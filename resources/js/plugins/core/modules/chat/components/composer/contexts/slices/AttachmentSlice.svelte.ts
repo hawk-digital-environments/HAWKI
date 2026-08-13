@@ -15,6 +15,8 @@ interface AttachmentSliceCheckpoint {
     uuids: Array<[File, string]>;
 }
 
+/** Owns the files staged for the next message, plus the server-assigned UUIDs
+ *  that correlate an already-uploaded file with its attachment record. */
 export class AttachmentSlice implements CheckpointingInterface<AttachmentSliceCheckpoint> {
     constructor(
         private readonly config: HawkiApp['config']
@@ -100,6 +102,10 @@ export class AttachmentSlice implements CheckpointingInterface<AttachmentSliceCh
         };
     }
 
+    // TODO(docs): `createCheckpoint()` captures `_assignedUuids`, but this only restores
+    // `_list` — `_assignedUuids` is left untouched. Is this intentional (uuids naturally
+    // stay valid across the restore because affected files keep the same reference) or a
+    // gap where the checkpoint's `uuids` field is silently discarded?
     public restoreCheckpoint(checkpoint: AttachmentSliceCheckpoint): void {
         this._list = [...checkpoint.list];
     }

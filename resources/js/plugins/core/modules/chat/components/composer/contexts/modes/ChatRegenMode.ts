@@ -88,6 +88,9 @@ export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRe
             });
         }
 
+        // `GuardSlice.canSend` requires a non-empty message; regen mode disables the input
+        // feature so the user never sees or edits this placeholder, but it still needs to be
+        // set for the send button to become enabled.
         context.message = 'dummy';
         context.focusInput();
 

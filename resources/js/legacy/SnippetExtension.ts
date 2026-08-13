@@ -47,14 +47,14 @@ export type ComponentWithName = Component & { name?: string };
  * table that makes that indirection possible. In the finished SPA the
  * component tree will import its children directly and no registry is needed.
  *
- * WHEN to touch it: normally never. Plugins register their snippets during
- * their `boot()` lifecycle — `plugins/core/core.plugin.ts` eager-globs
- * `$lib/plugins/core/snippets/**\/*.svelte` and registers every file under its
- * base name, so adding a new snippet is just adding a `.svelte` file to that
- * folder.
+ * WHEN to touch it: normally never. Registration happens in one place —
+ * {@link legacyInitializeSnippetApps} (`$lib/legacy/legacyInitializeSnippetApps.js`)
+ * lazy-globs `$lib/plugins/core/snippets/**\/*.svelte` and registers every
+ * file under its base name — so adding a new snippet is just adding a
+ * `.svelte` file to that folder, no manual `register()` call needed.
  *
  * @example
- * // Registering (inside a plugin's `boot(app, ctx)`):
+ * // Registering (what legacyInitializeSnippetApps does for every discovered file):
  * app.snippets.register('ChatHeader', ChatHeader);
  *
  * // Looking a snippet up (this is what the `<svelte-snippet>` element does):

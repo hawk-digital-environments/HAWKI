@@ -12,10 +12,9 @@ import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteReg
  * automatically namespaces any routes the module declares under the plugin's
  * route prefix.
  *
- * This module only declares a single route, `/`, lazily loading `ChatIndex.svelte`
- * as the page component. `registrar.lazyRoute` (as opposed to `registrar.route`)
- * defers importing the page until the route is actually navigated to, keeping it
- * out of the initial bundle.
+ * Declares the module's routes lazily via `registrar.lazyRoute` (as opposed to
+ * `registrar.route`), which defers importing each page component until the route
+ * is actually navigated to, keeping it out of the initial bundle.
  *
  * Note that the bulk of the chat feature is *not* reachable through this module
  * yet: the live composer UI under `components/composer/` is mounted by the legacy

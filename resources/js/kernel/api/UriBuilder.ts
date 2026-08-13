@@ -9,6 +9,15 @@ export class UriBuilder {
     ) {
     }
 
+    /**
+     * Builds a full JSON:API URL for the given resource type/path.
+     *
+     * `actionOrId` is dual-purpose: a string is appended as a path segment (a
+     * resource `id` or an RPC-style `action` name); an object is instead
+     * serialized as a query string via {@link buildQueryString} and appended —
+     * used by endpoints like {@link linkPreviewMetadataUri} that need query
+     * params rather than a path segment.
+     */
     public jsonApiUri(path: string, actionOrId?: string | Record<string, any>): string {
         let uri = this.joinUri(this.baseUri, [this.API_BASE_URL, path]);
         if (actionOrId) {

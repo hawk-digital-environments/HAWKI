@@ -14,18 +14,18 @@ declare module '$lib/kernel/extendableTypes.js' {
  * Reactive store for AI tools and their associated capability definitions.
  *
  * Tools are concrete callable integrations (e.g. web-search, code-interpreter). Capabilities
- * are broader feature flags that may span multiple tools. Use the `isAvailable*` and
- * `availableFor*` helpers to check support against a specific model — don't read
- * `tool_ids` from the model object directly.
+ * are broader feature flags that may span multiple tools; a capability entry additionally
+ * exposes `getTools()`/`getToolsFor(model)` (its underlying tools) and `hasNativeCapabilityFor(model)`
+ * (whether the model supports it without any tool). Use each entry's `isAvailableFor(model)` to
+ * check support against a specific model — don't read `tool_ids` off the model object directly.
+ *
+ * Access via `useStore('ai-tools')`.
  *
  * @example
- * // Show only the tools the active model supports
- * import {aiToolStore} from '$lib/stores/AiToolStore.svelte.js';
- * const tools = $derived(aiToolStore.availableToolsForModel(chatInputStore.currentModel!));
- *
- * @example
- * // Check whether a specific named tool is available before adding it to a request
- * if (aiToolStore.isAvailableToolOfModel('web-search', currentModel)) { ... }
+ * // List the tools/capabilities available for the current model
+ * import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+ * const aiToolStore = useStore('ai-tools');
+ * const availableTools = $derived(aiToolStore.tools.filter(t => t.isAvailableFor(currentModel)));
  */
 export class AiToolStore implements DataStore {
     public readonly name = 'ai-tools';

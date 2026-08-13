@@ -70,14 +70,19 @@ export interface HawkiPlugin {
     /** Register this plugin's `DataStore`s on the registrar. */
     stores?(registrar: StoreRegistrar, context: HawkiPluginContextWithConfig): void | Promise<void>;
 
-    // Executed after all plugins have been initialized and all app extensions are loaded.
-    // Still quite early in the app lifecycle. Triggered after {@link Bootstrapper.onEarlyStage} is done.
-    // Stores are not yet populated, this will be done in the "main" boot stage.
+    /**
+     * Runs once the `preparation` bootstrap stage has passed (config and
+     * connection are available); scheduled via `bootstrapper.onStagePassed('preparation', ...)`
+     * in `PluginExtension.ready()`. Stores are not populated yet — that
+     * happens on the `main` stage.
+     */
     boot?(app: HawkiApp, context: HawkiPluginContextWithConfig): void | Promise<void>;
 
-    // Executed after the app is fully bootstrapped and ready to be used.
-    // Triggered at the beginning of the {@link Bootstrapper.onFinalizationStage} stage,
-    // Before the Svelte app is being mounted.
+    /**
+     * Runs as soon as the `finalization` bootstrap stage is reached, before
+     * the Svelte app mounts; scheduled via `bootstrapper.onStageReached('finalization', ...)`
+     * in `PluginExtension.ready()`.
+     */
     ready?(app: HawkiApp, context: HawkiPluginContextWithConfig): void | Promise<void>;
 }
 

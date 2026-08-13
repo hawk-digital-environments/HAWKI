@@ -80,6 +80,9 @@ export class SendMessageStatus {
     }
 
     /** Records an upload error for a specific file and sets the overall status to `'failed'`. */
+    // TODO(docs): `this.fileIssues` is the `$derived.by` getter, which returns a fresh copy on
+    // every access — `.push()` here mutates that throwaway array, not `_fileIssues`. Looks like
+    // this should read `this._fileIssues.push([file, issue])` to actually record the issue.
     public addFileIssue(file: File, issue: string): void {
         this._status = 'failed';
         this.fileIssues.push([file, issue]);

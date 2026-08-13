@@ -1,7 +1,5 @@
 /**
  * Capitalises the first character of a string (equivalent to PHP's `Str::ucfirst`).
- *
- * @param str
  */
 export function ucfirst(str: string) {
     if (!str) return str;
@@ -11,9 +9,6 @@ export function ucfirst(str: string) {
 /**
  * Replaces multiple substrings in one pass, preferring longer keys over shorter ones –
  * matching PHP's `strtr($str, $pairs)` behaviour.
- *
- * @param str - The source string.
- * @param pairs - Map of search-strings to replacement-strings.
  */
 export function strtr(str: string, pairs: Record<string, string>) {
     // Sort keys longest-first so longer placeholders are matched preferentially

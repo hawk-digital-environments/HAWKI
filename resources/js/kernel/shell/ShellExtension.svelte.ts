@@ -4,6 +4,11 @@ import {mount, unmount} from 'svelte';
 import Shell from '$lib/app/components/Shell.svelte';
 import {legacyInitializeSnippetApps} from '$lib/legacy/legacyInitializeSnippetApps.js';
 
+/**
+ * Declaration merging that exposes this extension's members directly on the
+ * app object (`app.isBooting`, `app.mount()`, ...) — see {@link HawkiAppExtension}
+ * / `createApp()` in `kernel/HawkiApp.ts`.
+ */
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
         isMounted: boolean;
@@ -16,6 +21,21 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
 }
 
+/**
+ * App extension that mounts the SPA `Shell` component and bridges the boot
+ * sequence to it.
+ *
+ * `ready()` mounts `Shell` into `#hawki-app` as soon as the DOM is ready —
+ * before the rest of the app has finished bootstrapping — so a loading
+ * indicator can show immediately (`Shell` renders `Loader` while
+ * `isBooting` is `true`). `isBooting` only flips to `false` once the
+ * bootstrapper's `finalization` stage has passed, at which point `Shell`
+ * swaps to the real `RouterView`.
+ *
+ * Pages that don't have a `#hawki-app` element (still-legacy pages,
+ * mid-migration) never get mounted this way; `ready()` falls back to
+ * `legacyInitializeSnippetApps` for them instead.
+ */
 export class ShellExtension implements HawkiAppExtension {
     private readonly mountPointSelector = '#hawki-app';
     private _isBooting = $state<boolean>(true);
@@ -36,12 +56,16 @@ export class ShellExtension implements HawkiAppExtension {
             }
         }
 
-        // We mount emmediatey as soon as the DOM is ready, so we can show a fancy loading screen while the rest of the app is booting.
-        // This only renders the shell and a loading indicator, the rest of the app will be rendered once "_isBooting" is set to false.
+        // Mount immediately (synchronously, no DOM-ready wait) so the loading shell shows up as early as
+        // possible. Safe without an explicit check because app.ts is loaded as a `type="module"` script
+        // (see @vite() in the Blade layouts), which the browser only ever executes after the document has
+        // been parsed — `#hawki-app` is already in the DOM by the time `ready()` runs.
         let hasBeenMounted = false;
         hasBeenMounted = this.mount();
 
-        // Ensure the dom is ready before we mount.
+        // DOMContentLoaded may still be pending even though the DOM is parsed (e.g. deferred stylesheets/
+        // other module scripts). Delay the 'finalization' stage's completion until it fires, since the
+        // legacy fallback below and other finalization work may depend on it.
         bootstrapper.onFinalizationStage(() => new Promise(resolve => {
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => {
@@ -84,6 +108,13 @@ export class ShellExtension implements HawkiAppExtension {
         return this._app;
     }
 
+    /**
+     * Mounts `Shell` into the given element/selector, or `#hawki-app` by
+     * default. Returns `false` (without throwing) both when already mounted
+     * and when the target element can't be found — `ready()` uses that to
+     * decide whether to fall back to the legacy snippet bootstrap, so a
+     * missing target is an expected outcome on legacy pages, not an error.
+     */
     public mount(mountPointOrSelector?: HTMLElement | string): boolean {
         if (this.isMounted) {
             console.warn('SpaExtension is already mounted. Skipping mount.');

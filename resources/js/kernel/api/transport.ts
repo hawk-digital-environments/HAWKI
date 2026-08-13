@@ -9,11 +9,12 @@ import {ApiTransportError, type ApiTransportServerErrorMessage} from '$lib/kerne
  * tests (or non-browser environments like a web worker) can swap the transport
  * without touching the request-building / schema-validation logic.
  *
- * @todo update docs
  * {@link createDefaultTransport} returns the browser implementation: it calls
- * `fetch`, throws an `Error` (with the first JSON:API error's `detail`/`title`
- * appended when the body is a JSON:API error response) on a non-2xx response,
- * and otherwise returns the parsed JSON.
+ * `fetch` and, on a non-2xx response, throws an {@link ApiTransportError}
+ * (carrying `status`, the raw `body`, and any parsed JSON:API `errors`) with a
+ * message built from the first error's `detail`/`title` when the body is a
+ * JSON:API error response, otherwise a generic "API request failed with status
+ * N". On success it returns the parsed JSON body.
  */
 export type ApiTransport = (path: string, options: RequestInit) => Promise<any>;
 

@@ -48,11 +48,7 @@ export interface HybridCryptoValue {
     toString: () => string;
 }
 
-/**
- * Internal helper function to create a HybridCryptoValue object.
- * @param passphrase
- * @param value
- */
+/** @internal Assembles a {@link HybridCryptoValue} with a working `toString()`. */
 function createHybridCryptoValue(passphrase: string, value: SymmetricCryptoValue): HybridCryptoValue {
     return {
         passphrase,
@@ -63,10 +59,7 @@ function createHybridCryptoValue(passphrase: string, value: SymmetricCryptoValue
     };
 }
 
-/**
- * Loads a HybridCryptoValue from a form generated when calling toString on a HybridCryptoValue.
- * @param ciphertext
- */
+/** Reconstructs a {@link HybridCryptoValue} from the string produced by its `toString()`. */
 export function loadHybridCryptoValue(ciphertext: string): HybridCryptoValue {
     const cipherParts = ciphertext.split('|');
     if (cipherParts.length !== 2) {
@@ -94,10 +87,8 @@ export async function encryptHybrid(plaintext: string, publicKey: CryptoKey): Pr
 }
 
 /**
- * Decrypts the hybrid encrypted value using the provided private key.
- * This method first decrypts the passphrase using the private key, then uses that passphrase to decrypt the symmetric value.
- * @param value - The value to decrypt
- * @param privateKey - The private key to use for decryption
+ * Reverses {@link encryptHybrid}: unwraps `value.passphrase` (the AES key) with
+ * `privateKey`, then uses it to decrypt `value.value`.
  */
 export async function decryptHybrid(value: HybridCryptoValue, privateKey: CryptoKey): Promise<string> {
     return await decryptSymmetric(

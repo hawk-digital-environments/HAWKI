@@ -128,8 +128,9 @@ export function decodeJsonApiResourceResponse<T>(response: any): T {
 }
 
 /**
- * Helper to extend the Zod schema for a resource with the additional metadata and links that the API may return.
- * @param schema
+ * Extends a resource's Zod schema with the optional `_meta`/`_globalMeta`/`_links`
+ * fields the JSON:API decoder attaches (see {@link JsonaPropertyMapper}), so
+ * `schema.parse()` doesn't reject a decoded resource for carrying them.
  */
 export function extendResourceSchema<T extends ZodType>(schema: T) {
     return z.intersection(
