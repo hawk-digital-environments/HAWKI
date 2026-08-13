@@ -1,5 +1,13 @@
 {
     "ui": {
+        "navigation": {
+            "skipToContent": "Skip to main content",
+            "open": "Open navigation",
+            "close": "Close navigation",
+            "collapse": "Collapse sidebar",
+            "expand": "Expand sidebar",
+            "search": "Search"
+        },
         "dialog": {
             "closeLabel": "Close",
             "okLabel": "OK",

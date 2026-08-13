@@ -1,5 +1,13 @@
 {
     "ui": {
+        "navigation": {
+            "skipToContent": "Zum Hauptinhalt springen",
+            "open": "Navigation öffnen",
+            "close": "Navigation schließen",
+            "collapse": "Seitenleiste einklappen",
+            "expand": "Seitenleiste ausklappen",
+            "search": "Suchen"
+        },
         "dialog": {
             "closeLabel": "Schließen",
             "okLabel": "OK",

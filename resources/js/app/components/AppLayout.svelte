@@ -9,6 +9,7 @@
     import AppSidebar from '$lib/app/components/sidebar/AppSidebar.svelte';
     import SidebarContent from '$lib/components/ui/sidebar/SidebarContent.svelte';
     import SidebarContext from '$lib/components/ui/sidebar/SidebarContext.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         /** Page content, rendered in the layout's main column. */
@@ -16,11 +17,33 @@
     }
 
     const {children}: Props = $props();
+    const {__} = useTranslator();
 </script>
 
 <SidebarContext>
+    <a class="skip-link" href="#main-content">{__('ui.navigation.skipToContent')}</a>
     <AppSidebar />
     <SidebarContent>
         {@render children()}
     </SidebarContent>
 </SidebarContext>
+
+<style>
+    .skip-link {
+        position: fixed;
+        top: var(--space-2);
+        left: var(--space-2);
+        z-index: 100;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--corner-sm);
+        background: var(--color-interactive);
+        color: var(--color-on-interactive);
+        font-weight: var(--font-weight-semibold);
+        transform: translateY(calc(-100% - var(--space-4)));
+        transition: transform var(--duration-fast);
+    }
+
+    .skip-link:focus {
+        transform: translateY(0);
+    }
+</style>

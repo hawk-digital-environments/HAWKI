@@ -25,7 +25,7 @@
         --color-interactive: oklch(20% 0 0);
         --color-interactive-hover: oklch(32% 0 0);
         --color-interactive-active: oklch(12% 0 0);
-        --color-focus-ring: var(--color-accent-300);
+        --color-focus-ring: var(--color-accent-500);
         --color-on-interactive: oklch(100% 0 0);
         --color-accent-text: var(--color-accent-500);
         /* Label color for text sat on the accent fill (typeFilled hover/active).
@@ -51,12 +51,12 @@
            only richer — reserved for the one action that leads somewhere new. */
         /* The stops are exposed individually as well so components can animate
            the ramp — a gradient itself is not interpolatable, its colors are. */
-        --gradient-brand-1: var(--color-accent-500);
-        --gradient-brand-2: var(--color-accent-400);
-        --gradient-brand-3: var(--color-accent-300);
-        --gradient-brand-hover-1: var(--color-accent-600);
-        --gradient-brand-hover-2: var(--color-accent-500);
-        --gradient-brand-hover-3: var(--color-accent-400);
+        --gradient-brand-1: var(--color-accent-600);
+        --gradient-brand-2: var(--color-accent-500);
+        --gradient-brand-3: var(--color-accent-500);
+        --gradient-brand-hover-1: var(--color-accent-700);
+        --gradient-brand-hover-2: var(--color-accent-600);
+        --gradient-brand-hover-3: var(--color-accent-500);
 
         --gradient-brand: linear-gradient(
             135deg,
@@ -95,7 +95,7 @@
         --color-border: oklch(92% 0 0);
         --color-border-strong: oklch(50% 0 0);
         --color-text: oklch(20% 0 0);
-        --color-text-muted: oklch(57% 0 0);
+        --color-text-muted: oklch(56% 0 0);
         --color-text-invert: oklch(97% 0 0);
         --color-text-disabled: oklch(75% 0 0);
         --color-disabled-bg: oklch(93% 0 0);
