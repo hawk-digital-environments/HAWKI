@@ -48,6 +48,10 @@
     const nodeParams = $derived(router.nodeParams);
     // One object for the whole chain, not one per node — see `Router.meta`.
     const meta = $derived(router.meta ?? {});
+    // Replacing Loader's children destroys the complete routed Svelte tree.
+    // Only do that before the first route exists; later navigations keep the
+    // current page mounted until the next component is ready.
+    const isInitialLoading = $derived(isLoading && !RouteComponent);
 
     // Makes this router the one a bare `useRouter()` below resolves to, and
     // every router above it still reachable by name. A nested `RouterView`
@@ -105,7 +109,7 @@
 {/snippet}
 
 <svelte:boundary onerror={handleError}>
-    <Loader active={isLoading}>
+    <Loader active={isInitialLoading}>
         {@render layoutStack(0)}
     </Loader>
     {#snippet failed(error, reset)}
