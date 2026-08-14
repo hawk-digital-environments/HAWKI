@@ -55,8 +55,21 @@ export interface HawkiModule {
     sidebar?(locale: Locale): Component;
 }
 
+export interface HawkiCoreModule extends HawkiModule{
+    readonly pluginNameInRoutes?: boolean;
+
+}
+
+
 /** A {@link HawkiModule} paired with the {@link HawkiPlugin} that registered it,
  *  as stored by the {@link ModuleExtension}. */
 export interface HawkiModuleWithPlugin extends HawkiModule {
+
     readonly plugin: HawkiPlugin;
 }
+
+export interface HawkiCoreModuleWithPlugin extends HawkiCoreModule {
+
+    readonly plugin: HawkiPlugin;
+}
+

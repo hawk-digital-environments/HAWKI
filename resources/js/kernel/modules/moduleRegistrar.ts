@@ -1,4 +1,4 @@
-import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
+import type {HawkiCoreModuleWithPlugin, HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
@@ -20,7 +20,7 @@ import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteReg
  * already namespaced.
  */
 export function createModuleRegistrar(
-    modules: Map<string, HawkiModuleWithPlugin>,
+    modules: Map<string, HawkiModuleWithPlugin | HawkiCoreModuleWithPlugin>,
     plugin: HawkiPluginWithMetadata
 ) {
     function add(module: HawkiModule) {
@@ -38,12 +38,12 @@ export function createModuleRegistrar(
             const innerRoutes = module.routes;
             module = Object.assign({}, module, {
                 routes: async (registrar: RouteRegistrar) => {
-                    registrar.group(getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin), innerRoutes);
+                    registrar.group(getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin, (module as HawkiCoreModuleWithPlugin).pluginNameInRoutes), innerRoutes);
                 }
             });
         }
 
-        modules.set(fullModuleName, Object.assign({}, module, {plugin}) as HawkiModuleWithPlugin);
+        modules.set(fullModuleName, Object.assign({}, module, {plugin}) as HawkiModuleWithPlugin | HawkiCoreModuleWithPlugin);
     }
 
     return {
@@ -51,8 +51,8 @@ export function createModuleRegistrar(
     };
 }
 
-export function createModuleRegistrarFactory(modules: Map<string, HawkiModuleWithPlugin>) {
-    return (plugin: HawkiPluginWithMetadata) => createModuleRegistrar(modules, plugin);
+export function createModuleRegistrarFactory(modules: Map<string, HawkiModuleWithPlugin | HawkiCoreModuleWithPlugin>) {
+    return (plugin: HawkiPluginWithMetadata ) => createModuleRegistrar(modules, plugin);
 }
 
 export type ModuleRegistrar = ReturnType<typeof createModuleRegistrar>;

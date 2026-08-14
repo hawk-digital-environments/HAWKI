@@ -139,7 +139,7 @@ export class RestApi {
         id: string | number,
         options?: GetResourceOptions
     ): Promise<any> {
-        const url = this.uriBuilder.jsonApiUri(resourceType, id.toString());
+        const url = this.uriBuilder.jsonApiUri(resourceType, id, options?.query);
         const fetchOptions: FetchOptions = {
             ...options,
             beforeSchema: decodeJsonApiResourceResponse
@@ -178,7 +178,7 @@ export class RestApi {
         resourceType: string,
         options?: GetResourceCollectionOptions
     ): Promise<JsonApiCollection<any>> {
-        const url = this.uriBuilder.jsonApiUri(resourceType) + buildQueryString(options?.query);
+        const url = this.uriBuilder.jsonApiUri(resourceType, options?.query);
         const fetchOptions: FetchOptions = {
             ...options,
             beforeSchema: decodeJsonApiIndexResponse,

@@ -9,22 +9,37 @@ export class UriBuilder {
     ) {
     }
 
-    public jsonApiUri(path: string, actionOrId?: string | Record<string, any>): string {
+    public jsonApiUri(path: string, actionIdOrQuery?: string | number, queryParams?: Record<string, any>): string;
+    public jsonApiUri(path: string, actionIdOrQuery?: Record<string, any>): string;
+    public jsonApiUri(
+        path: string,
+        actionIdOrQuery?: string | number | Record<string, any>,
+        queryParams?: Record<string, any>
+    ): string {
         let uri = this.joinUri(this.baseUri, [this.API_BASE_URL, path]);
-        if (actionOrId) {
-            if (typeof actionOrId === 'object') {
-                const queryString = buildQueryString(actionOrId);
-                if (queryString) {
-                    uri += queryString;
-                }
-            } else {
-                uri = this.joinUri(uri, actionOrId);
+
+        let actionOrId: string | null = null;
+        let query: Record<string, any> | undefined = queryParams;
+
+        if (typeof actionIdOrQuery === 'string' || typeof actionIdOrQuery === 'number') {
+            actionOrId = actionIdOrQuery.toString();
+        } else if (actionIdOrQuery && typeof actionIdOrQuery === 'object') {
+            if (query) {
+                throw new Error('Cannot provide queryParams when actionIdOrQuery is an object; use only one or the other.');
             }
+            query = actionIdOrQuery;
+        }
+
+        if (actionOrId) {
+            uri = this.joinUri(uri, actionOrId);
+        }
+
+        if (query) {
+            uri += buildQueryString(query);
         }
 
         return uri;
     }
-
     /**
      * Builds the proxied URL for a stored file so the browser can fetch it through
      * the HAWKI backend rather than hitting the storage provider directly.
