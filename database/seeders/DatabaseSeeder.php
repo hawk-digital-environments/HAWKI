@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             AssistantCategorySeeder::class,
             AssistantSettingSeeder::class,
+            AssistantSeeder::class,
         ]);
     }
 }

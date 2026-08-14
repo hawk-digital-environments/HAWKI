@@ -1,5 +1,8 @@
 {
     "assistants": {
+
+        "assistant" : "Assistent",
+        "assistants" : "Assistenten",
         "categories": {
             "academic_writing": "Wissenschaftliches Schreiben",
             "computer_science": "Informatik",
@@ -40,6 +43,241 @@
                     "balanced": "Mittel",
                     "detailed": "Detailliert"
                 }
+            }
+        },
+        "sidebar": {
+            "home": "Startseite",
+            "store":"Store",
+            "drafts": "Entwürfe",
+            "favourites": "Favoriten",
+            "shared": "Freigegeben",
+            "create": "Erstellen",
+            "switch_case": "Bereich wechseln",
+            "back": "Zurück"
+        },
+
+        "entry": {
+            "title": "Assistent erstellen",
+            "description":"Wähle, wie du deinen neuen Assistenten erstellen möchtest.",
+            "advanced": "Erweitert",
+            "advanced_description": "Volle Kontrolle über alle Einstellungen, Wissen, Modell und Freigabe.",
+            "coming_soon": "Bald verfügbar",
+            "assisted": "Assistiert",
+            "assisted_description": "Lass dich Schritt für Schritt durch die Erstellung führen."
+        },
+
+
+        "store": {
+            "title": "Assistenten Store",
+            "description": "Entdecke vertrauenswürdige, geprüfte KI-Assistenten aus dem Hochschulnetzwerk.",
+            "empty_title": "",
+            "empty_description": ""
+        },
+        "drafts": {
+            "title": "Meine Entwürfe",
+            "description": "Deine privaten Assistenten-Entwürfe.",
+            "empty_title":  "Keine Entwürfe vorhanden",
+            "empty_description": "Du hast noch keine Assistenten als Entwurf gespeichert."
+        },
+        "shared": {
+            "title": "Freigegebene Assistenten",
+            "description": "Freigegebene Assistenten",
+            "empty_title":  "Keine freigegebene Assistant",
+            "empty_description": ""
+        },
+        "favourites": {
+            "title": "Favoriten",
+            "description": "Deine als Favorit markierten Assistenten",
+            "empty_title":  "Keine Favoriten gespeichert",
+            "empty_description": "Markiere Assistenten mit dem Herz-Symbol, um sie hier zu sehen."
+        },
+
+        "browser": {
+            "empty_title": "Keine Assistenten gefunden",
+            "empty_description": "Keine Assistenten passen zu deinen aktuellen Filtern.",
+            "loading": "Lade Assistenten…",
+            "pagination_of": "von"
+        },
+
+        "card": {
+            "remix": "Remix",
+            "category_unknown": "Unbekannt",
+            "remixed_via": ". via"
+        },
+
+        "release_stage": {
+            "private": "Privat",
+            "organizational": "Föderiert freigegeben",
+            "federated": "Verifiziert"
+        },
+
+        "risk": {
+            "low": "Geringes Risiko",
+            "medium": "Mittleres Risiko",
+            "high": "Hohes Risiko"
+        },
+
+        "detail": {
+            "back": "Zurück zum Store",
+            "edit": "Bearbeiten",
+            "edit_aria": "Assistent bearbeiten",
+            "remix": "Remixen",
+            "try_out": "Ausprobieren",
+            "meta_creator": "Ersteller",
+            "meta_version": "Version",
+            "meta_usage": "Nutzung",
+            "meta_usage_unit": "Aufrufe",
+            "meta_updated": "Aktualisiert",
+            "trust_title": "Vertrauen & Risiko",
+            "history_title": "Änderungsverlauf",
+            "feedback_sent": "Feedback gesendet."
+        },
+        "feedback": {
+            "feedback_to": "Feedback an",
+            "visible_to_creator": "Nur für den Ersteller sichtbar",
+            "send_feedback": "Feedback senden"
+        },
+        "remix": {
+            "remix_from": "Remix von",
+            "remix_from_creator": "Original erstellt von",
+            "original_status": "Original-Status:",
+            "remix_hint": "Dein Remix startet als privater Entwurf und muss vor einer breiteren Freigabe geprüft werden. Vertrauensstatus wird nicht vom Original übernommen."
+        },
+
+        "builder":{
+            "sidebar": {
+                "general": "Allgemein",
+                "behaviour": "Verhalten",
+                "knowledge": "Wissen & Daten",
+                "model": "Modell",
+                "test": "Testen",
+                "publish": "Veröffentlichen"
+            },
+            "general": {
+                "title": "Allgemeine Informationen",
+                "description": "Grundlegende Angaben zu deinem Assistenten.",
+                "input_name": "Name des Assistenten",
+                "input_handle": "Eindeutiger @Handle",
+                "input_description": "Kurzbeschreibung",
+                "input_short_description": "Ausführliche Beschreibung",
+                "input_category": "Kategorie",
+                "input_allow_remix": "Remixen erlauben",
+                "input_allow_remix_description": "Andere können eine eigene Version erstellen.",
+                "avatar_title": "Erscheinungsbild",
+                "avatar_description": "Wähle einen Hintergrund und ein Symbol – verwendet im App-Store und als Titelbild der Detailseite.",
+                "avatar_symbol": "Symbol",
+                "avatar_symbol_change": "Emoji ändern",
+                "avatar_background": "Hintergrund",
+                "avatar_preview_name": "Dein Assistent",
+                "avatar_preview_handle": "@dein-handle",
+                "tag_add": "Tag hinzufügen",
+                "tag_input_aria": "Tag eingeben",
+                "tag_confirm_aria": "Tag bestätigen"
+            },
+            "behaviour": {
+                "title": "Verhalten",
+                "description": "Lege fest, wie dein Assistent kommuniziert.",
+                "warning_system_prompt": "Änderungen am System-Prompt beeinflussen die Vertrauensprüfung.",
+                "input_system_prompt": "System-Prompt",
+                "input_system_prompt_placeholder": "System-Prompt schreiben",
+                "input_greeting": "Begrüßungsnachricht",
+                "input_greeting_placeholder": "Begrüßungsnachricht schreiben",
+                "input_starter_prompts": "Vorgeschlagene Starter-Prompts",
+                "input_starter_prompts_item": "Prompt"
+            },
+            "knowledge": {
+                "title": "Wissen & Daten",
+                "description": "Füge Kontextquellen hinzu, um die Antworten zu verbessern.",
+                "warning_knowledge_sources": "Wissensquellen können die Genehmigungsanforderungen beeinflussen.",
+                "upload_title": "Dateien hochladen",
+                "upload_hint": "PDF, DOCX, TXT, CSV — bis zu 50 MB",
+                "upload_browse": "Dateien durchsuchen",
+                "attached_files": "Angehängte Dateien",
+                "input_vector_databases": "Vektordatenbanken",
+                "documents_unit": "Dokumente"
+            },
+            "model": {
+                "title": "Modelleinstellungen",
+                "description": "Wähle und konfiguriere das KI-Modell.",
+                "input_allow_model_select": "Endnutzer darf Modell wählen",
+                "input_allow_model_select_description": "Nutzer können zwischen freigegebenen Modellen wählen.",
+                "input_temperature": "Temperatur",
+                "input_temperature_description": "Höhere Werte machen die Antworten kreativer, aber weniger vorhersehbar.",
+                "input_temperature_hint": "Steuert die Zufälligkeit der Antworten. Übliche Werte liegen zwischen 0 und 1.",
+                "input_top_p": "Top_P",
+                "input_top_p_description": "Begrenzt die Wahrscheinlichkeitsmasse, aus der das Modell sampelt.",
+                "input_top_p_hint": "Niedrigere Werte machen das Sampling fokussierter, höhere Werte offener.",
+                "input_max_tokens": "Max. Ausgabelänge",
+                "input_max_tokens_description": "Maximale Tokenanzahl pro Antwort.",
+                "input_max_tokens_hint": "Höhere Werte ermöglichen längere Antworten, kosten aber mehr Zeit."
+            },
+            "tools": {
+                "title": "Tools & MCP",
+                "description": "Wähle einzelne Werkzeuge aus genehmigten MCP-Servern. Jedes Tool beeinflusst die Risikostufe und Veröffentlichungspfade."
+            },
+            "test": {
+                "title": "Private Testumgebung",
+                "description": "Teste und verfeinere deinen Assistenten."
+            },
+            "publish": {
+                "title": "Veröffentlichen",
+                "description": "Wähle den Veröffentlichungspfad.",
+                "release_stage": {
+                    "title": "Veröffentlichungspfad wählen",
+                    "private_label": "Als privaten Entwurf speichern",
+                    "private_description": "Nur für dich sichtbar, keine Genehmigung nötig.",
+                    "organizational_label": "Zur internen Prüfung einreichen",
+                    "organizational_description": "Für die Freigabe innerhalb deiner Hochschule.",
+                    "federated_label": "Verifiziert",
+                    "federated_description": "Hochschulübergreifend sichtbar. Strenge Validierung."
+                },
+                "status": {
+                    "draft": "Draft",
+                    "private": "Privat",
+                    "organizational": "In Prüfung",
+                    "federated": "In Prüfung"
+                },
+                "visibility": {
+                    "draft": "Draft",
+                    "private": "Nur du",
+                    "organizational": "Hochschulweit",
+                    "federated": "Öffentlich"
+                },
+                "publishability": {
+                    "draft": "Draft",
+                    "private": "Nur privat nutzbar",
+                    "organizational": "Hochschulweit nutzbar",
+                    "federated": "Öffentlich nutzbar"
+                },
+                "risk": {
+                    "title": "Risiko-Übersicht",
+                    "description": "Assistent mit Wissensdateien oder Tools. Standardprüfung erforderlich.",
+                    "label_status": "Status",
+                    "label_risk_level": "Risikostufe",
+                    "risk_level_low": "Niedriges Risiko",
+                    "label_visibility": "Sichtbarkeit",
+                    "label_publishability": "Publizierbarkeit"
+                },
+                "completeness": {
+                    "title": "Vollständigkeitsprüfung",
+                    "description": "Pflicht für die Veröffentlichung."
+                },
+                "triggers": {
+                    "title": "Prüfungsauslöser"
+                },
+                "review_info": {
+                    "title": "Prüfung starten",
+                    "description": "Sobald du den Assistenten von „Privat“ auf „In der Hochschule verfügbar“ oder „Föderiert“ stellst, wird eine Prüfung ausgelöst.",
+                    "note": "MCP-Konfigurationen werden von uns eigenständig überprüft."
+                },
+                "input_version_note": "Versionshinweis",
+                "input_version_note_placeholder": "Was hat sich geändert?",
+                "save_as_private_draft": "Als privaten Entwurf speichern",
+                "save_as_review": "Zur Prüfung einreichen",
+                "save_as_draft": "Als draft Entwurf speichern",
+                "saved": "Assistent gespeichert.",
+                "submitted": "Assistent zur Prüfung eingereicht.",
+                "save_failed": "Speichern fehlgeschlagen."
             }
         }
     }

@@ -21,7 +21,7 @@
 -->
 <script lang="ts">
 
-    import SingleSelect, {type ItemSnippetProps, type SelectItemDefinition} from '$lib/components/ui/select/SingleSelect.svelte';
+    import SingleSelect, {type ItemSnippetProps, type SelectItemDefinition} from '$plugins/assistants/components/select/SingleSelect.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {mergeProps} from 'bits-ui';
     import {useComposerContext} from './contexts/ComposerContext.svelte';

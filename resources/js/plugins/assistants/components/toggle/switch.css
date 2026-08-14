@@ -1,0 +1,156 @@
+
+.typeSwitch.sizeSmall {
+    --width: 2.8rem;
+}
+.typeSwitch.sizeMedium {
+    --width: 3.5rem;
+}
+.typeSwitch.sizeLarge {
+    --width: 4rem;
+}
+
+.typeCheckbox.sizeSmall,
+.typeRoundCheckbox.sizeSmall,
+.typeRadio.sizeSmall
+{
+    --width: 1.0rem;
+}
+.typeCheckbox.sizeMedium,
+.typeRoundCheckbox.sizeMedium,
+.typeRadio.sizeMedium
+{
+    --width: 1.25rem;
+}
+.typeCheckbox.sizeLarge,
+.typeRoundCheckbox.sizeLarge,
+.typeRadio.sizeLarge
+{
+    --width: 1.5rem;
+}
+
+
+
+
+.switchButton{
+    width: var(--width);
+}
+.switchButton:disabled{
+    cursor: default;
+    opacity: 0.5;
+}
+
+.typeSwitch {
+    display: flex;
+    height: calc((var(--width) / 2));
+    aspect-ratio: 2;
+    background-color: var(--color-surface-raised);
+    border: 1px solid rgba(10,10,10, .3);
+    box-shadow: inset 1px 1px 5px rgba(0.1, 0.1, 0.1, 0.2);
+    border-radius: 1.5em;
+    align-items: center;
+    cursor: pointer;
+    transition: all var(--duration-medium);
+    padding: 0;
+}
+
+.typeSwitch .toggle{
+    display:flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.5em;
+
+    width: calc(var(--width) / 2 - 5px);
+    aspect-ratio: 1/1;
+
+    /*border: 1px solid rgba(10,10,10, .5);*/
+    background-color: var(--color-surface-raised);
+    box-shadow: 1px 1px 5px rgba(0.1, 0.1, 0.1, 0.7);
+
+    transform: translate(0, 0);
+    transition: all var(--transition-fast);
+    z-index: 100;
+    isolation: isolate;
+    outline: none;
+}
+.typeSwitch .toggle-area{
+    margin: .1em;
+    width: 100%;
+}
+
+.typeSwitch.active{
+    background-color: var(--color-accent-500);
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+}
+.typeSwitch.active .toggle {
+    transform: translate(calc(var(--width) / 2), 0);
+}
+
+
+.typeCheckbox,
+.typeRoundCheckbox,
+.typeRadio
+{
+    display: flex;
+    padding: 0;
+    width: var(--width);
+    height: var(--width);
+    align-items: center;
+    justify-content: center;
+    border: var(--border);
+}
+.typeRadio{
+    border: var(--border-strong);
+}
+.typeRoundCheckbox,
+.typeRadio
+{
+    border-radius: 50%;
+    overflow: hidden;
+}
+.typeCheckbox .toggle-area,
+.typeRoundCheckbox .toggle-area,
+.typeRadio .toggle-area
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.typeCheckbox .toggle,
+.typeRoundCheckbox .toggle
+{
+    background-color: var(--color-accent-500);
+    color: var(--color-on-interactive);
+    width: var(--width);
+    height: var(--width);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.typeCheckbox .toggle{
+    font-size: var(--width);
+}
+
+.typeRadio .toggle{
+    background-color: var(--color-accent-500);
+    color: var(--color-on-interactive);
+    width: calc(var(--width) * .35);
+    height: calc(var(--width) * .35);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.typeRoundCheckbox .toggle{
+    font-size: calc(var(--width) * .8);
+}
+
+.typeCheckbox:not(.active) .toggle,
+.typeRoundCheckbox:not(.active) .toggle,
+.typeRadio:not(.active) .toggle
+{
+    display: none;
+}
