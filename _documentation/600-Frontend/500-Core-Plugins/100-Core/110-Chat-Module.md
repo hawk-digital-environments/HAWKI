@@ -1,12 +1,12 @@
-# Composer
+# Chat Module
 
-The composer is the chat input area — the region where the user types a message, picks a model, attaches files, enables tools, and finally sends. All of that state lives in a single object called `ComposerContext`.
+The chat module (`plugins/core/modules/chat/`) bundles the chat feature: the composer (chat input area), the routed chat pages, and the message rendering components. The composer is the most complex part — all of its state lives in a single object called `ComposerContext`.
 
 Source directory: `resources/js/plugins/core/modules/chat/components/composer/`
 
 ---
 
-## Architecture Overview
+## Composer Architecture
 
 `ComposerContext` is the single state container that every composer Svelte component reads from and writes to. Rather than one monolithic class, state is divided into focused _slice_ classes, each owning exactly one concern. Two additional derived-view slices (no mutable state of their own) provide computed properties consumed by the UI. A pluggable _mode_ system layers temporary overlays on top of that state, and a dedicated _send pipeline_ handles the HTTP/transport lifecycle.
 
@@ -50,7 +50,7 @@ const context = createComposerContext(app, 'aiConv', toastContext);
 
 `type` is either `'aiConv'` (a dedicated AI conversation view) or `'room'` (a room chat where AI elements only appear when the message contains an `@handle` or regen mode is active).
 
-This follows the standard HAWKI context pattern described in Basics → Svelte Components.
+This follows the standard HAWKI context pattern described in [Svelte Components](../../200-Concepts/100-Svelte-Components.md#context--parent-child-communication).
 
 ---
 
@@ -130,21 +130,38 @@ if (result !== true) {
 
 `context.tools`
 
-Manages which tools the user has enabled for the next request.
+Manages which tools the user has enabled for the next request. Maintains two registries: `_active` (tools the user turned on, included in the request) and `_disabled` (tools temporarily turned off by a mode — e.g. regen mode disabling attachments — that should return to active when the mode exits). Tools are keyed by name and wrapped in `AiToolOrCapabilityWithState`.
 
 | Member | Type | Notes |
 |---|---|---|
-| `active` | `AiTool[]` | Tools the user has explicitly enabled. De-duplicated by tool name. |
-| `available` | `AiTool[] \| null` (derived) | Full set of tools the current model supports, or `null` if tool calling is disabled. |
-| `availableCapabilities` | `AiToolCapability[] \| null` (derived) | Capability definitions for the current model, or `null` if tool calling is disabled. |
+| `active` | `AiToolOrCapabilityWithState[]` (derived) | Tools the user has explicitly enabled. Included in the API request. De-duplicated by name. |
+| `all` | `AiToolOrCapabilityWithState[]` (derived) | Active + disabled tools combined. |
 
-**`add(tool)`** — enables a tool by name or object. No-op if already active.
+**`get(tool, includeDisabled?)`** — returns the wrapped tool-state entry for a tool, or `null`. Pass `includeDisabled: true` to also look in the disabled registry.
 
-**`remove(tool)`** — disables a tool by name or object. No-op if not active.
+**`isActive(tool)`** — `true` when the tool is in the active registry.
 
-**`clear()`** — disables all active tools.
+**`setFromTransferString(transferString, onError?)`** — resolves a tool from its transfer-string encoding (as produced by `toTransferString()`) and activates it. `onError` fires (instead of activating) with `'tool_not_found'` or `'tool_not_available'` when the tool no longer exists or isn't available for the current model. Used by modes/checkpointing to restore a tool set from a serialised checkpoint.
 
-**`canUse(tool)`** — returns `true` when the current model supports tool calling and the given tool is in the model's available tool list.
+**`set(tool, toolSelection?, toolSettings?)`** — enables a tool by name or object, carrying optional selection/settings state. No-op if already active (the entry is replaced). This is the primary "add a tool" method.
+
+**`remove(tool)`** — drops a tool from both active and disabled registries outright.
+
+**`disable(tool)`** — moves an active tool into the disabled registry, preserving its selection/settings so `enable()` can restore it later. No-op if the tool isn't active. Used by modes that need to temporarily lock a tool.
+
+**`enable(tool)`** — reactivates a previously `disable()`d tool, restoring its saved selection/settings. If the tool was never disabled, activates it fresh via `set()`.
+
+**`clear()`** — empties both active and disabled registries.
+
+```ts
+// Enable a tool the user toggled on
+context.tools.set(selectedTool);
+
+// A mode temporarily locks attachments without losing the user's selection
+context.tools.disable(attachmentTool);
+// ... mode exits ...
+context.tools.enable(attachmentTool);
+```
 
 ### ModelUsageSlice
 
@@ -296,7 +313,7 @@ const mode = new ModeSlice(
         switch (mode) {
             case 'edit':   return new ChatEditMode();
             case 'thread': return new ChatInThreadMode();
-            case 'regen':  return new ChatRegenMode(aiModelStore, aiToolStore, toastContext);
+            case 'regen':  return new ChatRegenMode(aiModelStore, toastContext, app.translator);
             case 'my':     return new ChatMyMode();  // ← add here
             default: throw new Error(`Unsupported mode ${mode}`);
         }
@@ -304,6 +321,8 @@ const mode = new ModeSlice(
     ...
 );
 ```
+
+Note `ChatRegenMode`'s constructor takes `(modelStore, toastContext, translator)` — the `Translator` comes from `app.translator`, not a store.
 
 Also add the new key to `ComposerModeRegistry` in `ModeSlice.svelte.ts` so `enter()` and `getState()` are properly typed.
 

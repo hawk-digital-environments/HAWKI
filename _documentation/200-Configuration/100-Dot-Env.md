@@ -269,7 +269,7 @@ Set the AUTHENTICATION_METHOD variable to one of the following:
 According to your authentication method, set the necessary variables as follows:
 
 > Custom authentication methods can be implemented as described in
-> the [Authentication documentation](../500-Backend/300-HTTP-API/300-Authentication.md#implementing-a-custom-provider).
+> the [Authentication documentation](../500-Backend/400-Domains/700-Authentication/index.md#implementing-a-custom-provider).
 > To register your own class: `AUTHENTICATION_METHOD="App\Services\Auth\MyCustomAuthService"`
 
 ## LDAP, OIDC and Shibboleth Configuration

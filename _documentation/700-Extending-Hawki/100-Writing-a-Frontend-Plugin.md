@@ -1,11 +1,11 @@
-# Writing a Plugin
+# Writing a Frontend Plugin
 
-A **plugin** is HAWKI's unit of feature composition. Instead of every feature reaching into the app directly, a plugin implements the lifecycle hooks it needs — `stores`, `resourceSchemas`, `modules`, `routes`, `boot`, … — and the kernel calls them at the right point in startup. The single first-party plugin is `core` (`resources/js/plugins/core/core.plugin.ts`); it registers the core stores, snippets, and migrations.
+A **plugin** is HAWKI's unit of feature composition. Instead of every feature reaching into the app directly, a plugin implements the lifecycle hooks it needs — `stores`, `modules`, `routes`, `migrations`, `boot`, … — and the kernel calls them at the right point in startup. The single first-party plugin is `core` (`resources/js/plugins/core/core.plugin.ts`); it registers the core stores, the chat module, the root route, and the core migrations.
 
-Source: `resources/js/kernel/plugins/types.ts` (contract), `kernel/plugins/PluginExtension.ts` (discovery + dispatch).
+Source: `resources/js/kernel/plugins/types.ts` (contract), `kernel/plugins/PluginExtension.ts` (discovery), `kernel/plugins/PluginBootstrapper.ts` (dispatch). For the dispatch internals, see [Architecture → Plugin Internals](../600-Frontend/300-Architecture/130-Plugin-Internals.md).
 
 :::info[Third-party plugins: not yet]
-Only **built-in** plugins are supported today — they are auto-discovered from `$lib/plugins/**/*.plugin.ts` at build time via `import.meta.glob`, so a plugin must be bundled with the app. Loading third-party (runtime-installed) plugins is planned for **HAWKI v3.0.0**; `PluginExtension.autoRegisterInstalledPlugins()` is currently a no-op placeholder. Until then, every plugin is a core plugin.
+Only **built-in** plugins are supported today — they are auto-discovered from `$lib/plugins/**/*.plugin.ts` at build time via `import.meta.glob`, so a plugin must be bundled with the app. Loading third-party (runtime-installed) plugins is planned for a future version; `PluginExtension.autoRegisterInstalledPlugins()` is currently a no-op placeholder. Until then, every plugin is a core plugin.
 :::
 
 ---
@@ -60,7 +60,7 @@ Every hook is optional — implement only what you need. Two context shapes are 
 | `configSchemas`   | `ConfigurationExtension.init()` | during assembly — register Zod config schemas                                                   |
 | `modules`         | `ModuleExtension.init()`        | during assembly — register feature modules                                                      |
 | `stores`          | `StoreExtension.init()`         | during assembly — register data stores                                                          |
-| `routes`          | routing extension               | (routing not yet wired — see [Routing](200-Routing.md))                                         |
+| `routes`          | `RoutingExtension.init()`       | during assembly — register routes, wrapped in a group under the plugin's route prefix           |
 | `migrations`      | `MigrationExtension`            | core plugins only                                                                               |
 | `boot`            | `PluginExtension.ready()`       | after the `preparation` stage passes (config + connection available; stores **not** yet loaded) |
 | `ready`           | `PluginExtension.ready()`       | at the `finalization` stage, just before the Svelte app mounts                                  |
@@ -81,13 +81,13 @@ declare module '$lib/kernel/extendableTypes.js' {
 }
 ```
 
-Now `app.plugins.get('myPlugin')` returns a typed `MyPlugin` instead of the generic `HawkiPluginWithMetadata`. The same declaration-merging pattern applies to `HawkiResourceSchemas`/`HawkiConfigSchemas` (next to each schema file) and `HawkiDataStores` (next to each store class) — see [The App & Kernel](110-App-and-Kernel.md).
+Now `app.plugins.get('myPlugin')` returns a typed `MyPlugin` instead of the generic `HawkiPluginWithMetadata`. The same declaration-merging pattern applies to `HawkiResourceSchemas`/`HawkiConfigSchemas` (next to each schema file) and `HawkiDataStores` (next to each store class) — see [Architecture → The App & Kernel](../600-Frontend/300-Architecture/100-App-and-Kernel.md).
 
 ---
 
 ## The reference implementation: `CorePlugin`
 
-The only first-party plugin is `resources/js/plugins/core/core.plugin.ts`. It implements `name`, `boot`, `migrations`, and `stores`. Open the file for the full shape; the extracts below show how each concern is registered and what is non-obvious about the timing.
+The only first-party plugin is `resources/js/plugins/core/core.plugin.ts`. It implements `name`, `migrations`, `modules`, `routes`, and `stores` — it does **not** implement `boot` or `ready`. Open the file for the full shape; the extracts below show how each concern is registered.
 
 ### Registering stores
 
@@ -103,32 +103,35 @@ class Plugin implements HawkiCorePlugin {
 }
 ```
 
-### Registering snippets
+### Registering a module
 
-`boot()` runs after the `preparation` stage, so `app` and `ctx.config` are available but stores are not yet loaded. That is why the core plugin registers Svelte snippets here (no data dependency) rather than hydrating stores. Each `.svelte` file under the plugin's `snippets/` directory is eager-globbed and handed to `app.snippets.register(name, Component)`:
+`modules()` receives a `ModuleRegistrar`. A module bundles a feature's routes (and optional title/icon/sidebar metadata) behind a single name, namespaced under the plugin.
 
 ```ts
 class Plugin implements HawkiCorePlugin {
-    public boot(app: HawkiApp, ctx: HawkiPluginContextWithConfig): void | Promise<void> {
-        const glob = import.meta.glob('$lib/plugins/core/snippets/**/*.svelte', {eager: true});
-        for (const [path, module] of Object.entries(glob)) {
-            const snippetName = path.split('/').pop()?.replace('.svelte', '');
-            if (snippetName) {
-                app.snippets.register(snippetName, (module as { default: Component }).default);
-            }
-        }
-        // …
+    public modules({add}: ModuleRegistrar): void | Promise<void> {
+        add(new ChatModule());
     }
 }
 ```
 
-:::caution[Deprecated]
-The whole concept of snippets is transitional — the SPA rewrite will give the page a single Svelte root, so snippets will no longer be needed. See [Old UI Integration](300-Old-Ui.md).
-:::
+See [Architecture → Modules & Routing](../600-Frontend/300-Architecture/120-Modules-and-Routing.md) for the `HawkiModule` contract and how routes are prefixed.
+
+### Registering routes
+
+`routes()` receives a `RouteRegistrar` already scoped under the plugin's route prefix (empty for core plugins, `/plugins/<slug>` otherwise). Use `lazyRoute` for code-split pages.
+
+```ts
+class Plugin implements HawkiCorePlugin {
+    public routes(registrar: RouteRegistrar): void | Promise<void> {
+        registrar.lazyRoute('/', async () => import('$plugins/core/pages/Index.svelte'));
+    }
+}
+```
 
 ### Registering migrations
 
-`migrations` is a `HawkiCorePlugin` hook — third-party plugins implement `HawkiPlugin`, which has no `migrations`; the kernel skips it for them. The registrar infers the run type from the directory the file lives in, so the plugin only hands over a lazy glob:
+`migrations` is a `HawkiCorePlugin` hook — third-party plugins implement `HawkiPlugin`, which has no `migrations`; the kernel skips it for them. The registrar infers the run type from the directory the file lives in, so the plugin only hands over a lazy glob.
 
 ```ts
 class Plugin implements HawkiCorePlugin {
@@ -137,6 +140,10 @@ class Plugin implements HawkiCorePlugin {
     }
 }
 ```
+
+:::warning[Dragons — core plugins only]
+Migrations have an unsolved rollback problem and are restricted to core plugins. See [Frontend Migrations](../600-Frontend/200-Concepts/170-Frontend-Migrations.md) and [Technical Debt](../600-Frontend/900-Technical-Debt.md).
+:::
 
 ---
 
@@ -184,8 +191,9 @@ That's the whole wiring — the file's location (`$lib/plugins/myPlugin/myPlugin
 
 | I want to…                                                | Read                                                |
 |-----------------------------------------------------------|-----------------------------------------------------|
-| Understand the extension system plugins plug into         | [The App & Kernel](110-App-and-Kernel.md)           |
-| Add a fundamentally new app-wide subsystem (not a plugin) | [Writing an Extension](120-Writing-an-Extension.md) |
-| See how registered stores are consumed                    | [Stores](../300-Data/100-Stores.md)                 |
+| Understand the extension system plugins plug into         | [Architecture → The App & Kernel](../600-Frontend/300-Architecture/100-App-and-Kernel.md) |
+| Understand how plugins are discovered and dispatched      | [Architecture → Plugin Internals](../600-Frontend/300-Architecture/130-Plugin-Internals.md) |
+| Add a fundamentally new app-wide subsystem (not a plugin)  | [Writing a Frontend Extension](200-Writing-a-Frontend-Extension.md) |
+| Understand modules and routing                           | [Architecture → Modules & Routing](../600-Frontend/300-Architecture/120-Modules-and-Routing.md) |
+| See how registered stores are consumed                    | [Concepts → Stores](../600-Frontend/200-Concepts/120-Stores.md) |
 | See the full plugin contract                              | `resources/js/kernel/plugins/types.ts`              |
-| See the dispatch order                                    | `resources/js/kernel/plugins/PluginBootstrapper.ts` |

@@ -1,4 +1,4 @@
-# Event System
+# Event Pipelines
 
 HAWKI does not use a general-purpose event bus. Instead it provides three purpose-built dispatcher classes — `SyncPipeline`, `AsyncPipeline`, and `ParallelAsyncWorkflow` — each enforcing a different execution contract at the TypeScript level. The type system prevents misuse: you cannot accidentally register an async handler on a `SyncPipeline`, and you cannot mix up sequential and concurrent execution without explicitly choosing the right type.
 

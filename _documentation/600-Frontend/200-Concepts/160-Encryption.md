@@ -23,7 +23,7 @@ AES-256-GCM with a 12-byte random IV and a 16-byte authentication tag. Use this 
 ### Key Generation
 
 ```ts
-import { generateSymmetricKey } from '$lib/kernel/encryption/symmetric.js';
+import {generateSymmetricKey} from '$lib/kernel/encryption/symmetric.js';
 
 const key = await generateSymmetricKey();
 // Returns an extractable CryptoKey usable for AES-GCM encrypt/decrypt.
@@ -54,7 +54,7 @@ const plaintext = await decryptSymmetric(loaded, key); // 'hello'
 When you need to wrap one key inside another (e.g. storing an RSA private key encrypted with the user's AES key), use the key-specific helpers:
 
 ```ts
-import { encryptKeySymmetric, decryptKeySymmetric } from '$lib/kernel/encryption/symmetric.js';
+import {encryptKeySymmetric, decryptKeySymmetric} from '$lib/kernel/encryption/symmetric.js';
 
 const wrappedKey = await encryptKeySymmetric(privateKey, userAesKey);
 // wrappedKey is a SymmetricCryptoValue — serialise with .toString()
@@ -111,7 +111,7 @@ const privBase64 = await exportPrivateKeyToString(privateKey); // PKCS#8, base64
 ### Loading Keys
 
 ```ts
-import { loadPublicKey, loadPrivateKey } from '$lib/kernel/encryption/asymmetric.js';
+import {loadPublicKey, loadPrivateKey} from '$lib/kernel/encryption/asymmetric.js';
 
 // Public key: accepts base64 SPKI string or ArrayBuffer.
 // The second argument controls whether the imported key is extractable (default: false).
@@ -128,7 +128,7 @@ Both loaders default to `extractable: false`, which prevents the key material fr
 `encryptAsymmetric` and `decryptAsymmetric` operate on strings and return/accept a base64-encoded ciphertext:
 
 ```ts
-import { encryptAsymmetric, decryptAsymmetric } from '$lib/kernel/encryption/asymmetric.js';
+import {encryptAsymmetric, decryptAsymmetric} from '$lib/kernel/encryption/asymmetric.js';
 
 const ciphertext = await encryptAsymmetric('short value', pubKey); // base64 string
 const plaintext = await decryptAsymmetric(ciphertext, privKey);
@@ -137,7 +137,7 @@ const plaintext = await decryptAsymmetric(ciphertext, privKey);
 ### Encrypting and Decrypting CryptoKeys
 
 ```ts
-import { encryptKeyAsymmetric, decryptKeyAsymmetric } from '$lib/kernel/encryption/asymmetric.js';
+import {encryptKeyAsymmetric, decryptKeyAsymmetric} from '$lib/kernel/encryption/asymmetric.js';
 
 const encryptedKey = await encryptKeyAsymmetric(aesKey, pubKey); // base64 string
 const recoveredKey = await decryptKeyAsymmetric(encryptedKey, privKey); // CryptoKey
@@ -154,8 +154,8 @@ Internally, `encryptHybrid` generates a fresh AES-256-GCM key for every operatio
 ### Encrypting
 
 ```ts
-import { encryptHybrid, loadHybridCryptoValue } from '$lib/kernel/encryption/hybrid.js';
-import { loadPublicKey } from '$lib/kernel/encryption/asymmetric.js';
+import {encryptHybrid, loadHybridCryptoValue} from '$lib/kernel/encryption/hybrid.js';
+import {loadPublicKey} from '$lib/kernel/encryption/asymmetric.js';
 
 const pubKey = await loadPublicKey(serverPublicKeyBase64);
 const encrypted = await encryptHybrid('secret data', pubKey);
@@ -165,8 +165,8 @@ const stored = encrypted.toString(); // send to server or store
 ### Decrypting
 
 ```ts
-import { decryptHybrid, loadHybridCryptoValue } from '$lib/kernel/encryption/hybrid.js';
-import { loadPrivateKey } from '$lib/kernel/encryption/asymmetric.js';
+import {decryptHybrid, loadHybridCryptoValue} from '$lib/kernel/encryption/hybrid.js';
+import {loadPrivateKey} from '$lib/kernel/encryption/asymmetric.js';
 
 const privKey = await loadPrivateKey(myPrivateKeyBase64);
 const loaded = loadHybridCryptoValue(stored);
@@ -192,7 +192,7 @@ The serialised string format from `.toString()` is `base64(encryptedAesKey)|base
 `utils.ts` also exposes `deriveKey`, which turns a user's passkey string into an AES-256-GCM `CryptoKey` via PBKDF2 (100 000 iterations, SHA-256). Always pass the server salt from the connection config to prevent offline dictionary attacks.
 
 ```ts
-import { deriveKey, loadServerSalt } from '$lib/kernel/encryption/utils.js';
+import {deriveKey, loadServerSalt} from '$lib/kernel/encryption/utils.js';
 
 const salt = loadServerSalt(connection.crypto_salt);
 const aesKey = await deriveKey(userPasskey, 'keychain', salt);
@@ -208,4 +208,4 @@ The `utils.ts` module is used internally by the other modules — feature code s
 
 ## See Also
 
-For key management — loading, storing, and rotating the user's crypto keys — see `kernel/keychain/keychainHandle.ts`, documented in the Data Layer section.
+For key management — loading, storing, and rotating the user's crypto keys — see `kernel/keychain/keychainHandle.ts`, documented in [Stores → KeychainStore](120-Stores.md#keychainstore).

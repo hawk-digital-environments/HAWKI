@@ -1,39 +1,44 @@
 # Styling
 
-HAWKI uses a CSS cascade layer system combined with a design token library. This document explains the architecture, available tokens, breakpoints, and the patterns for writing component styles.
+HAWKI uses CSS cascade layers combined with a design-token library. This page covers the architecture, the available tokens, the breakpoint system, and the patterns for writing component styles.
 
 ---
 
 ## Architecture
 
-The project uses a **CSS cascade layer system** to give explicit control over specificity. Layers are declared once in `resources/css/app.css`:
+The project uses a **CSS cascade layer system** to give explicit control over specificity. Each layer is declared inline in the file that owns it (there is no single `@layer` declaration in `app.css`):
 
-```
-@layer reset, tokens, base, components, utilities;
-```
+| Layer | Declared in | Priority |
+|---|---|---|
+| `reset` | `layers/reset.css` | lowest |
+| `tokens` | every `tokens/*.css` file | |
+| `base` | `layers/base.css` | |
+| `components` | (implicit — Svelte scoped `<style>` blocks compile here) | |
+| `utilities` | `utilities.css` | highest |
 
-Priority (lowest → highest): `reset` < `tokens` < `base` < `components` < `utilities`. This eliminates all need for `!important` — specificity is explicit and intentional.
+`resources/css/app.css` imports the token files, the reset/base layers, and `utilities.css` in that order. Svelte's compiler wraps scoped `<style>` blocks into the `components` layer automatically.
 
-All design values — colors, spacing, typography, radii, shadows, transitions — are defined as CSS custom properties in `resources/css/tokens/`. Svelte scoped `<style>` blocks compile into the `components` layer automatically.
+All design values — colors, spacing, typography, radii, shadows, transitions — are defined as CSS custom properties in `resources/css/tokens/`. Each token file declares its own `@layer tokens { … }` block.
 
 ```
 resources/css/
-├── app.css                   entry point: @layer declaration + imports
+├── app.css                   @import order + svelte-snippet display fix
 ├── tokens/
-│   ├── borders.css           border-related tokens
-│   ├── breakpoints.css       custom media query definitions
-│   ├── colors.css            OKLCH color scales + semantic aliases
+│   ├── breakpoints.css       @custom-media definitions (not a real @layer)
+│   ├── colors.css            OKLCH color scales + semantic aliases + dark-mode
 │   ├── typography.css        font sizes, weights, line heights
-│   ├── spacing.css           --space-1 through --space-16
-│   ├── radius.css            --corner-sm / md / lg / full
-│   ├── shadows.css           --elevation-none / 1 / 2
+│   ├── spacing.css           --space-* scale
+│   ├── radius.css            --corner-xs / sm / md / lg / full
+│   ├── borders.css           border-related tokens
+│   ├── shadows.css           --elevation-none / 1 / 2 / legacy
 │   └── transitions.css       --duration-* and --easing-*
-└── layers/
-    ├── reset.css             minimal modern reset
-    └── base.css              body, focus ring, scrollbar defaults
+├── layers/
+│   ├── reset.css             minimal modern reset
+│   └── base.css              body, focus ring, scrollbar defaults
+└── utilities.css             .u-* helper classes
 ```
 
-Dark mode is toggled via `[data-theme="dark"]` on `<html>`, with `@media (prefers-color-scheme: dark)` as an OS-level fallback. All color tokens update automatically — **components need no dark-mode-specific rules of their own**.
+Dark mode is toggled via the `.darkMode` class on `<html>`. All color tokens update automatically under `html.darkMode` — **components need no dark-mode-specific rules of their own**.
 
 ---
 
@@ -46,9 +51,9 @@ All tokens are available as CSS custom properties on every element. Common group
 | Colors      | `--color-bg`, `--color-surface`, `--color-text`, `--color-text-muted`, `--color-interactive`, `--color-border` |
 | Typography  | `--font-size-xs` → `--font-size-2xl`, `--font-weight-medium`, `--line-height-normal`                           |
 | Spacing     | `--space-1` (4px) → `--space-16` (64px)                                                                        |
-| Radius      | `--corner-sm` (5px), `--corner-md` (10px), `--corner-lg` (30px), `--corner-full`                               |
-| Shadows     | `--elevation-none`, `--elevation-1`, `--elevation-2`                                                           |
-| Transitions | `--duration-fast` (300ms), `--duration-normal`, `--easing-default`, `--easing-spring`                          |
+| Radius      | `--corner-xs` (8px), `--corner-sm` (12px), `--corner-md` (16px), `--corner-lg` (24px), `--corner-full`          |
+| Shadows     | `--elevation-none`, `--elevation-1`, `--elevation-2`, `--elevation-legacy`                                    |
+| Transitions | `--duration-extra-fast` (200ms), `--duration-fast` (300ms), `--duration-medium` (500ms), `--duration-slow` (1000ms), `--duration-extra-slow` (3000ms); `--easing-default`, `--easing-spring`, `--easing-out`, `--easing-in` |
 
 The full list of available tokens lives in the individual files under `resources/css/tokens/`.
 
@@ -60,24 +65,22 @@ Breakpoints are defined as [CSS Custom Media Queries](https://www.w3.org/TR/medi
 
 | Range | Min    | Max    |
 |-------|--------|--------|
-| `xxs` | 0      | 300px  |
-| `xs`  | 0      | 549px  |
+| `xxs` | —      | 300px  |
+| `xs`  | —      | 549px  |
 | `sm`  | 550px  | 767px  |
 | `md`  | 768px  | 991px  |
 | `lg`  | 992px  | 1199px |
 | `xl`  | 1200px | —      |
 
-Each range exposes several named queries:
+Each range exposes named queries. The full set that exists for each range (note: the "always-match" variants like `--bp-xxs-and-bigger` and `--bp-xl-and-smaller` are deliberately omitted — use no media query in those cases):
 
 | Query                       | Matches                          |
 |-----------------------------|----------------------------------|
-| `--bp-{range}`              | Exactly that range               |
-| `--bp-{range}-and-smaller`  | That range and below             |
-| `--bp-{range}-and-bigger`   | That range and above             |
-| `--bp-smaller-than-{range}` | Everything below the range's min |
+| `--bp-{range}`              | Exactly that range                |
+| `--bp-{range}-and-smaller`  | That range and below              |
+| `--bp-{range}-and-bigger`   | That range and above              |
+| `--bp-smaller-than-{range}` | Everything below the range's min  |
 | `--bp-bigger-than-{range}`  | Everything above the range's max |
-| `--bp-mode-mobile`          | `max-width: 850px`               |
-| `--bp-mode-desktop`         | `min-width: 851px`               |
 
 ```css
 /* In any .svelte <style> block or .css file */
@@ -135,13 +138,6 @@ State rules (`:hover`, `:focus`, `[disabled]`, etc.) should reassign component-l
 </div>
 
 <style>
-    /*
-     * Declare a component-local token at the root element of the component
-     * (the outermost DOM element, not CSS :root) when the value either:
-     *   - appears in multiple properties, or
-     *   - needs to change under a state rule (:hover, :focus, [disabled], …)
-     * For single-use, never-changing values, reference the global token directly.
-     */
     .card {
         --card-bg:        var(--color-surface);
         --card-border:    var(--color-border);
@@ -149,17 +145,12 @@ State rules (`:hover`, `:focus`, `[disabled]`, etc.) should reassign component-l
 
         background:    var(--card-bg);
         border:        1px solid var(--card-border);
-        border-radius: var(--corner-md);         /* single-use — global token directly */
+        border-radius: var(--corner-md);
         box-shadow:    var(--card-elevation);
-        padding:       var(--space-6);            /* single-use — global token directly */
+        padding:       var(--space-6);
         transition:    box-shadow var(--duration-fast) var(--easing-default);
     }
 
-    /*
-     * State rules reassign local tokens only — never repeat property declarations.
-     * The browser re-evaluates every property referencing the token automatically,
-     * so each state collapses to the minimum number of lines.
-     */
     .card:hover {
         --card-border:    var(--color-border-strong);
         --card-elevation: var(--elevation-2);
@@ -179,7 +170,7 @@ State rules (`:hover`, `:focus`, `[disabled]`, etc.) should reassign component-l
 </style>
 ```
 
-Because color tokens automatically switch values under `[data-theme="dark"]`, this component works correctly in both themes with no additional CSS.
+Because color tokens automatically switch values under `html.darkMode`, this component works correctly in both themes with no additional CSS.
 
 ---
 
@@ -229,9 +220,9 @@ Do not use `:global()` in Svelte components for rules that apply across componen
 
 ## Z-Index and Stacking
 
-**Avoid ad-hoc `z-index`.** In a component ecosystem where you cannot predict how components nest into each other, hand-rolled stacking values are brittle — they break down as soon as two popovers or tooltips are open at the same time, or a modal must open from inside a tooltip while the popover behind it stays visible. A global token ladder (`--z-popover: 600`, `--z-modal: 800`, …) looks tidy until components combine in ways the ladder didn't anticipate, at which point every fix requires raising numbers and introducing exceptions.
+**Avoid ad-hoc `z-index`.** In a component ecosystem where you cannot predict how components nest into each other, hand-rolled stacking values are brittle — they break down as soon as two popovers or tooltips are open at the same time, or a modal must open from inside a tooltip while the popover behind it stays visible.
 
-**The real fix for overlay components is portals.** Components like `Dialog`, `BottomSheet`, and `Popover` teleport their DOM to a root-level container (typically `<body>`), placing the rendered node completely outside any ancestor stacking context that would otherwise trap it. This is why simply moving a component tag to the end of the Svelte template is often enough — the teleported node lands at the end of the portal target, not because of local sibling order, but because it escapes the subtree entirely.
+**The real fix for overlay components is portals.** Components like `Dialog`, `BottomSheet`, and `Popover` teleport their DOM to a root-level container (typically `<body>`), placing the rendered node completely outside any ancestor stacking context that would otherwise trap it.
 
 ```svelte
 <!-- ✗ Don't roll your own overlay with position: fixed + z-index -->
@@ -265,6 +256,6 @@ Never use bare numeric `z-index` values or a global `--z-*` token ladder.
 - **No hardcoded sizes** — use spacing, radius, or typography tokens.
 - **States reassign component-local tokens**, not global ones. Because the browser re-evaluates every property referencing the token automatically, one reassignment line replaces what would otherwise be repeated property declarations in every state rule.
 - **No utility-class spam** — if a pattern repeats across 3+ components, extract a shared Svelte primitive, not a utility class.
-- **Dark mode is free** — do not add `[data-theme="dark"]` rules inside component styles. The token layer handles it globally.
-- **No ad-hoc `z-index`** — use portaled overlay components instead of rolling `position: fixed` + `z-index`. DOM ordering is only a secondary aid within a shared stacking context. See [Z-Index and Stacking](#z-index-and-stacking) for the full rationale and the allowed exception form.
+- **Dark mode is free** — do not add `html.darkMode` rules inside component styles. The token layer handles it globally.
+- **No ad-hoc `z-index`** — use portaled overlay components instead of rolling `position: fixed` + `z-index`. DOM ordering is only a secondary aid within a shared stacking context.
 - **Do not add new rules to `public/css/`** — those files belong to the legacy layer and are being phased out. New styles must use the token system described above.

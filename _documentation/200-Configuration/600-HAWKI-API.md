@@ -1,6 +1,6 @@
 # HAWKI API Documentation
 
-> **This document describes legacy API functionality.** The primary API surface since v2 is the JSON:API v1 server at `/api/hawki/v1`. The `POST /api/ai-req` endpoint described below is a deprecated legacy endpoint maintained for backwards compatibility only — do not use it in new integrations. External application integration now uses the OAuth-like ext-app flow documented in [Backend → External Apps](../500-Backend/400-Domains/400-Encryption/440-External-Apps.md).
+> **This document describes legacy API functionality.** The primary API surface since v2 is the JSON:API v1 server at `/api/hawki/v1`. The `POST /api/ai-req` endpoint described below is a deprecated legacy endpoint maintained for backwards compatibility only — do not use it in new integrations. External application integration now uses the OAuth-like ext-app flow documented in [Backend → External Apps](../500-Backend/700-Roadmap/300-External-Apps.md).
 >
 > Personal access tokens (`app:token` command, `ALLOW_USER_TOKEN_CREATION`) still exist as a distinct mechanism and the documentation for those remains valid.
 

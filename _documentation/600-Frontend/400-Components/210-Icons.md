@@ -80,6 +80,6 @@ export type IconComponent = Component<Omit<HugeiconsProps, 'icon'>>;
 <HugeiconsIcon icon={iconData} strokeWidth={2} {...props} />
 ```
 
-- `resources/js/components/ui/icons/iconset/` is **gitignored** — the free set generates 4000+ files and is never checked in. It's (re)built automatically the first time `npm run dev` / `npm run build` runs (via `bin/env`).
+- `resources/js/components/ui/icons/iconset/` is **gitignored** — the free set generates thousands of files and is never checked in. It's (re)built automatically the first time `npm run dev` / `npm run build` runs (via `bin/env`).
 - Regeneration is skipped once a `.gen-version` marker in the output directory matches the installed `@hugeicons/core-free-icons` version plus the plugin's own `PLUGIN_VERSION`. Bump `PLUGIN_VERSION` in the plugin if the generated file template changes, so every checkout regenerates.
 - Never hand-edit anything inside `iconset/` — it's overwritten on the next generation and doesn't exist at all until the first dev/build run.

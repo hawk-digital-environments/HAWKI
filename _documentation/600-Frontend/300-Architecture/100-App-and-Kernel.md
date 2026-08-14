@@ -1,6 +1,6 @@
 # The App & Kernel
 
-The kernel is the small, extension-assembled core of the frontend. There is no god object: `HawkiApp` is an empty shell that is built up at startup from a list of extensions, each contributing one subsystem (config, client, stores, plugins, …). Everything else in the app reaches those subsystems through the resulting `app` instance or the hooks that wrap it.
+The kernel is the small, extension-assembled core of the frontend. There is no god object: `HawkiApp` is an empty shell that is built up at startup from a list of extensions, each contributing one subsystem (config, client, stores, plugins, routing, shell, …). Everything else in the app reaches those subsystems through the resulting `app` instance or the hooks that wrap it.
 
 Source: `resources/js/kernel/`.
 
@@ -18,16 +18,17 @@ setHawkiApp(await createApp(
     bootstrapper,
     [
         new ResourceSchemaExtension(),   // 1. Zod schema registry (no dependencies)
-        new ClientExtension(),          // 2. HTTP client + connection (needs resourceSchemas)
-        new PluginExtension(),          // 3. discovers & drives all plugins (needs client)
-        new ConfigurationExtension(),   // 4. server config (needs plugins to register config schemas)
-        new MigrationExtension(),       // 5. frontend migrations
-        new LocalizationExtension(),    // 6. locale + translator (needs connection + config)
-        new ModuleExtension(),          // 7. feature-module registry (needs plugins)
-        new RoutingExtension(/* … */),  // 8. routing — not yet wired, see Routing page
-        new StoreExtension(),           // 9. data-store registry (needs plugins)
-        new SnippetExtension(),         // 10. legacy snippet registry (transitional)
-        new LegacyToastExtension()      // 11. app-wide toast holder (transitional)
+        new ClientExtension(),           // 2. HTTP client + connection (needs resourceSchemas)
+        new PluginExtension(),           // 3. discovers & drives all plugins (needs client)
+        new ConfigurationExtension(),    // 4. server config (needs plugins to register config schemas)
+        new MigrationExtension(),        // 5. frontend migrations
+        new LocalizationExtension(),     // 6. locale + translator (needs connection + config)
+        new ModuleExtension(),           // 7. feature-module registry (needs plugins)
+        new RoutingExtension(),          // 8. route registry + router build (needs plugins + modules)
+        new StoreExtension(),            // 9. data-store registry (needs plugins)
+        new ShellExtension(),            // 10. SPA shell mount + legacy snippet fallback
+        new SnippetExtension(),          // 11. legacy snippet registry (@deprecated, transitional)
+        new LegacyToastExtension()       // 12. app-wide toast holder (@deprecated, transitional)
     ]
 ));
 
@@ -60,11 +61,14 @@ Every property below is contributed by an extension's `provideProperties()` and 
 | `app.localization` | Active locale + loaded label sets | `LocalizationExtension` |
 | `app.translator` | Ready `Translator` (`__`, `translate`, …) | `LocalizationExtension` |
 | `app.modules` | Feature-module registry (`core:chat`, …) | `ModuleExtension` |
+| `app.router` | Compiled router handle (`router.resolve(pathname)`) | `RoutingExtension` |
 | `app.stores` | Data-store registry (`app.stores.get('theme')`) | `StoreExtension` |
+| `app.isMounted` / `app.isBooting` / `app.mountPoint` | SPA shell mount state | `ShellExtension` |
+| `app.mount(selector?)` / `app.unmount()` | Mount/unmount the SPA shell | `ShellExtension` |
 | `app.snippets` | Named Svelte-component registry for the legacy UI | `SnippetExtension` (`@deprecated`) |
 | `app.toast` | App-wide `ToastContext` holder | `LegacyToastExtension` (`@deprecated`) |
 
-`app.snippets` and `app.toast` are transitional bridges that go away once the SPA rewrite gives the page a single Svelte root (see [Old UI Integration](300-Old-Ui.md)). `ClientExtension` is flagged for further refactoring — don't over-rely on its exact shape yet.
+`app.snippets` and `app.toast` are transitional bridges that go away once the SPA rewrite gives the page a single Svelte root (see [Roadmap → Legacy UI Bridge](../700-Roadmap/100-Legacy-UI-Bridge.md)). `ClientExtension` is flagged for further refactoring — don't over-rely on its exact shape yet.
 
 ---
 
@@ -90,7 +94,7 @@ declare module '$lib/kernel/extendableTypes.js' {
 }
 ```
 
-`WithoutAppExtensionInternals<T>` strips the `init`/`ready`/`provideProperties` lifecycle members so `app.stores` exposes only `StoreExtension`'s public API, not its extension-plumbing. Adding a key to any of these interfaces next to your class definition is the whole wiring step — see [Writing an Extension](120-Writing-an-Extension.md).
+`WithoutAppExtensionInternals<T>` strips the `init`/`ready`/`provideProperties` lifecycle members so `app.stores` exposes only `StoreExtension`'s public API, not its extension-plumbing. Adding a key to any of these interfaces next to your class definition is the whole wiring step — see [Extending HAWKI](../../700-Extending-Hawki/index.md).
 
 ---
 
@@ -105,12 +109,13 @@ declare module '$lib/kernel/extendableTypes.js' {
 | `MigrationExtension` | frontend migrations | on-demand (`apply`) | core plugins only |
 | `LocalizationExtension` | locale + labels | `preparation` (locales), `main` (labels) | exposes `app.translator` |
 | `ModuleExtension` | feature-module registry | — (runs during assembly) | modules keyed `${plugin}:${name}` |
-| `RoutingExtension` | routes | — | not yet wired — see [Routing](200-Routing.md) |
+| `RoutingExtension` | route registry + router | `late` (builds the router) | dispatches `runRoutes` + module routes in `init` |
 | `StoreExtension` | data-store registry | `main` (calls each store's `loadData`) | plugins register stores |
+| `ShellExtension` | SPA shell mount | `finalization` (mounts + legacy fallback) | see [Modules & Routing](120-Modules-and-Routing.md) |
 | `SnippetExtension` | snippet registry | — | `@deprecated` transitional |
 | `LegacyToastExtension` | app-wide toast | — | `@deprecated` transitional |
 
-The boot stages themselves are documented in [App Startup](100-App-Startup.md); how plugins drive the per-concern `run*` dispatch is in [Writing a Plugin](130-Writing-a-Plugin.md).
+The boot stages themselves are documented in [App Startup](110-App-Startup.md); how plugins drive the per-concern `run*` dispatch is in [Plugin Internals](130-Plugin-Internals.md).
 
 ---
 
@@ -127,7 +132,7 @@ Prefer the dedicated hook in `app/hooks/` over `useApp()` when one exists — it
 | `useTranslator()` | `Translator` (`__`, `translate`, …) | user-facing strings |
 | `useRestApi()` / `useLinkPreviewApi()` | `app.restApi` / `app.linkPreviewApi` | typed fetches / link previews |
 
-`useApp()` resolves the app from Svelte context (`provideApp()`) and falls back to the legacy global registry (`getHawkiApp()`) when no context is set — the fallback is temporary and disappears once all legacy code is context-aware.
+`useApp()` resolves the app from Svelte context (`provideApp()`, set up by the `Shell` component) and falls back to the legacy global registry (`getHawkiApp()`) when no context is set — the fallback is temporary and disappears once all legacy code is context-aware.
 
 ---
 
@@ -135,8 +140,8 @@ Prefer the dedicated hook in `app/hooks/` over `useApp()` when one exists — it
 
 | I want to… | Read |
 |---|---|
-| Understand the boot stages and ordering | [App Startup](100-App-Startup.md) |
-| Add a new app-wide subsystem | [Writing an Extension](120-Writing-an-Extension.md) |
-| Add a feature (stores, schemas, snippets, modules) | [Writing a Plugin](130-Writing-a-Plugin.md) |
-| See how config/connection/stores are consumed | [Data Layer](../300-Data/index.md) |
-| See how the legacy layer is bridged | [Old UI Integration](300-Old-Ui.md) |
+| Understand the boot stages and ordering | [App Startup](110-App-Startup.md) |
+| Understand modules, routing, and the SPA shell | [Modules & Routing](120-Modules-and-Routing.md) |
+| Understand how plugins are discovered and dispatched | [Plugin Internals](130-Plugin-Internals.md) |
+| Add a new app-wide subsystem or a plugin | [Extending HAWKI](../../700-Extending-Hawki/index.md) |
+| See how config/connection/stores are consumed | [Data Layer](../200-Concepts/130-Data-Layer.md) |

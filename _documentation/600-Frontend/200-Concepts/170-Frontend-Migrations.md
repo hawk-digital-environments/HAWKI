@@ -4,27 +4,37 @@ Frontend migrations are one-time JavaScript scripts that run in the user's brows
 
 Common triggers include passkey format changes, re-encryption of room or conversation keys, and transformation of locally-held key material.
 
+:::warning[Dragons — core plugins only]
+Frontend migrations have an unsolved rollback problem. A migration runs **deferred** — only after the user logs in (and, for `after_passkey`, after they unlock). If a plugin that registered a migration is later uninstalled, its migrations would need to roll back, but the migration source may no longer be present. The only way to handle this would be to serialize the PHP and JS migration code into the database so the rollback survives the plugin's removal — but that means a rollback could fail when the code it references has since changed. There is no clean solution yet.
+
+For this reason **migrations are restricted to core plugins** (`HawkiCorePlugin`, not `HawkiPlugin`). Do not introduce migration registration on third-party plugins until the rollback story is settled. See [Technical Debt](../900-Technical-Debt.md).
+:::
+
 ## How They Work
 
 The system spans both the PHP backend and the TypeScript frontend. A single logical migration consists of a Laravel database migration (which registers the migration and builds per-user payloads) and a corresponding JS file (which performs the actual in-browser transformation).
 
-The frontend side is owned by `MigrationExtension` (`kernel/migrations/MigrationExtension.ts`, exposed as `app.migration`) and driven by the core plugin: `CorePlugin.migrations()` hands the migration-file glob to the `MigrationRegistrar`. The runner `applyMigrations(runType)` is exported from `kernel/migrations/helpers.ts` and published to legacy code as `window.applyMigrations`.
+The frontend side is owned by `MigrationExtension` (`kernel/migrations/MigrationExtension.ts`, exposed as `app.migration`) and driven by the core plugin: `CorePlugin.migrations()` hands the migration-file glob to the `MigrationRegistrar`.
 
 ### End-to-End Flow
 
 1. A developer runs `php artisan make:frontend-migration` to scaffold both a Laravel database migration and a JS migration file.
 2. When the Laravel migration runs (e.g., during `php artisan migrate`), it calls `FrontendMigrationBuilder::register()`, which inserts a record into the database and optionally pre-computes a per-user data payload for every existing user.
-3. After the user authenticates, the server includes a `migrations_to_apply` count in the connection response. The JS side calls `hasPendingMigrations()` to check this value.
-4. `applyMigrations(runType)` is called with the appropriate run type. It fetches the list of pending migration names and their payloads from the `migrations` API endpoint, then iterates over them:
+3. After the user authenticates, the server includes a `migrations_to_apply` count in the connection response. The JS side checks this via `app.migration.hasPending`.
+4. `app.migration.apply(runType)` is called with the appropriate run type. It fetches the list of pending migration names and their payloads from the `migrations` API endpoint, then iterates over them:
    - Each migration is matched by name against the in-memory registry built from the core plugin's `migrations()` glob.
    - Migrations whose `runType` does not match the current call are skipped.
    - The matching JS module is loaded and its `migrate(ctx)` function is called.
    - If `migrate()` resolves successfully, a `POST` to `actions/apply` marks the migration done on the server.
 5. If `migrate()` throws, the user sees an alert and the error propagates. The migration will be retried on the next login.
 
+:::tip[Prefer `app.migration` over the legacy helpers]
+`kernel/migrations/helpers.ts` exports `applyMigrations(runType)` and `hasPendingMigrations()`, and these are published to legacy code as `window.applyMigrations`. Both are **`@deprecated`** in favour of `useApp().migration.apply(runType)` / `useApp().migration.hasPending`. New code should reach the migration runner through `app.migration`, not the helpers or `window.*`.
+:::
+
 ### Error Handling
 
-A failed migration is **not** marked as applied on the server, so it will be attempted again the next time `applyMigrations` is called for that run type. Write migrations to be idempotent where possible — guard against already-migrated state at the start of the function.
+A failed migration is **not** marked as applied on the server, so it will be attempted again the next time `apply(runType)` is called for that run type. Write migrations to be idempotent where possible — guard against already-migrated state at the start of the function.
 
 ## Run Types
 
@@ -34,7 +44,7 @@ Migrations are grouped by when they should execute:
 |---|---|
 | `after_login` | Default — as soon as the user authenticates |
 | `after_passkey` | After the user verifies their passkey (required when the migration needs key material) |
-| custom string | Any identifier — callers must trigger `applyMigrations('myType')` manually |
+| custom string | Any identifier — callers must trigger `apply('myType')` manually |
 
 The run type is inferred from the **directory** the JS file lives in under `resources/js/plugins/core/migrations/`:
 
@@ -45,7 +55,7 @@ The run type is inferred from the **directory** the JS file lives in under `reso
 No configuration is needed — the directory structure is read at build time via the glob handed to the `MigrationRegistrar` by the core plugin.
 
 :::info[Core plugins only]
-Migrations are a `HawkiCorePlugin` hook (`plugin.migrations()`), not part of the third-party `HawkiPlugin` contract. Only built-in plugins can register migrations. See [Writing a Plugin](130-Writing-a-Plugin.md).
+Migrations are a `HawkiCorePlugin` hook (`plugin.migrations()`), not part of the third-party `HawkiPlugin` contract. Only built-in plugins can register migrations. See [Extending HAWKI](../../700-Extending-Hawki/index.md).
 :::
 
 ## Creating a New Migration
@@ -103,7 +113,7 @@ The `MigrationContext` fields:
 | `runType` | `string` | The run type this migration is executing under |
 | `name` | `string` | The migration name (matches the filename without extension) |
 | `app` | `HawkiApp` | The fully-assembled app — reach config, stores, restApi, the keychain handle through it |
-| `data` | `any \| undefined` | The per-user payload built by the backend closure; `undefined` if no `userDataFinder` was registered or the finder returned `null`/`false` for this user |
+| `data` | `any \| undefined` | The per-user payload built by the backend closure; `undefined` if no `userDatafinder` was registered or the finder returned `null`/`false` for this user |
 
 ### Real-World Example
 

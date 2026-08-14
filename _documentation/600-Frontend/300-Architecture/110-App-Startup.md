@@ -1,8 +1,12 @@
-# App Startup & Boot Sequence
+# App Startup
 
 The HAWKI frontend does not run feature code immediately on page load. `app.ts` assembles a `HawkiApp` from an ordered list of extensions via `createApp(bootstrapper, […])`, then calls `bootstrapper.run()` once. Each extension registers its own startup work into the `Bootstrapper`'s ordered stages during `init()`/`ready()`. Each stage fully resolves before the next one begins; within a stage, handlers run concurrently (up to 3 at a time). This guarantees that foundational infrastructure — connection, config — is always available before feature code runs.
 
-See [The App & Kernel](110-App-and-Kernel.md) for how the extensions are assembled; this page covers the boot stages themselves.
+See [The App & Kernel](100-App-and-Kernel.md) for how the extensions are assembled; this page covers the boot stages themselves.
+
+:::warning[No `bootstrapper` singleton]
+`Bootstrapper.ts` exports only the `Bootstrapper` class — there is no module-level `bootstrapper` instance. A single instance is created once in `app.ts` and threaded through the app: it is passed to every `HawkiAppExtension.init()`/`ready()` call and, via `HawkiPluginContext`, to every plugin lifecycle hook. Always obtain the instance from whichever `bootstrapper` parameter your hook already receives; do not construct a second `Bootstrapper`.
+:::
 
 ## Overview
 
@@ -22,26 +26,28 @@ preparation → migration → early → main → late → finalization
 | `migration` | *(currently unused — reserved for schema or storage migrations)*. Frontend migrations run on demand via `app.migration.apply(runType)` after login/passkey, not on a boot stage. |
 | `early` | *(currently unused — reserved for services that `main`-stage work depends on)* |
 | `main` | `StoreExtension` calls `loadData(app)` on every store that implements it; `LocalizationExtension` loads the active locale's translation labels — all concurrent. Plugins may add more `main`-stage work from their `boot()` hook. |
-| `late` | `app.ts` injects the `LegacySharedContent` snippet into the DOM. |
-| `finalization` | Plugin `ready()` hooks run (`onStageReached`); `app.ts` waits for `DOMContentLoaded`; the core plugin defines the `<svelte-snippet>` custom element (`onStagePassed`). |
+| `late` | `RoutingExtension.ready()` builds the router from the collected route registrations (`createRouterFromRegistrar('app', …)`). |
+| `finalization` | `ShellExtension.ready()` mounts the SPA `Shell` (if `#hawki-app` exists) and registers a `DOMContentLoaded` wait; on `onStagePassed('finalization')` it flips `isBooting` to `false` and, if no shell was mounted, falls back to `legacyInitializeSnippetApps`. `PluginExtension.ready()` schedules `plugin.ready()` to run at `onStageReached('finalization')`. |
 
 The `migration` and `early` stages are intentionally empty in the current codebase. They exist as reserved slots for future work that must run after `preparation` but before `main`.
 
 ## Registering Work in a Stage
 
-Each stage exposes three registration points that control precisely when a handler runs relative to that stage. Extensions register these from their `init()`/`ready()`; you rarely call them outside an extension (see [Writing an Extension](120-Writing-an-Extension.md)).
+Each stage exposes three registration points that control precisely when a handler runs relative to that stage. Extensions register these from their `init()`/`ready()`; you rarely call them outside an extension.
 
 ### `onStageReached(stage, handler)`
 
 Runs **before** the stage starts, serially. Use this to set up preconditions that the stage's concurrent handlers depend on. All `onStageReached` handlers for a stage complete before any `onStage` handlers begin.
 
 ```ts
-import {bootstrapper} from '$lib/kernel/Bootstrapper.js';
+import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 
-bootstrapper.onStageReached('main', async (bootstrap) => {
-    // Runs before any 'main' stage handlers start.
-    await ensurePrecondition();
-});
+public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper) {
+    bootstrapper.onStageReached('main', async (bootstrap) => {
+        // Runs before any 'main' stage handlers start.
+        await ensurePrecondition();
+    });
+}
 ```
 
 ### `onStage(stage, handler)`
@@ -60,11 +66,11 @@ Each stage also has a named shorthand method:
 | `onFinalizationStage(fn)` | `onStage('finalization', fn)` |
 
 ```ts
-import {bootstrapper} from '$lib/kernel/Bootstrapper.js';
-
-bootstrapper.onMainStage(async (bootstrap) => {
-    await loadMyFeature();
-});
+public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper) {
+    bootstrapper.onMainStage(async (bootstrap) => {
+        await loadMyFeature();
+    });
+}
 ```
 
 ### `onStagePassed(stage, handler)`
@@ -99,15 +105,9 @@ Late registration is never silently dropped.
 | `run()` | — | Starts the full sequence; idempotent |
 | `currentStage` | — | Read-only getter for the active stage name |
 
-The `Bootstrapper` is constructed in `app.ts` and passed to each extension's `init()`/`ready()`. Legacy code receives it through the `window.waitUntilBootstrap(cb)` callback (see [Old UI Integration](300-Old-Ui.md)) — it is no longer exposed as `window.hawkiBootstrap`.
-
-```ts
-import {bootstrapper} from '$lib/kernel/Bootstrapper.js';
-```
-
 ## Stage Concurrency
 
-Within each stage, handlers registered via `onStage` (and the named shorthands) run concurrently with a cap of 3 simultaneous handlers. As one completes, the next queued handler starts — a sliding window, not fixed batches. The stage does not advance until all handlers have resolved.
+Within each stage, handlers registered via `onStage` (and the named shorthands) run concurrently with a cap of 3 simultaneous handlers (implemented as a `ParallelAsyncWorkflow`). As one completes, the next queued handler starts — a sliding window, not fixed batches. The stage does not advance until all handlers have resolved.
 
 ## Lazy Dependencies
 

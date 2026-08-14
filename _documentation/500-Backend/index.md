@@ -39,7 +39,3 @@ The main external surface is the JSON:API v1 server at `/api/hawki/v1`. All AI i
 | **Deploy or operate HAWKI** (configure, monitor, troubleshoot) | [Infrastructure](./600-Infrastructure/index.md) → [Artisan Commands](./500-Reference/100-Artisan-Commands.md) → [Encryption](./400-Domains/400-Encryption/410-Encryption.md) (salts in production) |
 | **Extend HAWKI without touching core**                         | [Extending HAWKI](./200-Concepts/220-Extending-HAWKI.md) — every live extension point in one place                                                                                                 |
 | **Build a plugin** (v3 plugin system)                          | [Roadmap — Plugin System](./700-Roadmap/100-Plugin-System.md) — not yet implemented                                                                                                                |
-
-## Archived docs
-
-The pre-restructuring documentation is preserved at [`../501-Backend-old/`](../501-Backend-old/index.md) while the new tree is being completed. Do not edit those pages; new work belongs here.

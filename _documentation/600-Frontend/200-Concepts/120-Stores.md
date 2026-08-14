@@ -2,7 +2,7 @@
 
 Reactive state that needs to be shared across components lives in stores. Each store is a TypeScript class using Svelte 5 Runes (`$state`, `$derived`) that `implements DataStore`, with a `name` property and an optional `loadData(app)` method. Stores are registered by a plugin (the core plugin registers all of them today) into the kernel's `StoreExtension`, which drives `loadData` on the bootstrapper's `main` stage.
 
-Source: `resources/js/plugins/core/stores/*.svelte.ts`. Registry: `app.stores` (see [The App & Kernel](../600-Advanced/110-App-and-Kernel.md)).
+Source: `resources/js/plugins/core/stores/*.svelte.ts`. Registry: `app.stores` (see [The App & Kernel](../300-Architecture/100-App-and-Kernel.md)).
 
 ## Accessing a store
 
@@ -174,9 +174,9 @@ Exposes the user's end-to-end encryption keys as reactive `$state` properties. L
 | `privateKey` | `CryptoKey \| null` | RSA private key. `null` until loaded. |
 | `aiConvKey` | `CryptoKey \| null` | Shared AES key for AI conversations. `null` until loaded. |
 | `roomKeys` | `Record<string, RoomKeys>` | Per-room keys keyed by slug. Empty until loaded. |
-| `waitingToLoad` | `Promise<void>` | Resolves once the initial key load completes. |
+| `waitingToLoad` | `Promise<void>` | Resolves once the initial key load completes. Throws if accessed before `loadData` has run. |
 
-It also exposes `validateKeychainPassword(passkey)`, `initializeNewKeychain()`, `createNewRoomKey(slug)`, and `importRoomKey(slug, key)` — the operations a feature surface (e.g. room-key management) needs. For the full crypto handle and its lower-level operations, see `kernel/keychain/keychainHandle.ts` and [Encryption](../600-Advanced/400-Encryption.md).
+It also exposes `validateKeychainPassword(passkey)`, `initializeNewKeychain()`, `createNewRoomKey(slug)`, and `importRoomKey(slug, key)` — the operations a feature surface (e.g. room-key management) needs. For the full crypto handle and its lower-level operations, see `kernel/keychain/keychainHandle.ts` and [Encryption](160-Encryption.md).
 
 ---
 
@@ -243,7 +243,7 @@ export class MyStore implements DataStore {
 }
 ```
 
-2. Register it from your plugin's `stores()` hook (see [Writing a Plugin](../600-Advanced/130-Writing-a-Plugin.md)):
+2. Register it from your plugin's `stores()` hook (see [Extending HAWKI](../../700-Extending-Hawki/index.md)):
 
 ```ts
 public stores({add}: StoreRegistrar): void | Promise<void> {

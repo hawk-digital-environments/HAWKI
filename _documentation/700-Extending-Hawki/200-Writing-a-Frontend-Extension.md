@@ -1,12 +1,12 @@
-# Writing an Extension
+# Writing a Frontend Extension
 
-An **extension** is a self-contained subsystem that plugs into the `HawkiApp` during startup. This page is for the rare case where you need a *new app-wide subsystem* — a new registry, a new cross-cutting service that other extensions or plugins depend on. Most features do **not** need a new extension; they go in a plugin instead (see [Writing a Plugin](130-Writing-a-Plugin.md)).
+An **extension** is a self-contained subsystem that plugs into the `HawkiApp` during startup. This page is for the rare case where you need a *new app-wide subsystem* — a new registry, a new cross-cutting service that other extensions or plugins depend on. Most features do **not** need a new extension; they go in a plugin instead (see [Writing a Frontend Plugin](100-Writing-a-Frontend-Plugin.md)).
 
 :::tip[Extension or plugin?]
-Add an extension only when the surface must live on `app.*` and be available to other extensions/plugins during assembly — e.g. a new registry that plugins contribute to, or a service that `init()` of later extensions depends on. If your feature is stores, schemas, snippets, routes, or modules, write a plugin. If it is a one-off service used by components, a store is usually enough.
+Add an extension only when the surface must live on `app.*` and be available to other extensions/plugins during assembly — e.g. a new registry that plugins contribute to, or a service that `init()` of later extensions depends on. If your feature is stores, schemas, modules, routes, or migrations, write a plugin. If it is a one-off service used by components, a store is usually enough.
 :::
 
-The contract lives in `resources/js/kernel/HawkiApp.ts`. Source examples to mirror: `kernel/stores/StoreExtension.ts`, `kernel/localization/LocalizationExtension.svelte.ts`.
+The contract lives in `resources/js/kernel/HawkiApp.ts`. Source examples to mirror: `kernel/stores/StoreExtension.ts`, `kernel/localization/LocalizationExtension.svelte.ts`, `kernel/shell/ShellExtension.svelte.ts`.
 
 ---
 
@@ -28,6 +28,10 @@ export type HawkiAppExtension = {
 - `provideProperties()` — returns an object whose keys become real properties on `app` (via `Object.defineProperties`). Use getters so the property always resolves to the live extension instance. This is called right after `init()`, before `ready()`.
 
 Both `init` and `ready` are optional. An extension that only contributes a static registry can omit them.
+
+:::warning[No `bootstrapper` singleton]
+`Bootstrapper.ts` exports only the class. Always obtain the instance from the `bootstrapper` parameter your hook receives — do not construct a second one or import a singleton. See [Architecture → App Startup](../600-Frontend/300-Architecture/110-App-Startup.md).
+:::
 
 ---
 
@@ -141,7 +145,7 @@ public async init(app: UnfinishedHawkiApp) {
 
 | I want to… | Read |
 |---|---|
-| Add stores, schemas, snippets, routes, or modules | [Writing a Plugin](130-Writing-a-Plugin.md) |
-| Understand assembly order and the boot stages | [The App & Kernel](110-App-and-Kernel.md) and [App Startup](100-App-Startup.md) |
+| Add stores, schemas, modules, routes, or migrations | [Writing a Frontend Plugin](100-Writing-a-Frontend-Plugin.md) |
+| Understand assembly order and the boot stages | [Architecture → The App & Kernel](../600-Frontend/300-Architecture/100-App-and-Kernel.md) and [App Startup](../600-Frontend/300-Architecture/110-App-Startup.md) |
 | See a real registry extension | `kernel/stores/StoreExtension.ts`, `kernel/resources/ResourceSchemaExtension.ts` |
-| See a real stage-hooking extension | `kernel/localization/LocalizationExtension.svelte.ts` |
+| See a real stage-hooking extension | `kernel/localization/LocalizationExtension.svelte.ts`, `kernel/shell/ShellExtension.svelte.ts` |

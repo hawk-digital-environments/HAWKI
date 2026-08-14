@@ -1,10 +1,6 @@
 # Data Layer
 
-:::info[Architecture in Transition]
-The current data layer provides synchronous read access to configuration and connection data loaded once during bootstrap. This design will evolve as we introduce a reactive local-first JavaScript backbone in a future version. The API helpers and fetch patterns documented here are stable in the short term, but expect the underlying data synchronisation model to change significantly as that work progresses.
-:::
-
-The data layer is the surface between a Svelte component and the HAWKI REST API: runtime configuration, connection metadata, typed fetch helpers, and resource schema validation. All of it is assembled from kernel extensions and reached through the hooks in `app/hooks/`. See [The App & Kernel](../600-Advanced/110-App-and-Kernel.md) for the extension overview.
+The data layer is the surface between a Svelte component and the HAWKI REST API: runtime configuration, connection metadata, typed fetch helpers, and resource schema validation. All of it is assembled from kernel extensions and reached through the hooks in `app/hooks/`. See [The App & Kernel](../300-Architecture/100-App-and-Kernel.md) for the extension overview.
 
 ## Config vs Connection
 
@@ -50,7 +46,7 @@ Use the narrowest hook that fits the context. Using `useConnection()` everywhere
 
 ## Fetching API Resources
 
-All fetch helpers live on `app.restApi` (`RestApi` in `kernel/api/RestApi.ts`), reached via the `useRestApi()` hook. They communicate with the JSON:API endpoint, set the required `Accept` and `Content-Type` headers automatically, decode the JSON:API envelope, and parse JSON:API error responses into readable messages before throwing.
+All fetch helpers live on `app.restApi` (`RestApi` in `kernel/api/RestApi.ts`), reached via the `useRestApi()` hook (in `app/hooks/useApi.ts`). They communicate with the JSON:API endpoint, set the required `Accept` and `Content-Type` headers automatically, decode the JSON:API envelope, and parse JSON:API error responses into readable messages before throwing.
 
 ```svelte
 <script lang="ts">
@@ -155,6 +151,6 @@ The same auto-registration and declaration-merging pattern applies to config nam
 
 ## Keychain
 
-The user's encryption keys are exposed reactively through the `keychain` store (`useStore('keychain')`, see [Stores](100-Stores.md#keychainstore)) — `publicKey`, `privateKey`, `aiConvKey`, `roomKeys`, plus a `waitingToLoad` promise that resolves once the initial load completes. All key material is stored on the server in encrypted form and decrypted in-browser on load.
+The user's encryption keys are exposed reactively through the `keychain` store (`useStore('keychain')`, see [Stores](120-Stores.md#keychainstore)) — `publicKey`, `privateKey`, `aiConvKey`, `roomKeys`, plus a `waitingToLoad` promise that resolves once the initial load completes. All key material is stored on the server in encrypted form and decrypted in-browser on load.
 
-For the cryptographic primitives that underpin the keychain (symmetric encryption, asymmetric encryption, key derivation), see [Advanced → Encryption](../600-Advanced/400-Encryption.md). The lower-level handle used by the store and migrations lives in `kernel/keychain/keychainHandle.ts`.
+For the cryptographic primitives that underpin the keychain (symmetric encryption, asymmetric encryption, key derivation), see [Encryption](160-Encryption.md). The lower-level handle used by the store and migrations lives in `kernel/keychain/keychainHandle.ts`.

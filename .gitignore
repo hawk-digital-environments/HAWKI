@@ -57,4 +57,5 @@ DbgCommand.php
 _docker_production_test
 .devcontainer
 .agents
+.claude
 skills-lock.json
