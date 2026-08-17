@@ -33,6 +33,7 @@ return [
   'cache_creation_input_token_cost' => 1.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-6,
   'supports_assistant_prefill' => true,
+  'supports_native_structured_output' => true,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
@@ -65,6 +66,7 @@ return [
   'cache_creation_input_token_cost' => 1.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-6,
   'supports_assistant_prefill' => true,
+  'supports_native_structured_output' => true,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
@@ -96,7 +98,7 @@ return [
   'supports_web_search' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -120,7 +122,7 @@ return [
   'cache_read_input_token_cost' => 3.0E-8,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-04-20',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -149,7 +151,7 @@ return [
   'cache_read_input_token_cost' => 1.5E-6,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => '2026-05-01',
+  'deprecation_date' => '2026-01-05',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -178,7 +180,7 @@ return [
   'cache_read_input_token_cost' => 1.5E-6,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-06-15',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -190,7 +192,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -215,7 +217,7 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-06-15',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -231,7 +233,7 @@ return [
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
   'input_cost_per_token_above_200k_tokens' => 6.0E-6,
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -274,7 +276,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -318,7 +320,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -357,7 +359,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 2.5E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -366,12 +368,13 @@ return [
   'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
+  'supports_native_structured_output' => true,
   'supports_pdf_input' => true,
   'supports_sampling_params' => false,
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
-  'provider_specific_entry' =>
+  'provider_specific_entry' => 
   array (
     'us' => 1.1,
   ),
@@ -404,7 +407,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -433,7 +436,7 @@ return [
   'cache_read_input_token_cost' => 1.5E-6,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-08-05',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -446,7 +449,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
   'cache_creation_input_token_cost_above_1hr' => 3.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -485,7 +488,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
   'cache_creation_input_token_cost_above_1hr' => 3.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -511,7 +514,7 @@ return [
   'cache_read_input_token_cost' => 1.5E-6,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => '2026-05-14',
+  'deprecation_date' => '2026-06-15',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -524,7 +527,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
   'cache_creation_input_token_cost_above_1hr' => 3.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -562,7 +565,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -602,7 +605,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -642,7 +645,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -654,7 +657,7 @@ return [
   'supports_pdf_input' => true,
   'supports_native_structured_output' => true,
   'supports_tool_choice' => true,
-  'provider_specific_entry' =>
+  'provider_specific_entry' => 
   array (
     'us' => 1.1,
     'fast' => 6.0,
@@ -690,7 +693,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -702,7 +705,7 @@ return [
   'supports_pdf_input' => true,
   'supports_native_structured_output' => true,
   'supports_tool_choice' => true,
-  'provider_specific_entry' =>
+  'provider_specific_entry' => 
   array (
     'us' => 1.1,
     'fast' => 6.0,
@@ -738,7 +741,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -753,7 +756,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
-  'provider_specific_entry' =>
+  'provider_specific_entry' => 
   array (
     'us' => 1.1,
     'fast' => 6.0,
@@ -788,7 +791,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -803,7 +806,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
-  'provider_specific_entry' =>
+  'provider_specific_entry' => 
   array (
     'us' => 1.1,
     'fast' => 6.0,
@@ -838,7 +841,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -852,7 +855,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
-  'provider_specific_entry' =>
+  'provider_specific_entry' => 
   array (
     'us' => 1.1,
   ),
@@ -885,7 +888,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -900,7 +903,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
-  'provider_specific_entry' =>
+  'provider_specific_entry' => 
   array (
     'us' => 1.1,
     'fast' => 2.0,
@@ -935,7 +938,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -950,7 +953,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
-  'provider_specific_entry' =>
+  'provider_specific_entry' => 
   array (
     'us' => 1.1,
     'fast' => 2.0,
@@ -972,7 +975,7 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => '2026-05-14',
+  'deprecation_date' => '2026-06-15',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -989,7 +992,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1000,5 +1003,93 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'claude-mythos-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'anthropic',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 1.0E-5,
+  'output_cost_per_token' => 5.0E-5,
+  'cache_read_input_token_cost' => 1.0E-6,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 1.25E-5,
+  'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
+  'prompt_cache_min_tokens' => 512,
+  'search_context_cost_per_query' => 
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'source' => 'https://docs.claude.com/en/docs/about-claude/models/overview',
+  'supports_adaptive_thinking' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+),
+    array (
+  'id' => 'claude-mythos-preview',
+  'object' => 'model_catalog.entry',
+  'provider' => 'anthropic',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 1.0E-5,
+  'output_cost_per_token' => 5.0E-5,
+  'cache_read_input_token_cost' => 1.0E-6,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 1.25E-5,
+  'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
+  'prompt_cache_min_tokens' => 512,
+  'search_context_cost_per_query' => 
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'source' => 'https://docs.claude.com/en/docs/about-claude/models/overview',
+  'supports_adaptive_thinking' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
 ),
 ];

@@ -404,7 +404,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
   'cache_creation_input_token_cost_above_1hr' => 3.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -504,7 +504,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -543,7 +543,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -584,7 +584,7 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -625,7 +625,7 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -666,7 +666,7 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -708,7 +708,7 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -750,7 +750,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -792,7 +792,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -835,7 +835,7 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -878,7 +878,7 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -921,7 +921,7 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -964,7 +964,7 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1044,7 +1044,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 2.5E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1092,7 +1092,7 @@ return [
   'supports_pdf_input' => true,
   'supports_max_reasoning_effort' => true,
   'supports_tool_choice' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1166,7 +1166,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
   'cache_creation_input_token_cost_above_1hr' => 3.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1208,7 +1208,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1250,7 +1250,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1289,7 +1289,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 2.5E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1337,7 +1337,7 @@ return [
   'supports_pdf_input' => true,
   'supports_max_reasoning_effort' => true,
   'supports_tool_choice' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,

@@ -433,6 +433,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-6,
+  'supports_tool_search' => true,
   'source' => 'https://aws.amazon.com/about-aws/whats-new/2025/10/claude-4-5-haiku-anthropic-amazon-bedrock',
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
@@ -468,6 +469,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-6,
+  'supports_tool_search' => true,
   'source' => 'https://aws.amazon.com/about-aws/whats-new/2025/10/claude-4-5-haiku-anthropic-amazon-bedrock',
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
@@ -521,7 +523,7 @@ return [
   'cache_read_input_token_cost' => 1.5E-6,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2027-01-08',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -533,7 +535,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -570,7 +572,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -608,7 +610,8 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -651,7 +654,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -695,7 +699,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -739,7 +744,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -783,7 +789,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -827,7 +834,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -872,7 +880,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -919,7 +928,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -966,7 +976,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1013,7 +1024,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1060,7 +1072,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1105,7 +1118,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1152,7 +1165,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1199,7 +1212,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.2E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1246,7 +1259,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.2E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1296,7 +1309,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1343,7 +1356,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1390,7 +1403,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1437,7 +1450,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1484,7 +1497,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1531,7 +1544,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1578,7 +1591,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1626,7 +1639,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1674,7 +1687,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1722,7 +1735,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1770,7 +1783,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1818,7 +1831,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1863,7 +1876,8 @@ return [
   'supports_web_search' => NULL,
   'bedrock_converse_supports_strict_tools' => false,
   'cache_creation_input_token_cost' => 6.875E-6,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1906,9 +1920,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
   'cache_creation_input_token_cost' => 2.5E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1953,9 +1968,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
   'cache_creation_input_token_cost' => 2.5E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2000,9 +2016,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
   'cache_creation_input_token_cost' => 2.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.4E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2047,9 +2064,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
   'cache_creation_input_token_cost' => 2.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.4E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2094,9 +2112,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
   'cache_creation_input_token_cost' => 2.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.4E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2141,9 +2160,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
   'cache_creation_input_token_cost' => 2.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.4E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2191,7 +2211,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2234,7 +2255,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2277,7 +2299,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 4.125E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.6E-6,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2320,7 +2343,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 4.125E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.6E-6,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2363,7 +2387,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 4.125E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.6E-6,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2406,7 +2431,8 @@ return [
   'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 4.125E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.6E-6,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2435,7 +2461,7 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-10-14',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -2451,7 +2477,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2495,7 +2521,8 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.2E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2611,6 +2638,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-6,
+  'supports_tool_search' => true,
   'source' => 'https://aws.amazon.com/about-aws/whats-new/2025/10/claude-4-5-haiku-anthropic-amazon-bedrock',
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
@@ -2633,7 +2661,7 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-10-14',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -2649,7 +2677,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2693,7 +2721,8 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 8.25E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.32E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.6E-7,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2758,6 +2787,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_native_structured_output' => true,
   'supports_tool_choice' => true,
   'source' => 'https://aws.amazon.com/bedrock/pricing/',
 ),
@@ -2865,6 +2895,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.2E-6,
+  'supports_tool_search' => true,
   'source' => 'https://aws.amazon.com/about-aws/whats-new/2025/10/claude-4-5-haiku-anthropic-amazon-bedrock',
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
@@ -2899,7 +2930,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2936,7 +2967,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2961,7 +2992,7 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-10-14',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -2977,7 +3008,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3021,7 +3052,8 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 8.25E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.32E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.6E-7,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3167,7 +3199,8 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.2E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3194,7 +3227,7 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-10-14',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -3210,7 +3243,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3249,6 +3282,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-6,
+  'supports_tool_search' => true,
   'source' => 'https://aws.amazon.com/about-aws/whats-new/2025/10/claude-4-5-haiku-anthropic-amazon-bedrock',
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
@@ -3316,7 +3350,8 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 8.25E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.32E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.6E-7,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3356,6 +3391,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.2E-6,
+  'supports_tool_search' => true,
   'source' => 'https://aws.amazon.com/about-aws/whats-new/2025/10/claude-4-5-haiku-anthropic-amazon-bedrock',
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
@@ -3417,12 +3453,12 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 1.2E-7,
   'output_cost_per_token_batches' => 4.85E-7,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
     1 => 'code',
@@ -3455,12 +3491,12 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 8.5E-8,
   'output_cost_per_token_batches' => 3.3E-7,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
     1 => 'code',
@@ -4266,7 +4302,7 @@ return [
   'cache_read_input_token_cost' => NULL,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-09-14',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -4331,6 +4367,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.2E-6,
+  'supports_tool_search' => true,
   'source' => 'https://aws.amazon.com/about-aws/whats-new/2025/10/claude-4-5-haiku-anthropic-amazon-bedrock',
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
@@ -4383,7 +4420,7 @@ return [
   'cache_read_input_token_cost' => 1.5E-6,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2027-01-08',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -4395,7 +4432,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -4438,7 +4475,8 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 8.25E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.32E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.6E-7,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -4483,6 +4521,7 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 9.0E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.44E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 7.2E-7,
+  'supports_tool_search' => true,
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -4517,6 +4556,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-6,
   'cache_creation_input_token_cost_above_1hr' => 2.2E-6,
+  'supports_tool_search' => true,
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -4550,7 +4590,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -4588,7 +4628,8 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -4630,7 +4671,8 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -4671,7 +4713,8 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
-  'search_context_cost_per_query' =>
+  'supports_tool_search' => true,
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -4700,7 +4743,7 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-10-14',
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => true,
@@ -4716,7 +4759,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -4779,6 +4822,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_native_structured_output' => true,
   'supports_tool_choice' => true,
 ),
     array (
@@ -4805,6 +4849,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_native_structured_output' => true,
   'supports_tool_choice' => true,
 ),
     array (
@@ -4859,12 +4904,12 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 1.2E-7,
   'output_cost_per_token_batches' => 4.85E-7,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
     1 => 'code',
@@ -4897,12 +4942,12 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 8.5E-8,
   'output_cost_per_token_batches' => 3.3E-7,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
     1 => 'code',
@@ -4986,6 +5031,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
+  'supports_native_structured_output' => true,
   'supports_tool_choice' => true,
   'source' => 'https://aws.amazon.com/bedrock/pricing/',
 ),

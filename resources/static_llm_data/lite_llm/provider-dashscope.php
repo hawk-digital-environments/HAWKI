@@ -7,6 +7,168 @@ declare(strict_types=1);
 
 return [
     array (
+  'id' => 'dashscope/deepseek-v4-flash',
+  'object' => 'model_catalog.entry',
+  'provider' => 'dashscope',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
+  'input_cost_per_token' => 2.0E-7,
+  'output_cost_per_token' => 4.0E-7,
+  'cache_read_input_token_cost' => 4.0E-8,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/deepseek-v4-flash-0731',
+  'object' => 'model_catalog.entry',
+  'provider' => 'dashscope',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
+  'input_cost_per_token' => 2.0E-7,
+  'output_cost_per_token' => 4.0E-7,
+  'cache_read_input_token_cost' => 4.0E-8,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/deepseek-v4-pro',
+  'object' => 'model_catalog.entry',
+  'provider' => 'dashscope',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
+  'input_cost_per_token' => 2.4E-6,
+  'output_cost_per_token' => 4.8E-6,
+  'cache_read_input_token_cost' => 2.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/glm-5.1',
+  'object' => 'model_catalog.entry',
+  'provider' => 'dashscope',
+  'mode' => 'chat',
+  'max_input_tokens' => 202745,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'input_cost_per_token' => 1.4E-6,
+  'output_cost_per_token' => 4.4E-6,
+  'cache_read_input_token_cost' => 2.6E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/glm-5.2',
+  'object' => 'model_catalog.entry',
+  'provider' => 'dashscope',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'input_cost_per_token' => 1.4E-6,
+  'output_cost_per_token' => 4.4E-6,
+  'cache_read_input_token_cost' => 2.8E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/kimi-k2.7-code',
+  'object' => 'model_catalog.entry',
+  'provider' => 'dashscope',
+  'mode' => 'chat',
+  'max_input_tokens' => 229376,
+  'max_output_tokens' => 16384,
+  'max_tokens' => 16384,
+  'input_cost_per_token' => 9.5E-7,
+  'output_cost_per_token' => 4.0E-6,
+  'cache_read_input_token_cost' => 1.9E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_tool_choice' => true,
+),
+    array (
   'id' => 'dashscope/qwen-coder',
   'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
@@ -59,23 +221,23 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 5.0E-8,
       'output_cost_per_token' => 4.0E-7,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.5E-7,
       'output_cost_per_token' => 2.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -109,23 +271,23 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 5.0E-8,
       'output_cost_per_token' => 4.0E-7,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.5E-7,
       'output_cost_per_token' => 2.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -294,25 +456,25 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -346,25 +508,25 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -398,25 +560,25 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -585,47 +747,47 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'cache_read_input_token_cost' => 8.0E-8,
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 1.5E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'cache_read_input_token_cost' => 1.2E-7,
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 2.5E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'cache_read_input_token_cost' => 2.0E-7,
       'input_cost_per_token' => 8.0E-7,
       'output_cost_per_token' => 4.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 =>
+    3 => 
     array (
       'cache_read_input_token_cost' => 4.0E-7,
       'input_cost_per_token' => 1.6E-6,
       'output_cost_per_token' => 9.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -659,43 +821,43 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 1.5E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 2.5E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 8.0E-7,
       'output_cost_per_token' => 4.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 =>
+    3 => 
     array (
       'input_cost_per_token' => 1.6E-6,
       'output_cost_per_token' => 9.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -729,47 +891,47 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'cache_read_input_token_cost' => 1.0E-7,
       'input_cost_per_token' => 1.0E-6,
       'output_cost_per_token' => 5.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'cache_read_input_token_cost' => 1.8E-7,
       'input_cost_per_token' => 1.8E-6,
       'output_cost_per_token' => 9.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'cache_read_input_token_cost' => 3.0E-7,
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 =>
+    3 => 
     array (
       'cache_read_input_token_cost' => 6.0E-7,
       'input_cost_per_token' => 6.0E-6,
       'output_cost_per_token' => 6.0E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -803,43 +965,43 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 1.0E-6,
       'output_cost_per_token' => 5.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 1.8E-6,
       'output_cost_per_token' => 9.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 =>
+    3 => 
     array (
       'input_cost_per_token' => 6.0E-6,
       'output_cost_per_token' => 6.0E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -873,33 +1035,33 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -933,33 +1095,33 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -993,33 +1155,33 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -1215,33 +1377,33 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 2.0E-7,
       'output_cost_per_token' => 1.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 2.4E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 6.0E-7,
       'output_cost_per_token' => 4.8E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
@@ -1275,23 +1437,23 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_token' => 2.4E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 3.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -1352,31 +1514,58 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'cache_read_input_token_cost' => 8.0E-8,
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_token' => 1.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'cache_read_input_token_cost' => 2.4E-7,
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 4.8E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
       ),
     ),
   ),
+),
+    array (
+  'id' => 'dashscope/qwen3.8-max',
+  'object' => 'model_catalog.entry',
+  'provider' => 'dashscope',
+  'mode' => 'chat',
+  'max_input_tokens' => 991808,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'input_cost_per_token' => 2.0E-6,
+  'output_cost_per_token' => 6.0E-6,
+  'cache_read_input_token_cost' => 2.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwq-plus',
@@ -1430,7 +1619,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
   ),
@@ -1460,7 +1649,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
   ),

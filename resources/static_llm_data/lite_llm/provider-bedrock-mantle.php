@@ -30,7 +30,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -61,7 +61,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -92,7 +92,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -122,7 +122,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -133,7 +133,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'bedrock_mantle',
   'mode' => 'responses',
-  'max_input_tokens' => 272000,
+  'max_input_tokens' => 1000000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 5.5E-6,
@@ -152,18 +152,22 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
   'cache_creation_input_token_cost' => 6.875E-6,
+  'cache_creation_input_token_cost_above_272k_tokens' => 1.375E-5,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -174,7 +178,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'bedrock_mantle',
   'mode' => 'responses',
-  'max_input_tokens' => 272000,
+  'max_input_tokens' => 1000000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 2.2E-6,
@@ -193,18 +197,22 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'input_cost_per_token_above_272k_tokens' => 4.4E-6,
   'cache_creation_input_token_cost' => 2.75E-6,
+  'cache_creation_input_token_cost_above_272k_tokens' => 5.5E-6,
+  'cache_read_input_token_cost_above_272k_tokens' => 4.4E-7,
+  'output_cost_per_token_above_272k_tokens' => 1.98E-5,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -215,7 +223,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'bedrock_mantle',
   'mode' => 'responses',
-  'max_input_tokens' => 272000,
+  'max_input_tokens' => 1000000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 2.2E-7,
@@ -234,18 +242,22 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'input_cost_per_token_above_272k_tokens' => 4.4E-7,
   'cache_creation_input_token_cost' => 2.75E-7,
+  'cache_creation_input_token_cost_above_272k_tokens' => 5.5E-7,
+  'cache_read_input_token_cost_above_272k_tokens' => 4.4E-8,
+  'output_cost_per_token_above_272k_tokens' => 1.98E-6,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -276,16 +288,16 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -316,16 +328,16 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -356,7 +368,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -388,7 +400,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -420,7 +432,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -452,7 +464,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',

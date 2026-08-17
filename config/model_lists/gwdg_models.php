@@ -24,7 +24,7 @@ return [
     ],
     [
         'active' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_ACTIVE', true),
-        'id' => 'deepseek-v4-flash',
+        'id' => 'deepseek-v4-flash-0731',
         'label' => 'GWDG DeepSeek V4 Flash',
         'input' => [
             'text',

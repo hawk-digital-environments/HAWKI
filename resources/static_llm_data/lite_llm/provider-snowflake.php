@@ -656,6 +656,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
 ),
     array (
   'id' => 'snowflake/claude-4-sonnet',

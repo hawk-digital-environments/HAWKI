@@ -49,9 +49,9 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelParams::TOP_P => 0.9,
             ],
         ],
-        'deepseek-v4-flash' => [
+        'deepseek-v4-flash-0731' => [
             'max_tokens' => 1000000,
-            'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash',
+            'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731',
             'description' => 'DeepSeek V4 Flash is a strong Mixture-of-Experts (MoE) model with 284B parameters (13B activated) and a context window size of one million tokens. With a high reasoning effort, it achieves comparable reasoning performance to DeepSeek V4 Pro, but lacks the deep knowledge and most complex agentic capabilities of state-of-the-art models.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,

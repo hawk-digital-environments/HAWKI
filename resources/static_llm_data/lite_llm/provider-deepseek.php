@@ -31,7 +31,7 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -63,7 +63,7 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -97,7 +97,7 @@ return [
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 2.8E-8,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -187,7 +187,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_cache_hit' => 2.8E-8,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -258,8 +258,8 @@ return [
   'provider' => 'deepseek',
   'mode' => 'chat',
   'max_input_tokens' => 1000000,
-  'max_output_tokens' => 8192,
-  'max_tokens' => 8192,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
   'input_cost_per_token' => 1.4E-7,
   'output_cost_per_token' => 2.8E-7,
   'cache_read_input_token_cost' => 2.8E-9,
@@ -279,7 +279,7 @@ return [
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 2.8E-9,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -293,8 +293,8 @@ return [
   'provider' => 'deepseek',
   'mode' => 'chat',
   'max_input_tokens' => 1000000,
-  'max_output_tokens' => 8192,
-  'max_tokens' => 8192,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
   'input_cost_per_token' => 4.35E-7,
   'output_cost_per_token' => 8.7E-7,
   'cache_read_input_token_cost' => 3.625E-9,
@@ -314,7 +314,7 @@ return [
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 3.625E-9,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -328,8 +328,8 @@ return [
   'provider' => 'deepseek',
   'mode' => 'chat',
   'max_input_tokens' => 1000000,
-  'max_output_tokens' => 8192,
-  'max_tokens' => 8192,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
   'input_cost_per_token' => 1.4E-7,
   'output_cost_per_token' => 2.8E-7,
   'cache_read_input_token_cost' => 2.8E-9,
@@ -349,7 +349,7 @@ return [
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 2.8E-9,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),
@@ -363,8 +363,8 @@ return [
   'provider' => 'deepseek',
   'mode' => 'chat',
   'max_input_tokens' => 1000000,
-  'max_output_tokens' => 8192,
-  'max_tokens' => 8192,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
   'input_cost_per_token' => 4.35E-7,
   'output_cost_per_token' => 8.7E-7,
   'cache_read_input_token_cost' => 3.625E-9,
@@ -384,7 +384,7 @@ return [
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 3.625E-9,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
   ),

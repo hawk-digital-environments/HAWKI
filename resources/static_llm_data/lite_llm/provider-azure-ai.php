@@ -94,7 +94,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'supports_adaptive_thinking' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -134,7 +134,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'supports_adaptive_thinking' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -175,7 +175,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'supports_mid_conversation_system' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -218,7 +218,7 @@ return [
   'supports_web_search' => NULL,
   'supports_mid_conversation_system' => true,
   'supports_adaptive_thinking' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -261,7 +261,7 @@ return [
   'supports_web_search' => NULL,
   'supports_mid_conversation_system' => true,
   'supports_adaptive_thinking' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -366,7 +366,7 @@ return [
   'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 2.5E-6,
   'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -476,18 +476,18 @@ return [
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.5',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -532,18 +532,18 @@ return [
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.5',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -588,18 +588,18 @@ return [
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -644,18 +644,18 @@ return [
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -700,17 +700,17 @@ return [
   'output_cost_per_token_priority' => 0.00036,
   'output_cost_per_token_above_272k_tokens_priority' => 0.00054,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-pro',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -755,17 +755,17 @@ return [
   'output_cost_per_token_priority' => 0.00036,
   'output_cost_per_token_above_272k_tokens_priority' => 0.00054,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-pro',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -804,18 +804,18 @@ return [
   'input_cost_per_token_priority' => 1.5E-6,
   'output_cost_per_token_priority' => 9.0E-6,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-mini',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -854,18 +854,18 @@ return [
   'input_cost_per_token_priority' => 1.5E-6,
   'output_cost_per_token_priority' => 9.0E-6,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-mini',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -904,18 +904,18 @@ return [
   'input_cost_per_token_priority' => 4.0E-7,
   'output_cost_per_token_priority' => 2.5E-6,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-nano',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -954,18 +954,18 @@ return [
   'input_cost_per_token_priority' => 4.0E-7,
   'output_cost_per_token_priority' => 2.5E-6,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-nano',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -1085,7 +1085,7 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_image' => 0.04,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/black-forest-labs-flux-1-kontext-pro-and-flux1-1-pro-now-available-in-azure-ai-f/4434659',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
   ),
@@ -1116,7 +1116,7 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_image' => 0.04,
   'source' => 'https://azuremarketplace.microsoft.com/pt-br/marketplace/apps/cohere.cohere-embed-4-offer?tab=PlansAndPrice',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
   ),
@@ -1147,10 +1147,449 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_image' => 0.04,
   'source' => 'https://ai.azure.com/explore/models/flux.2-pro/version/1/registry/azureml-blackforestlabs',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
   ),
+),
+    array (
+  'id' => 'azure_ai/FW-DeepSeek-V3.2',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 163840,
+  'max_output_tokens' => 163840,
+  'max_tokens' => 163840,
+  'input_cost_per_token' => 6.2E-7,
+  'output_cost_per_token' => 1.85E-6,
+  'cache_read_input_token_cost' => 3.1E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-DeepSeek-V4-Pro',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 384000,
+  'max_tokens' => 384000,
+  'input_cost_per_token' => 1.925E-6,
+  'output_cost_per_token' => 3.828E-6,
+  'cache_read_input_token_cost' => 1.65E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-GLM-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 200000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 1.1E-6,
+  'output_cost_per_token' => 3.52E-6,
+  'cache_read_input_token_cost' => 2.2E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-GLM-5.1',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 202800,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'input_cost_per_token' => 1.54E-6,
+  'output_cost_per_token' => 4.84E-6,
+  'cache_read_input_token_cost' => 2.86E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-GLM-5.2',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'input_cost_per_token' => 1.54E-6,
+  'output_cost_per_token' => 4.84E-6,
+  'cache_read_input_token_cost' => 1.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-GLM-5.2-Fast',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'input_cost_per_token' => 2.1E-6,
+  'output_cost_per_token' => 6.6E-6,
+  'cache_read_input_token_cost' => 2.1E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://docs.fireworks.ai/serverless/pricing',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-Inkling',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
+  'max_tokens' => 1048576,
+  'input_cost_per_token' => 1.0E-6,
+  'output_cost_per_token' => 4.05E-6,
+  'cache_read_input_token_cost' => 1.7E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://fireworks.ai/models/fireworks/inkling',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-Kimi-K2.5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 262144,
+  'max_output_tokens' => 262144,
+  'max_tokens' => 262144,
+  'input_cost_per_token' => 6.6E-7,
+  'output_cost_per_token' => 3.3E-6,
+  'cache_read_input_token_cost' => 1.1E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-Kimi-K2.6',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 262144,
+  'max_output_tokens' => 262144,
+  'max_tokens' => 262144,
+  'input_cost_per_token' => 1.045E-6,
+  'output_cost_per_token' => 4.4E-6,
+  'cache_read_input_token_cost' => 1.76E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-Kimi-K2.7-Code',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 262144,
+  'max_output_tokens' => 262144,
+  'max_tokens' => 262144,
+  'input_cost_per_token' => 1.05E-6,
+  'output_cost_per_token' => 4.4E-6,
+  'cache_read_input_token_cost' => 2.1E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-Kimi-K3',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'input_cost_per_token' => 3.3E-6,
+  'output_cost_per_token' => 1.65E-5,
+  'cache_read_input_token_cost' => 3.3E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-kimi-k3-through-fireworks-ai-on-microsoft-foundry/4540187',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-MiniMax-M2.5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
+  'max_tokens' => 1000000,
+  'input_cost_per_token' => 3.3E-7,
+  'output_cost_per_token' => 1.32E-6,
+  'cache_read_input_token_cost' => 3.3E-8,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-MiniMax-M3',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 512000,
+  'max_output_tokens' => 512000,
+  'max_tokens' => 512000,
+  'input_cost_per_token' => 3.3E-7,
+  'output_cost_per_token' => 1.32E-6,
+  'cache_read_input_token_cost' => 6.6E-8,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/fireworks/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/FW-Nemotron-3-Ultra-NVFP4',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 262144,
+  'max_output_tokens' => 262144,
+  'max_tokens' => 262144,
+  'input_cost_per_token' => 6.0E-7,
+  'output_cost_per_token' => 2.4E-6,
+  'cache_read_input_token_cost' => 1.19E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://fireworks.ai/models/fireworks/nemotron-3-ultra-nvfp4',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_tool_choice' => true,
 ),
     array (
   'id' => 'azure_ai/MAI-Image-2.5',
@@ -1180,7 +1619,7 @@ return [
   'output_cost_per_image' => 0.05,
   'output_cost_per_image_token' => 4.7E-5,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/new-mai-models-in-microsoft-foundry-across-text-image-voice-and-speech/4524632',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -1214,7 +1653,7 @@ return [
   'output_cost_per_image' => 0.0338,
   'output_cost_per_image_token' => 3.3E-5,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/new-mai-models-in-microsoft-foundry-across-text-image-voice-and-speech/4524632',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -1247,7 +1686,7 @@ return [
   'output_cost_per_image' => 0.02,
   'output_cost_per_image_token' => 1.95E-5,
   'source' => 'https://aka.ms/mai-image-2e-foundryblog',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
   ),
@@ -1894,7 +2333,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.003,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/ocr',
   ),
@@ -1925,7 +2364,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.003,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/ocr',
   ),
@@ -1956,7 +2395,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.0015,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/ocr',
   ),
@@ -1987,7 +2426,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.01,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/ocr',
   ),
@@ -2018,7 +2457,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.01,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/ocr',
   ),
@@ -2427,11 +2866,11 @@ return [
   'supports_web_search' => NULL,
   'output_vector_size' => 3072,
   'source' => 'https://azuremarketplace.microsoft.com/pt-br/marketplace/apps/cohere.cohere-embed-4-offer?tab=PlansAndPrice',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/embeddings',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
@@ -2571,6 +3010,33 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
   'source' => 'https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/grok/',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure_ai/grok-4.3',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 200000,
+  'max_output_tokens' => 200000,
+  'max_tokens' => 200000,
+  'input_cost_per_token' => 1.25E-6,
+  'output_cost_per_token' => 2.5E-6,
+  'cache_read_input_token_cost' => 2.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => true,
+  'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-grok-4-3-on-microsoft-foundry-latest-generation-agentic-capabilities/4517096',
   'supports_tool_choice' => true,
 ),
     array (
@@ -2812,12 +3278,12 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-kimi-k2-6-in-microsoft-foundry/4513125',
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
