@@ -305,7 +305,7 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
             createdAt: feedback.created_at
         }))
     }
-    console.log('val', wire.creator)   ;
+    // console.log('val', wire.creator)   ;
     return val;
 });
 

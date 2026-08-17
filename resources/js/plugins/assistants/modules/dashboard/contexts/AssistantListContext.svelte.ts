@@ -55,7 +55,7 @@
  * </script>
  * ```
  */
-import { createContext } from 'svelte';
+import { createContext, untrack } from 'svelte';
 import type { HawkiApp } from '$lib/kernel/HawkiApp.js';
 import type { ToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
 import { ApiError } from '$plugins/assistants/api/errors';
@@ -139,9 +139,15 @@ export class AssistantListContext {
 
         try {
             console.log('loading');
+            // `setFilter` writes `this.filter` and calls `load` synchronously, in
+            // the same tick — often from inside a caller's `$effect`. Reading
+            // `this.filter` back here (via buildJsonApiFilter) would otherwise
+            // register it as a dependency of that effect; since the payload is a
+            // fresh object every run, the effect would then re-fire forever.
+            // `untrack` reads the current value without subscribing to it.
             const {assistants, pagination} = await listAssistants({
                 include: [...new Set([...ASSISTANT_LIST_INCLUDES, ...this.extraIncludes])],
-                filter: this.buildJsonApiFilter(),
+                filter: untrack(() => this.buildJsonApiFilter()),
                 page: {number: page, size: this.perPage}
             });
 
@@ -195,6 +201,7 @@ export class AssistantListContext {
         if (this.filter.assistant_category?.length) {
             // Produces filter[assistant_category][text]=...
             out['assistant_category'] = {text: this.filter.assistant_category.join(',')};
+            console.log('out', out);
         }
 
         if (this.filter.is_favorite) {

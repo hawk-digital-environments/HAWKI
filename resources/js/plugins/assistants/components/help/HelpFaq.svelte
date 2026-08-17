@@ -15,7 +15,7 @@
     import Wrench01Icon from '$lib/components/ui/icons/iconset/Wrench01Icon.svelte';
     import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
     import {HELP_ACCORDION_KEY, type HelpAccordionContext} from './helpAccordion';
-    import {__} from "$lib/utils/translator";
+        const {__} = useTranslator();
 
     let activeId = $state<string | null>(null);
 

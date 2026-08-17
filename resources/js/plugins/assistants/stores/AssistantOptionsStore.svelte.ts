@@ -1,11 +1,11 @@
 import z from "zod";
 import {
   AssistantSettingSchema,
-  CategorySchema,
-  TagSchema,
+  AssistantCategorySchema,
+  AssistantTagSchema,
   type AssistantSetting,
-  type Category,
-  type Tag,
+  type AssistantCategory,
+  type AssistantTag,
 } from "$plugins/assistants/types/assistant";
 import { useToastContext } from "$lib/components/ui/toast/ToastContext.svelte.js";
 
@@ -13,7 +13,7 @@ import {
   listCategories,
   listTags,
   listSettings,
-  createTag,
+  // createTag,
 } from "$plugins/assistants/api/resources/assistantOptionsClient";
 import { ApiError } from "$plugins/assistants/api/errors";
 import {DataStore} from "$lib/kernel/stores/types";
@@ -24,8 +24,8 @@ import {DataStore} from "$lib/kernel/stores/types";
  * written by an older build can have a stale option shape.
  */
 const CachedOptionsSchema = z.object({
-  categories: z.array(CategorySchema),
-  tags: z.array(TagSchema),
+  categories: z.array(AssistantCategorySchema),
+  tags: z.array(AssistantTagSchema),
   settings: z.array(AssistantSettingSchema),
 });
 
@@ -41,8 +41,8 @@ class AssistantOptionsStore implements DataStore{
     public readonly name = "assistant-options-store";
 
     static cacheKey = "assistant-options";
-    categories = $state<Category[]>([]);
-    tags = $state<Tag[]>([]);
+    categories = $state<AssistantCategory[]>([]);
+    tags = $state<AssistantTag[]>([]);
     settings = $state<AssistantSetting[]>([]);
 
     loaded = $state(false);
@@ -50,7 +50,7 @@ class AssistantOptionsStore implements DataStore{
     error = $state<string | null>(null);
 
     constructor() {
-    this.restoreFromCache();
+        this.restoreFromCache();
     }
 
     /** Seed the lists from the `localStorage` cache so the builder can render
@@ -70,67 +70,68 @@ class AssistantOptionsStore implements DataStore{
       return;
     }
 
-    const parsed = CachedOptionsSchema.safeParse(payload);
-    if (!parsed.success) {
-      console.warn(
-        "Discarding the cached assistant options: they do not match the current shape.",
-        parsed.error,
-      );
-      localStorage.removeItem(AssistantOptionsStore.cacheKey);
-      return;
-    }
+        const parsed = CachedOptionsSchema.safeParse(payload);
+        if (!parsed.success) {
+            console.warn(
+            "Discarding the cached assistant options: they do not match the current shape.",
+                parsed.error,
+            );
+            localStorage.removeItem(AssistantOptionsStore.cacheKey);
+            return;
+        }
 
-    this.categories = parsed.data.categories;
-    this.tags = parsed.data.tags;
-    this.settings = parsed.data.settings;
-    this.loaded = true;
+        this.categories = parsed.data.categories;
+        this.tags = parsed.data.tags;
+        this.settings = parsed.data.settings;
+        this.loaded = true;
     }
 
     /** Fetch all option lists in parallel. No-op once loaded unless `force`. */
     async load(force = false): Promise<void> {
-    if (this.loading || (this.loaded && !force)) return;
-    this.loading = true;
-    this.error = null;
+        console.log('load options')
+        if (this.loading || (this.loaded && !force)) return;
+        this.loading = true;
+        this.error = null;
 
-    try {
-      const [categories, tags, settings] = await Promise.all([
-        listCategories(),
-        listTags(),
-        listSettings(),
-      ]);
-      this.categories = categories;
-      this.tags = tags;
-      this.settings = settings;
-      this.loaded = true;
+        try {
+          const [categories, tags, settings] = await Promise.all([
+            listCategories(),
+            listTags(),
+            listSettings(),
+          ]);
+          this.categories = categories;
+          this.tags = tags;
+          this.settings = settings;
+          this.loaded = true;
 
-      localStorage.setItem(
-        AssistantOptionsStore.cacheKey,
-        JSON.stringify({
-          categories: this.categories,
-          tags: this.tags,
-          settings: this.settings,
-        }),
-      );
-    } catch (err) {
-      const apiErr = ApiError.from(err);
-      this.error = apiErr.message;
-      useToastContext().error(apiErr.userMessage);
-    } finally {
-          this.loading = false;
-          if (this.error) {
-            throw Error(this.error);
-          }
+          localStorage.setItem(
+            AssistantOptionsStore.cacheKey,
+            JSON.stringify({
+              categories: this.categories,
+              tags: this.tags,
+              settings: this.settings,
+            }),
+          );
+        } catch (err) {
+          const apiErr = ApiError.from(err);
+          this.error = apiErr.message;
+          useToastContext().error(apiErr.userMessage);
+        } finally {
+            this.loading = false;
+            if (this.error) {
+                throw Error(this.error);
+            }
         }
     }
 
-    async addTag(assistantId: string, normalizedTag: string): Promise<Tag> {
-        const existing = this.tags.find((t) => t.text === normalizedTag);
-        if (existing) return existing;
-
-        const tag = await createTag(assistantId, normalizedTag);
-        this.tags = [...this.tags, tag];
-        return tag;
-    }
+    // async addTag(assistantId: string, normalizedTag: string): Promise<AssistantTag> {
+    //     const existing = this.tags.find((t) => t.text === normalizedTag);
+    //     if (existing) return existing;
+    //
+    //     const tag = await createTag(assistantId, normalizedTag);
+    //     this.tags = [...this.tags, tag];
+    //     return tag;
+    // }
 
     getSetting(key: string): AssistantSetting | undefined {
         return this.settings.find((s) => s.key === key);

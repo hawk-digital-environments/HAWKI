@@ -53,7 +53,7 @@
     <div class="edit-panel" bind:this={containerEl}>
         <span
             role="textbox"
-            aria-label="Tag eingeben"
+            aria-label="AssistantTag eingeben"
             aria-multiline="false"
             tabindex="0"
             class="input"

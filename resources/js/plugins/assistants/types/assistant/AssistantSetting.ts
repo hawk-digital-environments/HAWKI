@@ -34,14 +34,15 @@ export type AssistantSettingOption = z.infer<typeof AssistantSettingOptionSchema
  *
  * `options` is absent for free-text settings.
  */
-export const AssistantSettingSchema = z.object({
-    id: z.string(),
-    /** Matches the assistant attribute this setting drives, e.g. `"formality"`. */
-    key: z.string(),
-    label: z.string(),
-    description: z.string(),
-    options: z.array(AssistantSettingOptionSchema).optional(),
-    defaultValue: z.string()
+export const AssistantSettingSchema = z.object(
+    {
+        id: z.string(),
+        /** Matches the assistant attribute this setting drives, e.g. `"formality"`. */
+        key: z.string(),
+        label: z.string(),
+        description: z.string(),
+        options: z.array(AssistantSettingOptionSchema).optional(),
+        defaultValue: z.string().nullable().optional()
 });
 
 export type AssistantSetting = z.infer<typeof AssistantSettingSchema>;

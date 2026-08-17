@@ -1,16 +1,24 @@
 <script lang="ts">
-    import AssistantBrowser from "$lib/components/assistant/assistantBrowser/AssistantBrowser.svelte";
-    import { assistantListStore } from "$lib/stores/assistants/AssistantListStore.svelte.js";
-    import {__} from "$lib/utils/translator";
+    import AssistantBrowser from "$plugins/assistants/components/assistantBrowser/AssistantBrowser.svelte";
+    import {ReleaseMode} from "$plugins/assistants/types/assistant";
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import {createAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
+    import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte"
 
-    // Load only the user's favourites (server-side `actions=favorite`).
-    // setFilter resets to page 1 and fetches; loadList reports its own errors.
-    // `includes` lists only extras — DEFAULT_INCLUDES are merged in for us.
+    const {__} = useTranslator();
+    assistantOptionsStore.load();
+    // This page owns the list: it is created here, published to the subtree
+    // (AssistantBrowser picks it up via useAssistantListContext), and released
+    // when the page unmounts.
+    const list = createAssistantListContext(useApp(), useToastContext());
 
     let searchQuery = $state("");
     let activeFilters = $state(new Set<string>());
+
     $effect(() => {
-        assistantListStore.setFilter({
+        list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
             is_favorite: false,

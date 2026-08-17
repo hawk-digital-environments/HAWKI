@@ -25,12 +25,12 @@ export {
     type AssistantSettingOption,
     type AssistantSettingKey
 } from './AssistantSetting';
-export { CategorySchema, type Category } from './Category';
+export { AssistantCategorySchema, type AssistantCategory } from './AssistantCategory';
 export { CreatorSchema, type Creator } from './Creator';
 export { ReleaseMode, ReleaseModeSchema } from './ReleaseMode';
 export { ReviewSchema, type Review } from './Review';
 export { ReviewStage, ReviewStageSchema } from './ReviewStage';
 export { RiskLevel, RiskLevelSchema } from './RiskLevel';
-export { TagSchema, type Tag } from './Tag';
+export { AssistantTagSchema, type AssistantTag } from './AssistantTag';
 export { UserPromptSchema, type UserPrompt } from './UserPrompt';
 export { VersionSchema, type Version } from './Version';

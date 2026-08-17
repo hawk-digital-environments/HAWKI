@@ -9,7 +9,7 @@
 
 
     let categories = $derived(assistantOptionsStore.categories);
-
+    console.log('categories', categories);
     let {
         activeFilters = $bindable(new Set<string>()),
     } = $props<{
@@ -20,6 +20,7 @@
         const next = new Set(activeFilters);
         next.has(category) ? next.delete(category) : next.add(category);
         activeFilters = next;
+        console.log(activeFilters)
     }
 
     function resetFilters() {

@@ -1,122 +1,101 @@
-import type { Category } from "$lib/plugins/assistants/types/assistant/Category";
-import type { Tag } from "$lib/plugins/assistants/types/assistant/Tag";
-import type { AssistantSetting } from "$lib/plugins/assistants/types/assistant/AssistantSetting";
+import type { AssistantTag } from "$plugins/assistants/types/assistant/AssistantTag";
+import {AssistantSetting, AssistantSettingSchema} from "$lib/plugins/assistants/types/assistant/AssistantSetting";
 import { useApp } from "$lib/app/hooks/useApp.svelte";
+import {AssistantCategory} from "$plugins/assistants/types/assistant/AssistantCategory";
 
-const CATEGORIES = "assistant-categories";
+const ASSISTANT_CATEGORIES = "assistant-categories";
 const ASSISTANT_TAGS = "assistant-tags";
 export const ASSISTANT_SETTING_VALUES = "assistant-setting-values";
-const SETTINGS = "assistant-settings";
+const ASSISTANT_SETTINGS = "assistant-settings";
 export const SETTING_ANSWER_LENGTH = "answer_length";
 export const SETTING_FORMALITY = "formality";
 export const SETTING_LANGUAGE = "language";
 
-export async function listCategories(): Promise<Category[]> {
+export async function listCategories(): Promise<any[]> {
   try {
-    const collection = await useApp().restApi.getResourceCollection(CATEGORIES);
-    const asd = collection.getAll().map(toOption);
-    debugger;
-    return asd;
+    const res = await useApp().restApi.getResourceCollection(ASSISTANT_CATEGORIES);
+    console.log(res);
+    return res;
   } catch (err) {
     throw err;
   }
 }
 
-export async function listTags(): Promise<Tag[]> {
+export async function listTags(): Promise<any[]> {
   try {
-    const collection = await getApi().getCollectionPage(ASSISTANT_TAGS);
-    return collection.getAll().map(toOption);
+      const res = await useApp().restApi.getResourceCollection(ASSISTANT_TAGS);
+      console.log(res);
+      return res;
   } catch (err) {
-    throw logApiError("listTags", err);
+      throw err;
   }
 }
 
-export async function listSettings(): Promise<AssistantSetting[]> {
-  try {
-    const collection = await getApi().getCollectionPage(SETTINGS);
-    return collection.response.data.map(toSetting);
-  } catch (err) {
-    throw logApiError("listSettings", err);
-  }
+export async function listSettings(): Promise<any[]> {
+    console.log('start')
+    try {
+        const collection = await useApp().restApi.getResourceCollection(ASSISTANT_SETTINGS);
+        console.log('settings', collection)
+        return Array.from(collection);
+    } catch (err) {
+        // throw logApiError("listSettings", err);
+        throw err;
+    }
 }
 
-export const makeDefaultAssistantSettingValues = async (
-  settings: ReadonlyArray<AssistantSetting>,
-  assistantId: string,
-) => {
-  // Frontend-only mode: the setting values live on the mock draft itself,
-  // so there is nothing to POST.
-  if (useMockData) return;
+// export const makeDefaultAssistantSettingValues = async (
+//   settings: ReadonlyArray<AssistantSetting>,
+//   assistantId: string,
+// ) => {
+//
+//   const defaultAssistantSettingValues = settings.map(
+//     ({ id: settingId, defaultValue }) => ({
+//       type: "assistant-setting-values",
+//       attributes: {
+//         value: defaultValue || "",
+//       },
+//       relationships: {
+//         assistant: {
+//           data: {
+//             type: "assistants",
+//             id: assistantId,
+//           },
+//         },
+//         setting: {
+//           data: {
+//             type: "assistant-settings",
+//             id: settingId,
+//           },
+//         },
+//       },
+//     }),
+//   );
+//   try {
+//     await Promise.all(
+//       defaultAssistantSettingValues.map((settingValue) =>
+//         getApi().postResource(ASSISTANT_SETTING_VALUES, settingValue),
+//       ),
+//     );
+//   } catch (err) {
+//     // throw logApiError("makeDefaultAssistantSettingValues", err, { assistantId });
+//       throw err;
+//   }
+// };
 
-  const defaultAssistantSettingValues = settings.map(
-    ({ id: settingId, defaultValue }) => ({
-      type: "assistant-setting-values",
-      attributes: {
-        value: defaultValue || "",
-      },
-      relationships: {
-        assistant: {
-          data: {
-            type: "assistants",
-            id: assistantId,
-          },
-        },
-        setting: {
-          data: {
-            type: "assistant-settings",
-            id: settingId,
-          },
-        },
-      },
-    }),
-  );
-  try {
-    await Promise.all(
-      defaultAssistantSettingValues.map((settingValue) =>
-        getApi().postResource(ASSISTANT_SETTING_VALUES, settingValue),
-      ),
-    );
-  } catch (err) {
-    throw logApiError("makeDefaultAssistantSettingValues", err, { assistantId });
-  }
-};
-
-export async function createTag(
-  assistantId: string,
-  text: string,
-): Promise<Tag> {
-  try {
-    const newTag = await getApi().postResource("assistant-tags", {
-      type: "assistant-tags",
-      attributes: {
-        text,
-      },
-    });
-    return toOption(newTag);
-  } catch (err) {
-    throw logApiError("createTag", err, { assistantId });
-  }
-}
-
-function toOption(resource: Resource): { id: string; text: string } {
-  return {
-    id: String(resource.get("id")),
-    text: String(
-      resource.get("text") ??
-        resource.get("name") ??
-        resource.get("label") ??
-        "",
-    ),
-  };
-}
-
-function toSetting(data: any): AssistantSetting {
-  return {
-    id: data.id,
-    key: data.key,
-    label: data.label,
-    description: data.description,
-    options: data.uiOptions,
-    defaultValue: data.defaultValue ?? null,
-  };
-}
+// export async function createTag(
+//   assistantId: string,
+//   text: string,
+// ): Promise<AssistantTag> {
+//   try {
+//     const newTag = await getApi().postResource("assistant-tags", {
+//       type: "assistant-tags",
+//       attributes: {
+//         text,
+//       },
+//     });
+//     return toOption(newTag);
+//   } catch (err) {
+//     // throw logApiError("createTag", err, { assistantId });
+//       throw err;
+//   }
+// }

@@ -291,9 +291,8 @@ export async function toggleAssistantFavorite(
     assistant: Assistant,
     active: boolean,
 ): Promise<void> {
-  // const method = active ? 'post' : 'delete';
+  const method = active ? 'post' : 'delete';
   // try {
-  //     await useApp().restApi.postToResourceAction()
   //   await  useApp().restApi.axios[method](`${TYPE}/${assistant.id}/actions/favorite`);
   // } catch (err) {
   //   throw logApiError("toggleAssistantFavorite", err, {

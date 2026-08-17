@@ -1,5 +1,5 @@
 <script lang="ts">
-    // import ReleaseStageStatus from "$lib/components/assistant/assistantBuilderComponents/ReleaseStageStatus.svelte";
+    import ReleaseStageStatus from "$lib/plugins/assistants/components/assistantBuilderComponents/ReleaseStageStatus.svelte";
     import AssistantBanner from "$lib/plugins/assistants/components/avatarBuilder/AssistantBanner.svelte";
     import AssistantAvatarIcon from "$lib/plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte";
     import type {Assistant} from "$lib/plugins/assistants/types/assistant/Assistant";
@@ -16,6 +16,8 @@
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {useRouter} from "$lib/components/ui/routing/hooks/useRouter.svelte";
     import Link from "$lib/components/util/link/Link.svelte";
+    import {getAvatar} from "$plugins/assistants/api/resources/userAvatarClient";
+    const {goToRoute, route, path, debug, params, p} = useRouter();
 
 
     const {__} = useTranslator();
@@ -27,21 +29,20 @@
     }>();
 
     const toast = useToastContext();
-    function getAvatar(input:any){
-        return null;
-    }
 
-    let avatarUrl = $state<string | null>(null);
+    let userAvatarUrl = $state<string | null>(null);
     $effect(() => {
         if(assistant.creator.avatar) {
-            // getAvatar(assistant.creator.avatar).then(url => {
-            //     avatarUrl = url;
-            // });
+            console.log('fetch')
+            getAvatar(assistant.creator.avatar)
+                .then(url => {
+                    userAvatarUrl = url;
+            });
 
             // Cleanup: revoke the object URL when identifier changes or component unmounts
             return () => {
-                if (avatarUrl) {
-                    URL.revokeObjectURL(avatarUrl);
+                if (userAvatarUrl) {
+                    URL.revokeObjectURL(userAvatarUrl);
                 }
             };
         }
@@ -72,10 +73,15 @@
 
 
 </script>
+<!--@todo: Link truned to button because style didn't budge-->
+<button
+    class="assistant-card"
+    onclick={()=>{goToRoute(
+       p('assistants.dashboard.details', { id: assistant.id })
+    )
 
-<Link class="assistant-card" href={{
-    name: 'assistants.dashboard.details', params: {id: assistant.id}
-}}>
+    }}
+>
     <div class="cover">
         <AssistantBanner assistantAvatar={assistant.avatar} />
         <div
@@ -110,11 +116,11 @@
                 <span class="handle">@ {assistant.handle}</span>
             </div>
             <div class="tags">
-                <!--{#if assistant.release_stage}-->
-<!--                    <ReleaseStageStatus-->
-<!--                        stage={assistant.releaseStage}-->
-<!--                    />-->
-                <!--{/if}-->
+                {#if assistant.release_stage}
+                    <ReleaseStageStatus
+                        stage={assistant.releaseStage}
+                    />
+                {/if}
 
 
             </div>
@@ -125,8 +131,8 @@
         <div class="footer">
             <div class="creator-info">
                 <div class="avatar">
-                    {#if avatarUrl}
-                        <img src={avatarUrl} alt="">
+                    {#if userAvatarUrl}
+                        <img src={userAvatarUrl} alt="">
                     {:else}
                         <span class="creator-initials">
                             {assistant.creator.displayName.slice(0,2)}
@@ -150,7 +156,7 @@
         </div>
 
     </div>
-</Link>
+</button>
 
 
 <style>
@@ -160,6 +166,8 @@
         flex-direction: column;
         height: fit-content;
         width: 100%;
+        padding: 0;
+        text-align: start;
         /* Fill the grid track; the grid's minmax controls the effective size, so
            the card no longer needs its own min/max width. */
         min-width: 0;

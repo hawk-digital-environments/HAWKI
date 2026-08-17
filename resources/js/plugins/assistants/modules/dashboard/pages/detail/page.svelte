@@ -19,8 +19,8 @@
     // import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
     // import {ApiError} from "$lib/data/api/errors";
     import {ValidationState} from "$lib/plugins/assistants/types/enums/ValidationState";
-    // import {assistantOptionsStore} from "$lib/stores/assistants/AssistantOptionsStore.svelte";
-    // import {assistantBuilderStore} from "$lib/stores/assistants/AssistantBuilderStore.svelte";
+    import {assistantOptionsStore} from "$lib/plugins/assistants/stores/AssistantOptionsStore.svelte";
+    // import {assistantBuilderStore} from "$lib/plugins/assistants/stores/AssistantBuilderStore.svelte";
     // import {goto, invalidate} from "$app/navigation";
     import {BACKGROUNDS} from "$lib/plugins/assistants/presets/backgrounds";
     import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
@@ -40,9 +40,10 @@
     import RemixDetails from "$lib/plugins/assistants/components/assistantBrowser/RemixDetails.svelte";
 
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
     const {goToRoute, route, path, debug, params} = useRouter();
 
-
+    const toast = useToastContext();
 
     const {__} = useTranslator();
     let assistant = $state<Assistant | undefined>(undefined);
@@ -51,10 +52,9 @@
 
     // CHECK AWAIT Syntax from Svelte
     $effect(() => {
-        console.log(params)
-
+        // @todo: params.id is string. why does the IDE detect it as string[]?
         loading = true;
-        getAssistant(params.id, {
+        getAssistant(params.id[0], {
             include: [...new Set([...ASSISTANT_DETAIL_INCLUDES])],
         })
         .then(result => { assistant = result; })
@@ -62,7 +62,6 @@
         .finally(() => { loading = false; });
     });
 
-    // const toast = useToastContext();
 
     /** Persist the favourite toggle, surfacing any failure as a toast. */
     async function onFavoriteChange(active: boolean) {
@@ -91,16 +90,16 @@
     );
 
     const startRemix = async () => {
-        // try {
-        //     await assistantOptionsStore.load();
-        //     await assistantBuilderStore.remix(assistant);
-        //     await goto("/builder/advanced/general");
-        // } catch {
-        //     // The failure is already reported to the user by the store that threw
-        //     // (assistantOptionsStore.load / assistantBuilderStore.startNew each push
-        //     // their own toast). Just swallow here so we don't navigate into a
-        //     // half-created builder or show a duplicate toast.
-        // }
+        try {
+            // await assistantOptionsStore.load();
+            // await assistantBuilderStore.remix(assistant);
+            // await goto("/builder/advanced/general");
+        } catch {
+            // The failure is already reported to the user by the store that threw
+            // (assistantOptionsStore.load / assistantBuilderStore.startNew each push
+            // their own toast). Just swallow here so we don't navigate into a
+            // half-created builder or show a duplicate toast.
+        }
     };
 
     const startEdit = async () => {
@@ -118,7 +117,6 @@
         //     toast.error(ApiError.from(err).userMessage);
         // }
     }
-
 
     const usageLabel = $derived(
         assistant.usageCount != null

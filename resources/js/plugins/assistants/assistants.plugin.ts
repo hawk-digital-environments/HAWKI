@@ -12,6 +12,9 @@ import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptions
 import AssistantsSchema from "$plugins/assistants/api/schemas/assistants.schema";
 import {AssistantFeedbackSchema} from "$plugins/assistants/types/assistant";
 import {AssistantAvatarSchema} from "$plugins/assistants/types/assistant";
+import {AssistantCategorySchema} from "$plugins/assistants/types/assistant/AssistantCategory";
+import {AssistantTagSchema} from "$plugins/assistants/types/assistant/AssistantTag";
+import {AssistantSettingSchema} from "$plugins/assistants/types/assistant/AssistantSetting";
 // import {assistantBuilderStore} from "$plugins/assistants/stores/AssistantBuilderStore.svelte";
 
 
@@ -28,8 +31,11 @@ export default class AssistantsPlugin implements HawkiCorePlugin {
 
     resourceSchemas?(registrar: ResourceSchemaRegistrar, context: HawkiPluginContext): void | Promise<void> {
         registrar.add('assistants', AssistantsSchema);
-        registrar.add('assistant_avatar', AssistantAvatarSchema);
-        registrar.add('assistant_feedback', AssistantFeedbackSchema)
+        registrar.add('assistant-avatar', AssistantAvatarSchema);
+        registrar.add('assistant-feedback', AssistantFeedbackSchema)
+        registrar.add('assistant-categories', AssistantCategorySchema)
+        registrar.add('assistant-tags', AssistantTagSchema)
+        registrar.add('assistant-settings', AssistantSettingSchema)
     }
     public modules({add}: ModuleRegistrar): void | Promise<void> {
         add(new DashboardModule());
@@ -67,8 +73,8 @@ export default class AssistantsPlugin implements HawkiCorePlugin {
         registrar.add(assistantOptionsStore);
     }
 
-    ready(app){
-        app.router.debug()
-    }
+    // ready(app){
+    //     app.router.debug()
+    // }
 
 }

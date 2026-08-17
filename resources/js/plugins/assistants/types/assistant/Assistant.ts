@@ -3,11 +3,11 @@ import AiToolsSchema from '$plugins/core/schemas/resources/ai-tools.schema.js';
 import { UploadFileSchema } from '../UploadFile';
 import { AssistantAvatarSchema } from './AssistantAvatar';
 import { AssistantFeedbackSchema } from './AssistantFeedback';
-import { CategorySchema } from './Category';
+import { AssistantCategorySchema } from './AssistantCategory';
 import { CreatorSchema } from './Creator';
 import { ReleaseMode } from './ReleaseMode';
 import { RiskLevel } from './RiskLevel';
-import { TagSchema } from './Tag';
+import { AssistantTagSchema } from './AssistantTag';
 import { VersionSchema } from './Version';
 import {AiModelDescription} from "$plugins/core/schemas/resources/ai-model-descriptions";
 
@@ -99,9 +99,9 @@ export const AssistantSchema = z.object({
 
     // ─── Relationships ───────────────────────────────────────────────────────
 
-    category: CategorySchema.nullable(),
+    category: AssistantCategorySchema.nullable(),
 
-    tags: z.array(TagSchema),
+    tags: z.array(AssistantTagSchema),
     creator: CreatorSchema,
     versions: z.array(VersionSchema),
 

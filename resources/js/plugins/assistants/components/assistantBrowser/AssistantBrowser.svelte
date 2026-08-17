@@ -1,12 +1,11 @@
 <script lang="ts">
     import AssistantCard from "./AssistantCard.svelte";
-    // import PageNavigation from "./PageNavigation.svelte";
+    import PageNavigation from "./PageNavigation.svelte";
     import Searchbar from "$plugins/assistants/components/searchbar/Searchbar.svelte";
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
-    // import autoAnimate from "@formkit/auto-animate";
+    import autoAnimate from "@formkit/auto-animate";
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
-    // TODO: pending component — not ported yet.
     import CategoryBar from "$lib/plugins/assistants/components/categoryBar/CategoryBar.svelte";
 
     const {__} = useTranslator();
@@ -32,21 +31,20 @@
 <CategoryBar bind:activeFilters />
 
 <div class="wrapper">
-<!--    <div class="grid-responsive" use:autoAnimate>-->
-    <div class="grid-responsive">
+    <div class="grid-responsive" use:autoAnimate>
         {#each list.assistants as assistant (assistant.id)}
             <AssistantCard assistant={assistant} />
         {/each}
     </div>
 
-<!--    <PageNavigation-->
-<!--        currentPage={list.currentPage}-->
-<!--        lastPage={list.lastPage}-->
-<!--        fromIndex={list.fromIndex}-->
-<!--        toIndex={list.toIndex}-->
-<!--        total={list.total}-->
-<!--        navigateTo={(page) => list.navigateTo(page)}-->
-<!--    />-->
+    <PageNavigation
+        currentPage={list.currentPage}
+        lastPage={list.lastPage}
+        fromIndex={list.fromIndex}
+        toIndex={list.toIndex}
+        total={list.total}
+        navigateTo={(page) => list.navigateTo(page)}
+    />
 </div>
 
 {#if list.loading}

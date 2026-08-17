@@ -101,15 +101,20 @@ export function extendResourceCollection<T>(response: Record<string, any>, colle
 
     const links = response.links;
     const meta = response.meta;
+    // The backend's JSON:API meta.page block uses these exact key names (see
+    // JsonApiMeta in app/Services/OpenApi/OpenApiGenerator.php) — not
+    // `page`/`pages`/`pageSize`/`itemCount`. Reading the wrong keys silently
+    // falls back to `collection.length` for pageSize/itemCount, which shrinks
+    // `perPage` every time a page returns fewer items than requested.
     const pagination = meta?.page ?? {};
     return Object.assign(collection, {
         _meta: meta,
         _links: response.links,
         _pagination: meta ? {
-            page: pagination.page ?? 1,
-            pages: pagination.pages ?? 1,
-            pageSize: pagination.pageSize ?? collection.length,
-            itemCount: pagination.itemCount ?? collection.length,
+            page: pagination.currentPage ?? 1,
+            pages: pagination.lastPage ?? 1,
+            pageSize: pagination.perPage ?? collection.length,
+            itemCount: pagination.total ?? collection.length,
             hasNextPage: !!(links?.next),
             hasPreviousPage: !!(links?.prev)
         } : undefined

@@ -5,9 +5,10 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {createAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
+    import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte"
 
     const {__} = useTranslator();
-
+    assistantOptionsStore.load();
     // This page owns the list: it is created here, published to the subtree
     // (AssistantBrowser picks it up via useAssistantListContext), and released
     // when the page unmounts.
@@ -15,31 +16,18 @@
 
     let searchQuery = $state("");
     let activeFilters = $state(new Set<string>());
-    console.log(activeFilters)
-    console.log('searchQuery', searchQuery)
-    // Every filter change re-runs the query from page 1. `setFilter` already
-    // discards responses that arrive out of order, so fast typing is safe.
 
-
-    list.setFilter({
-        name: searchQuery,
-        assistant_category: [...activeFilters],
-        release_stage: [
-            ReleaseMode.ORGANIZATIONAL,
-            ReleaseMode.FEDERATED
-        ]
+    $effect(() => {
+        console.log('effect')
+        list.setFilter({
+            name: searchQuery,
+            assistant_category: [...activeFilters],
+            release_stage: [
+                ReleaseMode.ORGANIZATIONAL,
+                ReleaseMode.FEDERATED
+            ]
+        });
     });
-    // $effect(() => {
-    //     console.log('effect')
-    //     list.setFilter({
-    //         name: searchQuery,
-    //         assistant_category: [...activeFilters],
-    //         release_stage: [
-    //             ReleaseMode.ORGANIZATIONAL,
-    //             ReleaseMode.FEDERATED
-    //         ]
-    //     });
-    // });
 </script>
 
 <div class="page-wrapper">

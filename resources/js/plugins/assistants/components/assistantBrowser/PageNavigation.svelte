@@ -1,5 +1,9 @@
 <script lang="ts">
-    import {__} from "$lib/utils/translator";
+
+
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+
+    const {__} = useTranslator()
 
     let {
         currentPage,
