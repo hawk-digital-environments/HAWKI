@@ -4,7 +4,7 @@
     import { useSidebar } from '$lib/components/ui/sidebar/SidebarState.svelte';
     import { useApp } from '$lib/app/hooks/useApp.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
-    import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
+    import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 
     const sidebar = useSidebar()
 
@@ -26,10 +26,8 @@
     let open = $state(false)
 
     const current = $derived.by(() => {
-        const module = modules.find(candidate => {
-            const prefix = getModuleRoutePrefix(candidate.plugin.name, candidate.name, candidate.plugin.isCorePlugin);
-            return app.router.isActive(prefix, {startsWith: true});
-        });
+        const module = modules.find(candidate =>
+            app.router.isRouteActive(getModuleRouteGroupName(candidate.plugin.name, candidate.name)));
         return module ? `${module.plugin.name}:${module.name}` : commands[0]?.value;
     })
 
