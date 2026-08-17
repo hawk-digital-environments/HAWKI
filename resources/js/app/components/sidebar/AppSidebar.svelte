@@ -12,15 +12,14 @@
     import ModuleSelector from '$lib/app/components/sidebar/ModuleSelector.svelte';
     import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
+    import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
 
     const app = useApp();
     // The sidebar lives outside the RouterView subtree, so the router context
     // set there is not reachable — the app-level handle is used instead.
-    const activeModule = $derived.by(() => app.modules.all.find(module => {
-        const prefix = getModuleRoutePrefix(module.plugin.name, module.name, module.plugin.isCorePlugin);
-        return app.router.isActive(prefix, {startsWith: true});
-    }) ?? null);
+    const activeModule = $derived.by(() => app.modules.all.find(module =>
+        app.router.isRouteActive(getModuleRouteGroupName(module.plugin.name, module.name))
+    ) ?? null);
     const ModuleSidebar = $derived(activeModule?.sidebar?.(app.localization.locale) ?? null);
 </script>
 
