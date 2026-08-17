@@ -100,7 +100,9 @@
         const observer = new ResizeObserver(() => {
             if (keepScrolledToBottom) region.scrollTop = region.scrollHeight;
         });
-        observer.observe(messages);
+        // border-box, so the pin also fires when the reserved composer-dock
+        // padding is measured/updated after the messages already rendered.
+        observer.observe(messages, {box: 'border-box'});
         return () => observer.disconnect();
     });
 
