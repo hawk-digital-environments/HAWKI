@@ -37,6 +37,9 @@
     let messageToDelete = $state<ChatMessageType | null>(null);
     let scrollRegion = $state<HTMLDivElement | null>(null);
     let messagesElement = $state<HTMLDivElement | null>(null);
+    let composerDock = $state<HTMLDivElement | null>(null);
+    let composerDockHeight = $state(0);
+    let scrollbarGutter = $state(0);
     let previousConversationSlug: string | null = null;
     let previousMessageCount = 0;
     let keepScrolledToBottom = false;
@@ -99,6 +102,41 @@
         });
         observer.observe(messages);
         return () => observer.disconnect();
+    });
+
+    // The composer floats above the scroll region, so the messages reserve its
+    // height as bottom padding — track it since the composer grows with input.
+    $effect(() => {
+        const dock = composerDock;
+        if (!dock || typeof ResizeObserver === 'undefined') return;
+
+        const observer = new ResizeObserver(() => {
+            composerDockHeight = dock.offsetHeight;
+        });
+        observer.observe(dock);
+        return () => {
+            observer.disconnect();
+            composerDockHeight = 0;
+        };
+    });
+
+    // The messages centre themselves inside the scroll region minus its
+    // scrollbar, while the dock spans the full panel — mirror the scrollbar
+    // width as dock padding so the composer stays aligned with the text.
+    $effect(() => {
+        const region = scrollRegion;
+        if (!region || typeof ResizeObserver === 'undefined') return;
+
+        // The content box shrinks when the scrollbar (dis)appears, so this
+        // also fires without the region's outer size changing.
+        const observer = new ResizeObserver(() => {
+            scrollbarGutter = region.offsetWidth - region.clientWidth;
+        });
+        observer.observe(region);
+        return () => {
+            observer.disconnect();
+            scrollbarGutter = 0;
+        };
     });
 
     $effect(() => {
@@ -203,7 +241,7 @@
     }
 </script>
 
-<section class="chat-page">
+<section class="chat-page" style:--composer-dock-height="{composerDockHeight}px">
     <div class="u-sr-only" role="status" aria-live="polite" aria-atomic="true">
         {liveAnnouncement}
     </div>
@@ -219,56 +257,60 @@
         <header class="new-header"><span>{__('chat.page.newChat')}</span></header>
     {/if}
 
-    <div class="scroll-region" bind:this={scrollRegion} onscroll={updateBottomPin}>
-        {#if store.loading}
-            <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
-        {:else if store.error}
-            <div class="state error">
-                <p>{store.error}</p>
-                {#if slug}
-                    <Button variant="stroke" size="sm" iconLeft={ArrowReloadHorizontalIcon} onclick={() => store.load(slug)}>
-                        {__('chat.page.retry')}
-                    </Button>
-                {/if}
-            </div>
-        {:else if !store.active || store.active.messages.length === 0}
-            <div class="welcome">
-                <span class="welcome-icon" aria-hidden="true"><AiChat01Icon size={28} /></span>
-                <h1>{__('chat.page.welcomeTitle')}</h1>
-                <p>{__('chat.page.welcomeDescription')}</p>
-            </div>
-        {:else}
-            <div
-                class="messages"
-                bind:this={messagesElement}
-                role="log"
-                aria-live="polite"
-                aria-relevant="additions"
-                aria-label={__('chat.page.messageHistory')}
-            >
-                {#each store.active.messages as message (message.message_id)}
-                    <ChatMessage {message} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
-                {/each}
+    <div class="chat-body">
+        <div class="scroll-region" bind:this={scrollRegion} onscroll={updateBottomPin}>
+            {#if store.loading}
+                <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
+            {:else if store.error}
+                <div class="state error">
+                    <p>{store.error}</p>
+                    {#if slug}
+                        <Button variant="stroke" size="sm" iconLeft={ArrowReloadHorizontalIcon} onclick={() => store.load(slug)}>
+                            {__('chat.page.retry')}
+                        </Button>
+                    {/if}
+                </div>
+            {:else if !store.active || store.active.messages.length === 0}
+                <div class="welcome">
+                    <span class="welcome-icon" aria-hidden="true"><AiChat01Icon size={28} /></span>
+                    <h1>{__('chat.page.welcomeTitle')}</h1>
+                    <p>{__('chat.page.welcomeDescription')}</p>
+                </div>
+            {:else}
+                <div
+                    class="messages"
+                    bind:this={messagesElement}
+                    role="log"
+                    aria-live="polite"
+                    aria-relevant="additions"
+                    aria-label={__('chat.page.messageHistory')}
+                >
+                    {#each store.active.messages as message (message.message_id)}
+                        <ChatMessage {message} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
+                    {/each}
+                </div>
+            {/if}
+        </div>
+
+        {#if !store.loading && !store.error}
+            <div class="composer-dock" bind:this={composerDock} style:--scrollbar-gutter="{scrollbarGutter}px">
+                <div class="composer-row">
+                    {#key slug ?? 'new'}
+                        <ChatComposer
+                            context="aiConv"
+                            {transport}
+                            backgroundActive={store.isGenerating(store.active?.slug)}
+                            initialSystemPrompt={store.active?.system_prompt ?? defaultPrompt}
+                            onSystemPromptChange={prompt => store.active && store.updateSystemPrompt(store.active.slug, prompt)}
+                            onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
+                            onReady={value => composer = value}
+                        />
+                    {/key}
+                </div>
+                <p class="disclaimer">{__('chat.page.disclaimer')}</p>
             </div>
         {/if}
     </div>
-
-    {#if !store.loading && !store.error}
-        <div class="composer-dock">
-            {#key slug ?? 'new'}
-                <ChatComposer
-                    context="aiConv"
-                    {transport}
-                    backgroundActive={store.isGenerating(store.active?.slug)}
-                    initialSystemPrompt={store.active?.system_prompt ?? defaultPrompt}
-                    onSystemPromptChange={prompt => store.active && store.updateSystemPrompt(store.active.slug, prompt)}
-                    onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
-                    onReady={value => composer = value}
-                />
-            {/key}
-            <p class="disclaimer">{__('chat.page.disclaimer')}</p>
-        </div>
-    {/if}
 </section>
 
 <ConfirmDialog
@@ -282,10 +324,17 @@
 <style>
     .chat-page {
         display: grid;
-        grid-template-rows: auto minmax(0, 1fr) auto;
+        grid-template-rows: auto minmax(0, 1fr);
         height: 100%;
         min-height: 0;
         background: var(--color-surface-raised);
+    }
+
+    /* Shared canvas for the scroll region and the floating composer: the
+       messages scroll behind the docked composer box. */
+    .chat-body {
+        position: relative;
+        min-height: 0;
     }
 
     .new-header {
@@ -298,13 +347,13 @@
         font-weight: var(--font-weight-semibold);
     }
 
-    .scroll-region { min-height: 0; overflow-y: auto; }
+    .scroll-region { height: 100%; overflow-y: auto; }
 
     .messages {
         display: flex;
         width: min(100%, 52rem);
         margin: 0 auto;
-        padding: var(--space-8) var(--space-5) var(--space-5);
+        padding: var(--space-8) var(--space-5) calc(var(--composer-dock-height, 0px) + var(--space-5));
         flex-direction: column;
         gap: var(--space-7);
     }
@@ -317,6 +366,7 @@
         align-items: center;
         justify-content: center;
         padding: var(--space-6);
+        padding-bottom: calc(var(--composer-dock-height, 0px) + var(--space-6));
         flex-direction: column;
         text-align: center;
     }
@@ -347,8 +397,48 @@
     }
 
     .composer-dock {
-        padding: var(--space-2) var(--space-5) var(--space-3);
-        background: linear-gradient(to top, var(--color-surface-raised) 72%, transparent);
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        z-index: 1;
+        padding-bottom: var(--space-3);
+        padding-right: var(--scrollbar-gutter, 0px);
+        /* Let wheel/click events in the gutters reach the chat behind the
+           dock; the composer row and disclaimer stay interactive. */
+        pointer-events: none;
+    }
+
+    /* The messages stay visible through the translucent composer card; only
+       the very bottom (disclaimer strip) fades them out. Stops short of the
+       scrollbar so it doesn't get tinted by the fade. */
+    .composer-dock::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: var(--scrollbar-gutter, 0px);
+        bottom: 0;
+        height: 5rem;
+        z-index: -1;
+        background: linear-gradient(to top, var(--color-surface-raised) 55%, transparent);
+    }
+
+    .composer-dock > * { pointer-events: auto; }
+
+    /* Mirror a message row's grid (avatar column + content) so the composer
+       card lines up exactly with the message text column. */
+    .composer-row {
+        display: grid;
+        grid-template-columns: 2rem minmax(0, 1fr);
+        gap: var(--space-3);
+        width: min(100%, 52rem);
+        margin-inline: auto;
+        padding-inline: var(--space-5);
+    }
+
+    .composer-row :global(.chat-composer-wrapper) {
+        grid-column: 2;
+        max-width: none;
+        min-width: 0;
     }
 
     .disclaimer {
@@ -368,13 +458,14 @@
     }
 
     @media (max-width: 640px) {
-        .new-header, .messages, .composer-dock { padding-inline: var(--space-3); }
+        .new-header, .messages, .composer-row { padding-inline: var(--space-3); }
         .new-header { padding-left: calc(var(--space-3) + 2.75rem); }
         .messages { padding-top: var(--space-5); }
     }
 
     @media print {
         :global(.app-sidebar), .composer-dock, .new-header, :global(.chat-page > header) { display: none !important; }
-        .chat-page, .scroll-region { display: block; height: auto; overflow: visible; }
+        .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
+        .messages { padding-bottom: var(--space-5); }
     }
 </style>
