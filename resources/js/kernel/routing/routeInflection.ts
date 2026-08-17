@@ -46,3 +46,15 @@ export function getModuleRoutePrefix(pluginName: string, moduleName: string, isC
     const moduleSlug = valueToSlug(moduleName);
     return `${pluginPrefix}/${moduleSlug}`;
 }
+
+/**
+ * Returns the route-group name a module's routes are registered under (see
+ * `createModuleRegistrar`). Pass it to `router.isRouteActive()` to check
+ * whether the module is the one currently shown.
+ *
+ * @example
+ * getModuleRouteGroupName('core', 'chat'); // 'pluginModule.core.chat'
+ */
+export function getModuleRouteGroupName(pluginName: string, moduleName: string): string {
+    return `pluginModule.${pluginName}.${moduleName}`;
+}
