@@ -3,8 +3,10 @@
 namespace App\Console\Commands\Make;
 
 use App\Services\Frontend\Migrations\Make\FrontendMigrationCreator;
+use App\Services\Frontend\Migrations\Make\PluginMigrationHookEnsurer;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 
 class MakeFrontendMigrationCommand extends Command implements PromptsForMissingInput
@@ -14,7 +16,8 @@ class MakeFrontendMigrationCommand extends Command implements PromptsForMissingI
     protected $description = 'Create a new migration file adding a new frontend migration';
 
     public function __construct(
-        readonly FrontendMigrationCreator $creator
+        readonly FrontendMigrationCreator $creator,
+        readonly Filesystem $files
     )
     {
         parent::__construct();
@@ -22,6 +25,18 @@ class MakeFrontendMigrationCommand extends Command implements PromptsForMissingI
 
     public function handle(): void
     {
+        $plugins = $this->availablePlugins();
+
+        if (empty($plugins)) {
+            $this->error('No plugins found in resources/js/plugins/.');
+            return;
+        }
+
+        $plugin = $this->choice(
+            'Which plugin should the JS migration belong to?',
+            $plugins
+        );
+
         $name = Str::snake(trim($this->input->getArgument('name')));
         $runType = $this->choice(
             'When should the JS migration run?',
@@ -37,14 +52,23 @@ class MakeFrontendMigrationCommand extends Command implements PromptsForMissingI
             $runType = trim($this->ask('Enter the run type for the JS migration (e.g. after_login, after_passkey, or any custom identifier)'));
         }
 
-        [$backendMigrationPath, $jsMigrationPath] = $this->creator->create(
+        $result = $this->creator->create(
             name: $name,
-            runType: $runType
+            runType: $runType,
+            plugin: $plugin
         );
 
-        $this->info("Frontend migration created successfully.");
-        $this->line("Backend migration: " . $backendMigrationPath);
-        $this->line("JS migration: " . $jsMigrationPath);
+        $this->info('Frontend migration created successfully.');
+        $this->line('Backend migration: ' . $result['backendPath']);
+        $this->line('JS migration:      ' . $result['jsPath']);
+
+        $pluginPath = $result['pluginPath'];
+        $pluginStatus = $result['pluginStatus'];
+        if ($pluginStatus === PluginMigrationHookEnsurer::STATUS_ALREADY_CONFIGURED) {
+            $this->line('Plugin file:        ' . $pluginPath . ' (already configured)');
+        } else {
+            $this->line('Plugin file:        ' . $pluginPath . ' (updated: ' . $pluginStatus . ')');
+        }
     }
 
     protected function promptForMissingArgumentsUsing(): array
@@ -52,5 +76,21 @@ class MakeFrontendMigrationCommand extends Command implements PromptsForMissingI
         return [
             'name' => ['What should the migration be named?', 'E.g. update_user_to_new_format'],
         ];
+    }
+
+    private function availablePlugins(): array
+    {
+        $directories = $this->files->directories(resource_path('js/plugins'));
+        $plugins = [];
+
+        foreach ($directories as $directory) {
+            $pluginName = basename($directory);
+            $pluginFiles = $this->files->glob($directory . '/*.plugin.ts');
+            if (!empty($pluginFiles)) {
+                $plugins[] = $pluginName;
+            }
+        }
+
+        return $plugins;
     }
 }
