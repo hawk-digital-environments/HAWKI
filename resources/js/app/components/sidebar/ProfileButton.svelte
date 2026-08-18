@@ -60,7 +60,7 @@
     contentProps={{class: 'profile-menu-content'}}
 >
     {#snippet trigger({props})}
-        <SidebarItem label={userName} {...props}>
+        <SidebarItem label={userName} active={menuOpen} {...props}>
             {#snippet media()}
                 <Avatar src={avatarUrl} name={userName} size={22}/>
             {/snippet}
