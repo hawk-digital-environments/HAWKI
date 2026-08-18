@@ -49,6 +49,8 @@
     }
 
     .module-selector {
-        margin-bottom: var(--space-2);
+        /* Its own group, so it takes the sidebar's group gap like every other
+           boundary in the column. */
+        margin-bottom: var(--nav-group-gap);
     }
 </style>
