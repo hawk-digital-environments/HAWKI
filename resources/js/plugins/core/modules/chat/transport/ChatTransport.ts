@@ -7,6 +7,8 @@ import type {AiMessage} from '$lib/kernel/ai/types.js';
 
 interface ChatTransportOptions {
     onConversationCreated?: (slug: string) => void;
+    /** Shows the first message while the server is still creating its conversation. */
+    onConversationPending?: (message: ChatMessage | null) => void;
 }
 
 export class ChatTransport implements MessageSenderTransportInterface {
@@ -70,6 +72,14 @@ export class ChatTransport implements MessageSenderTransportInterface {
         let generationStarted = false;
         let conversationCreated = false;
         let provisionalTitle: string | null = null;
+        const optimisticMessage = context.mode.isRegen ? null : this.optimisticUserMessage(opt);
+
+        // A new conversation has no slug/cache entry yet. Let ChatIndex render
+        // the message locally while the create request is in flight.
+        if (!targetSlug && optimisticMessage) {
+            this.options.onConversationPending?.(optimisticMessage);
+        }
+
         try {
             if (!targetSlug) {
                 // Title generation is another AI request and can take several
@@ -82,11 +92,14 @@ export class ChatTransport implements MessageSenderTransportInterface {
 
             this.store.beginGeneration(targetSlug);
             generationStarted = true;
+            if (optimisticMessage) this.store.appendMessage(targetSlug, optimisticMessage);
             if (conversationCreated) this.options.onConversationCreated?.(targetSlug);
 
             await this.uploadAttachments(opt);
             if (status.failed) {
+                if (optimisticMessage) this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
                 this.store.finishGeneration(targetSlug);
+                if (conversationCreated) this.options.onConversationPending?.(null);
                 return;
             }
 
@@ -100,10 +113,18 @@ export class ChatTransport implements MessageSenderTransportInterface {
                     content: {text: encrypted, attachments: this.attachmentUuids(opt)},
                     __plainText: sentMessage
                 });
-                this.store.appendMessage(targetSlug, userMessage);
+                if (optimisticMessage) {
+                    this.store.replaceMessage(targetSlug, optimisticMessage.message_id, userMessage);
+                } else {
+                    this.store.appendMessage(targetSlug, userMessage);
+                }
             }
         } catch (error) {
+            if (optimisticMessage && targetSlug) {
+                this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
+            }
             if (generationStarted && targetSlug) this.store.finishGeneration(targetSlug);
+            if (conversationCreated || !targetSlug) this.options.onConversationPending?.(null);
             setResponseFailed(this.errorMessage(error));
             return;
         }
@@ -119,6 +140,40 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 }
             }
         });
+    }
+
+    private optimisticUserMessage(opt: MessageSenderTransportOptions): ChatMessage {
+        const user = this.app.authenticatedConnection.userinfo;
+        const timestamp = new Date().toISOString();
+
+        return {
+            author: {
+                username: user.username,
+                name: user.name,
+                avatar_url: this.app.uriBuilder.storageFileUri(user.avatar) ?? ''
+            },
+            completion: 1,
+            content: {
+                text: opt.context.message,
+                attachments: opt.context.attachments.list.map(file => ({
+                    fileData: {
+                        uuid: `pending-${crypto.randomUUID()}`,
+                        name: file.name,
+                        mime: file.type,
+                        type: file.type.startsWith('image/') ? 'image' : 'document',
+                        category: 'private',
+                        url: ''
+                    }
+                }))
+            },
+            created_at: timestamp,
+            message_id: `pending-${crypto.randomUUID()}`,
+            message_role: 'user',
+            metadata: {tools: null, params: null},
+            model: null,
+            updated_at: timestamp,
+            isPending: true
+        };
     }
 
     private async uploadAttachments(opt: MessageSenderTransportOptions): Promise<void> {

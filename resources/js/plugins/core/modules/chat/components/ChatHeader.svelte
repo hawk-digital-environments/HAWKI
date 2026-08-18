@@ -46,12 +46,6 @@
             {__('chat.page.skipToComposer')}
         </button>
     {/if}
-    {#if generating}
-        <div class="generating" role="status" aria-live="polite">
-            <span class="generating-spinner" aria-hidden="true"></span>
-            <span>{__('chat.page.generating')}</span>
-        </div>
-    {/if}
     <ExportMenu {onExport} />
 </header>
 
