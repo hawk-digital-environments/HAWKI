@@ -91,6 +91,10 @@
                 min-width: 200px;
             }
         }
+
+        :global(.paragraph-node) {
+            margin-top: 0;
+        }
     }
 
     :global(.darkMode) {

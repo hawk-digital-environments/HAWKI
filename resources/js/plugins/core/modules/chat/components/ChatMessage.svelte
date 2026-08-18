@@ -56,7 +56,7 @@
     }
 </script>
 
-<article class="message" class:user={!isAssistant} class:assistant={isAssistant}>
+<article class="message" class:user={!isAssistant} class:assistant={isAssistant} class:pending={message.isPending} aria-busy={message.isPending}>
     <div class="avatar-wrap">
         {#if isAssistant}
             <span class="assistant-avatar" aria-hidden="true"><BotIcon size={18} /></span>
@@ -82,10 +82,14 @@
             {#if message.content.attachments?.length}
                 <div class="attachments">
                     {#each message.content.attachments as attachment (attachment.fileData.uuid)}
-                        <a href={attachment.fileData.url} target="_blank" rel="noreferrer" download={attachment.fileData.name}>
-                            {attachment.fileData.name}
-                        </a>
-                        <button class="remove-attachment" title={__('chat.actions.deleteAttachment')} aria-label={__('chat.actions.deleteAttachment')} onclick={() => onDeleteAttachment(message, attachment.fileData.uuid)}>×</button>
+                        {#if message.isPending}
+                            <span class="pending-attachment">{attachment.fileData.name}</span>
+                        {:else}
+                            <a href={attachment.fileData.url} target="_blank" rel="noreferrer" download={attachment.fileData.name}>
+                                {attachment.fileData.name}
+                            </a>
+                            <button class="remove-attachment" title={__('chat.actions.deleteAttachment')} aria-label={__('chat.actions.deleteAttachment')} onclick={() => onDeleteAttachment(message, attachment.fileData.uuid)}>×</button>
+                        {/if}
                     {/each}
                 </div>
             {/if}
@@ -95,7 +99,7 @@
             {/if}
         </div>
 
-        {#if !message.isStreaming}
+        {#if !message.isStreaming && !message.isPending}
             <div class="actions">
                 <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Copy01Icon} tooltip={__('chat.actions.copy')} onclick={copyMessage} />
                 <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={VolumeHighIcon} tooltip={__('chat.actions.speak')} onclick={speakMessage} />
@@ -136,6 +140,8 @@
 
     .message-column { min-width: 0; }
 
+    .pending { opacity: 0.72; }
+
     .meta {
         display: flex;
         align-items: baseline;
@@ -169,7 +175,8 @@
         margin-top: var(--space-2);
     }
 
-    .attachments a {
+    .attachments a,
+    .pending-attachment {
         padding: var(--space-1) var(--space-2);
         border: var(--border);
         border-radius: var(--corner-sm);

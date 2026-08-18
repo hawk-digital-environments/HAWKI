@@ -10,6 +10,8 @@ export interface ChatSummary {
 
 export interface ChatMessage extends OldUiConversationMessage {
     citations?: UrlCitation[];
+    /** Client-only message that is visible before it has been persisted. */
+    isPending?: boolean;
     isStreaming?: boolean;
     status?: string;
 }
