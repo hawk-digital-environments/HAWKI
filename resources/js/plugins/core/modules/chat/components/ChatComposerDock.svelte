@@ -73,7 +73,6 @@ padding so the composer stays aligned with the centred message column).
         position: absolute;
         inset-inline: 0;
         bottom: 0;
-        z-index: 1;
         padding-bottom: var(--space-3);
         padding-right: var(--scrollbar-gutter, 0px);
         /* Let wheel/click events in the gutters reach the chat behind the
