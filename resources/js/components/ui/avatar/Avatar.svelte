@@ -50,8 +50,8 @@
         flex-shrink: 0;
         border-radius: var(--corner-full);
         overflow: hidden;
-        background: var(--color-accent-400);
-        color: var(--color-on-interactive);
+        background: var(--color-accent-100);
+        color: var(--color-accent-text);
         font-weight: 600;
         line-height: 1;
         user-select: none;
@@ -59,13 +59,6 @@
 
     .avatar.neutral {
         background: var(--color-active-surface);
-        color: var(--color-active-text);
-    }
-
-    /* Accent stays blue in dark mode, but --color-on-interactive flips to dark
-       ink — match the active sidebar label instead. Only the accent fill needs
-       this; the neutral one carries its own ink. */
-    :global(html.darkMode) .avatar:not(.neutral) {
         color: var(--color-active-text);
     }
 
