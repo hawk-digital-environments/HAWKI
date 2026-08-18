@@ -20,11 +20,11 @@
  * Reaching past this file is the signal that either the need is real and
  * belongs here, or the code doing the reaching is in the wrong place.
  *
- * Two things intentionally keep their deep paths:
+ * Two things intentionally keep their own paths:
  * - The Svelte components, which are imported as `.svelte` files.
- * - `declare module` augmentation of `RouteDataLoaderContextExtensions` (see
- *   `kernel/routing/RoutingExtension.ts`), which has to name the module that
- *   *declares* the interface — a re-export is not a declaration site.
+ * - `extendableTypes.js`, which `declare module` augmentation has to name
+ *   directly — a barrel re-export is not a declaration site. It is a public
+ *   path in its own right, not a reach into the internals.
  */
 
 // =========================================================================
@@ -37,7 +37,7 @@ export {
     type IsActiveOptions,
     type Router,
     type RouterHandle
-} from '$lib/components/ui/routing/logistics/router.svelte.js';
+} from '$lib/components/ui/routing/logistics/router.js';
 
 export {provideDefaultRouterName, useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
 
@@ -85,9 +85,10 @@ export type {
     RouteCacheKeyResolver,
     RouteDataLoader,
     RouteDataLoaderContext,
-    RouteDataLoaderContextExtensions,
     RouteParamsSchema
 } from '$lib/components/ui/routing/logistics/dataLoader.js';
+
+export type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
 
 // =========================================================================
 // Resolution signals

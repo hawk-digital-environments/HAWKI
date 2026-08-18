@@ -23,7 +23,7 @@
  * changes what renders but leaves the URL pointing at a page the user was
  * never actually shown — a bookmark or reload lands back on the guarded
  * route and re-triggers the same swap. `redirect()` closes that gap by
- * updating the URL itself; see `router.svelte.ts`'s `runResolve()` for where
+ * updating the URL itself; see `router.ts`'s `runResolve()` for where
  * the signal is caught and turned into a new resolution.
  */
 import {type Route} from 'universal-router';

@@ -10,7 +10,7 @@ export interface SetRouteInStrategyOptions {
 }
 
 /**
- * Where a `Router` (see `logistics/router.svelte.ts`) reads and writes "the
+ * Where a `Router` (see `logistics/router.ts`) reads and writes "the
  * current path". Swapping the strategy is what turns the same router into a
  * path-based, hash-based, or in-memory-only SPA — see `pathRoutingStrategy`,
  * `hashRoutingStrategy`, and `transientRoutingStrategy` for the concrete

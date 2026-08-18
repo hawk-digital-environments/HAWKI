@@ -18,7 +18,7 @@
  * is also where the types below get their params from the sibling
  * `paramSchema` instead of raw `RouteParams`. `lazyComponent.ts` discovers a
  * component's `config` export when it resolves the module namespace;
- * `router.svelte.ts` runs each node's loader concurrently across the render
+ * `router.ts` runs each node's loader concurrently across the render
  * chain and publishes the results as `Router.nodeData`, which `RouterView`
  * passes to each node as its `data` prop.
  *
@@ -26,21 +26,10 @@
  * loader needs to run at all; the LRU store itself lives in `dataCache.ts`.
  */
 import type {Route, RouteContext, RouteParams} from 'universal-router';
-import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
+import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
+import type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
 import type {UrlParams} from 'universal-router/generateUrls';
 import type {z} from 'zod';
-
-/**
- * Extended by the kernel via declaration merging (see the `declare module`
- * block at the top of `RoutingExtension.ts`, modeled on the same idiom
- * `HawkiAppExtensions` uses) so the routing package can hand loaders
- * app-level services (`app`, `restApi`, ...) without importing the kernel —
- * the `components/ui` → `kernel` direction is deliberately not a dependency.
- * The concrete values are supplied per-router via
- * {@link import('./router.svelte.js').CreateRouterOptions.loaderContext}.
- */
-export interface RouteDataLoaderContextExtensions {
-}
 
 export interface RouteDataLoaderContext<TParams = RouteParams> extends RouteDataLoaderContextExtensions {
     /**
@@ -87,7 +76,7 @@ export interface RouteDataLoaderContext<TParams = RouteParams> extends RouteData
     /**
      * Fails this resolution with an HTTP-style status. Throws — never
      * returns. `404` lands the router on `state: 'notFound'`, anything else
-     * on `state: 'error'` — see `router.svelte.ts`'s `runResolve()`.
+     * on `state: 'error'` — see `router.ts`'s `runResolve()`.
      */
     error: (status: number, message?: string) => never;
 }
@@ -223,7 +212,7 @@ export function resolveCacheKey(nodeId: string, declared: RouteCacheKey | undefi
  * </script>
  * ```
  *
- * `router.svelte.ts` runs `schema.safeParse(rawParams)` for this node before
+ * `router.ts` runs `schema.safeParse(rawParams)` for this node before
  * evaluating its `cacheKey` or running its `loadData` — the parsed (and
  * possibly coerced/transformed) output replaces the raw params for that node
  * everywhere: the cache key context, the loader context, and the component's

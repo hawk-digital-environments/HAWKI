@@ -1,6 +1,6 @@
 /**
  * Component-side access to a `RouterHandle` published into Svelte context by
- * `RouterView` (see `router.svelte.ts` for what a `RouterHandle` exposes).
+ * `RouterView` (see `router.ts` for what a `RouterHandle` exposes).
  *
  * Supports multiple routers on the same page (e.g. a nested "app inside an
  * app" scenario): {@link provideDefaultRouterName} lets an ancestor pin which
@@ -8,7 +8,7 @@
  * falling back to `'app'` when nothing pinned it.
  */
 import {createContext, getContext} from 'svelte';
-import {getRouterContextName, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
+import {getRouterContextName, type RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
 
 const [getDefaultRouterName, setDefaultRouterName] = createContext<string>();
 

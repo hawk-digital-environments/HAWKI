@@ -1,7 +1,7 @@
 /**
  * Control-flow signals a middleware or a `loadData` can raise to redirect the
  * user, or to fail the current resolution with an HTTP-style status. Both are
- * thrown `Error`s, caught by `router.svelte.ts`'s `runResolve()` — see there
+ * thrown `Error`s, caught by `router.ts`'s `runResolve()` — see there
  * for how a redirect re-enters resolution and how an HTTP error maps onto
  * `state: 'notFound'`/`'error'`.
  *

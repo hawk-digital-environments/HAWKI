@@ -1,5 +1,5 @@
 import {collectRouteNodes, type ResolvedRouteNode, resolveNodeParts, resolveRouteNodes, type RouteNode} from '$lib/components/ui/routing/logistics/nodes.js';
-import type {CreateRouterOptions} from '$lib/components/ui/routing/logistics/router.svelte.js';
+import type {CreateRouterOptions} from '$lib/components/ui/routing/logistics/router.js';
 import {type ComponentModuleResolver, resolveLayoutOption} from '$lib/components/ui/routing/logistics/lazyComponent.js';
 import type {HawkiRoute, RouteComponent, RouteLayout, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import type {Route, RouteParams} from 'universal-router';

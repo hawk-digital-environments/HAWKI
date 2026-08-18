@@ -5,7 +5,7 @@
  * preview, or a test — since navigating it has no side effects outside the
  * component tree and resets to `''` when unbound. This is the default
  * strategy when none is specified (see `createStrategy` in
- * `router.svelte.ts`).
+ * `router.ts`).
  */
 import type {RoutingStrategy, SetRouteInStrategyOptions} from '$lib/components/ui/routing/strategy/types.js';
 

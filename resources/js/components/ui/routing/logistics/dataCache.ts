@@ -1,7 +1,7 @@
 /**
  * LRU store for `loadData` results, keyed by the cache key a node's
  * `cacheKey` resolves to (see `dataLoader.ts`). One instance per router,
- * sized by `CreateRouterOptions.dataCacheSize`; `router.svelte.ts`'s
+ * sized by `CreateRouterOptions.dataCacheSize`; `router.ts`'s
  * `runResolve()` is the only writer/reader.
  */
 

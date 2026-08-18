@@ -19,7 +19,7 @@ export type RouteNodeKind = 'layout' | 'page';
 /**
  * A single renderable unit of a route's chain — either a layout or a page.
  * Stamped once at build time by {@link RouteRegistrar} and from then on
- * treated as immutable data; `router.svelte.ts` folds its `id` into the
+ * treated as immutable data; `router.ts` folds its `id` into the
  * default `loadData` cache key (see `defaultCacheKey()` in `dataLoader.ts`).
  */
 export interface RouteNode {

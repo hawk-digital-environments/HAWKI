@@ -63,7 +63,7 @@
 import UniversalRouter, {type Route, type RouteError, type RouteParams} from 'universal-router';
 import {type RouteComponent, type RouteLayout, type RouteLayoutLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {resolveComponentModule} from '$lib/components/ui/routing/logistics/lazyComponent.js';
-import {type RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/logistics/dataLoader.js';
+import type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
 import {createRouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
 import type {AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
 import {RouteHttpError, RouteRedirect, RouteResolutionError} from '$lib/components/ui/routing/logistics/signals.js';
@@ -542,19 +542,7 @@ export function createRouterFromRegistrar(
         get nodeParams() {
             return state.currentNodeParams;
         },
-        bind: () => {
-            $effect(() => {
-                return state.strategy.bind?.(name, basePath) ?? (() => void 0);
-            });
-
-            $effect(() => {
-                const newPath = normalizePath(state.strategy.get());
-                if (newPath === state.resolvePath) {
-                    return;
-                }
-                void runResolve(newPath);
-            });
-        }
+        bind: () => state.bind((path) => void runResolve(path))
     };
 }
 

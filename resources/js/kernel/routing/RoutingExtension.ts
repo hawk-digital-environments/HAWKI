@@ -12,9 +12,7 @@ declare module '$lib/kernel/extendableTypes.js' {
 // Extends the router context with the app and restApi so the router itself
 // does not need to know about our app or restApi (which comes in handy,
 // when we externalize the components into their own package).
-// Names the declaring module rather than the `index.js` barrel on purpose —
-// augmentation has to target the file the interface is declared in.
-declare module '$lib/components/ui/routing/logistics/dataLoader.js' {
+declare module '$lib/components/ui/routing/extendableTypes.js' {
     interface RouteDataLoaderContextExtensions {
         app: HawkiApp;
         restApi: RestApi;
@@ -49,7 +47,7 @@ declare module '$lib/components/ui/routing/logistics/dataLoader.js' {
  * extension's concern: every compiled route's `action` (built by
  * `RouteRegistrar`'s `buildRouteFromOptions()`/`buildRouteGroupFromOptions()`)
  * just returns a `RouteResultBody` — `{component, context, params}` — and
- * `createRouterFromRegistrar()` (`router.svelte.ts`) is what actually resolves
+ * `createRouterFromRegistrar()` (`router.ts`) is what actually resolves
  * and renders it.
  */
 export class RoutingExtension implements HawkiAppExtension {

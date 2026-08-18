@@ -27,7 +27,7 @@
  *
  * `lazyComponent.ts` discovers the `config` export when it resolves a
  * component's module namespace; `nodes.ts` decides it against any config given
- * at registration; `router.svelte.ts` runs the parts.
+ * at registration; `router.ts` runs the parts.
  */
 import type {RouteParams} from 'universal-router';
 import type {z} from 'zod';

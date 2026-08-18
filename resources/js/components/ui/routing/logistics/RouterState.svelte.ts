@@ -1,9 +1,10 @@
 import type {default as UniversalRouter, RouteContext, RouteError} from 'universal-router';
 import type {RouteComponent, RouteLayout, RouteMeta, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import type {CreateRouterOptions, Router} from '$lib/components/ui/routing/logistics/router.svelte.js';
+import type {CreateRouterOptions, Router} from '$lib/components/ui/routing/logistics/router.js';
 import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
 import type {RouterNodeTree} from '$lib/components/ui/routing/logistics/nodeTree.js';
 import type {RouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
+import {normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
 
 export class RouterState {
     public currentState: Router['state'] = $state('loading');
@@ -23,6 +24,31 @@ export class RouterState {
      * this field.
      */
     private currentRun: AbortController | null = null;
+
+    /**
+     * Wires the routing strategy into the router for the lifetime of the
+     * calling component — reached through `Router.bind()`, which `RouterView`
+     * calls once during its init.
+     *
+     * Must run during a component's initialisation: `$effect` registers against
+     * whatever component is currently initialising, which is also what ties the
+     * strategy's teardown to that component being destroyed.
+     *
+     * `runResolve` is passed in rather than held on the state because resolving
+     * is `router.ts`'s job — this class only owns the reactive fields the
+     * resolution publishes into.
+     */
+    public bind(runResolve: (path: string) => void): void {
+        $effect(() => this.strategy.bind?.(this.name, this.basePath) ?? (() => void 0));
+
+        $effect(() => {
+            const newPath = normalizePath(this.strategy.get());
+            if (newPath === this.resolvePath) {
+                return;
+            }
+            runResolve(newPath);
+        });
+    }
 
     public constructor(
         public readonly name: string,

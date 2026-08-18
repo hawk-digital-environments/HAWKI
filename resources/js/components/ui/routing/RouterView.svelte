@@ -1,5 +1,5 @@
 <!--
-  @component Renders whatever a `Router` (see `logistics/router.svelte.ts`)
+  @component Renders whatever a `Router` (see `logistics/router.ts`)
   currently resolves to: a loading state, the matched page nested in its
   layout stack, the 404 fallback, or an error fallback. Publishes the
   router's `RouterHandle` into Svelte context under `router.contextName`, so
@@ -14,7 +14,7 @@
     import RouteNotFound from '$lib/components/ui/routing/RouteNotFound.svelte';
     import RouteError from '$lib/components/ui/routing/RouteError.svelte';
     import Loader from '$lib/components/ui/loader/Loader.svelte';
-    import {type Router, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
+    import {type Router, type RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
 
     interface Props {
         /** The router instance to render (from `createRouter`/`createRouterFromRegistrar`, or `app.router`). */
