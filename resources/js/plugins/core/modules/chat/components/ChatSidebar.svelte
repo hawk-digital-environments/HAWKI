@@ -8,6 +8,7 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import { fade } from 'svelte/transition';
 
     const store = useStore('chat');
     // Rendered in the app sidebar, outside the RouterView subtree, so the
@@ -42,16 +43,13 @@
                     {#each store.conversations as conversation (conversation.slug)}
                         {@const generating = store.isGenerating(conversation.slug)}
                         {#snippet conversationIcon()}
-                            <span class="conversation-icon">
-                                <Message01Icon size={18} strokeWidth={2} aria-hidden="true" />
-                                {#if generating}
-                                    <span class="generation-indicator" aria-hidden="true"></span>
-                                {/if}
-                            </span>
+                            {#if generating}
+                                <span out:fade class="generation-indicator" aria-hidden="true"></span>
+                            {/if}
                         {/snippet}
                         <SidebarItem
-                            media={conversationIcon}
                             label={conversation.name}
+                            trailing={conversationIcon}
                             active={app.router.isActive(`/chat/${conversation.slug}`)}
                             aria-label={generating
                                 ? `${conversation.name}, ${__('chat.sidebar.generating')}`
@@ -92,16 +90,12 @@
     }
 
     .generation-indicator {
-        position: absolute;
-        right: -0.2rem;
-        bottom: -0.2rem;
-        width: 0.55rem;
-        height: 0.55rem;
+        height: 1rem;
+        aspect-ratio: 1;
         border: 2px solid var(--color-surface);
         border-top-color: var(--color-interactive);
         border-right-color: var(--color-interactive);
         border-radius: 50%;
-        background: var(--color-surface);
         animation: generation-spin 700ms linear infinite;
     }
 

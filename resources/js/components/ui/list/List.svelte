@@ -46,6 +46,7 @@
     import type {Snippet} from 'svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import {createProximityHover} from '$lib/utils/proximityHover.svelte.js';
+    import { fade } from 'svelte/transition';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** The rows (ListItem instances, or anything wrapping them). */
@@ -151,9 +152,12 @@
         // without changing the container box (e.g. a mobile font-size bump).
         const observer = new ResizeObserver(() => reflow());
         observer.observe(el);
+        const reorderObserver = new MutationObserver((mutations) => reflow());
+        reorderObserver.observe(el, {childList: true, subtree: true});
         window.addEventListener('resize', reflow);
         return () => {
             observer.disconnect();
+            reorderObserver.disconnect();
             window.removeEventListener('resize', reflow);
             if (settleTimer) clearTimeout(settleTimer);
         };
@@ -239,6 +243,7 @@
             class:on-active={hoverOnActive}
             class:inset={hoverInset}
             class:no-transition={reflowing}
+            transition:fade={{ duration: 50 }}
             style:top="{hoverRect.top}px"
             style:height="{hoverRect.height}px"
         ></span>
