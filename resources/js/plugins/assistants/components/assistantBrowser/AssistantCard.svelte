@@ -240,8 +240,8 @@
         height: 2rem;
         cursor: pointer;
         transition:
-            background-color var(--transition-fast),
-            transform var(--transition-fast);
+            background-color var(--duration-fast),
+            transform var(--duration-fast);
     }
     /* Same hover feedback as the favourite button. */
     .remix-tag:hover {

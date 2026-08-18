@@ -1,6 +1,4 @@
-@import url("./variables.css");
 @import url("./containers.css");
-@import url("dragDropOverlay.css");
 /* SECTION: GENERALS */
 * {
     /*scrollbar-width: none;*/
@@ -8,10 +6,10 @@
     font-family: "Fira Sans", sans-serif;
     line-height: 1.5;
     box-sizing: border-box;
-    transition: background-color var(--color-transition-duration);
-    -webkit-transition: background-color var(--color-transition-duration);
-    -moz-transition: background-color var(--color-transition-duration);
-    -o-transition: background-color var(--color-transition-duration);
+    transition: background-color var(--duration-fast);
+    -webkit-transition: background-color var(--duration-fast);
+    -moz-transition: background-color var(--duration-fast);
+    -o-transition: background-color var(--duration-fast);
 }
 
 ::-webkit-scrollbar {
@@ -32,13 +30,13 @@
 
 
 p{
-    font-size: var(--font-sm);
+    font-size: var(--font-size-sm);
 }
 
 button{
     border: none;
     background: transparent;
-    color: var(--text-color);
+    color: var(--color-text);
 }
 button:disabled{
     opacity: 0.5;
@@ -48,15 +46,15 @@ input,
 textarea,
 select
 {
-    border: var(--border-stroke-thin);
-    border-radius: var(--border-radius-normal);
+    border: var(--border);
+    border-radius: var(--corner-md);
     min-height: 2.5rem;
     padding: .25rem 1rem;
 }
 
 input::placeholder,
 textarea::placeholder{
-    font-size: var(--font-xs);
+    font-size: var(--font-size-xs);
 }
 
 input:focus,
@@ -72,7 +70,7 @@ textarea{
 label,
 .label
 {
-    font-size: var(--font-sm);
+    font-size: var(--font-size-sm);
     font-weight: bold;
     margin: 0;
 }
@@ -80,11 +78,11 @@ label,
 .faded,
 .faded
 {
-    color: var(--text-faded-color);
+    color: var(--color-text-muted);
 }
 .label-xs
 {
-    font-size: var(--font-xs);
+    font-size: var(--font-size-xs);
 }
 .label-thin{
     font-weight: normal;
@@ -96,7 +94,7 @@ hr{
 }
 .tip{
     margin: .5rem 0 2rem 0;
-    font-size: var(--font-xs);
+    font-size: var(--font-size-xs);
 }
 .margin-bottom-05{
     margin-bottom: .5rem;
@@ -106,7 +104,7 @@ hr{
 
 .content-col{
     height: 100vh;
-    background: var(--background-secondary);
+    background: var(--color-bg-secondary);
     overflow-y: auto;
 }
 .sidebar-col{
@@ -114,7 +112,7 @@ hr{
     display: flex;
     flex-direction: column;
     width: 15rem;
-    border-right: var(--border-stroke-thin);
+    border-right: var(--border);
 }
 
 .context-col{
@@ -130,7 +128,7 @@ hr{
 .page-content{
     margin: 0 5vw;
     padding: 2rem;
-    transition: margin var(--transition-medium);
+    transition: margin var(--duration-medium);
 }
 @media(max-width: 1200px){
     .page-content{
@@ -151,6 +149,6 @@ hr{
 }
 .page-header .page-description{
     margin:0;
-    font-size: var(--font-sm);
-    color: var(--text-faded-color);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
 }

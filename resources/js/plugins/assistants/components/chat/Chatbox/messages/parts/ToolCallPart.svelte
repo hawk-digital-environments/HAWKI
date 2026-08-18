@@ -22,20 +22,20 @@
         align-items: center;
         gap: .35rem;
         flex-wrap: wrap;
-        font-size: var(--font-xs);
+        font-size: var(--font-size-xs);
         padding: .15rem 0;
-        color: var(--accent-color);
+        color: var(--color-accent-text);
     }
     .icon {
-        font-size: var(--font-md);
+        font-size: var(--font-size-base);
     }
     .name {
         font-weight: 600;
     }
     .args {
         font-family: "Fira Mono", ui-monospace, monospace;
-        background: var(--background-secondary);
+        background: var(--color-bg-secondary);
         padding: .1rem .35rem;
-        border-radius: var(--border-radius-tight);
+        border-radius: var(--corner-sm);
     }
 </style>

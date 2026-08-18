@@ -19,7 +19,6 @@
 @import './tokens/borders.css';
 @import './tokens/shadows.css';
 @import './tokens/transitions.css';
-@import './tokens/legacy.css';
 @import './layers/reset.css';
 @import './layers/base.css';
 @import './builder.css';

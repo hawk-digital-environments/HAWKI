@@ -20,9 +20,9 @@
 
 <style>
     .text-part {
-        font-size: var(--font-sm);
+        font-size: var(--font-size-sm);
         line-height: 1.5;
-        color: var(--text-color);
+        color: var(--color-text);
         word-break: break-word;
     }
 
@@ -33,13 +33,13 @@
     .text-part :global(pre) {
         padding: .75rem 1rem;
         margin: .5rem 0;
-        border-radius: var(--border-radius-normal);
+        border-radius: var(--corner-md);
         overflow-x: auto;
     }
 
     .text-part :global(code) {
         font-family: "Fira Mono", ui-monospace, monospace;
-        font-size: var(--font-xs);
+        font-size: var(--font-size-xs);
     }
 
     .text-part :global(ul),

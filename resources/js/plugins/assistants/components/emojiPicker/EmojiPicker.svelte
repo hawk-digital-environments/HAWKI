@@ -109,12 +109,12 @@
         align-items: center;
         justify-content: center;
         background: transparent;
-        color: var(--text-faded-color);
-        transition: color var(--transition-fast, 0.15s) ease;
+        color: var(--color-text-muted);
+        transition: color var(--duration-fast, 0.15s) ease;
     }
 
     .trigger:hover {
-        color: var(--text-color);
+        color: var(--color-text);
     }
 
     .popover {

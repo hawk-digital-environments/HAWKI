@@ -15,15 +15,15 @@
 <style>
     .user-message {
         padding: .5rem .75rem;
-        background: var(--accent-color);
-        color: var(--invert-text-color);
-        border: var(--border-stroke-thin);
-        border-radius: var(--border-radius-normal);
+        background: var(--color-accent-fill);
+        color: var(--color-on-accent-fill);
+        border: var(--border);
+        border-radius: var(--corner-md);
     }
 
     .text {
         white-space: pre-wrap;
-        font-size: var(--font-sm);
+        font-size: var(--font-size-sm);
         line-height: 1.5;
         word-break: break-word;
     }

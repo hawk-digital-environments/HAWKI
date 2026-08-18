@@ -28,12 +28,12 @@
 <style>
     .ai-message {
         padding: .5rem .75rem;
-        background: var(--message-ai-bg);
-        border: var(--border-stroke-thin);
-        border-radius: var(--border-radius-normal);
+        background: var(--color-message-ai);
+        border: var(--border);
+        border-radius: var(--corner-md);
     }
 
     .pending {
-        color: var(--text-faded-color);
+        color: var(--color-text-muted);
     }
 </style>

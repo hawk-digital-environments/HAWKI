@@ -18,23 +18,23 @@
         align-items: flex-start;
         gap: .35rem;
         flex-wrap: wrap;
-        font-size: var(--font-xs);
+        font-size: var(--font-size-xs);
         padding: .15rem 0 .15rem 1.25rem;
-        color: var(--text-faded-color);
+        color: var(--color-text-muted);
     }
     .icon {
-        font-size: var(--font-md);
+        font-size: var(--font-size-base);
         color: #16a34a;
     }
     .name {
         font-weight: 600;
-        color: var(--text-color);
+        color: var(--color-text);
     }
     .output {
         font-family: "Fira Mono", ui-monospace, monospace;
-        background: var(--background-secondary);
+        background: var(--color-bg-secondary);
         padding: .1rem .35rem;
-        border-radius: var(--border-radius-tight);
+        border-radius: var(--corner-sm);
         word-break: break-word;
         white-space: pre-wrap;
     }

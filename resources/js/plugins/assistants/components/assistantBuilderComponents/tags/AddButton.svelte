@@ -196,9 +196,9 @@
         border-radius: var(--corner-full);
         cursor: pointer;
         transition:
-            background-color var(--transition-fast),
-            border-color var(--transition-fast),
-            color var(--transition-fast);
+            background-color var(--duration-fast),
+            border-color var(--duration-fast),
+            color var(--duration-fast);
     }
     .add-button:hover{
         color: var(--color-accent-text);
@@ -230,7 +230,7 @@
         background: var(--color-surface-raised);
         border: var(--border);
         border-radius: var(--corner-full);
-        animation: pill-in var(--transition-fast) ease-out;
+        animation: pill-in var(--duration-fast) ease-out;
     }
     @keyframes pill-in {
         from { opacity: 0; transform: scale(0.96); }
@@ -250,8 +250,8 @@
         background: transparent;
         cursor: pointer;
         transition:
-            background-color var(--transition-fast),
-            color var(--transition-fast);
+            background-color var(--duration-fast),
+            color var(--duration-fast);
     }
     .confirm-btn.ready{
         color: var(--color-accent-text);
@@ -309,7 +309,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-0_5);
-        animation: pill-in var(--transition-fast) ease-out;
+        animation: pill-in var(--duration-fast) ease-out;
     }
     .suggestion{
         display: flex;
@@ -322,8 +322,8 @@
         border-radius: var(--corner-sm);
         cursor: pointer;
         transition:
-            background-color var(--transition-fast),
-            color var(--transition-fast);
+            background-color var(--duration-fast),
+            color var(--duration-fast);
     }
     .suggestion:hover{
         background: var(--color-hover);

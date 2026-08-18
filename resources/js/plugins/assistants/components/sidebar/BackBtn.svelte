@@ -24,11 +24,11 @@
         align-items: center;
         column-gap: .5rem;
         padding: .5rem 0;
-        color: var(--text-color);
-        fill: var(--text-color);
-        font-size: var(--font-xs);
+        color: var(--color-text);
+        fill: var(--color-text);
+        font-size: var(--font-size-xs);
         opacity: 0.7;
-        transition: opacity var(--transition-fast);
+        transition: opacity var(--duration-fast);
         user-select: none;
         margin-top: .5rem;
     }

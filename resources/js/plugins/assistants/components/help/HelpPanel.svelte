@@ -137,8 +137,8 @@
         color: var(--color-text-muted);
         cursor: pointer;
         transition:
-            background-color var(--transition-fast),
-            color var(--transition-fast);
+            background-color var(--duration-fast),
+            color var(--duration-fast);
     }
     .close-btn:hover{
         background-color: var(--color-hover);

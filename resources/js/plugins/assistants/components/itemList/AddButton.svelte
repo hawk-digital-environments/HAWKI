@@ -91,7 +91,7 @@
         font-size: var(--font-size-xs);
         border-radius: var(--corner-md);
         border: var(--border);
-        transition: all var(--transition-fast);
+        transition: all var(--duration-fast);
         margin-bottom: .5rem;
         background: var(--color-surface-raised);
 
@@ -127,8 +127,8 @@
         background: transparent;
         cursor: pointer;
         transition:
-            background-color var(--transition-fast),
-            color var(--transition-fast);
+            background-color var(--duration-fast),
+            color var(--duration-fast);
     }
     .confirm-btn:hover{
         color: var(--color-accent-text);

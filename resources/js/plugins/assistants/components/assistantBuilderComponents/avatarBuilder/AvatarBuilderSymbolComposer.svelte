@@ -111,7 +111,7 @@
         background: var(--color-surface-raised);
         border: var(--border);
         border-radius: var(--corner-sm);
-        transition: background-color var(--transition-fast);
+        transition: background-color var(--duration-fast);
     }
     .symbol-group :global(.trigger:hover){
         background: var(--color-hover);
@@ -157,11 +157,11 @@
         width: 100%;
         min-width: 3rem;
         overflow: visible;
-        border: var(--border-stroke-thin);
-        border-radius: var(--border-radius-normal);
+        border: var(--border);
+        border-radius: var(--corner-md);
     }
     .gradient-select.active {
-        border: var(--border-stroke-bold);
+        border: var(--border-strong);
     }
     .gradient-label {
         position: absolute;
@@ -176,7 +176,7 @@
 
         opacity: 0;
         pointer-events: none;
-        transition: opacity var(--transition-medium) ease;
+        transition: opacity var(--duration-medium) ease;
         transition-delay: 0s;
     }
 

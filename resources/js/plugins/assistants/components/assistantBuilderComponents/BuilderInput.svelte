@@ -244,7 +244,7 @@
         border: none;
         cursor: help;
         color: var(--color-text-muted);
-        transition: color var(--transition-fast);
+        transition: color var(--duration-fast);
     }
     .hint-trigger:hover,
     .hint-trigger:focus-visible {

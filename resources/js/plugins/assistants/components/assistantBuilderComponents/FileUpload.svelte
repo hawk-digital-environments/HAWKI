@@ -275,8 +275,8 @@
         width: 100%;
         background-color: var(--color-surface-raised);
         transition:
-            border-color var(--transition-fast),
-            background-color var(--transition-fast);
+            border-color var(--duration-fast),
+            background-color var(--duration-fast);
     }
     .upload-container:hover {
         border-color: var(--color-accent-300);

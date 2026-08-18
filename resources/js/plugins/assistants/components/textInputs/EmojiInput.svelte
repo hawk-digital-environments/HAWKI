@@ -88,13 +88,13 @@
     .input-wrapper {
         display: flex;
         align-items: stretch;
-        border: var(--border-stroke-thin);
-        border-radius: var(--border-radius-normal);
+        border: var(--border);
+        border-radius: var(--corner-md);
         overflow: visible;
     }
 
     .input-wrapper:focus-within {
-        /*border: var(--border-stroke-bold);*/
+        /*border: var(--border-strong);*/
     }
 
     .input-wrapper.disabled {
@@ -113,8 +113,8 @@
         display: flex;
         justify-content: space-between;
         padding: 0 .5rem;
-        color: var(--text-faded-color);
-        font-size: var(--font-xs) !important;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs) !important;
         margin: 0.2rem 0 0 0.2rem;
     }
 </style>

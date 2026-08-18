@@ -96,8 +96,8 @@
         cursor: pointer;
         opacity: 0.85;
         transition:
-            opacity var(--transition-fast),
-            background-color var(--transition-fast);
+            opacity var(--duration-fast),
+            background-color var(--duration-fast);
     }
     .help-element:hover{
         opacity: 1;

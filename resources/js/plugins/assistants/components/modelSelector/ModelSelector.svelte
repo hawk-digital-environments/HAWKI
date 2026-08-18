@@ -60,8 +60,8 @@ const builder = useBuilderContext();
         color: var(--color-text);
         box-shadow: var(--elevation-1);
         transition:
-                border-color var(--transition-fast),
-                box-shadow var(--transition-fast);
+                border-color var(--duration-fast),
+                box-shadow var(--duration-fast);
     }
 
     select:focus-visible {

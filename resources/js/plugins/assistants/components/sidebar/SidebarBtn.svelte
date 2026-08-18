@@ -44,26 +44,26 @@
         text-align: left;
         align-items: center;
         background: none;
-        transition: all var(--transition-fast);
+        transition: all var(--duration-fast);
         cursor: pointer;
-        border-radius: var(--border-radius-normal);
+        border-radius: var(--corner-md);
     }
     button:hover {
-        background: var(--panel-main);
+        background: var(--color-hover);
     }
     button.active{
-        color: var(--accent-color);
-        background: var(--panel-main);
+        color: var(--color-active-text);
+        background: var(--color-active-surface);
     }
     button.active .label{
         font-weight: bold;
     }
     button.active .icon{
-        color: var(--accent-color);
+        color: var(--color-active-text);
     }
     .icon {
         font-size: 1.25rem;
-        transition: all var(--transition-medium);
+        transition: all var(--duration-medium);
 
     }
 </style>

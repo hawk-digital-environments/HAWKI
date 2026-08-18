@@ -67,7 +67,7 @@
     box-shadow: 1px 1px 5px rgba(0.1, 0.1, 0.1, 0.7);
 
     transform: translate(0, 0);
-    transition: all var(--transition-fast);
+    transition: all var(--duration-fast);
     z-index: 100;
     isolation: isolate;
     outline: none;

@@ -76,8 +76,8 @@
         color: var(--color-text);
         cursor: pointer;
         transition:
-            border-color var(--transition-fast),
-            background var(--transition-fast);
+            border-color var(--duration-fast),
+            background var(--duration-fast);
     }
 
     .option:hover:not(:disabled) {

@@ -93,10 +93,10 @@
     }
     .details .name{
         font-weight: bold;
-        font-size: var(--font-sm);
+        font-size: var(--font-size-sm);
     }
     .details .creator {
-        font-size: var(--font-sm);
+        font-size: var(--font-size-sm);
         color: var(--color-text-mute)
     }
     .details .creator-name{
@@ -108,7 +108,7 @@
         display: flex;
         flex-direction: row;
         gap: var(--space-2_5);
-        font-size: var(--font-xs);
+        font-size: var(--font-size-xs);
     }
 
 
@@ -117,8 +117,8 @@
         flex-direction: row;
         gap: var(--space-1_5);
         align-items: start;
-        font-size: var(--font-xs);
-        line-height: var(--font-xs);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-size-xs);
         justify-content: center;
         color: var(--color-accent-500)
     }

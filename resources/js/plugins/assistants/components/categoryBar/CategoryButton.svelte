@@ -39,10 +39,10 @@
         cursor: pointer;
         opacity: 0.9;
         transition:
-            background-color var(--transition-fast),
-            border-color var(--transition-fast),
-            color var(--transition-fast),
-            opacity var(--transition-fast);
+            background-color var(--duration-fast),
+            border-color var(--duration-fast),
+            color var(--duration-fast),
+            opacity var(--duration-fast);
     }
     button:hover{
         opacity: 1;

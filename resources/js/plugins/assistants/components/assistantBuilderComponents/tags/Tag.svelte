@@ -38,7 +38,7 @@
         border-radius: var(--corner-full);
         background-color: var(--color-accent-100);
         color: var(--color-accent-text);
-        transition: background-color var(--transition-fast);
+        transition: background-color var(--duration-fast);
     }
     .tag:hover{
         background-color: var(--color-accent-200);

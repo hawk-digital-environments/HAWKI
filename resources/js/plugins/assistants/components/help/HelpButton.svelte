@@ -35,9 +35,9 @@
         box-shadow: var(--elevation-1);
         cursor: pointer;
         transition:
-            background-color var(--transition-fast),
-            color var(--transition-fast),
-            transform var(--transition-fast);
+            background-color var(--duration-fast),
+            color var(--duration-fast),
+            transform var(--duration-fast);
     }
     .help-button:hover{
         background-color: var(--color-hover);

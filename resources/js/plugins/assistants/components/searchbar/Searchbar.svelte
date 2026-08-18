@@ -43,8 +43,8 @@
         border-radius: var(--corner-md);
         background-color: var(--color-surface-raised);
         transition:
-            border-color var(--transition-fast),
-            box-shadow var(--transition-fast);
+            border-color var(--duration-fast),
+            box-shadow var(--duration-fast);
     }
     .searchbar:focus-within{
         border-color: var(--color-accent-300);

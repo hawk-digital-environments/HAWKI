@@ -4,7 +4,7 @@
 
     let {
         id,
-        color = 'var(--text-color)',
+        color = 'var(--color-text)',
         background = 'oklch(100% 0 0 / 0.25);',
         isActive = false,
         onchange,
@@ -54,8 +54,8 @@
         border-radius: var(--corner-full);
         cursor: pointer;
         transition:
-            background-color var(--transition-fast),
-            transform var(--transition-fast);
+            background-color var(--duration-fast),
+            transform var(--duration-fast);
     }
     .icon{
         display: flex;

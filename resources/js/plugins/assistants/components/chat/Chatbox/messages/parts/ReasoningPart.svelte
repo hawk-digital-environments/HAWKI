@@ -17,7 +17,7 @@
 
 <style>
     .reasoning {
-        border-left: 2px solid var(--text-faded-color);
+        border-left: 2px solid var(--color-text-muted);
         margin: .25rem 0;
         padding-left: .5rem;
     }
@@ -28,16 +28,16 @@
         cursor: pointer;
         background: none;
         border: none;
-        color: var(--text-faded-color);
-        font-size: var(--font-xs);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
         padding: .15rem 0;
     }
     .toggle .icon {
-        font-size: var(--font-md);
+        font-size: var(--font-size-base);
     }
     .text {
-        font-size: var(--font-xs);
-        color: var(--text-faded-color);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
         white-space: pre-wrap;
         padding: .15rem 0;
         word-break: break-word;

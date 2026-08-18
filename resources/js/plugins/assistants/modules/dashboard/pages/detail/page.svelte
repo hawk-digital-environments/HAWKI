@@ -351,7 +351,7 @@
         border-radius: var(--corner-full);
         backdrop-filter: blur(6px);
         cursor: pointer;
-        transition: background-color var(--transition-fast), transform var(--transition-fast);
+        transition: background-color var(--duration-fast), transform var(--duration-fast);
     }
     .back {
         left: var(--space-3);

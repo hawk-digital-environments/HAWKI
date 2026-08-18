@@ -39,8 +39,8 @@
         border-radius: var(--corner-full);
         opacity: 0.7;
         transition:
-            opacity var(--transition-fast),
-            background-color var(--transition-fast);
+            opacity var(--duration-fast),
+            background-color var(--duration-fast);
     }
     button:hover {
         opacity: 1;

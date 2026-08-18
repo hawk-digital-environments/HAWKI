@@ -117,8 +117,8 @@
         border: 1.5px solid var(--color-border-strong);
         position: relative;
         transition:
-            border-color var(--transition-fast),
-            background var(--transition-fast);
+            border-color var(--duration-fast),
+            background var(--duration-fast);
     }
     .radio-indicator.checked{
         border-color: var(--color-accent-text);
