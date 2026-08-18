@@ -26,15 +26,34 @@ export type ComponentOrLoader<TComponent extends Component<any>> = TComponent | 
  * returned — layout identity therefore stays stable across resolutions, which
  * is what keeps a shared layout mounted while navigating between its pages.
  *
- * @example
- * registrar.group('/admin', ..., {
- *     layout: lazyComponent(async () => (await import('./AdminLayout.svelte')).default)
- * });
+ * Internal: every option that takes a layout offers a `lazyLayout` sibling
+ * that applies this for the caller, so registration code never has to.
  */
 export function lazyComponent<TComponent extends Component<any>>(
     loader: ComponentLoader<TComponent>
 ): LazyComponentLoader<TComponent> {
     return Object.assign(loader, {type: LAZY_COMPONENT_MARKER} as const);
+}
+
+/**
+ * Collapses an eager/lazy layout option pair (`layout`/`lazyLayout`,
+ * `rootLayout`/`lazyRootLayout`) into the single value the router stores,
+ * tagging the loader on the way through.
+ *
+ * Refuses to guess when both are set: silently preferring one would leave the
+ * other's component registered nowhere, with nothing at runtime to hint at
+ * which of the two was meant. `describe` names the registration in that error,
+ * since an options object carries nothing else to identify it by.
+ */
+export function resolveLayoutOption<TComponent extends Component<any>>(
+    eager: TComponent | undefined,
+    loader: ComponentLoader<TComponent> | undefined,
+    describe: string
+): ComponentOrLoader<TComponent> | undefined {
+    if (eager && loader) {
+        throw new Error(`${describe} declares both an eager and a lazy layout — set only one of the two.`);
+    }
+    return loader ? lazyComponent(loader) : eager;
 }
 
 export function isLazyComponentLoader(value: unknown): value is LazyComponentLoader<any> {

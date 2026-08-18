@@ -1,6 +1,6 @@
 import {type Route, type RouteContext, type RouteParams, type RouteResult as URRouteResult} from 'universal-router';
 import {buildMiddlewareStack} from '$lib/components/ui/routing/logistics/buildMiddlewareStack.js';
-import {type ComponentLoader, type ComponentOrLoader, lazyComponent} from '$lib/components/ui/routing/logistics/lazyComponent.js';
+import {type ComponentLoader, type ComponentOrLoader, lazyComponent, resolveLayoutOption} from '$lib/components/ui/routing/logistics/lazyComponent.js';
 import type {Component} from 'svelte';
 import type {RouteNode, RouteNodeKind} from '$lib/components/ui/routing/logistics/nodes.js';
 import type {AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
@@ -139,9 +139,21 @@ export interface RouteOptions<TMeta extends RouteMeta = RouteMeta> {
     middlewares?: RouteMiddleware[];
     /**
      * Layout wrapping this route's page, rendered *inside* the layouts of the
-     * groups the route sits in. Use `lazyComponent()` for a loader.
+     * groups the route sits in. Prefer {@link lazyLayout} so the layout stays
+     * out of the initial bundle.
      */
-    layout?: RouteLayoutOrLoader;
+    layout?: RouteLayout;
+    /**
+     * {@link layout}, imported only once this route is actually resolved — the
+     * layout counterpart of {@link RouteRegistrar.lazyRoute}. Declaring both
+     * this and `layout` throws when the registrar builds.
+     *
+     * @example
+     * registrar.lazyRoute('/users', loader, {
+     *     lazyLayout: async () => (await import('./AdminLayout.svelte')).default
+     * });
+     */
+    lazyLayout?: RouteLayoutLoader;
     /**
      * Data handed to the page and all its layouts via the `route` prop's
      * `meta` field. Type it by passing the schema's inferred type as `TMeta`, e.g.
@@ -206,12 +218,24 @@ export interface RouteGroupOptions {
     /**
      * Layout wrapping every route inside this group. Stays mounted while
      * navigating between the group's routes, so it can hold sidebar state,
-     * scroll position or transitions. Use `lazyComponent()` for a loader.
+     * scroll position or transitions. Prefer {@link lazyLayout} so the layout
+     * stays out of the initial bundle.
      *
      * Groups carry no `meta`: meta is the matched route's, and a group layout
      * simply sees the meta of whichever route is currently open inside it.
      */
-    layout?: RouteLayoutOrLoader;
+    layout?: RouteLayout;
+    /**
+     * {@link layout}, imported only once a route inside this group is actually
+     * resolved. Declaring both this and `layout` throws when the registrar
+     * builds.
+     *
+     * @example
+     * registrar.group('/admin', (admin) => { ... }, {
+     *     lazyLayout: async () => (await import('./AdminLayout.svelte')).default
+     * });
+     */
+    lazyLayout?: RouteLayoutLoader;
     /**
      * Params, data loader and cache key for this group's `layout`, built with
      * `configureLayout()`. Same precedence rule as {@link RouteOptions.config}.
@@ -420,6 +444,7 @@ export class RouteRegistrar {
 
     private buildRouteFromOptions(options: RegisteredRouteOptions): Route {
         const path = options.path.replace(/\/$/, ''); // Strip trailing slash for consistency
+        const layout = resolveLayoutOption(options.layout, options.lazyLayout, `Route "${options.path}"`);
 
         // `meta` and `layout` sit on the inner route on purpose: middleware
         // wrappers must stay transparent, and the layout chain is collected by
@@ -435,10 +460,10 @@ export class RouteRegistrar {
             // `universal-router` is happy with.
             action: (ctx, params) => ({component: options.component, context: ctx, params}),
             meta: options.meta,
-            layout: options.layout,
+            layout,
             nodes: {
                 page: buildRouteNode('page', options.component, path, options.name, options.config),
-                layout: options.layout ? buildRouteNode('layout', options.layout, path, options.name, options.layoutConfig) : undefined
+                layout: layout ? buildRouteNode('layout', layout, path, options.name, options.layoutConfig) : undefined
             },
             // An *empty* children list is what turns this into a catch-all:
             // `universal-router` derives `end: !route.children` for its path
@@ -462,15 +487,16 @@ export class RouteRegistrar {
         const innerRegistrar = new RouteRegistrar();
         options.children(innerRegistrar);
         const innerRoutes = innerRegistrar.build();
+        const layout = resolveLayoutOption(options.layout, options.lazyLayout, `Group "${options.path}"`);
 
         const groupRoute: HawkiRoute = {
             name: options.name,
             path: options.path,
             children: innerRoutes,
-            layout: options.layout,
+            layout,
             // A group has no page node — its route has no `action` of its own.
-            nodes: options.layout
-                ? {layout: buildRouteNode('layout', options.layout, options.path ?? '', options.name, options.layoutConfig)}
+            nodes: layout
+                ? {layout: buildRouteNode('layout', layout, options.path ?? '', options.name, options.layoutConfig)}
                 : undefined
         };
 

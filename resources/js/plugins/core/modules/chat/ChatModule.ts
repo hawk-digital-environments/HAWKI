@@ -1,5 +1,5 @@
 import type {HawkiModule} from '$lib/kernel/modules/types.js';
-import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 
 /**
  * The "chat" feature module of the `core` plugin.

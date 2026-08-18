@@ -52,7 +52,7 @@
     import {mergeProps} from 'bits-ui';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {RouteParams} from 'universal-router';
-    import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
 
     // widen so Props can redefine safely
     interface NonConflictingProps extends HTMLAnchorAttributes {

@@ -10,7 +10,7 @@
 -->
 <script module lang="ts">
     import {z} from 'zod';
-    import {configurePage} from '$lib/components/ui/routing/logistics/routeConfig.js';
+    import {configurePage} from '$lib/components/ui/routing/index.js';
 
     export const config = configurePage({
         paramSchema: z.object({id: z.string()}),
@@ -25,7 +25,7 @@
 </script>
 <script lang="ts">
     import Link from '$lib/components/util/link/Link.svelte';
-    import type {RouteProps} from '$lib/components/ui/routing/logistics/routeProps.js';
+    import type {RouteProps} from '$lib/components/ui/routing/index.js';
 
     const {params, data}: RouteProps<typeof config> = $props();
 

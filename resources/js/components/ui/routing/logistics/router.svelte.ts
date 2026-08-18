@@ -61,7 +61,7 @@
  * comment for how it interacts with a resolution that is still in flight.
  */
 import UniversalRouter, {type Route, type RouteError, type RouteParams} from 'universal-router';
-import {type RouteComponent, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {type RouteComponent, type RouteLayout, type RouteLayoutLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {resolveComponentModule} from '$lib/components/ui/routing/logistics/lazyComponent.js';
 import {type RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/logistics/dataLoader.js';
 import {createRouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
@@ -239,9 +239,20 @@ export interface CreateRouterOptions {
     /**
      * Layout wrapping *everything* this router renders — including the 404 and
      * error pages, which have no route of their own to inherit a layout from.
-     * Use `lazyComponent()` for a loader.
+     * Prefer {@link lazyRootLayout} so the layout stays out of the initial bundle.
      */
-    rootLayout?: RouteLayoutOrLoader;
+    rootLayout?: RouteLayout;
+    /**
+     * {@link rootLayout}, imported only once the router resolves for the first
+     * time. Declaring both this and `rootLayout` throws when the router is
+     * created.
+     *
+     * @example
+     * createRouter('app', routes, {
+     *     lazyRootLayout: async () => (await import('./AppLayout.svelte')).default
+     * });
+     */
+    lazyRootLayout?: RouteLayoutLoader;
     /**
      * Params, data loader and cache key for the router-wide `rootLayout`,
      * built with `configureLayout()`. Same precedence rule as

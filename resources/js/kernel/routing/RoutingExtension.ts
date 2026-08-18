@@ -1,6 +1,5 @@
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import {createRouterFromRegistrar, type Router, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
+import {createRouterFromRegistrar, RouteRegistrar, type Router, type RouterHandle} from '$lib/components/ui/routing/index.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {RestApi} from '$lib/kernel/api/RestApi.js';
 
@@ -13,6 +12,8 @@ declare module '$lib/kernel/extendableTypes.js' {
 // Extends the router context with the app and restApi so the router itself
 // does not need to know about our app or restApi (which comes in handy,
 // when we externalize the components into their own package).
+// Names the declaring module rather than the `index.js` barrel on purpose —
+// augmentation has to target the file the interface is declared in.
 declare module '$lib/components/ui/routing/logistics/dataLoader.js' {
     interface RouteDataLoaderContextExtensions {
         app: HawkiApp;

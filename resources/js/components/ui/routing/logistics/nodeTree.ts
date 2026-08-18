@@ -1,6 +1,6 @@
 import {collectRouteNodes, type ResolvedRouteNode, resolveNodeParts, resolveRouteNodes, type RouteNode} from '$lib/components/ui/routing/logistics/nodes.js';
 import type {CreateRouterOptions} from '$lib/components/ui/routing/logistics/router.svelte.js';
-import {type ComponentModuleResolver} from '$lib/components/ui/routing/logistics/lazyComponent.js';
+import {type ComponentModuleResolver, resolveLayoutOption} from '$lib/components/ui/routing/logistics/lazyComponent.js';
 import type {HawkiRoute, RouteComponent, RouteLayout, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import type {Route, RouteParams} from 'universal-router';
 import {makeCacheKey, resolveCacheKey, type RouteCacheKeyContext, type RouteDataLoaderContext} from '$lib/components/ui/routing/logistics/dataLoader.js';
@@ -41,16 +41,17 @@ export function createNodeTree(
     // mints) so two routers that both carry a root layout can never collide,
     // even though neither goes through the module-level node-id counter.
     const rootNode: RouteNode | null = (() => {
-        if (!options?.rootLayout) {
+        const rootLayout = resolveLayoutOption(options?.rootLayout, options?.lazyRootLayout, `Router "${routerName}"`);
+        if (!rootLayout) {
             return null;
         }
 
         return {
             id: `root#${routerName}:layout`,
             kind: 'layout',
-            componentOrLoader: options.rootLayout,
+            componentOrLoader: rootLayout,
             routePath: '/',
-            configOption: options.rootLayoutConfig
+            configOption: options?.rootLayoutConfig
         };
     })();
 
