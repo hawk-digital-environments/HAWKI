@@ -242,6 +242,12 @@ Rendered once per page for either an AI conversation or a group room chat (see
         transition: border-color var(--duration-fast, 150ms) var(--easing-default);
     }
 
+    :global(.chat-composer-card:hover) {
+        /* --color-hover is a fill token and reads almost invisible as a hairline,
+           so deepen it along the accent ramp — same blue, more contrast. */
+        border-color: color-mix(in oklab, var(--color-hover) 45%, var(--color-accent-fill));
+    }
+
     :global(.chat-composer-card--error) {
         border-color: color-mix(in oklch, var(--color-error) 50%, transparent);
     }
