@@ -235,7 +235,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
         border-radius: var(--corner-lg);
         border: var(--border);
         background-color: var(--card-bg);
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(12px);
         overflow: hidden;
         cursor: text;
         transform-origin: bottom;
