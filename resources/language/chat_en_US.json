@@ -18,6 +18,7 @@
             "generating": "Generating response…",
             "responseReady": "The response is complete.",
             "messageHistory": "Message history",
+            "skipToComposer": "Skip to message input",
             "welcomeTitle": "How can I help?",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
             "disclaimer": "AI can make mistakes. Check important information."
