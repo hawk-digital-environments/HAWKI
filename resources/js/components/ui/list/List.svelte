@@ -151,9 +151,16 @@
         // without changing the container box (e.g. a mobile font-size bump).
         const observer = new ResizeObserver(() => reflow());
         observer.observe(el);
+        // Rows can also be reordered or swapped without any box changing (a
+        // keyed list moving the current row to the top), which neither observer
+        // above notices — the highlights would keep sitting on the row that
+        // used to be there.
+        const mutations = new MutationObserver(() => reflow());
+        mutations.observe(el, {childList: true, subtree: true});
         window.addEventListener('resize', reflow);
         return () => {
             observer.disconnect();
+            mutations.disconnect();
             window.removeEventListener('resize', reflow);
             if (settleTimer) clearTimeout(settleTimer);
         };
