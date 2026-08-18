@@ -88,8 +88,8 @@
         width: 0.7rem;
         height: 0.7rem;
         border: 2px solid var(--color-border);
-        border-top-color: var(--color-interactive);
-        border-right-color: var(--color-interactive);
+        border-top-color: var(--color-accent-500);
+        border-right-color: var(--color-accent-500);
         border-radius: 50%;
         animation: generation-spin 700ms linear infinite;
     }
@@ -98,7 +98,7 @@
 
     @media (prefers-reduced-motion: reduce) {
         .generation-indicator {
-            border-color: var(--color-interactive);
+            border-color: var(--color-accent-500);
             animation: none;
         }
     }
