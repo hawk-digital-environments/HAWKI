@@ -15,12 +15,16 @@
     interface Props {
         /** Brand/logo content, shown only while the nav is open. */
         children?: Snippet;
+        /** Turns the brand box itself into a link to this target. */
+        brandHref?: string;
+        /** Click handler for the brand link, e.g. to route client-side. */
+        onBrandClick?: (event: MouseEvent) => void;
         /** Renders a search action left of the collapse toggle when provided.
             In the rail it moves below the toggle, onto the icon column. */
         onSearch?: () => void;
     }
 
-    const {children, onSearch}: Props = $props();
+    const {children, brandHref, onBrandClick, onSearch}: Props = $props();
 
     const sidebar = useSidebar();
     const {__} = useTranslator();
@@ -43,7 +47,13 @@
 
 <div class="sidebar-header" class:open>
     {#if children}
-        <div class="brand" inert={!open}>{@render children()}</div>
+        <svelte:element
+            this={brandHref ? 'a' : 'div'}
+            class="brand"
+            href={brandHref}
+            onclick={onBrandClick}
+            inert={!open}
+        >{@render children()}</svelte:element>
     {/if}
     {#if onSearch}
         <Tooltip
@@ -174,6 +184,8 @@
            around an 18px glyph — so both hover surfaces have the same inset and
            the same height. */
         width: fit-content;
+        color: inherit;
+        text-decoration: none;
         padding: 0 calc((var(--collapse-size) - var(--nav-icon-size)) / 2);
         border-radius: var(--corner-sm);
         transition:
