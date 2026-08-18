@@ -162,6 +162,8 @@
             },
             "fileChips": {
                 "conflictMessage": "Vom aktuellen Modell nicht unterstützt",
+                "listAriaLabel": "Angehängte Dateien, mit den Pfeiltasten navigieren",
+                "removeFileAriaLabel": "Datei :file entfernen",
                 "uploadError": "Fehler beim Hochladen: :issue"
             },
             "fileDrop": {
@@ -176,7 +178,8 @@
                 "conflictTitleMultiple": ":model unterstützt die folgenden Anforderungen nicht",
                 "singleModelCapable": "Dieses Modell kann alles was du brauchst.",
                 "multipleModelsCapable": "Diese :count Modelle können alles was du brauchst.",
-                "noModelsAvailable": "Kein verfügbares Modell unterstützt diese Kombination. Entferne ein Tool oder einen Anhang."
+                "noModelsAvailable": "Kein verfügbares Modell unterstützt diese Kombination. Entferne ein Tool oder einen Anhang.",
+                "modelListAriaLabel": "Kompatible Modelle, mit den Pfeiltasten navigieren"
             },
             "toolMenuConfig": {
                 "variantLabel": "Variante",

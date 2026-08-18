@@ -33,9 +33,11 @@
         model: AiModel;
         /** If true, the human-readable demand label (e.g. "Low demand") is shown next to the bars. */
         showLabel?: boolean;
+        /** Set to false when the bars sit inside another focusable control, so they do not add a tab stop. */
+        focusable?: boolean;
     }
 
-    const {model, showLabel}: Props = $props();
+    const {model, showLabel, focusable = true}: Props = $props();
 
     const demand = $derived.by(() => {
         if (model.demand === 'low' || model.demand === 'medium' || model.demand === 'high') {
@@ -60,7 +62,7 @@
     const bars = [0, 1, 2] as const;
 </script>
 
-<Tooltip tooltip={tooltip}>
+<Tooltip tooltip={tooltip} {focusable}>
     {#snippet children({props})}
         <span class="load-bars" aria-label={__('chat.composer.demandBars.ariaLabel', {label})} {...props}>
             {#each bars as i (i)}
