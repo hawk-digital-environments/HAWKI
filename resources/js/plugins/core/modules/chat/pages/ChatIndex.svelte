@@ -9,6 +9,7 @@ from the store's in-flight cache.
 <script lang="ts">
     import ChatComposer from '$plugins/core/snippets/ChatComposer.svelte';
     import ChatComposerDock from '$plugins/core/modules/chat/components/ChatComposerDock.svelte';
+    import ChatMessageView from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import ChatWelcome from '$plugins/core/modules/chat/components/ChatWelcome.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -16,6 +17,7 @@ from the store's in-flight cache.
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {ChatTransport} from '$plugins/core/modules/chat/transport/ChatTransport.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
 
     // The index route matches without params; accept (and ignore) the route
     // props so the component satisfies the router's page signature.
@@ -33,10 +35,12 @@ from the store's in-flight cache.
         // conversation was being created.
         onConversationCreated: createdSlug => {
             if (router.isActive('/chat')) void router.goTo(router.p(`/chat/${createdSlug}`));
-        }
+        },
+        onConversationPending: message => pendingMessage = message
     });
 
     let composer = $state<ComposerContext | null>(null);
+    let pendingMessage = $state<ChatMessage | null>(null);
     let scrollRegion = $state<HTMLDivElement | null>(null);
     let composerDockHeight = $state(0);
 
@@ -57,7 +61,21 @@ from the store's in-flight cache.
 
     <div class="chat-body">
         <div class="scroll-region" bind:this={scrollRegion}>
-            <ChatWelcome />
+            {#if pendingMessage}
+                <div class="messages" role="log" aria-live="polite" aria-label={__('chat.page.messageHistory')}>
+                    <ChatMessageView
+                        message={pendingMessage}
+                        onDelete={() => undefined}
+                        onDeleteAttachment={() => undefined}
+                    />
+                    <div class="pending-response" role="status">
+                        <span class="spinner" aria-hidden="true"></span>
+                        <span>{__('chat.page.generating')}</span>
+                    </div>
+                </div>
+            {:else}
+                <ChatWelcome />
+            {/if}
         </div>
 
         <ChatComposerDock {scrollRegion} bind:height={composerDockHeight}>
@@ -98,6 +116,34 @@ from the store's in-flight cache.
     }
 
     .scroll-region { height: 100%; overflow-y: auto; }
+
+    .messages {
+        display: flex;
+        width: min(100%, 52rem);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-5) calc(var(--composer-dock-height, 0px) + var(--space-5));
+        flex-direction: column;
+        gap: var(--space-7);
+    }
+
+    .pending-response {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+    }
+
+    .spinner {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid var(--color-border);
+        border-top-color: var(--color-active-text);
+        border-radius: var(--corner-full);
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (--bp-md-and-smaller) {
         .new-header {
