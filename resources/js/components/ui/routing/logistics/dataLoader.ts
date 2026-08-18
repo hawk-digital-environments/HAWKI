@@ -25,13 +25,14 @@
  * `cacheKey` is evaluated *before* the loader runs, to decide whether the
  * loader needs to run at all; the LRU store itself lives in `dataCache.ts`.
  */
-import type {Route, RouteContext, RouteParams} from 'universal-router';
+import type {Route, RouteParams} from 'universal-router';
 import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
-import type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
+import type {HawkiRouteContext} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {RouteContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
 import type {UrlParams} from 'universal-router/generateUrls';
 import type {z} from 'zod';
 
-export interface RouteDataLoaderContext<TParams = RouteParams> extends RouteDataLoaderContextExtensions {
+export interface RouteDataLoaderContext<TParams = RouteParams> extends RouteContextExtensions {
     /**
      * The owning router — deliberately NOT `app.router`. A nested or
      * transient router's loaders must resolve navigation against the router
@@ -44,7 +45,8 @@ export interface RouteDataLoaderContext<TParams = RouteParams> extends RouteData
     params: TParams;
     /** The path being resolved, already normalized. */
     path: string;
-    context: RouteContext;
+    /** The resolution context the route matched with — the same one its middlewares saw. */
+    context: HawkiRouteContext;
     /**
      * Aborted when this resolution is superseded by a newer navigation. Pass
      * it to `restApi` calls — `FetchOptions extends RequestInit`, so `signal`
@@ -93,10 +95,16 @@ export type RouteDataLoader<TParams = RouteParams> =
 
 /**
  * Context for computing a node's cache key. Deliberately a *smaller* context
- * than {@link RouteDataLoaderContext}: being a plain interface rather than
- * `RouteDataLoaderContextExtensions`, it structurally cannot carry `restApi`
- * or any other app service. The key is evaluated to decide whether the loader
- * needs to run at all, so it must be computable without fetching anything.
+ * than {@link RouteDataLoaderContext}: it does not extend
+ * `RouteContextExtensions`, so `restApi` and the other app services are absent
+ * from its top level. The key is evaluated to decide whether the loader needs
+ * to run at all, so it must be computable without fetching anything.
+ *
+ * The discouragement is only that, not a guarantee — {@link context} is the
+ * same object a middleware receives and does carry those services at runtime,
+ * and `RouteContext`'s `[propName: string]: any` means reaching through it
+ * compiles either way. It is typed as the bare `RouteContext` so that nothing
+ * *invites* it.
  */
 export interface RouteCacheKeyContext<TParams = RouteParams> {
     /** See {@link RouteDataLoaderContext.router}. */
@@ -105,7 +113,7 @@ export interface RouteCacheKeyContext<TParams = RouteParams> {
     params: TParams;
     /** The path being resolved, already normalized. */
     path: string;
-    context: RouteContext;
+    context: HawkiRouteContext;
     /**
      * Builds a cache key from `prefix` plus every matched param, so a
      * hand-written key cannot forget one — the bug this exists to prevent is
@@ -120,6 +128,13 @@ export interface RouteCacheKeyContext<TParams = RouteParams> {
  * Computes a node's cache key, or returns `false` to skip caching for this
  * particular resolution (e.g. `ctx.params.id === 'new'` for a not-yet-created
  * draft that should never be served from a stale cache).
+ *
+ * This runs synchronously on *every* resolution of the node, cache hit or
+ * miss — so keep it to fast, predictable lookups (e.g. `ctx.context.app.config.get()`).
+ * Don't call `restApi` or anything else async from here, and don't fold in a
+ * value that can change on its own (a store, `app` state) — the key would
+ * drift out from under the cache and start evicting other routes' entries
+ * instead of reusing its own.
  */
 export type RouteCacheKeyResolver<TParams = RouteParams> =
     (ctx: RouteCacheKeyContext<TParams>) => string | false;
