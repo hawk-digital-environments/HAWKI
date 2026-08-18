@@ -3,12 +3,10 @@
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
     import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
-    import Message01Icon from '$lib/components/ui/icons/iconset/Message01Icon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import { fade } from 'svelte/transition';
 
     const store = useStore('chat');
     // Rendered in the app sidebar, outside the RouterView subtree, so the
@@ -42,14 +40,16 @@
                 <SidebarItems>
                     {#each store.conversations as conversation (conversation.slug)}
                         {@const generating = store.isGenerating(conversation.slug)}
-                        {#snippet conversationIcon()}
-                            {#if generating}
-                                <span out:fade class="generation-indicator" aria-hidden="true"></span>
-                            {/if}
+                        <!-- History rows are label-only: with every row carrying
+                             the same message icon it added no information. The
+                             leading slot is used solely to mark a conversation
+                             that is still generating. -->
+                        {#snippet generatingIndicator()}
+                            <span class="generation-indicator" aria-hidden="true"></span>
                         {/snippet}
                         <SidebarItem
+                            media={generating ? generatingIndicator : undefined}
                             label={conversation.name}
-                            trailing={conversationIcon}
                             active={app.router.isActive(`/chat/${conversation.slug}`)}
                             aria-label={generating
                                 ? `${conversation.name}, ${__('chat.sidebar.generating')}`
@@ -82,11 +82,6 @@
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
         line-height: var(--line-height-normal);
-    }
-
-    .conversation-icon {
-        position: relative;
-        display: inline-flex;
     }
 
     .generation-indicator {
