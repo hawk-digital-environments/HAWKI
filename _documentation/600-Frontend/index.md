@@ -4,13 +4,12 @@ HAWKI's frontend is a **Svelte 5 + TypeScript** application assembled from a sma
 
 ## How the docs are organised
 
-| Section | What you find there |
-|---|---|
-| [Concepts](200-Concepts/index.md) | "How do I use pattern X" — one page per pattern. The hub everything else links to. |
-| [Architecture](300-Architecture/index.md) | The kernel, boot sequence (including the life-of-a-routed-page walkthrough), modules & routing, plugin internals. Contributor-level. |
-| [Components](400-Components/index.md) | Catalogue of the component library (primitives, utilities, icons). |
-| [Reference](600-Reference/index.md) | Lookup catalogues (shared utilities). Code is truth. |
-| [Technical Debt](900-Technical-Debt.md) | The violations register, audience-tagged. |
+| Section                                 | What you find there                                                                                                             |
+|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| [Concepts](200-Concepts/index.md)       | The kernel, boot sequence, modules, plugins, routing, stores, styling — one page per concept. The hub everything else links to. |
+| [Components](400-Components/index.md)   | Catalogue of the component library (primitives, utilities, icons).                                                              |
+| [Reference](600-Reference/index.md)     | Lookup catalogues (shared utilities). Code is truth.                                                                            |
+| [Technical Debt](900-Technical-Debt.md) | The violations register, audience-tagged.                                                                                       |
 
 Plugin and extension authoring — both frontend and backend — lives in its own top-level section: [Plugins](../800-Plugins/index.md). That section also covers the first-party core plugins.
 
@@ -72,17 +71,17 @@ Path aliases: **`$lib` = `resources/js/`**, **`$plugins` = `resources/js/plugins
 
 ## Where to start
 
-| I want to… | Start here |
-|---|---|
-| Understand the mental model of the app + kernel | [Architecture → The App & Kernel](300-Architecture/100-App-and-Kernel.md) |
-| Walk a routed page end-to-end (from boot to render) | [Architecture → App Startup](300-Architecture/110-App-Startup.md) |
-| Write or restyle a Svelte component | [Concepts → Svelte Components](200-Concepts/100-Svelte-Components.md) → [Styling](200-Concepts/110-Styling.md) |
-| Read or write shared reactive state | [Concepts → Stores](200-Concepts/120-Stores.md) |
-| Fetch data from the server | [Concepts → Data Layer](200-Concepts/130-Data-Layer.md) |
-| Translate a string | [Concepts → Translations](200-Concepts/140-Translations.md) |
-| Use a UI primitive | [Components → UI Primitives](400-Components/100-UI-Primitives.md) |
-| Understand the composer (chat input) | [Plugins → Core Plugins → Chat Module](../800-Plugins/100-Core-Plugins/100-Core/110-Chat-Module.md) |
-| Add a feature (stores, schemas, modules, routes) | [Plugins → Extending HAWKI](../800-Plugins/200-Extending-HAWKI/index.md) |
-| Work with client-side encryption | [Concepts → Encryption](200-Concepts/160-Encryption.md) |
-| Understand frontend migrations | [Concepts → Frontend Migrations](200-Concepts/170-Frontend-Migrations.md) |
-| Understand routing | [Concepts → Routing](200-Concepts/180-Routing.md) |
+| I want to…                                          | Start here                                                                                                     |
+|-----------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| Understand the mental model of the app + kernel     | [Concepts → The App & Kernel](200-Concepts/120-App-and-Kernel/index.md)                                        |
+| Walk a routed page end-to-end (from boot to render) | [Concepts → App Startup](200-Concepts/120-App-and-Kernel/110-App-Startup.md)                                   |
+| Write or restyle a Svelte component                 | [Concepts → Svelte Components](200-Concepts/100-Svelte-Components.md) → [Styling](200-Concepts/110-Styling.md) |
+| Read or write shared reactive state                 | [Concepts → Stores](200-Concepts/130-Stores.md)                                                                |
+| Fetch data from the server                          | [Concepts → Data Layer](200-Concepts/140-Data-Layer.md)                                                        |
+| Translate a string                                  | [Concepts → Translations](200-Concepts/150-Translations.md)                                                    |
+| Use a UI primitive                                  | [Components → UI Primitives](400-Components/100-UI-Primitives.md)                                              |
+| Understand the composer (chat input)                | [Plugins → Core Plugins → Chat Module](../800-Plugins/100-Bundled-Plugins/100-Core/110-Chat-Module.md)         |
+| Add a feature (stores, schemas, modules, routes)    | [Plugins → Extending HAWKI](../800-Plugins/200-Extending-HAWKI/index.md)                                       |
+| Work with client-side encryption                    | [Concepts → Encryption](200-Concepts/170-Encryption.md)                                                        |
+| Understand frontend migrations                      | [Concepts → Frontend Migrations](200-Concepts/180-Frontend-Migrations.md)                                      |
+| Understand routing                                  | [Concepts → Routing](200-Concepts/190-Routing.md)                                                              |

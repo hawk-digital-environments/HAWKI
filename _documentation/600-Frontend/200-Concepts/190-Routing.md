@@ -1,6 +1,6 @@
 # Routing
 
-The frontend router resolves the current URL into a page component wrapped in a stack of layouts, runs each node's data loader, and hands the results to `RouterView` for rendering. This page covers the mental model a page or plugin author needs: the routing tree, how to write pages, apply layouts, use middleware, and add nested routers. For how the router plugs into the kernel and the boot stages, see [Modules & Routing](../300-Architecture/120-Modules-and-Routing.md).
+The frontend router resolves the current URL into a page component wrapped in a stack of layouts, runs each node's data loader, and hands the results to `RouterView` for rendering. This page covers the mental model a page or plugin author needs: the routing tree, how to write pages, apply layouts, use middleware, and add nested routers. For how the router plugs into the kernel and the boot stages, see [Modules & Routing](120-App-and-Kernel/120-Routing-and-Shell.md).
 
 The router lives in `resources/js/components/ui/routing/`. Import its public surface from the barrel:
 
@@ -404,6 +404,6 @@ Augmenting only makes the properties *visible* on the type; `CreateRouterOptions
 
 | I want to…                                                  | Read                                                                                    |
 |-------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| Understand how the router plugs into boot and the SPA shell | [Modules & Routing](../300-Architecture/120-Modules-and-Routing.md)                     |
-| Walk a routed page end-to-end                               | [App Startup](../300-Architecture/110-App-Startup.md)                        |
+| Understand how the router plugs into boot and the SPA shell | [Modules & Routing](120-App-and-Kernel/120-Routing-and-Shell.md)                     |
+| Walk a routed page end-to-end                               | [App Startup](120-App-and-Kernel/110-App-Startup.md)                        |
 | Write a plugin or module that registers routes              | [Writing a Frontend Plugin](../../800-Plugins/200-Extending-HAWKI/100-Writing-a-Frontend-Plugin.md) |

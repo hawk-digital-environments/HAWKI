@@ -175,16 +175,16 @@ The frontend is a custom kernel + plugin system assembled from extensions. Befor
 | Topic | Document |
 |---|---|
 | Tech stack, directory structure, the SPA shell | [Frontend Overview](600-Frontend/index.md) |
-| App assembly, extensions, declaration merging, `app.*` surface | [The App & Kernel](600-Frontend/300-Architecture/100-App-and-Kernel.md) |
-| Boot stages and where each extension registers work | [App Startup](600-Frontend/300-Architecture/110-App-Startup.md) |
-| Modules, routing, and the SPA shell | [Modules & Routing](600-Frontend/300-Architecture/120-Modules-and-Routing.md) |
+| App assembly, extensions, declaration merging, `app.*` surface | [The App & Kernel](600-Frontend/200-Concepts/120-App-and-Kernel/index.md) |
+| Boot stages and where each extension registers work | [App Startup](600-Frontend/200-Concepts/120-App-and-Kernel/110-App-Startup.md) |
+| Modules, routing, and the SPA shell | [Modules & Routing](600-Frontend/200-Concepts/120-App-and-Kernel/120-Routing-and-Shell.md) |
 | Adding a new app-wide subsystem (extension) | [Writing a Frontend Extension](800-Plugins/200-Extending-HAWKI/200-Writing-a-Frontend-Extension.md) |
 | Adding a feature (stores, schemas, modules, routes) | [Writing a Frontend Plugin](800-Plugins/200-Extending-HAWKI/100-Writing-a-Frontend-Plugin.md) |
 | Component authoring conventions | [Svelte Components](600-Frontend/200-Concepts/100-Svelte-Components.md) |
 | CSS tokens, cascade layers, dark mode | [Styling](600-Frontend/200-Concepts/110-Styling.md) |
-| Config, API fetch helpers, resource schemas, hooks | [Data Layer](600-Frontend/200-Concepts/130-Data-Layer.md) |
-| Reactive stores and `useStore()` | [Stores](600-Frontend/200-Concepts/120-Stores.md) |
-| Translations and `useTranslator()` | [Translations](600-Frontend/200-Concepts/140-Translations.md) |
+| Config, API fetch helpers, resource schemas, hooks | [Data Layer](600-Frontend/200-Concepts/140-Data-Layer.md) |
+| Reactive stores and `useStore()` | [Stores](600-Frontend/200-Concepts/130-Stores.md) |
+| Translations and `useTranslator()` | [Translations](600-Frontend/200-Concepts/150-Translations.md) |
 | Available UI primitive components | [UI Primitives](600-Frontend/400-Components/100-UI-Primitives.md) |
 
 ---

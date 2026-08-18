@@ -1,6 +1,6 @@
 # Data Layer
 
-The data layer is the surface between a Svelte component and the HAWKI REST API: runtime configuration, connection metadata, typed fetch helpers, and resource schema validation. All of it is assembled from kernel extensions and reached through the hooks in `app/hooks/`. See [The App & Kernel](../300-Architecture/100-App-and-Kernel.md) for the extension overview.
+The data layer is the surface between a Svelte component and the HAWKI REST API: runtime configuration, connection metadata, typed fetch helpers, and resource schema validation. All of it is assembled from kernel extensions and reached through the hooks in `app/hooks/`. See [The App & Kernel](120-App-and-Kernel/index.md) for the extension overview.
 
 ## Config vs Connection
 
@@ -151,6 +151,6 @@ The same auto-registration and declaration-merging pattern applies to config nam
 
 ## Keychain
 
-The user's encryption keys are exposed reactively through the `keychain` store (`useStore('keychain')`, see [Stores](120-Stores.md#keychainstore)) — `publicKey`, `privateKey`, `aiConvKey`, `roomKeys`, plus a `waitingToLoad` promise that resolves once the initial load completes. All key material is stored on the server in encrypted form and decrypted in-browser on load.
+The user's encryption keys are exposed reactively through the `keychain` store (`useStore('keychain')`, see [Stores](130-Stores.md#keychainstore)) — `publicKey`, `privateKey`, `aiConvKey`, `roomKeys`, plus a `waitingToLoad` promise that resolves once the initial load completes. All key material is stored on the server in encrypted form and decrypted in-browser on load.
 
-For the cryptographic primitives that underpin the keychain (symmetric encryption, asymmetric encryption, key derivation), see [Encryption](160-Encryption.md). The lower-level handle used by the store and migrations lives in `kernel/keychain/keychainHandle.ts`.
+For the cryptographic primitives that underpin the keychain (symmetric encryption, asymmetric encryption, key derivation), see [Encryption](170-Encryption.md). The lower-level handle used by the store and migrations lives in `kernel/keychain/keychainHandle.ts`.

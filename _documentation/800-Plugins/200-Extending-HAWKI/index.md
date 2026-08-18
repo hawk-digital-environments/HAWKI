@@ -23,4 +23,4 @@ This section is being built up. The frontend authoring pages are here; the backe
 | A backend feature (AI provider, tool, JSON:API resource, service) | [Backend Extension Points](../../500-Backend/200-Concepts/220-Extending-HAWKI.md) |
 | A full plugin spanning both sides | Start with the frontend plugin + backend extension points; the unified plugin contract is part of the v3 roadmap. |
 
-For the kernel internals behind these authoring pages (how plugins are discovered, how the bootstrapper dispatches hooks, how modules and routing work), see [Frontend Architecture](../../600-Frontend/300-Architecture/index.md).
+For the kernel internals behind these authoring pages (how plugins are discovered, how the bootstrapper dispatches hooks, how modules and routing work), see [Frontend Concepts](../../600-Frontend/200-Concepts/index.md).

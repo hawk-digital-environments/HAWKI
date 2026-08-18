@@ -208,4 +208,4 @@ The `utils.ts` module is used internally by the other modules — feature code s
 
 ## See Also
 
-For key management — loading, storing, and rotating the user's crypto keys — see `kernel/keychain/keychainHandle.ts`, documented in [Stores → KeychainStore](120-Stores.md#keychainstore).
+For key management — loading, storing, and rotating the user's crypto keys — see `kernel/keychain/keychainHandle.ts`, documented in [Stores → KeychainStore](130-Stores.md#keychainstore).

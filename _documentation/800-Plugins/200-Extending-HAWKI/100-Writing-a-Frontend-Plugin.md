@@ -2,7 +2,7 @@
 
 A **plugin** is HAWKI's unit of feature composition. Instead of every feature reaching into the app directly, a plugin implements the lifecycle hooks it needs — `stores`, `modules`, `routes`, `migrations`, `boot`, … — and the kernel calls them at the right point in startup. The single first-party plugin is `core` (`resources/js/plugins/core/core.plugin.ts`); it registers the core stores, the chat module, the root route, and the core migrations.
 
-Source: `resources/js/kernel/plugins/types.ts` (contract), `kernel/plugins/PluginExtension.ts` (discovery), `kernel/plugins/PluginBootstrapper.ts` (dispatch). For the dispatch internals, see [Architecture → Plugin Internals](../../600-Frontend/300-Architecture/130-Plugin-Internals.md).
+Source: `resources/js/kernel/plugins/types.ts` (contract), `kernel/plugins/PluginExtension.ts` (discovery), `kernel/plugins/PluginBootstrapper.ts` (dispatch). For the dispatch internals, see [Concepts → Plugin Internals](../../600-Frontend/200-Concepts/210-Plugins.md).
 
 :::info[Third-party plugins: not yet]
 Only **built-in** plugins are supported today — they are auto-discovered from `$lib/plugins/**/*.plugin.ts` at build time via `import.meta.glob`, so a plugin must be bundled with the app. Loading third-party (runtime-installed) plugins is planned for a future version; `PluginExtension.autoRegisterInstalledPlugins()` is currently a no-op placeholder. Until then, every plugin is a core plugin.
@@ -81,7 +81,7 @@ declare module '$lib/kernel/extendableTypes.js' {
 }
 ```
 
-Now `app.plugins.get('myPlugin')` returns a typed `MyPlugin` instead of the generic `HawkiPluginWithMetadata`. The same declaration-merging pattern applies to `HawkiResourceSchemas`/`HawkiConfigSchemas` (next to each schema file) and `HawkiDataStores` (next to each store class) — see [Architecture → The App & Kernel](../../600-Frontend/300-Architecture/100-App-and-Kernel.md).
+Now `app.plugins.get('myPlugin')` returns a typed `MyPlugin` instead of the generic `HawkiPluginWithMetadata`. The same declaration-merging pattern applies to `HawkiResourceSchemas`/`HawkiConfigSchemas` (next to each schema file) and `HawkiDataStores` (next to each store class) — see [Concepts → The App & Kernel](../../600-Frontend/200-Concepts/120-App-and-Kernel/index.md).
 
 ---
 
@@ -115,7 +115,7 @@ class Plugin implements HawkiCorePlugin {
 }
 ```
 
-See [Architecture → Modules & Routing](../../600-Frontend/300-Architecture/120-Modules-and-Routing.md) for the `HawkiModule` contract and how routes are prefixed.
+See [Concepts → Modules & Routing](../../600-Frontend/200-Concepts/120-App-and-Kernel/120-Routing-and-Shell.md) for the `HawkiModule` contract and how routes are prefixed.
 
 ### Registering routes
 
@@ -142,7 +142,7 @@ class Plugin implements HawkiCorePlugin {
 ```
 
 :::warning[Dragons — core plugins only]
-Migrations have an unsolved rollback problem and are restricted to core plugins. See [Frontend Migrations](../../600-Frontend/200-Concepts/170-Frontend-Migrations.md) and [Technical Debt](../../600-Frontend/900-Technical-Debt.md).
+Migrations have an unsolved rollback problem and are restricted to core plugins. See [Frontend Migrations](../../600-Frontend/200-Concepts/180-Frontend-Migrations.md) and [Technical Debt](../../600-Frontend/900-Technical-Debt.md).
 :::
 
 ---
@@ -191,9 +191,9 @@ That's the whole wiring — the file's location (`$lib/plugins/myPlugin/myPlugin
 
 | I want to…                                                | Read                                                |
 |-----------------------------------------------------------|-----------------------------------------------------|
-| Understand the extension system plugins plug into         | [Architecture → The App & Kernel](../../600-Frontend/300-Architecture/100-App-and-Kernel.md) |
-| Understand how plugins are discovered and dispatched      | [Architecture → Plugin Internals](../../600-Frontend/300-Architecture/130-Plugin-Internals.md) |
+| Understand the extension system plugins plug into         | [Concepts → The App & Kernel](../../600-Frontend/200-Concepts/120-App-and-Kernel/index.md) |
+| Understand how plugins are discovered and dispatched      | [Concepts → Plugin Internals](../../600-Frontend/200-Concepts/210-Plugins.md) |
 | Add a fundamentally new app-wide subsystem (not a plugin)  | [Writing a Frontend Extension](200-Writing-a-Frontend-Extension.md) |
-| Understand modules and routing                           | [Architecture → Modules & Routing](../../600-Frontend/300-Architecture/120-Modules-and-Routing.md) |
-| See how registered stores are consumed                    | [Concepts → Stores](../../600-Frontend/200-Concepts/120-Stores.md) |
+| Understand modules and routing                           | [Concepts → Modules & Routing](../../600-Frontend/200-Concepts/120-App-and-Kernel/120-Routing-and-Shell.md) |
+| See how registered stores are consumed                    | [Concepts → Stores](../../600-Frontend/200-Concepts/130-Stores.md) |
 | See the full plugin contract                              | `resources/js/kernel/plugins/types.ts`              |

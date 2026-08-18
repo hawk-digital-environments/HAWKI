@@ -6,4 +6,4 @@ Lookup catalogues of shared utilities. Code is truth — these pages point you a
 |---|---|
 | [Utilities](100-Utilities.md) | Small, focused helpers under `$lib/utils/` and the deprecated migration helpers. |
 
-The event dispatchers (`SyncPipeline`, `AsyncPipeline`, `ParallelAsyncWorkflow`) are documented as a concept in [Concepts → Event Pipelines](../200-Concepts/150-Event-Pipelines.md), not here — they're a pattern, not a grab-bag of helpers.
+The event dispatchers (`SyncPipeline`, `AsyncPipeline`, `ParallelAsyncWorkflow`) are documented as a concept in [Concepts → Event Pipelines](../200-Concepts/160-Event-Pipelines.md), not here — they're a pattern, not a grab-bag of helpers.

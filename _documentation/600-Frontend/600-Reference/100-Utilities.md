@@ -155,4 +155,4 @@ Both helpers are deprecated. Use `useApp().migration.hasPending` / `useApp().mig
 | `hasPendingMigrations()` | `useApp().migration.hasPending` |
 | `applyMigrations(runType)` | `useApp().migration.apply(runType)` |
 
-See [Concepts → Frontend Migrations](../200-Concepts/170-Frontend-Migrations.md) for the migration system.
+See [Concepts → Frontend Migrations](../200-Concepts/180-Frontend-Migrations.md) for the migration system.

@@ -32,6 +32,6 @@ plugins/core/
 | I want to… | Read |
 |---|---|
 | Understand the chat composer | [Chat Module](110-Chat-Module.md) |
-| Understand the stores it registers | [Concepts → Stores](../../../600-Frontend/200-Concepts/120-Stores.md) |
-| Understand frontend migrations | [Concepts → Frontend Migrations](../../../600-Frontend/200-Concepts/170-Frontend-Migrations.md) |
+| Understand the stores it registers | [Concepts → Stores](../../../600-Frontend/200-Concepts/130-Stores.md) |
+| Understand frontend migrations | [Concepts → Frontend Migrations](../../../600-Frontend/200-Concepts/180-Frontend-Migrations.md) |
 | Author a plugin of your own | [Extending HAWKI](../../200-Extending-HAWKI/index.md) |

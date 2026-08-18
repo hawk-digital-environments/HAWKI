@@ -4,7 +4,7 @@ HAWKI encrypts user data in the browser. That means the server cannot read, tran
 
 Frontend migrations solve this by splitting each migration into two cooperating files: a PHP file that tracks which users need the migration and optionally collects server-visible context, and a TypeScript file that runs in the user's browser at the right moment and performs the actual data transformation.
 
-For the frontend side of the system — the JS migration runner, run types, the plugin `migrations()` hook, and `MigrationContext` — see [Frontend Migrations (Concepts)](../../../600-Frontend/200-Concepts/170-Frontend-Migrations.md). This page covers the backend half.
+For the frontend side of the system — the JS migration runner, run types, the plugin `migrations()` hook, and `MigrationContext` — see [Frontend Migrations (Concepts)](../../../600-Frontend/200-Concepts/180-Frontend-Migrations.md). This page covers the backend half.
 
 ## Scaffolding
 
@@ -54,7 +54,7 @@ If you omit the closure, the migration is still registered but every user receiv
 
 ### Run type is not a `register()` parameter
 
-The run type (`after_login` / `after_passkey` / custom) is **not** passed to `FrontendMigrator::register()`. It is inferred entirely on the frontend from the JS file's directory (see [Frontend Migrations (Concepts)](../../../600-Frontend/200-Concepts/170-Frontend-Migrations.md#run-types)). The `FrontendMigrationRunType` enum (`AFTER_LOGIN`, `AFTER_PASSKEY`) exists for naming and documentation; the backend does not store or dispatch on it.
+The run type (`after_login` / `after_passkey` / custom) is **not** passed to `FrontendMigrator::register()`. It is inferred entirely on the frontend from the JS file's directory (see [Frontend Migrations (Concepts)](../../../600-Frontend/200-Concepts/180-Frontend-Migrations.md#run-types)). The `FrontendMigrationRunType` enum (`AFTER_LOGIN`, `AFTER_PASSKEY`) exists for naming and documentation; the backend does not store or dispatch on it.
 
 ### Why `down()` always throws
 

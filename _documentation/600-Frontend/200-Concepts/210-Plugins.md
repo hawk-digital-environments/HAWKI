@@ -1,6 +1,10 @@
-# Plugin Internals
+# Plugins
 
-How plugins are discovered and how the kernel dispatches their lifecycle hooks. For authoring a plugin (the contract, examples, declaration merging), see [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md) — this page covers the internals a contributor needs to understand what they're plugging into.
+A plugin is the unit of feature composition for the frontend. Instead of one monolithic app, HAWKI assembles itself from a list of extensions (the kernel's subsystems) and a set of plugins (the features). A plugin implements `HawkiPlugin` (or `HawkiCorePlugin` for built-in plugins that need migration access) and contributes whatever the feature needs: stores, resource schemas, modules, routes, and lifecycle hooks that run at specific boot stages.
+
+The core plugin (`core`) is the only first-party plugin today, bundling the chat module, all core stores, the root route, and the frontend migrations. The structure is designed for more plugins as they land.
+
+For authoring a plugin (the contract, examples, declaration merging), see [Writing a Frontend Plugin](../../800-Plugins/200-Extending-HAWKI/100-Writing-a-Frontend-Plugin.md). This page covers how plugins are discovered and how the kernel dispatches their hooks — the internals a contributor needs to understand what they're plugging into.
 
 Source: `kernel/plugins/PluginExtension.ts` (discovery), `kernel/plugins/PluginBootstrapper.ts` (dispatch), `kernel/plugins/types.ts` (contract).
 
@@ -51,6 +55,7 @@ Two context shapes are passed to plugin hooks:
 | I want to… | Read |
 |---|---|
 | Author a plugin or extension | [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md) |
-| Understand the boot stages hooks dispatch against | [App Startup](110-App-Startup.md) |
-| Understand modules and routing | [Modules & Routing](120-Modules-and-Routing.md) |
+| Understand the boot stages hooks dispatch against | [App Startup](120-App-and-Kernel/110-App-Startup.md) |
+| Understand modules | [Modules](200-Modules.md) |
+| Understand routing | [Routing](190-Routing.md) |
 | See the full plugin contract | `resources/js/kernel/plugins/types.ts` |

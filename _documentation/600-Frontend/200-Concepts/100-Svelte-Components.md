@@ -279,10 +279,10 @@ HAWKI provides a set of hooks in `app/hooks/` that give components typed access 
 | `useApp()` | `HawkiApp` | The root object — reach an extension surface that has no dedicated hook. Prefer a specific hook when one exists. |
 | `useConfig()` | Config extension | Runtime configuration values. |
 | `useConnection()` | Connection snapshot | Auth-state-aware access; narrows with `useAuthenticatedConnection` / `useConnectionWithUserInfo`. |
-| `useStore(name)` | Typed `DataStore` instance | Shared reactive state registered by a plugin. See [Stores](120-Stores.md). |
+| `useStore(name)` | Typed `DataStore` instance | Shared reactive state registered by a plugin. See [Stores](130-Stores.md). |
 | `useRestApi()` | `RestApi` | Typed JSON:API fetches (`getResource`, `getResourceCollection`, `postToResourceAction`, …). |
 | `useLinkPreviewApi()` | `LinkPreviewApi` | Rich link-preview metadata (title, description, image) for a URL. |
-| `useRouter(name?)` | `RouterHandle` | Navigation API (`goTo`, `isActive`, `getPath`, …). See [Routing](180-Routing.md). |
-| `useTranslator()` | Translator | User-facing strings via `__()`. See [Translations](140-Translations.md). |
+| `useRouter(name?)` | `RouterHandle` | Navigation API (`goTo`, `isActive`, `getPath`, …). See [Routing](190-Routing.md). |
+| `useTranslator()` | Translator | User-facing strings via `__()`. See [Translations](150-Translations.md). |
 
-All hooks are available after the `preparation` boot stage. See [Data Layer](130-Data-Layer.md) for the config/connection/REST surface, [Stores](120-Stores.md) for the store registry, and [Routing](180-Routing.md) for the router handle.
+All hooks are available after the `preparation` boot stage. See [Data Layer](140-Data-Layer.md) for the config/connection/REST surface, [Stores](130-Stores.md) for the store registry, and [Routing](190-Routing.md) for the router handle.

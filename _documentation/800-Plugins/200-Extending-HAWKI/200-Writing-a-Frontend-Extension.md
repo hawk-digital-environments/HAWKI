@@ -30,7 +30,7 @@ export type HawkiAppExtension = {
 Both `init` and `ready` are optional. An extension that only contributes a static registry can omit them.
 
 :::warning[No `bootstrapper` singleton]
-`Bootstrapper.ts` exports only the class. Always obtain the instance from the `bootstrapper` parameter your hook receives — do not construct a second one or import a singleton. See [Architecture → App Startup](../../600-Frontend/300-Architecture/110-App-Startup.md).
+`Bootstrapper.ts` exports only the class. Always obtain the instance from the `bootstrapper` parameter your hook receives — do not construct a second one or import a singleton. See [Concepts → App Startup](../../600-Frontend/200-Concepts/120-App-and-Kernel/110-App-Startup.md).
 :::
 
 ---
@@ -146,6 +146,6 @@ public async init(app: UnfinishedHawkiApp) {
 | I want to… | Read |
 |---|---|
 | Add stores, schemas, modules, routes, or migrations | [Writing a Frontend Plugin](100-Writing-a-Frontend-Plugin.md) |
-| Understand assembly order and the boot stages | [Architecture → The App & Kernel](../../600-Frontend/300-Architecture/100-App-and-Kernel.md) and [App Startup](../../600-Frontend/300-Architecture/110-App-Startup.md) |
+| Understand assembly order and the boot stages | [Concepts → The App & Kernel](../../600-Frontend/200-Concepts/120-App-and-Kernel/index.md) and [Concepts → App Startup](../../600-Frontend/200-Concepts/120-App-and-Kernel/110-App-Startup.md) |
 | See a real registry extension | `kernel/stores/StoreExtension.ts`, `kernel/resources/ResourceSchemaExtension.ts` |
 | See a real stage-hooking extension | `kernel/localization/LocalizationExtension.svelte.ts`, `kernel/shell/ShellExtension.svelte.ts` |

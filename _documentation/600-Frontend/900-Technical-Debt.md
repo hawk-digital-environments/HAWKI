@@ -57,7 +57,7 @@ Frontend migrations run **deferred** — only after the user logs in (and, for `
 
 For this reason **migrations are restricted to core plugins** (`HawkiCorePlugin`, not `HawkiPlugin`). Do not introduce migration registration on third-party plugins until the rollback story is settled.
 
-- See [Concepts → Frontend Migrations](200-Concepts/170-Frontend-Migrations.md).
+- See [Concepts → Frontend Migrations](200-Concepts/180-Frontend-Migrations.md).
 
 **Audience:** plugin authors, architects.
 
@@ -79,7 +79,7 @@ For this reason **migrations are restricted to core plugins** (`HawkiCorePlugin`
 
 `RoutingExtension.ready()` builds the router with a hardcoded `basePath: '/new'` to keep the SPA and legacy Blade UI separate during migration. This should be read from config once the SPA is the primary path.
 
-- See [Architecture → Modules & Routing](300-Architecture/120-Modules-and-Routing.md).
+- See [Concepts → Modules & Routing](200-Concepts/120-App-and-Kernel/120-Routing-and-Shell.md).
 
 **Audience:** contributors.
 

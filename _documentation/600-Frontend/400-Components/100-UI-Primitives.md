@@ -28,7 +28,7 @@ Low-level primitive components with no business logic and no dependency on app s
 | `RadioCard`, `RadioCardGroup`           | `ui/radio-card/`      | Card-style radio group — each card is selectable with a spring-animated indicator       |
 | `Citation`, `CitationList`, `CitationReference`, `CitationRoot` | `ui/citations/` | Web-search citation tiles and inline reference chips rendered below AI messages |
 | `Loader`                                | `ui/loader/Loader.svelte` | Swaps its `children` for a spinner while `active` is true — replace content in place rather than overlaying |
-| `RouterView`, `RouteError`, `RouteNotFound` + routing kit | `ui/routing/` | The SPA routing kit: `RouterView` renders the matched route nested in its layout stack; `RouteError`/`RouteNotFound` handle failures. The public surface (barrel `index.ts`, `configurePage`, `useRouter`, strategies) is documented in [Concepts → Routing](../200-Concepts/180-Routing.md); see [Modules & Routing](../300-Architecture/120-Modules-and-Routing.md) for the architecture-level view. |
+| `RouterView`, `RouteError`, `RouteNotFound` + routing kit | `ui/routing/` | The SPA routing kit: `RouterView` renders the matched route nested in its layout stack; `RouteError`/`RouteNotFound` handle failures. The public surface (barrel `index.ts`, `configurePage`, `useRouter`, strategies) is documented in [Concepts → Routing](../200-Concepts/190-Routing.md); see [Modules & Routing](../200-Concepts/120-App-and-Kernel/120-Routing-and-Shell.md) for the architecture-level view. |
 
 ---
 
