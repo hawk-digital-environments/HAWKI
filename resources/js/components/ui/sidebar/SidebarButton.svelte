@@ -45,7 +45,7 @@
             class:collapsed
         >
             <span class="icon-wrap" bind:this={iconEl}>
-                <Icon size={18} strokeWidth={2.25} aria-hidden="true" />
+                <Icon size={18} strokeWidth={2} aria-hidden="true" />
             </span>
             <span class="label">{label}</span>
         </button>
@@ -53,6 +53,27 @@
 </Tooltip>
 
 <style>
+    /* A gradient can't be interpolated, but registered color properties can — so
+       the ramp is built from three @property stops and the hover animates those
+       instead of swapping one background image for another. */
+    @property --brand-stop-1 {
+        syntax: '<color>';
+        inherits: false;
+        initial-value: transparent;
+    }
+
+    @property --brand-stop-2 {
+        syntax: '<color>';
+        inherits: false;
+        initial-value: transparent;
+    }
+
+    @property --brand-stop-3 {
+        syntax: '<color>';
+        inherits: false;
+        initial-value: transparent;
+    }
+
     .sidebar-button {
         display: flex;
         align-items: center;
@@ -64,22 +85,32 @@
         flex-shrink: 0;
         border: 0;
         border-radius: var(--corner-sm);
-        background: var(--gradient-brand);
+        --brand-stop-1: var(--gradient-brand-1);
+        --brand-stop-2: var(--gradient-brand-2);
+        --brand-stop-3: var(--gradient-brand-3);
+        background: linear-gradient(
+            135deg,
+            var(--brand-stop-1),
+            var(--brand-stop-2) 55%,
+            var(--brand-stop-3)
+        );
         color: var(--color-on-accent-fill);
         font: inherit;
         font-size: var(--font-size-nav);
-        font-weight: var(--font-weight-semibold);
         text-align: left;
         white-space: nowrap;
         cursor: pointer;
         transition:
-            background var(--duration-fast),
-            box-shadow var(--duration-fast);
+            --brand-stop-1 var(--duration-fast),
+            --brand-stop-2 var(--duration-fast),
+            --brand-stop-3 var(--duration-fast);
     }
 
+    /* The ramp deepens on hover rather than being washed out by a flat overlay. */
     .sidebar-button:hover {
-        background: var(--gradient-brand-hover);
-        box-shadow: var(--elevation-1);
+        --brand-stop-1: var(--gradient-brand-hover-1);
+        --brand-stop-2: var(--gradient-brand-hover-2);
+        --brand-stop-3: var(--gradient-brand-hover-3);
     }
 
     .sidebar-button:focus-visible {

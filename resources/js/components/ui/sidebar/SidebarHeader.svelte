@@ -109,10 +109,10 @@
         /* Named because the absolutely-positioned brand has to inset itself by
            the same amounts — see below. */
         --header-pad-top: var(--space-1);
-        /* `--space-3` is the sidebar's group gap: the same separation the
-           footer leaves between its action and the profile, so the whole
-           column is one rhythm. */
-        --header-pad-bottom: var(--space-3);
+        /* The sidebar's group gap: the same separation the footer leaves
+           between its action and the profile, so the whole column is one
+           rhythm. */
+        --header-pad-bottom: var(--nav-group-gap);
         /* Horizontal room the actions occupy, for the brand's max-width. */
         --actions-w: var(--collapse-size);
         /* How far a right-aligned action has to slide to land on the rail's icon
@@ -168,7 +168,21 @@
         /* Stop short of the actions so a long logo never runs under them. */
         max-width: calc(100% - var(--actions-w) - var(--space-2));
         overflow: hidden;
-        transition: opacity 160ms ease 100ms;
+        /* Shrink-wrap the logo so the hover surface hugs it instead of spanning
+           the whole free width of the row, and inset it by the rows' own
+           padding so the highlight starts on the same column theirs does. */
+        width: fit-content;
+        padding: 0 calc(var(--nav-item-pad-x) + var(--space-1) / 2);
+        border-radius: var(--corner-sm);
+        transition:
+            opacity 160ms ease 100ms,
+            background var(--duration-fast);
+    }
+
+    /* Same hover surface the header actions use, so the brand reads as part of
+       the same row. Suppressed in the rail, where the brand is faded out. */
+    .sidebar-header.open .brand:hover {
+        background: var(--color-hover);
     }
 
     .sidebar-header:not(.open) .brand {
