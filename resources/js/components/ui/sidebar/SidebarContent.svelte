@@ -58,8 +58,10 @@
         left: var(--space-3);
         z-index: 10;
         display: none;
-        width: 2.5rem;
-        height: 2.5rem;
+        /* Only ever shown at md-and-smaller, where the nav row token is the
+           same 2.5rem square this button used to hardcode. */
+        width: var(--nav-row-h);
+        height: var(--nav-row-h);
         padding: 0;
         align-items: center;
         justify-content: center;

@@ -21,6 +21,6 @@
 
 <!-- Child rows are indented to align with their parent's label; their highlight
      follows suit. -->
-<List {paused} style="--list-inset: calc(var(--space-3) + 18px);">
+<List {paused} style="--list-inset: calc(var(--space-3) + var(--nav-icon-size));">
     {@render children()}
 </List>
