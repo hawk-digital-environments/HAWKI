@@ -4,79 +4,128 @@ HAWKI encrypts user data in the browser. That means the server cannot read, tran
 
 Frontend migrations solve this by splitting each migration into two cooperating files: a PHP file that tracks which users need the migration and optionally collects server-visible context, and a TypeScript file that runs in the user's browser at the right moment and performs the actual data transformation.
 
+For the frontend side of the system — the JS migration runner, run types, the plugin `migrations()` hook, and `MigrationContext` — see [Frontend Migrations (Concepts)](../../../600-Frontend/200-Concepts/170-Frontend-Migrations.md). This page covers the backend half.
+
 ## Scaffolding
 
-```
+```bash
 php artisan make:frontend-migration <name>
 ```
 
-Creates two files: `database/migrations/{timestamp}_{name}_frontend.php` (PHP side) and `resources/js/migrations/{timestamp}_{name}.ts` (TypeScript side).
+The command prompts for the plugin that owns the JS migration (scanning `resources/js/plugins/`), then for the run type. It creates:
+
+- `database/migrations/{timestamp}_{runType}_{name}.php` — the PHP side.
+- `resources/js/plugins/{plugin}/migrations/{runType}/{timestamp}_{runType}_{name}.ts` — the TS side.
+- Updates the selected plugin's `.plugin.ts` to register the migration via `migrations()`.
+
+See the frontend concepts page for the full prompt flow and the plugin hook.
 
 ## PHP side
 
-The PHP migration file follows the standard Laravel migration shape, but `up()` calls `FrontendMigrator::register()` instead of modifying a database schema:
+The generated PHP migration is an anonymous class following the standard Laravel migration shape. Its `up()` calls the `FrontendMigrator` facade (backed by `FrontendMigrationBuilder`) instead of modifying a schema, and `down()` always throws:
 
 ```php
+use App\Models\User;
+use App\Services\Frontend\Migrations\Exceptions\NoDownForFrontendMigrationsExceptionException;
 use App\Services\Frontend\Migrations\Facades\FrontendMigrator;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Migrations\Migration;
 
-class AddRoomKeysV2Frontend extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
-        FrontendMigrator::register(
-            migrationName: __FILE__,
-            userDataFinder: function (User $user): array {
-                // Return server-visible context that the JS migration receives as ctx.data.
-                // Returning null skips this user (migration is applied immediately for them).
-                return [
-                    'roomSlugs' => $user->rooms()->pluck('slug')->all(),
-                ];
-            }
-        );
+        FrontendMigrator::register(__FILE__, static function (User $user, Connection $connection): array|null {
+            // Collect server-visible context the JS migration will receive as ctx.data.
+            // Return null to skip this user (they get ctx.data = undefined).
+            return ['someKey' => $user->some_value];
+        });
     }
 
     public function down(): void
     {
-        throw new \Exception('Frontend migrations cannot be reversed.');
+        throw NoDownForFrontendMigrationsExceptionException::forMigration(__CLASS__);
     }
-}
+};
 ```
 
-`FrontendMigrator::register()` takes a unique `migrationName` (pass `__FILE__` to use the filename) and a `userDataFinder` closure (`Closure(User): array|null`). The closure's return value is serialised and stored encrypted in `frontend_migration_userdata`. This is what the JS migration receives as `ctx.data`.
+`FrontendMigrator::register()` takes the migration name (pass `__FILE__` — the filename stem is used as the stored name) and an optional `$userDataFinder` closure with the signature `Closure(User, Connection): array|null`. The closure runs once per existing user during `php artisan migrate`. Its return value is serialised and stored encrypted in `frontend_migration_userdata`; this is what the JS migration receives as `ctx.data`. Return `null` or `false` to skip a user. The entire `register()` call runs inside a transaction.
+
+If you omit the closure, the migration is still registered but every user receives `ctx.data = undefined`.
+
+### Run type is not a `register()` parameter
+
+The run type (`after_login` / `after_passkey` / custom) is **not** passed to `FrontendMigrator::register()`. It is inferred entirely on the frontend from the JS file's directory (see [Frontend Migrations (Concepts)](../../../600-Frontend/200-Concepts/170-Frontend-Migrations.md#run-types)). The `FrontendMigrationRunType` enum (`AFTER_LOGIN`, `AFTER_PASSKEY`) exists for naming and documentation; the backend does not store or dispatch on it.
 
 ### Why `down()` always throws
 
-Frontend migrations are **intentionally irreversible**. The server cannot re-encrypt data it has never read. If a migration re-encrypts keychain values or rewrites room keys, there is no safe way to undo that without the user's passkey — which the server never holds. `down()` must always throw. If a migration turns out to be wrong, write a new forward migration that corrects the result.
+Frontend migrations are **intentionally irreversible**. The server cannot re-encrypt data it has never read. If a migration re-encrypts keychain values or rewrites room keys, there is no safe way to undo that without the user's passkey — which the server never holds. `down()` must always throw `NoDownForFrontendMigrationsExceptionException`. If a migration turns out to be wrong, write a new forward migration that corrects the result.
 
-## Run types
+### Real-World Example
 
-`FrontendMigrationRunType` controls when the JS migration runs in the browser boot sequence:
+`database/migrations/2026_06_07_215609_after_passkey_upgrade_to_user_keychain_values.php` registers the keychain-format migration, collects each user's legacy encrypted blob in the same step, then drops the old table:
 
-- `AFTER_LOGIN` — immediately after the user's session is established. Use when the migration only needs the user session; no encrypted data access required.
-- `AFTER_PASSKEY` — after the user has entered and verified their passkey. Use when the migration reads or transforms passkey-encrypted data (keychain contents, room keys).
+```php
+public function up(): void
+{
+    FrontendMigrator::register(__FILE__, static function (User $user, Connection $connection): array|null {
+        $userdata = $connection->table('private_user_data')
+            ->select()
+            ->where('user_id', $user->id)
+            ->first();
 
-Specify the run type as a parameter to `FrontendMigrator::register()` (defaults to `AFTER_LOGIN`).
+        if (!$userdata) {
+            return null;
+        }
 
-## TypeScript side
+        return [
+            'blob' => (string)EncryptionUtils::symmetricCryptoValueFromStrings(
+                $userdata->KCIV,
+                $userdata->KCTAG,
+                $userdata->keychain,
+            ),
+        ];
+    });
 
-The TypeScript migration file exports a default function:
-
-```typescript
-import type { MigrationContext } from '@/data/migrations/migrations';
-
-export default async function migrate(ctx: MigrationContext): Promise<void> {
-    const roomSlugs: string[] = ctx.data?.roomSlugs ?? [];
-    for (const slug of roomSlugs) {
-        await ctx.keychain.doUpdatesDeferred(() => {
-            // Batch keychain batch-update calls here.
-        });
-    }
+    Schema::drop('private_user_data');
 }
 ```
 
-`MigrationContext` carries `data` (the deserialised return value of the PHP `userDataFinder` closure), `keychain` (the live `KeychainHandle` instance, giving access to decrypted keys and the `doUpdatesDeferred()` batching helper), and additional context from the connection bootstrap as needed.
+## API Surface
 
-`KeychainHandle.doUpdatesDeferred()` is specifically designed for migrations: it batches all `batch-update` calls and flushes them in a single round-trip to `POST /api/hawki/v1/user-keychain-values/actions/batch-update` at the end of the migration. See [User Keychain](../400-Encryption/420-User-Keychain.md) for the batch-update API.
+The frontend discovers and reports migrations through two JSON:API endpoints under `/api/hawki/v1`:
+
+### Connection bootstrap
+
+`GET /api/hawki/v1/connections/hawki` includes a `migrations_to_apply` integer count when the session is an authenticated native session. `ConnectionFactory` populates it by calling `FrontendMigrationRepository::findAllMigrationsToApplyForUser($user)->count()`. The frontend uses this to short-circuit `app.migration.hasPending` without a second round-trip.
+
+### Migrations resource
+
+`GET /api/hawki/v1/migrations` returns the pending migrations for the authenticated user as `MigrationToApply` value objects. The schema (`MigrationSchema`) exposes two attributes:
+
+| Attribute | Description |
+|---|---|
+| `id` | The migration name (the Laravel migration's filename stem) — used by the frontend to locate the TS module |
+| `data` | The decrypted per-user payload, or `null` if no `userDataFinder` was registered for this migration |
+
+The run type is **not** part of the response — it is inferred from the JS file path on the frontend.
+
+### Marking a migration applied
+
+`POST /api/hawki/v1/migrations/actions/apply` (controller action `markMigrationAsApplied`) takes a `migration_name` body. It:
+
+1. Looks up the `FrontendMigration` by name (404 if unknown).
+2. Deletes the user's `frontend_migration_userdata` row for that migration (the payload is no longer needed).
+3. Inserts an `applied_frontend_migrations` row via `AppliedFrontendMigrationRepository::applyForUser()` — idempotent: if a row already exists it returns the existing record.
+
+## Database Tables
+
+| Table | Purpose |
+|---|---|
+| `frontend_migrations` | One row per registered migration (`migration_name`, `has_userdata`). Written by `FrontendMigrationBuilder::register()`. |
+| `frontend_migration_userdata` | Per-user encrypted payload for migrations that collected context. Dropped per-user once the migration is marked applied. |
+| `applied_frontend_migrations` | One row per (user, migration) pair that has already run in the browser. Acts as the "done" ledger. |
+
+New users are bulk-marked as having applied all currently-registered migrations by `AppliedFrontendMigrationRepository::applyAllForNewUser()` at registration time, so they never receive migrations that predate their account.
 
 ## Lifecycle
 
@@ -85,24 +134,22 @@ User logs in
      │
      ▼
 GET /api/hawki/v1/connections/hawki
-  └─ migrationsToApply: N  ◄── ConnectionFactory counts pending migrations
+  └─ migrations_to_apply: N  ◄── ConnectionFactory counts pending migrations
      │
      ▼ (if N > 0)
 GET /api/hawki/v1/migrations
-  └─ Returns list of MigrationToApply objects (migration name + run type + ctx.data)
+  └─ Returns MigrationToApply objects (id = migration name, data = per-user payload)
      │
-     ├─ AFTER_LOGIN migrations run immediately
+     ├─ after_login migrations run immediately
      │
      ▼ (user enters passkey)
-  AFTER_PASSKEY migrations run
+  after_passkey migrations run
      │
      ▼
 POST /api/hawki/v1/migrations/actions/apply
-  └─ Writes applied_frontend_migrations record for this user
+  └─ Inserts applied_frontend_migrations record for this user
   └─ Deletes the frontend_migration_userdata row for this user
 ```
-
-`ConnectionFactory` calls `FrontendMigrationRepository::findAllMigrationsToApplyForUser($user)->count()` to populate `migrationsToApply` in the connection bootstrap. See [Repositories](../../200-Concepts/130-Repositories.md) for the base pattern.
 
 ## Retry behaviour and idempotency
 

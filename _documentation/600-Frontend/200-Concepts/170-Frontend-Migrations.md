@@ -18,19 +18,15 @@ The frontend side is owned by `MigrationExtension` (`kernel/migrations/Migration
 
 ### End-to-End Flow
 
-1. A developer runs `php artisan make:frontend-migration` to scaffold both a Laravel database migration and a JS migration file.
-2. When the Laravel migration runs (e.g., during `php artisan migrate`), it calls `FrontendMigrationBuilder::register()`, which inserts a record into the database and optionally pre-computes a per-user data payload for every existing user.
+1. A developer runs `php artisan make:frontend-migration` to scaffold both a Laravel database migration and a JS migration file. The command prompts for the plugin that owns the migration (scanning `resources/js/plugins/`), then for the run type. It writes the JS file into the selected plugin's `migrations/` directory and ensures the plugin's `.plugin.ts` registers it — see [Creating a New Migration](#creating-a-new-migration).
+2. When the Laravel migration runs (e.g., during `php artisan migrate`), it calls `FrontendMigrator::register()`, which inserts a record into the database and optionally pre-computes a per-user data payload for every existing user.
 3. After the user authenticates, the server includes a `migrations_to_apply` count in the connection response. The JS side checks this via `app.migration.hasPending`.
 4. `app.migration.apply(runType)` is called with the appropriate run type. It fetches the list of pending migration names and their payloads from the `migrations` API endpoint, then iterates over them:
-   - Each migration is matched by name against the in-memory registry built from the core plugin's `migrations()` glob.
+   - Each migration is matched by name against the in-memory registry built from the plugin's `migrations()` glob.
    - Migrations whose `runType` does not match the current call are skipped.
    - The matching JS module is loaded and its `migrate(ctx)` function is called.
    - If `migrate()` resolves successfully, a `POST` to `actions/apply` marks the migration done on the server.
 5. If `migrate()` throws, the user sees an alert and the error propagates. The migration will be retried on the next login.
-
-:::tip[Prefer `app.migration` over the legacy helpers]
-`kernel/migrations/helpers.ts` exports `applyMigrations(runType)` and `hasPendingMigrations()`, and these are published to legacy code as `window.applyMigrations`. Both are **`@deprecated`** in favour of `useApp().migration.apply(runType)` / `useApp().migration.hasPending`. New code should reach the migration runner through `app.migration`, not the helpers or `window.*`.
-:::
 
 ### Error Handling
 
@@ -46,13 +42,13 @@ Migrations are grouped by when they should execute:
 | `after_passkey` | After the user verifies their passkey (required when the migration needs key material) |
 | custom string | Any identifier — callers must trigger `apply('myType')` manually |
 
-The run type is inferred from the **directory** the JS file lives in under `resources/js/plugins/core/migrations/`:
+The run type is inferred from the **directory** the JS file lives in under `resources/js/plugins/{plugin}/migrations/`:
 
 - Files directly in `migrations/` → `after_login`
 - Files in `migrations/after_passkey/` → `after_passkey`
 - Files in `migrations/my_type/` → `my_type`
 
-No configuration is needed — the directory structure is read at build time via the glob handed to the `MigrationRegistrar` by the core plugin.
+No configuration is needed — the directory structure is read at build time via the glob handed to the `MigrationRegistrar` by the plugin's `migrations()` hook.
 
 :::info[Core plugins only]
 Migrations are a `HawkiCorePlugin` hook (`plugin.migrations()`), not part of the third-party `HawkiPlugin` contract. Only built-in plugins can register migrations. See [Extending HAWKI](../../700-Extending-Hawki/index.md).
@@ -66,7 +62,15 @@ Run the artisan command:
 php artisan make:frontend-migration your_migration_name
 ```
 
-The name is converted to `snake_case`. The command then prompts for the run type:
+The name is converted to `snake_case`. The command then prompts for the plugin that should own the migration — it scans `resources/js/plugins/` and lists every directory containing a `*.plugin.ts` file:
+
+```
+Which plugin should the JS migration belong to?
+  [core]
+  [my_other_plugin]
+```
+
+Next it prompts for the run type:
 
 ```
 When should the JS migration run?
@@ -77,13 +81,16 @@ When should the JS migration run?
 
 Selecting `custom` opens a second prompt for the exact identifier string.
 
-The command creates two files and prints their paths:
+The command creates three things and prints their paths:
 
 ```
 Frontend migration created successfully.
-Backend migration: database/migrations/2026_xx_xx_xxxxxx_create_frontend_migration_your_migration_name.php
-JS migration:      resources/js/plugins/core/migrations/after_passkey/2026_xx_xx_xxxxxx_your_migration_name.ts
+Backend migration: database/migrations/2026_xx_xx_xxxxxx_after_passkey_your_migration_name.php
+JS migration:      resources/js/plugins/core/migrations/after_passkey/2026_xx_xx_xxxxxx_after_passkey_your_migration_name.ts
+Plugin file:        resources/js/plugins/core/core.plugin.ts (already configured)
 ```
+
+The command also ensures the selected plugin's `.plugin.ts` file has a `migrations()` hook that globs its migrations directory (see [Registering Migrations in a Plugin](#registering-migrations-in-a-plugin)). If the hook is already present it reports `already configured`; otherwise it adds the hook, the `MigrationRegistrar` import, and — if needed — upgrades the class from `HawkiPlugin` to `HawkiCorePlugin`.
 
 Run `php artisan migrate` after creation so the backend records the migration and builds any per-user payloads.
 
@@ -113,7 +120,7 @@ The `MigrationContext` fields:
 | `runType` | `string` | The run type this migration is executing under |
 | `name` | `string` | The migration name (matches the filename without extension) |
 | `app` | `HawkiApp` | The fully-assembled app — reach config, stores, restApi, the keychain handle through it |
-| `data` | `any \| undefined` | The per-user payload built by the backend closure; `undefined` if no `userDatafinder` was registered or the finder returned `null`/`false` for this user |
+| `data` | `any \| undefined` | The per-user payload built by the backend closure; `undefined` if no `userDataFinder` was registered or the finder returned `null`/`false` for this user |
 
 ### Real-World Example
 
@@ -130,28 +137,37 @@ The `after_passkey` run type is essential here because the passkey is required t
 
 ## Registering the Backend Migration
 
-The generated Laravel migration file calls `FrontendMigrationBuilder::register()`. The optional `userDataFinder` closure runs once per existing user during `php artisan migrate` and returns the array that becomes `ctx.data` in the JS migration. Return `null` or `false` to skip a user (they will receive `ctx.data = undefined`).
+The backend half of a frontend migration **must live inside a Laravel database migration** — never in a service provider, a boot hook, or anywhere else. The `make:frontend-migration` command generates this migration file for you, pre-wired with a call to the `FrontendMigrator` facade and a `down()` that always throws (frontend migrations cannot be rolled back — see the dragons warning above).
+
+The facade is `App\Services\Frontend\Migrations\Facades\FrontendMigrator`, backed by `FrontendMigrationBuilder`. Its `register()` method takes the migration file (pass `__FILE__`) and an optional `$userDataFinder` closure that runs once per existing user during `php artisan migrate`. The array the closure returns becomes `ctx.data` in the JS migration; return `null` or `false` to skip a user (they receive `ctx.data = undefined`).
 
 ```php
-use App\Services\Frontend\Migrations\FrontendMigrationBuilder;
 use App\Models\User;
+use App\Services\Frontend\Migrations\Exceptions\NoDownForFrontendMigrationsExceptionException;
+use App\Services\Frontend\Migrations\Facades\FrontendMigrator;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Migrations\Migration;
 
-app(FrontendMigrationBuilder::class)->register(
-    migrationName: '2026_xx_xx_xxxxxx_your_migration_name',
-    userDataFinder: function (User $user, Connection $db): array|null {
-        $blob = $db->table('user_keychain')
-            ->where('user_id', $user->id)
-            ->value('blob');
-
-        return $blob ? ['blob' => $blob] : null;
+return new class extends Migration {
+    public function up(): void
+    {
+        FrontendMigrator::register(__FILE__, static function (User $user, Connection $connection): array|null {
+            // Collect the current per-user state the JS migration will receive.
+            // Return null/false to skip this user.
+            return ['someKey' => $user->some_value];
+        });
     }
-);
+
+    public function down(): void
+    {
+        throw NoDownForFrontendMigrationsExceptionException::forMigration(__CLASS__);
+    }
+};
 ```
 
-If no `userDataFinder` is provided, the migration is still registered but every user receives `ctx.data = undefined`.
+If you remove the `$userDataFinder` closure, the migration is still registered but every user receives `ctx.data = undefined`.
 
-The `userDataFinder` closure receives:
+The `$userDataFinder` closure receives:
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -160,6 +176,82 @@ The `userDataFinder` closure receives:
 
 The entire `register()` call runs inside a transaction — inserting the migration record and all per-user data rows is atomic.
 
-## Auto-Discovery
+### Real-World Backend Example
 
-The core plugin's `migrations()` hook lazy-globs every `*.ts` file under `resources/js/plugins/core/migrations/` and hands the loaders to the `MigrationRegistrar`. The run type and migration name are inferred from the file path — no manual import or registration is required in JavaScript. Adding a new file to the correct directory is sufficient for it to be picked up.
+`database/migrations/2026_06_07_215609_after_passkey_upgrade_to_user_keychain_values.php` registers the keychain-format migration and collects each user's legacy encrypted blob in one step, then drops the old table:
+
+```php
+public function up(): void
+{
+    FrontendMigrator::register(__FILE__, static function (User $user, Connection $connection): array|null {
+        $userdata = $connection->table('private_user_data')
+            ->select()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$userdata) {
+            return null;
+        }
+
+        return [
+            'blob' => (string)EncryptionUtils::symmetricCryptoValueFromStrings(
+                $userdata->KCIV,
+                $userdata->KCTAG,
+                $userdata->keychain,
+            ),
+        ];
+    });
+
+    Schema::drop('private_user_data');
+}
+```
+
+Use this as the template whenever the migration needs to hand the JS side a snapshot of the user's current server-side state before transforming it.
+
+## Registering Migrations in a Plugin
+
+Migrations are registered through a core plugin's `migrations()` lifecycle hook, which receives a `MigrationRegistrar`. There are two ways to populate it.
+
+### Option 1 — Module loading helper (recommended)
+
+Let the registrar glob the plugin's migrations directory. Every `*.ts` file under the glob is picked up automatically; the migration name is inferred from the filename stem and the run type from the parent directory. This is what the `make:frontend-migration` command wires into the plugin file:
+
+```ts
+import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
+import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
+
+export default class MyPlugin implements HawkiCorePlugin {
+    readonly name = 'my_plugin';
+
+    public migrations(registrar: MigrationRegistrar): void | Promise<void> {
+        registrar.addFromModules(
+            import.meta.glob('$lib/plugins/my_plugin/migrations/**/*.ts', {eager: false}),
+        );
+    }
+}
+```
+
+Adding a new file under `plugins/my_plugin/migrations/{runType}/` is then the only step needed on the JS side — no manual import or registration call.
+
+### Option 2 — Manual registration
+
+For cases where you want explicit control over which migrations are registered (e.g. a migration loaded from a package outside the glob), call `registrar.add()` directly with the migration name, run type, and a lazy loader:
+
+```ts
+import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
+import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
+
+export default class MyPlugin implements HawkiCorePlugin {
+    readonly name = 'my_plugin';
+
+    public migrations(registrar: MigrationRegistrar): void | Promise<void> {
+        registrar.add(
+            '2026_01_01_120000_after_login_update_user_prefs',
+            'after_login',
+            () => import('$lib/plugins/my_plugin/migrations/after_login/2026_01_01_120000_after_login_update_user_prefs.js'),
+        );
+    }
+}
+```
+
+The name passed to `add()` must match the migration name stored by the backend (the Laravel migration's filename stem). `add()` throws on duplicate names, so collisions surface immediately.
