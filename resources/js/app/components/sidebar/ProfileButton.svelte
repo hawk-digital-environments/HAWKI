@@ -9,6 +9,7 @@
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
     import SettingsDialog from '$lib/app/components/settings/SettingsDialog.svelte';
+    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
     import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
@@ -63,6 +64,9 @@
         <SidebarItem label={userName} active={menuOpen} {...props}>
             {#snippet media()}
                 <Avatar src={avatarUrl} name={userName} size={22}/>
+            {/snippet}
+            {#snippet trailing()}
+                <Settings03Icon size={15} strokeWidth={2}/>
             {/snippet}
         </SidebarItem>
     {/snippet}

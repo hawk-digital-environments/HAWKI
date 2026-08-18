@@ -213,12 +213,13 @@
         padding: 0;
         border: none;
         background: transparent;
-        color: var(--color-text);
-        opacity: 0.85;
+        /* Recedes at rest and comes forward on hover, same as the section
+           switcher's chevron. */
+        color: var(--color-text-muted);
         cursor: pointer;
         border-radius: var(--corner-sm);
         transition:
-            opacity var(--duration-fast),
+            color var(--duration-fast),
             background var(--duration-fast),
             transform 280ms var(--easing-spring);
     }
@@ -261,7 +262,7 @@
     }
 
     .header-action:hover {
-        opacity: 1;
+        color: var(--color-text);
         background: var(--color-hover);
     }
 
