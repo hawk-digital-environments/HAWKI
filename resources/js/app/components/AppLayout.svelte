@@ -10,6 +10,7 @@
     import SidebarContent from '$lib/components/ui/sidebar/SidebarContent.svelte';
     import SidebarContext from '$lib/components/ui/sidebar/SidebarContext.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import Toaster from '$lib/components/ui/toast/Toaster.svelte';
 
     interface Props {
         /** Page content, rendered in the layout's main column. */
@@ -26,6 +27,8 @@
     <SidebarContent>
         {@render children()}
     </SidebarContent>
+
+    <Toaster />
 </SidebarContext>
 
 <style>
