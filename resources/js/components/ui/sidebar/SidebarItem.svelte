@@ -1,5 +1,6 @@
 <!--
-  @component A single nav row. Renders an icon (or custom media) and label, and
+  @component A single nav row. Renders an optional icon (or custom media) and a
+  label — with neither, the row is label-only — and
   registers itself as a ListItem so the enclosing SidebarItems can track it with
   its proximity-hover and active highlights. When given `children` (its
   sub-items) it owns its own chevron and toggles the sub-tree inline — the
@@ -21,7 +22,9 @@
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
 
     interface Props extends HTMLButtonAttributes {
-        /** Hugeicons icon shown before the label. Ignored when `media` is provided. */
+        /** Hugeicons icon shown before the label. Ignored when `media` is provided.
+            Optional: with neither `icon` nor `media` the row is label-only and
+            the leading slot is omitted entirely. */
         icon?: IconComponent;
         /** Custom leading visual (e.g. an avatar) rendered in place of the icon. */
         media?: Snippet;
@@ -108,13 +111,15 @@
         class:drill
         class:standalone
     >
-        <span class="icon-wrap" bind:this={iconEl}>
-            {#if media}
-                {@render media()}
-            {:else if Icon}
-                <Icon size={18} strokeWidth={2} aria-hidden="true" />
-            {/if}
-        </span>
+        {#if media || Icon}
+            <span class="icon-wrap" bind:this={iconEl}>
+                {#if media}
+                    {@render media()}
+                {:else if Icon}
+                    <Icon size={18} strokeWidth={2} aria-hidden="true" />
+                {/if}
+            </span>
+        {/if}
         <span class="label">{label}</span>
         {#if hasChildren}
             <span class="caret" class:open={expanded} aria-hidden="true">

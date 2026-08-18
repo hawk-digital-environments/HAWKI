@@ -3,7 +3,6 @@
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
     import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
-    import Message01Icon from '$lib/components/ui/icons/iconset/Message01Icon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
@@ -41,16 +40,15 @@
                 <SidebarItems>
                     {#each store.conversations as conversation (conversation.slug)}
                         {@const generating = store.isGenerating(conversation.slug)}
-                        {#snippet conversationIcon()}
-                            <span class="conversation-icon">
-                                <Message01Icon size={18} strokeWidth={2} aria-hidden="true" />
-                                {#if generating}
-                                    <span class="generation-indicator" aria-hidden="true"></span>
-                                {/if}
-                            </span>
+                        <!-- History rows are label-only: with every row carrying
+                             the same message icon it added no information. The
+                             leading slot is used solely to mark a conversation
+                             that is still generating. -->
+                        {#snippet generatingIndicator()}
+                            <span class="generation-indicator" aria-hidden="true"></span>
                         {/snippet}
                         <SidebarItem
-                            media={conversationIcon}
+                            media={generating ? generatingIndicator : undefined}
                             label={conversation.name}
                             active={app.router.isActive(`/chat/${conversation.slug}`)}
                             aria-label={generating
@@ -86,22 +84,13 @@
         line-height: var(--line-height-normal);
     }
 
-    .conversation-icon {
-        position: relative;
-        display: inline-flex;
-    }
-
     .generation-indicator {
-        position: absolute;
-        right: -0.2rem;
-        bottom: -0.2rem;
-        width: 0.55rem;
-        height: 0.55rem;
-        border: 2px solid var(--color-surface);
+        width: 0.7rem;
+        height: 0.7rem;
+        border: 2px solid var(--color-border);
         border-top-color: var(--color-interactive);
         border-right-color: var(--color-interactive);
         border-radius: 50%;
-        background: var(--color-surface);
         animation: generation-spin 700ms linear infinite;
     }
 
