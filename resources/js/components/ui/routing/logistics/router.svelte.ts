@@ -3,10 +3,11 @@
  *
  * A `Router` is a reactive wrapper around a `universal-router` instance: it
  * resolves the current path into a page component + layout stack, tracks the
- * result as Svelte `$state`, and exposes both through a `RouterHandle` that
- * components read via `useRouter()`. `RouterView.svelte` is the only
- * consumer that renders a `Router`'s state; this module has no rendering
- * concerns of its own.
+ * result as Svelte `$state`, and exposes it to `RouterView.svelte` — the only
+ * consumer that renders a `Router`'s state. `RouterView` passes `data`,
+ * `params` and `route` down to each page/layout as props; `RouterHandle`,
+ * returned by `useRouter()`, is the navigation API components call
+ * (`goTo`, `getPath`, `isActive`, ...) and holds no route state of its own.
  *
  * ## Construction
  *
@@ -27,35 +28,55 @@
  * ## Resolution & state
  *
  * `runResolve()` is the single place that writes router state — `state`,
- * `component`, `componentProps`, `layouts`, `meta`, `error` are all set there,
+ * `component`, `layouts`, `meta`, `nodeData`, `error` are all set there,
  * so a page, a 404 and an error page all leave the router in one consistent
- * shape. Concurrent resolutions are guarded with a monotonic `loadId`: a
- * `runResolve()` call that finishes after a newer one has already started is
- * discarded, so a slow navigation can never clobber a faster, later one.
+ * shape. Concurrent resolutions are guarded by a single `AbortController` (see
+ * `RouterState.startRun()`): starting a resolution aborts its predecessor, so a
+ * `runResolve()` call that finishes after a newer one has already started finds
+ * its own signal aborted and discards itself rather than clobbering the faster,
+ * later one.
  *
  * `universal-router`'s own 404 handling is repurposed: its `errorHandler`
- * always throws (wrapped in {@link RouteResolutionError}), and `runResolve()`
- * distinguishes a 404 (`status === 404`) from a genuine failure to decide
- * between `state: 'notFound'` and `state: 'error'`.
+ * always throws, wrapping in {@link RouteResolutionError} everything except a
+ * `RouteRedirect`/`RouteHttpError` raised by a middleware, which pass through
+ * untouched for `runResolve()` to act on. `runResolve()` then distinguishes a
+ * 404 (`status === 404`) from a genuine failure to decide between
+ * `state: 'notFound'` and `state: 'error'`.
  *
  * ## Layouts
  *
  * Every resolution rebuilds the layout stack from the matched route's parent
- * chain (see `layouts.ts`) plus the router-wide `rootLayout`, which also
+ * chain (see `nodes.ts`) plus the router-wide `rootLayout`, which also
  * covers the 404/error states since those have no matched route to inherit a
  * layout from.
+ *
+ * ## Data caching
+ *
+ * `nodeTree.ts`'s `runNode()` (called once per render-chain node) first
+ * validates the node's params against its `paramSchema` (see
+ * `parseNodeParams()`), then consults an LRU `dataCache` (see `dataCache.ts`)
+ * keyed by each node's `cacheKey` (see `dataLoader.ts`) — computed from the
+ * *parsed* params — before running its `loadData`, so a cache hit skips the
+ * loader entirely. `RouterHandle.clearData()` invalidates entries; see its doc
+ * comment for how it interacts with a resolution that is still in flight.
  */
-import UniversalRouter, {type Route, type RouteContext, type RouteError, type RouteParams} from 'universal-router';
-import {type HawkiRoute, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import {collectRouteLayouts, resolveRouteLayouts} from '$lib/components/ui/routing/logistics/layouts.js';
+import UniversalRouter, {type Route, type RouteError, type RouteParams} from 'universal-router';
+import {type RouteComponent, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {resolveComponentModule} from '$lib/components/ui/routing/logistics/lazyComponent.js';
+import {type RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/logistics/dataLoader.js';
+import {createRouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
+import type {AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
+import {RouteHttpError, RouteRedirect, RouteResolutionError} from '$lib/components/ui/routing/logistics/signals.js';
 import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
-import {z} from 'zod';
 import {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
 import {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
 import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.svelte.js';
 import {mergePaths, normalizeBasePath, normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
 import {isPathActive, type IsPathActiveOptions, isRouteActive} from '$lib/components/ui/routing/logistics/isActive.js';
 import generateUrls, {type UrlParams} from 'universal-router/generateUrls';
+import {createNodeTree} from '$lib/components/ui/routing/logistics/nodeTree.js';
+import {RouterState} from '$lib/components/ui/routing/logistics/RouterState.svelte.js';
+import {resolveRoute} from '$lib/components/ui/routing/logistics/routeResolver.js';
 
 export interface IsActiveOptions extends Omit<IsPathActiveOptions, 'rootPath'> {
     /** Params for a named route target — same meaning as in {@link RouterHandle.getPath}. */
@@ -63,10 +84,6 @@ export interface IsActiveOptions extends Omit<IsPathActiveOptions, 'rootPath'> {
 }
 
 export interface RouterHandle {
-    readonly route: Route<RouteResultBody> | null;
-    readonly params: RouteParams | null;
-    readonly context: RouteContext<RouteResultBody> | null;
-    readonly path: string;
     /**
      * Resolves a named route (via `universal-router`'s URL generator) or a
      * literal path (passed through, prefixed with the router's `basePath` if
@@ -76,10 +93,14 @@ export interface RouterHandle {
     getPath: (routeNameOrPath: string, params?: UrlParams) => string;
     /** Short alias for {@link getPath}, for terse usage in templates. */
     p: (routeNameOrPath: string, params?: UrlParams) => string;
-    /** Navigates to a literal path through the active {@link RoutingStrategy}. */
-    goTo: (path: string) => Promise<void>;
+    /**
+     * Navigates to a literal path through the active {@link RoutingStrategy}.
+     * `options.replace` is forwarded to the strategy's `set()` — see its doc
+     * comment for what "replace" means per strategy.
+     */
+    goTo: (path: string, options?: { replace?: boolean }) => Promise<void>;
     /** Resolves `routeName`/`params` via {@link getPath} and navigates to the result. */
-    goToRoute: (routeName: string, params?: UrlParams) => Promise<void>;
+    goToRoute: (routeName: string, params?: UrlParams, options?: { replace?: boolean }) => Promise<void>;
     /**
      * Whether `path` is one the active {@link RoutingStrategy} would route
      * through itself (see {@link RoutingStrategy.canHandlePath}). Use this to
@@ -105,26 +126,47 @@ export interface RouterHandle {
      */
     isRouteActive: (routeName: string) => boolean;
     /**
-     * The matched route's `meta`, or `null` while nothing is rendered (loading,
-     * 404, error). Shared by the page and every layout around it — prefer the
-     * typed `useRouteMeta()` hook over reading this raw.
-     */
-    readonly meta: RouteMeta | null;
-    /**
-     * The failure that put the router into its current `error` state, or `null`
-     * when the last resolution did not fail.
-     *
-     * Also set for `notFound` — a 404 arrives as a `RouteError` with
-     * `status: 404` — so check {@link Router.state} to tell the two apart
-     * rather than testing this for nullishness.
-     */
-    readonly error: Error | RouteError | null;
-    /**
      * Resolves the current path again from scratch. Backs the retry button of
      * an error page, and is the way to re-run middlewares after something they
      * depend on (a login, a permission change) happened.
      */
     reload: () => Promise<void>;
+    /**
+     * Invalidates cached loader data. No argument clears everything.
+     * Does NOT re-resolve the current route — call {@link reload} for that.
+     *
+     * Takes a discriminated object rather than an overloaded `string`
+     * because a cache key, a key prefix, a path and a route name are
+     * different namespaces that all happen to be `string`s — route names in
+     * particular are explicitly not validated for uniqueness by
+     * `RouteRegistrar`, so a plain string could collide between a path and a
+     * route name with no way to tell which one was meant. Naming the
+     * namespace up front makes that ambiguity unrepresentable instead of
+     * resolving it in some undocumented order and failing silently on a
+     * collision.
+     *
+     * - `{key}` — removes the single entry with that exact key.
+     * - `{keyStartsWith}` — removes every entry whose key starts with the
+     *   prefix. Pairs with a `cacheKey` built via `ctx.makeKey(prefix)` (see
+     *   `dataLoader.ts`), which always puts the prefix first, so this drops
+     *   the whole family of keys a resolver derived from one prefix.
+     * - `{path}` — removes every entry loaded for that exact normalized path.
+     * - `{route, params}` — resolves `route`/`params` through {@link getPath}
+     *   and removes entries loaded for the resulting path, same as `{path}`.
+     * - `{route}` without `params` — a wildcard over every entry belonging to
+     *   that route's node, regardless of which params it was resolved with.
+     *   Cannot be implemented by resolving a path (a route with a required
+     *   param has no single path to resolve), so it matches on the node's
+     *   `routeName` instead — which is only present when the route/group was
+     *   registered with a `name`.
+     *
+     * Returns whether anything was actually removed.
+     */
+    clearData: (target?:
+                    | { key: string }
+                    | { keyStartsWith: string }
+                    | { path: string }
+                    | { route: string; params?: UrlParams }) => boolean;
     /**
      * Dev helper: dumps the router's current state and full route tree to the
      * console (see `debugger.ts`). Imported dynamically so the dump code
@@ -139,7 +181,6 @@ export interface Router {
     readonly contextName: string;
     readonly handle: RouterHandle;
     readonly component: RouteComponent | null;
-    readonly componentProps: RouteComponentProps | null;
     /**
      * Layouts wrapping whatever is currently rendered, outermost first — the
      * optional `rootLayout` followed by the layouts collected along the matched
@@ -147,8 +188,46 @@ export interface Router {
      */
     readonly layouts: RouteLayout[];
     readonly path: string;
-    /** See {@link RouterHandle.error}. */
+    /** The matched route, or `null` while nothing is rendered (loading, 404, error). Read by `RouterView` and passed to each node as its `route` prop. */
+    readonly route: Route<RouteResultBody> | null;
+    /** The matched route's params, or `null` under the same conditions as {@link route}. Passed to each node as its `params` prop. */
+    readonly params: RouteParams | null;
+    /**
+     * The matched route's `meta`, or `null` under the same conditions as
+     * {@link route}. Passed to *every* node as its `meta` prop — unlike
+     * {@link nodeData}/{@link nodeParams} there is no per-node variant, because
+     * meta belongs to the route rather than to the components rendering it, so
+     * a layout sees the meta of whichever page is open inside it.
+     */
+    readonly meta: RouteMeta | null;
+    /**
+     * The failure that put the router into its current `error` state, or `null`
+     * when the last resolution did not fail.
+     *
+     * Also set for `notFound` — a 404 arrives as a `RouteError` with
+     * `status: 404` — so check {@link state} to tell the two apart rather than
+     * testing this for nullishness.
+     */
     readonly error: Error | RouteError | null;
+    /**
+     * Data returned by every currently rendered node's `loadData`,
+     * index-aligned with `[...layouts, component]` — i.e.
+     * `nodeData[nodeData.length - 1]` is the page's own data. A node without
+     * a loader contributes an empty object. Reset to `[]` on a 404 or an
+     * error so a failed resolution can never leave the previous route's data
+     * visible behind the error page.
+     */
+    readonly nodeData: ReadonlyArray<Record<string, unknown>>;
+    /**
+     * Each rendered node's params, index-aligned with {@link nodeData} and
+     * the render chain. A node with a `paramSchema` gets that schema's
+     * parsed/coerced output; a node without one gets the matched route's raw
+     * params unchanged. Params are therefore genuinely per-node — a layout
+     * and its page can see differently-typed params for the same URL, since
+     * each parses only what it declares. Reset to `[]` alongside
+     * {@link nodeData} on a 404 or an error.
+     */
+    readonly nodeParams: ReadonlyArray<unknown>;
     bind: () => void;
 }
 
@@ -163,16 +242,29 @@ export interface CreateRouterOptions {
      * Use `lazyComponent()` for a loader.
      */
     rootLayout?: RouteLayoutOrLoader;
+    /**
+     * Params, data loader and cache key for the router-wide `rootLayout`,
+     * built with `configureLayout()`. Same precedence rule as
+     * {@link import('./RouteRegistrar.js').RouteOptions.config} — it wins over
+     * a `config` the `rootLayout` module exports itself.
+     */
+    rootLayoutConfig?: AnyRouteConfig;
+    /**
+     * How many `loadData` results to keep. Defaults to 10; `0` disables
+     * caching entirely, which is also what a negative value does (see
+     * `dataCache.ts`'s `createRouteDataCache`).
+     */
+    dataCacheSize?: number;
+    /**
+     * Concrete values for {@link RouteDataLoaderContextExtensions} — the
+     * app-level services (`app`, `restApi`, ...) every loader's context is
+     * merged with. `RoutingExtension.ready()` fills this in with `{app,
+     * restApi: app.restApi}` when it builds `app.router`; a standalone or
+     * transient router may omit it if none of its loaders need those
+     * services.
+     */
+    loaderContext?: RouteDataLoaderContextExtensions;
 }
-
-const routeResultSchema = z.object({
-    // `z.function()` would hand back a *wrapper* around the component instead of
-    // the component itself; the fresh reference on every resolve makes Svelte
-    // tear the page down and re-mount it even when only the params changed.
-    component: z.custom<RouteComponent>(value => typeof value === 'function'),
-    context: z.object({}).loose(),
-    params: z.object({}).loose()
-});
 
 /**
  * Creates a `Router` from a route-registration callback — convenience
@@ -206,36 +298,42 @@ export function createRouterFromRegistrar(
     registrar: RouteRegistrar,
     options?: CreateRouterOptions
 ): Router {
-    let currentState: Router['state'] = $state('loading');
-    let currentError: Error | RouteError | null = $state.raw(null);
-    let resolvePath: string | null = $state(null);
-    let currentPath: string | null = $state(null);
-    let currentContext: RouteContext<RouteResultBody> | null = $state.raw(null);
-    let currentComponent: RouteComponent | null = $state(null);
-    let currentComponentProps: RouteComponentProps | null = $state(null);
-    let currentLayouts: RouteLayout[] = $state.raw([]);
-    let currentMeta: RouteMeta | null = $state.raw(null);
-    const strategy = createStrategy(options?.strategy);
-
-    // Loaded once and shared by every resolution — a failing root layout must
-    // not take the whole router down, so it degrades to "no root layout".
-    const rootLayoutPromise: Promise<RouteLayout[]> = options?.rootLayout
-        ? resolveRouteLayouts([options.rootLayout]).catch((error) => {
-            console.error('Failed to load the root layout of router:', name, error);
-            return [];
-        })
-        : Promise.resolve([]);
-
     const basePath = normalizeBasePath(options?.basePath);
-    const innerRouter = new UniversalRouter(registrar.build(), {
-        baseUrl: basePath,
-        errorHandler: (error) => {
-            throw new RouteResolutionError(error, error.status === 404 ? 'notFound' : 'error');
-        }
-    });
+    const state = new RouterState(
+        name,
+        options,
+        createStrategy(options?.strategy),
+        basePath,
+        createNodeTree(
+            name,
+            resolveComponentModule,
+            options
+        ),
+        new UniversalRouter(registrar.build(), {
+            baseUrl: basePath,
+            // `universal-router` calls this for ANY throw from a route/middleware
+            // action, including a `RouteRedirect`/`RouteHttpError` raised via
+            // `redirect()`/`routeError()` inside a middleware — wrapping those in
+            // `RouteResolutionError` like every other failure would bury the
+            // signal where `runResolve()`'s dedicated `catch` branches for them
+            // (see below) can never see it. Let them through unwrapped instead;
+            // everything else still gets tagged 'notFound' vs 'error' as before.
+            // A `loadData` throwing the same signals needs no such passthrough —
+            // loaders run outside `universal-router` entirely (in `runResolve()`,
+            // after `resolve()` returns), so their throws already reach
+            // `runResolve()`'s `catch` directly.
+            errorHandler: (error) => {
+                if (error instanceof RouteRedirect || error instanceof RouteHttpError) {
+                    throw error;
+                }
+                throw new RouteResolutionError(error, error.status === 404 ? 'notFound' : 'error');
+            }
+        }),
+        createRouteDataCache(options?.dataCacheSize ?? 30)
+    );
 
     const innerUrlGenerator = (() => {
-        const generator = generateUrls(innerRouter);
+        const generator = generateUrls(state.innerRouter);
         return (routeName: string, params?: UrlParams) => {
             return normalizePath(generator(routeName, params));
         };
@@ -258,102 +356,34 @@ export function createRouterFromRegistrar(
     }
 
     function isActive(routeNameOrPath: string, options?: IsActiveOptions): boolean {
-        return isPathActive(currentPath ?? '', getPath(routeNameOrPath, options?.params), {
+        return isPathActive(state.currentPath ?? '', getPath(routeNameOrPath, options?.params), {
             startsWith: options?.startsWith,
             rootPath: basePath
         });
     }
 
-    /** Root layout plus the matched route's own layout chain, loaded in parallel. */
-    async function buildLayoutStack(route: Route | null | undefined): Promise<RouteLayout[]> {
-        const [rootLayouts, routeLayouts] = await Promise.all([
-            rootLayoutPromise,
-            resolveRouteLayouts(collectRouteLayouts(route))
-        ]);
-        return [...rootLayouts, ...routeLayouts];
-    }
-
-    let loadId: number = 0;
-
     /**
      * Resolves `path` and publishes the outcome — the single place router state
      * is written, so a page, a 404 and an error all leave it consistent.
      *
-     * A newer call always wins: `loadId` is re-checked after every `await`, so a
-     * slow resolution can never overwrite a faster one that started later.
+     * A newer call always wins: it aborts this one's signal, which is re-checked
+     * after every `await`, so a slow resolution can never overwrite a faster one
+     * that started later.
+     *
+     * `redirectChain` carries every path visited so far *because* of a
+     * `RouteRedirect` on the way to this call — empty for a "real" navigation
+     * (from `bind()`'s `$effect`, `goTo()`, or `reload()`), populated only
+     * when this call is itself the result of following a redirect. It exists
+     * purely for the loop-detection check below; nothing else reads it.
      */
-    async function runResolve(path: string): Promise<void> {
-        const currentLoadId = ++loadId;
-        resolvePath = path;
-        currentError = null;
-        currentState = 'loading';
-
-        try {
-            const renderable = await innerRouter.resolve(path);
-            if (!renderable) {
-                // noinspection ExceptionCaughtLocallyJS
-                throw new Error('No renderable returned for path: ' + path);
-            }
-
-            if (currentLoadId !== loadId) {
-                console.log('Route resolution for path', path, 'was invalidated before completion.');
-                return;
-            }
-
-            const parsedRenderable = routeResultSchema.safeParse(renderable);
-            if (!parsedRenderable.success) {
-                // Thrown instead of handled inline so it runs through the same
-                // cleanup as every other failure — in particular so it captures
-                // `currentError` for the error page.
-                // noinspection ExceptionCaughtLocallyJS
-                throw new Error(`Invalid route result for path "${path}"`, {cause: parsedRenderable.error});
-            }
-
-            const {component, context, params} = parsedRenderable.data as any as RouteResultBody;
-
-            // Loaded before anything is published so a lazy layout
-            // keeps the router in `loading` instead of flashing an
-            // unwrapped page.
-            const layouts = await buildLayoutStack(context.route);
-            if (currentLoadId !== loadId) {
-                console.log('Route resolution for path', path, 'was invalidated while its layouts were loading.');
-                return;
-            }
-
-            currentContext = context;
-            currentComponent = component;
-            currentComponentProps = {
-                context,
-                params
-            };
-            currentMeta = (context.route as HawkiRoute)?.meta ?? null;
-            currentLayouts = layouts;
-
-            currentState = 'waiting';
-        } catch (error) {
-            if (loadId !== currentLoadId) {
-                console.warn('Route resolution for path', path, 'was invalidated before error handling could complete.');
-                return;
-            }
-            currentMeta = null;
-            currentLayouts = await rootLayoutPromise;
-            const originalError = error instanceof RouteResolutionError ? error.originalError : error;
-            currentError = originalError as Error | RouteError;
-
-            if (error instanceof RouteResolutionError && error.type === 'notFound') {
-                // Not an application failure — just a path nothing matched.
-                console.warn('No route matched path:', path);
-                currentState = 'notFound';
-                return;
-            }
-
-            console.error('Error resolving route for path:', path, originalError);
-            currentState = 'error';
-        } finally {
-            if (loadId === currentLoadId) {
-                currentPath = path;
-            }
-        }
+    async function runResolve(path: string, redirectChain: string[] = []): Promise<void> {
+        await resolveRoute(
+            state,
+            path,
+            redirectChain,
+            () => handle,
+            (...args) => getPath(...args)
+        );
     }
 
     /**
@@ -361,58 +391,104 @@ export function createRouterFromRegistrar(
      * resolution targets the path that failed, not the last one that worked.
      */
     async function reload(): Promise<void> {
-        await runResolve(resolvePath ?? normalizePath(strategy.get()));
+        await runResolve(state.resolvePath ?? normalizePath(state.strategy.get()));
     }
 
-    async function goTo(path: string): Promise<void> {
-        strategy.set(path);
+    /**
+     * Pre-emptively invalidates an in-flight resolution before `goTo()`'s
+     * `strategy.set()` even reaches `bind()`'s `$effect` — closing the window
+     * where a stale resolution could still finish and publish after the user
+     * has already navigated away.
+     *
+     * Returns whether there was anything to cancel — see `goTo()` for why that
+     * distinction matters.
+     */
+    function cancelInFlightResolve(): boolean {
+        return state.abortCurrentRun();
     }
 
-    async function goToRoute(routeName: string, params?: UrlParams): Promise<void> {
+    async function goTo(path: string, options?: { replace?: boolean }): Promise<void> {
+        const cancelledRunInFlight = cancelInFlightResolve();
+
+        // Normalized before the strategy stores it so that its "did this
+        // change?" answer below is about the same string `bind()`'s `$effect`
+        // compares against `resolvePath` — the effect normalizes what it reads
+        // back, so `/foo/` and `/foo` are one path to it but would otherwise
+        // be two different history entries to the strategy.
+        const target = normalizePath(path);
+
+        // Normally this is the whole navigation: `set()` marks `bind()`'s
+        // resolve `$effect` dirty and that effect runs the resolution. But the
+        // effect only fires when the strategy's stored path actually changed,
+        // so `goTo()` to the path already on screen resolves nothing — which
+        // is correct while the router is idle, and a hang if the line above
+        // just cancelled a resolution of that same path (the user clicking the
+        // link again because the page is taking too long). Only then does this
+        // have to resolve the route itself.
+        //
+        // It cannot double-resolve either way: `resolveRoute()` assigns
+        // `resolvePath` synchronously, so an effect that does fire finds its
+        // own `newPath === resolvePath` guard already satisfied.
+        if (!state.strategy.set(target, options) && cancelledRunInFlight) {
+            void runResolve(target);
+        }
+    }
+
+    async function goToRoute(routeName: string, params?: UrlParams, options?: { replace?: boolean }): Promise<void> {
         const path = getPath(routeName, params);
-        await goTo(path);
+        await goTo(path, options);
+    }
+
+    /**
+     * A resolution already in flight is neither aborted nor prevented from
+     * re-populating the cache with what it loaded: its result is about to be
+     * rendered either way, and a cache that disagrees with what is on screen
+     * would be the worse outcome. Callers who need the *screen* refreshed
+     * after clearing want `clearData()` followed by `reload()`.
+     */
+    function clearData(target?:
+                           | { key: string }
+                           | { keyStartsWith: string }
+                           | { path: string }
+                           | { route: string; params?: UrlParams }): boolean {
+        if (!target) {
+            return state.dataCache.clear();
+        }
+        if ('key' in target) {
+            return state.dataCache.removeWhere((entry) => entry.key === target.key);
+        }
+        if ('keyStartsWith' in target) {
+            return state.dataCache.removeWhere((entry) => entry.key.startsWith(target.keyStartsWith));
+        }
+        // A `route` target without `params` cannot be turned into a path —
+        // `getPath()` has nothing to fill a required `:id` with — so it
+        // matches on the node's `routeName` instead, wildcarding over every
+        // param combination that route was ever resolved with.
+        if ('route' in target && target.params === undefined) {
+            return state.dataCache.removeWhere((entry) => entry.routeName === target.route);
+        }
+        const targetPath = 'route' in target
+            ? normalizePath(getPath(target.route, target.params))
+            : normalizePath(target.path);
+        return state.dataCache.removeWhere((entry) => entry.path === targetPath);
     }
 
     async function debug(): Promise<void> {
         const dbg = await (import('./debugger.js'));
-        dbg.dumpRouterToConsole({
-            name,
-            state: currentState,
-            currentPath,
-            meta: currentMeta,
-            layouts: currentLayouts,
-            innerRouter
-        });
+        dbg.dumpRouterToConsole(state);
     }
 
     const handle: RouterHandle = {
-        get route() {
-            return currentContext?.route ?? null;
-        },
-        get params() {
-            return currentContext?.params ?? null;
-        },
-        get context() {
-            return currentContext;
-        },
-        get path() {
-            return currentPath ?? '';
-        },
-        get meta() {
-            return currentMeta;
-        },
-        get error() {
-            return currentError;
-        },
         reload,
+        clearData,
         debug,
         getPath,
         p: getPath,
         goTo,
         goToRoute,
-        canHandlePath: (path: string) => strategy.canHandlePath?.(path) ?? path.startsWith('/'),
+        canHandlePath: (path: string) => state.strategy.canHandlePath?.(path) ?? path.startsWith('/'),
         isActive,
-        isRouteActive: (routeName: string) => isRouteActive(currentContext, routeName)
+        isRouteActive: (routeName: string) => isRouteActive(state.currentContext, routeName)
     };
 
     return {
@@ -423,34 +499,46 @@ export function createRouterFromRegistrar(
             return getRouterContextName(name);
         },
         get state() {
-            return currentState;
+            return state.currentState;
         },
         get component() {
-            return currentComponent;
-        },
-        get componentProps() {
-            return currentComponentProps;
+            return state.currentComponent;
         },
         get layouts() {
-            return currentLayouts;
+            return state.currentLayouts;
         },
         get handle() {
             return handle;
         },
         get path() {
-            return currentPath ?? '';
+            return state.currentPath ?? '';
+        },
+        get route() {
+            return state.currentContext?.route ?? null;
+        },
+        get params() {
+            return state.currentContext?.params ?? null;
+        },
+        get meta() {
+            return state.currentMeta;
         },
         get error() {
-            return currentError;
+            return state.currentError;
+        },
+        get nodeData() {
+            return state.currentNodeData;
+        },
+        get nodeParams() {
+            return state.currentNodeParams;
         },
         bind: () => {
             $effect(() => {
-                return strategy.bind?.(name, basePath) ?? (() => void 0);
+                return state.strategy.bind?.(name, basePath) ?? (() => void 0);
             });
 
             $effect(() => {
-                const newPath = normalizePath(strategy.get());
-                if (newPath === resolvePath) {
+                const newPath = normalizePath(state.strategy.get());
+                if (newPath === state.resolvePath) {
                     return;
                 }
                 void runResolve(newPath);
@@ -472,21 +560,5 @@ function createStrategy(strategy: CreateRouterOptions['strategy']): RoutingStrat
         return createHashRoutingStrategy();
     } else {
         return strategy;
-    }
-}
-
-/**
- * Wraps whatever `universal-router`'s `errorHandler` receives, tagging it
- * with `'notFound'` vs `'error'` so `runResolve()`'s `catch` block can pick
- * the right router state without re-inspecting the original error. Never
- * escapes this module — `runResolve()` unwraps `originalError` before
- * publishing it as {@link RouterHandle.error}.
- */
-class RouteResolutionError extends Error {
-    constructor(
-        public readonly originalError: Error | RouteError,
-        public readonly type: 'notFound' | 'error'
-    ) {
-        super(originalError.message);
     }
 }

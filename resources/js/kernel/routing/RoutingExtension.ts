@@ -1,11 +1,22 @@
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import {RouteRegistrar, type RouteRenderer} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {createRouterFromRegistrar, type Router, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
+import type {RestApi} from '$lib/kernel/api/RestApi.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
         router: RouterHandle;
+    }
+}
+
+// Extends the router context with the app and restApi so the router itself
+// does not need to know about our app or restApi (which comes in handy,
+// when we externalize the components into their own package).
+declare module '$lib/components/ui/routing/logistics/dataLoader.js' {
+    interface RouteDataLoaderContextExtensions {
+        app: HawkiApp;
+        restApi: RestApi;
     }
 }
 
@@ -34,9 +45,11 @@ declare module '$lib/kernel/extendableTypes.js' {
  *    namespaced automatically.
  *
  * Turning a matched route into something renderable is deliberately *not* this
- * extension's concern: the {@link RouteRenderer} is injected through the
- * constructor (`new RoutingExtension(createDefaultRouteRenderer())` in
- * `resources/js/app.ts`) and is invoked as the `action` of every compiled route.
+ * extension's concern: every compiled route's `action` (built by
+ * `RouteRegistrar`'s `buildRouteFromOptions()`/`buildRouteGroupFromOptions()`)
+ * just returns a `RouteResultBody` — `{component, context, params}` — and
+ * `createRouterFromRegistrar()` (`router.svelte.ts`) is what actually resolves
+ * and renders it.
  */
 export class RoutingExtension implements HawkiAppExtension {
     /**
@@ -89,7 +102,12 @@ export class RoutingExtension implements HawkiAppExtension {
             this._router = createRouterFromRegistrar('app', this.registrar, {
                 // @todo this is a temporary construct, we should read the base path from the config instead of hardcoding it here
                 basePath: '/new',
-                strategy: 'path'
+                strategy: 'path',
+                // Supplies the `app`/`restApi` properties the `declare module`
+                // block above adds to `RouteDataLoaderContextExtensions`, so
+                // every `loadData` resolved by this router sees them on its
+                // context.
+                loaderContext: {app, restApi: app.restApi}
             });
         });
     }

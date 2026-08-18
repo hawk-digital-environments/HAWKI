@@ -39,8 +39,12 @@
     const isLoading = $derived(routerState === 'loading');
     const isNotFound = $derived(routerState === 'notFound');
     const RouteComponent = $derived(router.component);
-    const routeProps = $derived(router.componentProps);
     const layouts = $derived(router.layouts);
+    const route = $derived(router.route);
+    const nodeData = $derived(router.nodeData);
+    const nodeParams = $derived(router.nodeParams);
+    // One object for the whole chain, not one per node — see `Router.meta`.
+    const meta = $derived(router.meta ?? {});
 
     // svelte-ignore state_referenced_locally
     setContext<RouterHandle>(router.contextName, router.handle);
@@ -62,7 +66,7 @@
 {#snippet layoutStack(index: number)}
     {#if index < layouts.length}
         {@const Layout = layouts[index]}
-        <Layout>
+        <Layout data={nodeData[index] ?? {}} params={nodeParams[index] ?? {}} {meta} {route}>
             {@render layoutStack(index + 1)}
         </Layout>
     {:else}
@@ -87,8 +91,9 @@
         {@render errorPage(router.error, () => void router.handle.reload())}
     {:else if isNotFound}
         <NotFoundComponent/>
-    {:else if RouteComponent && routeProps}
-        <RouteComponent {...routeProps}/>
+    {:else if RouteComponent}
+        <!-- The page is always the last entry of the render chain `[...layouts, page]` — see `Router.nodeData`'s doc comment. -->
+        <RouteComponent data={nodeData[layouts.length] ?? {}} params={nodeParams[layouts.length] ?? {}} {meta} {route}/>
     {/if}
 {/snippet}
 

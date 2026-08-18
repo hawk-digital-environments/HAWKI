@@ -7,14 +7,19 @@
  * strategy when none is specified (see `createStrategy` in
  * `router.svelte.ts`).
  */
-import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
+import type {RoutingStrategy, SetRouteInStrategyOptions} from '$lib/components/ui/routing/strategy/types.js';
 
 export function createTransientRoutingStrategy(): RoutingStrategy {
     let currentPath = $state('');
 
     return {
-        set(path: string) {
+        set(path: string, _options?: SetRouteInStrategyOptions): boolean {
+            // No history for this strategy; `replace` is accepted for interface parity and ignored.
+            if (currentPath === path) {
+                return false;
+            }
             currentPath = path;
+            return true;
         },
         get() {
             return currentPath;

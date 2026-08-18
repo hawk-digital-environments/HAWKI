@@ -9,13 +9,11 @@
 <script lang="ts">
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
     import {onMount} from 'svelte';
+    import type {RouteProps} from '$lib/components/ui/routing/logistics/routeProps.js';
 
-    const {goToRoute, route, path, debug} = useRouter();
+    const {goToRoute, debug} = useRouter();
 
-    interface Props {
-    }
-
-    const {}: Props = $props();
+    const {}: RouteProps = $props();
 
     onMount(() => {
         debug();
