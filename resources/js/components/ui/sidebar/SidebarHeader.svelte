@@ -169,10 +169,12 @@
         max-width: calc(100% - var(--actions-w) - var(--space-2));
         overflow: hidden;
         /* Shrink-wrap the logo so the hover surface hugs it instead of spanning
-           the whole free width of the row, and inset it by the rows' own
-           padding so the highlight starts on the same column theirs does. */
+           the whole free width of the row, and pad it exactly as the header
+           actions pad their icon — the toggle is a `--collapse-size` square
+           around an 18px glyph — so both hover surfaces have the same inset and
+           the same height. */
         width: fit-content;
-        padding: 0 calc(var(--nav-item-pad-x) + var(--space-1) / 2);
+        padding: 0 calc((var(--collapse-size) - var(--nav-icon-size)) / 2);
         border-radius: var(--corner-sm);
         transition:
             opacity 160ms ease 100ms,
