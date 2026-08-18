@@ -16,6 +16,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {type ComposerContext, type ComposerContextType, createComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {MessageSenderTransportInterface} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
     import OldUiStyling from '$plugins/core/modules/chat/components/composer/OldUiStyling.svelte';
@@ -24,6 +25,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import ComposerFocusWrap from '$plugins/core/modules/chat/components/composer/utils/ComposerFocusWrap.svelte';
     import ModePanel from '$plugins/core/modules/chat/components/composer/ModePanel.svelte';
     import ModelPicker from '$plugins/core/modules/chat/components/composer/ModelPicker.svelte';
+    import ModelPickerV2 from '$plugins/core/modules/chat/components/composer/ModelPickerV2.svelte';
     import SettingsMenu from '$plugins/core/modules/chat/components/composer/SettingsMenu.svelte';
     import ComposerTextarea from '$plugins/core/modules/chat/components/composer/ComposerTextarea.svelte';
     import ModelConflictPicker from '$plugins/core/modules/chat/components/composer/ModelConflictPicker.svelte';
@@ -62,6 +64,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
 
     const app = useApp();
     const toastContext = useToastContext();
+    const experiments = useStore('experiments');
     // This is a bit of a hack to work around the "state_referenced_locally" warning thrown by svelte.
     const initialOptions = (() => ({
         transport,
@@ -159,7 +162,11 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                 {#if chatContext.guard.showsAiUiElements}
                                     <!-- Left: model controls -->
                                     <div class="chat-composer-left" transition:growTransition>
-                                        <ModelPicker/>
+                                        {#if experiments.isEnabled('modelPickerV2')}
+                                            <ModelPickerV2/>
+                                        {:else}
+                                            <ModelPicker/>
+                                        {/if}
                                     </div>
 
                                     <!-- Right: settings -->

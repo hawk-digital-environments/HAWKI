@@ -5,8 +5,8 @@
  * foundational, always-on features of the frontend:
  *   - **Stores**: registers the core reactive stores ({@link KeychainStore},
  *     {@link AiHandleStore}, {@link AiModelStore}, {@link AiToolStore},
- *     {@link SystemPromptStore}, {@link ThemeStore}) with the kernel's
- *     `StoreExtension` so their `loadData` runs on the bootstrapper's main stage.
+ *     {@link SystemPromptStore}, {@link ThemeStore}, {@link ExperimentsStore}) with
+ *     the kernel's `StoreExtension` so their `loadData` runs on the bootstrapper's main stage.
  *   - **Migrations**: lazy-globs the `plugins/core/migrations/` directory and
  *     hands the loaders to the `MigrationExtension` for the keychain/encryption
  *     format upgrades.
@@ -26,6 +26,7 @@ import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
 import {SystemPromptStore} from '$plugins/core/stores/SystemPromptStore.svelte.js';
 import {ThemeStore} from '$plugins/core/stores/ThemeStore.svelte.js';
+import {ExperimentsStore} from '$plugins/core/stores/ExperimentsStore.svelte.js';
 import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
@@ -60,6 +61,7 @@ export default class CorePlugin implements HawkiCorePlugin {
         add(new AiToolStore());
         add(new SystemPromptStore());
         add(new ThemeStore());
+        add(new ExperimentsStore());
         add(new ChatStore());
     }
 }
