@@ -65,23 +65,49 @@
 <style>
     header {
         position: relative;
+        /* Above the scroll region so the fade can overhang the messages. */
+        z-index: 1;
         display: flex;
         min-height: 3.75rem;
         align-items: center;
         justify-content: space-between;
         gap: var(--space-3);
         padding: var(--space-2) var(--space-5);
-        border-bottom: var(--divider);
+    }
+
+    /* Soft fade instead of a hard divider: the blurred panel backdrop is drawn
+       on a pseudo-element that extends past the header and fades out, so
+       content scrolling underneath dissolves rather than hitting a line. */
+    header::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 -3rem;
+        z-index: -1;
+        pointer-events: none;
         background: color-mix(in oklch, var(--panel-bg) 88%, transparent);
         backdrop-filter: blur(12px);
+        /* Eased ramp (rather than one linear stop) so neither the start nor the
+           end of the fade shows a visible edge. */
+        --header-fade: linear-gradient(
+            to bottom,
+            black 0,
+            black 45%,
+            rgba(0, 0, 0, 0.86) 60%,
+            rgba(0, 0, 0, 0.55) 72%,
+            rgba(0, 0, 0, 0.25) 84%,
+            rgba(0, 0, 0, 0.08) 92%,
+            transparent 100%
+        );
+        mask-image: var(--header-fade);
+        -webkit-mask-image: var(--header-fade);
     }
 
     .name {
         flex: 1;
         min-width: 0;
         max-width: 34rem;
-        font-size: var(--font-size-base);
-        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-nav);
+        font-weight: var(--font-weight-medium);
     }
 
     /* Like the app's skip link: invisible until keyboard focus, then a small
