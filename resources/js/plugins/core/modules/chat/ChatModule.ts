@@ -7,9 +7,8 @@ import type {Component} from 'svelte';
 import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
 import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
 
-// Both chat routes render the same page. Sharing one loader also shares the
-// resolved-component cache between the empty chat and conversation URLs.
-const loadChatPage = async () => import('./pages/ChatIndex.svelte');
+const loadIndexPage = async () => import('./pages/ChatIndex.svelte');
+const loadConversationPage = async () => import('./pages/ChatConversation.svelte');
 
 /**
  * The "chat" feature module of the `core` plugin.
@@ -22,9 +21,9 @@ const loadChatPage = async () => import('./pages/ChatIndex.svelte');
  * automatically namespaces any routes the module declares under the plugin's
  * route prefix.
  *
- * `/` resolves the module index at `/chat`, while `/:slug` opens a concrete
- * conversation. Both routes lazy-load the same routed chat page and pass the
- * optional slug through the router props.
+ * `/` resolves the module index at `/chat` (the "new chat" page), while
+ * `/:slug` opens a concrete conversation. Each route lazy-loads its own page
+ * component; the conversation route passes the slug through the router props.
  *
  * @example Registration happens in the owning plugin, not here:
  * // plugins/core/core.plugin.ts
@@ -50,8 +49,8 @@ export class ChatModule implements HawkiModule {
      */
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar
-            .lazyRoute('/', loadChatPage, {name: 'chat.index'})
-            .lazyRoute('/:slug', loadChatPage, {name: 'chat.conversation'});
+            .lazyRoute('/', loadIndexPage, {name: 'chat.index'})
+            .lazyRoute('/:slug', loadConversationPage, {name: 'chat.conversation'});
     }
 
     public title(translate: Translator['translate'], _locale: Locale): string {
