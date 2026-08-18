@@ -3,42 +3,31 @@
  * Dev-only tool, reached through `RouterHandle.debug()`, which imports this
  * module dynamically so it never lands in the production bundle.
  */
-import type {Router} from './router.svelte.js';
-import type {default as UniversalRouter, Route} from 'universal-router';
+import type {Route} from 'universal-router';
 import type {Path} from 'universal-router/path-to-regexp';
 import {mergePaths} from './normalizePath.js';
-import type {HawkiRoute, RouteLayout, RouteLayoutOrLoader, RouteMeta} from './RouteRegistrar.js';
+import type {HawkiRoute, RouteLayoutOrLoader} from './RouteRegistrar.js';
 import {isLazyComponentLoader} from './lazyComponent.js';
-
-export interface RouterDump {
-    name: string;
-    state: Router['state'];
-    currentPath: string | null;
-    /** Meta of the matched route — the very object `useRouteMeta()` parses. */
-    meta: RouteMeta | null;
-    /** Resolved layout stack currently wrapping the page, outermost first. */
-    layouts: RouteLayout[];
-    innerRouter: UniversalRouter;
-}
+import type {RouterState} from './RouterState.svelte.js';
 
 /** Logs `dump`'s state, current path, meta, layout stack, and the full route tree (with middleware/catch-all markers) to the console. */
-export function dumpRouterToConsole(dump: RouterDump) {
+export function dumpRouterToConsole(state: RouterState) {
     // Empty is the neutral base (see `normalizeBasePath`); shown as '/' for readability.
-    const baseUrl = dump.innerRouter.baseUrl;
+    const baseUrl = state.innerRouter.baseUrl;
 
-    console.log('Router dump:', dump.name);
+    console.log('Router dump:', state.name);
     console.log('-'.repeat(50));
-    console.log('  state:', dump.state ?? 'NULL');
-    console.log('  path:', dump.currentPath);
+    console.log('  state:', state.currentState ?? 'NULL');
+    console.log('  path:', state.currentPath);
     console.log('  basePath', baseUrl || '/');
-    if (dump.meta) {
-        console.log('  meta:', dump.meta ?? 'NONE');
+    if (state.currentMeta) {
+        console.log('  meta:', state.currentMeta ?? 'NONE');
     }
-    if (dump.layouts.length > 0) {
-        console.log('  layouts:', dump.layouts.map(describeLayout).join(' > '));
+    if (state.currentLayouts.length > 0) {
+        console.log('  layouts:', state.currentLayouts.map(describeLayout).join(' > '));
     }
     console.log('  routes:');
-    for (const route of dump.innerRouter.root.children || []) {
+    for (const route of state.innerRouter.root.children || []) {
         recursivelyDumpRoute(route, 1, baseUrl);
     }
 }

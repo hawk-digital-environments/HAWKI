@@ -15,6 +15,16 @@
  * Used by {@link RouteRegistrar} when compiling both single routes
  * (`middlewares` from {@link RouteOptions}) and route groups (`middlewares`
  * from {@link RouteGroupOptions}).
+ *
+ * A middleware can also `import {redirect} from './signals.js'` and call it
+ * to send the user elsewhere entirely, instead of returning a replacement
+ * `RouteResultBody`. That distinction matters: swapping the component (the
+ * only option before {@link import('./signals.js').RouteRedirect} existed)
+ * changes what renders but leaves the URL pointing at a page the user was
+ * never actually shown — a bookmark or reload lands back on the guarded
+ * route and re-triggers the same swap. `redirect()` closes that gap by
+ * updating the URL itself; see `router.ts`'s `runResolve()` for where
+ * the signal is caught and turned into a new resolution.
  */
 import {type Route} from 'universal-router';
 import type {RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware, RouteResultBody} from './RouteRegistrar.js';

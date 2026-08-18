@@ -9,13 +9,11 @@
 <script lang="ts">
     import {useRouter} from '@hawk-hhg/hawki-svelte-components';
     import {onMount} from 'svelte';
+    import type {RouteProps} from '@hawk-hhg/hawki-svelte-components';
 
-    const {goToRoute, route, path, debug} = useRouter();
+    const {goToRoute, debug} = useRouter();
 
-    interface Props {
-    }
-
-    const {}: Props = $props();
+    const {}: RouteProps = $props();
 
     onMount(() => {
         debug();

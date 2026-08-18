@@ -495,7 +495,8 @@ I can try to let docker compose create the containers (without starting them) fo
             if (opt?.buildNoCache === true) {
                 cmd.push('--no-cache');
             }
-            const result = await this.executeComposeCommand(cmd, {interactive: true});
+            // A failed build is not fatal here — it is offered a retry below.
+            const result = await this.executeComposeCommand(cmd, {interactive: true, throwOnExitCode: false});
 
             if (result.code !== 0) {
                 console.log(chalk.red('Docker build failed. Should I try again without pulling the latest images?'));
@@ -506,7 +507,7 @@ I can try to let docker compose create the containers (without starting them) fo
 
                 if (retryWithoutPull) {
                     cmd.splice(cmd.indexOf('--pull'), 1);
-                    const retryResult = await this.executeComposeCommand(cmd, {interactive: true});
+                    const retryResult = await this.executeComposeCommand(cmd, {interactive: true, throwOnExitCode: false});
                     if (retryResult.code !== 0) {
                         throw new Error('Docker build failed again.');
                     }
@@ -519,7 +520,9 @@ I can try to let docker compose create the containers (without starting them) fo
         }
 
         await this._context.events.trigger('docker:up:before', {args});
-        await this.executeComposeCommand(['up', ...args], {interactive: true});
+        // Attached (`follow`) runs are ended by the user pressing Ctrl-C, which compose
+        // reports as a non-zero code — that is not a failure of ours to report.
+        await this.executeComposeCommand(['up', ...args], {interactive: true, throwOnExitCode: opt?.follow !== true});
     }
 
     /**
@@ -643,7 +646,8 @@ I can try to let docker compose create the containers (without starting them) fo
             args.add(this.defaultServiceName);
         }
 
-        await this.executeComposeCommand(['logs', ...args], {foreground: true});
+        // `logs -f` is ended by Ctrl-C; see `up()` above.
+        await this.executeComposeCommand(['logs', ...args], {foreground: true, throwOnExitCode: false});
     }
 
     /**
@@ -684,7 +688,9 @@ I can try to let docker compose create the containers (without starting them) fo
 
         const command = cmd ? [shell, '-c', cmd] : [shell];
 
-        await this.executeCommandInService(serviceName, command, {interactive: true});
+        // The exit code of an interactive shell is whatever the user's last command
+        // (or their `exit N`) left behind — reporting that as a HAWKI error is wrong.
+        await this.executeCommandInService(serviceName, command, {interactive: true, throwOnExitCode: false});
     }
 
     /**
@@ -728,11 +734,11 @@ I can try to let docker compose create the containers (without starting them) fo
         let whichCommand: string[] | undefined;
 
         try {
-            await this.executeDockerCommand(['exec', containerId, 'which', 'which'], {throwOnExitCode: true});
+            await this.executeDockerCommand(['exec', containerId, 'which', 'which']);
             whichCommand = ['which'];
         } catch (e) {
             try {
-                await this.executeDockerCommand(['exec', containerId, 'command'], {throwOnExitCode: true});
+                await this.executeDockerCommand(['exec', containerId, 'command']);
                 whichCommand = ['command', '-v'];
             } catch (e) {
                 // Silence...
@@ -743,7 +749,7 @@ I can try to let docker compose create the containers (without starting them) fo
         if (whichCommand) {
             for (const shell of shellOptions) {
                 try {
-                    const result = await this.executeDockerCommand(['exec', containerId, ...whichCommand, shell], {throwOnExitCode: true});
+                    const result = await this.executeDockerCommand(['exec', containerId, ...whichCommand, shell]);
                     return result.stdout.trim();
                 } catch (e) {
                     // Silence...
@@ -753,7 +759,7 @@ I can try to let docker compose create the containers (without starting them) fo
 
         // Method 2: Inspecting the image configuration
         try {
-            const inspectResult = await this.executeDockerCommand(['inspect', containerId], {throwOnExitCode: true});
+            const inspectResult = await this.executeDockerCommand(['inspect', containerId]);
             const inspectData = JSON.parse(inspectResult.stdout);
             if (inspectData && inspectData.length > 0) {
                 // Check for explicitly defined shell
@@ -767,7 +773,7 @@ I can try to let docker compose create the containers (without starting them) fo
 
         // Method 3: Looking at /etc/passwd for real shells
         try {
-            const passwdContent = await this.executeDockerCommand(['exec', containerId, 'cat', '/etc/passwd'], {throwOnExitCode: true});
+            const passwdContent = await this.executeDockerCommand(['exec', containerId, 'cat', '/etc/passwd']);
             const lines = passwdContent.stdout.split('\n').map(line => line.trim());
             for (const line of lines) {
                 const fields = line.split(':');

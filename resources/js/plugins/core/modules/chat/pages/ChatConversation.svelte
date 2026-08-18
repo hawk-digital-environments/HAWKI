@@ -5,19 +5,31 @@
   non-Svelte-routed part of the app during the ongoing routing migration.
 
   Usage: never imported directly — resolved lazily by `ChatModule.routes()`
-  via `registrar.lazyRoute('/room/:id', ...)` and rendered by the kernel's
-  route renderer, which passes the matched route params as `params`.
+  via `registrar.lazyRoute('/room/:id', ...)`. Receives the matched `id`
+  param via its `params` prop.
 -->
+<script module lang="ts">
+    import {z} from 'zod';
+    import {configurePage} from '@hawk-hhg/hawki-svelte-components';
+
+    export const config = configurePage({
+        paramSchema: z.object({id: z.string()}),
+        loadData: async () => {
+            return {
+                foo: await new Promise<number>((resolve) => {
+                    setTimeout(() => resolve(123), 4000);
+                })
+            };
+        }
+    });
+</script>
 <script lang="ts">
     import {Link} from '@hawk-hhg/hawki-svelte-components';
+    import type {RouteProps} from '@hawk-hhg/hawki-svelte-components';
 
-    interface Props {
-        /** Matched route params — `id` of the conversation to display. */
-        params: { id: string };
-    }
+    const {params, data}: RouteProps<typeof config> = $props();
 
-    const {params}: Props = $props();
-
+    $inspect(data);
 </script>
 <h1>Single chat!</h1>
 <p>This is a single conversation with {params.id}</p>

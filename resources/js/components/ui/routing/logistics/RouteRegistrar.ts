@@ -1,18 +1,20 @@
 import {type Route, type RouteContext, type RouteParams, type RouteResult as URRouteResult} from 'universal-router';
 import {buildMiddlewareStack} from './buildMiddlewareStack.js';
-import {type ComponentLoader, type ComponentOrLoader, isLazyComponentLoader, lazyComponent, resolveComponent} from './lazyComponent.js';
-import type {Component, Snippet} from 'svelte';
+import {type ComponentLoader, type ComponentOrLoader, lazyComponent, resolveLayoutOption} from './lazyComponent.js';
+import type {Component} from 'svelte';
+import type {RouteNode, RouteNodeKind} from './nodes.js';
+import type {AnyRouteConfig} from './routeConfig.js';
+import type {RouteLayoutProps, RouteProps} from './routeProps.js';
 
 /** Signature of a callback that receives a {@link RouteRegistrar} to register routes on — used for plugin/module `routes()` hooks and for `registrar.group()` children. */
 export type RouteRegistrationCallback = (registrar: RouteRegistrar) => void;
 
-export interface RouteComponentProps {
-    context: RouteContext;
-    params: any;
-}
-
-/** A Svelte component used as the "page" of a route. */
-export type RouteComponent = Component<RouteComponentProps>;
+/**
+ * A Svelte component used as the "page" of a route. Receives {@link RouteProps}
+ * — a page declares its own `TParams`/`TData` and destructures what it needs
+ * from `$props()`; `RouterView` supplies the rest.
+ */
+export type RouteComponent = Component<RouteProps<any, any, any>>;
 /** Lazily imports a route's page component, e.g. `async () => (await import('./pages/ChatIndex.svelte')).default`. */
 export type RouteComponentLoader = ComponentLoader<RouteComponent>;
 /**
@@ -20,21 +22,18 @@ export type RouteComponentLoader = ComponentLoader<RouteComponent>;
  *
  * Because a Svelte 5 `Component` *is* a function, a loader cannot be told
  * apart from a component at runtime — hence {@link RouteRegistrar.lazyRoute}
- * tags loaders with the `type: 'lazy_route'` marker, which a
- * {@link RouteRenderer} can check to decide whether it has to `await` the
- * component first.
+ * tags loaders with the `type: 'lazy_route'` marker, which
+ * `lazyComponent.ts`'s `isLazyComponentLoader()` checks to decide whether
+ * `resolveComponentModule()` has to `await` the component first.
  */
 export type RouteComponentOrLoader = ComponentOrLoader<RouteComponent>;
 
 /**
  * A component that wraps a route's page (and any layout below it) in its
- * `children` snippet — the router's equivalent of a nested layout.
- *
- * Layouts receive no props: everything they need comes from the router context
- * (`useRouter()`, `useRouteMeta()`), which is what lets a layout stay mounted
- * while the page inside it changes.
+ * `children` snippet — the router's equivalent of a nested layout. Receives
+ * {@link RouteLayoutProps}, same as a page plus `children`.
  */
-export type RouteLayout = Component<{ children: Snippet }>;
+export type RouteLayout = Component<RouteLayoutProps<any, any, any>>;
 /** Lazily imports a layout component, e.g. `async () => (await import('./AdminLayout.svelte')).default`. */
 export type RouteLayoutLoader = ComponentLoader<RouteLayout>;
 /**
@@ -47,9 +46,11 @@ export type RouteLayoutOrLoader = ComponentOrLoader<RouteLayout>;
  * Arbitrary data a route carries for the components that render it — page
  * title, icon, permission hints, whatever the owning plugin needs.
  *
- * Meta belongs to the *route*, not to the layouts around it: it is read once
- * when the route resolves and is then visible to the page and every layout
- * wrapping it, via `useRouteMeta()`. Router-internal settings (such as
+ * Meta belongs to the *route*, not to the layouts around it: the page and
+ * every layout wrapping it receive the matched route's meta as their `meta`
+ * prop, so a layout reads the meta of whichever page is currently open inside
+ * it. Untyped here on purpose — narrow it where it is read, through
+ * {@link RouteProps}' third type argument. Router-internal settings (such as
  * {@link RouteOptions.layout}) deliberately live outside of it, so they can
  * never collide with — or leak into — a plugin's own meta.
  */
@@ -64,22 +65,15 @@ export type RouteMeta = Record<string, unknown>;
 export interface HawkiRoute<R = any> extends Route<R> {
     meta?: RouteMeta;
     layout?: RouteLayoutOrLoader;
+    /**
+     * The compiled node chain for this route — `layout` from
+     * {@link RouteOptions.layout}/{@link RouteGroupOptions.layout}, `page` from
+     * the route's own component. `layout` stays the registration-time input;
+     * `nodes` is what {@link buildRouteFromOptions}/{@link buildRouteGroupFromOptions}
+     * derive from it and what `nodes.ts` walks at resolve time.
+     */
+    nodes?: { layout?: RouteNode; page?: RouteNode };
 }
-/**
- * Turns a matched route into whatever the app renders. Installed as the
- * `action` of every compiled route, so it receives the `universal-router`
- * context (`pathname`, `baseUrl`, `route`, `next`, ...) alongside the matched
- * URL params.
- *
- * Beware of `universal-router`'s resolve semantics: returning `undefined`
- * makes the router continue with the next matching route, returning `null`
- * additionally skips the rest of the matched route's subtree, and if nothing
- * ever returns a value `resolve()` rejects with a 404 `Route not found` error.
- *
- * The concrete implementation is injected into {@link RoutingExtension}; see
- * `createDefaultRouteRenderer()` in `routeRenderer.js`.
- */
-export type RouteRenderer<TResult = any> = (component: RouteComponentOrLoader, context: RouteContext, params: RouteParams) => URRouteResult<TResult>;
 /**
  * Guard that runs *before* the route (or route group) it is attached to.
  *
@@ -94,12 +88,19 @@ export type RouteRenderer<TResult = any> = (component: RouteComponentOrLoader, c
  *   resolution. The body carries `component`, `context` and `params`, so a
  *   middleware can both replace the page *and* rewrite the params the page
  *   will receive — e.g. inject a derived value, normalise a slug — before the
- *   router picks them up.
+ *   router picks them up. `component` may be an eager component or a
+ *   `lazyComponent()` loader; the router resolves it like any other node.
  * - **`return await next()`** to pass through to the guarded route. Whatever
  *   the guarded route resolves to is handed back unchanged.
  * - **Return nothing (or throw)** to mark the guarded route as unreachable:
  *   `universal-router` skips the route's subtree, falls through to the next
  *   sibling, and 404s if nothing else matches — the permission-deny signal.
+ * - **`import {redirect, routeError} from './signals.js'` and call one** to
+ *   send the user elsewhere, or fail the resolution with an HTTP-style
+ *   status, instead of returning/throwing directly — see `signals.ts` and
+ *   `buildMiddlewareStack.ts`'s module doc comment for why this exists
+ *   alongside "return a replacement body": swapping the component alone
+ *   leaves the URL pointing at a page the user isn't actually on.
  */
 export type RouteMiddleware = (
     context: RouteContext,
@@ -111,9 +112,14 @@ export type RouteMiddleware = (
  * actions return and what the router renders. Exposed to middlewares via
  * {@link RouteMiddleware} so they can inspect or rewrite it before passing
  * through (`next()`), or construct one to take over rendering.
+ *
+ * `component` is unresolved on purpose: a route's action no longer awaits it,
+ * so a middleware replacing it is free to hand back either an eager component
+ * or a `lazyComponent()` loader. The router resolves it once, alongside the
+ * rest of the matched route's node chain.
  */
 export interface RouteResultBody {
-    component: RouteComponent;
+    component: RouteComponentOrLoader;
     context: RouteContext;
     params: RouteParams;
 }
@@ -133,12 +139,24 @@ export interface RouteOptions<TMeta extends RouteMeta = RouteMeta> {
     middlewares?: RouteMiddleware[];
     /**
      * Layout wrapping this route's page, rendered *inside* the layouts of the
-     * groups the route sits in. Use `lazyComponent()` for a loader.
+     * groups the route sits in. Prefer {@link lazyLayout} so the layout stays
+     * out of the initial bundle.
      */
-    layout?: RouteLayoutOrLoader;
+    layout?: RouteLayout;
     /**
-     * Data handed to the page and all its layouts through `useRouteMeta()`.
-     * Type it by passing the schema's inferred type as `TMeta`, e.g.
+     * {@link layout}, imported only once this route is actually resolved — the
+     * layout counterpart of {@link RouteRegistrar.lazyRoute}. Declaring both
+     * this and `layout` throws when the registrar builds.
+     *
+     * @example
+     * registrar.lazyRoute('/users', loader, {
+     *     lazyLayout: async () => (await import('./AdminLayout.svelte')).default
+     * });
+     */
+    lazyLayout?: RouteLayoutLoader;
+    /**
+     * Data handed to the page and all its layouts via the `route` prop's
+     * `meta` field. Type it by passing the schema's inferred type as `TMeta`, e.g.
      * `registrar.lazyRoute<ChatMeta>('/', loader, {meta: {title: 'Chat'}})`.
      */
     meta?: TMeta;
@@ -158,6 +176,24 @@ export interface RouteOptions<TMeta extends RouteMeta = RouteMeta> {
      * at least one segment and therefore does not match the bare `/files`.
      */
     catchAll?: boolean;
+    /**
+     * Params, data loader and cache key for this route's page, built with
+     * `configurePage()` — see `routeConfig.ts`.
+     *
+     * Takes precedence over a `config` exported from the component's own
+     * module, so the same component can be registered on several routes and
+     * still be given a different dataset here. It replaces that config
+     * wholesale rather than merging into it — see `nodes.ts`'s
+     * `resolveNodeConfig()` for why. Declaring both warns in dev.
+     *
+     * This is also the only way to configure a component that is not
+     * resolvable as a module (a loader written as `async () => (await
+     * import('./X.svelte')).default` throws the module namespace away before
+     * `resolveComponentModule()` ever sees it, so it cannot export one).
+     */
+    config?: AnyRouteConfig;
+    /** Same, for this route's own `layout` — built with `configureLayout()`. Same precedence rule as {@link config}. */
+    layoutConfig?: AnyRouteConfig;
 }
 
 /** A route registration as stored in the registrar: the user-supplied {@link RouteOptions} plus the path and component it was registered with. */
@@ -182,18 +218,60 @@ export interface RouteGroupOptions {
     /**
      * Layout wrapping every route inside this group. Stays mounted while
      * navigating between the group's routes, so it can hold sidebar state,
-     * scroll position or transitions. Use `lazyComponent()` for a loader.
+     * scroll position or transitions. Prefer {@link lazyLayout} so the layout
+     * stays out of the initial bundle.
      *
      * Groups carry no `meta`: meta is the matched route's, and a group layout
      * simply sees the meta of whichever route is currently open inside it.
      */
-    layout?: RouteLayoutOrLoader;
+    layout?: RouteLayout;
+    /**
+     * {@link layout}, imported only once a route inside this group is actually
+     * resolved. Declaring both this and `layout` throws when the registrar
+     * builds.
+     *
+     * @example
+     * registrar.group('/admin', (admin) => { ... }, {
+     *     lazyLayout: async () => (await import('./AdminLayout.svelte')).default
+     * });
+     */
+    lazyLayout?: RouteLayoutLoader;
+    /**
+     * Params, data loader and cache key for this group's `layout`, built with
+     * `configureLayout()`. Same precedence rule as {@link RouteOptions.config}.
+     */
+    layoutConfig?: AnyRouteConfig;
 }
 
 /** A group registration as stored in the registrar: the user-supplied {@link RouteGroupOptions} plus the group's path prefix and its children callback. */
 export interface RegisteredRouteGroupOptions extends RouteGroupOptions {
     path: string | undefined;
     children: (registrar: RouteRegistrar) => void;
+}
+
+/**
+ * Mints ids for {@link RouteNode}s. Module-level, not a `RouteRegistrar`
+ * instance field: {@link RouteRegistrar.group} builds each nested group with
+ * a *fresh* `RouteRegistrar`, so a per-instance counter would hand out
+ * colliding ids across groups — only a counter shared by every registrar
+ * guarantees uniqueness across the whole compiled tree.
+ */
+let nodeIdCounter = 0;
+
+/**
+ * Stamps a {@link RouteNode}. The counter alone guarantees a unique id;
+ * `path` and `kind` are folded in purely so the id stays readable in a debug
+ * dump (e.g. `n42#/admin/users:page`).
+ */
+function buildRouteNode(kind: RouteNodeKind, componentOrLoader: ComponentOrLoader<any>, path: string, name: string | undefined, configOption?: AnyRouteConfig): RouteNode {
+    return {
+        id: `n${++nodeIdCounter}#${path}:${kind}`,
+        kind,
+        componentOrLoader,
+        routeName: name,
+        routePath: path,
+        configOption
+    };
 }
 
 /**
@@ -250,9 +328,9 @@ export class RouteRegistrar {
      * actually resolved. Throws if a route with the same `path` exists on this
      * registrar level.
      *
-     * The given loader is tagged in place with `type: 'lazy_route'` so the
-     * {@link RouteRenderer} can distinguish it from an eager component (both
-     * are plain functions at runtime).
+     * The given loader is tagged in place with `type: 'lazy_route'` so
+     * `lazyComponent.ts`'s `isLazyComponentLoader()` can distinguish it from
+     * an eager component (both are plain functions at runtime).
      *
      * @example
      * registrar.lazyRoute('/', async () => (await import('./pages/ChatIndex.svelte')).default);
@@ -364,30 +442,29 @@ export class RouteRegistrar {
         return [...builtRoutes, ...builtCatchAllRoutes];
     }
 
-    private isLazyRouteLoader(obj: any): obj is RouteComponentLoader {
-        return isLazyComponentLoader(obj);
-    }
-
     private buildRouteFromOptions(options: RegisteredRouteOptions): Route {
-        const renderableRouteResolver = (context: RouteContext, params: RouteParams): RouteResult => {
-            if (!this.isLazyRouteLoader(options.component)) {
-                return {component: options.component as RouteComponent, context, params};
-            }
-
-            return resolveComponent(options.component, `route "${options.path}"`)
-                .then((component) => ({component, context, params}));
-        };
+        const path = options.path.replace(/\/$/, ''); // Strip trailing slash for consistency
+        const layout = resolveLayoutOption(options.layout, options.lazyLayout, `Route "${options.path}"`);
 
         // `meta` and `layout` sit on the inner route on purpose: middleware
         // wrappers must stay transparent, and the layout chain is collected by
         // walking up from whichever route actually matched.
         const innerRoute: HawkiRoute = {
             name: options.name,
-            path: options.path.replace(/\/$/, ''), // Strip trailing slash for consistency,
-            action: (ctx, params) =>
-                renderableRouteResolver(ctx, params),
+            path,
+            // The action no longer resolves the component: it hands back the
+            // unresolved `ComponentOrLoader` and lets the router resolve the
+            // whole node chain (this page plus its layouts) in one place, so
+            // it can run every resolution in parallel instead of one route
+            // at a time. This also keeps the action synchronous, which
+            // `universal-router` is happy with.
+            action: (ctx, params) => ({component: options.component, context: ctx, params}),
             meta: options.meta,
-            layout: options.layout,
+            layout,
+            nodes: {
+                page: buildRouteNode('page', options.component, path, options.name, options.config),
+                layout: layout ? buildRouteNode('layout', layout, path, options.name, options.layoutConfig) : undefined
+            },
             // An *empty* children list is what turns this into a catch-all:
             // `universal-router` derives `end: !route.children` for its path
             // matcher, so having children (even none) switches the route to
@@ -410,12 +487,17 @@ export class RouteRegistrar {
         const innerRegistrar = new RouteRegistrar();
         options.children(innerRegistrar);
         const innerRoutes = innerRegistrar.build();
+        const layout = resolveLayoutOption(options.layout, options.lazyLayout, `Group "${options.path}"`);
 
         const groupRoute: HawkiRoute = {
             name: options.name,
             path: options.path,
             children: innerRoutes,
-            layout: options.layout
+            layout,
+            // A group has no page node — its route has no `action` of its own.
+            nodes: layout
+                ? {layout: buildRouteNode('layout', layout, options.path ?? '', options.name, options.layoutConfig)}
+                : undefined
         };
 
         return buildMiddlewareStack(groupRoute, options);

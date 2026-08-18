@@ -15,7 +15,8 @@
     // please confirm what this page is expected to render before that migration
     // lands, so the doc block above doesn't become stale.
 
-    import {Link, useRouter} from '@hawk-hhg/hawki-svelte-components';
+    import {Link} from '@hawk-hhg/hawki-svelte-components';
+    import {useRouter} from '@hawk-hhg/hawki-svelte-components';
 
     /**
      * The kernel's route renderer instantiates page components without passing

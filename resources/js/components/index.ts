@@ -126,59 +126,15 @@ export {default as RouteError} from './ui/routing/RouteError.svelte';
 export {default as RouteNotFound} from './ui/routing/RouteNotFound.svelte';
 export {default as RouterView} from './ui/routing/RouterView.svelte';
 
-export {provideDefaultRouterName, useRouter} from './ui/routing/hooks/useRouter.svelte.js';
-export {useRouteMeta} from './ui/routing/hooks/useRouteMeta.svelte.js';
-export type {RouteMetaHandle, UseRouteMetaOptions} from './ui/routing/hooks/useRouteMeta.svelte.js';
-
-export {buildMiddlewareStack} from './ui/routing/logistics/buildMiddlewareStack.js';
-export {dumpRouterToConsole, type RouterDump} from './ui/routing/logistics/debugger.js';
-export {isPathActive, isRouteActive, type IsPathActiveOptions} from './ui/routing/logistics/isActive.js';
-export {collectRouteLayouts, resolveRouteLayouts} from './ui/routing/logistics/layouts.js';
-export {
-    isLazyComponentLoader,
-    LAZY_COMPONENT_MARKER,
-    lazyComponent,
-    resolveComponent,
-    type ComponentLoader,
-    type ComponentOrLoader,
-    type LazyComponentLoader
-} from './ui/routing/logistics/lazyComponent.js';
-export {mergePaths, normalizeBasePath, normalizePath} from './ui/routing/logistics/normalizePath.js';
-export {
-    RouteRegistrar,
-    type HawkiRoute,
-    type RegisteredRouteGroupOptions,
-    type RegisteredRouteOptions,
-    type RouteComponent,
-    type RouteComponentLoader,
-    type RouteComponentOrLoader,
-    type RouteComponentProps,
-    type RouteGroupOptions,
-    type RouteLayout,
-    type RouteLayoutLoader,
-    type RouteLayoutOrLoader,
-    type RouteMeta,
-    type RouteMiddleware,
-    type RouteOptions,
-    type RouteRegistrationCallback,
-    type RouteRenderer,
-    type RouteResult,
-    type RouteResultBody
-} from './ui/routing/logistics/RouteRegistrar.js';
-export {
-    createRouter,
-    createRouterFromRegistrar,
-    getRouterContextName,
-    type CreateRouterOptions,
-    type IsActiveOptions,
-    type Router,
-    type RouterHandle
-} from './ui/routing/logistics/router.svelte.js';
-
-export {createHashRoutingStrategy} from './ui/routing/strategy/hashRoutingStrategy.svelte.js';
-export {createPathRoutingStrategy} from './ui/routing/strategy/pathRoutingStrategy.svelte.js';
-export {createTransientRoutingStrategy} from './ui/routing/strategy/transientRoutingStrategy.svelte.js';
-export type {RoutingStrategy} from './ui/routing/strategy/types.js';
+// Routing curates its own public surface in `ui/routing/index.ts`, and that
+// file is explicit about what it withholds and why. Re-export it wholesale
+// rather than reaching into `logistics/`, `strategy/` or `hooks/` from here —
+// a second, wider door into the same subsystem would defeat the point.
+//
+// `ui/routing/extendableTypes.js` is deliberately not re-exported: `declare
+// module` augmentation has to name a declaration site directly, so consumers
+// augment it through its own subpath.
+export * from './ui/routing/index.js';
 
 // -------------------------------------------------------------------------
 // ui/select
