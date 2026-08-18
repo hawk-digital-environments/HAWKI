@@ -112,10 +112,6 @@
     /* Brand + collapse toggle row. Horizontal padding 0 so the logo and toggle
        sit flush with the item rows below. */
     .sidebar-header {
-        /* The nav rows' height: at rail width a row is square, so matching it
-           gives the header actions the exact same square as every other item —
-           same hit area, same hover surface, same column. */
-        --collapse-size: var(--nav-row-h);
         /* Named because the absolutely-positioned brand has to inset itself by
            the same amounts — see below. */
         --header-pad-top: var(--space-1);
@@ -123,14 +119,17 @@
            the panel's cap rather than as another group, so it sits closer to
            the module switcher below it. */
         --header-pad-bottom: var(--space-2);
-        /* Horizontal room the actions occupy, for the brand's max-width. */
-        --actions-w: var(--collapse-size);
+        /* Horizontal room the actions occupy, for the brand's max-width. The
+           actions are `--nav-row-h` squares: at rail width a row is square, so
+           matching the row height gives them the same hit area, hover surface
+           and column as every other item. */
+        --actions-w: var(--nav-row-h);
         /* How far a right-aligned action has to slide to land on the rail's icon
            column: the difference between where the rows put their icon centre and
            where the panel's right edge leaves that button's centre. */
         --rail-nudge: calc(
             (var(--space-2) + var(--nav-item-pad-x) + var(--nav-icon-size) / 2) -
-                (var(--rail-w) - var(--divider-width) - var(--space-2) - var(--collapse-size) / 2)
+                (var(--rail-w) - var(--divider-width) - var(--space-2) - var(--nav-row-h) / 2)
         );
 
         position: relative;
@@ -148,14 +147,14 @@
     }
 
     .sidebar-header:has(.search) {
-        --actions-w: calc(2 * var(--collapse-size) + var(--space-1));
+        --actions-w: calc(2 * var(--nav-row-h) + var(--space-1));
     }
 
     /* In the rail the search action drops onto a second line, so the row has to
        reserve that line's height itself — it is absolutely positioned and would
        otherwise overlap the first nav item. */
     .sidebar-header:has(.search):not(.open) {
-        --header-pad-bottom: calc(var(--space-2) + var(--collapse-size) + var(--space-1));
+        --header-pad-bottom: calc(var(--space-2) + var(--nav-row-h) + var(--space-1));
     }
 
     /* The brand is positioned out of the flex line on purpose. In the flow it
@@ -172,7 +171,7 @@
            bottom padding grows in the rail, which would drag the logo down with
            it mid-collapse. */
         top: var(--header-pad-top);
-        height: var(--collapse-size);
+        height: var(--nav-row-h);
         display: inline-flex;
         align-items: center;
         /* Stop short of the actions so a long logo never runs under them. */
@@ -180,13 +179,13 @@
         overflow: hidden;
         /* Shrink-wrap the logo so the hover surface hugs it instead of spanning
            the whole free width of the row, and pad it exactly as the header
-           actions pad their icon — the toggle is a `--collapse-size` square
-           around an 18px glyph — so both hover surfaces have the same inset and
-           the same height. */
+           actions pad their icon — the toggle is a `--nav-row-h` square
+           around a `--nav-icon-size` glyph — so both hover surfaces have the
+           same inset and the same height. */
         width: fit-content;
         color: inherit;
         text-decoration: none;
-        padding: 0 calc((var(--collapse-size) - var(--nav-icon-size)) / 2);
+        padding: 0 calc((var(--nav-row-h) - var(--nav-icon-size)) / 2);
         border-radius: var(--corner-sm);
         transition:
             opacity 160ms ease 100ms,
@@ -209,8 +208,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: var(--collapse-size);
-        height: var(--collapse-size);
+        width: var(--nav-row-h);
+        height: var(--nav-row-h);
         padding: 0;
         border: none;
         background: transparent;
@@ -238,7 +237,7 @@
        matches the toggle's, so insetting the top alone lines the two up. */
     .header-action.search {
         position: absolute;
-        right: calc(var(--collapse-size) + var(--space-1));
+        right: calc(var(--nav-row-h) + var(--space-1));
         top: var(--header-pad-top);
     }
 
@@ -248,8 +247,8 @@
        as one movement. */
     .sidebar-header:not(.open) .header-action.search {
         transform: translate(
-            calc(var(--rail-nudge) + var(--collapse-size) + var(--space-1)),
-            calc(var(--collapse-size) + var(--space-1))
+            calc(var(--rail-nudge) + var(--nav-row-h) + var(--space-1)),
+            calc(var(--nav-row-h) + var(--space-1))
         );
     }
 
