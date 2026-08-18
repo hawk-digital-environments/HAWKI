@@ -185,14 +185,48 @@
         }
     }
 
+    /* Sits inline where the name text was, so it inherits the surrounding
+       font and only adds a light field affordance instead of a full form input. */
     .chat-name-input {
-        padding: var(--space-0_5);
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding: var(--space-0_5) var(--space-1_5);
         height: auto;
         min-height: unset;
-        background: transparent;
+        border: 1px solid var(--color-border);
+        border-radius: var(--corner-xs);
+        background: var(--color-surface-raised);
+        font: inherit;
+        color: inherit;
+        transition: border-color var(--duration-extra-fast) ease,
+                    box-shadow var(--duration-extra-fast) ease;
+
+        &:focus,
+        &:focus-visible {
+            outline: none;
+            border-color: var(--color-focus-ring);
+            box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-focus-ring) 25%, transparent);
+        }
 
         &.has-issue {
-            outline-color: var(--color-error);
+            border-color: var(--color-error);
+
+            &:focus,
+            &:focus-visible {
+                border-color: var(--color-error);
+                box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-error) 25%, transparent);
+            }
+        }
+    }
+
+    /* Grow/shrink with the typed name instead of spanning the full row.
+       Falls back to the full-width field where field-sizing is unsupported. */
+    @supports (field-sizing: content) {
+        .chat-name-input {
+            width: auto;
+            field-sizing: content;
+            min-width: 6rem;
         }
     }
 
