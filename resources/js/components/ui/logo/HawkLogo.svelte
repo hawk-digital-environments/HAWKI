@@ -28,10 +28,6 @@
     .mark {
         height: 0.9375rem;
         width: auto;
-        color: var(--color-accent-500, #2f2abf);
-    }
-
-    :global(html.darkMode) .mark {
-        color: oklch(100% 0 0);
+        color: var(--color-accent-text, #2f2abf);
     }
 </style>

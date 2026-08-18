@@ -41,11 +41,11 @@
         defaultExpanded?: boolean;
         /** Bindable expansion state of the sub-tree; defaults to `defaultExpanded`. */
         expanded?: boolean;
+        /** Custom trailing visual (e.g. a settings icon). Ignored when the row
+            renders a chevron of its own (`children` or `drill`). */
+        trailing?: Snippet;
         /** Sub-items revealed beneath this row. Presence renders a chevron. */
         children?: Snippet;
-        /** Custom trailing visual (e.g. a badge) rendered in place of the chevron.
-            Ignored when the row has `children`. */
-        trailing?: Snippet;
     }
 
     let {
@@ -55,6 +55,7 @@
         active = false,
         indent = false,
         drill = false,
+        trailing,
         defaultExpanded = false,
         expanded = $bindable(defaultExpanded),
         children,
@@ -134,7 +135,7 @@
                 <ChevronRightIcon size={15} strokeWidth={2} />
             </span>
         {:else if trailing}
-            <span class="caret" aria-hidden="true">
+            <span class="caret trailing" aria-hidden="true">
                 {@render trailing()}
             </span>
         {/if}
@@ -299,11 +300,23 @@
         color: inherit;
         transition:
             transform 120ms var(--easing-spring),
+            color var(--duration-fast),
             opacity 160ms ease 100ms;
     }
 
     .caret.open {
         transform: rotate(90deg);
+    }
+
+    /* A trailing visual recedes at rest and comes forward on hover or while the
+       row is active — same treatment as the section switcher's chevron. */
+    .caret.trailing {
+        color: var(--color-text-muted);
+    }
+
+    .sidebar-item:hover .caret.trailing,
+    .sidebar-item.active .caret.trailing {
+        color: inherit;
     }
 
     .subtree {
