@@ -44,7 +44,7 @@ export class ModelParameterSlice implements CheckpointingInterface<ModelParamete
     }
 
     /** Defaults declared by the current model definition (from the server). */
-    public modelDefaults = $derived.by(() => this.model.current.parameters ?? {});
+    public modelDefaults = $derived.by(() => this.model.current?.parameters ?? {});
 
     /** Effective defaults: model-specific values merged over the global fallbacks
      *  (`temperature=0.7`, `top_p=0.9`). Used by `reset()` and `isModified`. */
