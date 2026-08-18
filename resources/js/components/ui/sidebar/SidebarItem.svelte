@@ -180,22 +180,24 @@
         padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
         border: none;
         background: transparent;
-        color: var(--color-text);
+        /* Rows recede at rest and come forward on hover — the same treatment as
+           the section switcher's chevron and the header actions, but held part
+           way to the full text color: a list of chat titles is content, not
+           chrome, so it stays comfortably readable while unselected. */
+        color: color-mix(in oklab, var(--color-text) 60%, var(--color-text-muted));
         font-size: var(--font-size-nav);
         cursor: pointer;
         border-radius: var(--corner-sm);
         text-align: left;
-        opacity: 0.85;
-        transition: opacity var(--duration-fast);
+        transition: color var(--duration-fast);
     }
 
     /* Hover/active surfaces are provided by the sliding highlights in List. */
     .sidebar-item:hover {
-        opacity: 1;
+        color: var(--color-text);
     }
 
     .sidebar-item.active {
-        opacity: 1;
         color: var(--color-active-text);
     }
 
@@ -224,7 +226,6 @@
        they read as an action — the one row in the sidebar carrying the brand
        gradient, which sets it apart from every translucent nav highlight. */
     .sidebar-item.drill {
-        opacity: 1;
         --drill-stop-1: var(--gradient-brand-1);
         --drill-stop-2: var(--gradient-brand-2);
         --drill-stop-3: var(--gradient-brand-3);
@@ -236,7 +237,6 @@
         );
         color: var(--color-on-accent-fill);
         transition:
-            opacity var(--duration-fast),
             --drill-stop-1 var(--duration-fast),
             --drill-stop-2 var(--duration-fast),
             --drill-stop-3 var(--duration-fast);
