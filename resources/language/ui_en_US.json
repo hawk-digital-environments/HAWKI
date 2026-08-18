@@ -6,7 +6,8 @@
             "close": "Close navigation",
             "collapse": "Collapse sidebar",
             "expand": "Expand sidebar",
-            "search": "Search"
+            "search": "Search",
+            "newChat": "New chat"
         },
         "dialog": {
             "closeLabel": "Close",
