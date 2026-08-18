@@ -82,7 +82,8 @@
             "attachFileTooltip": "Datei anhängen",
             "error": {
                 "unsupported_file_type": "Dateien vom Typ „:type“ können nicht angehängt werden.",
-                "file_too_large": "Die Datei „:name“ ist zu groß. Maximal erlaubt sind :maxSize."
+                "file_too_large": "Die Datei „:name“ ist zu groß. Maximal erlaubt sind :maxSize.",
+                "unknown_file": "Unbekannt"
             },
             "assistantButtonTooltip": {
                 "addHandle": "Mit HAWKI sprechen",
