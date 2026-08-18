@@ -6,7 +6,8 @@
             "close": "Navigation schließen",
             "collapse": "Seitenleiste einklappen",
             "expand": "Seitenleiste ausklappen",
-            "search": "Suchen"
+            "search": "Suchen",
+            "newChat": "Neuer Chat"
         },
         "dialog": {
             "closeLabel": "Schließen",
