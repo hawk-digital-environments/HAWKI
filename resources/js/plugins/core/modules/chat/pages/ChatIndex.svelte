@@ -254,6 +254,7 @@
             onRename={name => store.rename(store.active!.slug, name)}
             onDelete={removeConversation}
             onExport={exportConversation}
+            onSkipToComposer={() => composer?.focusInput()}
         />
     {:else}
         <header class="new-header"><span>{__('chat.page.newChat')}</span></header>
