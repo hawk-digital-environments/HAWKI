@@ -274,10 +274,15 @@
         transition: opacity 100ms ease;
     }
 
+    /* Pinned to the icon column rather than shrink-wrapped, so leading visuals
+       that are not glyph-sized — an avatar, say — still centre on the same
+       column as every icon, in the rail as well as the open panel. */
     .icon-wrap {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        width: var(--nav-icon-size);
+        height: var(--nav-icon-size);
         flex-shrink: 0;
     }
 
