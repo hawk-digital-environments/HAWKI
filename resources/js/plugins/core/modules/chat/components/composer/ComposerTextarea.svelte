@@ -94,9 +94,10 @@
                 const issues = composerContext.attachments.add(file)
                 if (issues !== true) {
                     for (let issue of issues) {
+                        console.log(file)
                         toastContext.error(__(`chat.composer.error.${issue.type}`, {
                             name: issue.file.name,
-                            type: issue.file.type,
+                            type: file.name.indexOf(".") !== -1 ? ("." + file.name.split('.').pop()) : __("chat.composer.error.unknown_file"),
                             maxSize: formatMaxSize(issue.maxSize)
                         }))
                     }
