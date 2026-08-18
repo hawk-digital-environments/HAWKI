@@ -17,6 +17,31 @@
     const {__} = useTranslator();
     const expanded = $derived(sidebar.navOpen);
 
+    // Fade the list edge only where there is actually more content in that
+    // direction, so a short (or fully scrolled) list shows no fade at all.
+    let historyEl = $state<HTMLElement | null>(null);
+    let fadeTop = $state(false);
+    let fadeBottom = $state(false);
+
+    function updateFades() {
+        const el = historyEl;
+        if (!el) return;
+        const max = el.scrollHeight - el.clientHeight;
+        fadeTop = el.scrollTop > 1;
+        fadeBottom = el.scrollTop < max - 1;
+    }
+
+    $effect(() => {
+        const el = historyEl;
+        if (!el) return;
+        // Re-measure when the list itself changes, not just on scroll.
+        const observer = new ResizeObserver(updateFades);
+        observer.observe(el);
+        for (const child of el.children) observer.observe(child);
+        updateFades();
+        return () => observer.disconnect();
+    });
+
     function newChat() {
         store.startNew();
         void app.router.goTo(app.router.p('/chat'));
@@ -24,14 +49,15 @@
 </script>
 
 <div class="chat-sidebar">
-    <SidebarButton
-        icon={Add01Icon}
-        label={__('chat.sidebar.newChat')}
-        onclick={newChat}
-    />
-
     {#if expanded}
-        <div class="history" aria-label={__('chat.sidebar.history')}>
+        <div
+            class="history"
+            class:fade-top={fadeTop}
+            class:fade-bottom={fadeBottom}
+            bind:this={historyEl}
+            onscroll={updateFades}
+            aria-label={__('chat.sidebar.history')}
+        >
             {#if store.listLoading && store.conversations.length === 0}
                 <p class="hint">{__('chat.sidebar.loading')}</p>
             {:else if store.conversations.length === 0}
@@ -61,6 +87,16 @@
             {/if}
         </div>
     {/if}
+
+    <!-- Pinned to the bottom of the column, directly above the profile
+         footer; the history scroller above it takes the free space. -->
+    <div class="new-chat">
+        <SidebarButton
+            icon={Add01Icon}
+            label={__('chat.sidebar.newChat')}
+            onclick={newChat}
+        />
+    </div>
 </div>
 
 <style>
@@ -74,7 +110,43 @@
 
     .history {
         min-height: 0;
+        flex: 1;
         overflow-y: auto;
+        /* The list still scrolls, but without a visible bar — same treatment
+           as the other scrollable panels (see DropdownMenuDetailView). */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        /* Both edges are collapsed to zero by default; the scroll state opens
+           the one that has content beyond it. */
+        --fade-top: 0px;
+        --fade-bottom: 0px;
+        --history-fade: linear-gradient(
+            to bottom,
+            transparent 0,
+            black var(--fade-top),
+            black calc(100% - var(--fade-bottom)),
+            transparent 100%
+        );
+        mask-image: var(--history-fade);
+        -webkit-mask-image: var(--history-fade);
+    }
+
+    .history.fade-top {
+        --fade-top: var(--space-6);
+    }
+
+    .history.fade-bottom {
+        --fade-bottom: var(--space-6);
+    }
+
+    .history::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Keeps the button on the bottom edge even in the collapsed rail, where
+       the history above it is not rendered at all. */
+    .new-chat {
+        margin-top: auto;
     }
 
     .hint {
