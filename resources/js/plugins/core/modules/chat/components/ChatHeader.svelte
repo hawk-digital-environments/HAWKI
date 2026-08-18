@@ -13,9 +13,11 @@
         onDelete: () => void | Promise<void>;
         onExport: (format: OldUiExportType) => void;
         generating?: boolean;
+        /** When set, renders a visually hidden skip link (after the title) that jumps focus past the message log into the composer. */
+        onSkipToComposer?: () => void;
     }
 
-    const {conversation, onRename, onDelete, onExport, generating = false}: Props = $props();
+    const {conversation, onRename, onDelete, onExport, generating = false, onSkipToComposer}: Props = $props();
     const {__} = useTranslator();
     let name = $state((() => conversation.name)());
     let deleteOpen = $state(false);
@@ -39,6 +41,11 @@
             </DropdownMenuItem>
         </ChatNameMenu>
     </div>
+    {#if onSkipToComposer}
+        <button class="skip-to-composer" type="button" onclick={onSkipToComposer}>
+            {__('chat.page.skipToComposer')}
+        </button>
+    {/if}
     {#if generating}
         <div class="generating" role="status" aria-live="polite">
             <span class="generating-spinner" aria-hidden="true"></span>
@@ -57,6 +64,7 @@
 
 <style>
     header {
+        position: relative;
         display: flex;
         min-height: 3.75rem;
         align-items: center;
@@ -74,6 +82,31 @@
         max-width: 34rem;
         font-size: var(--font-size-base);
         font-weight: var(--font-weight-semibold);
+    }
+
+    /* Like the app's skip link: invisible until keyboard focus, then a small
+       pill below the header so it never shifts the header layout. */
+    .skip-to-composer {
+        position: absolute;
+        top: calc(100% + var(--space-2));
+        left: var(--space-5);
+        z-index: 10;
+        padding: var(--space-2) var(--space-3);
+        border: none;
+        border-radius: var(--corner-sm);
+        background: var(--color-interactive);
+        color: var(--color-on-interactive);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+    }
+
+    .skip-to-composer:not(:focus) {
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
     }
 
     .generating {

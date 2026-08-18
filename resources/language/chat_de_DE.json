@@ -18,6 +18,7 @@
             "generating": "Antwort wird generiert…",
             "responseReady": "Die Antwort ist vollständig.",
             "messageHistory": "Nachrichtenverlauf",
+            "skipToComposer": "Zur Nachrichteneingabe springen",
             "welcomeTitle": "Wie kann ich helfen?",
             "welcomeDescription": "Starte eine private, verschlüsselte Unterhaltung mit HAWKI.",
             "disclaimer": "KI kann Fehler machen. Prüfe wichtige Informationen."
