@@ -40,6 +40,9 @@
         expanded?: boolean;
         /** Sub-items revealed beneath this row. Presence renders a chevron. */
         children?: Snippet;
+        /** Custom trailing visual (e.g. a badge) rendered in place of the chevron.
+            Ignored when the row has `children`. */
+        trailing?: Snippet;
     }
 
     let {
@@ -53,6 +56,7 @@
         expanded = $bindable(defaultExpanded),
         children,
         onclick,
+        trailing,
         class: className,
         ...rest
     }: Props = $props();
@@ -118,6 +122,10 @@
         {:else if drill}
             <span class="caret" aria-hidden="true">
                 <ChevronRightIcon size={15} strokeWidth={2} />
+            </span>
+        {:else if trailing}
+            <span class="caret" aria-hidden="true">
+                {@render trailing()}
             </span>
         {/if}
     </button>
