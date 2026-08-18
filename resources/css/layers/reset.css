@@ -5,7 +5,16 @@
    ========================================================================== */
 
 @layer reset {
-    /* Temporary specific targeting, in the future *, *::before, *::after */
+    /* Border-box everywhere. Without a `svelte-snippet` wrapper (this app has
+       none) the scoped rule below never matched, so padded width/height:100%
+       boxes overflowed their containers and got clipped — e.g. the sidebar's
+       .inner (16rem + padding) clipped on the right and bottom. */
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
     svelte-snippet,
     [id^="bits-"] {
         & *,

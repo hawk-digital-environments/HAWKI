@@ -1,39 +1,65 @@
 <script lang="ts">
 
-    import {aiToolsStore} from "$lib/stores/AiToolsStore.svelte.js";
-    import {assistantBuilderStore} from "$lib/stores/assistants/AssistantBuilderStore.svelte.js";
-    import ToolsList from "$lib/components/assistant/assistantBuilderComponents/aiToolComponents/ToolsList.svelte";
-    import McpServerSelector from "$lib/components/assistant/assistantBuilderComponents/aiToolComponents/McpServerSelector.svelte";
-    import type {AiTool} from "$lib/types/aiTools/AiTool";
+    import {useStore} from "$lib/app/hooks/useStore.svelte.js";
+    import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
+    import ToolsList from "$lib/plugins/assistants/components/assistantBuilderComponents/aiToolComponents/ToolsList.svelte";
+    import McpServerSelector from "$lib/plugins/assistants/components/assistantBuilderComponents/aiToolComponents/McpServerSelector.svelte";
+    import type {AiToolOrCapability} from "$plugins/core/stores/aiToolStoreData.js";
+    import type {McpServer} from "$plugins/core/schemas/resources/mcp-servers.schema.js";
+
+    const builder = useBuilderContext();
+    const toolStore = useStore('ai-tools');
 
     // Ids of the tools currently selected on the draft — drives initial toggle state.
     const selectedIds = $derived(
-        new Set((assistantBuilderStore.draft.aiTools ?? []).map(t => t.id))
+        new Set((builder.draft.aiTools ?? []).map(t => t.id))
     );
 
-    function onchange(tool: AiTool, active: boolean) {
-        const current = assistantBuilderStore.draft.aiTools ?? [];
+    // The store returns a flat list (built-in tools, capabilities, and
+    // MCP-backed tools together) — split it the way the UI wants it: plain
+    // top-level entries (nothing runs through an MCP server) vs. entries
+    // grouped under the server that backs them. `McpServer` itself carries no
+    // tool list, so the grouping happens here rather than on the store.
+    // Capabilities (`is_capability`) are excluded: they're a synthetic
+    // grouping over several real tools, not a concrete `ai-tools` record, so
+    // their `id` isn't something the assistant's `aiTools` relationship can
+    // reference — only the individual tools underneath them can.
+    const nonMcpTools = $derived(toolStore.tools.filter(t => !t.server && !t.is_capability));
+    const mcpGroups = $derived.by(() => {
+        const groups = new Map<string, {server: McpServer; tools: AiToolOrCapability[]}>();
+        for (const tool of toolStore.tools) {
+            if (!tool.server || tool.is_capability) continue;
+            const group = groups.get(tool.server.id) ?? {server: tool.server, tools: []};
+            group.tools.push(tool);
+            groups.set(tool.server.id, group);
+        }
+        return [...groups.values()];
+    });
+
+    function onchange(tool: AiToolOrCapability, active: boolean) {
+        const current = builder.draft.aiTools ?? [];
         const next = active
             ? (current.some(t => t.id === tool.id) ? current : [...current, tool])
             : current.filter(t => t.id !== tool.id);
-        assistantBuilderStore.set("aiTools", next);
+        builder.set("aiTools", next);
     }
 
 </script>
 
 
 <div class="tool-selector">
-    {#if aiToolsStore.nonMcpTools.length > 0}
+    {#if nonMcpTools.length > 0}
         <ToolsList
-            tools={aiToolsStore.nonMcpTools}
+            tools={nonMcpTools}
             {selectedIds}
             {onchange}
         />
     {/if}
 
-    {#each aiToolsStore.mcpServers as server}
+    {#each mcpGroups as group (group.server.id)}
         <McpServerSelector
-            {server}
+            server={group.server}
+            tools={group.tools}
             {selectedIds}
             {onchange}
         />

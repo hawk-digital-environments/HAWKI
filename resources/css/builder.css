@@ -1,0 +1,161 @@
+/* ==========================================================================
+   Builder styling.
+
+   The assistant builder's shared field-layout helpers (`.input-container`,
+   `.field-header`, label variants) and page shell (columns, page header/body)
+   are styled here via class rules SCOPED under `.wrapper-grid` (the builder
+   shell) so they only affect the builder subtree and leave other pages
+   untouched. Placed in the `legacy` layer so scoped component styles still win.
+
+   The form controls themselves (input / textarea / select) are no longer
+   styled here — they are self-contained primitives (Input.svelte,
+   Textarea.svelte, Select.svelte) that carry their own scoped styles.
+
+   Migrated to the new design-system tokens to match the app-layout sidebar:
+   neutral surfaces, `--border`/`--corner-*`, soft accent focus rings, and the
+   token-based type/spacing scale.
+
+   Adapted for embedding in the global AppLayout content area: columns fill
+   their container (height:100%) instead of the viewport.
+   ========================================================================== */
+@layer legacy {
+    /* Form elements ------------------------------------------------------- */
+    .wrapper-grid p {
+        font-size: var(--font-size-sm);
+    }
+
+    .wrapper-grid button {
+        border: none;
+        background: transparent;
+        color: var(--color-text);
+    }
+    .wrapper-grid button:disabled {
+        opacity: 0.5;
+    }
+
+    /* Form-control styling (input / textarea / select) now lives in the
+       self-contained primitives — see Input.svelte, Textarea.svelte and
+       Select.svelte. Only the shared field-layout/label helpers below remain,
+       since consumers use them directly (KnowledgeBases, ReleaseStage, …). */
+
+    .wrapper-grid label,
+    .wrapper-grid .label {
+        font-size: var(--font-size-nav);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text);
+        margin: 0;
+    }
+
+    .wrapper-grid .faded {
+        color: var(--color-text-muted);
+    }
+    .wrapper-grid .label-xs {
+        font-size: var(--font-size-xs);
+    }
+    .wrapper-grid .label-thin {
+        font-weight: var(--font-weight-normal);
+    }
+    .wrapper-grid hr {
+        border: none;
+        border-top: var(--divider);
+        margin: var(--space-2) 0;
+    }
+    .wrapper-grid .tip {
+        margin: var(--space-2) 0 var(--space-8) 0;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+    }
+
+    /* Field container: label/error header stacked above the control. Ported
+       here (from the disabled _off/containers.css) so builder fields have
+       consistent internal spacing using the token scale. */
+    .wrapper-grid .input-container {
+        position: relative;
+        display: flex;
+        gap: var(--space-2);
+    }
+    .wrapper-grid .input-container.renderBlock {
+        flex-direction: column;
+    }
+    .wrapper-grid .input-container.renderInline {
+        flex-direction: row;
+        align-items: center;
+    }
+    .wrapper-grid .field-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+    }
+
+    /* Layout columns ------------------------------------------------------ */
+    /* Sole scroll region of the builder. `min-height: 0` lets it shrink inside
+       the grid row so its own `overflow-y` engages instead of overflowing the
+       shell (and the parent AppContent). */
+    .wrapper-grid .content-col {
+        height: 100%;
+        min-height: 0;
+        min-width: 0;
+        overflow-y: auto;
+    }
+
+    /* Mobile: the floating nav toggle / aside trigger overlay the content top.
+       Scroll-away padding keeps at-rest content below them while letting it
+       scroll up under the AppContent fade overlay. Literal query mirrors the
+       --bp-mode-mobile token (plain CSS isn't run through the custom-media
+       preprocessor). */
+    @media (max-width: 850px) {
+        .wrapper-grid .content-col {
+            padding-top: calc(var(--space-2) + 2.5rem);
+        }
+    }
+
+    .wrapper-grid .sidebar-col {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 15rem;
+        overflow-y: auto;
+        border-right: var(--divider);
+    }
+
+    /* Page body ----------------------------------------------------------- */
+    .wrapper-grid .page-wrapper {
+        min-height: 100%;
+    }
+
+    .wrapper-grid .page-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: var(--space-8);
+    }
+
+    .wrapper-grid .page-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin-bottom: var(--space-2);
+    }
+    .wrapper-grid .page-header .page-title {
+        margin: 0;
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-medium);
+        letter-spacing: -0.01em;
+        color: var(--color-text);
+    }
+    .wrapper-grid .page-header .page-description {
+        margin: 0;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+    }
+
+    .wrapper-grid .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-4);
+    }
+}

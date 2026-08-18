@@ -3,7 +3,8 @@
     import { tick, onMount } from 'svelte';
     import Add01Icon from "$lib/components/ui/icons/iconset/Add01Icon.svelte";
     import Tick02Icon from "$lib/components/ui/icons/iconset/Tick02Icon.svelte";
-        const {__} = useTranslator();
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    const {__} = useTranslator();
 
     let {
         suggestions = [],

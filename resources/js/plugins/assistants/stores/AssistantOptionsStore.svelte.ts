@@ -124,14 +124,18 @@ class AssistantOptionsStore implements DataStore{
         }
     }
 
-    // async addTag(assistantId: string, normalizedTag: string): Promise<AssistantTag> {
-    //     const existing = this.tags.find((t) => t.text === normalizedTag);
-    //     if (existing) return existing;
-    //
-    //     const tag = await createTag(assistantId, normalizedTag);
-    //     this.tags = [...this.tags, tag];
-    //     return tag;
-    // }
+    async addTag(assistantId: string, normalizedTag: string): Promise<AssistantTag> {
+        const existing = this.tags.find((t) => t.text === normalizedTag);
+        if (existing) return existing;
+
+        // const tag = await createTag(assistantId, normalizedTag);
+        const tag = {
+            id: '999',
+            text: 'newTag'
+        };
+        this.tags = [...this.tags, tag];
+        return tag;
+    }
 
     getSetting(key: string): AssistantSetting | undefined {
         return this.settings.find((s) => s.key === key);

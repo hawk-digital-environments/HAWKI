@@ -1,11 +1,54 @@
-import type { Assistant } from "$lib/plugins/assistants/types/assistant/Assistant";
-import { ReleaseMode } from "$lib/plugins/assistants/types/assistant/ReleaseMode";
+/**
+ * # Builder Context
+ *
+ * One assistant-builder session — the draft being edited, its autosave
+ * pipeline, and the {@link BuilderValidatorContext} that judges it — scoped to
+ * the component subtree that owns the build/edit flow.
+ *
+ * ## Why a context and not a module-level store
+ *
+ * The previous `assistantBuilderStore` (and its `validator`) were singletons
+ * created at import time: allocated as soon as the module was pulled into the
+ * bundle, alive for the whole session even outside the builder route, with no
+ * owner to release them once the user leaves. A context instance is owned by
+ * the component that calls {@link createBuilderContext} — created on mount,
+ * garbage-collected on unmount — and can't be shared by two unrelated builder
+ * sessions. Same rationale as `AssistantListContext`
+ * (`modules/dashboard/contexts/AssistantListContext.svelte.ts`).
+ *
+ * ## Usage
+ *
+ * ```svelte
+ * <!-- modules/builder/pages/advance/builderLayout.svelte — the owner -->
+ * <script lang="ts">
+ *     import { createBuilderContext } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
+ *     import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
+ *     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+ *
+ *     const { __ } = useTranslator();
+ *     const builder = createBuilderContext(useToastContext(), __);
+ *     onMount(() => builder.init());
+ * </script>
+ * ```
+ *
+ * ```svelte
+ * <!-- any descendant — no props to thread through -->
+ * <script lang="ts">
+ *     import { useBuilderContext } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
+ *     const builder = useBuilderContext();
+ *     const nameError = $derived(builder.validator.errorFor('name'));
+ * </script>
+ * ```
+ */
+import { createContext } from 'svelte';
+import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
+import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
 import {
   assistantToApi,
   createEmptyAssistant
-} from "$lib/plugins/assistants/api/serializers/assistantSerializer";
-import {ASSISTANT_SETTING_KEYS} from "$lib/plugins/assistants/api/serializers/apiFieldSerializer";
-import {avatarToApi} from "$lib/plugins/assistants/api/serializers/avatarSerializer"
+} from "$plugins/assistants/api/serializers/assistantSerializer";
+import {ASSISTANT_SETTING_KEYS} from "$plugins/assistants/api/serializers/apiFieldSerializer";
+import {avatarToApi} from "$plugins/assistants/api/serializers/avatarSerializer"
 import {
   // createAssistant,
   // updateAssistant,
@@ -15,24 +58,34 @@ import {
   removeAssistantPrompts,
   // requestRemix,
   getAssistant,
-} from "$lib/plugins/assistants/api/resources/assistantsClient";
+} from "$plugins/assistants/api/resources/assistantsClient";
 import {
   createOrUpdateAssistantAvatar
-} from "$lib/plugins/assistants/api/resources/assistantAvatarClient";
+} from "$plugins/assistants/api/resources/assistantAvatarClient";
 import {aiModelStore} from "$plugins/core/stores/AiModelStore.svelte";
 
-import { validator } from "$lib/plugins/assistants/stores/AssistantBuilderValidator.svelte";
-import { clone, valuesEqual, IDENTITY_KEYS } from "$lib/plugins/assistants/stores/assistantStoreUtils";
-import { ApiError } from "$lib/plugins/assistants/api/errors";
-import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
-import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
-const toast = useToastContext();
+import { BuilderValidatorContext } from "./BuilderValidatorContext.svelte.js";
+import { clone, valuesEqual, IDENTITY_KEYS } from "./builderUtils.js";
+import { ApiError } from "$plugins/assistants/api/errors";
+import type {ToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
+
 export type BuilderMode = "init" | "create" | "edit" | "remix";
-const {__} = useTranslator();
 
+export class BuilderContext {
+  public constructor(
+    private readonly toast: ToastContext,
+    /** The translator's `__` function, resolved by the caller (component-init
+     *  timing) rather than here, mirroring how `AssistantListContext` takes
+     *  its `toast`/`app` dependencies as constructor params. */
+    private readonly translate: (key: string) => string,
+  ) {
+    this.validator = new BuilderValidatorContext(() => this.draft, () => this.mode);
+  }
 
+  /** Judges whether {@link draft} is valid: completeness checks, session
+   *  change-tracking, and inline server field errors. */
+  readonly validator: BuilderValidatorContext;
 
-class AssistantBuilderStore {
   draft = $state<Assistant>(createEmptyAssistant());
   baseline = $state<Assistant>(createEmptyAssistant());
 
@@ -82,7 +135,7 @@ class AssistantBuilderStore {
     } catch (err) {
       const apiErr = ApiError.from(err);
       this.error = apiErr.message;
-      toast.error(`Could not create a new assistant. ${apiErr.userMessage}`);
+      this.toast.error(`Could not create a new assistant. ${apiErr.userMessage}`);
     } finally {
       this.loading = false;
       if (this.error) {
@@ -125,7 +178,7 @@ class AssistantBuilderStore {
     this.draft = clone(assistant);
     this.baseline = clone(assistant);
     this.setToSession();
-    validator.init(this.draft);
+    this.validator.init(this.draft);
   }
 
   readonly changedKeys = $derived.by(() => {
@@ -143,7 +196,7 @@ class AssistantBuilderStore {
 
   set<K extends keyof Assistant>(key: K, value: Assistant[K]): void {
     this.draft = { ...this.draft, [key]: value };
-    validator.clearError(key);
+    this.validator.clearError(key);
     this.setToSession();
     this.scheduleUpdate();
   }
@@ -157,7 +210,7 @@ class AssistantBuilderStore {
   setModel(modelId: string): void {
     if (modelId === this.draft.model) return;
 
-    const model = aiModelsStore.models.find((m) => m.modelId === modelId);
+    const model = aiModelStore.models.find((m) => m.modelId === modelId);
     const patch: Partial<Assistant> = { model: modelId };
     if (model) {
       patch.temp = model.parameters.temp;
@@ -165,7 +218,7 @@ class AssistantBuilderStore {
     }
 
     this.draft = { ...this.draft, ...patch };
-    validator.clearError("model", "temp", "topP");
+    this.validator.clearError("model", "temp", "topP");
     this.setToSession();
     this.scheduleUpdate();
   }
@@ -190,7 +243,7 @@ class AssistantBuilderStore {
       patch[key] = $state.snapshot(this.draft[key]) as any;
     this.baseline = { ...this.baseline, ...patch };
     // A successfully saved field can't still be in error.
-    validator.clearError(...keys);
+    this.validator.clearError(...keys);
   }
 
   private async updateServer(): Promise<void> {
@@ -267,14 +320,14 @@ class AssistantBuilderStore {
     } catch (err) {
       // Surface the error without losing the dirty state so the user can retry.
       // Route any validation errors to their fields for inline display.
-      validator.recordServerErrors(err);
+      this.validator.recordServerErrors(err);
       const apiErr = ApiError.from(err);
       this.error = apiErr.message;
       // Validation errors are already shown inline per-field; only the
       // non-validation failures (connection dropped, server error, …) need a
       // toast, since this save runs in the background with no other UI signal.
       if (!apiErr.isValidation) {
-        toast.error(`Could not save your changes. ${apiErr.userMessage}`);
+        this.toast.error(`Could not save your changes. ${apiErr.userMessage}`);
       }
       console.error("Failed to save assistant:", apiErr);
     } finally {
@@ -290,21 +343,21 @@ class AssistantBuilderStore {
   async requestRelease(){
     try {
       if (!(await requestAssistantRelease(this.draft))) {
-        toast.error(__("assistants.builder.publish.save_failed"));
+        this.toast.error(this.translate("assistants.builder.publish.save_failed"));
         return;
       }
       this.draft = { ...this.draft, requested_release_stage: this.draft.releaseStage };
       this.setToSession();
       // A private draft is just saved; the other stages go through review, so
       // say which of the two actually happened.
-      toast.success(
+      this.toast.success(
         this.draft.releaseStage === ReleaseMode.PRIVATE
-          ? __("assistants.builder.publish.saved")
-          : __("assistants.builder.publish.submitted"),
+          ? this.translate("assistants.builder.publish.saved")
+          : this.translate("assistants.builder.publish.submitted"),
       );
     } catch (err) {
       const apiErr = ApiError.from(err);
-      toast.error(`${__("assistants.builder.publish.save_failed")} ${apiErr.userMessage}`);
+      this.toast.error(`${this.translate("assistants.builder.publish.save_failed")} ${apiErr.userMessage}`);
     }
   }
 
@@ -338,7 +391,7 @@ class AssistantBuilderStore {
       this.draft = draft;
       this.baseline = baseline;
       this.mode = mode;
-      validator.init(baseline);
+      this.validator.init(baseline);
       return true;
     } catch {
       console.error("Failed to retrieve assistant in session");
@@ -365,4 +418,31 @@ class AssistantBuilderStore {
     });
   }
 }
-export const assistantBuilderStore = new AssistantBuilderStore();
+
+const [get, set] = createContext<BuilderContext>();
+
+/** Returns the builder session published by the nearest {@link createBuilderContext} ancestor. */
+export function useBuilderContext(): BuilderContext {
+  const context: BuilderContext | null | undefined = get();
+  if (!context) {
+    throw new Error('No BuilderContext found in the Svelte context tree. Call createBuilderContext() in a parent component.');
+  }
+  return context;
+}
+
+/**
+ * Creates a builder session and publishes it to the component subtree. Call
+ * once, in the component that owns the build/edit flow (the `/advance/*`
+ * layout); the instance dies with that component.
+ *
+ * Does **not** fetch/restore — call `.init()` when ready, so the owner
+ * decides the timing (mirrors `AssistantListContext.load()`).
+ */
+export function createBuilderContext(
+  toast: ToastContext,
+  translate: (key: string) => string,
+): BuilderContext {
+  const context = new BuilderContext(toast, translate);
+  set(context);
+  return context;
+}

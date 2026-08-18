@@ -19,11 +19,34 @@
 @import './tokens/borders.css';
 @import './tokens/shadows.css';
 @import './tokens/transitions.css';
+@import './tokens/legacy.css';
 @import './layers/reset.css';
 @import './layers/base.css';
+@import './builder.css';
 @import './utilities.css';
 
 /* ── Svelte custom element display fix ──────────────────────────────────── */
 svelte-snippet {
     display: block;
+}
+
+/* ── Animatable layout tracks ───────────────────────────────────────────────
+   The app-layout grid animates its nav/aside column widths through these two
+   custom properties. Registering them with a type is what makes them
+   interpolate; it has to happen at the top level, not inside a scoped
+   component <style>.
+
+   `initial-value` must be computationally independent, so these are in px —
+   rem depends on the root font size and would invalidate the whole rule. The
+   values actually used at runtime are still authored in rem. */
+@property --nav-track {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 256px;
+}
+
+@property --aside-track {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
 }

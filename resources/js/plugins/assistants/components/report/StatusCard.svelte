@@ -1,7 +1,7 @@
 <script lang="ts">
 
     import type {IconComponent} from '$lib/components/ui/icons';
-    import type {ValidationState} from "$lib/types/enums/ValidationState";
+    import type {ValidationState} from "$lib/plugins/assistants/types/enums/ValidationState";
 
     let {
         label,

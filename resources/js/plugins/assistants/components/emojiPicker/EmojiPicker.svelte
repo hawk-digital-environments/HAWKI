@@ -137,8 +137,8 @@
         bottom: calc(100% + 0.375rem);
     }
 
-    emoji-picker {
-        --background: var(--background-main);
+    .emoji-picker {
+        --background: var(--bg-color);
         --border-radius: var(--corner-sm);
         --input-border-radius: var(--corner-xs);
         --input-padding: 0.375rem 0.75rem;

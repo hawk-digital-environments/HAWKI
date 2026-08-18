@@ -1,12 +1,11 @@
 <script lang="ts">
     import { tick, untrack } from "svelte";
     import Tag from './Tag.svelte';
-    import type { Tag as TagType } from '$lib/types/assistant/Tag'
-    import AddButton from "$lib/components/assistant/assistantBuilderComponents/tags/AddButton.svelte";
-    import InputError from "$lib/components/generic/inputError/InputError.svelte";
-    import {assistantOptionsStore} from "$lib/stores/assistants/AssistantOptionsStore.svelte.js";
-    import {assistantBuilderStore} from "$lib/stores/assistants/AssistantBuilderStore.svelte.js";
-    import {validator} from "$lib/stores/assistants/AssistantBuilderValidator.svelte.js";
+    import type { AssistantTag as TagType } from '$lib/plugins/assistants/types/assistant/AssistantTag'
+    import AddButton from "$lib/plugins/assistants/components/assistantBuilderComponents/tags/AddButton.svelte";
+    import InputError from "$lib/plugins/assistants/components/inputError/InputError.svelte";
+    import {assistantOptionsStore} from "$lib/plugins/assistants/stores/AssistantOptionsStore.svelte.js";
+    import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
 
     interface Props {
         id?: string
@@ -19,8 +18,10 @@
         disabled = false,
     }: Props = $props();
 
+    const builder = useBuilderContext();
+
     // eslint-disable-next-line svelte/state_referenced_locally
-    let tags = $derived<TagType[]>(assistantBuilderStore.draft.tags);
+    let tags = $derived<TagType[]>(builder.draft.tags);
     let tagsEl = $state<HTMLElement | null>(null);
     let highlightedTag = $state<string | null>(null);
 
@@ -44,10 +45,10 @@
             return;
         }
 
-        const newTag:TagType = await assistantOptionsStore.addTag(assistantBuilderStore.draft.id, normalized);
+        const newTag:TagType = await assistantOptionsStore.addTag(builder.draft.id, normalized);
 
         tags = [...tags, newTag];
-        assistantBuilderStore.set('tags', tags)
+        builder.set('tags', tags)
 
         tick().then(() => {
             tagsEl?.scrollTo({
@@ -59,17 +60,17 @@
 
     function removeTag(value: string): void {
         tags = tags.filter(t => t.text !== value);
-        assistantBuilderStore.set('tags', tags)
+        builder.set('tags', tags)
     }
 </script>
 
 <div class="input-container renderBlock">
-    {#if label || validator.errorFor('tags')}
+    {#if label || builder.validator.errorFor('tags')}
         <div class="field-header">
             {#if label}
                 <label for={id}>{label}</label>
             {/if}
-            <InputError message={validator.errorFor('tags')} />
+            <InputError message={builder.validator.errorFor('tags')} />
         </div>
     {/if}
 

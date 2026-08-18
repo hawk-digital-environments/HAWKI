@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { assistantBuilderStore } from '$lib/plugins/assistants/stores/AssistantBuilderStore.svelte.js';
-    import { validator } from '$lib/plugins/assistants/stores/AssistantBuilderValidator.svelte.js';
+    import { useBuilderContext } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
     import { assistantOptionsStore } from '$lib/plugins/assistants/stores/AssistantOptionsStore.svelte.js';
     import type { Assistant } from '$lib/plugins/assistants/types/assistant/Assistant';
     import type { AssistantTag } from '$lib/plugins/assistants/types/assistant/AssistantTag';
@@ -18,6 +17,7 @@
 
 
     const {__} = useTranslator();
+    const builder = useBuilderContext();
 
 
     interface Props {
@@ -67,14 +67,14 @@
     const isAnswerLength = $derived(assistantValueKey === 'answerLength');
 
     // Inline server validation error for this field, if any.
-    let error = $derived(validator.errorFor(assistantValueKey));
+    let error = $derived(builder.validator.errorFor(assistantValueKey));
 
     let currentValue = $derived(
-        isCategory ? assistantBuilderStore.draft?.category?.id :
-            isFormality ? assistantBuilderStore.draft.formality :
-                isLanguage ? assistantBuilderStore.draft.language:
-                    isAnswerLength ? assistantBuilderStore.draft.answerLength:
-                        assistantBuilderStore.draft[assistantValueKey] as any
+        isCategory ? builder.draft?.category?.id :
+            isFormality ? builder.draft.formality :
+                isLanguage ? builder.draft.language:
+                    isAnswerLength ? builder.draft.answerLength:
+                        builder.draft[assistantValueKey] as any
     );
     let booleanValue = $derived(Boolean(currentValue));
 
@@ -124,14 +124,14 @@
     // write to store, translating back into the field's stored shape
     function update(value: any) {
         if (isCategory) {
-            assistantBuilderStore.set('category', assistantOptionsStore.categories.find(c => __(c.text) === value) ?? null);
+            builder.set('category', assistantOptionsStore.categories.find(c => __(c.text) === value) ?? null);
         }
         else if (activeSetting) {
             const option = activeSetting.options?.find(o => __(o.label ?? '') === value);
-            assistantBuilderStore.set(assistantValueKey, option?.value ?? undefined);
+            builder.set(assistantValueKey, option?.value ?? undefined);
         }
         else {
-            assistantBuilderStore.set(assistantValueKey, value);
+            builder.set(assistantValueKey, value);
         }
     }
 </script>

@@ -1,7 +1,7 @@
 import {getContext, setContext} from "svelte";
 import {getOpenAiApiBaseUrl} from "$lib/data/api/client";
 import {getAuthToken} from "$lib/data/api/auth";
-import {assistantBuilderStore} from "$lib/stores/assistants/AssistantBuilderStore.svelte";
+import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
 
 export type ChatConfig = {
     apiUrl: string;
@@ -18,13 +18,14 @@ export type ChatConfigApi = {
 const KEY = Symbol("chat-config");
 
 export const provideChatConfig = (handleOverride?: () => string | undefined): ChatConfigApi => {
+    const builder = useBuilderContext();
     const value = $derived<ChatConfig>({
         apiUrl: getOpenAiApiBaseUrl(),
         token: getAuthToken() ?? "",
-        model: assistantBuilderStore.baseline.model ?? "",
+        model: builder.baseline.model ?? "",
         assistantHandle: (
             handleOverride?.()?.trim() ||
-            assistantBuilderStore.baseline.handle?.trim() ||
+            builder.baseline.handle?.trim() ||
             ""
         ),
     });

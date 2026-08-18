@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
     import MessageMultiple01Icon from '$lib/components/ui/icons/iconset/MessageMultiple01Icon.svelte';
-    import type { AssistantFeedback } from '$lib/types/assistant/AssistantFeedback';
+    import type { AssistantFeedback } from '$lib/plugins/assistants/types/assistant/AssistantFeedback';
 
     let { feedback }: { feedback: AssistantFeedback[] } = $props();
 

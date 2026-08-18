@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { UploadFile } from "$lib/types/UploadFile";
+    import type { UploadFile } from "$lib/plugins/assistants/types/UploadFile";
     import RadialProgress from "$lib/components/ui/radial-progress/RadialProgress.svelte";
     import CheckmarkCircleIcon from "$lib/components/ui/icons/iconset/CheckmarkCircleIcon.svelte";
     import CircleXIcon from "$lib/components/ui/icons/iconset/CircleXIcon.svelte";

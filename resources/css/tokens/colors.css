@@ -40,8 +40,36 @@
 
         /* Active-selection surface + ink, shared by nav rows, the profile item,
            the neutral avatar, and single-select menus. */
-        --color-active-surface: var(--color-accent-100);
+        /* Translucent mix of accent-200 that lands on accent-100 over the app
+           background, so layering a second copy for hover-on-active deepens the
+           row on its own — same mechanism as dark mode. */
+        --color-active-surface: color-mix(in oklab, var(--color-accent-200) 40%, transparent);
         --color-active-text: var(--color-accent-text);
+
+        /* Brand gradient for primary calls to action. Runs along the accent
+           ramp so it stays the same hue family as every other accent surface,
+           only richer — reserved for the one action that leads somewhere new. */
+        /* The stops are exposed individually as well so components can animate
+           the ramp — a gradient itself is not interpolatable, its colors are. */
+        --gradient-brand-1: var(--color-accent-500);
+        --gradient-brand-2: var(--color-accent-400);
+        --gradient-brand-3: var(--color-accent-300);
+        --gradient-brand-hover-1: var(--color-accent-600);
+        --gradient-brand-hover-2: var(--color-accent-500);
+        --gradient-brand-hover-3: var(--color-accent-400);
+
+        --gradient-brand: linear-gradient(
+            135deg,
+            var(--gradient-brand-1),
+            var(--gradient-brand-2) 55%,
+            var(--gradient-brand-3)
+        );
+        --gradient-brand-hover: linear-gradient(
+            135deg,
+            var(--gradient-brand-hover-1),
+            var(--gradient-brand-hover-2) 55%,
+            var(--gradient-brand-hover-3)
+        );
 
         /* ── Status colors ──────────────────────────────────────────────── */
         --color-success: oklch(50% 0.17 145);
@@ -82,8 +110,10 @@
         --color-interactive-active: oklch(72% 0 0);
         --color-focus-ring: var(--color-accent-dark-300);
         --color-accent-text: oklch(80% 0.11 240);
-        --color-accent-fill: oklch(25.9% 0.103 272.4);
-        --color-accent-fill-hover: oklch(31.2% 0.128 272.4);
+        /*--color-accent-fill: oklch(25.9% 0.103 272.4);*/
+        /*--color-accent-fill-hover: oklch(31.2% 0.128 272.4);*/
+        --color-accent-fill: #151b54;
+        --color-accent-fill-hover: #1e2570;
 
         /* Active/hover rows track the blue button accent fill, slightly translucent. */
         --color-active-surface: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
@@ -93,6 +123,32 @@
            (filled buttons, tags, selected cards, radio switches) so it reads as
            an accent on dark chrome instead of a bright light-blue patch. */
         --color-accent-100: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
+
+        /* Same single-hue 265 ramp as light mode, anchored darker so the CTA
+           reads as an accent on dark chrome rather than a bright patch. Holding
+           the hue matters: mixing the indigo accent fills with the 240-hue dark
+           variants drifted hue mid-gradient and let the light end go grey.
+           Hover brightens rather than darkens — the dark-mode analogue of light
+           mode's "step further along the ramp". */
+        --gradient-brand-1: oklch(32% 0.16 265);
+        --gradient-brand-2: oklch(42% 0.21 265);
+        --gradient-brand-3: oklch(52% 0.22 265);
+        --gradient-brand-hover-1: oklch(38% 0.19 265);
+        --gradient-brand-hover-2: oklch(48% 0.22 265);
+        --gradient-brand-hover-3: oklch(58% 0.21 265);
+
+        --gradient-brand: linear-gradient(
+            135deg,
+            var(--gradient-brand-1),
+            var(--gradient-brand-2) 55%,
+            var(--gradient-brand-3)
+        );
+        --gradient-brand-hover: linear-gradient(
+            135deg,
+            var(--gradient-brand-hover-1),
+            var(--gradient-brand-hover-2) 55%,
+            var(--gradient-brand-hover-3)
+        );
 
         --color-bg: oklch(18% 0 0);
         --color-bg-secondary: oklch(0.213 0 0);
@@ -106,6 +162,7 @@
         --color-message-ai: oklch(20% 0 0);
 
         --color-hover: color-mix(in oklab, var(--color-accent-fill) 70%, transparent);
+        --color-surface-light: oklch(32% 0 0);
         --color-border: oklch(31% 0 0);
         --color-border-strong: oklch(74% 0 0);
         --color-text: oklch(93% 0 0);

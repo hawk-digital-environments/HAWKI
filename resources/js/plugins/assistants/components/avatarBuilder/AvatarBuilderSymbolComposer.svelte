@@ -1,8 +1,9 @@
 <script lang="ts">
     import { type AssistantAvatar} from "$lib/plugins/assistants/types/assistant/AssistantAvatar";
-    import { BACKGROUNDS } from "$lib/data/presets/backgrounds";
-    import EmojiPicker from "$lib/components/generic/emojiPicker/EmojiPicker.svelte";
-        const {__} = useTranslator();
+    import { BACKGROUNDS } from "$lib/plugins/assistants/presets/backgrounds";
+    import EmojiPicker from "$lib/plugins/assistants/components/emojiPicker/EmojiPicker.svelte";
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    const {__} = useTranslator();
 
     let {
         assistantAvatar = $bindable<AssistantAvatar>(),
@@ -158,7 +159,7 @@
         min-width: 3rem;
         overflow: visible;
         border: var(--border-stroke-thin);
-        border-radius: var(--border-radius-normal);
+        border-radius: var(--corner-sm);
     }
     .gradient-select.active {
         border: var(--border-stroke-bold);

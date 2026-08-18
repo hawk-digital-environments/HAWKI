@@ -1,7 +1,10 @@
 <script lang="ts">
 
-import Chatbox from "$lib/components/chat/Chatbox";
-import {__} from "$lib/utils/translator";
+import Chatbox from "$lib/plugins/assistants/components/chat/Chatbox";
+import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+
+
+const {__} = useTranslator();
 </script>
 
 

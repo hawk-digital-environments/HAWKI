@@ -44,7 +44,7 @@ export function valuesEqual(a: unknown, b: unknown): boolean {
  * Keys that hold a live browser handle rather than data. They are dropped when
  * a draft is written to session storage: `JSON.stringify` turns them into `{}`,
  * which would then fail validation on the way back in (see
- * {@link import('./AssistantBuilderStore.svelte').AssistantBuilderStore.restoreFromSession}).
+ * {@link import('./BuilderContext.svelte').BuilderContext.restoreFromSession}).
  */
 const TRANSIENT_KEYS = new Set(['file', 'abortController']);
 

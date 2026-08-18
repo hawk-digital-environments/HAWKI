@@ -1,18 +1,22 @@
 <script lang="ts">
-    import type {McpServer} from "$lib/types/aiTools/McpServer";
-    import ToolsList from "$lib/components/assistant/assistantBuilderComponents/aiToolComponents/ToolsList.svelte";
-    import type {AiTool} from "$lib/types/aiTools/AiTool";
+    import type {McpServer} from "$plugins/core/schemas/resources/mcp-servers.schema.js";
+    import ToolsList from "$lib/plugins/assistants/components/assistantBuilderComponents/aiToolComponents/ToolsList.svelte";
+    import type {AiToolOrCapability} from "$plugins/core/stores/aiToolStoreData.js";
     import ArrowRight01Icon from "$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte";
     import ServerStack01Icon from "$lib/components/ui/icons/iconset/ServerStack01Icon.svelte";
 
     let {
         server,
+        tools,
         onchange,
-        selectedIds = new Set<number>(),
+        selectedIds = new Set<string>(),
     } = $props <{
         server: McpServer
-        onchange: (aiTool: AiTool, active: boolean) => void;
-        selectedIds?: Set<number>;
+        /** The tools backed by this MCP server — McpServer itself carries no
+         *  tool list; ToolSelector derives it from the flat ai-tools store. */
+        tools: AiToolOrCapability[];
+        onchange: (aiTool: AiToolOrCapability, active: boolean) => void;
+        selectedIds?: Set<string>;
     }>();
 
     let isOpen = $state(false);
@@ -29,7 +33,7 @@
         </span>
         <span class="text-wrapper">
             <span class="label-row">
-                <span class="label">{server.server_label ?? server.url.split(/[/]+/).pop()}</span>
+                <span class="label">{server.server_label}</span>
             </span>
             {#if server.description}
                 <p class="description">{server.description}</p>
@@ -48,7 +52,7 @@
             <div class="approvalTags">
 
                 <ToolsList
-                    tools={server.tools}
+                    tools={tools}
                     borderless={true}
                     {selectedIds}
                     {onchange}/>

@@ -1,0 +1,80 @@
+
+.drag-drop-overlay {
+    display: none;
+    position: absolute;
+    top: 0; bottom: 0; left: 0; right: 0;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+    background-color: var(--background-main);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    border-radius: var(--border-radius-normal);
+    border: 2px dashed var(--accent-color);
+}
+.drag-drop-box {
+    padding: 0 2rem;
+    background: var(--background-main);
+    width: 100%;
+    height: 100%;
+    min-height: 5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    position: relative;
+}
+.drag-drop-content {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    text-align: center;
+    height: 100%;
+    width: fit-content;
+    justify-self: center;
+}
+.drag-drop-box .icon {
+    display: flex;
+    align-items: center;
+}
+@media (max-width: 800px) {
+    .drag-drop-box .icon { display: none; }
+}
+.drag-drop-box .icon img {
+    width: auto;
+    height: 6rem;
+}
+.drag-drop-box h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+.drag-drop-box p {
+    color: var(--text-color);
+    line-height: 1.4;
+    margin: 0.5rem 0 0 0;
+    font-size: var(--font-xs);
+}
+.drag-drop-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    padding: 0 2rem;
+}
+.drag-drop-status {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+}
+.drag-status-valid {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 2rem;
+    color: #16a34a;
+    background-color: rgba(34, 197, 94, 0.15);
+}

@@ -1,10 +1,12 @@
 <script lang="ts">
 
-    import { assistantBuilderStore} from "$lib/stores/assistants/AssistantBuilderStore.svelte.js";
+    import { useBuilderContext } from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import type {AssistantAvatar} from "$lib/plugins/assistants/types/assistant/AssistantAvatar";
-    import AssistantAvatarIcon from "$lib/components/assistant/assistantBuilderComponents/avatarBuilder/AssistantAvatarIcon.svelte";
-    import AssistantBanner from "$lib/components/assistant/assistantBuilderComponents/avatarBuilder/AssistantBanner.svelte";
-        const {__} = useTranslator();
+    import AssistantAvatarIcon from "./AssistantAvatarIcon.svelte";
+    import AssistantBanner from "./AssistantBanner.svelte";
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    const {__} = useTranslator();
+    const builder = useBuilderContext();
 
     let {
         assistantAvatar,
@@ -13,11 +15,11 @@
     }>();
 
     const name = $derived(
-        assistantBuilderStore.draft.name !== ''
-            ? assistantBuilderStore.draft.name
+        builder.draft.name !== ''
+            ? builder.draft.name
             : __('assistants.builder.general.avatar_preview_name')
     );
-    const handle = $derived(assistantBuilderStore.draft.handle);
+    const handle = $derived(builder.draft.handle);
 </script>
 
 <!-- App-store-style cover card: hero banner up top, the avatar icon overlapping

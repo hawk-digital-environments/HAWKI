@@ -1,19 +1,20 @@
 <script lang="ts">
-import AvatarBuilderPreview from "$lib/components/assistant/assistantBuilderComponents/avatarBuilder/AvatarBuilderPreview.svelte";
-import AvatarBuilderSymbolComposer from "$lib/components/assistant/assistantBuilderComponents/avatarBuilder/AvatarBuilderSymbolComposer.svelte";
+import AvatarBuilderPreview from "./AvatarBuilderPreview.svelte";
+import AvatarBuilderSymbolComposer from "./AvatarBuilderSymbolComposer.svelte";
 import {type AssistantAvatar} from "$lib/plugins/assistants/types/assistant/AssistantAvatar";
-import {assistantBuilderStore} from "$lib/stores/assistants/AssistantBuilderStore.svelte.js";
-    const {__} = useTranslator();
-
+import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
+import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+const {__} = useTranslator();
+const builder = useBuilderContext();
 
 let assistantAvatar = $derived(
-    assistantBuilderStore.draft.avatar
+    builder.draft.avatar
 );
 
 
 function handleAvatarChange(avatar: AssistantAvatar) {
     assistantAvatar = avatar;
-    assistantBuilderStore.set('avatar', $state.snapshot(avatar));
+    builder.set('avatar', $state.snapshot(avatar));
 }
 
 </script>

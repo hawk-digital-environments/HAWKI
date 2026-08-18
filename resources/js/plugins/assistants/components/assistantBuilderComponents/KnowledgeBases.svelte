@@ -1,10 +1,11 @@
 <script lang="ts">
 import FullWidthToggle from "$lib/plugins/assistants/components/toggle/FullWidthToggle.svelte";
 import Database01Icon from "$lib/components/ui/icons/iconset/Database01Icon.svelte";
-import { assistantBuilderStore } from '$lib/plugins/assistants/stores/AssistantBuilderStore.svelte.js';
+import { useBuilderContext } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
 import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
 
 const {__} = useTranslator()
+const builder = useBuilderContext();
 
 const raw= [
     {
@@ -33,13 +34,13 @@ interface KnowledgeBase {
 const kdb = (raw as KnowledgeBase[]).map(db => ({ ...db, _toggleId: db.id }));
 
 
-let kdbValues = $derived((assistantBuilderStore.draft.knowledgeBases ?? []) as string[]);
+let kdbValues = $derived((builder.draft.knowledgeBases ?? []) as string[]);
 
 function onToggleInput(kdbId: number, value: boolean) {
     const id = String(kdbId);
-    const current = assistantBuilderStore.draft.knowledgeBases ?? [];
+    const current = builder.draft.knowledgeBases ?? [];
 
-    assistantBuilderStore.set('knowledgeBases', value
+    builder.set('knowledgeBases', value
         ? [...new Set([...current, id])]
         : current.filter(existing => existing !== id));
 }

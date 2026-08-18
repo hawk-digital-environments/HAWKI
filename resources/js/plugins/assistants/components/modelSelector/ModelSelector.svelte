@@ -1,8 +1,8 @@
 <script lang="ts">
 
 import {aiModelsStore} from "$lib/stores/AiModelsStore.svelte.js";
-import type {AiModel} from "$lib/types/aiModel/AiModel";
-import {assistantBuilderStore} from "$lib/stores/assistants/AssistantBuilderStore.svelte.js";
+import type {AiModel} from "$lib/plugins/assistants/types/aiModel/AiModel";
+import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
 
 const {
     disabled = false,
@@ -11,6 +11,8 @@ const {
     disabled?: boolean;
     onchange?: (value: string) => void;
 }>();
+
+const builder = useBuilderContext();
 
 </script>
 
@@ -24,12 +26,12 @@ const {
             {disabled}
             onchange={(e) => onchange?.(e.currentTarget.value)}
     >
-        {#if !assistantBuilderStore.draft.model}
+        {#if !builder.draft.model}
             <option disabled selected value>Select a Model</option>
         {/if}
         {#each aiModelsStore.models as model}
-            {#if assistantBuilderStore.draft.model &&
-                model.modelId === assistantBuilderStore.draft.model}
+            {#if builder.draft.model &&
+                model.modelId === builder.draft.model}
                 <option value={model.modelId} selected>{model.label}</option>
             {:else}
                 <option value={model.modelId}>{model.label}</option>

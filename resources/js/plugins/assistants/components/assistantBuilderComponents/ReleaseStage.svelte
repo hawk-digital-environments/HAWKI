@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { assistantBuilderStore } from "$lib/plugins/assistants/stores/AssistantBuilderStore.svelte";
+    import { useBuilderContext } from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import { ReleaseMode } from "$lib/plugins/assistants/types/assistant/ReleaseMode";
     import RadioSwitch from "$lib/plugins/assistants/components/radioSwitch/RadioSwitch.svelte";
     import RadioOption from "$lib/plugins/assistants/components/radioSwitch/RadioOption.svelte";
@@ -10,11 +10,12 @@
 
 
     const {__} = useTranslator()
+    const builder = useBuilderContext();
 
-    let currentValue = $derived(assistantBuilderStore.draft.releaseStage);
+    let currentValue = $derived(builder.draft.releaseStage);
 
     function update(value: string) {
-        assistantBuilderStore.set('releaseStage', value as ReleaseMode);
+        builder.set('releaseStage', value as ReleaseMode);
     }
 </script>
 

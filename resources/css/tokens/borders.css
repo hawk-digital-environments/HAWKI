@@ -4,8 +4,12 @@
 
 @layer tokens {
     :root {
-        --border: 1.5px solid var(--color-border);
+        /* Exposed on its own so layouts can subtract a border's width when they
+           need to align content across one (e.g. the sidebar's icon rail). */
+        --divider-width: 1.5px;
+
+        --border:        var(--divider-width) solid var(--color-border);
         --border-strong: 2px solid var(--color-border-strong);
-        --divider: 1.5px solid var(--color-border);
+        --divider:       var(--divider-width) solid var(--color-border);
     }
 }

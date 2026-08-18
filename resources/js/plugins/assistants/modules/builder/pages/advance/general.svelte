@@ -1,9 +1,11 @@
 <script>
-    import BuilderInput from "$lib/components/assistant/assistantBuilderComponents/BuilderInput.svelte";
-    import TagInput from "$lib/components/assistant/assistantBuilderComponents/tags/TagInput.svelte";
-    import AvatarBuidlerPanel from "$lib/components/assistant/assistantBuilderComponents/avatarBuilder/AvatarBuidlerPanel.svelte";
-    import {assistantOptionsStore} from "$lib/stores/assistants/AssistantOptionsStore.svelte";
-    import {__} from "$lib/utils/translator";
+    import BuilderInput from "$lib/plugins/assistants/components/assistantBuilderComponents/BuilderInput.svelte";
+    import TagInput from "$lib/plugins/assistants/components/assistantBuilderComponents/tags/TagInput.svelte";
+    import {assistantOptionsStore} from "$lib/plugins/assistants/stores/AssistantOptionsStore.svelte";
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    import AvatarBuilderPanel from "$plugins/assistants/components/avatarBuilder/AvatarBuilderPanel.svelte";
+
+    const {__} = useTranslator();
 </script>
 
 <div class="page-wrapper">
@@ -28,7 +30,7 @@
                     assistantValueKey="handle"/>
         </div>
 
-        <AvatarBuidlerPanel/>
+        <AvatarBuilderPanel/>
 
         <BuilderInput
                 type="input"

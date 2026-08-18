@@ -1,24 +1,24 @@
 <script lang="ts">
-import ReleaseStage from "$lib/components/assistant/assistantBuilderComponents/ReleaseStage.svelte";
-import ReportPanel from "$lib/components/generic/report/ReportPanel.svelte";
-import ReportCard from "$lib/components/generic/report/ReportCard.svelte";
-import StatusCard from "$lib/components/generic/report/StatusCard.svelte";
-import ChecklistItem from "$lib/components/generic/report/ChecklistItem.svelte";
-import InfoPanel from "$lib/components/generic/info/InfoPanel.svelte";
-import BuilderInput from "$lib/components/assistant/assistantBuilderComponents/BuilderInput.svelte";
-import Button from "$lib/components/generic/button/Button.svelte";
-import FloppyDiskIcon from "$lib/components/generic/icons/iconset/FloppyDiskIcon.svelte";
-import {assistantBuilderStore} from "$lib/stores/assistants/AssistantBuilderStore.svelte";
-import {validator} from "$lib/stores/assistants/AssistantBuilderValidator.svelte";
-import { ReleaseMode } from "$lib/types/assistant/ReleaseMode";
-import { ValidationState } from "$lib/types/enums/ValidationState";
-import Shield01Icon from "$lib/components/generic/icons/iconset/Shield01Icon.svelte";
-import TaskEdit01Icon from "$lib/components/generic/icons/iconset/TaskEdit01Icon.svelte";
-import CheckmarkCircle01Icon from "$lib/components/generic/icons/iconset/CheckmarkCircle01Icon.svelte";
-import CheckListIcon from "$lib/components/generic/icons/iconset/CheckListIcon.svelte";
-import {__} from "$lib/utils/translator";
-
-let assistant = $derived(assistantBuilderStore.draft);
+import ReleaseStage from "$lib/plugins/assistants/components/assistantBuilderComponents/ReleaseStage.svelte";
+import ReportPanel from "$lib/plugins/assistants/components/report/ReportPanel.svelte";
+import ReportCard from "$lib/plugins/assistants/components/report/ReportCard.svelte";
+import StatusCard from "$lib/plugins/assistants/components/report/StatusCard.svelte";
+import ChecklistItem from "$lib/plugins/assistants/components/report/ChecklistItem.svelte";
+import InfoPanel from "$lib/plugins/assistants/components/info/InfoPanel.svelte";
+import BuilderInput from "$lib/plugins/assistants/components/assistantBuilderComponents/BuilderInput.svelte";
+import Button from "$lib/components/ui/button/Button.svelte";
+import FloppyDiskIcon from "$lib/components/ui/icons/iconset/FloppyDiskIcon.svelte";
+import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
+import { ReleaseMode } from "$lib/plugins/assistants/types/assistant/ReleaseMode";
+import { ValidationState } from "$lib/plugins/assistants/types/enums/ValidationState";
+import Shield01Icon from "$lib/components/ui/icons/iconset/Shield01Icon.svelte";
+import TaskEdit01Icon from "$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte";
+import CheckmarkCircle01Icon from "$lib/components/ui/icons/iconset/CheckmarkCircle01Icon.svelte";
+import CheckListIcon from "$lib/components/ui/icons/iconset/CheckListIcon.svelte";
+import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+const {__} = useTranslator();
+const builder = useBuilderContext();
+let assistant = $derived(builder.draft);
 
 const statusLabels: Record<ReleaseMode, string> = {
     [ReleaseMode.DRAFT]: __('assistants.builder.publish.status.draft'),
@@ -53,7 +53,7 @@ let requiresReview = $derived(
 );
 
 let saveAsText = $derived.by(() => {
-    switch (assistantBuilderStore.draft.releaseStage) {
+    switch (builder.draft.releaseStage) {
         case ReleaseMode.PRIVATE:
             return __('assistants.builder.publish.save_as_private_draft');
         case ReleaseMode.ORGANIZATIONAL:
@@ -134,7 +134,7 @@ let saveAsText = $derived.by(() => {
                 description={__('assistants.builder.publish.completeness.description')}
                 display="column"
         >
-            {#each validator.completenessGroups as group}
+            {#each builder.validator.completenessGroups as group}
                 <div class="completeness-group">
                     <p class="label faded group-heading">{group.group}</p>
                     {#each group.items as item (item.id)}
@@ -155,7 +155,7 @@ let saveAsText = $derived.by(() => {
                 icon={CheckListIcon}
                 display="column"
             >
-                {#each validator.triggers as item (item.id)}
+                {#each builder.validator.triggers as item (item.id)}
                     <ChecklistItem
                             label={item.label}
                             description={item.description}
@@ -190,8 +190,8 @@ let saveAsText = $derived.by(() => {
             size="md"
             block
             iconLeft={FloppyDiskIcon}
-            disabled={assistantBuilderStore.draft.releaseStage === ReleaseMode.DRAFT}
-            onclick={() => {assistantBuilderStore.requestRelease()}}
+            disabled={builder.draft.releaseStage === ReleaseMode.DRAFT}
+            onclick={() => {builder.requestRelease()}}
         >{saveAsText}</Button>
 
     </div>

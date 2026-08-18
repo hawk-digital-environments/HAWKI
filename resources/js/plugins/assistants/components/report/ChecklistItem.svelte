@@ -5,7 +5,7 @@
     import CheckmarkCircle02Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle02Icon.svelte';
     import CircleIcon from '$lib/components/ui/icons/iconset/CircleIcon.svelte';
     import type {IconComponent} from '$lib/components/ui/icons';
-    import {ValidationState} from "$lib/types/enums/ValidationState";
+    import {ValidationState} from "$lib/plugins/assistants/types/enums/ValidationState";
 
     let {
         label,

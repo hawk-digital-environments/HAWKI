@@ -1,26 +1,26 @@
 <script lang="ts">
-    import type {AiTool} from "$lib/types/aiTools/AiTool";
-    import RadioSwitch from "$lib/components/generic/radioSwitch/RadioSwitch.svelte";
-    import RadioOption from "$lib/components/generic/radioSwitch/RadioOption.svelte";
+    import type {AiToolOrCapability} from "$plugins/core/stores/aiToolStoreData.js";
+    import RadioSwitch from "$lib/plugins/assistants/components/radioSwitch/RadioSwitch.svelte";
+    import RadioOption from "$lib/plugins/assistants/components/radioSwitch/RadioOption.svelte";
 
     let {
         tools,
         onchange,
         borderless = false,
-        selectedIds = new Set<number>(),
+        selectedIds = new Set<string>(),
     } = $props<{
-        tools: AiTool[];
-        onchange: (aiTool: AiTool, active: boolean) => void;
+        tools: AiToolOrCapability[];
+        onchange: (aiTool: AiToolOrCapability, active: boolean) => void;
         /** Borderless rows (nested inside an MCP card) vs. standalone cards. */
         borderless?: boolean;
         /** Ids of tools already selected on the assistant, for initial state. */
-        selectedIds?: Set<number>;
+        selectedIds?: Set<string>;
     }>();
 
     // RadioSwitch works with string values; map ids <-> strings.
-    const byId = $derived(new Map(tools.map((t: AiTool) => [String(t.id), t])));
+    const byId = $derived(new Map(tools.map((t: AiToolOrCapability) => [t.id, t])));
     const selected = $derived(
-        tools.filter((t: AiTool) => selectedIds.has(t.id)).map((t: AiTool) => String(t.id))
+        tools.filter((t: AiToolOrCapability) => selectedIds.has(t.id)).map((t: AiToolOrCapability) => t.id)
     );
 
     function handleChange(value: string, active: boolean) {
@@ -33,8 +33,8 @@
     <RadioSwitch multiple value={selected} onchange={handleChange}>
         {#each tools as tool}
             <RadioOption
-                value={String(tool.id)}
-                label={tool.name}
+                value={tool.id}
+                label={tool.displayName}
                 description={tool.description}
             />
         {/each}

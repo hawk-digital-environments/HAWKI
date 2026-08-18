@@ -2,7 +2,7 @@
     import FileUploadIcon from '$lib/components/ui/icons/iconset/FileUploadIcon.svelte';
     import File01Icon from '$lib/components/ui/icons/iconset/File01Icon.svelte';
     import DragDropOverlay from '$lib/plugins/assistants/components/dragDropOverlay/DragDropOverlay.svelte';
-    import { assistantBuilderStore } from '$lib/plugins/assistants/stores/AssistantBuilderStore.svelte.js';
+    import { useBuilderContext } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
     import type { UploadFile } from "$lib/plugins/assistants/types/UploadFile";
     import GenericItemList from "$lib/plugins/assistants/components/itemList/GenericItemList.svelte";
     import Item from "$lib/plugins/assistants/components/itemList/Item.svelte";
@@ -18,8 +18,9 @@
 
     const {__} = useTranslator();
     const toast = useToastContext();
+    const builder = useBuilderContext();
 
-    let currentFiles = $derived((assistantBuilderStore.draft.files ?? []) as UploadFile[]);
+    let currentFiles = $derived((builder.draft.files ?? []) as UploadFile[]);
 
     /** True while at least one file is still uploading — drives the overlay. */
     let hasActiveUpload = $derived(
@@ -85,10 +86,10 @@
      *  reference matches. Mirrors the per-file status mutations HAWKI applied
      *  via the `SendMessageStatus` object. */
     function patchFile(fileRef: File | undefined, patch: Partial<UploadFile>): void {
-        const next = (assistantBuilderStore.draft.files ?? []).map((f) =>
+        const next = (builder.draft.files ?? []).map((f) =>
             f.file === fileRef ? { ...f, ...patch } : f,
         );
-        assistantBuilderStore.set("files", next);
+        builder.set("files", next);
     }
 
     // --- File handling ---
@@ -111,12 +112,12 @@
             status: "pending",
             progress: 0,
         }));
-        assistantBuilderStore.set("files", [
-            ...(assistantBuilderStore.draft.files ?? []),
+        builder.set("files", [
+            ...(builder.draft.files ?? []),
             ...queued,
         ]);
 
-        const assistantId = assistantBuilderStore.draft.id;
+        const assistantId = builder.draft.id;
         if (!assistantId) return;
 
         queued.forEach((q) => patchFile(q.file, { status: "uploading", progress: 0 }));
@@ -130,7 +131,7 @@
         );
 
         // Reconcile per result: mark successes, drop failures with a toast.
-        const current = assistantBuilderStore.draft.files ?? [];
+        const current = builder.draft.files ?? [];
         const next: UploadFile[] = [];
         for (const f of current) {
             const idx = queued.findIndex((q) => q.file === f.file);
@@ -154,7 +155,7 @@
                 ...(result?.uuid ? { uuid: result.uuid } : {}),
             });
         }
-        assistantBuilderStore.set("files", next);
+        builder.set("files", next);
     }
 
     /**
@@ -167,11 +168,11 @@
      */
     async function removeFile(index: number): Promise<void> {
         if (deleting) return;
-        const files = assistantBuilderStore.draft.files ?? [];
+        const files = builder.draft.files ?? [];
         const target = files[index];
         if (!target) return;
 
-        const assistantId = assistantBuilderStore.draft.id;
+        const assistantId = builder.draft.id;
         if (assistantId && target.uuid) {
             deleting = true;
             try {
@@ -188,7 +189,7 @@
                 deleting = false;
             }
         }
-        assistantBuilderStore.set("files", files.filter((_, i) => i !== index));
+        builder.set("files", files.filter((_, i) => i !== index));
     }
 
     function browse(): void {

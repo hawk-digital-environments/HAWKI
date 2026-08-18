@@ -1,5 +1,5 @@
 <script lang="ts">
-    import CloseButton from "$lib/components/generic/closeBtn/CloseButton.svelte";
+    import CloseButton from "$lib/plugins/assistants/components/closeBtn/CloseButton.svelte";
 
     let {
         value,

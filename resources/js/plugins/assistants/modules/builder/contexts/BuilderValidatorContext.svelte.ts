@@ -1,120 +1,21 @@
-import type {Assistant} from "$lib/plugins/assistants/types/assistant/Assistant";
-import {createEmptyAssistant} from "$lib/plugins/assistants/api/serializers/assistantSerializer"
-import {apiFieldToAssistantKey} from "$lib/plugins/assistants/api/serializers/apiFieldSerializer";
-import {ApiError} from "$lib/plugins/assistants/api/errors";
-import {valuesEqual, IDENTITY_KEYS} from "./assistantStoreUtils";
-import {assistantBuilderStore} from "./AssistantBuilderStore.svelte.js";
-import {ValidationState} from "$lib/plugins/assistants/types/enums/ValidationState";
+import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
+import {createEmptyAssistant} from "$plugins/assistants/api/serializers/assistantSerializer";
+import {apiFieldToAssistantKey} from "$plugins/assistants/api/serializers/apiFieldSerializer";
+import {ApiError} from "$plugins/assistants/api/errors";
+import {valuesEqual, IDENTITY_KEYS} from "./builderUtils.js";
+import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
+import type {BuilderMode} from "./BuilderContext.svelte.js";
+import {
+    COMPLETENESS_RULES,
+    TRIGGER_RULES,
+    type CheckItem,
+    type FieldErrorMap,
+    type ReportGroup,
+} from "./builderValidationRules.js";
 
-/** Per-field error message, keyed by `Assistant` field. */
-export type FieldErrorMap = Partial<Record<keyof Assistant, string>>;
+export type {CheckItem, FieldErrorMap, ReportGroup} from "./builderValidationRules.js";
 
-/** A single line in a builder report (completenessCheckItem check or audit trigger). */
-export interface CheckItem {
-    id: string;
-    group: string;
-    label: string;
-    description?: string;
-    status: ValidationState;
-    /** Whether the check passes (required field satisfied / no trigger). */
-    ok: boolean;
-}
-
-/** Report items grouped under a section title, for rendering. */
-export interface ReportGroup {
-    group: string;
-    items: CheckItem[];
-}
-
-/** A required-field completeness rule. */
-interface CompletenessRule {
-    id: string;
-    group: string;
-    /** Fields this rule concerns (used for the remix "changed" check). */
-    keys: (keyof Assistant)[];
-    /** Whether the field(s) hold an acceptable value. */
-    isFilled: (a: Assistant) => boolean;
-    okLabel: string;
-    failLabel: string;
-    description?: string;
-    /** Status when not satisfied (default `warning`). */
-    failStatus?: ValidationState;
-}
-
-/** A field whose change during the session flags a re-check. */
-interface TriggerRule {
-    id: string;
-    group: string;
-    keys: (keyof Assistant)[];
-    changedLabel: string;
-    unchangedLabel: string;
-    description?: string;
-}
-
-const COMPLETENESS_RULES: CompletenessRule[] = [
-    {
-        id: 'name-handle',
-        group: 'Allgemeine Informationen',
-        keys: ['name', 'handle'],
-        isFilled: a => !!(a.name && a.handle),
-        okLabel: 'Name und Handle festgelegt',
-        failLabel: 'Name und Handle noch nicht festgelegt',
-    },
-    {
-        id: 'description',
-        group: 'Allgemeine Informationen',
-        keys: ['description'],
-        isFilled: a => a.description !== '',
-        okLabel: 'Beschreibung vollständig',
-        failLabel: 'Beschreibung nicht vollständig!',
-        description: 'Kernverhalten wurde angepasst',
-    },
-    {
-        id: 'category',
-        group: 'Allgemeine Informationen',
-        keys: ['category'],
-        isFilled: a => !!a.category,
-        okLabel: 'Kategorie gewählt',
-        failLabel: 'Kategorie nicht gewählt',
-    },
-    {
-        id: 'system-prompt',
-        group: 'Verhalten',
-        keys: ['systemPrompt'],
-        isFilled: a => !!a.systemPrompt,
-        okLabel: 'System-Prompt definiert',
-        failLabel: 'System-Prompt nicht definiert',
-        failStatus: ValidationState.UNKNOWN,
-    },
-    {
-        id: 'model',
-        group: 'Model',
-        keys: ['model'],
-        isFilled: a => !!a.model,
-        okLabel: 'Model Ausgewählt',
-        failLabel: 'Model nicht ausgewählt!',
-    },
-];
-
-const TRIGGER_RULES: TriggerRule[] = [
-    {
-        id: 'system-prompt-changed',
-        group: 'Prüfungsauslöser',
-        keys: ['systemPrompt'],
-        changedLabel: 'System-Prompt geändert',
-        unchangedLabel: 'System-Prompt unverändert',
-        description: 'Kernverhalten wurde angepasst',
-    },
-    {
-        id: 'files-changed',
-        group: 'Prüfungsauslöser',
-        keys: ['files'],
-        changedLabel: 'Dateien geändert',
-        unchangedLabel: 'Keine Dateiänderung',
-    },
-];
-
-/** Thrown by {@link AssistantBuilderValidator.validate} when required fields are
+/** Thrown by {@link BuilderValidatorContext.validate} when required fields are
  *  not satisfied; `failures` carries the unsatisfied checks for reporting. */
 export class ValidationError extends Error {
     constructor(public readonly failures: CheckItem[]) {
@@ -129,8 +30,19 @@ export class ValidationError extends Error {
  *    source assistant), used both for "audit triggers" and the remix rule;
  *  - server-side field errors (moved out of the store) surfaced inline by inputs;
  *  - client-side completeness checks for required fields, reported to the UI.
+ *
+ * Owned and constructed by {@link BuilderContext} (accessible as
+ * `builder.validator`) rather than published as its own Svelte context: every
+ * consumer that needs it already holds a `BuilderContext`. It reads the draft
+ * via injected accessors instead of importing the builder context module
+ * directly, so the two files don't need to import each other.
  */
-class AssistantBuilderValidator {
+export class BuilderValidatorContext {
+
+    constructor(
+        private readonly getDraft: () => Assistant,
+        private readonly getMode: () => BuilderMode,
+    ) {}
 
     /** Snapshot of the draft at the start of the editing session (for remix:
      *  the source assistant). Used to detect what the user changed this session. */
@@ -151,7 +63,7 @@ class AssistantBuilderValidator {
 
     readonly sessionChangedKeys = $derived.by(() => {
         const out = new Set<keyof Assistant>();
-        const draft = assistantBuilderStore.draft;
+        const draft = this.getDraft();
         for (const key of Object.keys(draft) as (keyof Assistant)[]) {
             if (IDENTITY_KEYS.has(key)) continue;
             if (!valuesEqual(draft[key], this.sessionBaseline[key])) out.add(key);
@@ -199,8 +111,8 @@ class AssistantBuilderValidator {
      * the meaningful signal).
      */
     readonly completeness = $derived.by<CheckItem[]>(() => {
-        const draft = assistantBuilderStore.draft;
-        const remix = assistantBuilderStore.mode === 'remix';
+        const draft = this.getDraft();
+        const remix = this.getMode() === 'remix';
         return COMPLETENESS_RULES.map(rule => {
             const ok = remix
                 ? rule.keys.some(k => this.isChanged(k))
@@ -260,5 +172,3 @@ class AssistantBuilderValidator {
         if (failures.length) throw new ValidationError(failures);
     }
 }
-
-export const validator = new AssistantBuilderValidator();

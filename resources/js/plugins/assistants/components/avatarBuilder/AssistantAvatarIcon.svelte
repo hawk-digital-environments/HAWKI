@@ -1,8 +1,5 @@
 <script lang="ts">
-
-
     import type {AssistantAvatar} from "$lib/plugins/assistants/types/assistant/AssistantAvatar";
-    import {BACKGROUNDS} from "$lib/plugins/assistants/presets/backgrounds";
 
     let{
         assistantAvatar,

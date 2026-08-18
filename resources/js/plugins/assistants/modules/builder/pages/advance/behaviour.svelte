@@ -1,11 +1,11 @@
 <script>
-import StatusCard from "$lib/components/generic/report/StatusCard.svelte";
-import BuilderInput from "$lib/components/assistant/assistantBuilderComponents/BuilderInput.svelte";
-import AlertCircleIcon from "$lib/components/generic/icons/iconset/AlertCircleIcon.svelte";
-import {assistantOptionsStore} from "$lib/stores/assistants/AssistantOptionsStore.svelte";
-import {ValidationState} from "$lib/types/enums/ValidationState";
-import {__} from "$lib/utils/translator";
-
+import StatusCard from "$lib/plugins/assistants/components/report/StatusCard.svelte";
+import BuilderInput from "$lib/plugins/assistants/components/assistantBuilderComponents/BuilderInput.svelte";
+import AlertCircleIcon from "$lib/components/ui/icons/iconset/AlertCircleIcon.svelte";
+import {assistantOptionsStore} from "$lib/plugins/assistants/stores/AssistantOptionsStore.svelte";
+import {ValidationState} from "$lib/plugins/assistants/types/enums/ValidationState";
+import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+const {__} = useTranslator();
 </script>
 
 

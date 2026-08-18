@@ -15,7 +15,7 @@ import {AssistantAvatarSchema} from "$plugins/assistants/types/assistant";
 import {AssistantCategorySchema} from "$plugins/assistants/types/assistant/AssistantCategory";
 import {AssistantTagSchema} from "$plugins/assistants/types/assistant/AssistantTag";
 import {AssistantSettingSchema} from "$plugins/assistants/types/assistant/AssistantSetting";
-// import {assistantBuilderStore} from "$plugins/assistants/stores/AssistantBuilderStore.svelte";
+import {BuilderModule} from "$plugins/assistants/modules/builder/BuilderModule";
 
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -39,37 +39,18 @@ export default class AssistantsPlugin implements HawkiCorePlugin {
     }
     public modules({add}: ModuleRegistrar): void | Promise<void> {
         add(new DashboardModule());
+        add(new BuilderModule())
     }
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {
-        // registrar.group('/assistants', (assistants) => {
-        //     assistants.group('/dashboard', (dashboard) => {
-        //         dashboard.lazyRoute('/store', async () => (await import('$plugins/assistants/modules/dashboard/pages/store/page.svelte')).default);
-        //         dashboard.lazyRoute('/my_drafts', async () => (await import('$plugins/assistants/modules/dashboard/pages/my_drafts/page.svelte')).default);
-        //         dashboard.lazyRoute('/favourites', async () => (await import('$plugins/assistants/modules/dashboard/pages/favourites/page.svelte')).default);
-        //         dashboard.lazyRoute('/shared', async () => (await import('$plugins/assistants/modules/dashboard/pages/shared/page.svelte')).default);
-        //     })
-        //     assistants.lazyRoute(`/:id`, async () => (await import('$plugins/assistants/modules/dashboard/pages/detail/page.svelte')).default);
-        //
-        //     // assistants.group('/builder', (builder) =>{
-        //         // builder.group('/advanced', (advanced) => {
-        //         //     advanced.lazyRoute('/general', async () => (await import('$plugins/assistants/modules/builder/')).default);
-        //         //     advanced.lazyRoute('/behaviour', async () => (await import('$plugins/assistants/modules/builder/')).default);
-        //         //     advanced.lazyRoute('/knowledge', async () => (await import('$plugins/assistants/modules/builder/')).default);
-        //         //     advanced.lazyRoute('/model', async () => (await import('$plugins/assistants/modules/builder/')).default);
-        //         //     advanced.lazyRoute('/test', async () => (await import('$plugins/assistants/modules/builder/')).default);
-        //         //     advanced.lazyRoute('/publish', async () => (await import('$plugins/assistants/modules/builder/')).default);
-        //         // })
-        //
-        //     // })
-        // })
+
     }
 
 
     stores?(registrar: StoreRegistrar, context: HawkiPluginContextWithConfig): void | Promise<void> {
-        // Register the singleton rather than a fresh instance: the validator and
-        // the builder pages import `assistantBuilderStore` directly, so a second
-        // instance here would hold a draft nobody reads.
+        // The builder's draft state is a BuilderContext now (created/owned by
+        // modules/builder/pages/advance/builderLayout.svelte), not a store — only
+        // the still-app-wide assistant options list is registered here.
         registrar.add(assistantOptionsStore);
     }
 
