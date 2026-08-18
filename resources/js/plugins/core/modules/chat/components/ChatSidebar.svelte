@@ -71,7 +71,7 @@
         min-height: 0;
         flex: 1;
         flex-direction: column;
-        gap: var(--space-3);
+        gap: var(--nav-group-gap);
     }
 
     .history {

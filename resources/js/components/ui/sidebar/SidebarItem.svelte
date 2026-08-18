@@ -69,6 +69,11 @@
     // to the icon instead.
     let iconEl = $state<HTMLElement | null>(null);
 
+    // A row wired up as a popup trigger is marked active while its surface is
+    // showing, which is a pressed state — not "this is the current page". Let
+    // the trigger's own aria-expanded carry it instead of claiming aria-current.
+    const isPopupTrigger = $derived(!!rest['aria-haspopup']);
+
     const hasChildren = $derived(!!children);
     // Children never render in the rail; the chevron and sub-tree are hidden there.
     const showChildren = $derived(hasChildren && expanded && !collapsed);
@@ -91,7 +96,7 @@
     <button
         type="button"
         {@attach attach}
-        aria-current={active ? 'page' : undefined}
+        aria-current={active && !isPopupTrigger ? 'page' : undefined}
         aria-expanded={hasChildren ? expanded : undefined}
         {...mergeProps(triggerProps, rest, {
             class: ['sidebar-item', className],
@@ -223,8 +228,12 @@
             --drill-stop-3 var(--duration-fast);
     }
 
-    /* Rows outside a list container have no sliding highlight behind them. */
-    .sidebar-item.standalone:not(.drill):hover {
+    /* Rows outside a list container have no sliding highlight behind them —
+       they paint hover, and their active state, themselves. A standalone row is
+       marked active while the surface it opens is showing, so the surface has
+       to persist once the pointer moves off the row and onto that menu. */
+    .sidebar-item.standalone:not(.drill):hover,
+    .sidebar-item.standalone.active:not(.drill) {
         background: var(--color-hover);
     }
 
