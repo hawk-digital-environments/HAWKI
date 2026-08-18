@@ -42,12 +42,14 @@ readonly class PluginMigrationHookEnsurer
         return new EnsuredPluginMigrationHook($pluginFile, EnsuredPluginMigrationHook::STATUS_ADDED_HOOK);
     }
 
-    private function updateGlob(string $content, string $glob): string
-    {
-        $offset = mb_strpos($content, 'migrations(');
+        $offset = 0;
 
-        if (preg_match('/import\.meta\.glob\(\s*[\'"][^\'"]*[\'"]/', $content, $matches, \PREG_OFFSET_CAPTURE, $offset) === 1) {
-            return substr_replace($content, "import.meta.glob('" . $glob . "'", $matches[0][1], mb_strlen($matches[0][0]));
+        if (preg_match('/\bmigrations\s*\(/', $content, $migrationMatch, \PREG_OFFSET_CAPTURE) === 1) {
+            $offset = $migrationMatch[0][1];
+        }
+
+        if (preg_match('/import\.meta\.glob\(\s*[\'\"][^\'\"]*[\'\"]/', $content, $matches, \PREG_OFFSET_CAPTURE, $offset) === 1) {
+            return substr_replace($content, "import.meta.glob('" . $glob . "'", $matches[0][1], \strlen($matches[0][0]));
         }
 
         return $content;
