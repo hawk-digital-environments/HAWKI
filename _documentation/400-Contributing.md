@@ -121,6 +121,7 @@ Before submitting your PR:
 - [ ] Enums used for all constrained string or int values
 - [ ] DocBlocks only where needed (complex types, non-obvious intent)
 - [ ] No `now()`, `new \DateTime()`, `Carbon::now()`, or similar — use injected `CarbonClockInterface` (`Psr\Clock\ClockInterface` if the class must stay PSR-only)
+- [ ] No Yoda conditions — write `$var === 'value'`, not `'value' === $var`
 - [ ] No debug statements (`dd()`, `dump()`, `var_dump()`)
 - [ ] No hardcoded values (use config or constants)
 - [ ] You provided good test coverage for new features and bug fixes
