@@ -23,6 +23,7 @@
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import ComposerAssistantButton from '$plugins/core/modules/chat/components/composer/ComposerAssistantButton.svelte';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();
@@ -74,6 +75,36 @@
             ref.style.height = Math.min(ref.scrollHeight, 250) + 'px';
         }
     });
+
+    const toastContext = useToastContext();
+
+    /** Renders the byte limit from a file issue as human-readable megabytes for the error toast. */
+    function formatMaxSize(maxSize: number | undefined): string {
+        if (maxSize === undefined || !Number.isFinite(maxSize)) {
+            return '';
+        }
+        return `${Math.round(maxSize / (1024 * 1024))} MB`;
+    }
+
+    function handlePaste(e: ClipboardEvent) {
+        if (e.clipboardData && e.clipboardData.types[0] === "Files") {
+            e.preventDefault();
+            const files = e.clipboardData.files;
+            for (let file of files) {
+                const issues = composerContext.attachments.add(file)
+                if (issues !== true) {
+                    for (let issue of issues) {
+                        toastContext.error(__(`chat.composer.error.${issue.type}`, {
+                            name: issue.file.name,
+                            type: issue.file.type,
+                            maxSize: formatMaxSize(issue.maxSize)
+                        }))
+                    }
+                }
+            }
+        }
+    }
+
 </script>
 {#if !composerContext.guard.disablesFeature('input', false)}
     <div
@@ -86,6 +117,7 @@
             bind:value={composerContext.message}
             disabled={composerContext.sendStatus?.sending}
             onkeydown={handleKeyDown}
+            onpaste={handlePaste}
             class="chat-textarea"
             rows={1}
             aria-label={textareaLabel}
