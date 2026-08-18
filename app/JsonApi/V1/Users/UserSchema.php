@@ -22,7 +22,7 @@ class UserSchema extends Schema
     {
         return [
             ID::make(),
-            Str::make('display_name')->extractUsing(function (User $user) {
+            Str::make('display_name', 'name')->extractUsing(function (User $user) {
                 $displayName = $user->name ?: $user->username;
 
                 // For some reason the HAWKI user has their name and username reversed.
@@ -32,14 +32,14 @@ class UserSchema extends Schema
 
                 return $displayName;
             }),
-            Str::make('username'),
-            Str::make('email')->hidden(UserCondition::isNonAdmin(...)),
+            Str::make('username')->readOnly(),
+            Str::make('email')->hidden(UserCondition::isNonAdmin(...))->readOnly(),
             Str::make('bio'),
             Str::make('avatar')->extractUsing(function (User $user) {
                 $identifier = StoredFileIdentifier::tryFromUserAvatar($user);
                 return $identifier ? (string)$identifier : null;
-            }),
-            Str::make('employee_type')->hidden(UserCondition::isNonAdmin(...)),
+            })->readOnly(),
+            Str::make('employee_type')->hidden(UserCondition::isNonAdmin(...))->readOnly(),
             Str::make('created_at')->readOnly(),
             Str::make('updated_at')->readOnly(),
         ];

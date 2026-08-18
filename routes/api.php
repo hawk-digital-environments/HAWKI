@@ -78,7 +78,10 @@ JsonApiRoute::server('v1')
     ->resources(function (ResourceRegistrar $server) {
         $server->resource('connections', ConnectionController::class)
             ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
-            ->only('show');
+            ->only('show')
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/locale', 'storeLocale');
+            });
 
         $server->resource('migrations', MigrationController::class)
             ->actions(function (ActionRegistrar $actions) {
@@ -148,10 +151,12 @@ JsonApiRoute::server('v1')
             ->readOnly();
 
         $server->resource('users', UsersController::class)
-            ->readOnly()
+            ->only('index', 'show', 'update')
             ->actions(function (ActionRegistrar $actions) {
                 $actions->get('me', 'handleMe')
                     ->withoutMiddleware(AppTokenForbiddenMiddleware::class);
+                $actions->post('actions/avatar', 'uploadAvatar');
+                $actions->post('actions/reset-profile', 'resetProfile');
             });
 
         $server->resource('user-keychain-values', UserKeychainValueController::class)

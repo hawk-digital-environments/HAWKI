@@ -36,6 +36,13 @@ export class ThemeStore implements DataStore {
     constructor() {
         const observer = new MutationObserver(() => (this._theme = detectAppTheme()));
         observer.observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
+
+        // Apply a previously persisted preference; the `<html>` class rendered by the
+        // server does not know about it.
+        const persisted = readPersistedTheme();
+        if (persisted && persisted !== this._theme) {
+            this.theme = persisted;
+        }
     }
 
     private _theme = $state(detectAppTheme());
@@ -46,14 +53,35 @@ export class ThemeStore implements DataStore {
         return this._theme;
     }
 
-    /** Sets the active theme by toggling `darkMode` / `lightMode` on `<html>`
-     *  and updating the reactive value in one step. */
+    /** Sets the active theme by toggling `darkMode` / `lightMode` on `<html>`,
+     *  persisting the preference and updating the reactive value in one step. */
     public set theme(value: AppTheme) {
         const className = value === 'dark' ? 'darkMode' : 'lightMode';
         document.documentElement.classList.add(className);
         document.documentElement.classList.remove(value === 'dark' ? 'lightMode' : 'darkMode');
+        // Same storage key/values the legacy theme switcher uses, so both UIs stay in sync.
+        try {
+            localStorage.setItem('darkMode', value === 'dark' ? 'enabled' : 'disabled');
+        } catch (e) {
+            // Storage may be unavailable (private mode/quota) — the theme still applies for this page.
+        }
         this._theme = value;
     }
+}
+
+function readPersistedTheme(): AppTheme | null {
+    try {
+        const stored = localStorage.getItem('darkMode');
+        if (stored === 'enabled') {
+            return 'dark';
+        }
+        if (stored === 'disabled') {
+            return 'light';
+        }
+    } catch (e) {
+        // Storage unavailable — fall through to detection.
+    }
+    return null;
 }
 
 function detectAppTheme(): AppTheme {
