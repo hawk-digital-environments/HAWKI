@@ -6,6 +6,13 @@ import type {RestApi} from '$lib/kernel/api/RestApi.js';
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
         router: RouterHandle;
+        /**
+         * The shared {@link RouteRegistrar} all plugin/module routes are collected on.
+         * Lets foreign code guard routes it does not own (`addMiddlewareToRoute`,
+         * `addMiddlewareToGroup`, `addGlobalMiddleware`) — but only before the router
+         * is compiled on the `late` boot stage; registrations after that have no effect.
+         */
+        routeRegistrar: RouteRegistrar;
     }
 }
 
@@ -122,6 +129,9 @@ export class RoutingExtension implements HawkiAppExtension {
         return {
             get router() {
                 return extension.router;
+            },
+            get routeRegistrar() {
+                return extension.registrar;
             },
             /**
              * @internal Exposes the compiled router as `app.__router`. This is not a public API! Do not use it in your code, it may change or be removed at any time.

@@ -36,6 +36,7 @@ import {ModuleExtension} from '$lib/kernel/modules/ModuleExtension.js';
 import {createApp} from '$lib/kernel/HawkiApp.js';
 import {MigrationExtension} from '$lib/kernel/migrations/MigrationExtension.js';
 import {ClientExtension} from '$lib/kernel/client/ClientExtension.js';
+import {SessionGuardExtension} from '$lib/kernel/client/SessionGuardExtension.js';
 import {ResourceSchemaExtension} from '$lib/kernel/resources/ResourceSchemaExtension.js';
 import {PluginExtension} from '$lib/kernel/plugins/PluginExtension.js';
 import {LocalizationExtension} from '$lib/kernel/localization/LocalizationExtension.svelte.js';
@@ -68,6 +69,7 @@ provideLegacyGlobals();
         [
             new ResourceSchemaExtension(),
             new ClientExtension(),
+            new SessionGuardExtension(),
             new PluginExtension(),
             new ConfigurationExtension(),
             new MigrationExtension(),
