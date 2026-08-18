@@ -1,83 +1,74 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\Frontend\Migrations\Make;
 
-
+use App\Services\Frontend\Migrations\Make\Values\EnsuredPluginMigrationHook;
+use App\Services\Frontend\Plugin\PluginFs;
 use Illuminate\Filesystem\Filesystem;
-use RuntimeException;
 
 readonly class PluginMigrationHookEnsurer
 {
-    public const string STATUS_ALREADY_CONFIGURED = 'already configured';
-    public const string STATUS_ADDED_HOOK = 'added migrations hook';
-    public const string STATUS_UPDATED_GLOB = 'updated migrations glob';
-
-    public function __construct(private Filesystem $files)
-    {
+    public function __construct(
+        private Filesystem $files,
+        private PluginFs $pluginFs,
+    ) {
     }
 
     /**
-     * @param string $plugin Plugin name (directory name under resources/js/plugins/).
-     * @return array{path: string, status: string}
+     * Ensures the plugin's `.plugin.ts` file has a `migrations()` hook that globs the correct
+     * migrations directory. Adds or updates the hook, the `MigrationRegistrar` import, and the
+     * `HawkiCorePlugin` type as needed.
      */
-    public function ensure(string $plugin): array
+    public function ensure(string $plugin): EnsuredPluginMigrationHook
     {
-        $pluginFiles = $this->files->glob(resource_path('js/plugins/' . $plugin . '/*.plugin.ts'));
-        if (empty($pluginFiles)) {
-            throw new RuntimeException("No .plugin.ts file found for plugin '$plugin'.");
-        }
-        $pluginFile = $pluginFiles[0];
-
+        $pluginFile = $this->pluginFs->pluginFilePath($plugin);
         $content = $this->files->get($pluginFile);
-        $expectedGlob = '$lib/plugins/' . $plugin . '/migrations/**/*.ts';
+        $expectedGlob = $this->pluginFs->migrationsTsGlob($plugin);
 
         if (str_contains($content, $expectedGlob)) {
-            return ['path' => $pluginFile, 'status' => self::STATUS_ALREADY_CONFIGURED];
+            return new EnsuredPluginMigrationHook($pluginFile, EnsuredPluginMigrationHook::STATUS_ALREADY_CONFIGURED);
         }
 
         if (preg_match('/\bmigrations\s*\(/', $content) === 1) {
-            $content = $this->updateGlob($content, $plugin);
-            $this->files->put($pluginFile, $content);
+            $this->files->put($pluginFile, $this->updateGlob($content, $expectedGlob));
 
-            return ['path' => $pluginFile, 'status' => self::STATUS_UPDATED_GLOB];
+            return new EnsuredPluginMigrationHook($pluginFile, EnsuredPluginMigrationHook::STATUS_UPDATED_GLOB);
         }
 
-        $content = $this->addMigrationHook($content, $plugin);
-        $this->files->put($pluginFile, $content);
+        $this->files->put($pluginFile, $this->addMigrationHook($content, $expectedGlob));
 
-        return ['path' => $pluginFile, 'status' => self::STATUS_ADDED_HOOK];
+        return new EnsuredPluginMigrationHook($pluginFile, EnsuredPluginMigrationHook::STATUS_ADDED_HOOK);
     }
 
-    private function updateGlob(string $content, string $plugin): string
+    private function updateGlob(string $content, string $glob): string
     {
-        $glob = '$lib/plugins/' . $plugin . '/migrations/**/*.ts';
-        $offset = strpos($content, 'migrations(');
+        $offset = mb_strpos($content, 'migrations(');
 
-        if (preg_match('/import\.meta\.glob\(\s*[\'"][^\'"]*[\'"]/', $content, $matches, PREG_OFFSET_CAPTURE, $offset) === 1) {
-            return substr_replace($content, "import.meta.glob('" . $glob . "'", $matches[0][1], strlen($matches[0][0]));
+        if (preg_match('/import\.meta\.glob\(\s*[\'"][^\'"]*[\'"]/', $content, $matches, \PREG_OFFSET_CAPTURE, $offset) === 1) {
+            return substr_replace($content, "import.meta.glob('" . $glob . "'", $matches[0][1], mb_strlen($matches[0][0]));
         }
 
         return $content;
     }
 
-    private function addMigrationHook(string $content, string $plugin): string
+    private function addMigrationHook(string $content, string $glob): string
     {
         $content = $this->ensureImport($content, "import type {MigrationRegistrar} from '\$lib/kernel/migrations/migrationRegistrar.js';");
         $content = $this->ensureCorePluginType($content);
 
-        $glob = '$lib/plugins/' . $plugin . '/migrations/**/*.ts';
         $method = "    public migrations(registrar: MigrationRegistrar): void | Promise<void> {\n"
             . "        registrar.addFromModules(import.meta.glob('" . $glob . "', {eager: false}));\n"
             . "    }\n";
 
-        $lastBrace = strrpos($content, '}');
-        if ($lastBrace === false) {
+        $lastBrace = mb_strrpos($content, '}');
+
+        if (false === $lastBrace) {
             return $content . "\n" . $method;
         }
 
-        return substr($content, 0, $lastBrace) . $method . substr($content, $lastBrace);
+        return mb_substr($content, 0, $lastBrace) . $method . mb_substr($content, $lastBrace);
     }
 
     private function ensureImport(string $content, string $import): string
@@ -88,13 +79,14 @@ readonly class PluginMigrationHookEnsurer
 
         $lines = explode("\n", $content);
         $lastImportIndex = -1;
+
         foreach ($lines as $index => $line) {
-            if (preg_match('/^import\b/', ltrim($line)) === 1) {
+            if (preg_match('/^import\b/', mb_ltrim($line)) === 1) {
                 $lastImportIndex = $index;
             }
         }
 
-        if ($lastImportIndex >= 0) {
+        if (0 <= $lastImportIndex) {
             array_splice($lines, $lastImportIndex + 1, 0, [$import]);
         } else {
             array_unshift($lines, $import);
