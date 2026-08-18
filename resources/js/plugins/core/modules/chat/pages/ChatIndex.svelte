@@ -47,6 +47,10 @@
     let announcementConversationSlug: string | null = null;
     let wasGenerating = false;
 
+    // No messages yet: welcome text and composer are centred as one block
+    // instead of the composer docking to the bottom of the scroll region.
+    const isEmpty = $derived(!store.loading && !store.error && (!store.active || store.active.messages.length === 0));
+
     $effect(() => {
         const requestedSlug = slug;
         if (!requestedSlug) {
@@ -256,11 +260,9 @@
             onExport={exportConversation}
             onSkipToComposer={() => composer?.focusInput()}
         />
-    {:else}
-        <header class="new-header"><span>{__('chat.page.newChat')}</span></header>
     {/if}
 
-    <div class="chat-body">
+    <div class="chat-body" class:empty={isEmpty}>
         <div class="scroll-region" bind:this={scrollRegion} onscroll={updateBottomPin}>
             {#if store.loading}
                 <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
@@ -337,18 +339,29 @@
        messages scroll behind the docked composer box. */
     .chat-body {
         position: relative;
+        grid-row: 2;
         min-height: 0;
     }
 
-    .new-header {
+    /* Empty chat: the scroll region shrinks to its content so the welcome
+       block and the composer sit together in the middle of the panel. */
+    .chat-body.empty {
         display: flex;
-        min-height: 3.75rem;
-        align-items: center;
-        padding: var(--space-2) var(--space-5);
-        border-bottom: var(--divider);
-        font-size: var(--font-size-base);
-        font-weight: var(--font-weight-semibold);
+        flex-direction: column;
+        justify-content: center;
+        overflow-y: auto;
     }
+
+    .empty .scroll-region { height: auto; flex: 0 0 auto; overflow: visible; }
+
+    .empty .welcome {
+        height: auto;
+        min-height: 0;
+        padding-bottom: var(--space-6);
+    }
+
+    .empty .composer-dock { position: static; padding-bottom: 0; }
+    .empty .composer-dock::before { display: none; }
 
     .scroll-region { height: 100%; overflow-y: auto; }
 
@@ -453,21 +466,13 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (--bp-md-and-smaller) {
-        .new-header {
-            padding-right: var(--space-3);
-            padding-left: calc(var(--space-3) + 2.75rem);
-        }
-    }
-
     @media (max-width: 640px) {
-        .new-header, .messages, .composer-row { padding-inline: var(--space-3); }
-        .new-header { padding-left: calc(var(--space-3) + 2.75rem); }
+        .messages, .composer-row { padding-inline: var(--space-3); }
         .messages { padding-top: var(--space-5); }
     }
 
     @media print {
-        :global(.app-sidebar), .composer-dock, .new-header, :global(.chat-page > header) { display: none !important; }
+        :global(.app-sidebar), .composer-dock, :global(.chat-page > header) { display: none !important; }
         .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
         .messages { padding-bottom: var(--space-5); }
     }
