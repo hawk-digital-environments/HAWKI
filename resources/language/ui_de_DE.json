@@ -84,7 +84,13 @@
                 "title": "Experimente",
                 "description": "Probiere unfertige Funktionen der neuen Oberfläche aus.",
                 "emptyTitle": "Keine Experimente verfügbar",
-                "emptyHint": "Aktuell gibt es nichts auszuprobieren. Neue Experimente erscheinen hier."
+                "emptyHint": "Aktuell gibt es nichts auszuprobieren. Neue Experimente erscheinen hier.",
+                "flags": {
+                    "modelPickerV2": {
+                        "title": "Neue Modellauswahl",
+                        "description": "Eine erweiterte Modellauswahl mit Anbieter-Tabs, Suche, Favoriten und Tastaturkürzeln."
+                    }
+                }
             }
         }
     }

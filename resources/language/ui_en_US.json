@@ -84,7 +84,13 @@
                 "title": "Experiments",
                 "description": "Try unfinished features of the new interface.",
                 "emptyTitle": "No experiments available",
-                "emptyHint": "There is nothing to try right now. New experiments will show up here."
+                "emptyHint": "There is nothing to try right now. New experiments will show up here.",
+                "flags": {
+                    "modelPickerV2": {
+                        "title": "New model picker",
+                        "description": "A richer model picker with provider tabs, search, favorites and keyboard shortcuts."
+                    }
+                }
             }
         }
     }
