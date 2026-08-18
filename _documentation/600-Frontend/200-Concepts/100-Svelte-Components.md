@@ -169,7 +169,7 @@ export function useToolMenuFocusContext(): ToolMenuFocusContext {
 The factory that publishes a context is named for what it does:
 
 - **`create…Context()`** — the parent **constructs** the instance and registers it. Use this when the parent owns the object (the typical case). See `ToastContext.svelte.ts`, `ComposerContext.svelte.ts`.
-- **`provide…()`** — the parent **forwards a reference** to something it already has (or only pins a setting), without constructing it. The clearest example is `provideApp(app)`: the app was built by `app.ts`, the `Shell` just hands the existing instance to its subtree via `set(app)`. `provideDefaultRouterName(name)` is the same shape for a plain string — it pins which router name `useRouter()` resolves to without building anything.
+- **`provide…()`** — the parent **forwards a reference** to something it already has, without constructing it. The clearest example is `provideApp(app)`: the app was built by `app.ts`, the `Shell` just hands the existing instance to its subtree via `set(app)`.
 
 ```ts
 // app/hooks/useApp.svelte.ts
@@ -270,8 +270,19 @@ The `components/` directory is slated to be extracted into a dedicated npm packa
 
 A component that gets complex enough to need its own state, context, or sub-components should be extracted from its page into its own directory under the feature module.
 
-## Accessing Server Data
+## Accessing app data and services
 
-Use the hooks in `app/hooks/` to reach server data: `useConfig()` for runtime configuration, `useConnection()` (and its narrowing variants `useAuthenticatedConnection` / `useConnectionWithUserInfo`) for auth-state-aware access, `useStore()` for shared reactive state, and `useRestApi()` for typed fetches. All are available after the `preparation` boot stage. See [Data Layer](130-Data-Layer.md) and [Stores](120-Stores.md).
+HAWKI provides a set of hooks in `app/hooks/` that give components typed access to the kernel's surfaces. Each hook resolves the `HawkiApp` from Svelte context (with a legacy-global fallback during the migration), so they work in any component below the `Shell` root.
 
-Use `useTranslator()`'s `__()` for all user-facing strings. See [Translations](140-Translations.md).
+| Hook | Returns | Use for |
+|---|---|---|
+| `useApp()` | `HawkiApp` | The root object — reach an extension surface that has no dedicated hook. Prefer a specific hook when one exists. |
+| `useConfig()` | Config extension | Runtime configuration values. |
+| `useConnection()` | Connection snapshot | Auth-state-aware access; narrows with `useAuthenticatedConnection` / `useConnectionWithUserInfo`. |
+| `useStore(name)` | Typed `DataStore` instance | Shared reactive state registered by a plugin. See [Stores](120-Stores.md). |
+| `useRestApi()` | `RestApi` | Typed JSON:API fetches (`getResource`, `getResourceCollection`, `postToResourceAction`, …). |
+| `useLinkPreviewApi()` | `LinkPreviewApi` | Rich link-preview metadata (title, description, image) for a URL. |
+| `useRouter(name?)` | `RouterHandle` | Navigation API (`goTo`, `isActive`, `getPath`, …). See [Routing](180-Routing.md). |
+| `useTranslator()` | Translator | User-facing strings via `__()`. See [Translations](140-Translations.md). |
+
+All hooks are available after the `preparation` boot stage. See [Data Layer](130-Data-Layer.md) for the config/connection/REST surface, [Stores](120-Stores.md) for the store registry, and [Routing](180-Routing.md) for the router handle.

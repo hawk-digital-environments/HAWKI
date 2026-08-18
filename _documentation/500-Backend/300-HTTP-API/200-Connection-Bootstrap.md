@@ -112,4 +112,4 @@ GET /api/hawki/v1/connections/{extAppUserId}
 - Linked → `EXTERNAL_APP_AUTHENTICATED` + `ExtAppSecrets` (passkey, API token, private key for the HAWKI account)
 - Not yet linked → `EXTERNAL_APP` + an encrypted `extAppConnectRequest` payload that the external app uses to initiate the linking flow
 
-`UsageContext` must be `EXTERNAL_APP` and `UserContext` must be `EXTERNAL_APP` for this path to succeed; otherwise `ConnectionFactory` logs a warning and returns `null`. See [External App Integration](../700-Roadmap/300-External-Apps.md).
+`UsageContext` must be `EXTERNAL_APP` and `UserContext` must be `EXTERNAL_APP` for this path to succeed; otherwise `ConnectionFactory` logs a warning and returns `null`.

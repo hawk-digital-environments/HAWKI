@@ -51,7 +51,7 @@ The run type is inferred from the **directory** the JS file lives in under `reso
 No configuration is needed — the directory structure is read at build time via the glob handed to the `MigrationRegistrar` by the plugin's `migrations()` hook.
 
 :::info[Core plugins only]
-Migrations are a `HawkiCorePlugin` hook (`plugin.migrations()`), not part of the third-party `HawkiPlugin` contract. Only built-in plugins can register migrations. See [Extending HAWKI](../../700-Extending-Hawki/index.md).
+Migrations are a `HawkiCorePlugin` hook (`plugin.migrations()`), not part of the third-party `HawkiPlugin` contract. Only built-in plugins can register migrations. See [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md).
 :::
 
 ## Creating a New Migration

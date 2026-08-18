@@ -6,7 +6,7 @@ This page covers the storage architecture. Text extraction from documents is in 
 
 ## The storage proxy
 
-`App\Http\Controllers\StorageProxyController` is the single entry point for all file access (see [Life of a Request](../../100-Tutorials/100-Life-of-a-Request.md) for a full walk). It parses a `StoredFileIdentifier` string, dispatches by category, retrieves the file bytes via the appropriate storage service, and returns a `StreamedResponse` with ETag-based caching headers.
+`App\Http\Controllers\StorageProxyController` is the single entry point for all file access. It parses a `StoredFileIdentifier` string, dispatches by category, retrieves the file bytes via the appropriate storage service, and returns a `StreamedResponse` with ETag-based caching headers.
 
 Access rules by category:
 

@@ -68,7 +68,7 @@ Every property below is contributed by an extension's `provideProperties()` and 
 | `app.snippets` | Named Svelte-component registry for the legacy UI | `SnippetExtension` (`@deprecated`) |
 | `app.toast` | App-wide `ToastContext` holder | `LegacyToastExtension` (`@deprecated`) |
 
-`app.snippets` and `app.toast` are transitional bridges that go away once the SPA rewrite gives the page a single Svelte root (see [Roadmap → Legacy UI Bridge](../700-Roadmap/100-Legacy-UI-Bridge.md)). `ClientExtension` is flagged for further refactoring — don't over-rely on its exact shape yet.
+`app.snippets` and `app.toast` are transitional bridges that go away once the SPA rewrite gives the page a single Svelte root. `ClientExtension` is flagged for further refactoring — don't over-rely on its exact shape yet.
 
 ---
 
@@ -94,7 +94,7 @@ declare module '$lib/kernel/extendableTypes.js' {
 }
 ```
 
-`WithoutAppExtensionInternals<T>` strips the `init`/`ready`/`provideProperties` lifecycle members so `app.stores` exposes only `StoreExtension`'s public API, not its extension-plumbing. Adding a key to any of these interfaces next to your class definition is the whole wiring step — see [Extending HAWKI](../../700-Extending-Hawki/index.md).
+`WithoutAppExtensionInternals<T>` strips the `init`/`ready`/`provideProperties` lifecycle members so `app.stores` exposes only `StoreExtension`'s public API, not its extension-plumbing. Adding a key to any of these interfaces next to your class definition is the whole wiring step — see [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md).
 
 ---
 
@@ -143,5 +143,5 @@ Prefer the dedicated hook in `app/hooks/` over `useApp()` when one exists — it
 | Understand the boot stages and ordering | [App Startup](110-App-Startup.md) |
 | Understand modules, routing, and the SPA shell | [Modules & Routing](120-Modules-and-Routing.md) |
 | Understand how plugins are discovered and dispatched | [Plugin Internals](130-Plugin-Internals.md) |
-| Add a new app-wide subsystem or a plugin | [Extending HAWKI](../../700-Extending-Hawki/index.md) |
+| Add a new app-wide subsystem or a plugin | [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md) |
 | See how config/connection/stores are consumed | [Data Layer](../200-Concepts/130-Data-Layer.md) |

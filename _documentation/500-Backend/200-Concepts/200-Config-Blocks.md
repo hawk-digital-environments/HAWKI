@@ -40,5 +40,5 @@ Built-in blocks live under the `hawki-core` namespace: `locale`, `salts`, `secur
 ## Dragons
 
 - **Salts are only delivered to authenticated users.** `SaltConfig` returns an empty payload for guests. Do not move salt delivery into a guest-visible block.
-- **Do not put secrets in a public config block.** If a value must not reach the browser, it does not belong here. The DB-backed config layer (planned, see [Roadmap](../700-Roadmap/100-Plugin-System.md)) is the home for server-only sensitive config.
+- **Do not put secrets in a public config block.** If a value must not reach the browser, it does not belong here. The DB-backed config layer is planned but not yet implemented.
 - **Do not duplicate Laravel's config-file pattern.** Config blocks are meant to evolve into DB-backed configuration, not to mirror `config/*.php` files. The `AbstractConfig` base currently polyfills the database read via a `make()` method — this is transitional and will be replaced.

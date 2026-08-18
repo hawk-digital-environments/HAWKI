@@ -67,4 +67,4 @@ $this->app->extend(AiService::class, function (AiService $original) {
 
 ## Where the live extension points are
 
-The list of registries, container tags, filter events, and other hooks you can use today is in [Extending HAWKI](./220-Extending-HAWKI.md). The not-yet-implemented v3 plugin system (`HawkiPluginInterface`, `PluginRegistry`, Composer lifecycle) lives in the [Roadmap](../700-Roadmap/100-Plugin-System.md).
+The list of registries, container tags, filter events, and other hooks you can use today is in [Extending HAWKI](./220-Extending-HAWKI.md). The not-yet-implemented v3 plugin system (`HawkiPluginInterface`, `PluginRegistry`, Composer lifecycle) will build on these extension points.

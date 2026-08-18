@@ -1,4 +1,4 @@
-# Technical Debt Register
+# Backend Technical Debt
 
 The violations below were confirmed against `_documentation/400-Contributing.md` as of v2.5.0. Items are tagged as `pre-refactor rough edge` (already known, tracked) or `new finding` (identified in the v2.5.0 audit). Every item carries a rule reference so the writer knows what standard it breaks.
 

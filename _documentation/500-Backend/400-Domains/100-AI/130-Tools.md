@@ -68,7 +68,7 @@ Tools are not just PHP classes — they are persisted in the database so operato
 ## Register a function tool
 
 :::warning[Subject to change]
-The container-tag registration pattern will be replaced by a registry (like `ProviderAdapterRegistry` and `AgentRegistry`) once the new admin panel lands. See [Technical Debt](../../900-Technical-Debt.md) and [Roadmap](../../700-Roadmap/100-Plugin-System.md).
+The container-tag registration pattern will be replaced by a registry (like `ProviderAdapterRegistry` and `AgentRegistry`) once the new admin panel lands. See [Technical Debt](../../900-Technical-Debt.md).
 :::
 
 Tag the tool class with `ToolInterface::class` (or the `'ai.tool'` tag) in `ServiceProvider::register()`:

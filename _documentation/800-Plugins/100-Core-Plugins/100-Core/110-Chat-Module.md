@@ -50,7 +50,7 @@ const context = createComposerContext(app, 'aiConv', toastContext);
 
 `type` is either `'aiConv'` (a dedicated AI conversation view) or `'room'` (a room chat where AI elements only appear when the message contains an `@handle` or regen mode is active).
 
-This follows the standard HAWKI context pattern described in [Svelte Components](../../200-Concepts/100-Svelte-Components.md#context--parent-child-communication).
+This follows the standard HAWKI context pattern described in [Svelte Components](../../../600-Frontend/200-Concepts/100-Svelte-Components.md#context--parent-child-communication).
 
 ---
 

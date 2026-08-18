@@ -82,7 +82,7 @@ API resource and schema classes cannot use constructor injection because `larave
 
 ## SyncLog meta slot
 
-Every mutating JSON:API response automatically receives a `_hawki_sync_log` key in its `meta` object. The slot exists and is populated today, but the data it will carry — incremental sync deltas for WebSocket subscribers — is part of the larger SyncLog system, currently disabled. See [Roadmap — Plugin System](../700-Roadmap/100-Plugin-System.md).
+Every mutating JSON:API response automatically receives a `_hawki_sync_log` key in its `meta` object. The slot exists and is populated today, but the data it will carry — incremental sync deltas for WebSocket subscribers — is part of the larger SyncLog system, currently disabled.
 
 ## Resource inventory
 

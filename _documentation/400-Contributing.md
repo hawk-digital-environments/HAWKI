@@ -87,7 +87,7 @@ The full architecture documentation lives in the **[Backend section](500-Backend
 | `@api` stability contract, `DecoratorTrait`, extension points    | [API Stability & Extension Points](500-Backend/200-Concepts/210-API-Stability.md)           |
 | ServiceLocatorTrait, contextual scopes, custom translator        | [ServiceLocator](500-Backend/200-Concepts/110-Dependency-Injection/100-ServiceLocator.md)                            |
 | Known coding-standard violations in the codebase                 | [Technical Debt Register](500-Backend/900-Technical-Debt.md)                                |
-| How a request flows through every layer                          | [Life of a Request](500-Backend/100-Tutorials/100-Life-of-a-Request.md)                     |
+| How a request flows through every layer                          | [Layers & Domains](500-Backend/200-Concepts/100-Layers-and-Domains.md)                |
 
 > The old `3-architecture/` directory contains pre-refactor documentation and does not reflect current patterns. Do not use it as a reference.
 
@@ -178,15 +178,14 @@ The frontend is a custom kernel + plugin system assembled from extensions. Befor
 | App assembly, extensions, declaration merging, `app.*` surface | [The App & Kernel](600-Frontend/300-Architecture/100-App-and-Kernel.md) |
 | Boot stages and where each extension registers work | [App Startup](600-Frontend/300-Architecture/110-App-Startup.md) |
 | Modules, routing, and the SPA shell | [Modules & Routing](600-Frontend/300-Architecture/120-Modules-and-Routing.md) |
-| Adding a new app-wide subsystem (extension) | [Writing a Frontend Extension](700-Extending-Hawki/200-Writing-a-Frontend-Extension.md) |
-| Adding a feature (stores, schemas, modules, routes) | [Writing a Frontend Plugin](700-Extending-Hawki/100-Writing-a-Frontend-Plugin.md) |
+| Adding a new app-wide subsystem (extension) | [Writing a Frontend Extension](800-Plugins/200-Extending-HAWKI/200-Writing-a-Frontend-Extension.md) |
+| Adding a feature (stores, schemas, modules, routes) | [Writing a Frontend Plugin](800-Plugins/200-Extending-HAWKI/100-Writing-a-Frontend-Plugin.md) |
 | Component authoring conventions | [Svelte Components](600-Frontend/200-Concepts/100-Svelte-Components.md) |
 | CSS tokens, cascade layers, dark mode | [Styling](600-Frontend/200-Concepts/110-Styling.md) |
 | Config, API fetch helpers, resource schemas, hooks | [Data Layer](600-Frontend/200-Concepts/130-Data-Layer.md) |
 | Reactive stores and `useStore()` | [Stores](600-Frontend/200-Concepts/120-Stores.md) |
 | Translations and `useTranslator()` | [Translations](600-Frontend/200-Concepts/140-Translations.md) |
 | Available UI primitive components | [UI Primitives](600-Frontend/400-Components/100-UI-Primitives.md) |
-| Bridging new Svelte code to the legacy JS layer | [Legacy UI Bridge](600-Frontend/700-Roadmap/100-Legacy-UI-Bridge.md) |
 
 ---
 

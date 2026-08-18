@@ -4,6 +4,18 @@ Reactive state that needs to be shared across components lives in stores. Each s
 
 Source: `resources/js/plugins/core/stores/*.svelte.ts`. Registry: `app.stores` (see [The App & Kernel](../300-Architecture/100-App-and-Kernel.md)).
 
+## Stores vs global stores vs context
+
+"Store" means different things depending on the scope. The distinction matters when deciding where reactive state belongs.
+
+**Stores** in Svelte's vocabulary are reactive containers. HAWKI uses the word the same way — classes built with `$state` / `$derived` runes that hold distinct reactive data. Not every store is global.
+
+**Global stores** are stores registered with `storeRegistrar.add()` in a plugin's `stores()` hook. They are accessible by any component or plugin via `useStore(name)`. They hold data that is fetched once and is normally static within a single app lifecycle — model lists, system prompts, the theme, the keychain. The registry key is a flat string, not namespaced (see the warning in [Writing a store](#writing-a-store)).
+
+**Context** is for reactive state that is scoped to a component and its children. Complex components should use Svelte's context (`createContext`, `set`/`get`) to share state downward — it can (and often should) be a store in the Svelte sense, but no other component or plugin can or should interfere with that data. See [Svelte Components → Context](100-Svelte-Components.md#context--parent-child-communication) for the pattern.
+
+The rule of thumb: if the data is app-wide and other plugins need to read it, it is a global store. If the data is local to a component subtree, use context — even if the context value is a store class.
+
 ## Accessing a store
 
 In a Svelte component, use the `useStore()` hook — it returns the typed store instance from `app.stores.get(name)`:
@@ -243,7 +255,7 @@ export class MyStore implements DataStore {
 }
 ```
 
-2. Register it from your plugin's `stores()` hook (see [Extending HAWKI](../../700-Extending-Hawki/index.md)):
+2. Register it from your plugin's `stores()` hook (see [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md)):
 
 ```ts
 public stores({add}: StoreRegistrar): void | Promise<void> {
@@ -252,3 +264,7 @@ public stores({add}: StoreRegistrar): void | Promise<void> {
 ```
 
 That's the whole wiring — the `name` becomes the `useStore('my-thing')` key, and `loadData` is called automatically on the `main` stage if present.
+
+:::warning[Store keys are not namespaced]
+The registry is a flat map keyed by the store's `name` string. Two stores with the same name silently collide — the last one registered wins, the other's `loadData` never runs, and `useStore(name)` returns the wrong instance. Prefix your store name with something plugin-specific (e.g. `'myPlugin:my-thing'`, not `'my-thing'`) to avoid collisions with core or other plugins.
+:::

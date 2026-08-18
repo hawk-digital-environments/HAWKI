@@ -1,6 +1,6 @@
 # Extending HAWKI
 
-The live extension points you can use today, without waiting for the v3 plugin system. Plugin-author audience; the not-yet-implemented plugin lifecycle lives in the [Roadmap](../700-Roadmap/100-Plugin-System.md).
+The live extension points you can use today, without waiting for the v3 plugin system. Plugin-author audience; the plugin lifecycle is not yet implemented.
 
 ## Extension points at a glance
 
@@ -103,7 +103,7 @@ class CheckMyServiceHealth
 }
 ```
 
-See [Health Checks](../600-Infrastructure/100-Health-Checks.md).
+See [Health Checks](../500-Reference/100-Health-Checks.md).
 
 ## Decorate an `@api` service
 
@@ -133,4 +133,4 @@ Register a converter class implementing `FileConverterInterface` in `config/file
 
 ## The v3 plugin system
 
-The extension points above establish the stable surface that the HAWKI v3 plugin system will build on. The plugin system itself (`HawkiPluginInterface`, `PluginRegistry`, Composer lifecycle hooks, DB-backed config, SyncLog, frontend slot/zone) is not yet implemented. See [Roadmap — Plugin System](../700-Roadmap/100-Plugin-System.md).
+The extension points above establish the stable surface that the HAWKI v3 plugin system will build on. The plugin system itself (`HawkiPluginInterface`, `PluginRegistry`, Composer lifecycle hooks, DB-backed config, SyncLog, frontend slot/zone) is not yet implemented.

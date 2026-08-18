@@ -1,28 +1,28 @@
 # App Startup
 
-The HAWKI frontend does not run feature code immediately on page load. `app.ts` assembles a `HawkiApp` from an ordered list of extensions via `createApp(bootstrapper, […])`, then calls `bootstrapper.run()` once. Each extension registers its own startup work into the `Bootstrapper`'s ordered stages during `init()`/`ready()`. Each stage fully resolves before the next one begins; within a stage, handlers run concurrently (up to 3 at a time). This guarantees that foundational infrastructure — connection, config — is always available before feature code runs.
+The HAWKI frontend does not run feature code immediately on page load. `app.ts` assembles a `HawkiApp` from an ordered list of extensions via `createApp(bootstrapper, […])`, then calls `bootstrapper.run()` once. This page covers the boot stages themselves and how the two bootstrappers — the app-level `Bootstrapper` and the `PluginBootstrapper` — intertwine to reach a ready state. For how the extensions are assembled, see [The App & Kernel](100-App-and-Kernel.md).
 
-See [The App & Kernel](100-App-and-Kernel.md) for how the extensions are assembled; this page covers the boot stages themselves.
+## What the kernel is, and what it is not
 
-:::warning[No `bootstrapper` singleton]
-`Bootstrapper.ts` exports only the `Bootstrapper` class — there is no module-level `bootstrapper` instance. A single instance is created once in `app.ts` and threaded through the app: it is passed to every `HawkiAppExtension.init()`/`ready()` call and, via `HawkiPluginContext`, to every plugin lifecycle hook. Always obtain the instance from whichever `bootstrapper` parameter your hook already receives; do not construct a second `Bootstrapper`.
-:::
+The kernel is infrastructure. It does not know about chat, AI models, rooms, or any feature. What it owns: the extension list, the `Bootstrapper` that sequences startup, the `PluginBootstrapper` that dispatches plugin lifecycle hooks, and the shared registries (stores, modules, routes, migrations, config schemas, resource schemas). Features are contributed by plugins and extensions; the kernel provides the scaffolding that lets them register and run in the right order.
 
-## Overview
+But the kernel also manages **loading state** — `app.isBooting`, `app.isMounted`, the boot stages — because deciding when to show a loading spinner vs. the real UI is the same problem as deciding when feature code can safely run. The two concerns cannot be separated: the boot stages exist so that the loading state is honest, not a guess.
 
-The boot sequence follows this order:
+## The two bootstrappers
 
-```
-preparation → migration → early → main → late → finalization
-```
+There are two things called "bootstrapper" in the frontend. They are not the same class, and they serve different scopes.
 
-`bootstrapper.run()` is idempotent: subsequent calls return the same promise as the first.
+**`Bootstrapper`** (`kernel/Bootstrapper.ts`) — the app-level stage runner. It owns the six ordered stages (`preparation → migration → early → main → late → finalization`) and the concurrency within each. Extensions register work into it during their `init()`/`ready()`. A single instance is created in `app.ts` and threaded through everything. There is no singleton — always obtain it from whichever `bootstrapper` parameter your hook already receives.
 
-## Boot Stages
+**`PluginBootstrapper`** (`kernel/plugins/PluginBootstrapper.ts`) — the plugin lifecycle dispatcher. It is created by `PluginExtension.init()` and exposed as `app.plugins.bootstrapper`. It owns the `run*` methods that call each plugin lifecycle hook (`runInit`, `runExtensions`, `runConfigSchemas`, `runResourceSchemas`, `runModules`, `runMigrations`, `runStores`, `runRoutes`, `runBoot`, `runReady`). Its `run*` methods are not called all at once — each is invoked by whichever extension owns that concern, at the point in the boot lifecycle where it makes sense.
+
+The interplay: the `Bootstrapper` drives the stages; extensions register work into the stages; some of that work calls `PluginBootstrapper.run*` to dispatch plugin hooks at the right moment. `PluginExtension.ready()` schedules `runBoot()` to fire when the `preparation` stage passes and `runReady()` to fire when the `finalization` stage is reached.
+
+## Boot stages
 
 | Stage | What runs here |
 |---|---|
-| `preparation` | `ClientExtension` fetches the connection; `ConfigurationExtension` fetches the config — both register `onPreparationStage`, so they run concurrently. Everything else depends on both. |
+| `preparation` | `ClientExtension` fetches the connection; `ConfigurationExtension` fetches the config — both run concurrently. Everything else depends on both. `PluginExtension.ready()` schedules `plugin.boot()` to run once `preparation` passes. |
 | `migration` | *(currently unused — reserved for schema or storage migrations)*. Frontend migrations run on demand via `app.migration.apply(runType)` after login/passkey, not on a boot stage. |
 | `early` | *(currently unused — reserved for services that `main`-stage work depends on)* |
 | `main` | `StoreExtension` calls `loadData(app)` on every store that implements it; `LocalizationExtension` loads the active locale's translation labels — all concurrent. Plugins may add more `main`-stage work from their `boot()` hook. |
@@ -31,7 +31,83 @@ preparation → migration → early → main → late → finalization
 
 The `migration` and `early` stages are intentionally empty in the current codebase. They exist as reserved slots for future work that must run after `preparation` but before `main`.
 
-## Registering Work in a Stage
+`bootstrapper.run()` is idempotent: subsequent calls return the same promise as the first call.
+
+## Life of a routed page
+
+A user navigates to the chat index page (`/new/`). We follow the request from the moment the bundle loads, through the boot sequence, the route match, and into the rendered component. This is the cleanest path through the SPA shell.
+
+### Sequence
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant A as app.ts
+    participant K as Kernel (createApp)
+    participant BS as Bootstrapper
+    participant SE as ShellExtension
+    participant RE as RoutingExtension
+    participant S as Shell.svelte
+    participant RV as RouterView
+    participant Page as ChatIndex.svelte
+
+    B->>A: load bundle (type="module")
+    A->>A: provideLegacyGlobals()
+    A->>K: createApp(bootstrapper, [12 extensions])
+    K->>K: init() each extension in order
+    Note over RE: init(): dispatch runRoutes + module routes<br/>into the shared RouteRegistrar
+    K->>K: ready() each extension
+    Note over SE: ready(): mount() Shell into #hawki-app<br/>(isBooting = true)
+    K->>A: returns HawkiApp
+    A->>BS: bootstrapper.run()
+    Note over BS: preparation → migration → early → main → late → finalization
+    Note over RE: late stage: build router from registrar<br/>(basePath: '/new')
+    Note over SE: finalization onStagePassed:<br/>isBooting = false (shell mounted, no legacy fallback)
+    BS-->>A: resolved
+    A->>A: runLegacyWaitUntilReadyQueue()
+    Note over S: isBooting flipped to false<br/>swaps Loader for RouterView
+    S->>RV: render
+    RV->>RE: router.resolve('/new/')
+    RE-->>RV: matched route: chat.index
+    RV->>Page: lazy-load + render ChatIndex.svelte
+    Page-->>B: chat page visible
+```
+
+### Assembly — `createApp()`
+
+Each extension's `init()` runs in array order. The two that matter for this request:
+
+- `PluginExtension.init()` discovers the `core` plugin (auto-glob `$lib/plugins/**/*.plugin.ts`) and dispatches its `init`/`extensions`/`resourceSchemas` hooks via `PluginBootstrapper`. The core plugin registers `ChatModule` via `modules()` later (when `ModuleExtension.init()` runs).
+- `RoutingExtension.init()` feeds its shared `RouteRegistrar` in two passes: first every plugin's `routes()` (the core plugin declares `/` → `Index.svelte`), then every module's `routes()` (`ChatModule` declares `/` → `ChatIndex.svelte` and `/room/:id` → `ChatConversation.svelte`, namespaced under the plugin prefix).
+
+`ready()` then runs on each extension. `ShellExtension.ready()` immediately calls `mount()`, which finds `#hawki-app` and mounts `Shell.svelte` into it — `isBooting` is still `true`, so `Shell` renders its `Loader`. See [Modules & Routing](120-Modules-and-Routing.md).
+
+### Boot — `bootstrapper.run()`
+
+The six stages run in order. The ones that matter here:
+
+- **`preparation`** — `ClientExtension` fetches the connection, `ConfigurationExtension` fetches the config. Everything else depends on both.
+- **`main`** — `StoreExtension` calls `loadData(app)` on every store that implements it (the chat page reads the `ai-models` store, which loads here). `LocalizationExtension` loads the active locale's translation labels.
+- **`late`** — `RoutingExtension.ready()` compiles the registrar into a `universal-router` router (`createRouterFromRegistrar('app', …, { basePath: '/new', strategy: 'path' })`) and stores it as `app.__router` (exposed publicly as the narrower `app.router` handle).
+- **`finalization`** — `ShellExtension` flips `isBooting` to `false`. Because a shell was mounted (`isMounted === true`), the legacy snippet fallback is skipped.
+
+### Render — `Shell.svelte` → `RouterView`
+
+`Shell.svelte` is minimal: it provides the app via Svelte context (`provideApp`), sets up the toast context, and renders:
+
+```svelte
+<Loader active={app.isBooting}>
+    <RouterView router={(app as any).__router}/>
+</Loader>
+```
+
+Once `isBooting` flips to `false`, the `Loader` swaps out and `RouterView` takes over. `RouterView` calls `router.resolve('/new/')` against the compiled router. The registrar collected the `ChatModule` route `/` (under the core plugin's empty prefix), so the match resolves to the `chat.index` route and its lazy loader. See [Routing](../200-Concepts/180-Routing.md) for how the router resolves and renders.
+
+### The page — `ChatIndex.svelte`
+
+`RouterView` calls the route's lazy loader, imports the component, and renders it. `ChatIndex.svelte` reaches the app through the hooks (`useStore('ai-models')`, `useConfig()`, `useTranslator()`, …) set up by the boot sequence that just completed.
+
+## Registering work in a stage
 
 Each stage exposes three registration points that control precisely when a handler runs relative to that stage. Extensions register these from their `init()`/`ready()`; you rarely call them outside an extension.
 
@@ -44,7 +120,6 @@ import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 
 public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper) {
     bootstrapper.onStageReached('main', async (bootstrap) => {
-        // Runs before any 'main' stage handlers start.
         await ensurePrecondition();
     });
 }
@@ -52,18 +127,7 @@ public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper) {
 
 ### `onStage(stage, handler)`
 
-Runs **during** the stage, concurrently with other handlers registered for the same stage (up to the concurrency limit of 3). This is where most feature setup goes. Returns a cleanup function that deregisters the handler.
-
-Each stage also has a named shorthand method:
-
-| Shorthand | Equivalent |
-|---|---|
-| `onPreparationStage(fn)` | `onStage('preparation', fn)` |
-| `onMigrationStage(fn)` | `onStage('migration', fn)` |
-| `onEarlyStage(fn)` | `onStage('early', fn)` |
-| `onMainStage(fn)` | `onStage('main', fn)` |
-| `onLateStage(fn)` | `onStage('late', fn)` |
-| `onFinalizationStage(fn)` | `onStage('finalization', fn)` |
+Runs **during** the stage, concurrently with other handlers registered for the same stage (up to the concurrency limit of 3). This is where most feature setup goes. Returns a cleanup function that deregisters the handler. Named shorthands exist: `onPreparationStage`, `onMigrationStage`, `onEarlyStage`, `onMainStage`, `onLateStage`, `onFinalizationStage`.
 
 ```ts
 public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper) {
@@ -77,62 +141,10 @@ public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper) {
 
 Runs **after** the stage completes, serially. Use this to react to a stage finishing without blocking the next stage from starting.
 
-```ts
-bootstrapper.onStagePassed('main', async (bootstrap) => {
-    // All 'main' handlers have resolved.
-    reportReadinessMetric();
-});
-```
+### Late registration
 
-### Late Registration
+If a handler is registered after its target stage has already passed, it is called immediately and a console warning is emitted. Late registration is never silently dropped.
 
-If a handler is registered after its target stage (and timing slot) has already passed, it is called immediately and a console warning is emitted:
+## Stage concurrency
 
-```
-Trying to register a bootstrap handler for stage main and timing before, but that timing has already passed. Running handler immediately.
-```
-
-Late registration is never silently dropped.
-
-## `Bootstrapper` API Reference
-
-| Method | When it runs | Execution |
-|---|---|---|
-| `onStageReached(stage, fn)` | Before stage starts | Serial |
-| `onStage(stage, fn)` | During stage | Concurrent (max 3) |
-| `on{Stage}Stage(fn)` | During the named stage | Concurrent (max 3) |
-| `onStagePassed(stage, fn)` | After stage completes | Serial |
-| `run()` | — | Starts the full sequence; idempotent |
-| `currentStage` | — | Read-only getter for the active stage name |
-
-## Stage Concurrency
-
-Within each stage, handlers registered via `onStage` (and the named shorthands) run concurrently with a cap of 3 simultaneous handlers (implemented as a `ParallelAsyncWorkflow`). As one completes, the next queued handler starts — a sliding window, not fixed batches. The stage does not advance until all handlers have resolved.
-
-## Lazy Dependencies
-
-`legacy/dependencies.ts` exports a `dependencyLoader(name)` function that loads heavy third-party libraries on demand rather than bundling them into the main chunk. It is published to the legacy scripts as `window.hawkiDependencyLoader` by `provideLegacyGlobals()`.
-
-:::warning[Legacy only]
-`dependencyLoader` exists solely to serve the old vanilla-JS UI, which has no module system. **New Svelte/TS code must not use it** — write a normal `import` (or a plain `await import()` for code-splitting) instead.
-:::
-
-```ts
-import {dependencyLoader} from '$lib/legacy/dependencies.js';
-
-const echo = await dependencyLoader('echo');
-// echo is a fully configured Laravel Echo instance connected via Reverb/Pusher
-```
-
-### Registered Dependencies
-
-| Name | Package(s) loaded | Notes |
-|---|---|---|
-| `echo` | `pusher-js`, `laravel-echo` | Configures a Laravel Echo instance using `hawki-core` WebSocket config; sets `window.Pusher` |
-| `cropperJs` | `cropperjs` | Image cropping |
-| `jsPdf` | `jspdf` | Client-side PDF generation |
-| `pdfJsLib` | `pdfjs-dist`, `pdfjs-dist/web/pdf_viewer` | PDF rendering; sets `window.pdfjsLib` and configures the worker URL |
-| `docx` | `docx` | DOCX file creation |
-| `docxPreview` | `docx-preview` | DOCX file preview rendering |
-
-The promise cache (`dependencyPromises`) is module-level, so each dependency is instantiated at most once per page load even if `dependencyLoader` is called from multiple components. A failed load is cached too — a later retry rejects immediately rather than re-importing.
+Within each stage, handlers registered via `onStage` (and the named shorthands) run concurrently with a cap of 3 simultaneous handlers (a sliding window, not fixed batches). The stage does not advance until all handlers have resolved.

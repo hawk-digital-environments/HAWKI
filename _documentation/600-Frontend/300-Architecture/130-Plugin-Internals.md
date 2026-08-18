@@ -1,6 +1,6 @@
 # Plugin Internals
 
-How plugins are discovered and how the kernel dispatches their lifecycle hooks. For authoring a plugin (the contract, examples, declaration merging), see [Extending HAWKI](../../700-Extending-Hawki/index.md) — this page covers the internals a contributor needs to understand what they're plugging into.
+How plugins are discovered and how the kernel dispatches their lifecycle hooks. For authoring a plugin (the contract, examples, declaration merging), see [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md) — this page covers the internals a contributor needs to understand what they're plugging into.
 
 Source: `kernel/plugins/PluginExtension.ts` (discovery), `kernel/plugins/PluginBootstrapper.ts` (dispatch), `kernel/plugins/types.ts` (contract).
 
@@ -50,7 +50,7 @@ Two context shapes are passed to plugin hooks:
 
 | I want to… | Read |
 |---|---|
-| Author a plugin or extension | [Extending HAWKI](../../700-Extending-Hawki/index.md) |
+| Author a plugin or extension | [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md) |
 | Understand the boot stages hooks dispatch against | [App Startup](110-App-Startup.md) |
 | Understand modules and routing | [Modules & Routing](120-Modules-and-Routing.md) |
 | See the full plugin contract | `resources/js/kernel/plugins/types.ts` |

@@ -52,7 +52,7 @@ See [MCP](../400-Domains/100-AI/140-MCP.md).
 | `ext-app:list` | Lists all external apps that are currently registered in the system |
 | `ext-app:remove` | Deletes a registered external app from the system |
 
-See [External App Integration](../700-Roadmap/300-External-Apps.md).
+External app integration (not yet fully documented — see the ExtApp classes in the codebase).
 
 ## Personal Access Tokens
 

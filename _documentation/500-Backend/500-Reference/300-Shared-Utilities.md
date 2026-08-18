@@ -36,7 +36,7 @@ Throws `CyclicDependencyException` when constraints form a cycle. Used by `Agent
 
 ## Infrastructure macros
 
-Two macros live canonically in [Infrastructure](../600-Infrastructure/index.md):
+Two macros live canonically in the Reference section:
 
-- **`Http::getSsrfSafe(url)`** — registered by `SsrfSafeGetterMacro`. Validates every URL and redirect hop against a public-IP allowlist before making the request. All external HTTP calls in HAWKI must use this instead of `Http::get()`. See [SSRF Protection](../600-Infrastructure/300-SSRF-Protection.md).
-- **`Schedule::commandWithDynamicInterval()`** — registered by `ScheduleWithDynamicIntervalFactory`. Reads the command's scheduling frequency from DB/config rather than hardcoding a cron expression. The `never` sentinel disables a job without removing it from the schedule definition. See [Scheduling](../600-Infrastructure/200-Scheduling.md).
+- **`Http::getSsrfSafe(url)`** — registered by `SsrfSafeGetterMacro`. Validates every URL and redirect hop against a public-IP allowlist before making the request. All external HTTP calls in HAWKI must use this instead of `Http::get()`. See [SSRF Protection](./300-SSRF-Protection.md).
+- **`Schedule::commandWithDynamicInterval()`** — registered by `ScheduleWithDynamicIntervalFactory`. Reads the command's scheduling frequency from DB/config rather than hardcoding a cron expression. The `never` sentinel disables a job without removing it from the schedule definition. See [Scheduling](./200-Scheduling.md).

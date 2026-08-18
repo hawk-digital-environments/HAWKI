@@ -80,13 +80,11 @@ The compiled router is exposed as `app.router` (a `RouterHandle`). `app.__router
 
 The `RouteRegistrar` (in `components/ui/routing/logistics/RouteRegistrar.ts`) is the surface plugins and modules register against. Key methods:
 
-| Method | Purpose |
-|---|---|
-| `route(path, component, options?)` | Register a route with an eagerly imported component. |
-| `lazyRoute(path, loader, options?)` | Register a route with a lazy component loader (code-split). |
-| `group(options, callback)` | Namespace a group of routes under a shared prefix/middleware. |
+- `route(path, component, options?)` — register a route with an eagerly imported component.
+- `lazyRoute(path, loader, options?)` — register a route with a lazy component loader (code-split). Preferred.
+- `group(path, callback, options?)` — namespace a group of routes under a shared prefix/middleware/layout.
 
-Routes support optional `meta` (typed per-route data — e.g. `{title: 'Chat'}`), middleware, layouts, and a `name` for reverse lookups.
+Routes support optional `meta` (typed per-route data — e.g. `{title: 'Chat'}`), middleware, layouts, and a `name` for reverse lookups. The full shape — including `configurePage` / `configureLayout`, the loader context, cache keys, and the render-chain model — is documented in [Concepts → Routing](../200-Concepts/180-Routing.md).
 
 ### The `RouterView` component
 
@@ -99,17 +97,17 @@ Routes support optional `meta` (typed per-route data — e.g. `{title: 'Chat'}`)
 </Loader>
 ```
 
-`RouterView` uses the full `Router` instance (reached via the `@internal` `__router`), while the public `app.router` handle exposes only the narrower `resolve`/`isRouteActive` surface consumers need.
+`RouterView` uses the full `Router` instance (reached via the `@internal` `__router`), while the public `app.router` handle exposes only the narrower navigation surface (`goTo`, `isActive`, `getPath`, …) components need. Route state (`data`, `params`, `route`) arrives as **props** from `RouterView`, never from `useRouter()`.
 
-The routing UI kit under `components/ui/routing/` also provides hooks (`useRouter`, `useRouteMeta`), strategy implementations (`path`, `hash`, `transient`), error components (`RouteError`, `RouteNotFound`), and logistics (`buildMiddlewareStack`, `lazyComponent`, `isActive`, `layouts`). See the directory for the full set.
+The routing kit also provides `RouteError` / `RouteNotFound` fallback components and three routing strategies (`path`, `hash`, `transient`). Its public surface is the barrel `components/ui/routing/index.ts`; see [Concepts → Routing](../200-Concepts/180-Routing.md) for the mental model.
 
 ## The SPA Shell
 
 `ShellExtension` mounts the SPA root. In `ready()` (which runs after every extension is assembled):
 
-1. It calls `mount()` immediately — `mount()` looks for `#hawki-app` and, if found, mounts `Shell.svelte` into it. Returns `false` (without throwing) when the element is absent.
+3. It calls `mount()` immediately — `mount()` looks for `#hawki-app` and, if found, mounts `Shell.svelte` into it. Returns `false` (without throwing) when the element is absent.
 2. It registers a `DOMContentLoaded` wait on the `finalization` stage so the legacy fallback and other finalization work can depend on the DOM being ready.
-3. On `onStagePassed('finalization')` it flips `isBooting` to `false` (so `Shell` swaps its `Loader` for `RouterView`) and, **if no shell was mounted**, calls `legacyInitializeSnippetApps` — the legacy snippet fallback (see [Roadmap → Snippet System](../700-Roadmap/200-Snippet-System.md)).
+4. On `onStagePassed('finalization')` it flips `isBooting` to `false` (so `Shell` swaps its `Loader` for `RouterView`) and, **if no shell was mounted**, calls `legacyInitializeSnippetApps` — the legacy snippet fallback.
 
 `Shell.svelte` is minimal: it provides the app via Svelte context (`provideApp`), sets up the shared toast context, and renders `Loader` while booting / `RouterView` once booted.
 
@@ -127,7 +125,7 @@ The shell's mount state is exposed on `app`:
 
 | I want to… | Read |
 |---|---|
-| Register a feature module or routes | [Extending HAWKI](../../700-Extending-Hawki/index.md) |
+| Register a feature module or routes | [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md) |
 | Understand the boot stages the shell mounts on | [App Startup](110-App-Startup.md) |
 | See how plugins are discovered and dispatched | [Plugin Internals](130-Plugin-Internals.md) |
-| Understand the legacy snippet fallback (being phased out) | [Roadmap → Snippet System](../700-Roadmap/200-Snippet-System.md) |
+| Understand the legacy snippet fallback (being phased out) |

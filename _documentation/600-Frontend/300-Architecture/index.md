@@ -9,4 +9,4 @@ The kernel is the small, extension-assembled core of the frontend. This section 
 | Understand modules, routing, and the SPA shell | [Modules & Routing](120-Modules-and-Routing.md) |
 | Understand how plugins are discovered and dispatched | [Plugin Internals](130-Plugin-Internals.md) |
 
-Authoring a new plugin or extension is a separate concern that touches backend and frontend alike — see [Extending HAWKI](../../700-Extending-Hawki/index.md) for the how-to. These pages cover the kernel internals a contributor needs to understand what they're plugging into.
+Authoring a new plugin or extension is a separate concern that touches backend and frontend alike — see [Extending HAWKI](../../800-Plugins/200-Extending-HAWKI/index.md) for the how-to. These pages cover the kernel internals a contributor needs to understand what they're plugging into.

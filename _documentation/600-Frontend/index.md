@@ -2,24 +2,17 @@
 
 HAWKI's frontend is a **Svelte 5 + TypeScript** application assembled from a small extension-based kernel. It is mid-migration from a Blade + vanilla-JS UI toward a single-page Svelte app; the new shell and router are the primary path, the legacy snippet bridge is being phased out.
 
-:::info[Migration phase]
-The SPA shell (`ShellExtension` + `RouterView`) is the direction. Today both systems coexist: pages with a `#hawki-app` mount point run the routed SPA; legacy pages fall back to the snippet system. The snippet system and legacy bridge are scheduled for removal in the next release. New code targets the SPA; treat snippet/legacy paths as read-only. See [Roadmap](700-Roadmap/index.md) for the transitional scaffolding.
-:::
-
 ## How the docs are organised
 
 | Section | What you find there |
 |---|---|
-| [Tutorials](100-Tutorials/index.md) | One concrete scenario, walked end-to-end. The cleanest path in the codebase. |
 | [Concepts](200-Concepts/index.md) | "How do I use pattern X" — one page per pattern. The hub everything else links to. |
-| [Architecture](300-Architecture/index.md) | The kernel, boot sequence, modules & routing, plugin internals. Contributor-level. |
+| [Architecture](300-Architecture/index.md) | The kernel, boot sequence (including the life-of-a-routed-page walkthrough), modules & routing, plugin internals. Contributor-level. |
 | [Components](400-Components/index.md) | Catalogue of the component library (primitives, utilities, icons). |
-| [Core Plugins](500-Core-Plugins/index.md) | The first-party plugins and their feature modules. Currently only `core`. |
 | [Reference](600-Reference/index.md) | Lookup catalogues (shared utilities). Code is truth. |
-| [Roadmap](700-Roadmap/index.md) | Transitional scaffolding being phased out (legacy bridge, snippet system). |
 | [Technical Debt](900-Technical-Debt.md) | The violations register, audience-tagged. |
 
-Authoring plugins and extensions touches frontend and backend alike — that content lives in its own top-level section: [Extending HAWKI](../700-Extending-Hawki/index.md).
+Plugin and extension authoring — both frontend and backend — lives in its own top-level section: [Plugins](../800-Plugins/index.md). That section also covers the first-party core plugins.
 
 ## Where things live
 
@@ -82,14 +75,14 @@ Path aliases: **`$lib` = `resources/js/`**, **`$plugins` = `resources/js/plugins
 | I want to… | Start here |
 |---|---|
 | Understand the mental model of the app + kernel | [Architecture → The App & Kernel](300-Architecture/100-App-and-Kernel.md) |
-| Walk a routed page end-to-end | [Tutorials → Life of a Routed Page](100-Tutorials/100-Life-of-a-Routed-Page.md) |
+| Walk a routed page end-to-end (from boot to render) | [Architecture → App Startup](300-Architecture/110-App-Startup.md) |
 | Write or restyle a Svelte component | [Concepts → Svelte Components](200-Concepts/100-Svelte-Components.md) → [Styling](200-Concepts/110-Styling.md) |
 | Read or write shared reactive state | [Concepts → Stores](200-Concepts/120-Stores.md) |
 | Fetch data from the server | [Concepts → Data Layer](200-Concepts/130-Data-Layer.md) |
 | Translate a string | [Concepts → Translations](200-Concepts/140-Translations.md) |
 | Use a UI primitive | [Components → UI Primitives](400-Components/100-UI-Primitives.md) |
-| Understand the composer (chat input) | [Core Plugins → Core → Chat Module](500-Core-Plugins/100-Core/110-Chat-Module.md) |
-| Add a feature (stores, schemas, modules, routes) | [Extending HAWKI](../700-Extending-Hawki/index.md) |
+| Understand the composer (chat input) | [Plugins → Core Plugins → Chat Module](../800-Plugins/100-Core-Plugins/100-Core/110-Chat-Module.md) |
+| Add a feature (stores, schemas, modules, routes) | [Plugins → Extending HAWKI](../800-Plugins/200-Extending-HAWKI/index.md) |
 | Work with client-side encryption | [Concepts → Encryption](200-Concepts/160-Encryption.md) |
 | Understand frontend migrations | [Concepts → Frontend Migrations](200-Concepts/170-Frontend-Migrations.md) |
-| Bridge to the legacy layer (transitional) | [Roadmap → Legacy UI Bridge](700-Roadmap/100-Legacy-UI-Bridge.md) |
+| Understand routing | [Concepts → Routing](200-Concepts/180-Routing.md) |

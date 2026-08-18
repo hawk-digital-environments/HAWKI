@@ -5,4 +5,4 @@ The encryption domain index. The single home for the three cryptographic tiers, 
 - [User Keychain](./420-User-Keychain.md) — per-user key blob storage and the batch-update API.
 - [Passkey Backup](./430-Passkey-Backup.md) — encrypted passkey backup and recovery.
 
-External app integration is not fully implemented yet — see [Roadmap — External App Integration](../../700-Roadmap/300-External-Apps.md).
+External app integration is not fully implemented yet.

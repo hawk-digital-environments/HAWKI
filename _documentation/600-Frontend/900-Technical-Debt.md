@@ -16,7 +16,6 @@ The `<svelte-snippet>` custom element, `SnippetExtension` (`app.snippets`), `Leg
 
 - Do not write new snippets. New pages mount via the SPA shell.
 - Do not read from `app.snippets` or `app.toast` in new code.
-- See [Roadmap → Snippet System](700-Roadmap/200-Snippet-System.md).
 
 **Audience:** contributors. Plugin authors should not register snippets.
 
@@ -27,7 +26,6 @@ The `<svelte-snippet>` custom element, `SnippetExtension` (`app.snippets`), `Leg
 `OldUiBridge`, `OldUiMessageHistory`, the `window.*` globals published by `provideLegacyGlobals()`, and the `dependencyLoader` exist only to bridge the new Svelte layer to the old vanilla-JS UI. New Svelte code must not read from `window.*` — import the real modules and use the hooks.
 
 - The composer's only transport (`OldUiBridgeTransport`) depends on `OldUiBridge.triggerSendMessage()`. That coupling goes away when the routed chat transport lands.
-- See [Roadmap → Legacy UI Bridge](700-Roadmap/100-Legacy-UI-Bridge.md).
 
 **Audience:** contributors.
 
@@ -95,6 +93,6 @@ For this reason **migrations are restricted to core plugins** (`HawkiCorePlugin`
 
 ## Plugin system (not yet implemented)
 
-Third-party (runtime-installed) plugins are not yet supported. `PluginExtension.autoRegisterInstalledPlugins()` is a no-op placeholder. Every plugin today is a built-in core plugin discovered via `import.meta.glob`. The full plugin-system design lives in the backend roadmap: [`../500-Backend/700-Roadmap/100-Plugin-System.md`](../500-Backend/700-Roadmap/100-Plugin-System.md).
+Third-party (runtime-installed) plugins are not yet supported. `PluginExtension.autoRegisterInstalledPlugins()` is a no-op placeholder. Every plugin today is a built-in core plugin discovered via `import.meta.glob`.
 
 **Audience:** plugin authors (watch this space).

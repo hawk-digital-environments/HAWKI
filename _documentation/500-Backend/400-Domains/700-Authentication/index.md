@@ -119,4 +119,4 @@ The key-generation step — creating the user's asymmetric keypair, storing the 
 
 Session management and WebSocket channel authentication use Laravel Sanctum (`config/sanctum.php`). Sanctum issues the session cookies that subsequent JSON:API requests carry.
 
-Personal access tokens (managed via `ApiTokenService` and the `app:token` artisan command) are a **separate** Sanctum mechanism from the ext-app OAuth-like flow. See [External App Integration](../../700-Roadmap/300-External-Apps.md) for the distinction.
+Personal access tokens (managed via `ApiTokenService` and the `app:token` artisan command) are a **separate** Sanctum mechanism from the ext-app OAuth-like flow.
