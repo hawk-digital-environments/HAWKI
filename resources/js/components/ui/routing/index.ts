@@ -13,10 +13,9 @@
  * Neither are the helpers the router already applies on a caller's behalf —
  * path normalization, `isPathActive`/`isRouteActive` (reachable as
  * `RouterHandle.isActive`/`isRouteActive`), `makeCacheKey` (as
- * `RouteCacheKeyContext.makeKey`), `getRouterContextName` (as
- * `Router.contextName`, which `RouterView` already publishes) and
- * `lazyComponent` (applied by `lazyRoute()` and by every `lazyLayout` /
- * `lazyRootLayout` option).
+ * `RouteCacheKeyContext.makeKey`), `provideRouterScope` (which `RouterView`
+ * already calls) and `lazyComponent` (applied by `lazyRoute()` and by every
+ * `lazyLayout` / `lazyRootLayout` option).
  * Reaching past this file is the signal that either the need is real and
  * belongs here, or the code doing the reaching is in the wrong place.
  *
@@ -39,7 +38,7 @@ export {
     type RouterHandle
 } from '$lib/components/ui/routing/logistics/router.js';
 
-export {provideDefaultRouterName, useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+export {useRouter, useRouterScope, type RouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
 
 // =========================================================================
 // Route registration

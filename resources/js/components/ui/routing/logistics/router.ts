@@ -85,6 +85,14 @@ export interface IsActiveOptions extends Omit<IsPathActiveOptions, 'rootPath'> {
 
 export interface RouterHandle {
     /**
+     * The name this router was created under — what `useRouter(name)` resolves
+     * against. Fixed for the router's lifetime. Carried on the handle so a
+     * component holding one can tell *which* router it got, which is otherwise
+     * unanswerable: a handle exposes only behaviour, and two routers' handles
+     * are indistinguishable until one is asked about a path.
+     */
+    readonly name: string;
+    /**
      * Resolves a named route (via `universal-router`'s URL generator) or a
      * literal path (passed through, prefixed with the router's `basePath` if
      * it isn't already) into the path string to use as an `href`. A leading
@@ -178,7 +186,6 @@ export interface RouterHandle {
 export interface Router {
     readonly state: 'loading' | 'waiting' | 'notFound' | 'error';
     readonly name: string;
-    readonly contextName: string;
     readonly handle: RouterHandle;
     readonly component: RouteComponent | null;
     /**
@@ -302,7 +309,9 @@ export function createRouter(
  * `bind()`) alongside its `RouterHandle` (navigation API for components).
  *
  * `name` must be unique among routers mounted at once — it is what
- * `useRouter(name)` and `RouterView`'s context key are looked up by.
+ * `useRouter(name)` looks a router up by. A duplicate is not an error: the
+ * nearest `RouterView` wins for its own subtree, so a nested router reusing an
+ * outer one's name makes the outer router unreachable from inside it.
  */
 export function createRouterFromRegistrar(
     name: string,
@@ -490,6 +499,7 @@ export function createRouterFromRegistrar(
     }
 
     const handle: RouterHandle = {
+        name,
         reload,
         clearData,
         debug,
@@ -505,9 +515,6 @@ export function createRouterFromRegistrar(
     return {
         get name() {
             return name;
-        },
-        get contextName() {
-            return getRouterContextName(name);
         },
         get state() {
             return state.currentState;
@@ -544,10 +551,6 @@ export function createRouterFromRegistrar(
         },
         bind: () => state.bind((path) => void runResolve(path))
     };
-}
-
-export function getRouterContextName(name?: string): string {
-    return `hawki-router-${name ?? 'app'}`;
 }
 
 function createStrategy(strategy: CreateRouterOptions['strategy']): RoutingStrategy {
