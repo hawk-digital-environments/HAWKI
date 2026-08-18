@@ -327,7 +327,6 @@ function buildRouteNode(kind: RouteNodeKind, componentOrLoader: ComponentOrLoade
 export class RouteRegistrar {
     private readonly routes = new Map<string, RegisteredRouteOptions>();
     private readonly groups = new Map<string, RegisteredRouteGroupOptions>();
-    private readonly globalMiddlewares: RouteMiddleware[] = [];
 
     /**
      * Registers a route that renders an already-imported component.
@@ -431,21 +430,6 @@ export class RouteRegistrar {
     }
 
     /**
-     * Registers a middleware wrapping *everything* on this registrar — every
-     * route and every group, including ones registered after this call, since
-     * the wrapping only happens in {@link build}. Use it for app-wide concerns
-     * such as an authentication guard.
-     *
-     * Only meaningful on the root registrar: the nested registrars created for
-     * groups are fresh instances, and a group's routes are already covered by
-     * the root registrar's global middlewares.
-     */
-    public addGlobalMiddleware(middleware: RouteMiddleware) {
-        this.globalMiddlewares.push(middleware);
-        return this;
-    }
-
-    /**
      * Compiles everything registered so far into the `Route[]` that
      * {@link RoutingExtension} feeds to `UniversalRouter`: first all plain
      * routes (in registration order), then all groups (in registration order),
@@ -475,15 +459,7 @@ export class RouteRegistrar {
             builtRoutes.push(builtGroup);
         }
 
-        const allRoutes = [...builtRoutes, ...builtCatchAllRoutes];
-        if (this.globalMiddlewares.length === 0) {
-            return allRoutes;
-        }
-
-        // A path-less parent route matches without consuming URL segments, so
-        // wrapping the whole tree in one leaves every child path unchanged —
-        // the same trick buildMiddlewareStack plays for per-route middlewares.
-        return [buildMiddlewareStack({path: '', children: allRoutes}, {middlewares: this.globalMiddlewares})];
+        return [...builtRoutes, ...builtCatchAllRoutes];
     }
 
     private buildRouteFromOptions(options: RegisteredRouteOptions): Route {
