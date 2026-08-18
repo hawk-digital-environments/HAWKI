@@ -31,6 +31,7 @@ export class KeychainStore implements DataStore {
     public readonly name = 'keychain';
 
     private _handle: KeychainHandle | null = null;
+    private _app: HawkiApp | null = null;
 
     /** Resolves when the initial keychain load has completed (or was skipped
      *  because the connection is unauthenticated). Await this before reading keys. */
@@ -71,6 +72,22 @@ export class KeychainStore implements DataStore {
         await this.handle.initializeNewKeychain();
     }
 
+    /**
+     * Removes the locally stored passkey session (encrypted localStorage blob + legacy
+     * bridge). Server-side data is untouched — used before logout/profile-reset redirects.
+     */
+    public clearLocalSession(): void {
+        try {
+            const connection = this._app?.authenticatedConnection;
+            if (connection) {
+                localStorage.removeItem(`${connection.userinfo.username}PK`);
+            }
+        } catch (error) {
+            // No authenticated connection — nothing to clean up.
+        }
+        oldUiBridge.passkey = null;
+    }
+
     /** Generates a fresh symmetric key pair for `slug` and persists it in the keychain. */
     public async createNewRoomKey(slug: string) {
         return await this.handle.createRoomKeys(slug);
@@ -83,6 +100,7 @@ export class KeychainStore implements DataStore {
     }
 
     public async loadData(app: HawkiApp) {
+        this._app = app;
         this._handle = createKeychainHandle(app, () => {
             const currentPasskey = oldUiBridge.passkey;
             if (!currentPasskey) {

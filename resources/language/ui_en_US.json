@@ -29,51 +29,62 @@
         },
         "profile": {
             "fallbackName": "Profile",
-            "mockName": "Alex Morgan",
             "menuTitle": "Account menu",
             "lightMode": "Light mode",
             "darkMode": "Dark mode",
             "settings": "Settings",
-            "logout": "Log out",
-            "settingsTitle": "Settings",
-            "settingsDescription": "Manage your account and preferences.",
-            "settingsNavigationLabel": "Settings sections",
-            "saveChanges": "Save changes",
-            "mockNotice": "Mock settings — changes stay in this session.",
-            "mockSaved": "Saved for this session.",
-            "settingsNav": {
+            "logout": "Log out"
+        },
+        "settings": {
+            "title": "Settings",
+            "description": "Manage your account and preferences.",
+            "navLabel": "Settings sections",
+            "nav": {
+                "general": "General",
                 "profile": "Profile",
-                "preferences": "Preferences",
-                "privacy": "Privacy"
+                "experiments": "Experiments"
             },
-            "profileSettings": {
+            "common": {
+                "save": "Save changes",
+                "saving": "Saving…",
+                "cancel": "Cancel"
+            },
+            "general": {
+                "title": "General",
+                "description": "Language, appearance and account-wide actions.",
+                "languageLabel": "Language",
+                "languageError": "The language could not be changed. Please try again.",
+                "themeLabel": "Theme",
+                "themeLight": "Light",
+                "themeDark": "Dark",
+                "dangerTitle": "Danger area",
+                "deleteData": "Delete all data",
+                "deleteDataHint": "Removes all your conversations, rooms, keys and tokens from the server.",
+                "deleteDataButton": "Delete",
+                "deleteConfirmTitle": "Delete all data?",
+                "deleteConfirmText": "This permanently deletes all your conversations, room memberships, keys, tokens and backups. This cannot be undone.",
+                "deleteConfirmButton": "Delete everything",
+                "deleteError": "Your data could not be deleted. Please try again."
+            },
+            "profile": {
                 "title": "Profile",
                 "description": "Update the details people see when you collaborate.",
-                "avatarHint": "Avatar uploads will be added later.",
+                "avatarHint": "Images are cropped to a square automatically.",
                 "changeAvatar": "Change",
+                "avatarUploading": "Uploading…",
+                "avatarSaved": "Avatar updated.",
+                "avatarError": "The avatar could not be uploaded.",
                 "nameLabel": "Display name",
-                "usernameLabel": "Username",
-                "emailLabel": "Email address"
+                "bioLabel": "Bio",
+                "errorNameRequired": "Please enter a display name.",
+                "saved": "Profile updated.",
+                "saveError": "The profile could not be saved."
             },
-            "preferenceSettings": {
-                "title": "Preferences",
-                "description": "Choose how HAWKI communicates with you.",
-                "languageLabel": "Language",
-                "languageAuto": "Use browser language",
-                "emailNotifications": "Email notifications",
-                "emailNotificationsHint": "Receive important account and workspace updates.",
-                "productUpdates": "Product updates",
-                "productUpdatesHint": "Hear about new features and improvements."
-            },
-            "privacySettings": {
-                "title": "Privacy",
-                "description": "Control how your activity is used in HAWKI.",
-                "saveHistory": "Save chat history",
-                "saveHistoryHint": "Keep conversations available across sessions.",
-                "personalizedSuggestions": "Personalized suggestions",
-                "personalizedSuggestionsHint": "Use recent activity to tailor suggestions.",
-                "localOnlyTitle": "Mock settings only",
-                "localOnlyHint": "These controls do not update server data yet."
+            "experiments": {
+                "title": "Experiments",
+                "description": "Try unfinished features of the new interface.",
+                "emptyTitle": "No experiments available",
+                "emptyHint": "There is nothing to try right now. New experiments will show up here."
             }
         }
     }

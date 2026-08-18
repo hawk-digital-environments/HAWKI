@@ -29,51 +29,62 @@
         },
         "profile": {
             "fallbackName": "Profil",
-            "mockName": "Alex Morgan",
             "menuTitle": "Kontomenü",
             "lightMode": "Heller Modus",
             "darkMode": "Dunkler Modus",
             "settings": "Einstellungen",
-            "logout": "Abmelden",
-            "settingsTitle": "Einstellungen",
-            "settingsDescription": "Verwalte dein Konto und deine Präferenzen.",
-            "settingsNavigationLabel": "Einstellungsbereiche",
-            "saveChanges": "Änderungen speichern",
-            "mockNotice": "Mock-Einstellungen – Änderungen gelten nur für diese Sitzung.",
-            "mockSaved": "Für diese Sitzung gespeichert.",
-            "settingsNav": {
+            "logout": "Abmelden"
+        },
+        "settings": {
+            "title": "Einstellungen",
+            "description": "Verwalte dein Konto und deine Präferenzen.",
+            "navLabel": "Einstellungsbereiche",
+            "nav": {
+                "general": "Allgemein",
                 "profile": "Profil",
-                "preferences": "Präferenzen",
-                "privacy": "Datenschutz"
+                "experiments": "Experimente"
             },
-            "profileSettings": {
+            "common": {
+                "save": "Änderungen speichern",
+                "saving": "Speichern…",
+                "cancel": "Abbrechen"
+            },
+            "general": {
+                "title": "Allgemein",
+                "description": "Sprache, Erscheinungsbild und kontoweite Aktionen.",
+                "languageLabel": "Sprache",
+                "languageError": "Die Sprache konnte nicht geändert werden. Bitte versuche es erneut.",
+                "themeLabel": "Design",
+                "themeLight": "Hell",
+                "themeDark": "Dunkel",
+                "dangerTitle": "Gefahrenbereich",
+                "deleteData": "Alle Daten löschen",
+                "deleteDataHint": "Entfernt alle deine Unterhaltungen, Räume, Schlüssel und Tokens vom Server.",
+                "deleteDataButton": "Löschen",
+                "deleteConfirmTitle": "Alle Daten löschen?",
+                "deleteConfirmText": "Dies löscht unwiderruflich alle deine Unterhaltungen, Raum-Mitgliedschaften, Schlüssel, Tokens und Backups. Das kann nicht rückgängig gemacht werden.",
+                "deleteConfirmButton": "Alles löschen",
+                "deleteError": "Deine Daten konnten nicht gelöscht werden. Bitte versuche es erneut."
+            },
+            "profile": {
                 "title": "Profil",
                 "description": "Bearbeite die Angaben, die andere bei der Zusammenarbeit sehen.",
-                "avatarHint": "Avatar-Uploads werden später ergänzt.",
+                "avatarHint": "Bilder werden automatisch quadratisch zugeschnitten.",
                 "changeAvatar": "Ändern",
+                "avatarUploading": "Wird hochgeladen…",
+                "avatarSaved": "Avatar aktualisiert.",
+                "avatarError": "Der Avatar konnte nicht hochgeladen werden.",
                 "nameLabel": "Anzeigename",
-                "usernameLabel": "Benutzername",
-                "emailLabel": "E-Mail-Adresse"
+                "bioLabel": "Bio",
+                "errorNameRequired": "Bitte gib einen Anzeigenamen ein.",
+                "saved": "Profil aktualisiert.",
+                "saveError": "Das Profil konnte nicht gespeichert werden."
             },
-            "preferenceSettings": {
-                "title": "Präferenzen",
-                "description": "Lege fest, wie HAWKI mit dir kommuniziert.",
-                "languageLabel": "Sprache",
-                "languageAuto": "Browsersprache verwenden",
-                "emailNotifications": "E-Mail-Benachrichtigungen",
-                "emailNotificationsHint": "Erhalte wichtige Konto- und Workspace-Updates.",
-                "productUpdates": "Produktneuigkeiten",
-                "productUpdatesHint": "Erfahre von neuen Funktionen und Verbesserungen."
-            },
-            "privacySettings": {
-                "title": "Datenschutz",
-                "description": "Steuere, wie deine Aktivität in HAWKI verwendet wird.",
-                "saveHistory": "Chatverlauf speichern",
-                "saveHistoryHint": "Halte Unterhaltungen sitzungsübergreifend verfügbar.",
-                "personalizedSuggestions": "Personalisierte Vorschläge",
-                "personalizedSuggestionsHint": "Nutze letzte Aktivitäten für passendere Vorschläge.",
-                "localOnlyTitle": "Nur Mock-Einstellungen",
-                "localOnlyHint": "Diese Optionen ändern noch keine Serverdaten."
+            "experiments": {
+                "title": "Experimente",
+                "description": "Probiere unfertige Funktionen der neuen Oberfläche aus.",
+                "emptyTitle": "Keine Experimente verfügbar",
+                "emptyHint": "Aktuell gibt es nichts auszuprobieren. Neue Experimente erscheinen hier."
             }
         }
     }

@@ -1,68 +1,170 @@
+<!--
+  @component Profile settings: avatar upload, display name and bio, persisted
+  through the `users` JSON:API resource.
+-->
 <script lang="ts">
+    import z from 'zod';
     import Avatar from '$lib/components/ui/avatar/Avatar.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
+    import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {useConnectionWithUserInfo} from '$lib/app/hooks/useConnection.svelte.js';
+    import {useAuthenticatedConnection} from '$lib/app/hooks/useConnection.svelte.js';
+    import {useConfig} from '$lib/app/hooks/useConfig.svelte.js';
+    import {useRestApi} from '$lib/app/hooks/useApi.js';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {RouteComponentProps} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
     const {}: RouteComponentProps = $props();
 
+    const NAME_MAX_LENGTH = 20;
+    const BIO_MAX_LENGTH = 255;
+    /** Matches the export size of the legacy avatar cropper. */
+    const AVATAR_SIZE = 512;
+
     const app = useApp();
-    const connection = useConnectionWithUserInfo();
+    const config = useConfig();
+    const connection = useAuthenticatedConnection();
+    const restApi = useRestApi();
+    const toast = useToastContext();
     const {__} = useTranslator();
+
     const info = connection?.userinfo;
-    const avatarIdentifier = info && 'avatar' in info && typeof info.avatar === 'string' ? info.avatar : null;
 
-    let name = $state(info?.name ?? __('ui.profile.mockName'));
-    let email = $state(info?.email ?? 'alex@example.com');
-    let username = $state(info?.username ?? 'alex');
-    let saved = $state(false);
+    let name = $state(info?.name ?? '');
+    let bio = $state(info?.bio ?? '');
+    let avatarIdentifier = $state(info?.avatar ?? null);
+    let saving = $state(false);
+    let uploading = $state(false);
+    let fileInput = $state<HTMLInputElement | null>(null);
 
-    function saveMock(event: SubmitEvent): void {
+    const avatarUrl = $derived(app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined);
+
+    async function save(event: SubmitEvent): Promise<void> {
         event.preventDefault();
-        saved = true;
+        if (!info) return;
+
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+            toast.error(__('ui.settings.profile.errorNameRequired'));
+            return;
+        }
+
+        saving = true;
+        try {
+            await restApi.updateResource('users', String(info.id), {
+                display_name: trimmedName,
+                bio: bio.trim()
+            });
+            // Keep the cached connection in sync so freshly mounted components see the change.
+            info.name = trimmedName;
+            info.bio = bio.trim();
+            toast.success(__('ui.settings.profile.saved'));
+        } catch (error) {
+            console.error('Failed to update the profile', error);
+            toast.error(__('ui.settings.profile.saveError'));
+        } finally {
+            saving = false;
+        }
+    }
+
+    /** Center-crops the image to a square and scales it to the avatar export size. */
+    async function prepareAvatar(file: File): Promise<Blob> {
+        const bitmap = await createImageBitmap(file);
+        const side = Math.min(bitmap.width, bitmap.height);
+        const target = Math.min(AVATAR_SIZE, side);
+        const canvas = document.createElement('canvas');
+        canvas.width = target;
+        canvas.height = target;
+        canvas.getContext('2d')!.drawImage(
+            bitmap,
+            (bitmap.width - side) / 2,
+            (bitmap.height - side) / 2,
+            side,
+            side,
+            0,
+            0,
+            target,
+            target
+        );
+        bitmap.close();
+        return await new Promise((resolve, reject) => canvas.toBlob(
+            (blob) => blob ? resolve(blob) : reject(new Error('Failed to encode the avatar image')),
+            'image/jpeg',
+            0.9
+        ));
+    }
+
+    async function uploadAvatar(event: Event): Promise<void> {
+        const input = event.currentTarget as HTMLInputElement;
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file || !info) return;
+
+        uploading = true;
+        try {
+            const form = new FormData();
+            form.append('image', await prepareAvatar(file), 'avatar.jpg');
+            const response = await restApi.postToResourceAction('users', 'actions/avatar', form, {
+                schema: z.object({avatar: z.string().nullable(), url: z.string()})
+            });
+            avatarIdentifier = response.avatar;
+            info.avatar = response.avatar;
+            toast.success(__('ui.settings.profile.avatarSaved'));
+        } catch (error) {
+            console.error('Failed to upload the avatar', error);
+            toast.error(__('ui.settings.profile.avatarError'));
+        } finally {
+            uploading = false;
+        }
     }
 </script>
 
 <section class="settings-section">
     <header>
-        <h2>{__('ui.profile.profileSettings.title')}</h2>
-        <p>{__('ui.profile.profileSettings.description')}</p>
+        <h2>{__('ui.settings.profile.title')}</h2>
+        <p>{__('ui.settings.profile.description')}</p>
     </header>
 
     <div class="avatar-row">
-        <Avatar
-            src={app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined}
-            name={name}
-            size={48}
-        />
+        <Avatar src={avatarUrl} name={name || info?.username || ''} size={48}/>
         <div>
             <strong>{name}</strong>
-            <span>{__('ui.profile.profileSettings.avatarHint')}</span>
+            <span>{__('ui.settings.profile.avatarHint')}</span>
         </div>
-        <Button type="button" variant="stroke" size="xs" disabled>
-            {__('ui.profile.profileSettings.changeAvatar')}
+        <input
+            bind:this={fileInput}
+            type="file"
+            accept={config.storage_avatars?.allowedMimeTypes.join(',') ?? 'image/*'}
+            onchange={uploadAvatar}
+            hidden
+        />
+        <Button
+            type="button"
+            variant="stroke"
+            size="xs"
+            disabled={uploading || !config.storage_avatars}
+            onclick={() => fileInput?.click()}
+        >
+            {uploading ? __('ui.settings.profile.avatarUploading') : __('ui.settings.profile.changeAvatar')}
         </Button>
     </div>
 
-    <form onsubmit={saveMock} oninput={() => (saved = false)}>
+    <form onsubmit={save}>
         <label>
-            <span>{__('ui.profile.profileSettings.nameLabel')}</span>
-            <input bind:value={name} autocomplete="name"/>
+            <span>{__('ui.settings.profile.nameLabel')}</span>
+            <input bind:value={name} maxlength={NAME_MAX_LENGTH} autocomplete="name" required/>
         </label>
         <label>
-            <span>{__('ui.profile.profileSettings.usernameLabel')}</span>
-            <input bind:value={username} autocomplete="username"/>
-        </label>
-        <label>
-            <span>{__('ui.profile.profileSettings.emailLabel')}</span>
-            <input bind:value={email} type="email" autocomplete="email"/>
+            <span>{__('ui.settings.profile.bioLabel')}</span>
+            <Textarea bind:value={bio} maxlength={BIO_MAX_LENGTH} rows={4}/>
+            <small>{bio.length}/{BIO_MAX_LENGTH}</small>
         </label>
 
         <div class="form-footer">
-            <span class:saved>{saved ? __('ui.profile.mockSaved') : __('ui.profile.mockNotice')}</span>
-            <Button type="submit" size="sm">{__('ui.profile.saveChanges')}</Button>
+            <Button type="submit" size="sm" disabled={saving}>
+                {saving ? __('ui.settings.common.saving') : __('ui.settings.common.save')}
+            </Button>
         </div>
     </form>
 </section>
@@ -96,10 +198,16 @@
     }
 
     p,
-    .avatar-row span,
-    .form-footer > span {
+    small,
+    .avatar-row span {
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
+    }
+
+    small {
+        font-size: var(--font-size-xxs);
+        font-weight: var(--font-weight-normal);
+        text-align: right;
     }
 
     .avatar-row {
@@ -136,7 +244,7 @@
         font-weight: var(--font-weight-medium);
     }
 
-    input {
+    input:not([type='file']) {
         min-height: 2.5rem;
         padding: 0 var(--space-3);
         border: var(--border);
@@ -147,20 +255,14 @@
         font-weight: var(--font-weight-normal);
     }
 
-    input:focus {
+    input:not([type='file']):focus {
         border-color: var(--color-focus-ring);
         outline: none;
     }
 
     .form-footer {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-3);
+        justify-content: flex-end;
         padding-top: var(--space-1);
-    }
-
-    .form-footer > span.saved {
-        color: var(--color-success);
     }
 </style>

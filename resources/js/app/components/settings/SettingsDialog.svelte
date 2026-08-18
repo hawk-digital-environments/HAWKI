@@ -1,7 +1,7 @@
 <!--
-  @component Mock account settings surface. The dialog owns a hash router so
-  each settings section has browser-history-aware navigation without leaving
-  the current application page.
+  @component Account settings surface. The dialog owns a hash router so each
+  settings section has browser-history-aware navigation without leaving the
+  current application page.
 -->
 <script lang="ts">
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
@@ -11,12 +11,11 @@
     import {createRouter} from '$lib/components/ui/routing/logistics/router.svelte.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
-    import Notification02Icon from '$lib/components/ui/icons/iconset/Notification02Icon.svelte';
-    import Shield01Icon from '$lib/components/ui/icons/iconset/Shield01Icon.svelte';
+    import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
     import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
+    import GeneralSettings from '$lib/app/components/settings/pages/GeneralSettings.svelte';
     import ProfileSettings from '$lib/app/components/settings/pages/ProfileSettings.svelte';
-    import PreferenceSettings from '$lib/app/components/settings/pages/PreferenceSettings.svelte';
-    import PrivacySettings from '$lib/app/components/settings/pages/PrivacySettings.svelte';
+    import ExperimentsSettings from '$lib/app/components/settings/pages/ExperimentsSettings.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
@@ -29,17 +28,18 @@
 
     const settingsRouter = createRouter('settings', (registrar) => {
         registrar
-            .route('/', ProfileSettings)
+            .route('/', GeneralSettings)
+            .route('/general', GeneralSettings, {name: 'settings.general'})
             .route('/profile', ProfileSettings, {name: 'settings.profile'})
-            .route('/preferences', PreferenceSettings, {name: 'settings.preferences'})
-            .route('/privacy', PrivacySettings, {name: 'settings.privacy'});
+            .route('/experiments', ExperimentsSettings, {name: 'settings.experiments'});
     }, {strategy: 'hash'});
 
-    const navItems: Array<{path: string; label: string; icon: IconComponent}> = [
-        {path: '/profile', label: __('ui.profile.settingsNav.profile'), icon: UserIcon},
-        {path: '/preferences', label: __('ui.profile.settingsNav.preferences'), icon: Notification02Icon},
-        {path: '/privacy', label: __('ui.profile.settingsNav.privacy'), icon: Shield01Icon}
-    ];
+    // $derived so the labels follow runtime locale switches from the general settings page.
+    const navItems: Array<{path: string; label: string; icon: IconComponent}> = $derived([
+        {path: '/general', label: __('ui.settings.nav.general'), icon: Settings05Icon},
+        {path: '/profile', label: __('ui.settings.nav.profile'), icon: UserIcon},
+        {path: '/experiments', label: __('ui.settings.nav.experiments'), icon: FlaskConicalIcon}
+    ]);
 
     $effect(() => {
         if (!open) return;
@@ -47,7 +47,7 @@
         const currentHashPath = window.location.hash.slice(1);
         const knownPath = navItems.some((item) => item.path === currentHashPath);
         if (!knownPath) {
-            void settingsRouter.handle.goTo('/profile');
+            void settingsRouter.handle.goTo('/general');
         }
     });
 
@@ -78,18 +78,18 @@
 >
     {#snippet title()}
         <Settings05Icon size={17}/>
-        {__('ui.profile.settingsTitle')}
+        {__('ui.settings.title')}
     {/snippet}
     {#snippet description()}
-        {__('ui.profile.settingsDescription')}
+        {__('ui.settings.description')}
     {/snippet}
 
     <div class="settings-layout">
-        <nav class="settings-nav" aria-label={__('ui.profile.settingsNavigationLabel')}>
+        <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
             <List>
                 {#each navItems as item (item.path)}
                     {@const Icon = item.icon}
-                    {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/profile' && settingsRouter.handle.path === '/')}
+                    {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/general' && settingsRouter.handle.path === '/')}
                     <ListItem {active}>
                         {#snippet children({attach})}
                             <button

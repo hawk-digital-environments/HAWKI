@@ -19,11 +19,9 @@ import type {HawkiConfigSchemas} from '$lib/kernel/extendableTypes.js';
  * pass a namespace key to get that namespace's config; the return type is
  * inferred from the matching Zod schema in either case.
  *
- * The returned value is wrapped in `$derived.by(...)`, so it is a reactive
- * Svelte 5 value — reading it inside a component template/derivation tracks
- * it like any other rune-based reactive value. In practice, config is loaded
- * once per page and cached, so it will not change during a session unless
- * the underlying `ConfigurationExtension` cache is explicitly invalidated.
+ * The returned value is a plain (non-reactive) object: config is fetched once
+ * during bootstrap and parsed/cached per namespace, so it does not change
+ * during a session — there is nothing to track reactively.
  *
  * Throws if no schema is registered for the requested namespace.
  *
@@ -44,5 +42,5 @@ export function useConfig(): z.infer<HawkiConfigSchemas['hawki-core']>;
 export function useConfig<N extends keyof HawkiConfigSchemas>(namespace: N): z.infer<HawkiConfigSchemas[N]>;
 export function useConfig<N extends keyof HawkiConfigSchemas>(namespace?: N): z.infer<HawkiConfigSchemas[N]> {
     const app = useApp();
-    return $derived.by(() => app.config.get(namespace as N));
+    return app.config.get(namespace as N);
 }
