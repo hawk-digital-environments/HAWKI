@@ -4,7 +4,7 @@
  * serve the app shell for every path under `basePath`, since a hard
  * reload/deep link hits the server directly rather than the client router.
  */
-import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
+import type {RoutingStrategy, SetRouteInStrategyOptions} from '$lib/components/ui/routing/strategy/types.js';
 
 export function createPathRoutingStrategy(): RoutingStrategy {
     let currentPath = $state(loadPath());
@@ -14,11 +14,22 @@ export function createPathRoutingStrategy(): RoutingStrategy {
     }
 
     return {
-        set(path: string) {
+        set(path: string, options?: SetRouteInStrategyOptions): boolean {
+            // `currentPath` and `location.pathname` never drift — every writer
+            // (`set()` below, `popstate` in `bind()`) moves both — so this
+            // also means the history entry is already the one being asked for.
+            if (currentPath === path) {
+                return false;
+            }
             if (window.location.pathname !== path) {
-                window.history.pushState({}, '', path);
+                if (options?.replace) {
+                    window.history.replaceState({}, '', path);
+                } else {
+                    window.history.pushState({}, '', path);
+                }
             }
             currentPath = path;
+            return true;
         },
         get() {
             return currentPath;

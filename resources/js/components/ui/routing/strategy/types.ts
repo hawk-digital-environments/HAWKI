@@ -1,13 +1,32 @@
+export interface SetRouteInStrategyOptions {
+    /**
+     * Asks for `history.replaceState`-like semantics (no new back-button entry) instead
+     * used by a {@link import('../logistics/signals.js').RouteRedirect}
+     * so the page that redirected does not stay reachable via back. A
+     * strategy with no browser history to speak of (`transientRoutingStrategy`)
+     * has nothing to replace and treats this as a no-op; see its own comment.
+     */
+    replace?: boolean;
+}
+
 /**
- * Where a `Router` (see `logistics/router.svelte.ts`) reads and writes "the
+ * Where a `Router` (see `logistics/router.ts`) reads and writes "the
  * current path". Swapping the strategy is what turns the same router into a
  * path-based, hash-based, or in-memory-only SPA — see `pathRoutingStrategy`,
  * `hashRoutingStrategy`, and `transientRoutingStrategy` for the concrete
  * trade-offs of each.
  */
 export interface RoutingStrategy {
-    /** Publishes `path` as the current location (e.g. `history.pushState`). */
-    set(path: string): void;
+    /**
+     * Publishes `path` as the current location (e.g. `history.pushState`).
+     *
+     * Returns whether the path {@link get} reports actually changed. `false`
+     * means the strategy already stood on `path`, so no reactive read of
+     * `get()` became dirty and the router's resolve `$effect` will not fire —
+     * `goTo()` relies on this to tell "the effect is handling it" apart from
+     * "nobody will", and resolves the route itself in the latter case.
+     */
+    set(path: string, options?: SetRouteInStrategyOptions): boolean;
 
     /** The current path, read fresh — not necessarily the last value passed to {@link set}. */
     get(): string;

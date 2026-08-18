@@ -6,6 +6,7 @@ import {createEnvFile} from './env/EnvFile.ts';
 import {createPlatform} from './Platform.ts';
 import {loadAddons} from './loadAddons.ts';
 import {createContext, extendContext} from './Context.ts';
+import {CommandFailedError} from './executeCommand.ts';
 
 export class Application {
     public async run(args: string[]) {
@@ -42,10 +43,21 @@ export class Application {
 
             await program.parseAsync(args);
         } catch (error) {
-            await events.trigger('error:before', {error});
-            console.error(ui.renderError(error));
-            await events.trigger('error:after', {error});
-            process.exit(1);
+            let castError: Error;
+            if (!(error instanceof Error)) {
+                castError = new Error(String(error));
+            } else {
+                castError = error;
+            }
+            await events.trigger('error:before', {error: castError});
+            console.error(ui.renderError(castError));
+            await events.trigger('error:after', {error: castError});
+
+            // A failing command reports its own exit code as ours, so `bin/env test`
+            // is readable by CI; anything else is a CLI failure and gets a plain 1.
+            // `process.exitCode` (not `process.exit()`) so pending stdout writes
+            // still flush before the process exits naturally.
+            process.exitCode = castError instanceof CommandFailedError ? castError.code : 1;
         }
     }
 }

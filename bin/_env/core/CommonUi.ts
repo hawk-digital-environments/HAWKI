@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import PrettyError from 'pretty-error';
+import {CommandFailedError} from './executeCommand.ts';
 import type {EventBus} from './EventBus.ts';
 import type {PackageInfo} from './PackageInfo.ts';
 
@@ -82,6 +83,12 @@ ${this.renderPackageInfo(pkg)}
     public renderError(error: Error): string {
         if (error.message.includes('User force closed the prompt')) {
             return '';
+        }
+
+        // A failed child command already printed its own diagnostics; a stack
+        // trace into `executeCommand.ts` adds nothing but noise on top of them.
+        if (error instanceof CommandFailedError) {
+            return chalk.red(error.message);
         }
 
         return [

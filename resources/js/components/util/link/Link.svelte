@@ -52,7 +52,7 @@
     import {mergeProps} from 'bits-ui';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {RouteParams} from 'universal-router';
-    import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {type RouterScope, useRouterScope} from '$lib/components/ui/routing/index.js';
 
     // widen so Props can redefine safely
     interface NonConflictingProps extends HTMLAnchorAttributes {
@@ -144,6 +144,19 @@
 
     const app = useApp();
 
+    // Captured here because Svelte context is readable during initialization
+    // only, while `router` is a prop that can change afterwards — so the *name*
+    // is resolved against the scope further down instead, and pointing the prop
+    // at another router picks up that router rather than keeping the first one.
+    // A missing scope is not yet an error: an external href never needs a
+    // router, and `Link` is a primitive that also renders above the app's
+    // `RouterView` (during boot, for one).
+    let routerScope: RouterScope | undefined;
+    try {
+        routerScope = useRouterScope();
+    } catch { /* resolving a local href will report this properly below */
+    }
+
     const hrefIsRoute = $derived.by(() => {
         if (!givenHref) {
             return false;
@@ -170,11 +183,21 @@
         if (!hrefIsLocal) {
             return null;
         }
-        try {
-            return useRouter(routerName);
-        } catch {
-            throw new Error(`Router "${routerName}" not found`);
+        if (!routerScope) {
+            throw new Error(
+                `<Link href=${JSON.stringify(givenHref)}> needs a router to resolve a local href, but is not rendered inside a <RouterView>.`
+            );
         }
+        if (routerName === undefined) {
+            return routerScope.current;
+        }
+        const handle = routerScope.get(routerName);
+        if (!handle) {
+            throw new Error(
+                `<Link router="${routerName}"> found no such router. Reachable from here: ${routerScope.names().join(', ')}.`
+            );
+        }
+        return handle;
     });
     const href = $derived.by(() => {
         if (!router) {
@@ -208,7 +231,7 @@
             return getPathFromRouter(givenHref);
         }
         if (typeof givenHref === 'string' && givenHref.startsWith('@')) {
-            return getPathFromRouter({name: givenHref.slice(1), router: 'app'});
+            return getPathFromRouter({name: givenHref.slice(1)});
         }
         throw new Error(`Invalid href prop: ${JSON.stringify(givenHref)}`);
     });
