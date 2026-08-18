@@ -119,10 +119,10 @@
         /* Named because the absolutely-positioned brand has to inset itself by
            the same amounts — see below. */
         --header-pad-top: var(--space-1);
-        /* The sidebar's group gap: the same separation the footer leaves
-           between its action and the profile, so the whole column is one
-           rhythm. */
-        --header-pad-bottom: var(--nav-group-gap);
+        /* A touch tighter than the sidebar's group gap: the brand row reads as
+           the panel's cap rather than as another group, so it sits closer to
+           the module switcher below it. */
+        --header-pad-bottom: var(--space-2);
         /* Horizontal room the actions occupy, for the brand's max-width. */
         --actions-w: var(--collapse-size);
         /* How far a right-aligned action has to slide to land on the rail's icon
@@ -155,7 +155,7 @@
        reserve that line's height itself — it is absolutely positioned and would
        otherwise overlap the first nav item. */
     .sidebar-header:has(.search):not(.open) {
-        --header-pad-bottom: calc(var(--space-3) + var(--collapse-size) + var(--space-1));
+        --header-pad-bottom: calc(var(--space-2) + var(--collapse-size) + var(--space-1));
     }
 
     /* The brand is positioned out of the flex line on purpose. In the flow it
