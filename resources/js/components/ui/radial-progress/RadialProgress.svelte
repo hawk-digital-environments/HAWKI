@@ -17,7 +17,7 @@
 <script lang="ts">
     import type {SVGAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {growTransition} from '../../lib/transitions/growTransition.js';
 
     interface Props extends SVGAttributes<SVGElement> {
         /** Progress value, 0–100. Clamped to that range. */

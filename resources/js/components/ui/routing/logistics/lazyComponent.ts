@@ -7,7 +7,7 @@
  * either by {@link lazyComponent} or by `RouteRegistrar.lazyRoute()`.
  */
 import type {Component} from 'svelte';
-import {type AnyRouteConfig, assertIsRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
+import {type AnyRouteConfig, assertIsRouteConfig} from './routeConfig.js';
 
 /** Value of the `type` marker that flags a function as a loader rather than a component. */
 export const LAZY_COMPONENT_MARKER = 'lazy_route';

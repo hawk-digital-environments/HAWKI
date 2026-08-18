@@ -26,8 +26,8 @@
  * loader needs to run at all; the LRU store itself lives in `dataCache.ts`.
  */
 import type {Route, RouteContext, RouteParams} from 'universal-router';
-import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
-import type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
+import type {RouterHandle} from './router.js';
+import type {RouteDataLoaderContextExtensions} from '../extendableTypes.js';
 import type {UrlParams} from 'universal-router/generateUrls';
 import type {z} from 'zod';
 

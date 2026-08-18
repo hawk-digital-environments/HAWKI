@@ -25,7 +25,7 @@
   ```
 -->
 <script lang="ts">
-    import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';
+    import {StatusDot} from '@hawk-hhg/hawki-svelte-components';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {AiTool} from '$plugins/core/schemas/resources/ai-tools.schema.js';

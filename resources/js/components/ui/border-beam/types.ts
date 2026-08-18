@@ -1,4 +1,4 @@
-import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
+import type {ColorScheme} from '../../lib/color-scheme/ColorSchemeContext.js';
 
 /**
  * Shared types for the `BorderBeam` component and its CSS generator
@@ -20,10 +20,11 @@ export type BorderBeamSize = 'sm' | 'md' | 'line';
 
 /**
  * Theme mode for adapting beam colors to background. `'auto'` is
- * `BorderBeam`-only — it resolves to the live app theme (`AppTheme`) via the
- * theme store; the CSS generator only ever receives the resolved `AppTheme`.
+ * `BorderBeam`-only — it resolves to the host's colour scheme
+ * (`ColorScheme`) via `useColorScheme()`; the CSS generator only ever
+ * receives the resolved `ColorScheme`.
  */
-export type BorderBeamTheme = AppTheme | 'auto';
+export type BorderBeamTheme = ColorScheme | 'auto';
 
 /**
  * Geometry preset for a `BorderBeamSize`. Consumed by `sizePresets` in

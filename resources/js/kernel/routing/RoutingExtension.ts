@@ -1,5 +1,5 @@
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import {createRouterFromRegistrar, RouteRegistrar, type Router, type RouterHandle} from '$lib/components/ui/routing/index.js';
+import {createRouterFromRegistrar, RouteRegistrar, type Router, type RouterHandle} from '@hawk-hhg/hawki-svelte-components';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {RestApi} from '$lib/kernel/api/RestApi.js';
 
@@ -12,7 +12,7 @@ declare module '$lib/kernel/extendableTypes.js' {
 // Extends the router context with the app and restApi so the router itself
 // does not need to know about our app or restApi (which comes in handy,
 // when we externalize the components into their own package).
-declare module '$lib/components/ui/routing/extendableTypes.js' {
+declare module '@hawk-hhg/hawki-svelte-components/ui/routing/extendableTypes.js' {
     interface RouteDataLoaderContextExtensions {
         app: HawkiApp;
         restApi: RestApi;

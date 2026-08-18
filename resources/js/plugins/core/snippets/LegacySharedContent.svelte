@@ -6,7 +6,7 @@ single shared `Toaster`. Every snippet's `useToastContext()` calls resolve to th
 the shared `useApp().toast` bridge (see `ToastContext.svelte.ts`), so any snippet can push a toast that ends up
 here regardless of which `<svelte-snippet>` it renders in. -->
 <script lang="ts">
-    import Toaster from '$lib/components/ui/toast/Toaster.svelte';
+    import {Toaster} from '@hawk-hhg/hawki-svelte-components';
 </script>
 
 <Toaster/>

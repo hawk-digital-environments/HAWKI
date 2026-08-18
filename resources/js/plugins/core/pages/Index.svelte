@@ -7,9 +7,9 @@
   the routing migration produces real root pages.
 -->
 <script lang="ts">
-    import {useRouter} from '$lib/components/ui/routing/index.js';
+    import {useRouter} from '@hawk-hhg/hawki-svelte-components';
     import {onMount} from 'svelte';
-    import type {RouteProps} from '$lib/components/ui/routing/index.js';
+    import type {RouteProps} from '@hawk-hhg/hawki-svelte-components';
 
     const {goToRoute, debug} = useRouter();
 

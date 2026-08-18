@@ -2,7 +2,7 @@
  * Declaration-merging surface of the routing system, modeled on the kernel's
  * `$lib/kernel/extendableTypes.js`. It exports empty interfaces on purpose —
  * whoever wires the router into an application augments them via
- * `declare module '$lib/components/ui/routing/extendableTypes.js' { ... }`
+ * `declare module './extendableTypes.js' { ... }`
  * instead of this package having to know about that application. Always import
  * the *type* (`import type {...}`) here; the module has no runtime exports.
  *
@@ -25,7 +25,7 @@
  * direction is deliberately not a dependency. HAWKI's kernel augments it in
  * `$lib/kernel/routing/RoutingExtension.js`:
  * ```ts
- * declare module '$lib/components/ui/routing/extendableTypes.js' {
+ * declare module './extendableTypes.js' {
  *     interface RouteDataLoaderContextExtensions {
  *         app: HawkiApp;
  *         restApi: RestApi;

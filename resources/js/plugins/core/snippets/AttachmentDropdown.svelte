@@ -12,13 +12,10 @@ Usage (embedded in the legacy attachment template — see
 ```
 -->
 <script lang="ts">
-    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
-    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
-    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
-    import FileViewIcon from '$lib/components/ui/icons/iconset/FileViewIcon.svelte';
-    import Download01Icon from '$lib/components/ui/icons/iconset/Download01Icon.svelte';
-    import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';
+    import {ConfirmDialog, DropdownMenu, DropdownMenuItem, DropdownMenuSeparator} from '@hawk-hhg/hawki-svelte-components';
+    import FileViewIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/FileViewIcon.svelte';
+    import Download01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Download01Icon.svelte';
+    import EllipsisIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/EllipsisIcon.svelte';
     import {oldUiBridge, type OldUiFileData} from '$lib/legacy/OldUiBridge.svelte.js';
     import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
     import {useAuthenticatedConnection} from '$lib/app/hooks/useConnection.svelte.js';

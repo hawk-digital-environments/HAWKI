@@ -1,22 +1,3 @@
-<script module lang="ts">
-    export interface SelectItemDefinition {
-        /** The value of the select item. This is the value that will be set on the select when the item is selected. */
-        value: string;
-        /** The label of the select item. This is the text that will be displayed in the select content. */
-        label: string;
-        /** Whether the item is disabled. Disabled items cannot be selected and have a different style. */
-        disabled?: boolean;
-        /** Optional group label. If provided, items with the same group label will be grouped together in the select content. */
-        groupLabel?: string;
-    }
-
-    export interface ItemSnippetProps {
-        /** The item being rendered. */
-        item: SelectItemDefinition,
-        /** Whether this item is currently selected. */
-        selected: boolean
-    }
-</script>
 <!--
   @component Single-value select dropdown. On mobile (narrower than `md`)
   renders as a BottomSheet; on desktop as a floating dropdown. Supports plain
@@ -54,11 +35,12 @@
 <script lang="ts">
     import {mergeProps, Select as SelectPrimitive, type WithoutChildren} from 'bits-ui';
     import type {ComponentProps, Snippet} from 'svelte';
-    import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
-    import SnippetOrStringTrigger from '$lib/components/util/snippetOrString/SnippetOrStringTrigger.svelte';
-    import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
-    import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
-    import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
+    import SnippetOrString from '../../util/snippetOrString/SnippetOrString.svelte';
+    import SnippetOrStringTrigger from '../../util/snippetOrString/SnippetOrStringTrigger.svelte';
+    import BottomSheet from '../sheet/BottomSheet.svelte';
+    import Breakpoint from '../../util/breakpoints/Breakpoint.svelte';
+    import ChevronDownIcon from '../icons/iconset/ChevronDownIcon.svelte';
+    import type {ItemSnippetProps, SelectItemDefinition} from './types.js';
 
 
     type Props = Omit<WithoutChildren<SelectPrimitive.RootProps>, 'type' | 'items'> & Partial<{

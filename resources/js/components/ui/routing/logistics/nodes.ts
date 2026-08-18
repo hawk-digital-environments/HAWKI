@@ -8,11 +8,11 @@
  * matched route, without the router having to track them during resolution.
  */
 import type {Route} from 'universal-router';
-import {type ComponentOrLoader, resolveComponentModule, type ResolvedComponentModule} from '$lib/components/ui/routing/logistics/lazyComponent.js';
+import {type ComponentOrLoader, resolveComponentModule, type ResolvedComponentModule} from './lazyComponent.js';
 import type {Component} from 'svelte';
-import type {HawkiRoute} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import type {RouteCacheKey, RouteDataLoader, RouteParamsSchema} from '$lib/components/ui/routing/logistics/dataLoader.js';
-import {type AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
+import type {HawkiRoute} from './RouteRegistrar.js';
+import type {RouteCacheKey, RouteDataLoader, RouteParamsSchema} from './dataLoader.js';
+import {type AnyRouteConfig} from './routeConfig.js';
 
 export type RouteNodeKind = 'layout' | 'page';
 

@@ -19,11 +19,7 @@
   />
 -->
 <script lang="ts">
-    import type {EnrichedUrlCitation, UrlCitation as MessageCitationType} from '$lib/components/ui/citations/types.js';
-    import Markdown from '$lib/components/util/markdown/Markdown.svelte';
-    import CitationRoot from '$lib/components/ui/citations/CitationRoot.svelte';
-    import CitationList from '$lib/components/ui/citations/CitationList.svelte';
-    import Citation from '$lib/components/ui/citations/Citation.svelte';
+    import {Citation, CitationList, CitationRoot, Markdown, type EnrichedUrlCitation, type UrlCitation as MessageCitationType} from '@hawk-hhg/hawki-svelte-components';
     import {injectCitationsIntoMarkdown} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
 
     interface Props {

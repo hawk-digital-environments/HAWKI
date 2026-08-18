@@ -6,7 +6,7 @@ import type {ChatModeInterface} from '$plugins/core/modules/chat/components/comp
 import {ChatEditMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
 import {ChatInThreadMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
 import type {ChatRegenMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
-import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+import type {ToastContext} from '@hawk-hhg/hawki-svelte-components';
 import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 

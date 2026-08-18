@@ -14,9 +14,8 @@
 <script lang="ts">
     import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
     import {provideApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {createToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import RouterView from '$lib/components/ui/routing/RouterView.svelte';
-    import Loader from '$lib/components/ui/loader/Loader.svelte';
+    import {provideComponentServices} from '$lib/app/provideComponentServices.js';
+    import {createToastContext, Loader, RouterView} from '@hawk-hhg/hawki-svelte-components';
 
     interface Props {
         /** The fully-assembled `HawkiApp` instance, passed in by `ShellExtension.mount()`. */
@@ -28,6 +27,8 @@
     // svelte-ignore state_referenced_locally
     provideApp(app);
     createToastContext();
+    // svelte-ignore state_referenced_locally
+    provideComponentServices(app);
 
 </script>
 

@@ -13,8 +13,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
 ```
 -->
 <script lang="ts">
-    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {growTransition, useToastContext} from '@hawk-hhg/hawki-svelte-components';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {type ComposerContextType, createComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import OldUiStyling from '$plugins/core/modules/chat/components/composer/OldUiStyling.svelte';

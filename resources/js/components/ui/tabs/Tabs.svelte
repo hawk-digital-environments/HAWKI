@@ -17,17 +17,9 @@
   />
   ```
 -->
-<script module lang="ts">
-    export interface TabItem {
-        /** Stable identifier for the tab, used as `value`. */
-        key: string;
-        /** Visible label. */
-        label: string;
-    }
-</script>
-
 <script lang="ts">
     import {Spring} from 'svelte/motion';
+    import type {TabItem} from './types.js';
 
     interface Props {
         /** The selectable tabs. */

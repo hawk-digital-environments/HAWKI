@@ -1,4 +1,4 @@
-import {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+import {ToastContext} from '@hawk-hhg/hawki-svelte-components';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 import type {FileAttachmentIssue} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
 

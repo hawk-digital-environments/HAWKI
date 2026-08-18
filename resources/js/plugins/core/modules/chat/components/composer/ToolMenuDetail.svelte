@@ -30,10 +30,10 @@
     import {onMount} from 'svelte';
     import type {ToolMenuEntry} from './ToolMenu.svelte';
     import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
-    import Switch from '$lib/components/ui/switch/Switch.svelte';
+    import {Switch} from '@hawk-hhg/hawki-svelte-components';
     import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
     import ToolMenuConfig from '$plugins/core/modules/chat/components/composer/ToolMenuConfig.svelte';
-    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import ArrowLeft01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();

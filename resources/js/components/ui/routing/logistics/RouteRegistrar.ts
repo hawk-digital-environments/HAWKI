@@ -1,10 +1,10 @@
 import {type Route, type RouteContext, type RouteParams, type RouteResult as URRouteResult} from 'universal-router';
-import {buildMiddlewareStack} from '$lib/components/ui/routing/logistics/buildMiddlewareStack.js';
-import {type ComponentLoader, type ComponentOrLoader, lazyComponent, resolveLayoutOption} from '$lib/components/ui/routing/logistics/lazyComponent.js';
+import {buildMiddlewareStack} from './buildMiddlewareStack.js';
+import {type ComponentLoader, type ComponentOrLoader, lazyComponent, resolveLayoutOption} from './lazyComponent.js';
 import type {Component} from 'svelte';
-import type {RouteNode, RouteNodeKind} from '$lib/components/ui/routing/logistics/nodes.js';
-import type {AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
-import type {RouteLayoutProps, RouteProps} from '$lib/components/ui/routing/logistics/routeProps.js';
+import type {RouteNode, RouteNodeKind} from './nodes.js';
+import type {AnyRouteConfig} from './routeConfig.js';
+import type {RouteLayoutProps, RouteProps} from './routeProps.js';
 
 /** Signature of a callback that receives a {@link RouteRegistrar} to register routes on — used for plugin/module `routes()` hooks and for `registrar.group()` children. */
 export type RouteRegistrationCallback = (registrar: RouteRegistrar) => void;

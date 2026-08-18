@@ -51,7 +51,7 @@ export const breakpointsQueries = {
 ${queriesLines}
 } as const;
 
-export type Breakpoint = keyof typeof breakpointsQueries;
+export type BreakpointName = keyof typeof breakpointsQueries;
 
 export interface BreakpointExactProps {
 ${exactLines}

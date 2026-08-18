@@ -25,12 +25,6 @@
             "fileTooLarge": "The file \":name\" could not be attached because its size of :size exceeds the maximum file size of :maxSize.",
             "unsupportedFileType": "The file \":name\" could not be attached because the file type \":type\" is not supported."
         },
-        "message": {
-            "sources": "Sources",
-            "citationReference": {
-                "contextError": "Something was coded wrong. This reference is not inside a CitationContext. Please report this bug to the developers."
-            }
-        },
         "export": {
             "title": "Export",
             "tooltip": "Choose an option to export this conversation",

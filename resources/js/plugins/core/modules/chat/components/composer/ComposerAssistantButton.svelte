@@ -19,11 +19,10 @@
 -->
 <script lang="ts">
 
-    import BorderBeam from '$lib/components/ui/border-beam/BorderBeam.svelte';
-    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
+    import {BorderBeam, ButtonWithTooltip} from '@hawk-hhg/hawki-svelte-components';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ComponentProps} from 'svelte';
-    import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
+    import BotIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/BotIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
 

@@ -13,7 +13,7 @@
   ```
 -->
 <script lang="ts">
-    import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';
+    import {StatusDot} from '@hawk-hhg/hawki-svelte-components';
     import type {AiModel} from '$lib/plugins/core/schemas/resources/ai-models.schema.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 

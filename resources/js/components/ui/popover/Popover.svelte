@@ -30,8 +30,8 @@
 <script lang="ts">
     import {mergeProps, Popover as PopoverPrimitive, type PopoverContentProps} from 'bits-ui';
     import type {Snippet} from 'svelte';
-    import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
-    import SnippetOrStringTrigger from '$lib/components/util/snippetOrString/SnippetOrStringTrigger.svelte';
+    import SnippetOrString from '../../util/snippetOrString/SnippetOrString.svelte';
+    import SnippetOrStringTrigger from '../../util/snippetOrString/SnippetOrStringTrigger.svelte';
 
     interface Props {
         /** Whether the popover is open. Supports bind:open. */

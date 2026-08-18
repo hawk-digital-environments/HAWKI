@@ -21,40 +21,12 @@
   />
   ```
 -->
-<script module lang="ts">
-    import {cva, type VariantProps} from 'class-variance-authority';
-
-    const buttonVariants = cva('btn', {
-        variants: {
-            variant: {
-                fill: 'btn--fill',
-                accent: 'btn--accent',
-                stroke: 'btn--stroke',
-                ghost: 'btn--ghost',
-                iconGhost: 'btn--iconGhost',
-                delete: 'btn--delete'
-            },
-            size: {
-                xs: 'btn--xs',
-                sm: 'btn--sm',
-                md: 'btn--md',
-                // This is an internal size used when an icon is provided without children.
-                // It can not be set directly via the `size` prop.
-                iconOnly: 'btn--iconOnly'
-            }
-        },
-        defaultVariants: {variant: 'fill', size: 'md'}
-    });
-
-    export type ButtonVariant = VariantProps<typeof buttonVariants>['variant'];
-    export type ButtonSize = Exclude<VariantProps<typeof buttonVariants>['size'], 'iconOnly'>;
-</script>
-
 <script lang="ts">
     import type {HTMLButtonAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import type {Component} from 'svelte';
-    import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import type {IconComponent} from '../icons/index.js';
+    import {buttonVariants, type ButtonSize, type ButtonVariant} from './variants.js';
 
     interface Props extends HTMLButtonAttributes {
         /** The reference to the underlying button element. Can be used for imperative actions like focusing the button. */

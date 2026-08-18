@@ -12,7 +12,7 @@
 -->
 <script lang="ts">
     import type {ComponentProps, Snippet} from 'svelte';
-    import Link from '$lib/components/util/link/Link.svelte';
+    import Link from './Link.svelte';
 
     interface Props extends Omit<ComponentProps<typeof Link>, 'children'> {
         /**

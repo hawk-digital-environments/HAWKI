@@ -1,10 +1,10 @@
 import type {default as UniversalRouter, RouteContext, RouteError} from 'universal-router';
-import type {RouteComponent, RouteLayout, RouteMeta, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import type {CreateRouterOptions, Router} from '$lib/components/ui/routing/logistics/router.js';
-import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
-import type {RouterNodeTree} from '$lib/components/ui/routing/logistics/nodeTree.js';
-import type {RouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
-import {normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
+import type {RouteComponent, RouteLayout, RouteMeta, RouteResultBody} from './RouteRegistrar.js';
+import type {CreateRouterOptions, Router} from './router.js';
+import type {RoutingStrategy} from '../strategy/types.js';
+import type {RouterNodeTree} from './nodeTree.js';
+import type {RouteDataCache} from './dataCache.js';
+import {normalizePath} from './normalizePath.js';
 
 export class RouterState {
     public currentState: Router['state'] = $state('loading');

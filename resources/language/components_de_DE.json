@@ -1,0 +1,63 @@
+{
+    "components": {
+        "dialog": {
+            "closeLabel": "Schließen",
+            "okLabel": "OK",
+            "cancelLabel": "Abbrechen"
+        },
+        "sheet": {
+            "menuTitle": "Menü"
+        },
+        "statusDot": {
+            "ariaLabel": "Statusanzeige",
+            "onlineTooltip": "Online",
+            "offlineTooltip": "Offline",
+            "unknownTooltip": "Unbekannt"
+        },
+        "dropdownMenu": {
+            "switchItem": {
+                "toggleLabel": "Element umschalten"
+            }
+        },
+        "citationList": {
+            "sources": "Quellen"
+        },
+        "citationReference": {
+            "contextError": "Hier wurde etwas falsch programmiert. Diese Referenz befindet sich nicht in einem CitationContext. Bitte melde diesen Fehler den Entwicklern."
+        },
+        "urlPreview": {
+            "loading": "Suche läuft...",
+            "unavailable": "Vorschau nicht verfügbar"
+        },
+        "markdown": {
+            "markstream": {
+                "common": {
+                    "copy": "Kopieren",
+                    "copied": "Kopiert",
+                    "decrease": "Verkleinern",
+                    "reset": "Zurücksetzen",
+                    "increase": "Vergrößern",
+                    "expand": "Ausklappen",
+                    "collapse": "Einklappen",
+                    "preview": "Vorschau",
+                    "source": "Quellcode",
+                    "export": "Exportieren",
+                    "open": "Öffnen",
+                    "close": "Schließen",
+                    "zoomIn": "Hineinzoomen",
+                    "zoomOut": "Herauszoomen",
+                    "resetZoom": "Zoom zurücksetzen"
+                },
+                "artifacts": {
+                    "htmlPreviewTitle": "HTML-Vorschau",
+                    "svgPreviewTitle": "SVG-Vorschau"
+                },
+                "image": {
+                    "preview": "Bildvorschau",
+                    "loadError": "Fehler beim Laden des Bildes",
+                    "loading": "Bild wird geladen..."
+                }
+            }
+        }
+    }
+}

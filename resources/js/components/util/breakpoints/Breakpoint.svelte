@@ -38,8 +38,8 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
-    import {type Breakpoint, type BreakpointSnippetProps, breakpointsQueries} from './breakpoints.js';
-    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import {type BreakpointName, type BreakpointSnippetProps, breakpointsQueries} from './breakpoints.js';
+    import {useBreakpoint} from './useBreakpoint.svelte.js';
 
     interface Props extends BreakpointSnippetProps {
         /**
@@ -49,7 +49,7 @@
          * matches. Every snippet key passed to this component must appear in
          * the array; omitting one is a dev-time error.
          */
-        order?: Breakpoint[];
+        order?: BreakpointName[];
         /**
          * When true every matching breakpoint snippet is rendered (in `order`
          * / CSS-file order). When false (default) only the first match is
@@ -64,7 +64,7 @@
     $effect(() => {
         const {order} = props;
         if (!order) return;
-        const provided = (Object.keys(breakpointsQueries) as Breakpoint[]).filter(
+        const provided = (Object.keys(breakpointsQueries) as BreakpointName[]).filter(
             k => (props as Record<string, unknown>)[k] !== undefined
         );
         const missing = provided.filter(k => !order.includes(k));
@@ -79,7 +79,7 @@
 
     const toRender = $derived.by((): Snippet[] => {
         const {order, showAllMatching = false} = props;
-        const sequence = order ?? (Object.keys(breakpointsQueries) as Breakpoint[]);
+        const sequence = order ?? (Object.keys(breakpointsQueries) as BreakpointName[]);
 
         const matching = sequence.filter(
             k =>

@@ -19,7 +19,7 @@
     import type {Snippet} from 'svelte';
     import Dialog from './Dialog.svelte';
     import Button from '../button/Button.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
     const {__} = useTranslator();
 
@@ -47,8 +47,8 @@
         onOpenChange,
         title,
         description,
-        okLabel = __('ui.dialog.okLabel'),
-        cancelLabel = __('ui.dialog.cancelLabel'),
+        okLabel = __('components.dialog.okLabel'),
+        cancelLabel = __('components.dialog.cancelLabel'),
         onConfirm,
         onCancel
     }: Props = $props();

@@ -4,8 +4,8 @@
   `title` and `description` are omitted except the icon.
 -->
 <script lang="ts">
-    import type { IconComponent } from '$lib/components/ui/icons';
-    import Txt from '$lib/components/ui/Txt.svelte';
+    import type { IconComponent } from '../icons/index.js';
+    import Txt from '../Txt.svelte';
 
     type Size = "small" | "default" | "large";
 

@@ -21,7 +21,7 @@
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import {Spring} from 'svelte/motion';
-    import {getRadioCardContext} from '$lib/components/ui/radio-card/RadioCardContext.svelte.js';
+    import {getRadioCardContext} from './RadioCardContext.svelte.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** The value this card represents within the group. */

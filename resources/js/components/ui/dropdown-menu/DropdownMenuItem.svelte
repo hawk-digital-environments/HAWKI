@@ -25,8 +25,8 @@
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
-    import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
+    import type {IconComponent} from '../icons/index.js';
+    import Delete02Icon from '../icons/iconset/Delete02Icon.svelte';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** When true, the item cannot be interacted with. */

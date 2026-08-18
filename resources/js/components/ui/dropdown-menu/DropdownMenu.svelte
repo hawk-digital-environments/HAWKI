@@ -31,9 +31,9 @@
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, type DropdownMenuContentProps, mergeProps} from 'bits-ui';
     import type {Snippet} from 'svelte';
-    import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
-    import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
-    import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
+    import Breakpoint from '../../util/breakpoints/Breakpoint.svelte';
+    import BottomSheet from '../sheet/BottomSheet.svelte';
+    import SnippetOrString from '../../util/snippetOrString/SnippetOrString.svelte';
 
     interface Props {
         /** Whether the dropdown is open. Supports bind:open. */

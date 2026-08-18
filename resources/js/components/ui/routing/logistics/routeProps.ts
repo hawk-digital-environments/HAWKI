@@ -7,9 +7,9 @@
 import type {Route} from 'universal-router';
 import type {Snippet} from 'svelte';
 import type {z} from 'zod';
-import type {RouteParamsSchema} from '$lib/components/ui/routing/logistics/dataLoader.js';
-import type {RouteConfig, RouteConfigParams} from '$lib/components/ui/routing/logistics/routeConfig.js';
-import type {RouteMeta} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {RouteParamsSchema} from './dataLoader.js';
+import type {RouteConfig, RouteConfigParams} from './routeConfig.js';
+import type {RouteMeta} from './RouteRegistrar.js';
 
 /**
  * A config contributes the output of its `paramSchema` (or raw `RouteParams`

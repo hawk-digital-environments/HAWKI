@@ -1,16 +1,16 @@
-import {type Breakpoint, breakpointsQueries} from '$lib/components/util/breakpoints/breakpoints.js';
+import {type BreakpointName, breakpointsQueries} from './breakpoints.js';
 
 export interface BreakpointState {
     /**
      * Returns true if the current viewport matches the given breakpoint.
      * @param breakpoint
      */
-    is(breakpoint: Breakpoint): boolean;
+    is(breakpoint: BreakpointName): boolean;
 
     /**
      * Returns an array of all breakpoints that match the current viewport.
      */
-    matching(): Breakpoint[];
+    matching(): BreakpointName[];
 }
 
 /**
@@ -45,13 +45,13 @@ export function useBreakpoint(): BreakpointState {
     });
 
     return {
-        is(breakpoint: Breakpoint): boolean {
+        is(breakpoint: BreakpointName): boolean {
             return matchStates[breakpoint] ?? false;
         },
-        matching(): Breakpoint[] {
+        matching(): BreakpointName[] {
             return Object.entries(matchStates)
                 .filter(([_, matches]) => matches)
-                .map(([key, _]) => key as Breakpoint);
+                .map(([key, _]) => key as BreakpointName);
         }
     };
 }

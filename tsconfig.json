@@ -9,6 +9,12 @@
             "vite/client"
         ],
         "paths": {
+            "@hawk-hhg/hawki-svelte-components": [
+                "./resources/js/components/index.ts"
+            ],
+            "@hawk-hhg/hawki-svelte-components/*": [
+                "./resources/js/components/*"
+            ],
             "$lib": [
                 "./resources/js"
             ],

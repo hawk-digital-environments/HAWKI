@@ -1,5 +1,5 @@
 import {getContext, setContext} from 'svelte';
-import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
+import {Emitter} from '../../lib/events/Emitter.js';
 
 interface Events {
     focusCitation: string;
@@ -28,7 +28,7 @@ interface Events {
  * instance via {@link useCitationContext} without prop drilling.
  */
 export class CitationContext {
-    private flow = new SyncPipeline<Events>();
+    private emitter = new Emitter<Events>();
 
     /**
      * Requests that the citation tile with the given identifier scroll into
@@ -36,7 +36,7 @@ export class CitationContext {
      * is clicked.
      */
     public focusCitation(citationId: string): void {
-        this.flow.trigger('focusCitation', citationId);
+        this.emitter.emit('focusCitation', citationId);
     }
 
     /**
@@ -46,7 +46,7 @@ export class CitationContext {
      * cleanup).
      */
     public onFocusCitation(citationId: string, callback: () => void): () => void {
-        return this.flow.on('focusCitation', (id) => {
+        return this.emitter.on('focusCitation', (id) => {
             if (id === citationId) {
                 callback();
             }

@@ -4,7 +4,7 @@
  * than reaching into `logistics/`, `strategy/` or `hooks/`:
  *
  * ```ts
- * import {configurePage, type RouteProps, useRouter} from '$lib/components/ui/routing/index.js';
+ * import {configurePage, type RouteProps, useRouter} from './index.js';
  * ```
  *
  * What is *not* re-exported is deliberate, not an oversight: the resolver, the
@@ -36,9 +36,9 @@ export {
     type IsActiveOptions,
     type Router,
     type RouterHandle
-} from '$lib/components/ui/routing/logistics/router.js';
+} from './logistics/router.js';
 
-export {useRouter, useRouterScope, type RouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+export {useRouter, useRouterScope, type RouterScope} from './hooks/useRouter.svelte.js';
 
 // =========================================================================
 // Route registration
@@ -59,7 +59,7 @@ export {
     type RouteRegistrationCallback,
     type RouteResult,
     type RouteResultBody
-} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+} from './logistics/RouteRegistrar.js';
 
 // =========================================================================
 // Component configuration
@@ -71,9 +71,9 @@ export {
     type RouteConfig,
     type RouteConfigInput,
     type RouteConfigParams
-} from '$lib/components/ui/routing/logistics/routeConfig.js';
+} from './logistics/routeConfig.js';
 
-export type {RouteLayoutProps, RouteProps} from '$lib/components/ui/routing/logistics/routeProps.js';
+export type {RouteLayoutProps, RouteProps} from './logistics/routeProps.js';
 
 // =========================================================================
 // Data loading
@@ -85,9 +85,9 @@ export type {
     RouteDataLoader,
     RouteDataLoaderContext,
     RouteParamsSchema
-} from '$lib/components/ui/routing/logistics/dataLoader.js';
+} from './logistics/dataLoader.js';
 
-export type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
+export type {RouteDataLoaderContextExtensions} from './extendableTypes.js';
 
 // =========================================================================
 // Resolution signals
@@ -105,15 +105,15 @@ export {
     RouteHttpError,
     RouteRedirect,
     RouteResolutionError
-} from '$lib/components/ui/routing/logistics/signals.js';
+} from './logistics/signals.js';
 
 // =========================================================================
 // Routing strategies
 // =========================================================================
-export {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.svelte.js';
-export {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
-export {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
-export type {RoutingStrategy, SetRouteInStrategyOptions} from '$lib/components/ui/routing/strategy/types.js';
+export {createHashRoutingStrategy} from './strategy/hashRoutingStrategy.svelte.js';
+export {createPathRoutingStrategy} from './strategy/pathRoutingStrategy.svelte.js';
+export {createTransientRoutingStrategy} from './strategy/transientRoutingStrategy.svelte.js';
+export type {RoutingStrategy, SetRouteInStrategyOptions} from './strategy/types.js';
 
 // =========================================================================
 // `universal-router` types that appear in the signatures above

@@ -1,11 +1,11 @@
-import {collectRouteNodes, type ResolvedRouteNode, resolveNodeParts, resolveRouteNodes, type RouteNode} from '$lib/components/ui/routing/logistics/nodes.js';
-import type {CreateRouterOptions} from '$lib/components/ui/routing/logistics/router.js';
-import {type ComponentModuleResolver, resolveLayoutOption} from '$lib/components/ui/routing/logistics/lazyComponent.js';
-import type {HawkiRoute, RouteComponent, RouteLayout, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {collectRouteNodes, type ResolvedRouteNode, resolveNodeParts, resolveRouteNodes, type RouteNode} from './nodes.js';
+import type {CreateRouterOptions} from './router.js';
+import {type ComponentModuleResolver, resolveLayoutOption} from './lazyComponent.js';
+import type {HawkiRoute, RouteComponent, RouteLayout, RouteResultBody} from './RouteRegistrar.js';
 import type {Route, RouteParams} from 'universal-router';
-import {makeCacheKey, resolveCacheKey, type RouteCacheKeyContext, type RouteDataLoaderContext} from '$lib/components/ui/routing/logistics/dataLoader.js';
-import {routeError} from '$lib/components/ui/routing/logistics/signals.js';
-import type {RouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
+import {makeCacheKey, resolveCacheKey, type RouteCacheKeyContext, type RouteDataLoaderContext} from './dataLoader.js';
+import {routeError} from './signals.js';
+import type {RouteDataCache} from './dataCache.js';
 
 export type RouterNodeTree = ReturnType<typeof createNodeTree>;
 

@@ -31,7 +31,7 @@
  */
 import type {RouteParams} from 'universal-router';
 import type {z} from 'zod';
-import type {RouteCacheKey, RouteDataLoader, RouteDataLoaderContext, RouteParamsSchema} from '$lib/components/ui/routing/logistics/dataLoader.js';
+import type {RouteCacheKey, RouteDataLoader, RouteDataLoaderContext, RouteParamsSchema} from './dataLoader.js';
 
 /**
  * The params a node's `loadData`/`cacheKey` see: the schema's parsed output

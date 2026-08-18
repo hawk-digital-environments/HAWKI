@@ -1,9 +1,9 @@
-import {RouteDataLoaderContext} from '$lib/components/ui/routing/logistics/dataLoader.js';
+import {RouteDataLoaderContext} from './dataLoader.js';
 import {z} from 'zod';
-import type {RouterState} from '$lib/components/ui/routing/logistics/RouterState.svelte.js';
-import type {HawkiRoute, RouteComponentOrLoader, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
-import {redirect, routeError, RouteHttpError, RouteRedirect, RouteResolutionError} from '$lib/components/ui/routing/logistics/signals.js';
+import type {RouterState} from './RouterState.svelte.js';
+import type {HawkiRoute, RouteComponentOrLoader, RouteResultBody} from './RouteRegistrar.js';
+import type {RouterHandle} from './router.js';
+import {redirect, routeError, RouteHttpError, RouteRedirect, RouteResolutionError} from './signals.js';
 import type {RouteError} from 'universal-router';
 
 // Backstop for a redirect chain that never repeats a path, which

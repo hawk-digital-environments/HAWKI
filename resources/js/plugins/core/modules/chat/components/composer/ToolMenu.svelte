@@ -77,15 +77,12 @@
     }
 </script>
 <script lang="ts">
-    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
+    import {ButtonWithTooltip, DropdownMenu, DropdownMenuDetailView, growTransition} from '@hawk-hhg/hawki-svelte-components';
     import ToolMenuList from '$plugins/core/modules/chat/components/composer/ToolMenuList.svelte';
     import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
-    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import {setToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
-    import PlusSignIcon from '$lib/components/ui/icons/iconset/PlusSignIcon.svelte';
+    import PlusSignIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/PlusSignIcon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 

@@ -5,10 +5,10 @@
  */
 import type {Route} from 'universal-router';
 import type {Path} from 'universal-router/path-to-regexp';
-import {mergePaths} from '$lib/components/ui/routing/logistics/normalizePath.js';
-import type {HawkiRoute, RouteLayoutOrLoader} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import {isLazyComponentLoader} from '$lib/components/ui/routing/logistics/lazyComponent.js';
-import type {RouterState} from '$lib/components/ui/routing/logistics/RouterState.svelte.js';
+import {mergePaths} from './normalizePath.js';
+import type {HawkiRoute, RouteLayoutOrLoader} from './RouteRegistrar.js';
+import {isLazyComponentLoader} from './lazyComponent.js';
+import type {RouterState} from './RouterState.svelte.js';
 
 /** Logs `dump`'s state, current path, meta, layout stack, and the full route tree (with middleware/catch-all markers) to the console. */
 export function dumpRouterToConsole(state: RouterState) {

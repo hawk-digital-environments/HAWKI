@@ -29,10 +29,10 @@
 
     import type {Snippet} from 'svelte';
     import {Dialog as DialogPrimitive, type DialogContentProps, type DialogDescriptionProps, type DialogOverlayProps, type DialogTitleProps, mergeProps} from 'bits-ui';
-    import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
+    import SnippetOrString from '../../util/snippetOrString/SnippetOrString.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
-    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import Cancel01Icon from '../icons/iconset/Cancel01Icon.svelte';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
     const {__} = useTranslator();
     
@@ -125,7 +125,7 @@
                 </div>
             {/if}
             {#if closable}
-                <DialogPrimitive.Close class="dialog-close" aria-label={__('ui.dialog.closeLabel')}>
+                <DialogPrimitive.Close class="dialog-close" aria-label={__('components.dialog.closeLabel')}>
                     <Cancel01Icon size={16}/>
                 </DialogPrimitive.Close>
             {/if}

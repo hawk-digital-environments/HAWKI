@@ -18,13 +18,12 @@
   ```
 -->
 <script lang="ts">
-    import Button from '$lib/components/ui/button/Button.svelte';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
-    import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
-    import ThreadIcon from '$lib/components/ui/icons/iconset/ThreadIcon.svelte';
-    import RefreshIcon from '$lib/components/ui/icons/iconset/RefreshIcon.svelte';
-    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
-    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {Button, growTransition} from '@hawk-hhg/hawki-svelte-components';
+    import MoreHorizontalIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/MoreHorizontalIcon.svelte';
+    import ThreadIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/ThreadIcon.svelte';
+    import RefreshIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/RefreshIcon.svelte';
+    import PencilEdit01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import Cancel01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 

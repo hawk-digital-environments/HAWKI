@@ -20,8 +20,7 @@
     import type {ToolMenuEntry, ToolMenuGroupedEntries} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
     import ToolMenuListItem from '$plugins/core/modules/chat/components/composer/ToolMenuListItem.svelte';
     import ToolMenuGroupHeader from '$plugins/core/modules/chat/components/composer/ToolMenuGroupHeader.svelte';
-    import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
-    import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
+    import {DropdownMenuLabel, DropdownMenuSeparator} from '@hawk-hhg/hawki-svelte-components';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();

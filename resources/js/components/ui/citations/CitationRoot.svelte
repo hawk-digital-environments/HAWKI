@@ -31,7 +31,7 @@
   markers that `ExtendedLinkNode` turns into `CitationReference` chips.
 -->
 <script lang="ts">
-    import {createCitationContext} from '$lib/components/ui/citations/CitationContext.js';
+    import {createCitationContext} from './CitationContext.js';
     import type {Snippet} from 'svelte';
 
     interface Props {

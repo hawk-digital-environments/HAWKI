@@ -32,7 +32,7 @@ snippet.dispatchEvent(new CustomEvent('doneStreaming', {detail: {text: finalText
 
     import type {HTMLSvelteSnippetElement} from '$lib/legacy/svelteSnippetLoader.js';
     import {onMount} from 'svelte';
-    import type {UrlCitation} from '$lib/components/ui/citations/types.js';
+    import type {UrlCitation} from '@hawk-hhg/hawki-svelte-components';
     import MessageBody from '$plugins/core/modules/chat/components/message/MessageBody.svelte';
 
     interface Props {

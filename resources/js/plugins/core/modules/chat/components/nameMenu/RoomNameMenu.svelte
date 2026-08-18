@@ -19,14 +19,12 @@
 -->
 <script lang="ts">
     import type {ComponentProps} from 'svelte';
-    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
-    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+    import {ConfirmDialog, DropdownMenuItem, DropdownMenuSeparator} from '@hawk-hhg/hawki-svelte-components';
     import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
     import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
-    import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
-    import ViewIcon from '$lib/components/ui/icons/iconset/ViewIcon.svelte';
-    import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
+    import Settings05Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Settings05Icon.svelte';
+    import ViewIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/ViewIcon.svelte';
+    import Logout02Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Logout02Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import ChatNameMenu from '$plugins/core/modules/chat/components/nameMenu/ChatNameMenu.svelte';
 

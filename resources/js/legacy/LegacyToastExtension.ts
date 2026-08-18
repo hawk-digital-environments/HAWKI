@@ -1,5 +1,5 @@
 import type {HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
-import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+import type {ToastContext} from '@hawk-hhg/hawki-svelte-components';
 
 /**
  * Declaration merging that exposes this extension on the app object as
@@ -37,16 +37,16 @@ declare module '$lib/kernel/extendableTypes.js' {
  * point this extension can go away.
  *
  * WHEN to use it: **don't, directly.** Call `useToastContext()` from
- * `$lib/components/ui/toast/ToastContext.svelte.js` instead — it already
+ * `@hawk-hhg/hawki-svelte-components` instead — it already
  * prefers the real Svelte context and only falls back to this bridge (lazily
  * creating and registering the instance here on first use).
  *
  * @example
  * // Preferred — indirection through the toast helper:
- * import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+ * import {useToastContext} from '@hawk-hhg/hawki-svelte-components';
  * useToastContext().error('Upload fehlgeschlagen.');
  *
- * @see ToastContext in `$lib/components/ui/toast/ToastContext.svelte.js`
+ * @see ToastContext in `@hawk-hhg/hawki-svelte-components`
  * @deprecated The toast context will only be provided via sveltes context feature once the rewrite to an SPA is complete.
  */
 export class LegacyToastExtension implements HawkiAppExtension {

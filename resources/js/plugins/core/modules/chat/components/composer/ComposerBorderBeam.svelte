@@ -23,7 +23,7 @@
 -->
 <script lang="ts">
 
-    import BorderBeam from '$lib/components/ui/border-beam/BorderBeam.svelte';
+    import {BorderBeam} from '@hawk-hhg/hawki-svelte-components';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {type Snippet} from 'svelte';
 

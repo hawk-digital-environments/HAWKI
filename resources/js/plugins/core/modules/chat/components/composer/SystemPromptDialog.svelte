@@ -4,10 +4,8 @@
   the save button; closing or cancelling discards any unsaved edits.
 -->
 <script lang="ts">
-    import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
-    import Button from '$lib/components/ui/button/Button.svelte';
-    import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
-    import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
+    import {Button, Dialog, Textarea} from '@hawk-hhg/hawki-svelte-components';
+    import FileEditIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/FileEditIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();

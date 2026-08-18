@@ -18,12 +18,11 @@
 <script lang="ts">
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import FilePreview from '$plugins/core/modules/chat/components/composer/utils/FilePreview.svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {mergeProps} from 'bits-ui';
     import {cubicIn} from 'svelte/easing';
-    import RadialProgress from '$lib/components/ui/radial-progress/RadialProgress.svelte';
-    import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
-    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {RadialProgress, Tooltip} from '@hawk-hhg/hawki-svelte-components';
+    import Alert02Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Alert02Icon.svelte';
+    import Cancel01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const composerContext = useComposerContext();

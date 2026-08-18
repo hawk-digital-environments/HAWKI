@@ -18,8 +18,7 @@
 -->
 <script lang="ts">
 
-    import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {growTransition, Textarea} from '@hawk-hhg/hawki-svelte-components';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import ComposerAssistantButton from '$plugins/core/modules/chat/components/composer/ComposerAssistantButton.svelte';

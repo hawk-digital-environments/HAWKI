@@ -13,11 +13,11 @@
 -->
 <script lang="ts">
     import type {Component} from 'svelte';
-    import RouteNotFound from '$lib/components/ui/routing/RouteNotFound.svelte';
-    import RouteError from '$lib/components/ui/routing/RouteError.svelte';
-    import Loader from '$lib/components/ui/loader/Loader.svelte';
-    import type {Router} from '$lib/components/ui/routing/logistics/router.js';
-    import {provideRouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import RouteNotFound from './RouteNotFound.svelte';
+    import RouteError from './RouteError.svelte';
+    import Loader from '../loader/Loader.svelte';
+    import type {Router} from './logistics/router.js';
+    import {provideRouterScope} from './hooks/useRouter.svelte.js';
 
     interface Props {
         /** The router instance to render (from `createRouter`/`createRouterFromRegistrar`, or `app.router`). */

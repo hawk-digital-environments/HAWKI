@@ -19,23 +19,15 @@
   `ComposerContext` directly.
 -->
 <script lang="ts">
-    import Popover from '$lib/components/ui/popover/Popover.svelte';
-    import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
-    import Tabs, {type TabItem} from '$lib/components/ui/tabs/Tabs.svelte';
-    import Slider from '$lib/components/ui/slider/Slider.svelte';
-    import Txt from '$lib/components/ui/Txt.svelte';
-    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
+    import {Alert, Breakpoint, ButtonWithTooltip, InfoPopover, Popover, BottomSheet, Slider, Tabs, type TabItem, Txt} from '@hawk-hhg/hawki-svelte-components';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import SystemPromptDialog from '$plugins/core/modules/chat/components/composer/SystemPromptDialog.svelte';
-    import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
-    import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
-    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
-    import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
-    import UndoIcon from '$lib/components/ui/icons/iconset/UndoIcon.svelte';
+    import PencilEdit01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import Settings01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Settings01Icon.svelte';
+    import UndoIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/UndoIcon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import Alert from '$lib/components/ui/alert/Alert.svelte';
-    import Alert01Icon from '$lib/components/ui/icons/iconset/Alert01Icon.svelte';
+    import Alert01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Alert01Icon.svelte';
 
     const composerContext = useComposerContext();
     const systemPromptStore = useStore('system-prompts');

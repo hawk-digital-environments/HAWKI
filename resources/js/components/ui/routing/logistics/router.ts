@@ -61,22 +61,22 @@
  * comment for how it interacts with a resolution that is still in flight.
  */
 import UniversalRouter, {type Route, type RouteError, type RouteParams} from 'universal-router';
-import {type RouteComponent, type RouteLayout, type RouteLayoutLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import {resolveComponentModule} from '$lib/components/ui/routing/logistics/lazyComponent.js';
-import type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
-import {createRouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
-import type {AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
-import {RouteHttpError, RouteRedirect, RouteResolutionError} from '$lib/components/ui/routing/logistics/signals.js';
-import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
-import {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
-import {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
-import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.svelte.js';
-import {mergePaths, normalizeBasePath, normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
-import {isPathActive, type IsPathActiveOptions, isRouteActive} from '$lib/components/ui/routing/logistics/isActive.js';
+import {type RouteComponent, type RouteLayout, type RouteLayoutLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from './RouteRegistrar.js';
+import {resolveComponentModule} from './lazyComponent.js';
+import type {RouteDataLoaderContextExtensions} from '../extendableTypes.js';
+import {createRouteDataCache} from './dataCache.js';
+import type {AnyRouteConfig} from './routeConfig.js';
+import {RouteHttpError, RouteRedirect, RouteResolutionError} from './signals.js';
+import type {RoutingStrategy} from '../strategy/types.js';
+import {createTransientRoutingStrategy} from '../strategy/transientRoutingStrategy.svelte.js';
+import {createPathRoutingStrategy} from '../strategy/pathRoutingStrategy.svelte.js';
+import {createHashRoutingStrategy} from '../strategy/hashRoutingStrategy.svelte.js';
+import {mergePaths, normalizeBasePath, normalizePath} from './normalizePath.js';
+import {isPathActive, type IsPathActiveOptions, isRouteActive} from './isActive.js';
 import generateUrls, {type UrlParams} from 'universal-router/generateUrls';
-import {createNodeTree} from '$lib/components/ui/routing/logistics/nodeTree.js';
-import {RouterState} from '$lib/components/ui/routing/logistics/RouterState.svelte.js';
-import {resolveRoute} from '$lib/components/ui/routing/logistics/routeResolver.js';
+import {createNodeTree} from './nodeTree.js';
+import {RouterState} from './RouterState.svelte.js';
+import {resolveRoute} from './routeResolver.js';
 
 export interface IsActiveOptions extends Omit<IsPathActiveOptions, 'rootPath'> {
     /** Params for a named route target — same meaning as in {@link RouterHandle.getPath}. */

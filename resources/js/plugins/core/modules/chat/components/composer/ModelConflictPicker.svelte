@@ -22,8 +22,8 @@
   ```
 -->
 <script lang="ts">
-    import {growTransition} from '$lib/utils/transitions/growTransition';
-    import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
+    import {growTransition} from '@hawk-hhg/hawki-svelte-components';
+    import Alert02Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Alert02Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {AiToolOrCapabilityWithState} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';

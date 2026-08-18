@@ -28,7 +28,7 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
     import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
     import type {HTMLSvelteSnippetElement} from '$lib/legacy/svelteSnippetLoader.js';
     import type {ComponentProps} from 'svelte';
-    import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';
+    import EllipsisIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/EllipsisIcon.svelte';
     import RoomNameMenu from '$plugins/core/modules/chat/components/nameMenu/RoomNameMenu.svelte';
     import AiConvNameMenu from '$plugins/core/modules/chat/components/nameMenu/AiConvNameMenu.svelte';
 

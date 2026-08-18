@@ -50,9 +50,9 @@
     import type {HTMLAnchorAttributes, MouseEventHandler} from 'svelte/elements';
     import * as svelte from 'svelte';
     import {mergeProps} from 'bits-ui';
-    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {RouteParams} from 'universal-router';
-    import {type RouterScope, useRouterScope} from '$lib/components/ui/routing/index.js';
+    import {type RouterScope, useRouterScope} from '../../ui/routing/index.js';
+    import {useLinkServices} from '../../lib/link/LinkServicesContext.js';
 
     // widen so Props can redefine safely
     interface NonConflictingProps extends HTMLAnchorAttributes {
@@ -142,7 +142,7 @@
 
     let faviconFailed = $state(false);
 
-    const app = useApp();
+    const linkServices = useLinkServices();
 
     // Captured here because Svelte context is readable during initialization
     // only, while `router` is a prop that can change afterwards — so the *name*
@@ -253,7 +253,7 @@
     });
 
     const faviconUrl = $derived.by(() => {
-        if (!givenHref || faviconFailed || hrefIsLocal) {
+        if (!givenHref || faviconFailed || hrefIsLocal || !linkServices.faviconUrl) {
             return null;
         }
         try {
@@ -261,7 +261,7 @@
             if (!/^https?:$/.test(parsed.protocol) || parsed.origin === window.location.origin) {
                 return null;
             }
-            return app.uriBuilder.linkPreviewFaviconUri(href);
+            return linkServices.faviconUrl(href);
         } catch {
             return null;
         }

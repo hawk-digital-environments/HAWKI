@@ -21,12 +21,12 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
-    import type {EnrichedUrlCitation} from '$lib/components/ui/citations/types.js';
-    import {type CitationContext, useCitationContext} from '$lib/components/ui/citations/CitationContext.js';
-    import Link from '$lib/components/util/link/Link.svelte';
-    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {citationAnchorId} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import type {EnrichedUrlCitation} from './types.js';
+    import {type CitationContext, useCitationContext} from './CitationContext.js';
+    import Link from '../../util/link/Link.svelte';
+    import {useToastContext} from '../toast/ToastContext.svelte.js';
+    import {citationAnchorId} from './anchors.js';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
     // svelte-ignore non_reactive_update
     let citationContext: CitationContext | null = null;
@@ -59,7 +59,7 @@
     function handleClick(event: MouseEvent) {
         event.preventDefault();
         if (!citationContext) {
-            toastContext.error(__('chat.message.citationReference.contextError'));
+            toastContext.error(__('components.citationReference.contextError'));
             return;
         }
         if (citationContext) {

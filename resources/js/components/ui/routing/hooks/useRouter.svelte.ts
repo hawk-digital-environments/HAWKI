@@ -15,7 +15,7 @@
  * de-registered.
  */
 import {createContext} from 'svelte';
-import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
+import type {RouterHandle} from '../logistics/router.js';
 
 /**
  * The routers reachable from one point in the component tree — one link in a

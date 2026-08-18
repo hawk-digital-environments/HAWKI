@@ -7,7 +7,7 @@
  * strategy when none is specified (see `createStrategy` in
  * `router.ts`).
  */
-import type {RoutingStrategy, SetRouteInStrategyOptions} from '$lib/components/ui/routing/strategy/types.js';
+import type {RoutingStrategy, SetRouteInStrategyOptions} from './types.js';
 
 export function createTransientRoutingStrategy(): RoutingStrategy {
     let currentPath = $state('');

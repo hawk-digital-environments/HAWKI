@@ -21,10 +21,10 @@
 <script lang="ts">
 
     import type {ComponentProps} from 'svelte';
-    import Popover from '$lib/components/ui/popover/Popover.svelte';
+    import Popover from './Popover.svelte';
     import {mergeProps} from 'bits-ui';
-    import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
+    import type {IconComponent} from '../icons/index.js';
+    import InformationCircleIcon from '../icons/iconset/InformationCircleIcon.svelte';
 
     type PopoverProps = ComponentProps<typeof Popover>;
 

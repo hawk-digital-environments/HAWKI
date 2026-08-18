@@ -27,7 +27,7 @@
  * the signal is caught and turned into a new resolution.
  */
 import {type Route} from 'universal-router';
-import type {RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware, RouteResultBody} from './RouteRegistrar.js';
 
 /** A group registration reduced to the parts relevant for the middleware stack (its `children` callback has already been compiled by then). */
 type GroupMiddlewareStackOptions = Omit<RegisteredRouteGroupOptions, 'children'>;
