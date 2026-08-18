@@ -7,15 +7,13 @@
   the routing migration produces real root pages.
 -->
 <script lang="ts">
-    import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
     import {onMount} from 'svelte';
+    import type {RouteProps} from '$lib/components/ui/routing/index.js';
 
-    const {goToRoute, route, path, debug} = useRouter();
+    const {goToRoute, debug} = useRouter();
 
-    interface Props {
-    }
-
-    const {}: Props = $props();
+    const {}: RouteProps = $props();
 
     onMount(() => {
         debug();

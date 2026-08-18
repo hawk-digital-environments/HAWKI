@@ -16,7 +16,7 @@
     // lands, so the doc block above doesn't become stale.
 
     import Link from '$lib/components/util/link/Link.svelte';
-    import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
 
     /**
      * The kernel's route renderer instantiates page components without passing

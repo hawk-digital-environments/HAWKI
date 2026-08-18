@@ -6,7 +6,7 @@ import type {ConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistr
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
-import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 import {getPluginRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 
 /**

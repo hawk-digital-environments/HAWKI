@@ -1,20 +1,23 @@
 <!--
-  @component Renders whatever a `Router` (see `logistics/router.svelte.ts`)
+  @component Renders whatever a `Router` (see `logistics/router.ts`)
   currently resolves to: a loading state, the matched page nested in its
   layout stack, the 404 fallback, or an error fallback. Publishes the
-  router's `RouterHandle` into Svelte context under `router.contextName`, so
-  `useRouter()` calls anywhere below it resolve without an explicit name.
+  router's `RouterHandle` into the `RouterScope` its subtree reads through
+  `useRouter()`, as the router a bare `useRouter()` means — so a nested
+  `RouterView` transparently redirects its subtree to its own router while
+  leaving the outer routers reachable by name.
 
   One `RouterView` is expected per `Router` instance — it calls
   `router.bind()` on init, which wires the router up to its routing strategy
   (path/hash/transient) for the lifetime of this component.
 -->
 <script lang="ts">
-    import {type Component, setContext} from 'svelte';
+    import type {Component} from 'svelte';
     import RouteNotFound from '$lib/components/ui/routing/RouteNotFound.svelte';
     import RouteError from '$lib/components/ui/routing/RouteError.svelte';
     import Loader from '$lib/components/ui/loader/Loader.svelte';
-    import {type Router, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
+    import type {Router} from '$lib/components/ui/routing/logistics/router.js';
+    import {provideRouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
 
     interface Props {
         /** The router instance to render (from `createRouter`/`createRouterFromRegistrar`, or `app.router`). */
@@ -39,11 +42,19 @@
     const isLoading = $derived(routerState === 'loading');
     const isNotFound = $derived(routerState === 'notFound');
     const RouteComponent = $derived(router.component);
-    const routeProps = $derived(router.componentProps);
     const layouts = $derived(router.layouts);
+    const route = $derived(router.route);
+    const nodeData = $derived(router.nodeData);
+    const nodeParams = $derived(router.nodeParams);
+    // One object for the whole chain, not one per node — see `Router.meta`.
+    const meta = $derived(router.meta ?? {});
 
+    // Makes this router the one a bare `useRouter()` below resolves to, and
+    // every router above it still reachable by name. A nested `RouterView`
+    // shadows the outer one for its own subtree, which is the whole point — a
+    // layout shared by both asks the router that is actually rendering it.
     // svelte-ignore state_referenced_locally
-    setContext<RouterHandle>(router.contextName, router.handle);
+    provideRouterScope(router.handle);
 
     // svelte-ignore state_referenced_locally
     router.bind();
@@ -62,7 +73,7 @@
 {#snippet layoutStack(index: number)}
     {#if index < layouts.length}
         {@const Layout = layouts[index]}
-        <Layout>
+        <Layout data={nodeData[index] ?? {}} params={nodeParams[index] ?? {}} {meta} {route}>
             {@render layoutStack(index + 1)}
         </Layout>
     {:else}
@@ -87,8 +98,9 @@
         {@render errorPage(router.error, () => void router.handle.reload())}
     {:else if isNotFound}
         <NotFoundComponent/>
-    {:else if RouteComponent && routeProps}
-        <RouteComponent {...routeProps}/>
+    {:else if RouteComponent}
+        <!-- The page is always the last entry of the render chain `[...layouts, page]` — see `Router.nodeData`'s doc comment. -->
+        <RouteComponent data={nodeData[layouts.length] ?? {}} params={nodeParams[layouts.length] ?? {}} {meta} {route}/>
     {/if}
 {/snippet}
 

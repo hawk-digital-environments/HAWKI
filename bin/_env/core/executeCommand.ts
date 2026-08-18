@@ -6,7 +6,14 @@ interface BaseExecuteCommandOptions {
      */
     env?: NodeJS.ProcessEnv;
     /**
-     * If true, an error will be thrown if the command exits with a non-zero exit code.
+     * Whether a non-zero exit code is turned into a thrown {@link CommandFailedError}.
+     * Defaults to `true`: a command that fails aborts the CLI invocation and its
+     * exit code becomes the CLI's own (see `Application.run()`).
+     *
+     * Set to `false` only when a non-zero code is a normal outcome rather than a
+     * failure — the caller inspects `result.code` itself, or the command is an
+     * interactive session the user ends (a shell, `logs`, an attached `up`),
+     * whose exit code is theirs and not ours to report.
      */
     throwOnExitCode?: boolean;
 
@@ -54,6 +61,23 @@ export interface NonInteractiveCommandResult {
 export type ExecuteCommandOptions = InteractiveExecuteCommandOptions | NonInteractiveExecuteCommandOptions;
 export type ExecuteCommandResult = InteractiveCommandResult | NonInteractiveCommandResult;
 
+/**
+ * Thrown when a command exits non-zero and `throwOnExitCode` was not disabled.
+ *
+ * Carries the child's exit code so `Application.run()` can adopt it as the
+ * CLI's own instead of flattening every failure to `1` — `bin/env test` has to
+ * report what the test runner reported for CI to read it.
+ */
+export class CommandFailedError extends Error {
+    public readonly code: number;
+
+    constructor(command: string, args: string[], code: number) {
+        super(`Command failed with exit code ${code}: ${command} ${args.join(' ')}`);
+        this.name = 'CommandFailedError';
+        this.code = code;
+    }
+}
+
 export async function executeCommand(command: string, args: string[], opt: NonInteractiveExecuteCommandOptions): Promise<NonInteractiveCommandResult>;
 export async function executeCommand(command: string, args: string[], opt: InteractiveExecuteCommandOptions): Promise<InteractiveCommandResult>;
 export async function executeCommand(command: string, args: string[], opt?: GenericExecuteCommandOptions): Promise<NonInteractiveCommandResult>;
@@ -61,8 +85,8 @@ export async function executeCommand(command: string, args: string[], opt?: Gene
     const env = opt?.env || process.env;
     args = args.filter((arg) => arg !== undefined && arg !== null && arg !== '');
     const exitCodeHandler = (res: ExecuteCommandResult) => {
-        if (opt?.throwOnExitCode && res.code !== 0) {
-            throw new Error(`Command failed with exit code ${res.code}: ${command} ${args.join(' ')}`);
+        if (res.code !== 0 && opt?.throwOnExitCode !== false) {
+            throw new CommandFailedError(command, args, res.code);
         }
         return res;
     };
