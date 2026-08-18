@@ -39,14 +39,6 @@ declare module '$lib/kernel/extendableTypes.js' {
          * @throws Error if the connection has not been loaded yet or if the client is not authenticated or registering a new user.
          */
         readonly connectionWithUserInfo: InternalAuthenticatedConnection | InternalRegisteringUserConnection;
-
-        /**
-         * Re-fetches the connection resource from the backend and replaces the cached
-         * {@link connection}. Call this whenever the session state may have changed
-         * without a page reload (e.g. after an in-SPA login or a detected logout) so
-         * `app.connection` and everything derived from it stays accurate.
-         */
-        reloadConnection(): Promise<Connection>;
     }
 }
 
@@ -87,11 +79,6 @@ export class ClientExtension implements HawkiAppExtension {
         return this.currentConnection;
     }
 
-    private async reloadConnection(): Promise<Connection> {
-        this.currentConnection = await this.client.restApi.getResource('connections', 'hawki');
-        return this.currentConnection;
-    }
-
     public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper): void {
         this.resourceSchemas = app.getOrFail('resourceSchemas');
 
@@ -117,9 +104,6 @@ export class ClientExtension implements HawkiAppExtension {
             },
             get connection(): Connection {
                 return extension.getConnection();
-            },
-            reloadConnection(): Promise<Connection> {
-                return extension.reloadConnection();
             },
             get authenticatedConnection(): InternalAuthenticatedConnection {
                 const connection = extension.getConnection();

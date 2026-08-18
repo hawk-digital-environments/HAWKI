@@ -53,11 +53,6 @@ export class UriBuilder {
         return this.joinUri(this.baseUri, '/logout');
     }
 
-    /** URL of the legacy login page. Navigating there requires a hard redirect, as it is not part of the SPA. */
-    public loginUri(): string {
-        return this.joinUri(this.baseUri, '/login');
-    }
-
     public linkPreviewMetadataUri(url: string): string {
         return this.jsonApiUri('/proxy/link-preview/metadata', {url});
     }
