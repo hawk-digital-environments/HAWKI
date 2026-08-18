@@ -12,12 +12,9 @@
 -->
 <script lang="ts">
 
-    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {oldUiBridge, type OldUiExportType} from '$lib/legacy/OldUiBridge.svelte.js';
-    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
-    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
-    import FileExportIcon from '$lib/components/ui/icons/iconset/FileExportIcon.svelte';
+    import {Breakpoint, ButtonWithTooltip, DropdownMenu, DropdownMenuItem} from '@hawk-hhg/hawki-svelte-components';
+    import FileExportIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/FileExportIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();

@@ -21,8 +21,8 @@
 <script lang="ts">
     import {Dialog as DialogPrimitive, type DialogContentProps, mergeProps} from 'bits-ui';
     import type {Snippet} from 'svelte';
-    import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import SnippetOrString from '../../util/snippetOrString/SnippetOrString.svelte';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
     const {__} = useTranslator();
     
@@ -151,7 +151,7 @@
                         <SnippetOrString value={title}/>
                     </DialogPrimitive.Title>
                 {:else}
-                    <DialogPrimitive.Title class="u-sr-only">{__('ui.sheet.menuTitle')}</DialogPrimitive.Title>
+                    <DialogPrimitive.Title class="u-sr-only">{__('components.sheet.menuTitle')}</DialogPrimitive.Title>
                 {/if}
 
                 {#if description}

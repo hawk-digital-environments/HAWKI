@@ -8,7 +8,7 @@
  * falling back to `'app'` when nothing pinned it.
  */
 import {createContext, getContext} from 'svelte';
-import {getRouterContextName, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
+import {getRouterContextName, type RouterHandle} from '../logistics/router.svelte.js';
 
 const [getDefaultRouterName, setDefaultRouterName] = createContext<string>();
 

@@ -7,7 +7,7 @@
  * strategy when none is specified (see `createStrategy` in
  * `router.svelte.ts`).
  */
-import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
+import type {RoutingStrategy} from './types.js';
 
 export function createTransientRoutingStrategy(): RoutingStrategy {
     let currentPath = $state('');

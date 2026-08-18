@@ -1,6 +1,5 @@
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import {RouteRegistrar, type RouteRenderer} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import {createRouterFromRegistrar, type Router, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
+import {createRouterFromRegistrar, RouteRegistrar, type Router, type RouterHandle, type RouteRenderer} from '@hawk-hhg/hawki-svelte-components';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 
 declare module '$lib/kernel/extendableTypes.js' {

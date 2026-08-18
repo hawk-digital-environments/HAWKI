@@ -1,21 +1,3 @@
-<script module lang="ts">
-    import {cva, type VariantProps} from 'class-variance-authority';
-
-    const badgeVariants = cva('badge', {
-        variants: {
-            variant: {
-                default: 'badge--default',
-                secondary: 'badge--secondary',
-                destructive: 'badge--destructive',
-                outline: 'badge--outline',
-            },
-        },
-        defaultVariants: {variant: 'default'},
-    });
-
-    export type BadgeVariant = VariantProps<typeof badgeVariants>['variant'];
-    export {badgeVariants};
-</script>
 <!--
   @component Small status/label chip. Supports `default`, `secondary`,
   `destructive`, and `outline` variants. Renders a `<div>` with `children` as
@@ -29,6 +11,7 @@
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
+    import {badgeVariants, type BadgeVariant} from './variants.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Visual style variant. */

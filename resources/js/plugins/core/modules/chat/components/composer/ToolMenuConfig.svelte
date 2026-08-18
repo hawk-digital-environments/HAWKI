@@ -28,12 +28,8 @@
 
     import type {ToolMenuEntry} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
-    import RadioCardGroup from '$lib/components/ui/radio-card/RadioCardGroup.svelte';
-    import RadioCard from '$lib/components/ui/radio-card/RadioCard.svelte';
+    import {DropdownMenuLabel, DropdownMenuSeparator, InfoPopover, RadioCard, RadioCardGroup} from '@hawk-hhg/hawki-svelte-components';
     import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
-    import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
-    import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 

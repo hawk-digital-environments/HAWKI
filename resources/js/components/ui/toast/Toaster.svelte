@@ -16,10 +16,10 @@
 -->
 <script lang="ts">
     import {backOut, cubicIn} from 'svelte/easing';
-    import {type ToastVariant, useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
-    import CheckmarkCircle01Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle01Icon.svelte';
-    import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
+    import {type ToastVariant, useToastContext} from './ToastContext.svelte.js';
+    import AlertCircleIcon from '../icons/iconset/AlertCircleIcon.svelte';
+    import CheckmarkCircle01Icon from '../icons/iconset/CheckmarkCircle01Icon.svelte';
+    import InformationCircleIcon from '../icons/iconset/InformationCircleIcon.svelte';
 
     const toastContext = useToastContext();
 

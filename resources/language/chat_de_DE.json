@@ -25,12 +25,6 @@
             "fileTooLarge": "Die Datei \":name\" konnte nicht angehängt werden, da sie mit :size die maximale Dateigröße von :maxSize überschreitet.",
             "unsupportedFileType": "Die Datei \":name\" konnte nicht angehängt werden, da der Dateityp \":type\" nicht unterstützt wird."
         },
-        "message": {
-            "sources": "Quellen",
-            "citationReference": {
-                "contextError": "Hier wurde etwas falsch programmiert. Diese Referenz befindet sich nicht in einem CitationContext. Bitte melde diesen Fehler den Entwicklern."
-            }
-        },
         "export": {
             "title": "Exportieren",
             "tooltip": "Wähle eine Option um diese Konversation zu exportieren",

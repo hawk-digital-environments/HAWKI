@@ -2,7 +2,7 @@
     <div class="link-preview-panel">
         <div class="preview-loading">
             <div class="spinner"></div>
-            <span>{{__('Preview_Loading')}}</span>
+            <span>{{__('components.urlPreview.loading')}}</span>
         </div>
         <div class="preview-content" style="display: none;">
             <div class="preview-image-container">
@@ -18,7 +18,7 @@
             </div>
         </div>
         <div class="preview-error" style="display: none;">
-            <span>{{__('Preview_Unavailable')}} 🙁</span>
+            <span>{{__('components.urlPreview.unavailable')}} 🙁</span>
         </div>
     </div>
 </template>

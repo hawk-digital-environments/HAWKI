@@ -25,15 +25,12 @@
 <script lang="ts">
 
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {Breakpoint, ButtonWithTooltip, growTransition, useToastContext} from '@hawk-hhg/hawki-svelte-components';
     import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
-    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
-    import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
-    import ArtificialIntelligence08Icon from '$lib/components/ui/icons/iconset/ArtificialIntelligence08Icon.svelte';
-    import SquareIcon from '$lib/components/ui/icons/iconset/SquareIcon.svelte';
+    import Tick02Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Tick02Icon.svelte';
+    import SentIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/SentIcon.svelte';
+    import ArtificialIntelligence08Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/ArtificialIntelligence08Icon.svelte';
+    import SquareIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/SquareIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const toastContext = useToastContext();

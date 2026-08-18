@@ -9,6 +9,17 @@ import {vitePluginCssLayers} from './.vite/vitePluginCssLayers.js';
 export default defineConfig({
     resolve: {
         alias: [
+            // Prepares the extraction of `resources/js/components` into its own package.
+            // The bare specifier resolves to the barrel file, everything below it (most
+            // notably `ui/icons/iconset/*.svelte`) keeps working as a subpath import.
+            {
+                find: /^@hawk-hhg\/hawki-svelte-components$/,
+                replacement: path.resolve('./resources/js/components/index.ts')
+            },
+            {
+                find: '@hawk-hhg/hawki-svelte-components',
+                replacement: path.resolve('./resources/js/components')
+            },
             {
                 find: '$lib',
                 replacement: path.resolve('./resources/js')

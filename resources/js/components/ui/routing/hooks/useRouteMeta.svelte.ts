@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+import {useRouter} from './useRouter.svelte.js';
 
 export interface UseRouteMetaOptions<TSchema extends z.ZodType> {
     /**

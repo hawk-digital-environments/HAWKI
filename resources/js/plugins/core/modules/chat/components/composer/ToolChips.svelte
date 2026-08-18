@@ -20,8 +20,8 @@
 <script lang="ts">
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
-    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {growTransition} from '@hawk-hhg/hawki-svelte-components';
+    import Cancel01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();

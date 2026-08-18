@@ -20,8 +20,7 @@
   ```
 -->
 <script lang="ts">
-    import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
-    import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
+    import {DropdownMenuLabel, InfoPopover} from '@hawk-hhg/hawki-svelte-components';
     import {useToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 

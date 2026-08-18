@@ -21,8 +21,8 @@
 <script lang="ts">
 
     import type {ComponentProps} from 'svelte';
-    import Button from '$lib/components/ui/button/Button.svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import Button from './Button.svelte';
+    import Tooltip from '../tooltip/Tooltip.svelte';
     import {mergeProps} from 'bits-ui';
 
     type TooltipProps = ComponentProps<typeof Tooltip>;

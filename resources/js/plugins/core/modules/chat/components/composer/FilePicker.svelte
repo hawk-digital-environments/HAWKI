@@ -14,9 +14,8 @@
   ```
 -->
 <script lang="ts">
-    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import AttachmentIcon from '$lib/components/ui/icons/iconset/AttachmentIcon.svelte';
+    import {ButtonWithTooltip, useToastContext} from '@hawk-hhg/hawki-svelte-components';
+    import AttachmentIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/AttachmentIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';

@@ -24,7 +24,7 @@
 <script lang="ts">
 
     import type {Snippet} from 'svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
     const {__} = useTranslator();
 
@@ -36,7 +36,7 @@
     const {children}: Props = $props();
 </script>
 <section class="message-citations">
-    <h3 class="message-citations__heading">{__('chat.message.sources')}</h3>
+    <h3 class="message-citations__heading">{__('components.citationList.sources')}</h3>
     <div class="message-citations__grid">
         {@render children?.()}
     </div>

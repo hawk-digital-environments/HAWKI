@@ -18,10 +18,10 @@
 <script lang="ts">
     import type {SvelteRenderableNode, SvelteRenderContext} from 'markstream-svelte';
     import {RenderChildren} from 'markstream-svelte';
-    import TextLink from '$lib/components/util/link/TextLink.svelte';
-    import UrlPreviewTooltip from '$lib/components/ui/tooltip/UrlPreviewTooltip.svelte';
-    import CitationReference from '$lib/components/ui/citations/CitationReference.svelte';
-    import {CITATION_ANCHOR_PREFIX, citationIdFromAnchorId} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
+    import TextLink from '../../link/TextLink.svelte';
+    import UrlPreviewTooltip from '../../../ui/tooltip/UrlPreviewTooltip.svelte';
+    import CitationReference from '../../../ui/citations/CitationReference.svelte';
+    import {CITATION_ANCHOR_PREFIX, citationIdFromAnchorId} from '../../../ui/citations/anchors.js';
 
     interface Props {
         /** The parsed markdown link node (href, title, children, text). */

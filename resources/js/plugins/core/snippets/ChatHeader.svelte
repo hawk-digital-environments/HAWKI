@@ -16,7 +16,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
 
     import type {ComposerContextType} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {growTransition} from '@hawk-hhg/hawki-svelte-components';
     import type {ComponentProps} from 'svelte';
     import AiConvNameMenu from '$plugins/core/modules/chat/components/nameMenu/AiConvNameMenu.svelte';
     import RoomNameMenu from '$plugins/core/modules/chat/components/nameMenu/RoomNameMenu.svelte';

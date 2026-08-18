@@ -8,7 +8,7 @@ import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchema
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
-import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {RouteRegistrar} from '@hawk-hhg/hawki-svelte-components';
 
 // @todo if configuration extension changes, it could become part of HawkiPluginContext (as it is basically a part of the client).
 

@@ -25,17 +25,13 @@
 -->
 <script lang="ts">
 
-    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
-    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import type {ComponentProps} from 'svelte';
-    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import {ButtonWithTooltip, DropdownMenu, DropdownMenuItem, useToastContext, type IconComponent} from '@hawk-hhg/hawki-svelte-components';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
-    import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
-    import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import ChevronDownIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/ChevronDownIcon.svelte';
+    import PencilEdit01Icon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/PencilEdit01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const toastContext = useToastContext();

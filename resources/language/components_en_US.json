@@ -1,0 +1,63 @@
+{
+    "components": {
+        "dialog": {
+            "closeLabel": "Close",
+            "okLabel": "OK",
+            "cancelLabel": "Cancel"
+        },
+        "sheet": {
+            "menuTitle": "Menu"
+        },
+        "statusDot": {
+            "ariaLabel": "Status indicator",
+            "onlineTooltip": "Online",
+            "offlineTooltip": "Offline",
+            "unknownTooltip": "Unknown"
+        },
+        "dropdownMenu": {
+            "switchItem": {
+                "toggleLabel": "Toggle item"
+            }
+        },
+        "citationList": {
+            "sources": "Sources"
+        },
+        "citationReference": {
+            "contextError": "Something was coded wrong. This reference is not inside a CitationContext. Please report this bug to the developers."
+        },
+        "urlPreview": {
+            "loading": "Loading preview...",
+            "unavailable": "Preview unavailable"
+        },
+        "markdown": {
+            "markstream": {
+                "common": {
+                    "copy": "Copy",
+                    "copied": "Copied",
+                    "decrease": "Decrease",
+                    "reset": "Reset",
+                    "increase": "Increase",
+                    "expand": "Expand",
+                    "collapse": "Collapse",
+                    "preview": "Preview",
+                    "source": "Source",
+                    "export": "Export",
+                    "open": "Open",
+                    "close": "Close",
+                    "zoomIn": "Zoom in",
+                    "zoomOut": "Zoom out",
+                    "resetZoom": "Reset zoom"
+                },
+                "artifacts": {
+                    "htmlPreviewTitle": "HTML Preview",
+                    "svgPreviewTitle": "SVG Preview"
+                },
+                "image": {
+                    "preview": "Preview image",
+                    "loadError": "Image failed to load",
+                    "loading": "Loading image..."
+                }
+            }
+        }
+    }
+}

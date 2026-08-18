@@ -1,7 +1,7 @@
 import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
-import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {RouteRegistrar} from '@hawk-hhg/hawki-svelte-components';
 
 /**
  * Per-plugin registrar factory for the {@link ModuleExtension}.

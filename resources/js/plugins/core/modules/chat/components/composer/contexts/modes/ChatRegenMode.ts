@@ -1,6 +1,6 @@
 import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
 import {type ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+import type {ToastContext} from '@hawk-hhg/hawki-svelte-components';
 import type {DisabledChatFeature} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
 import type {ChatDefaultModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatDefaultMode.js';
 import {AbstractMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/AbstractMode.js';

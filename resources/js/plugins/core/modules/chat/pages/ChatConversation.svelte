@@ -9,7 +9,7 @@
   route renderer, which passes the matched route params as `params`.
 -->
 <script lang="ts">
-    import Link from '$lib/components/util/link/Link.svelte';
+    import {Link} from '@hawk-hhg/hawki-svelte-components';
 
     interface Props {
         /** Matched route params — `id` of the conversation to display. */

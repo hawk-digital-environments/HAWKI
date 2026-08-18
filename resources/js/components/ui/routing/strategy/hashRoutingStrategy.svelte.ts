@@ -10,7 +10,7 @@
  * Without the mirror, `goTo()` would write the hash but no `$state` would
  * change, so the effect wouldn't re-run and navigation would silently no-op.
  */
-import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
+import type {RoutingStrategy} from './types.js';
 
 export function createHashRoutingStrategy(): RoutingStrategy {
     let currentPath = $state(loadHash());

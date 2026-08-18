@@ -15,7 +15,7 @@
  * never carry them.
  */
 import type {Route, RouteContext} from 'universal-router';
-import {normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
+import {normalizePath} from './normalizePath.js';
 
 export interface IsPathActiveOptions {
     /**

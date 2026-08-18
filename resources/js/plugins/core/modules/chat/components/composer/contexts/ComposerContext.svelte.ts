@@ -83,7 +83,7 @@ import {ToolSlice} from '$plugins/core/modules/chat/components/composer/contexts
 import {ModelUsageSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelUsageSlice.svelte.js';
 import {ContextCheckpointer} from '$plugins/core/modules/chat/components/composer/contexts/utils/ContextCheckpointer.js';
 import {ModeSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModeSlice.svelte.js';
-import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+import type {ToastContext} from '@hawk-hhg/hawki-svelte-components';
 import {ChatEditMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
 import {ChatInThreadMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
 import {ChatRegenMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';

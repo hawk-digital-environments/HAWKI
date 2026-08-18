@@ -7,8 +7,8 @@
  * matched route, without the router having to track them during resolution.
  */
 import type {Route} from 'universal-router';
-import {type HawkiRoute, type RouteLayout, type RouteLayoutOrLoader} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import {resolveComponent} from '$lib/components/ui/routing/logistics/lazyComponent.js';
+import {type HawkiRoute, type RouteLayout, type RouteLayoutOrLoader} from './RouteRegistrar.js';
+import {resolveComponent} from './lazyComponent.js';
 
 /**
  * Collects the layouts along the matched route's `parent` chain, ordered

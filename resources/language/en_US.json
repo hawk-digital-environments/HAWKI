@@ -181,7 +181,5 @@
     "Default": "Default",
     "TT_Temp": "Controls the creativity of the AI's responses. Higher values (e.g., 0.8) make output more diverse and inventive; lower values (e.g., 0.2) make responses more focused and predictable.",
     "TT_Top_P": "Limits the AI’s choices to the most probable words whose total probability does not exceed this value. Lower Top_P (e.g., 0.7) results in more conservative responses; higher values (e.g., 0.9) allow for greater variety.",
-    "MissingToolMsg": "This message was generated with an obsolete tool: ",
-    "Preview_Loading": "Loading preview...",
-    "Preview_Unavailable": "Preview unavailable"
+    "MissingToolMsg": "This message was generated with an obsolete tool: "
 }

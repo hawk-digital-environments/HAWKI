@@ -19,9 +19,9 @@
   ```
 -->
 <script lang="ts">
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import Tooltip from '../tooltip/Tooltip.svelte';
     import type {Snippet} from 'svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
     interface Props {
         /** Visual size of the dot. `sm` = 8 px, `md` = 10 px. Defaults to `'sm'`. */
@@ -50,9 +50,9 @@
         labelOnline,
         labelOffline,
         labelUnknown,
-        tooltipOnline = __('ui.statusDot.onlineTooltip'),
-        tooltipOffline = __('ui.statusDot.offlineTooltip'),
-        tooltipUnknown = __('ui.statusDot.unknownTooltip')
+        tooltipOnline = __('components.statusDot.onlineTooltip'),
+        tooltipOffline = __('components.statusDot.offlineTooltip'),
+        tooltipUnknown = __('components.statusDot.unknownTooltip')
     }: Props = $props();
 
     const label = $derived.by(() => {
@@ -73,7 +73,7 @@
         <div class="status-dot-wrapper status-dot-wrapper--{status}">
             <span
                 class="status-dot status-dot--{size}"
-                aria-label={label || __('ui.statusDot.ariaLabel')}
+                aria-label={label || __('components.statusDot.ariaLabel')}
                 {...props}
             ></span>
             {#if showLabel}

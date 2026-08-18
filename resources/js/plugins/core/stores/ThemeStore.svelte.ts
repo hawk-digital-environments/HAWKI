@@ -1,6 +1,14 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
+import type {ColorScheme} from '@hawk-hhg/hawki-svelte-components';
 
-export type AppTheme = 'dark' | 'light';
+/**
+ * App-side alias of the package's `ColorScheme` union
+ * (`@hawk-hhg/hawki-svelte-components`). Kept so existing app code can keep
+ * importing `AppTheme` without a project-wide rename; the package itself
+ * owns the canonical `'light' | 'dark'` union and never imports this alias
+ * back (see `ui/border-beam/types.ts`, `lib/color-scheme/ColorSchemeContext.ts`).
+ */
+export type AppTheme = ColorScheme;
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiDataStores {

@@ -39,7 +39,7 @@
     import Switch from '../switch/Switch.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
     const {__} = useTranslator();
 
@@ -76,7 +76,7 @@
         class: className,
         closeOnSelect = true,
         toggleOnIndicatorOnly = false,
-        switchLabel = __('ui.dropdownMenu.switchItem.toggleLabel'),
+        switchLabel = __('components.dropdownMenu.switchItem.toggleLabel'),
         rowClickable = false,
         ...restProps
     }: Props = $props();

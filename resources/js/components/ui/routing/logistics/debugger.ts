@@ -3,12 +3,12 @@
  * Dev-only tool, reached through `RouterHandle.debug()`, which imports this
  * module dynamically so it never lands in the production bundle.
  */
-import type {Router} from '$lib/components/ui/routing/logistics/router.svelte.js';
+import type {Router} from './router.svelte.js';
 import type {default as UniversalRouter, Route} from 'universal-router';
 import type {Path} from 'universal-router/path-to-regexp';
-import {mergePaths} from '$lib/components/ui/routing/logistics/normalizePath.js';
-import type {HawkiRoute, RouteLayout, RouteLayoutOrLoader, RouteMeta} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import {isLazyComponentLoader} from '$lib/components/ui/routing/logistics/lazyComponent.js';
+import {mergePaths} from './normalizePath.js';
+import type {HawkiRoute, RouteLayout, RouteLayoutOrLoader, RouteMeta} from './RouteRegistrar.js';
+import {isLazyComponentLoader} from './lazyComponent.js';
 
 export interface RouterDump {
     name: string;

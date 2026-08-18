@@ -27,9 +27,9 @@
 <script lang="ts">
     import {mergeProps, Tooltip as TooltipPrimitive, type TooltipContentProps} from 'bits-ui';
     import type {Snippet} from 'svelte';
-    import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
+    import SnippetOrString from '../../util/snippetOrString/SnippetOrString.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
-    import SnippetOrStringTrigger from '$lib/components/util/snippetOrString/SnippetOrStringTrigger.svelte';
+    import SnippetOrStringTrigger from '../../util/snippetOrString/SnippetOrStringTrigger.svelte';
 
     type Props = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & Partial<{
         /** Delay in milliseconds before the tooltip is shown after hovering over the trigger. Default is 200ms. */

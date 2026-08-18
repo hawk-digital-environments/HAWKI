@@ -14,7 +14,7 @@
 <script lang="ts">
 
     import type {AiToolOrCapability} from '$plugins/core/stores/aiToolStoreData.js';
-    import ToolboxIcon from '$lib/components/ui/icons/iconset/ToolboxIcon.svelte';
+    import ToolboxIcon from '@hawk-hhg/hawki-svelte-components/ui/icons/iconset/ToolboxIcon.svelte';
 
     interface Props {
         tool: AiToolOrCapability;

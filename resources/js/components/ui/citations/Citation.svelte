@@ -25,10 +25,10 @@
   ```
 -->
 <script lang="ts">
-    import type {EnrichedUrlCitation} from '$lib/components/ui/citations/types.js';
-    import Link from '$lib/components/util/link/Link.svelte';
-    import UrlPreviewTooltip from '$lib/components/ui/tooltip/UrlPreviewTooltip.svelte';
-    import {useCitationContext} from '$lib/components/ui/citations/CitationContext.js';
+    import type {EnrichedUrlCitation} from './types.js';
+    import Link from '../../util/link/Link.svelte';
+    import UrlPreviewTooltip from '../tooltip/UrlPreviewTooltip.svelte';
+    import {useCitationContext} from './CitationContext.js';
     import {onMount} from 'svelte';
 
     const citationContext = useCitationContext();

@@ -13,10 +13,9 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
-    import {useLinkPreviewApi} from '$lib/app/hooks/useApi.js';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import Tooltip from './Tooltip.svelte';
+    import {useLinkServices} from '../../lib/link/LinkServicesContext.js';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
     interface Props {
         /** The URL to fetch and display the preview for. */
@@ -29,16 +28,24 @@
     }
 
     const {url, children: trigger}: Props = $props();
-    const api = useLinkPreviewApi();
+    const linkServices = useLinkServices();
     const {__} = useTranslator();
-
-    const app = useApp();
 
     let disabled = $state<boolean>(false);
 
+    /**
+     * When the host hasn't injected `fetchPreview`, disable the tooltip
+     * entirely rather than opening to a permanent "unavailable" state — this
+     * is the standalone default (no preview service configured).
+     */
+    const canFetchPreview = !!linkServices.fetchPreview;
+
     async function extendedFetchLinkPreviewMetadata(url: string) {
+        if (!linkServices.fetchPreview) {
+            throw new Error('No fetchPreview service configured.');
+        }
         try {
-            return await api.getLinkPreviewMetadata(url);
+            return await linkServices.fetchPreview(url);
         } catch (error) {
             // Don't let the tooltip open again if the fetch failed, to avoid repeated failed requests.
             disabled = true;
@@ -53,7 +60,7 @@
         {#await extendedFetchLinkPreviewMetadata(url)}
             <div class="url-preview__loading">
                 <span class="url-preview__spinner" aria-hidden="true"></span>
-                <span>{__('Preview_Loading')}</span>
+                <span>{__('components.urlPreview.loading')}</span>
             </div>
         {:then metadata}
             <div class="url-preview__content">
@@ -79,14 +86,14 @@
             </div>
         {:catch}
             <div class="url-preview__error">
-                <span>{__('Preview_Unavailable')}</span>
+                <span>{__('components.urlPreview.unavailable')}</span>
                 <span class="url-preview__domain">{url}</span>
             </div>
         {/await}
     </div>
 {/snippet}
 
-<Tooltip {disabled} tooltip={tooltipBody} class="url-preview-tooltip" delayDuration={500}>
+<Tooltip disabled={disabled || !canFetchPreview} tooltip={tooltipBody} class="url-preview-tooltip" delayDuration={500}>
     {#snippet children(args)}
         {@render trigger?.(args)}
     {/snippet}

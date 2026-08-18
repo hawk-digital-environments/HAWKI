@@ -11,7 +11,7 @@
  *
  * HOW TO USE — from any component or plain `.ts` module:
  * ```ts
- * import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+ * import {useToastContext} from '@hawk-hhg/hawki-svelte-components';
  *
  * const toastContext = useToastContext();
  * toastContext.error('Datei konnte nicht angehängt werden.');

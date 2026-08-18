@@ -4,7 +4,7 @@
  * serve the app shell for every path under `basePath`, since a hard
  * reload/deep link hits the server directly rather than the client router.
  */
-import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
+import type {RoutingStrategy} from './types.js';
 
 export function createPathRoutingStrategy(): RoutingStrategy {
     let currentPath = $state(loadPath());

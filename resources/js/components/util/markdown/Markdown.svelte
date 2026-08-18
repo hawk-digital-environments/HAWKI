@@ -27,14 +27,14 @@
     import katexWorkerUrl from 'markstream-svelte/workers/katexRenderer.worker?worker&url';
     import mermaidWorkerUrl from 'markstream-svelte/workers/mermaidParser.worker?worker&url';
     import {MarkdownRender, setDefaultI18nMap, setKaTeXWorker, setMermaidWorker} from 'markstream-svelte';
-    import ExtendedLinkNode from '$lib/components/util/markdown/extension/ExtendedLinkNode.svelte';
+    import ExtendedLinkNode from './extension/ExtendedLinkNode.svelte';
     import 'katex/dist/katex.min.css';
     import 'monaco-editor/min/vs/editor/editor.main.css';
     import 'markstream-svelte/index.css';
-    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useColorScheme} from '../../lib/color-scheme/ColorSchemeContext.js';
+    import {useTranslator} from '../../lib/i18n/TranslatorContext.js';
 
-    const themeStore = useStore('theme');
+    const colorSchemeContext = useColorScheme();
     const {getTranslationsFlat} = useTranslator();
 
     interface Props {
@@ -70,12 +70,12 @@
 
     setKaTeXWorker(loadWorker(katexWorkerUrl));
     setMermaidWorker(loadWorker(mermaidWorkerUrl));
-    setDefaultI18nMap(getTranslationsFlat('markdown.markstream'));
+    setDefaultI18nMap(getTranslationsFlat('components.markdown.markstream'));
 </script>
 
 <MarkdownRender
     content={message}
-    isDark={themeStore.theme === 'dark'}
+    isDark={colorSchemeContext.colorScheme === 'dark'}
     final={!!isStreaming}
     showTooltips={false}
     customComponents={{link: ExtendedLinkNode}}

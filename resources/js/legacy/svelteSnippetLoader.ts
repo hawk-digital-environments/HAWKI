@@ -78,6 +78,7 @@
 
 import {mount, unmount} from 'svelte';
 import {getHawkiApp} from '$lib/legacy/legacy.js';
+import SnippetServicesProvider from '$lib/legacy/SnippetServicesProvider.svelte';
 
 /**
  * @deprecated Will be removed as soon as all the old js has been refactored
@@ -182,9 +183,16 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
         }
 
         this.innerHTML = ''; // Clear any leftover content from the previous mount
-        this._app = mount(component, {
+        // Mounted through SnippetServicesProvider (not `component` directly) so
+        // this independent root also gets the package services normally
+        // provided by Shell.svelte's context — see that component's doc block.
+        this._app = mount(SnippetServicesProvider, {
             target: this,
-            props: this._getProps()
+            props: {
+                app,
+                component,
+                componentProps: this._getProps()
+            }
         });
     }
 

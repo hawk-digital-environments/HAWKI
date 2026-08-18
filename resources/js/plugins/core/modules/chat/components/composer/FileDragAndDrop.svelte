@@ -28,7 +28,7 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
-    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import {useToastContext} from '@hawk-hhg/hawki-svelte-components';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';

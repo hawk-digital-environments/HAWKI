@@ -46,15 +46,15 @@
  * layout from.
  */
 import UniversalRouter, {type Route, type RouteContext, type RouteError, type RouteParams} from 'universal-router';
-import {type HawkiRoute, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import {collectRouteLayouts, resolveRouteLayouts} from '$lib/components/ui/routing/logistics/layouts.js';
-import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
+import {type HawkiRoute, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from './RouteRegistrar.js';
+import {collectRouteLayouts, resolveRouteLayouts} from './layouts.js';
+import type {RoutingStrategy} from '../strategy/types.js';
 import {z} from 'zod';
-import {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
-import {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
-import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.svelte.js';
-import {mergePaths, normalizeBasePath, normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
-import {isPathActive, type IsPathActiveOptions, isRouteActive} from '$lib/components/ui/routing/logistics/isActive.js';
+import {createTransientRoutingStrategy} from '../strategy/transientRoutingStrategy.svelte.js';
+import {createPathRoutingStrategy} from '../strategy/pathRoutingStrategy.svelte.js';
+import {createHashRoutingStrategy} from '../strategy/hashRoutingStrategy.svelte.js';
+import {mergePaths, normalizeBasePath, normalizePath} from './normalizePath.js';
+import {isPathActive, type IsPathActiveOptions, isRouteActive} from './isActive.js';
 import generateUrls, {type UrlParams} from 'universal-router/generateUrls';
 
 export interface IsActiveOptions extends Omit<IsPathActiveOptions, 'rootPath'> {

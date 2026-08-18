@@ -26,7 +26,7 @@ export const breakpointsQueries = {
     bpXl: '(min-width: 1200px)',
 } as const;
 
-export type Breakpoint = keyof typeof breakpointsQueries;
+export type BreakpointName = keyof typeof breakpointsQueries;
 
 export interface BreakpointExactProps {
     bpXxs?: Snippet;
