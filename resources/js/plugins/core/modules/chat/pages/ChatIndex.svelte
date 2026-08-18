@@ -44,6 +44,10 @@ from the store's in-flight cache.
     let scrollRegion = $state<HTMLDivElement | null>(null);
     let composerDockHeight = $state(0);
 
+    // No messages yet: welcome text and composer are centred as one block
+    // instead of the composer docking to the bottom of the scroll region.
+    const isEmpty = $derived(!pendingMessage);
+
     // Opening this page always starts from a blank chat, also when coming
     // from an open conversation.
     $effect(() => {
@@ -57,9 +61,7 @@ from the store's in-flight cache.
 </script>
 
 <section class="chat-page" style:--composer-dock-height="{composerDockHeight}px">
-    <header class="new-header"><span>{__('chat.page.newChat')}</span></header>
-
-    <div class="chat-body">
+    <div class="chat-body" class:empty={isEmpty}>
         <div class="scroll-region" bind:this={scrollRegion}>
             {#if pendingMessage}
                 <div class="messages" role="log" aria-live="polite" aria-label={__('chat.page.messageHistory')}>
@@ -93,7 +95,7 @@ from the store's in-flight cache.
 <style>
     .chat-page {
         display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
         height: 100%;
         min-height: 0;
         background: var(--color-surface-raised);
@@ -105,15 +107,25 @@ from the store's in-flight cache.
         min-height: 0;
     }
 
-    .new-header {
+    /* Empty chat: the scroll region shrinks to its content so the welcome
+       block and the composer sit together in the middle of the panel. */
+    .chat-body.empty {
         display: flex;
-        min-height: 3.75rem;
-        align-items: center;
-        padding: var(--space-2) var(--space-5);
-        border-bottom: var(--divider);
-        font-size: var(--font-size-base);
-        font-weight: var(--font-weight-semibold);
+        flex-direction: column;
+        justify-content: center;
+        overflow-y: auto;
     }
+
+    .empty .scroll-region { height: auto; flex: 0 0 auto; overflow: visible; }
+
+    .empty :global(.welcome) {
+        height: auto;
+        min-height: 0;
+        padding-bottom: var(--space-6);
+    }
+
+    .empty :global(.composer-dock) { position: static; padding-bottom: 0; }
+    .empty :global(.composer-dock::before) { display: none; }
 
     .scroll-region { height: 100%; overflow-y: auto; }
 
@@ -145,22 +157,12 @@ from the store's in-flight cache.
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (--bp-md-and-smaller) {
-        .new-header {
-            padding-right: var(--space-3);
-            padding-left: calc(var(--space-3) + 2.75rem);
-        }
-    }
-
     @media (max-width: 640px) {
-        .new-header {
-            padding-inline: var(--space-3);
-            padding-left: calc(var(--space-3) + 2.75rem);
-        }
+        .messages { padding-inline: var(--space-3); padding-top: var(--space-5); }
     }
 
     @media print {
-        :global(.app-sidebar), .new-header { display: none !important; }
+        :global(.app-sidebar), :global(.composer-dock) { display: none !important; }
         .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
     }
 </style>
