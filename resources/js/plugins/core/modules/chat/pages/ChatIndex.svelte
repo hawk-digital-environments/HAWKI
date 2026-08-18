@@ -401,7 +401,7 @@
         color: var(--color-active-text);
     }
 
-    h1 { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); }
+    h1 { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
     .welcome p, .state p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }
     .state { gap: var(--space-3); }
     .error p { color: var(--color-error); }
