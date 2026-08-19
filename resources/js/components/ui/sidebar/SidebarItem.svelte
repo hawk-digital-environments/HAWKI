@@ -127,11 +127,11 @@
         <span class="label">{label}</span>
         {#if hasChildren}
             <span class="caret" class:open={expanded} aria-hidden="true">
-                <ChevronRightIcon size={15} strokeWidth={2} />
+                <ChevronRightIcon size={16} strokeWidth={2} />
             </span>
         {:else if drill}
             <span class="caret" aria-hidden="true">
-                <ChevronRightIcon size={15} strokeWidth={2} />
+                <ChevronRightIcon size={16} strokeWidth={2} />
             </span>
         {:else if trailing}
             <span class="caret trailing" aria-hidden="true">
