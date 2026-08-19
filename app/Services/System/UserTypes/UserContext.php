@@ -1,13 +1,15 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\System\UserTypes;
 
+use App\Models\User;
 use App\Services\System\UserTypes\Contracts\WellKnownUserTypes;
 use App\Services\System\UserTypes\Events\UserTypeChangedEvent;
 use App\Services\System\UserTypes\Values\RegisteringUser;
 use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Contracts\Auth\Factory;
 
 /**
  * Singleton that tracks which type of user is currently making the request.
@@ -39,6 +41,9 @@ use Illuminate\Container\Attributes\Singleton;
  *             $registering = $this->userContext->getRegisteringUser();
  *             // $registering->username, ->name, ->email, ->employeeType
  *         }
+ *
+ *         // Or, to get whichever identity shape currently applies:
+ *         $caller = $this->userContext->getUser(); // RegisteringUser|User|null
  *     }
  * }
  * ```
@@ -46,11 +51,15 @@ use Illuminate\Container\Attributes\Singleton;
  * @see WellKnownUserTypes    Built-in user type identifier constants.
  * @see Events\UserTypeChangedEvent  Event dispatched after every successful {@see set()} call.
  */
-#[Singleton]
+#[Singleton()]
 class UserContext
 {
     private string $userType = WellKnownUserTypes::GUEST;
-    private RegisteringUser|null $registeringUser = null;
+    private ?RegisteringUser $registeringUser = null;
+
+    public function __construct(private readonly Factory $auth)
+    {
+    }
 
     // -------------------------------------------------------
     // Well known user types
@@ -61,7 +70,7 @@ class UserContext
      */
     public function isGuest(): bool
     {
-        return $this->userType === WellKnownUserTypes::GUEST;
+        return WellKnownUserTypes::GUEST === $this->userType;
     }
 
     /**
@@ -71,7 +80,7 @@ class UserContext
      */
     public function isRegisteringUser(): bool
     {
-        return $this->userType === WellKnownUserTypes::REGISTERING_USER;
+        return WellKnownUserTypes::REGISTERING_USER === $this->userType;
     }
 
     /**
@@ -79,7 +88,7 @@ class UserContext
      */
     public function isUser(): bool
     {
-        return $this->userType === WellKnownUserTypes::USER;
+        return WellKnownUserTypes::USER === $this->userType;
     }
 
     /**
@@ -88,7 +97,7 @@ class UserContext
      */
     public function isExternalApp(): bool
     {
-        return $this->userType === WellKnownUserTypes::EXTERNAL_APP;
+        return WellKnownUserTypes::EXTERNAL_APP === $this->userType;
     }
 
     /**
@@ -97,7 +106,7 @@ class UserContext
      */
     public function isCli(): bool
     {
-        return $this->isGuest() && strtolower(PHP_SAPI) === 'cli';
+        return $this->isGuest() && mb_strtolower(\PHP_SAPI) === 'cli';
     }
 
     // -------------------------------------------------------
@@ -145,7 +154,7 @@ class UserContext
      * Returns the partial registration data for the current user, or null when the user
      * is not in the {@see WellKnownUserTypes::REGISTERING_USER} state.
      */
-    public function getRegisteringUser(): RegisteringUser|null
+    public function getRegisteringUser(): ?RegisteringUser
     {
         return $this->registeringUser;
     }
@@ -157,9 +166,39 @@ class UserContext
      * {@see WellKnownUserTypes::REGISTERING_USER}; passing null resets it to
      * {@see WellKnownUserTypes::GUEST}.
      */
-    public function setRegisteringUser(RegisteringUser|null $registeringUser): void
+    public function setRegisteringUser(?RegisteringUser $registeringUser): void
     {
         $this->registeringUser = $registeringUser;
         $this->set($registeringUser ? WellKnownUserTypes::REGISTERING_USER : WellKnownUserTypes::GUEST);
+    }
+
+    // -------------------------------------------------------
+    // Authenticated user
+    // -------------------------------------------------------
+
+    /**
+     * Returns the fully authenticated {@see User} model for the current request, resolved
+     * through the Laravel auth guard, or null when no user is authenticated.
+     *
+     * This is the equivalent of {@see getRegisteringUser()} for the {@see WellKnownUserTypes::USER}
+     * state: a plain getter over the current authentication state, independent of the active
+     * user type.
+     */
+    public function getAuthenticatedUser(): ?User
+    {
+        $user = $this->auth->guard()->user();
+
+        return $user instanceof User ? $user : null;
+    }
+
+    /**
+     * Returns the caller's identity, whichever shape currently applies: the partial
+     * {@see RegisteringUser} data while mid-registration, the fully authenticated {@see User}
+     * model once resolved through the guard, or null when neither is available (e.g. a guest
+     * or an external app before the real user is resolved).
+     */
+    public function getUser(): null|RegisteringUser|User
+    {
+        return $this->getRegisteringUser() ?? $this->getAuthenticatedUser();
     }
 }

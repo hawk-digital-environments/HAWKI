@@ -28,6 +28,7 @@
 - Plugin routes are now automatically namespaced under `/plugins/<slug>` (core plugin routes remain unprefixed at the root), matching the existing module route namespacing (`getPluginRoutePrefix` in `routeInflection.ts`).
 - Added a `canHandlePath()` hook to the `RoutingStrategy` interface (default: paths starting with `/`) so strategies can distinguish routable paths from local hrefs such as hash anchors or query-only links; `RouterHandle` and `Link.svelte` use it to decide whether to intercept a click or let the browser handle it.
 - `RoutingExtension`'s public `app.router` is now typed as `RouterHandle` instead of the raw `universal-router` instance, removing an internal-only escape hatch from the public API. An `app.__router` field (marked `@internal`) still exposes the full router for `Shell.svelte`'s bootstrap.
+- `UserContext` now injects the Laravel auth `Factory` and gained `getAuthenticatedUser()` (returns the resolved `User` model or `null`) and `getUser()` (returns whichever identity shape currently applies: `RegisteringUser`, `User`, or `null`), complementing the existing `getRegisteringUser()`.
 
 ### Deprecation
 
