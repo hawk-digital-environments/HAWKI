@@ -63,7 +63,7 @@
 import UniversalRouter, {type Route, type RouteError, type RouteParams} from 'universal-router';
 import {type RouteComponent, type RouteLayout, type RouteLayoutLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {resolveComponentModule} from '$lib/components/ui/routing/logistics/lazyComponent.js';
-import type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
+import type {RouteContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
 import {createRouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
 import type {AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
 import {RouteHttpError, RouteRedirect, RouteResolutionError} from '$lib/components/ui/routing/logistics/signals.js';
@@ -274,14 +274,17 @@ export interface CreateRouterOptions {
      */
     dataCacheSize?: number;
     /**
-     * Concrete values for {@link RouteDataLoaderContextExtensions} — the
-     * app-level services (`app`, `restApi`, ...) every loader's context is
-     * merged with. `RoutingExtension.ready()` fills this in with `{app,
-     * restApi: app.restApi}` when it builds `app.router`; a standalone or
-     * transient router may omit it if none of its loaders need those
-     * services.
+     * Concrete values for {@link RouteContextExtensions} — the app-level
+     * services (`app`, `restApi`, ...) merged into every context this router
+     * produces: middlewares, route actions and `loadData` alike. Handed
+     * straight to `UniversalRouter`'s own `context` option, which is what makes
+     * it reach middlewares rather than loaders only.
+     *
+     * `RoutingExtension.ready()` fills this in with `{app, restApi:
+     * app.restApi}` when it builds `app.router`; a standalone or transient
+     * router may omit it if none of its route code needs those services.
      */
-    loaderContext?: RouteDataLoaderContextExtensions;
+    context?: RouteContextExtensions;
 }
 
 /**
@@ -331,6 +334,11 @@ export function createRouterFromRegistrar(
         ),
         new UniversalRouter(registrar.build(), {
             baseUrl: basePath,
+            // Merged into every context `universal-router` builds, so a
+            // middleware reaches `context.app` exactly like a loader reaches
+            // `ctx.app` — without this, a guard would be the one place in the
+            // routing system with no way to ask the application anything.
+            context: options?.context ?? {},
             // `universal-router` calls this for ANY throw from a route/middleware
             // action, including a `RouteRedirect`/`RouteHttpError` raised via
             // `redirect()`/`routeError()` inside a middleware — wrapping those in

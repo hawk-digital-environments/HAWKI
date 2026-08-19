@@ -64,7 +64,7 @@ export async function resolveRoute(
         // the single source of truth for cancellation, and `nodeTree` reads it
         // back off this object rather than being handed it separately.
         const loaderContext = {
-            ...(state.options?.loaderContext ?? {}),
+            ...(state.options?.context ?? {}),
             router: getHandle(),
             route: context.route,
             params,

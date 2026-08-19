@@ -13,7 +13,7 @@ declare module '$lib/kernel/extendableTypes.js' {
 // does not need to know about our app or restApi (which comes in handy,
 // when we externalize the components into their own package).
 declare module '$lib/components/ui/routing/extendableTypes.js' {
-    interface RouteDataLoaderContextExtensions {
+    interface RouteContextExtensions {
         app: HawkiApp;
         restApi: RestApi;
     }
@@ -103,10 +103,10 @@ export class RoutingExtension implements HawkiAppExtension {
                 basePath: '/new',
                 strategy: 'path',
                 // Supplies the `app`/`restApi` properties the `declare module`
-                // block above adds to `RouteDataLoaderContextExtensions`, so
-                // every `loadData` resolved by this router sees them on its
-                // context.
-                loaderContext: {app, restApi: app.restApi}
+                // block above adds to `RouteContextExtensions`, so every
+                // middleware, route action and `loadData` resolved by this
+                // router sees them on its context.
+                context: {app, restApi: app.restApi}
             });
         });
     }

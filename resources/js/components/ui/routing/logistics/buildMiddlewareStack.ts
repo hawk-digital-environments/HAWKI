@@ -27,7 +27,7 @@
  * the signal is caught and turned into a new resolution.
  */
 import {type Route} from 'universal-router';
-import type {RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {HawkiRouteContext, RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 /** A group registration reduced to the parts relevant for the middleware stack (its `children` callback has already been compiled by then). */
 type GroupMiddlewareStackOptions = Omit<RegisteredRouteGroupOptions, 'children'>;
@@ -65,7 +65,15 @@ function createMiddlewareRoute(
         path: '',
         action: async (context) => {
             const next = () => context.next() as Promise<RouteResultBody | undefined>;
-            return (await middleware(context, next)) ?? null;
+            // `universal-router` types an action's context as its own bare
+            // `RouteContext`; the extensions are on it at runtime because
+            // `router.ts` passes them as `UniversalRouter`'s `context` option
+            // and `resolve()` spreads that into every matched route's context.
+            // The cast is the one place that knowledge is asserted — a router
+            // created without `options.context` genuinely hands middlewares a
+            // context missing them, which is why `RouteContextExtensions`'
+            // doc comment pairs the augmentation with supplying the values.
+            return (await middleware(context as HawkiRouteContext, next)) ?? null;
         },
         children,
         isMiddleware: true

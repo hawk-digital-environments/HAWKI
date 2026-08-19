@@ -5,6 +5,7 @@ import type {Component} from 'svelte';
 import type {RouteNode, RouteNodeKind} from '$lib/components/ui/routing/logistics/nodes.js';
 import type {AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
 import type {RouteLayoutProps, RouteProps} from '$lib/components/ui/routing/logistics/routeProps.js';
+import type {RouteContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
 
 /** Signature of a callback that receives a {@link RouteRegistrar} to register routes on — used for plugin/module `routes()` hooks and for `registrar.group()` children. */
 export type RouteRegistrationCallback = (registrar: RouteRegistrar) => void;
@@ -74,11 +75,30 @@ export interface HawkiRoute<R = any> extends Route<R> {
      */
     nodes?: { layout?: RouteNode; page?: RouteNode };
 }
+
+/**
+ * `universal-router`'s {@link RouteContext} plus whatever the application
+ * merged into every context through
+ * {@link import('./router.js').CreateRouterOptions.context} — the same
+ * `{@link RouteContextExtensions}` a loader sees, because the router hands that
+ * object straight to `UniversalRouter`'s own `context` option.
+ *
+ * Naming the intersection matters: `RouteContext` carries
+ * `[propName: string]: any`, so *any* property access on a bare one compiles.
+ * Only the intersection turns `context.app` into a typed `HawkiApp` and a
+ * misspelling into a compile error — TypeScript prefers a declared property
+ * over an index signature, so the extensions win the lookup rather than being
+ * widened back to `any` by it.
+ */
+export type HawkiRouteContext<R = any> = RouteContext<R> & RouteContextExtensions;
+
 /**
  * Guard that runs *before* the route (or route group) it is attached to.
  *
  * Modeled on a classic PHP-style middleware stack: the callable receives the
- * route context and a `next` callback that resumes the guarded route. Only
+ * route context — a {@link HawkiRouteContext}, so app-level services such as
+ * `context.app` / `context.restApi` are reachable from a guard, same as from a
+ * loader — and a `next` callback that resumes the guarded route. Only
  * the three return shapes below are meaningful — HAWKI does not expose
  * `universal-router`'s raw `null` vs. `undefined` action distinction to
  * middleware authors; the wrapper in {@link buildMiddlewareStack} normalises
@@ -103,7 +123,7 @@ export interface HawkiRoute<R = any> extends Route<R> {
  *   leaves the URL pointing at a page the user isn't actually on.
  */
 export type RouteMiddleware = (
-    context: RouteContext,
+    context: HawkiRouteContext,
     next: () => Promise<RouteResultBody | undefined>
 ) => Promise<RouteResultBody | undefined>;
 
@@ -120,7 +140,7 @@ export type RouteMiddleware = (
  */
 export interface RouteResultBody {
     component: RouteComponentOrLoader;
-    context: RouteContext;
+    context: HawkiRouteContext;
     params: RouteParams;
 }
 

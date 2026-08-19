@@ -46,6 +46,7 @@ export {useRouter, useRouterScope, type RouterScope} from '$lib/components/ui/ro
 export {
     RouteRegistrar,
     type HawkiRoute,
+    type HawkiRouteContext,
     type RouteComponent,
     type RouteComponentLoader,
     type RouteComponentOrLoader,
@@ -87,7 +88,7 @@ export type {
     RouteParamsSchema
 } from '$lib/components/ui/routing/logistics/dataLoader.js';
 
-export type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
+export type {RouteContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
 
 // =========================================================================
 // Resolution signals
@@ -95,9 +96,12 @@ export type {RouteDataLoaderContextExtensions} from '$lib/components/ui/routing/
 /**
  * `redirect()` and `routeError()` are how a middleware aborts a resolution —
  * a `loadData` reaches the same two through `ctx.redirect`/`ctx.error`, but a
- * middleware only receives `universal-router`'s `RouteContext`, which carries
- * neither. The error classes are exported for a custom `errorComponent` that
- * wants to tell an HTTP-status failure apart from a crash.
+ * middleware's `HawkiRouteContext` carries neither, because those two are the
+ * one part of a loader context that is router-*specific* (a redirect resolves
+ * its target through the owning router's `getPath()`) rather than merged in
+ * from the outside. The error classes are exported for a custom
+ * `errorComponent` that wants to tell an HTTP-status failure apart from a
+ * crash.
  */
 export {
     redirect,

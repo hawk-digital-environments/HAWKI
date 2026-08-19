@@ -16,17 +16,19 @@
  */
 
 /**
- * Extra properties every `loadData` finds on its context, on top of the
- * routing-owned ones {@link import('./logistics/dataLoader.js').RouteDataLoaderContext}
- * declares itself.
+ * Extra properties merged into *every* route context this router produces — a
+ * middleware's {@link import('./logistics/RouteRegistrar.js').HawkiRouteContext},
+ * a route action's, and a
+ * {@link import('./logistics/dataLoader.js').RouteDataLoaderContext} — on top
+ * of the routing-owned properties each declares itself.
  *
- * This exists so the routing package can hand loaders application-level
- * services without importing the application — the `components/ui` → `kernel`
- * direction is deliberately not a dependency. HAWKI's kernel augments it in
- * `$lib/kernel/routing/RoutingExtension.js`:
+ * This exists so the routing package can hand application-level services to
+ * route code without importing the application — the `components/ui` →
+ * `kernel` direction is deliberately not a dependency. HAWKI's kernel augments
+ * it in `$lib/kernel/routing/RoutingExtension.js`:
  * ```ts
  * declare module '$lib/components/ui/routing/extendableTypes.js' {
- *     interface RouteDataLoaderContextExtensions {
+ *     interface RouteContextExtensions {
  *         app: HawkiApp;
  *         restApi: RestApi;
  *     }
@@ -35,13 +37,19 @@
  *
  * Augmenting only makes the properties *visible*; the concrete values are
  * supplied per-router through
- * {@link import('./logistics/router.js').CreateRouterOptions.loaderContext},
- * so a router created without them would type-check but hand loaders a context
- * missing what they were promised. The two belong together.
+ * {@link import('./logistics/router.js').CreateRouterOptions.context}, so a
+ * router created without them would type-check but hand route code a context
+ * missing what it was promised. The two belong together.
+ *
+ * Do not add a property named `router`, `route`, `params`, `path`, `baseUrl`,
+ * `pathname` or `next`: those are `universal-router`'s own context fields, and
+ * it spreads this object *over* them (`universal-router.js`'s `resolve()`), so
+ * one of the two would silently disappear.
  *
  * Note that `RouteCacheKeyContext` deliberately does *not* extend this — see
- * its doc comment for why a cache key must be computable without app services.
+ * its doc comment for why a cache key should be computable without app
+ * services.
  */
-export interface RouteDataLoaderContextExtensions {
+export interface RouteContextExtensions {
     // Populated by the consuming application via declaration merging (see above).
 }
