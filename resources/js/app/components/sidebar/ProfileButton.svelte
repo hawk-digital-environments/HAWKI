@@ -66,7 +66,7 @@
                 <Avatar src={avatarUrl} name={userName} size={22}/>
             {/snippet}
             {#snippet trailing()}
-                <Settings03Icon size={15} strokeWidth={2}/>
+                <Settings03Icon size={16} strokeWidth={2}/>
             {/snippet}
         </SidebarItem>
     {/snippet}
