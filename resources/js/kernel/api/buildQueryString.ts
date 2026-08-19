@@ -37,6 +37,15 @@ export interface FetchCollectionQuery extends FetchQuery {
 export interface FetchResourceQuery extends FetchQuery {
 }
 
+/**
+ * Serializes a {@link FetchCollectionQuery}/{@link FetchResourceQuery} into a
+ * JSON:API query string (leading `?`, or `''` for an empty/undefined query).
+ *
+ * Nested objects (`filter`, `fields`, `page`) are encoded as bracket notation
+ * (`filter[name]=x`); arrays are comma-joined. A `sort` object
+ * (`{name: 'asc', date: 'desc'}`) is converted to the JSON:API array form
+ * first (`['name', '-date']`) before encoding.
+ */
 export function buildQueryString(query?: FetchCollectionQuery | FetchResourceQuery): string {
     if (!query) {
         return '';

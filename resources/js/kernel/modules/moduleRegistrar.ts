@@ -1,7 +1,7 @@
 import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
-import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
 import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 
 /**
  * Per-plugin registrar factory for the {@link ModuleExtension}.
@@ -38,7 +38,11 @@ export function createModuleRegistrar(
             const innerRoutes = module.routes;
             module = Object.assign({}, module, {
                 routes: async (registrar: RouteRegistrar) => {
-                    registrar.group(getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin), innerRoutes);
+                    registrar.group(
+                        getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin),
+                        innerRoutes,
+                        {name: `pluginModule.${plugin.name}.${module.name}`}
+                    );
                 }
             });
         }

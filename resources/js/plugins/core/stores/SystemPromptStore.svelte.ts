@@ -11,13 +11,14 @@ declare module '$lib/kernel/extendableTypes.js' {
 /**
  * Reactive store for system prompts configured on the server.
  *
- * Populated by {@link loadSystemPrompts} during bootstrap (authenticated connections only).
+ * Populated by {@link SystemPromptStore.loadData} during bootstrap (authenticated connections only).
  * Use {@link getPromptByType} to retrieve a prompt by its well-known type string instead of
  * filtering `prompts` manually — the overload with `WellKnownSystemPromptType` is non-nullable,
  * so TypeScript won't require a null-check when using a known type constant.
  *
  * @example
- * import {systemPromptStore} from '$lib/stores/SystemPromptStore.svelte.js';
+ * import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+ * const systemPromptStore = useStore('system-prompts');
  * const chatPrompt = systemPromptStore.getPromptByType('chat');
  */
 export class SystemPromptStore implements DataStore {

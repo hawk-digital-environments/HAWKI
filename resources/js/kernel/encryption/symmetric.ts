@@ -36,20 +36,18 @@ import {
 } from './utils.js';
 
 export interface SymmetricCryptoValue {
-    ciphertext: ArrayBuffer; // Base64-encoded ciphertext
-    iv: ArrayBuffer; // Base64-encoded initialization vector
-    tag: ArrayBuffer; // Base64-encoded authentication tag,
+    /** Raw ciphertext bytes (tag already sliced off, see the module doc). Base64-encode via {@link toObject}/{@link toString}/{@link toJson} for storage. */
+    ciphertext: ArrayBuffer;
+    /** Raw 12-byte AES-GCM initialization vector. */
+    iv: ArrayBuffer;
+    /** Raw 16-byte AES-GCM authentication tag. */
+    tag: ArrayBuffer;
     toObject: () => { ciphertext: string, iv: string, tag: string };
     toString: () => string;
     toJson: () => string;
 }
 
-/**
- * Internal helper function to create a SymmetricCryptoValue object.
- * @param ciphertext
- * @param iv
- * @param tag
- */
+/** @internal Assembles a {@link SymmetricCryptoValue} with working `toObject`/`toString`/`toJson`. */
 function createSymmetricCryptoValue(ciphertext: ArrayBuffer, iv: ArrayBuffer, tag: ArrayBuffer): SymmetricCryptoValue {
     const toObject = () => ({
         ciphertext: arrayBufferToBase64(ciphertext),
@@ -72,9 +70,8 @@ function createSymmetricCryptoValue(ciphertext: ArrayBuffer, iv: ArrayBuffer, ta
 }
 
 /**
- * Basically the same as loadSymmetricCryptoValue, but expects a JSON string
- * containing the ciphertext, iv, and tag values.
- * @param ciphertext
+ * Like {@link loadSymmetricCryptoValue}, but reads from the `.toJson()` shape —
+ * either the JSON string itself or an already-parsed `{ciphertext, iv, tag}` object.
  */
 export function loadSymmetricCryptoValueFromJson(ciphertext: string | {
     ciphertext: string,
@@ -98,12 +95,9 @@ export function loadSymmetricCryptoValueFromJson(ciphertext: string | {
 }
 
 /**
- * Basically the same as loadSymmetricCryptoValue, but expects the ciphertext, iv, and tag
- * as separate strings. This is useful for cases where the values are stored separately,
- * for example in a database or a form.
- * @param ciphertext
- * @param iv
- * @param tag
+ * Like {@link loadSymmetricCryptoValue}, but takes the ciphertext, iv, and tag as three
+ * separate base64 strings — useful when they're stored as separate columns/fields
+ * rather than one pipe-delimited string.
  */
 export function loadSymmetricCryptoValueFromStrings(
     ciphertext: string,
@@ -117,10 +111,7 @@ export function loadSymmetricCryptoValueFromStrings(
     return loadSymmetricCryptoValue([iv, tag, ciphertext].join('|'));
 }
 
-/**
- * Loads a SymmetricCryptoValue from an object containing the ciphertext, iv, and tag as base64 strings.
- * @param obj
- */
+/** Like {@link loadSymmetricCryptoValue}, but takes a `{ciphertext, iv, tag}` object of base64 strings. */
 export function loadSymmetricCryptoValueFromObject(obj: {
     ciphertext: string,
     iv: string,
@@ -132,10 +123,7 @@ export function loadSymmetricCryptoValueFromObject(obj: {
     return loadSymmetricCryptoValueFromStrings(obj.ciphertext, obj.iv, obj.tag);
 }
 
-/**
- * Loads a SymmetricCryptoValue from a form generated when calling toString on a SymmetricCryptoValue.
- * @param ciphertext
- */
+/** Reconstructs a {@link SymmetricCryptoValue} from the pipe-delimited string produced by its `toString()`. */
 export function loadSymmetricCryptoValue(ciphertext: string): SymmetricCryptoValue {
     const valueParts = ciphertext.split('|').map(part => {
         return base64ToArrayBuffer(part);
@@ -167,6 +155,11 @@ export async function generateSymmetricKey() {
     }
 }
 
+/**
+ * The same as {@link encryptSymmetric}, but explicitly encrypts a CryptoKey instead of a
+ * string — used to wrap one key with another (e.g. re-encrypting a room key for a new
+ * keychain password).
+ */
 export async function encryptKeySymmetric(keyToEncrypt: CryptoKey, key: CryptoKey): Promise<SymmetricCryptoValue> {
     if (!keyToEncrypt || !key) {
         throw new Error('Missing required parameters for key encryption');
@@ -179,11 +172,7 @@ export async function encryptKeySymmetric(keyToEncrypt: CryptoKey, key: CryptoKe
     }
 }
 
-/**
- * Encrypts the given data using AES-256-GCM symmetric encryption.
- * @param plaintext - The data to encrypt.
- * @param key - The key used for encryption.
- */
+/** Encrypts `plaintext` with the given AES-256-GCM key. */
 export async function encryptSymmetric(plaintext: string, key: CryptoKey): Promise<SymmetricCryptoValue> {
     if (!plaintext || !key) {
         throw new Error('Missing required parameters for encryption');
@@ -215,10 +204,8 @@ async function encryptArrayBufferSymmetric(data: ArrayBuffer, key: CryptoKey): P
 }
 
 /**
- * The same as decryptSymmetric, but explicitly decrypts a CryptoKey instead of a string.
- * Accepts both full SymmetricCryptoValue and LeanSymmetricCryptoValue.
- * @param value - The symmetric encrypted value to decrypt.
- * @param key - The symmetric key used for decryption.
+ * The same as {@link decryptSymmetric}, but explicitly decrypts a CryptoKey instead of a
+ * string. Counterpart to {@link encryptKeySymmetric}.
  */
 export async function decryptKeySymmetric(value: SymmetricCryptoValue, key: CryptoKey): Promise<CryptoKey> {
     if (!value || !key) {
@@ -234,11 +221,7 @@ export async function decryptKeySymmetric(value: SymmetricCryptoValue, key: Cryp
     }
 }
 
-/**
- * Decrypts the given symmetric encrypted value using AES-256-GCM.
- * @param value - The encrypted value to decrypt.
- * @param key - The symmetric key used for decryption.
- */
+/** Decrypts a {@link SymmetricCryptoValue} with the given AES-256-GCM key. Counterpart to {@link encryptSymmetric}. */
 export async function decryptSymmetric(value: SymmetricCryptoValue, key: CryptoKey): Promise<string> {
     if (!value || !key) {
         throw new Error('Missing required parameters for decryption');

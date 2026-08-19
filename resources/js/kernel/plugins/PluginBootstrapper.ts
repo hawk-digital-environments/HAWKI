@@ -1,12 +1,13 @@
 import type {AppExtensionRegistrar, HawkiCorePlugin, HawkiPluginContext, HawkiPluginContextWithConfig, HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {HawkiApp, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
-import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
 import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 import type {ConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistrar.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
+import {getPluginRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 
 /**
  * Dispatches each `HawkiPlugin` lifecycle hook (see `$lib/kernel/plugins/types.js`)
@@ -35,7 +36,6 @@ import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
  */
 export class PluginBootstrapper {
     private _contextWithConfig: HawkiPluginContextWithConfig | null = null;
-    private _resourceSchemaRegistrar: ResourceSchemaRegistrar | null = null;
 
     constructor(
         private readonly plugins: HawkiPluginWithMetadata[],
@@ -104,9 +104,25 @@ export class PluginBootstrapper {
         return this.runForEach(plugin => plugin.stores?.(registrar, this.contextWithConfig));
     }
 
-    /** Calls `plugin.routes()` so each plugin can register its routes on the given `RouteRegistrar`. */
+    /**
+     * Calls `plugin.routes()` so each plugin can register its routes on the
+     * given `RouteRegistrar`, wrapped in a `registrar.group()` under the
+     * plugin's route prefix (see {@link getPluginRoutePrefix} —
+     * `/plugins/<plugin>` for third-party plugins, unprefixed for core
+     * plugins). Mirrors how `createModuleRegistrar` prefixes module routes.
+     */
     public runRoutes(registrar: RouteRegistrar) {
-        return this.runForEach(plugin => plugin.routes?.(registrar, this.contextWithConfig));
+        return this.runForEach(plugin => {
+            if (!plugin.routes) {
+                return;
+            }
+            const innerRoutes = plugin.routes.bind(plugin);
+            registrar.group(
+                getPluginRoutePrefix(plugin.name, plugin.isCorePlugin),
+                (groupRegistrar) => innerRoutes(groupRegistrar, this.contextWithConfig),
+                {name: `plugin.${plugin.name}`}
+            );
+        });
     }
 
     /** Calls `plugin.boot()` on every plugin. Triggered once the `preparation` bootstrap stage has passed; stores are not populated yet at this point. */

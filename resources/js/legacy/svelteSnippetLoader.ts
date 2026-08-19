@@ -1,9 +1,12 @@
 /**
  * # svelte-snippet — custom HTML element loader
  *
- * Registers the `<svelte-snippet>` custom element, which lets you mount any
- * Svelte component from the `resources/js/svelte/snippets/` folder directly
- * in a Blade template (or any plain HTML) without writing any JavaScript.
+ * Defines the `<svelte-snippet>` custom element, which lets you mount any
+ * Svelte component from the `resources/js/plugins/core/snippets/` folder
+ * directly in a Blade template (or any plain HTML) without writing any
+ * JavaScript. The element itself is registered (`customElements.define`) by
+ * {@link legacyInitializeSnippetApps} in `$lib/legacy/legacyInitializeSnippetApps.js`,
+ * not by this module — this file only implements the element's behaviour.
  *
  * ## Usage in Blade templates (recommended)
  *
@@ -51,12 +54,13 @@
  *
  * ## Adding a new snippet
  *
- * 1. Create a `.svelte` file in `resources/js/svelte/snippets/`, e.g.
- *    `resources/js/svelte/snippets/MyWidget.svelte`.
+ * 1. Create a `.svelte` file in `resources/js/plugins/core/snippets/`, e.g.
+ *    `resources/js/plugins/core/snippets/MyWidget.svelte`.
  * 2. Use it in Blade: `<x-svelte type="MyWidget" />`.
  *
- * No registration or import is needed — the loader discovers all files in
- * that folder automatically at build time.
+ * No registration or import is needed by hand — {@link legacyInitializeSnippetApps}
+ * globs the folder and registers every file it finds into `app.snippets`
+ * (see {@link SnippetExtension}) before this element ever tries to mount one.
  *
  * ## Reactivity
  *
@@ -86,17 +90,21 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
     /** The currently mounted Svelte app instance, or null when unmounted. */
     private _app: object | null = null;
 
+    // @todo never set to true anywhere in this class, so the guards that read
+    // it (connectedCallback, _destroyComponent) never take their true branch.
+    // Looks like an incomplete overlap guard for destroy/mount races; treat
+    // as always false until this is wired up or removed.
     private _hasActiveDestruction: boolean = false;
+    /** Set by attributeChangedCallback/connectedCallback to remount once the in-flight {@link _destroyComponent} settles. */
     private _mountAfterDestruction: boolean = false;
 
     private _oldType: string | null = null;
     private _oldProps: string | null = null;
 
-    /**
-     * Monotonically-increasing counter used to cancel in-flight async mounts.
-     * Incremented on every destroy so that a pending import whose component
-     * was already removed will be a no-op when it finally resolves.
-     */
+    // @todo unused — vestigial from when _mountComponent() did an async import
+    // per mount and needed a token to discard stale resolutions. Mounting is
+    // now a synchronous registry lookup (see _mountComponent below), so this
+    // can be removed.
     private _mountId: number = 0;
 
     connectedCallback(): void {

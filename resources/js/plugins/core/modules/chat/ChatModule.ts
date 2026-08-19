@@ -1,5 +1,5 @@
 import type {HawkiModule} from '$lib/kernel/modules/types.js';
-import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 
 /**
  * The "chat" feature module of the `core` plugin.
@@ -12,10 +12,9 @@ import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
  * automatically namespaces any routes the module declares under the plugin's
  * route prefix.
  *
- * This module only declares a single route, `/`, lazily loading `ChatIndex.svelte`
- * as the page component. `registrar.lazyRoute` (as opposed to `registrar.route`)
- * defers importing the page until the route is actually navigated to, keeping it
- * out of the initial bundle.
+ * Declares the module's routes lazily via `registrar.lazyRoute` (as opposed to
+ * `registrar.route`), which defers importing each page component until the route
+ * is actually navigated to, keeping it out of the initial bundle.
  *
  * Note that the bulk of the chat feature is *not* reachable through this module
  * yet: the live composer UI under `components/composer/` is mounted by the legacy
@@ -46,6 +45,8 @@ export class ChatModule implements HawkiModule {
      *   imported ones.
      */
     public routes(registrar: RouteRegistrar): void | Promise<void> {
-        registrar.lazyRoute('/', async () => (await import('./pages/ChatIndex.svelte')).default);
+        registrar
+            .lazyRoute('/', async () => import('./pages/ChatIndex.svelte'), {name: 'chat.index'})
+            .lazyRoute('/room/:id', async () => import('./pages/ChatConversation.svelte'), 'chat.conversation');
     }
 }

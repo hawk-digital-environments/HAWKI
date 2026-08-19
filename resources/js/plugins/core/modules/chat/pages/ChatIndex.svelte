@@ -15,6 +15,9 @@
     // please confirm what this page is expected to render before that migration
     // lands, so the doc block above doesn't become stale.
 
+    import Link from '$lib/components/util/link/Link.svelte';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
+
     /**
      * The kernel's route renderer instantiates page components without passing
      * any props, so this interface is intentionally empty. Add route-derived
@@ -24,6 +27,12 @@
     }
 
     const {}: Props = $props();
+
+    const {p, isActive} = useRouter();
 </script>
 <h1>Chat index!</h1>
-<p>Hello 👋</p>
+<Link href={p('chat.conversation', {id: '123'})}>Go to conversation 123</Link>
+<hr/>
+<Link href={{name: 'chat.conversation', params: {id: '456'}}}>Go to conversation 456</Link>
+<hr/>
+<Link href={p('/')}>Go to home</Link>

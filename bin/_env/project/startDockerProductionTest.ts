@@ -12,7 +12,9 @@ export async function startDockerProductionTest(context: Context, pull: boolean)
     const testDirectory = path.join(context.paths.projectDir, '_docker_production_test');
     if (fs.existsSync(testDirectory)) {
         console.log(`Shutting down existing test environment in ${testDirectory}...`);
-        await context.docker.executeComposeCommand(['down', '--volumes'], {cwd: testDirectory, foreground: true});
+        // Best effort: the leftover stack may be half-broken, and the directory is
+        // removed below regardless of whether compose could tear it down.
+        await context.docker.executeComposeCommand(['down', '--volumes'], {cwd: testDirectory, foreground: true, throwOnExitCode: false});
         try {
             fs.rmSync(testDirectory, {recursive: true, force: true});
         } catch (e) {
@@ -57,7 +59,9 @@ LDAP_FILTER="(|(uid=username))"
     fs.appendFileSync(envPath, env);
 
     // Check if there are orphan volumes from previous test runs and remove them
-    const {stdout: volumes} = await context.docker.executeComposeCommand(['volumes', '--format', '{{.Name}}'], {cwd: testDirectory});
+    // `compose volumes` does not exist on older compose versions; an empty result
+    // there means "no orphans to clean up", which is the same branch as success.
+    const {stdout: volumes} = await context.docker.executeComposeCommand(['volumes', '--format', '{{.Name}}'], {cwd: testDirectory, throwOnExitCode: false});
     const volumeList = volumes.split('\n').map(v => v.trim()).filter(v => v.length > 0);
     for (const volume of volumeList) {
         if (volume.startsWith('docker_production_test_')) {
@@ -82,7 +86,8 @@ LDAP_FILTER="(|(uid=username))"
     await executeCommand('chmod', ['+x', './deploy.sh'], {cwd: testDirectory, foreground: true});
 
     console.log('Starting Docker containers for production test...');
-    await executeCommand('./deploy.sh', [], {cwd: testDirectory, interactive: true});
+    // Runs compose attached (see the rewrite above), so the user ends it with Ctrl-C.
+    await executeCommand('./deploy.sh', [], {cwd: testDirectory, interactive: true, throwOnExitCode: false});
 }
 
 function createLdapComposeFile(testDirectory: string) {

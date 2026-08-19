@@ -1,98 +1,114 @@
-<script lang="ts">
+<!--
+  @component Renders whatever a `Router` (see `logistics/router.ts`)
+  currently resolves to: a loading state, the matched page nested in its
+  layout stack, the 404 fallback, or an error fallback. Publishes the
+  router's `RouterHandle` into the `RouterScope` its subtree reads through
+  `useRouter()`, as the router a bare `useRouter()` means — so a nested
+  `RouterView` transparently redirects its subtree to its own router while
+  leaving the outer routers reachable by name.
 
-    import type UniversalRouter from 'universal-router';
-    import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
-    import {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
-    import {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
-    import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.js';
+  One `RouterView` is expected per `Router` instance — it calls
+  `router.bind()` on init, which wires the router up to its routing strategy
+  (path/hash/transient) for the lifetime of this component.
+-->
+<script lang="ts">
     import type {Component} from 'svelte';
     import RouteNotFound from '$lib/components/ui/routing/RouteNotFound.svelte';
+    import RouteError from '$lib/components/ui/routing/RouteError.svelte';
+    import Loader from '$lib/components/ui/loader/Loader.svelte';
+    import type {Router} from '$lib/components/ui/routing/logistics/router.js';
+    import {provideRouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
 
     interface Props {
-        router: UniversalRouter;
-        routeResolution?: 'transient' | 'path' | 'hash' | RoutingStrategy;
+        /** The router instance to render (from `createRouter`/`createRouterFromRegistrar`, or `app.router`). */
+        router: Router;
+        /** Rendered when no route matches the current path. Defaults to `RouteNotFound`. */
         notFoundComponent?: Component;
+        /** Rendered when resolution fails or a rendered route crashes. Defaults to `RouteError`. See `RouteError.svelte` for the `error`/`reset` contract. */
+        errorComponent?: Component<{ error: unknown; reset: () => void }>;
     }
 
     const {
         router,
-        routeResolution = 'transient',
-        notFoundComponent = RouteNotFound
+        notFoundComponent = RouteNotFound,
+        errorComponent = RouteError
     }: Props = $props();
 
-    const NotFoundComponent = notFoundComponent;
+    const NotFoundComponent = $derived(notFoundComponent);
+    const ErrorComponent = $derived(errorComponent);
 
-    const strategy = $derived.by(() => {
-        if (routeResolution === 'transient') {
-            return createTransientRoutingStrategy();
-        } else if (routeResolution === 'path') {
-            return createPathRoutingStrategy();
-        } else if (routeResolution === 'hash') {
-            return createHashRoutingStrategy();
-        } else {
-            return routeResolution;
-        }
-    });
+    const routerState = $derived(router.state);
+    const hasRoutingError = $derived(routerState === 'error');
+    const isLoading = $derived(routerState === 'loading');
+    const isNotFound = $derived(routerState === 'notFound');
+    const RouteComponent = $derived(router.component);
+    const layouts = $derived(router.layouts);
+    const route = $derived(router.route);
+    const nodeData = $derived(router.nodeData);
+    const nodeParams = $derived(router.nodeParams);
+    // One object for the whole chain, not one per node — see `Router.meta`.
+    const meta = $derived(router.meta ?? {});
 
-    const currentPath = $derived.by(() => {
-        const path = strategy.get();
-        if (path === null || path === '') {
-            return '/';
-        } else {
-            return path;
-        }
-    });
+    // Makes this router the one a bare `useRouter()` below resolves to, and
+    // every router above it still reachable by name. A nested `RouterView`
+    // shadows the outer one for its own subtree, which is the whole point — a
+    // layout shared by both asks the router that is actually rendering it.
+    // svelte-ignore state_referenced_locally
+    provideRouterScope(router.handle);
 
-    let RouteComponent = $state<Component | null>(null);
-    let routeProps = $state({});
-    let notFound = $state(false);
+    // svelte-ignore state_referenced_locally
+    router.bind();
 
-    $effect(() => {
-        let isInvalid = false;
-        (async () => {
-            try {
-                const result = await router.resolve(currentPath);
-                if (isInvalid) {
-                    return;
-                }
-
-                if (typeof result === 'function') {
-                    RouteComponent = result;
-                    routeProps = {};
-                    return;
-                }
-
-                if (typeof result === 'object' && result !== null) {
-                    if ('props' in result && typeof result.props === 'object') {
-                        routeProps = result.props;
-                    } else {
-                        routeProps = {};
-                    }
-                    if ('component' in result && typeof result.component === 'function') {
-                        RouteComponent = result.component;
-                        return;
-                    } else {
-                        throw new Error('Resolved route does not contain a valid component');
-                    }
-                }
-
-                throw new Error('Resolved route is not a valid component or object with component and props');
-            } catch (error) {
-                console.error('ROUTER ERROR', error, 'for current path', currentPath);
-                notFound = true;
-            }
-        })();
-
-        return () => {
-            isInvalid = true;
-        };
-    });
-
-    $inspect(currentPath, RouteComponent, router, notFound);
+    function handleError(error: unknown) {
+        console.error('Error while rendering route component', error);
+    }
 </script>
 
-{#if notFound}
-    <NotFoundComponent/>
-{:else if RouteComponent !== null}
-    <RouteComponent {...routeProps}/>
-{/if}
+<!--
+  Nests the layout stack (outermost first) around the page. Recursing over an
+  index instead of shrinking the array keeps each level's component expression
+  pointing at the same reference across navigations, so a layout shared by two
+  routes stays mounted while only the page inside it swaps out.
+-->
+{#snippet layoutStack(index: number)}
+    {#if index < layouts.length}
+        {@const Layout = layouts[index]}
+        <Layout data={nodeData[index] ?? {}} params={nodeParams[index] ?? {}} {meta} {route}>
+            {@render layoutStack(index + 1)}
+        </Layout>
+    {:else}
+        {@render page()}
+    {/if}
+{/snippet}
+
+<!--
+  The two ways a route can fail need different recoveries but present the same
+  contract to `ErrorComponent`:
+  - resolution failed — nothing rendered, so retrying means resolving again.
+    Stays inside the layout stack, like the 404 does.
+  - the route rendered and crashed — caught by the boundary below, which has
+    already torn the subtree (layouts included) down; `reset` re-renders it.
+-->
+{#snippet errorPage(error: unknown, reset: () => void)}
+    <ErrorComponent {error} {reset}/>
+{/snippet}
+
+{#snippet page()}
+    {#if hasRoutingError}
+        {@render errorPage(router.error, () => void router.handle.reload())}
+    {:else if isNotFound}
+        <NotFoundComponent/>
+    {:else if RouteComponent}
+        <!-- The page is always the last entry of the render chain `[...layouts, page]` — see `Router.nodeData`'s doc comment. -->
+        <RouteComponent data={nodeData[layouts.length] ?? {}} params={nodeParams[layouts.length] ?? {}} {meta} {route}/>
+    {/if}
+{/snippet}
+
+<svelte:boundary onerror={handleError}>
+    <Loader active={isLoading}>
+        {@render layoutStack(0)}
+    </Loader>
+    {#snippet failed(error, reset)}
+        {@render errorPage(error, reset)}
+    {/snippet}
+</svelte:boundary>

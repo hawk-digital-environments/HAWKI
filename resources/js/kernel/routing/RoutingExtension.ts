@@ -1,10 +1,21 @@
-import type {HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import UniversalRouter from 'universal-router';
-import {RouteRegistrar, type RouteRenderer} from '$lib/kernel/routing/RouteRegistrar.js';
+import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
+import {createRouterFromRegistrar, RouteRegistrar, type Router, type RouterHandle} from '$lib/components/ui/routing/index.js';
+import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
+import type {RestApi} from '$lib/kernel/api/RestApi.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
-        router: UniversalRouter;
+        router: RouterHandle;
+    }
+}
+
+// Extends the router context with the app and restApi so the router itself
+// does not need to know about our app or restApi (which comes in handy,
+// when we externalize the components into their own package).
+declare module '$lib/components/ui/routing/extendableTypes.js' {
+    interface RouteContextExtensions {
+        app: HawkiApp;
+        restApi: RestApi;
     }
 }
 
@@ -19,7 +30,11 @@ declare module '$lib/kernel/extendableTypes.js' {
  *
  * 1. Every plugin's `routes(registrar, context)` hook, dispatched through
  *    `PluginBootstrapper.runRoutes()` (see `$lib/kernel/plugins/types.js`).
- *    These are registered on the *root* registrar, i.e. without any prefix.
+ *    `runRoutes` already wrapped each hook in a `registrar.group(...)` carrying
+ *    the plugin's route prefix (see `getPluginRoutePrefix` in
+ *    `routeInflection.js`) — empty for core plugins, `/plugins/<slug>`
+ *    otherwise — so plugin-level routes are namespaced the same way module
+ *    routes are.
  * 2. Every registered module's `routes(registrar)` hook (see
  *    `$lib/kernel/modules/types.js`). Modules are collected earlier by
  *    `ModuleExtension`, which is why `RoutingExtension` must be listed *after*
@@ -29,14 +44,11 @@ declare module '$lib/kernel/extendableTypes.js' {
  *    namespaced automatically.
  *
  * Turning a matched route into something renderable is deliberately *not* this
- * extension's concern: the {@link RouteRenderer} is injected through the
- * constructor (`new RoutingExtension(createDefaultRouteRenderer())` in
- * `resources/js/app.ts`) and is invoked as the `action` of every compiled route.
- *
- * TODO(docs): Nothing in `resources/js/` currently calls `app.router.resolve()`
- * or listens to history/`popstate` events. Which layer is meant to own
- * navigation and mount the resolved result — a future root Svelte component,
- * or the {@link RouteRenderer} itself?
+ * extension's concern: every compiled route's `action` (built by
+ * `RouteRegistrar`'s `buildRouteFromOptions()`/`buildRouteGroupFromOptions()`)
+ * just returns a `RouteResultBody` — `{component, context, params}` — and
+ * `createRouterFromRegistrar()` (`router.ts`) is what actually resolves
+ * and renders it.
  */
 export class RoutingExtension implements HawkiAppExtension {
     /**
@@ -49,29 +61,18 @@ export class RoutingExtension implements HawkiAppExtension {
      * {@link router}.
      */
     public readonly registrar = new RouteRegistrar();
-    private _router: UniversalRouter | null = null;
-
-    /**
-     * @param routeRenderer Invoked as the `action` of every compiled route to
-     *        turn the route's component (or lazy loader) into the router's
-     *        resolve result. See `createDefaultRouteRenderer()` in
-     *        `routeRenderer.js`.
-     */
-    constructor(
-        private readonly routeRenderer: RouteRenderer
-    ) {
-    }
+    private _router: Router | null = null;
 
     /**
      * The compiled router, ready for `router.resolve(pathname)`. Throws if
      * accessed before {@link init} has run (the instance only exists once all
      * route registrations have been collected and compiled).
      */
-    public get router(): UniversalRouter {
+    public get router(): RouterHandle {
         if (!this._router) {
             throw new Error('Router is not initialized yet. Call init() first.');
         }
-        return this._router;
+        return this._router.handle;
     }
 
     /**
@@ -92,9 +93,22 @@ export class RoutingExtension implements HawkiAppExtension {
                 await module.routes(this.registrar);
             }
         }
+    }
 
-        const routes = await this.registrar.build(this.routeRenderer);
-        this._router = new UniversalRouter(routes);
+    public ready(app: HawkiApp, bootstrapper: Bootstrapper): void | Promise<void> {
+        bootstrapper.onLateStage(() => {
+            // @todo we could read the base path from the config here
+            this._router = createRouterFromRegistrar('app', this.registrar, {
+                // @todo this is a temporary construct, we should read the base path from the config instead of hardcoding it here
+                basePath: '/new',
+                strategy: 'path',
+                // Supplies the `app`/`restApi` properties the `declare module`
+                // block above adds to `RouteContextExtensions`, so every
+                // middleware, route action and `loadData` resolved by this
+                // router sees them on its context.
+                context: {app, restApi: app.restApi}
+            });
+        });
     }
 
     /**
@@ -108,6 +122,12 @@ export class RoutingExtension implements HawkiAppExtension {
         return {
             get router() {
                 return extension.router;
+            },
+            /**
+             * @internal Exposes the compiled router as `app.__router`. This is not a public API! Do not use it in your code, it may change or be removed at any time.
+             */
+            get __router() {
+                return extension._router;
             }
         };
     }

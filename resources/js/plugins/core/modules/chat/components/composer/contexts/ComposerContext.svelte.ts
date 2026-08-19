@@ -328,13 +328,12 @@ export class ComposerContext {
     }
 
     /**
-     * Used after a message has been sent (keeps most of the settings intact, just clears the message, attachments, and sending state).
+     * Used after a message has been sent (keeps most of the settings intact, just clears the
+     * message and attachments). `sendStatus` is intentionally left untouched — callers invoke
+     * this while a send is still in flight (see `ChatComposer.svelte`'s `handleSend`), and
+     * `sendStatus` only clears itself once the response body has fully arrived (see {@link send}).
      * Use {@link reset} to reset everything back to the initial state (e.g. when loading a new conversation or exiting a thread).
      */
-    // TODO(docs): The summary above says `clear()` also clears the "sending state", but the
-    // implementation only resets `message` and `attachments` — `_sendStatus` is cleared
-    // separately inside `send()` once the response body resolves. Is the doc wording just
-    // stale, or is clearing `_sendStatus` here intended as well?
     public clear(): void {
         // When the previous message was sent to the ai, we want to keep the handles in the message,
         // so you can keep chatting with the same ai without having to re-tag it in every message.

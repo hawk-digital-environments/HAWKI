@@ -35,6 +35,15 @@
   For plain text links with the favicon prepended automatically, use
   `TextLink.svelte` instead.
 
+  Router-driven links get an `active` class and `aria-current="page"` while they
+  point at the page currently shown. Use `activeMatch="prefix"` for a section
+  link that should stay lit on nested pages:
+
+    <Link href="/admin" activeMatch="prefix">Admin</Link>
+
+  The `active` class carries no styling of its own — set `--link-active-color`
+  or `--link-active-font-weight` on an ancestor to give it a look.
+
   All standard `<a>` attributes are forwarded via rest-props.
 -->
 <script lang="ts">
@@ -42,9 +51,13 @@
     import * as svelte from 'svelte';
     import {mergeProps} from 'bits-ui';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import type {RouteParams} from 'universal-router';
+    import {type RouterScope, useRouterScope} from '$lib/components/ui/routing/index.js';
 
+    // widen so Props can redefine safely
     interface NonConflictingProps extends HTMLAnchorAttributes {
-        children?: any; // widen so Props can redefine safely
+        href?: any;
+        children?: any;
     }
 
     interface Props extends NonConflictingProps {
@@ -53,7 +66,9 @@
          * rendered `href` becomes `javascript:void(0)` so the element remains
          * keyboard-focusable without causing navigation.
          */
-        href?: string;
+        href?: string | { name: string; params?: RouteParams };
+
+        router?: string;
 
         /**
          * Standard anchor `target`. Omit to use the browser default.
@@ -91,15 +106,37 @@
          * The element stays in the DOM and remains keyboard-focusable.
          */
         disabled?: boolean;
+
+        /**
+         * When the link counts as "active", i.e. gets the `active` class and
+         * `aria-current="page"`. Only ever true for router-driven links.
+         *
+         * - `exact` (default) — only while the current path *is* the target.
+         * - `prefix` — also while a path below the target is open, so a section
+         *   link stays lit on its child pages. Ignored for the application root,
+         *   which prefixes everything.
+         * - `never` — opts out of active tracking entirely.
+         */
+        activeMatch?: 'exact' | 'prefix' | 'never';
+
+        /**
+         * Overrides the computed active state. Use for targets the router
+         * cannot judge on its own — e.g. a section whose routes do not share a
+         * common path prefix, via `useRouter().isRouteActive('section')`.
+         */
+        active?: boolean;
     }
 
     const {
-        href: hrefRaw = '',
+        href: givenHref = '',
+        router: routerName,
         target = '',
         rel: relRaw = '',
         onclick: onclickRaw,
         children,
         disabled,
+        activeMatch = 'exact',
+        active: activeOverride,
         ...restProps
     }: Props = $props();
 
@@ -107,26 +144,127 @@
 
     const app = useApp();
 
+    // Captured here because Svelte context is readable during initialization
+    // only, while `router` is a prop that can change afterwards — so the *name*
+    // is resolved against the scope further down instead, and pointing the prop
+    // at another router picks up that router rather than keeping the first one.
+    // A missing scope is not yet an error: an external href never needs a
+    // router, and `Link` is a primitive that also renders above the app's
+    // `RouterView` (during boot, for one).
+    let routerScope: RouterScope | undefined;
+    try {
+        routerScope = useRouterScope();
+    } catch { /* resolving a local href will report this properly below */
+    }
+
+    const hrefIsRoute = $derived.by(() => {
+        if (!givenHref) {
+            return false;
+        }
+        return (typeof givenHref === 'object' && givenHref.name)
+            || (typeof givenHref === 'string' && givenHref.startsWith('@'));
+    });
+    const hrefIsLocal = $derived.by(() => {
+        if (hrefIsRoute) {
+            return true;
+        }
+        if (!givenHref || typeof givenHref !== 'string') {
+            return false;
+        }
+        try {
+            const parsed = new URL(givenHref, window.location.origin);
+            return parsed.origin === window.location.origin;
+        } catch {
+            return givenHref.startsWith('/') || givenHref.startsWith('#') || givenHref.startsWith('?');
+        }
+    });
+    const router = $derived.by(() => {
+        // If the href is not a route, nor a local link, we don't need a router
+        if (!hrefIsLocal) {
+            return null;
+        }
+        if (!routerScope) {
+            throw new Error(
+                `<Link href=${JSON.stringify(givenHref)}> needs a router to resolve a local href, but is not rendered inside a <RouterView>.`
+            );
+        }
+        if (routerName === undefined) {
+            return routerScope.current;
+        }
+        const handle = routerScope.get(routerName);
+        if (!handle) {
+            throw new Error(
+                `<Link router="${routerName}"> found no such router. Reachable from here: ${routerScope.names().join(', ')}.`
+            );
+        }
+        return handle;
+    });
+    const href = $derived.by(() => {
+        if (!router) {
+            if (!givenHref || typeof givenHref !== 'string' || disabled) {
+                return 'javascript:void(0)';
+            }
+        }
+
+        if (!hrefIsRoute) {
+            // A literal path that the router owns must be run through
+            // `getPath` so the router's `basePath` is applied — otherwise a
+            // href like `/settings` under a `/new` base is rendered and
+            // navigated outside the SPA, producing a 404. Non-routable local
+            // hrefs (`#anchor`, `?q=1`, relative URLs) are returned verbatim
+            // so the browser handles them natively.
+            if (router && typeof givenHref === 'string' && router.canHandlePath(givenHref)) {
+                return router.getPath(givenHref);
+            }
+            return givenHref as string;
+        }
+
+        function getPathFromRouter(hrefRaw: any) {
+            try {
+                return router!.getPath(hrefRaw.name, hrefRaw.params);
+            } catch {
+                throw new Error(`Failed to resolve named route "${hrefRaw.name}" with params ${JSON.stringify(hrefRaw.params)}`);
+            }
+        }
+
+        if (typeof givenHref === 'object' && givenHref.name) {
+            return getPathFromRouter(givenHref);
+        }
+        if (typeof givenHref === 'string' && givenHref.startsWith('@')) {
+            return getPathFromRouter({name: givenHref.slice(1)});
+        }
+        throw new Error(`Invalid href prop: ${JSON.stringify(givenHref)}`);
+    });
+
+    const isActive = $derived.by(() => {
+        if (activeOverride !== undefined) {
+            return activeOverride;
+        }
+        if (!router || disabled || activeMatch === 'never') {
+            return false;
+        }
+        // Hash anchors, query-only links, relative URLs and similar local
+        // but non-routable hrefs never describe a route, so they can never be
+        // the active one — see `RoutingStrategy.canHandlePath`.
+        if (!router.canHandlePath(href)) {
+            return false;
+        }
+        return router.isActive(href, {startsWith: activeMatch === 'prefix'});
+    });
+
     const faviconUrl = $derived.by(() => {
-        if (!hrefRaw || faviconFailed) {
+        if (!givenHref || faviconFailed || hrefIsLocal) {
             return null;
         }
         try {
-            const parsed = new URL(hrefRaw, window.location.origin);
+            const parsed = new URL(href, window.location.origin);
             if (!/^https?:$/.test(parsed.protocol) || parsed.origin === window.location.origin) {
                 return null;
             }
-            return app.uriBuilder.linkPreviewFaviconUri(hrefRaw);
+            return app.uriBuilder.linkPreviewFaviconUri(href);
         } catch {
             return null;
         }
-    });
-
-    const href = $derived.by(() => {
-        if (!hrefRaw || disabled) {
-            return 'javascript:void(0)';
-        }
-        return hrefRaw;
     });
 
     const rel = $derived.by(() => {
@@ -145,6 +283,16 @@
                 event.preventDefault();
             };
         }
+        if (router && router.canHandlePath(href)) {
+            return (event: MouseEvent) => {
+                onclickRaw?.(event as any);
+                if (event.defaultPrevented) {
+                    return;
+                }
+                event.preventDefault();
+                router.goTo(href);
+            };
+        }
         return onclickRaw;
     });
 
@@ -158,6 +306,9 @@
         }
         if (onclick) {
             props.onclick = onclick;
+        }
+        if (isActive) {
+            props['aria-current'] = 'page';
         }
         return props;
     });
@@ -180,7 +331,8 @@
     {
         href,
         class: {
-            disabled: disabled
+            disabled: disabled,
+            active: isActive
         }
     },
     dynamicProps,
@@ -193,6 +345,13 @@
     .disabled {
         pointer-events: none;
         opacity: 0.5;
+    }
+
+    /* Styling hook only — inherits unless a consumer sets the tokens, so the
+       active state never changes a link's look without being asked to. */
+    .active {
+        color: var(--link-active-color, inherit);
+        font-weight: var(--link-active-font-weight, inherit);
     }
 
     .favicon {

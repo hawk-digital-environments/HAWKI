@@ -82,7 +82,7 @@ export class SendMessageStatus {
     /** Records an upload error for a specific file and sets the overall status to `'failed'`. */
     public addFileIssue(file: File, issue: string): void {
         this._status = 'failed';
-        this.fileIssues.push([file, issue]);
+        this._fileIssues = [...this._fileIssues, [file, issue]];
     }
 
     public clearFileIssue(file: File): void {
