@@ -1,10 +1,10 @@
 <script>
-    import StatusCard from '$lib/plugins/assistants/components/report/StatusCard.svelte';
-    import KnowledgeBases from "$lib/plugins/assistants/components/assistantBuilderComponents/KnowledgeBases.svelte";
-    import FileUpload from "$lib/plugins/assistants/components/assistantBuilderComponents/FileUpload.svelte";
+    import StatusCard from '$plugins/assistants/components/report/StatusCard.svelte';
+    import KnowledgeBases from "$plugins/assistants/components/assistantBuilderComponents/KnowledgeBases.svelte";
+    import FileUpload from "$plugins/assistants/components/assistantBuilderComponents/FileUpload.svelte";
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
-    import {ValidationState} from "$lib/plugins/assistants/types/enums/ValidationState";
-    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    import {ValidationState} from "$plugins/assistants/types/enums/ValidationState.ts";
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.ts";
 const {__} = useTranslator();</script>
 
 <div class="page-wrapper">

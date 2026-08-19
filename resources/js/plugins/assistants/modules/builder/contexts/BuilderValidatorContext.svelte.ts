@@ -1,6 +1,5 @@
 import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
-import {createEmptyAssistant} from "$plugins/assistants/api/serializers/assistantSerializer";
-import {apiFieldToAssistantKey} from "$plugins/assistants/api/serializers/apiFieldSerializer";
+import {createEmptyAssistant, apiFieldToAssistantKey} from "$plugins/assistants/api/schemas/resources/assistants.schema";
 import {ApiError} from "$plugins/assistants/api/errors";
 import {valuesEqual, IDENTITY_KEYS} from "./builderUtils.js";
 import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";

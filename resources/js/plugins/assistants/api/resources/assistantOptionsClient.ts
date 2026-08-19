@@ -13,9 +13,7 @@ export const SETTING_LANGUAGE = "language";
 
 export async function listCategories(): Promise<any[]> {
   try {
-    const res = await useApp().restApi.getResourceCollection(ASSISTANT_CATEGORIES);
-    console.log(res);
-    return res;
+    return await useApp().restApi.getResourceCollection(ASSISTANT_CATEGORIES);
   } catch (err) {
     throw err;
   }
@@ -23,9 +21,7 @@ export async function listCategories(): Promise<any[]> {
 
 export async function listTags(): Promise<any[]> {
   try {
-      const res = await useApp().restApi.getResourceCollection(ASSISTANT_TAGS);
-      console.log(res);
-      return res;
+      return await useApp().restApi.getResourceCollection(ASSISTANT_TAGS);
   } catch (err) {
       throw err;
   }

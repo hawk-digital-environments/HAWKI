@@ -1,15 +1,18 @@
-import type {Assistant} from "$lib/plugins/assistants/types/assistant/Assistant";
-import type {AssistantAvatar} from "$lib/plugins/assistants/types/assistant/AssistantAvatar";
-import {logApiError} from "$lib/plugins/assistants/api/errors";
-import {getAssistant} from "$lib/plugins/assistants/api/resources/assistantsClient";
-import {avatarFromApi} from "$lib/plugins/assistants/api/serializers/avatarSerializer";
+import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
+import {logApiError} from "$plugins/assistants/api/errors";
+import {getAssistant} from "$plugins/assistants/api/resources/assistantsClient";
+import AssistantAvatarsSchema from "$plugins/assistants/api/schemas/resources/assistant-avatars.schema";
+import type {JsonApiResourceBody} from "$plugins/assistants/api/schemas/wireFragments";
 
 
 
 export async function getAssistantAvatar(id: string): Promise<AssistantAvatar|null> {
-    // `getAssistant` already normalizes + logs; just map the avatar out here.
+    // `getAssistant` already validates + maps the whole assistant (including
+    // its inlined avatar) via `assistants.schema.ts` — `response.avatar` is
+    // already a domain `AssistantAvatar`, not wire data, so no further
+    // parsing belongs here.
     const response = await getAssistant(id, {include: 'assistant_avatar'});
-    return response.avatar ? avatarFromApi(response.avatar) : null;
+    return response.avatar ?? null;
 }
 
 
@@ -42,10 +45,19 @@ export async function createOrUpdateAssistantAvatar(
     }
 }
 
+// @todo `getApi()` is not a defined helper anywhere in this codebase — these
+// two go through `useApp().restApi` (like every other client in this plugin)
+// once the create/update avatar endpoints are actually wired up. Left as-is
+// rather than guessed at: not part of this cleanup's scope (see the "post
+// functions aren't implemented yet" note this schema reorg was asked to keep
+// in mind). `AssistantAvatarsSchema.parse(...)` below assumes a jsona-decoded
+// response shape (flat `icon_css`, not the raw `{data: {attributes: {...}}}`
+// envelope `axios.post` would actually return) — whoever wires this up for
+// real should go through `restApi` instead, which decodes for you.
 async function createAssistantAvatar(body: JsonApiResourceBody): Promise<AssistantAvatar> {
     try {
         const response = await getApi().axios.post(`assistant-avatars`, { data: body });
-        return avatarFromApi(response.data.data);
+        return AssistantAvatarsSchema.parse(response.data.data);
     } catch (err) {
         throw logApiError("createAssistantAvatar", err);
     }
@@ -54,7 +66,7 @@ async function createAssistantAvatar(body: JsonApiResourceBody): Promise<Assista
 async function updateAssistantAvatar(avatarId: string, body: JsonApiResourceBody): Promise<AssistantAvatar> {
     try {
         const response = await getApi().axios.patch(`assistant-avatars/${avatarId}`, { data: body });
-        return avatarFromApi(response.data.data);
+        return AssistantAvatarsSchema.parse(response.data.data);
     } catch (err) {
         throw logApiError("updateAssistantAvatar", err, { avatarId });
     }

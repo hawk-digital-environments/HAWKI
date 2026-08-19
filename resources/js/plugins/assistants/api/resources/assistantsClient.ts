@@ -2,10 +2,9 @@ import z from "zod";
 import { useApp } from "$lib/app/hooks/useApp.svelte.js";
 import type { FetchCollectionQuery, FetchResourceQuery } from "$lib/kernel/api/buildQueryString.js";
 import type { JsonApiCollection, JsonApiPagination } from "$lib/kernel/api/jsonApiEncoding.js";
-import AssistantsSchema from "$plugins/assistants/api/schemas/assistants.schema";
 import { logApiError } from "$plugins/assistants/api/errors";
 import type { Assistant } from "$plugins/assistants/types/assistant";
-// import {ASSISTANT_SETTING_KEY_MAP} from "$lib/plugins/assistants/api/serializers/apiFieldSerializer"
+// import {ASSISTANT_SETTING_KEY_MAP} from "$plugins/assistants/api/schemas/resources/assistants.schema"
 // import { ASSISTANT_SETTING_VALUES } from "./assistantOptionsClient";
 // import lodash from "lodash";
 
@@ -122,6 +121,7 @@ export async function listAssistants(
       const collection = await useApp().restApi.getResourceCollection(ASSISTANTS, {
         query
       })
+
       return {
           assistants: Array.from(collection),
           pagination: collection._pagination,

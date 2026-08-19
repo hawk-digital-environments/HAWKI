@@ -1,4 +1,3 @@
-import { getApi } from "$lib/plugins/assistants/api/client";
 import { ApiError, logApiError } from "$lib/plugins/assistants/api/errors";
 
 const TYPE = "assistants";
@@ -99,26 +98,26 @@ export async function uploadAssistantAttachmentQueue(
     onFileProgress?: (file: File, progress: number) => void,
     signal?: AbortSignal,
 ): Promise<AttachmentQueueResult[]> {
-    const uploadTasks = files.map((file) =>
-        uploadAssistantAttachment(
-            assistantId,
-            file,
-            (progress) => onFileProgress?.(file, progress),
-            signal,
-        )
-            .then((result): AttachmentQueueResult => {
-                onFileProgress?.(file, 100);
-                return { uuid: result.uuid };
-            })
-            .catch((error): AttachmentQueueResult => {
-                console.error(`Upload failed for ${file.name}:`, error);
-                onFileProgress?.(file, 0);
-                const apiError = error instanceof ApiError ? error : ApiError.from(error);
-                return { error: apiError };
-            }),
-    );
-
-    return Promise.all(uploadTasks);
+    // const uploadTasks = files.map((file) =>
+    //     uploadAssistantAttachment(
+    //         assistantId,
+    //         file,
+    //         (progress) => onFileProgress?.(file, progress),
+    //         signal,
+    //     )
+    //         .then((result): AttachmentQueueResult => {
+    //             onFileProgress?.(file, 100);
+    //             return { uuid: result.uuid };
+    //         })
+    //         .catch((error): AttachmentQueueResult => {
+    //             console.error(`Upload failed for ${file.name}:`, error);
+    //             onFileProgress?.(file, 0);
+    //             const apiError = error instanceof ApiError ? error : ApiError.from(error);
+    //             return { error: apiError };
+    //         }),
+    // );
+    //
+    // return Promise.all(uploadTasks);
 }
 
 /**

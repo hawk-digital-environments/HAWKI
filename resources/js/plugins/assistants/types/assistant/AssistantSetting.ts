@@ -32,17 +32,22 @@ export type AssistantSettingOption = z.infer<typeof AssistantSettingOptionSchema
  * `assistantOptionsStore.settings`; the *chosen* value lives on the assistant
  * itself under the matching `key` (see `Assistant.formality` etc.).
  *
+ * This is the domain shape. The wire shape differs (`ui_options` /
+ * `default_value`, not `options` / `defaultValue`) and does no longer belong
+ * here — see `api/schemas/resources/assistant-settings.schema.ts` for the
+ * validated wire→domain mapping that produces this type; that file is what
+ * `AssistantsPlugin.resourceSchemas()` registers.
+ *
  * `options` is absent for free-text settings.
  */
-export const AssistantSettingSchema = z.object(
-    {
-        id: z.string(),
-        /** Matches the assistant attribute this setting drives, e.g. `"formality"`. */
-        key: z.string(),
-        label: z.string(),
-        description: z.string(),
-        options: z.array(AssistantSettingOptionSchema).optional(),
-        defaultValue: z.string().nullable().optional()
+export const AssistantSettingSchema = z.object({
+    id: z.string(),
+    /** Matches the assistant attribute this setting drives, e.g. `"formality"`. */
+    key: z.string(),
+    label: z.string(),
+    description: z.string(),
+    options: z.array(AssistantSettingOptionSchema).optional(),
+    defaultValue: z.string().nullable().optional()
 });
 
 export type AssistantSetting = z.infer<typeof AssistantSettingSchema>;

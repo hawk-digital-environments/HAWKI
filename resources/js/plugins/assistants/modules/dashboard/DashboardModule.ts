@@ -12,9 +12,9 @@ export class DashboardModule implements HawkiCoreModule {
             {name: "assistant.dashboard.store"}
         );
         registrar.lazyRoute(
-            '/my_drafts',
-            () => import('$plugins/assistants/modules/dashboard/pages/my_drafts/page.svelte'),
-            {name: "assistant.dashboard.my_drafts"}
+            '/drafts',
+            () => import('$plugins/assistants/modules/dashboard/pages/drafts/page.svelte'),
+            {name: "assistant.dashboard.drafts"}
         );
         registrar.lazyRoute(
             '/favourites',

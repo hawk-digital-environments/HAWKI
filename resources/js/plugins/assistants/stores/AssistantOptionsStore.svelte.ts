@@ -88,8 +88,7 @@ class AssistantOptionsStore implements DataStore{
 
     /** Fetch all option lists in parallel. No-op once loaded unless `force`. */
     async load(force = false): Promise<void> {
-        console.log('load options')
-        if (this.loading || (this.loaded && !force)) return;
+        // if (this.loading || (this.loaded && !force)) return;
         this.loading = true;
         this.error = null;
 
@@ -99,6 +98,7 @@ class AssistantOptionsStore implements DataStore{
             listTags(),
             listSettings(),
           ]);
+
           this.categories = categories;
           this.tags = tags;
           this.settings = settings;

@@ -9,12 +9,12 @@ import {StoreRegistrar} from "$lib/kernel/stores/storeRegistrar";
 import {DashboardModule} from "$plugins/assistants/modules/dashboard/DashboardModule";
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte";
-import AssistantsSchema from "$plugins/assistants/api/schemas/assistants.schema";
-import {AssistantFeedbackSchema} from "$plugins/assistants/types/assistant";
-import {AssistantAvatarSchema} from "$plugins/assistants/types/assistant";
-import {AssistantCategorySchema} from "$plugins/assistants/types/assistant/AssistantCategory";
-import {AssistantTagSchema} from "$plugins/assistants/types/assistant/AssistantTag";
-import {AssistantSettingSchema} from "$plugins/assistants/types/assistant/AssistantSetting";
+import AssistantsSchema from "$plugins/assistants/api/schemas/resources/assistants.schema";
+import AssistantAvatarsSchema from "$plugins/assistants/api/schemas/resources/assistant-avatars.schema";
+import AssistantFeedbackSchema from "$plugins/assistants/api/schemas/resources/assistant-feedback.schema";
+import AssistantCategoriesSchema from "$plugins/assistants/api/schemas/resources/assistant-categories.schema";
+import AssistantTagsSchema from "$plugins/assistants/api/schemas/resources/assistant-tags.schema";
+import AssistantSettingsSchema from "$plugins/assistants/api/schemas/resources/assistant-settings.schema";
 import {BuilderModule} from "$plugins/assistants/modules/builder/BuilderModule";
 
 
@@ -31,11 +31,13 @@ export default class AssistantsPlugin implements HawkiCorePlugin {
 
     resourceSchemas?(registrar: ResourceSchemaRegistrar, context: HawkiPluginContext): void | Promise<void> {
         registrar.add('assistants', AssistantsSchema);
-        registrar.add('assistant-avatar', AssistantAvatarSchema);
+        // Was registered as 'assistant-avatar' (singular) — the backend resource
+        // type is plural (`AssistantAvatarSchema::type()`); fixed while moving.
+        registrar.add('assistant-avatars', AssistantAvatarsSchema);
         registrar.add('assistant-feedback', AssistantFeedbackSchema)
-        registrar.add('assistant-categories', AssistantCategorySchema)
-        registrar.add('assistant-tags', AssistantTagSchema)
-        registrar.add('assistant-settings', AssistantSettingSchema)
+        registrar.add('assistant-categories', AssistantCategoriesSchema)
+        registrar.add('assistant-tags', AssistantTagsSchema)
+        registrar.add('assistant-settings', AssistantSettingsSchema)
     }
     public modules({add}: ModuleRegistrar): void | Promise<void> {
         add(new DashboardModule());

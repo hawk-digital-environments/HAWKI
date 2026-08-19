@@ -18,7 +18,6 @@
     let activeFilters = $state(new Set<string>());
 
     $effect(() => {
-        console.log('effect')
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],

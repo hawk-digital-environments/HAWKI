@@ -45,10 +45,10 @@ import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
 import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
 import {
   assistantToApi,
-  createEmptyAssistant
-} from "$plugins/assistants/api/serializers/assistantSerializer";
-import {ASSISTANT_SETTING_KEYS} from "$plugins/assistants/api/serializers/apiFieldSerializer";
-import {avatarToApi} from "$plugins/assistants/api/serializers/avatarSerializer"
+  createEmptyAssistant,
+  ASSISTANT_SETTING_KEYS
+} from "$plugins/assistants/api/schemas/resources/assistants.schema";
+import {avatarToApi} from "$plugins/assistants/api/schemas/resources/assistant-avatars.schema"
 import {
   // createAssistant,
   // updateAssistant,

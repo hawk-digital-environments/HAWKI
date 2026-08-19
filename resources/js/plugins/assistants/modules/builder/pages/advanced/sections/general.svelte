@@ -1,11 +1,12 @@
 <script>
-    import BuilderInput from "$lib/plugins/assistants/components/assistantBuilderComponents/BuilderInput.svelte";
-    import TagInput from "$lib/plugins/assistants/components/assistantBuilderComponents/tags/TagInput.svelte";
-    import {assistantOptionsStore} from "$lib/plugins/assistants/stores/AssistantOptionsStore.svelte";
+    import BuilderInput from "$plugins/assistants/components/assistantBuilderComponents/BuilderInput.svelte";
+    import TagInput from "$plugins/assistants/components/assistantBuilderComponents/tags/TagInput.svelte";
+    import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import AvatarBuilderPanel from "$plugins/assistants/components/avatarBuilder/AvatarBuilderPanel.svelte";
 
     const {__} = useTranslator();
+    console.log((assistantOptionsStore.getSetting('language')))
 </script>
 
 <div class="page-wrapper">

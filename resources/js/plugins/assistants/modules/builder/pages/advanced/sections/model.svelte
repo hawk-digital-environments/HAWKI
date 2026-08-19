@@ -1,11 +1,11 @@
 <script lang="ts">
 
 
-    import BuilderInput from "$lib/plugins/assistants/components/assistantBuilderComponents/BuilderInput.svelte";
-    import ModelSelector from "$lib/plugins/assistants/components/modelSelector/ModelSelector.svelte";
+    import BuilderInput from "$plugins/assistants/components/assistantBuilderComponents/BuilderInput.svelte";
+    import ModelSelector from "$plugins/assistants/components/modelSelector/ModelSelector.svelte";
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
-    import ToolSelector from "$lib/plugins/assistants/components/assistantBuilderComponents/aiToolComponents/ToolSelector.svelte";
-    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    import ToolSelector from "$plugins/assistants/components/assistantBuilderComponents/aiToolComponents/ToolSelector.svelte";
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
 const {__} = useTranslator();
 const builder = useBuilderContext();
 
