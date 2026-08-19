@@ -73,7 +73,7 @@
     });
 </script>
 
-<div class="history-row" class:menu-open={menuOpen}>
+<div class="history-row" class:menu-open={menuOpen} class:active>
     {#if renaming}
         <input
             class="rename-input"
@@ -101,7 +101,6 @@
                         variant="ghost"
                         size="sm"
                         iconLeft={MoreHorizontalIcon}
-                        highlight={props['data-state']}
                         tooltip={__('chat.nameMenu.actionsTooltip')}
                         tooltipSide="right"
                     />
@@ -167,6 +166,15 @@
         height: var(--action-size);
         padding: 0;
         border-radius: var(--corner-xs);
+        /* No plate behind the glyph — the row underneath already carries the
+           hover / active surface. */
+        background: transparent;
+    }
+
+    /* The glyph sits directly on the selected row's surface, so it takes the
+       same text color as the row's label rather than the neutral ghost color. */
+    .history-row.active .actions :global(button) {
+        color: var(--color-active-text);
     }
 
     /* Touch has no hover, so the trigger stays visible there. */
