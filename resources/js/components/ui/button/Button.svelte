@@ -183,7 +183,7 @@
 
         &:disabled {
             opacity: 1;
-            --btn-bg: var(--color-bg-secondary);
+            --btn-bg: var(--color-disabled-bg);
             --btn-color: var(--color-text-disabled);
         }
     }
