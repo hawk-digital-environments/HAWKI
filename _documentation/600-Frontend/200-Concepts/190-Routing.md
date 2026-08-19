@@ -138,6 +138,9 @@ The loader context (`ctx`) carries what a loader needs:
 
 - `ctx.params` — the parsed params (typed by the sibling `paramSchema`).
 - `ctx.router` — the owning router's `RouterHandle`, for navigation within a loader.
+- `ctx.path` — the path being resolved, already normalized.
+- `ctx.route` — the matched `universal-router` `Route` object.
+- `ctx.context` — the resolution context the route matched with, the same one its middlewares saw.
 - `ctx.signal` — an `AbortSignal` that fires when this resolution is superseded by a newer navigation. Pass it to `restApi` calls so a superseded fetch is aborted, not left dangling.
 - `ctx.redirect(pathOrRoute, params?)` — throws, never returns. Resolved against the owning router.
 - `ctx.error(status, message?)` — throws, never returns. `404` lands the router on `state: 'notFound'`, anything else on `state: 'error'`.
@@ -215,7 +218,7 @@ The router caches component references by loader identity, so a layout shared by
 
 A layout declares its own `config` with `configureLayout` — same shape as `configurePage`, separate name for clarity:
 
-```sveltehtml
+```svelte
 // AdminLayout.svelte
 <script module lang="ts">
     export const config = configureLayout({
@@ -384,12 +387,12 @@ The matched remainder is **not** exposed as a param. Use a wildcard in the path 
 
 ## Advanced: reaching app services from a loader
 
-The `components/ui/` package must not import from `kernel/` — that direction is deliberately not a dependency, so the routing kit can be externalized into its own package. Loaders reach app services (`app`, `restApi`) through TypeScript declaration merging on `RouteDataLoaderContextExtensions` in `resources/js/components/ui/routing/extendableTypes.ts`:
+The `components/ui/` package must not import from `kernel/` — that direction is deliberately not a dependency, so the routing kit can be externalized into its own package. Loaders reach app services (`app`, `restApi`) through TypeScript declaration merging on `RouteContextExtensions` in `resources/js/components/ui/routing/extendableTypes.ts` — the same interface a middleware's `context` is intersected with, since `RouteDataLoaderContext` extends it too:
 
 ```ts
 // In RoutingExtension.ts
 declare module '$lib/components/ui/routing/extendableTypes.js' {
-    interface RouteDataLoaderContextExtensions {
+    interface RouteContextExtensions {
         app: HawkiApp;
         restApi: RestApi;
     }

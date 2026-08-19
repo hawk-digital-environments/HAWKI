@@ -23,7 +23,7 @@ flowchart LR
 | Piece | Extension | Job |
 |---|---|---|
 | Feature modules | `ModuleExtension` | Registry of modules (`core:chat`, …). See [Modules](../200-Modules.md). |
-| Route registry + router | `RoutingExtension` | Collects route registrations from plugins and modules, compiles them into a `universal-router` router on the `late` stage, exposes the handle as `app.router`. |
+| Route registry + router | `RoutingExtension` | Collects route registrations from plugins and modules during `init()`, compiles them into a `universal-router` router on the `late` stage (in `ready()`), exposes the handle as `app.router`. |
 | SPA shell | `ShellExtension` | Mounts the `Shell.svelte` root component into `#hawki-app` (if present) and drives the legacy snippet fallback otherwise. |
 
 ## RoutingExtension
@@ -33,9 +33,7 @@ flowchart LR
 1. Every plugin's `routes(registrar, context)` hook, dispatched through `PluginBootstrapper.runRoutes()` — already wrapped in a `registrar.group(...)` carrying the plugin's route prefix (empty for core plugins, `/plugins/<slug>` otherwise).
 2. Every registered module's `routes(registrar)` hook — already wrapped in a `registrar.group(...)` carrying the module's route prefix.
 
-The router is a one-time snapshot: `init()` calls `registrar.build()` once and never re-reads the registrar, so registering routes after boot has no effect on `app.router`.
-
-On the `late` stage, `ready()` compiles the registrar into a `universal-router` instance and exposes it as `app.router` (a `RouterHandle`). `app.__router` is the `@internal` escape hatch that exposes the full `Router` instance — used only by `RouterView` inside the shell.
+The router is a one-time snapshot: on the `late` stage, `ready()` compiles the registrar into a `universal-router` instance via `createRouterFromRegistrar` (which calls `registrar.build()` internally) and exposes the result as `app.router` (a `RouterHandle`). Nothing re-reads the registrar afterwards, so registering routes after that point has no effect on `app.router`. `app.__router` is the `@internal` escape hatch that exposes the full `Router` instance — used only by `RouterView` inside the shell.
 
 The route registration API (`lazyRoute`, `route`, `group`), the `configurePage` / `configureLayout` config pattern, and the render-chain model are documented in [Routing](../190-Routing.md).
 

@@ -50,7 +50,7 @@ sequenceDiagram
     A ->> A: runLegacyWaitUntilReadyQueue()
     Note over S: isBooting flipped to false<br/>swaps Loader for RouterView
     S ->> RV: render
-    RV ->> RE: router.resolve('/new/')
+    RV ->> RE: router.bind() (reads path strategy, resolves internally)
     RE -->> RV: matched route: chat.index
     RV ->> Page: lazy-load + render ChatIndex.svelte
     Page -->> B: chat page visible
@@ -84,7 +84,7 @@ The six stages run in order. The ones that matter here:
 </Loader>
 ```
 
-Once `isBooting` flips to `false`, the `Loader` swaps out and `RouterView` takes over. `RouterView` calls `router.resolve('/new/')` against the compiled router. The registrar collected the `ChatModule` route `/` (under the core plugin's empty prefix), so the match resolves to the `chat.index` route and its lazy loader. See [Routing](../190-Routing.md) for how the router resolves and renders.
+Once `isBooting` flips to `false`, the `Loader` swaps out and `RouterView` takes over. `RouterView` calls `router.bind()`, which wires the router to its routing strategy — here the `path` strategy, so it reads `window.location.pathname` (`/new/`) and triggers resolution internally. The registrar collected the `ChatModule` route `/` (under the core plugin's empty prefix), so the match resolves to the `chat.index` route and its lazy loader. See [Routing](../190-Routing.md) for how the router resolves and renders.
 
 ### The page — `ChatIndex.svelte`
 

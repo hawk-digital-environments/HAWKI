@@ -131,7 +131,7 @@ Every property below is contributed by an extension's `provideProperties()` and 
 | `app.localization`                                   | Active locale + loaded label sets                                        | `LocalizationExtension`                |
 | `app.translator`                                     | Ready `Translator` (`__`, `translate`, …)                                | `LocalizationExtension`                |
 | `app.modules`                                        | Feature-module registry (`core:chat`, …)                                 | `ModuleExtension`                      |
-| `app.router`                                         | Compiled router handle (`router.resolve(pathname)`)                      | `RoutingExtension`                     |
+| `app.router`                                         | Compiled router handle (`goTo`, `getPath`, `isActive`, …)                 | `RoutingExtension`                     |
 | `app.stores`                                         | Data-store registry (`app.stores.get('theme')`)                          | `StoreExtension`                       |
 | `app.isMounted` / `app.isBooting` / `app.mountPoint` | SPA shell mount state                                                    | `ShellExtension`                       |
 | `app.mount(selector?)` / `app.unmount()`             | Mount/unmount the SPA shell                                              | `ShellExtension`                       |
