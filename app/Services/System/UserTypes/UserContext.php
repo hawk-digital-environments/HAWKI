@@ -199,6 +199,6 @@ class UserContext
      */
     public function getUser(): null|RegisteringUser|User
     {
-        return $this->registeringUser ?? $this->getAuthenticatedUser();
+        return $this->getRegisteringUser() ?? $this->getAuthenticatedUser();
     }
 }
