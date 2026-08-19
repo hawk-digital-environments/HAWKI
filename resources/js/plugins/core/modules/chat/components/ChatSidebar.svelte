@@ -1,12 +1,13 @@
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
-    import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
+    import ChatHistoryItem from '$plugins/core/modules/chat/components/ChatHistoryItem.svelte';
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
     import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 
     const store = useStore('chat');
     // Rendered in the app sidebar, outside the RouterView subtree, so the
@@ -15,6 +16,7 @@
     const app = useApp();
     const sidebar = useSidebar();
     const {__} = useTranslator();
+    const toast = useToastContext();
     const expanded = $derived(sidebar.navOpen);
 
     // Fade the list edge only where there is actually more content in that
@@ -41,6 +43,27 @@
         updateFades();
         return () => observer.disconnect();
     });
+
+    async function renameConversation(slug: string, name: string) {
+        try {
+            await store.rename(slug, name);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    async function removeConversation(slug: string) {
+        try {
+            await store.remove(slug);
+            // Only leave the conversation that just disappeared; deleting some
+            // other row from the list must not navigate away.
+            if (app.router.isActive(`/chat/${slug}`)) {
+                void app.router.goTo(app.router.p('/chat'));
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : String(error));
+        }
+    }
 
     function newChat() {
         store.startNew();
@@ -73,14 +96,16 @@
                         {#snippet generatingIndicator()}
                             <span class="generation-indicator" aria-hidden="true"></span>
                         {/snippet}
-                        <SidebarItem
+                        <ChatHistoryItem
                             media={generating ? generatingIndicator : undefined}
-                            label={conversation.name}
+                            name={conversation.name}
                             active={app.router.isActive(`/chat/${conversation.slug}`)}
-                            aria-label={generating
+                            rowLabel={generating
                                 ? `${conversation.name}, ${__('chat.sidebar.generating')}`
                                 : conversation.name}
-                            onclick={() => app.router.goTo(app.router.p(`/chat/${conversation.slug}`))}
+                            onOpen={() => app.router.goTo(app.router.p(`/chat/${conversation.slug}`))}
+                            onRename={name => renameConversation(conversation.slug, name)}
+                            onDelete={() => removeConversation(conversation.slug)}
                         />
                     {/each}
                 </SidebarItems>
