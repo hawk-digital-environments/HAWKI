@@ -1,24 +1,83 @@
 <!--
-  @component Swaps its `children` for a loading spinner while `active` is true. Use to replace
-  content in place (e.g. a button label, a panel body) rather than overlaying it.
+  @component Loading indicator that can either replace its children or overlay
+  them while preserving the mounted subtree.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
+    import {mergeProps} from 'bits-ui';
 
-    interface Props {
-        /** Shows the spinner instead of `children` while true. */
+    interface Props extends HTMLAttributes<HTMLDivElement> {
+        /** Whether the loading indicator is visible. */
         active: boolean;
-        /** Content rendered when not loading. */
+        /** Content shown when loading finishes or below an overlay loader. */
         children: Snippet;
+        /** Keep children mounted and cover them with the loading surface. */
+        overlay?: boolean;
+        /** Translated accessible loading text. */
+        label: string;
     }
 
-    const {children, active}: Props = $props();
+    const {children, active, overlay = false, label, class: className, ...rest}: Props = $props();
 </script>
 
-{#if active}
-    <div class="loader">
-        <div class="spinner">Loading!</div>
+{#if overlay}
+    <div {...mergeProps(rest, {class: ['loader-host', className], 'aria-busy': active})}>
+        {@render children()}
+        {#if active}
+            <div class="loader loader--overlay" role="status" aria-label={label}>
+                <span class="spinner" aria-hidden="true"></span>
+            </div>
+        {/if}
+    </div>
+{:else if active}
+    <div {...mergeProps(rest, {class: ['loader', className], role: 'status', 'aria-label': label})}>
+        <span class="spinner" aria-hidden="true"></span>
     </div>
 {:else}
     {@render children()}
 {/if}
+
+<style>
+    .loader-host {
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+    }
+
+    .loader {
+        display: grid;
+        min-height: 4rem;
+        place-items: center;
+    }
+
+    .loader--overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: color-mix(in oklch, var(--color-bg) 65%, transparent);
+        backdrop-filter: blur(1px);
+    }
+
+    .spinner {
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 2px solid var(--color-border);
+        border-top-color: var(--color-interactive);
+        border-radius: 50%;
+        animation: spin 700ms linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            rotate: 1turn;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .spinner {
+            animation-duration: 1400ms;
+        }
+    }
+</style>

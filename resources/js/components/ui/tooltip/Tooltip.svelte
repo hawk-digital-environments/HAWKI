@@ -57,6 +57,8 @@
          * The tooltip still opens on hover and on focus of the surrounding control.
          */
         focusable?: boolean;
+        /** Screen-reader text used when the tooltip trigger is not independently focusable. */
+        hiddenLabel?: string;
         /**
          * The content that triggers the tooltip, typically an icon or button. Can be a string or a Svelte snippet.
          * If a snippet is provided, it will receive a `props` object as an argument, which MUST be used to spread onto the root element of the snippet.
@@ -74,6 +76,7 @@
         open = $bindable(false),
         disabled,
         focusable = true,
+        hiddenLabel,
         ...restProps
     }: Props = $props();
 
@@ -146,6 +149,9 @@
         </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>
 </TooltipPrimitive.Provider>
+{#if (!focusable || disabled) && hiddenLabel}
+    <span class="u-sr-only">{hiddenLabel}</span>
+{/if}
 
 <style>
     :global(.tooltip-content) {

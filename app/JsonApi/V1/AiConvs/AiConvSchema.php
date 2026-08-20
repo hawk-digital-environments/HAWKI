@@ -22,6 +22,11 @@ class AiConvSchema extends Schema
     public static string $model = AiConv::class;
 
     /**
+     * Conversation responses may include both messages and their authors.
+     */
+    protected int $maxDepth = 2;
+
+    /**
      * Get the resource fields.
      *
      * The slug doubles as the resource id because the frontend routes address
@@ -41,7 +46,6 @@ class AiConvSchema extends Schema
             Str::make('system_prompt'),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
-
             HasMany::make('messages')->type('ai-conv-messages')->readOnly(),
         ];
     }

@@ -9,6 +9,17 @@ interface Options {
     axis?: 'x' | 'y';
 }
 
+/**
+ * Tracks the registered item nearest to the pointer and measures every item
+ * relative to one scrollable container. Consumers use the returned rectangles
+ * to position a single animated hover/selection surface instead of giving each
+ * row an independent background.
+ *
+ * Call `setContainer()` with the positioning parent, register rows with stable
+ * numeric ids, and forward the three `handlers` to the container. Re-run
+ * `measureItems()` after layout changes that do not originate from pointer
+ * movement (for example a sidebar resize).
+ */
 export function createProximityHover(options: Options = {}) {
     const { axis = 'y' } = options;
 

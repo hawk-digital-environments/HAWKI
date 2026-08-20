@@ -1,5 +1,6 @@
 {
     "ui": {
+        "loading": "Loading…",
         "navigation": {
             "skipToContent": "Skip to main content",
             "open": "Open navigation",
@@ -7,7 +8,8 @@
             "collapse": "Collapse sidebar",
             "expand": "Expand sidebar",
             "search": "Search",
-            "newChat": "New chat"
+            "newChat": "New chat",
+            "label": "Navigation"
         },
         "dialog": {
             "closeLabel": "Close",

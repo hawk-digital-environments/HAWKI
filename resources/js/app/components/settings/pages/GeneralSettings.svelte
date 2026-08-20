@@ -6,7 +6,7 @@
     import z from 'zod';
     import Button from '$lib/components/ui/button/Button.svelte';
     import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
-    import ConfirmDialog from '$lib/app/components/settings/ConfirmDialog.svelte';
+    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useConfig} from '$lib/app/hooks/useConfig.svelte.js';
     import {useRestApi} from '$lib/app/hooks/useApi.js';
@@ -126,7 +126,9 @@
     bind:open={confirmDeleteOpen}
     title={__('ui.settings.general.deleteConfirmTitle')}
     description={__('ui.settings.general.deleteConfirmText')}
-    confirmLabel={__('ui.settings.general.deleteConfirmButton')}
+    okLabel={__('ui.settings.general.deleteConfirmButton')}
+    cancelLabel={__('ui.settings.common.cancel')}
+    confirmVariant="delete"
     busy={deleting}
     onConfirm={deleteAllData}
 />

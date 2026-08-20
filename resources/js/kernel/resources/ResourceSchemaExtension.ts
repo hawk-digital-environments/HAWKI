@@ -26,9 +26,11 @@ declare module '$lib/kernel/extendableTypes.js' {
  * {@link HawkiResourceSchemas} interface via declaration merging so
  * `app.restApi.getResourceCollection('ai-models')` returns a typed
  * `AiModel[]`. The extension itself eager-globs `$lib/app/schemas/resources/*.schema.{ts,js}`
- * on `init` to register the core schemas; `has`/`get` are the lookup helpers
+ * on `init` to register foundation schemas; `has`/`get` are the lookup helpers
  * the `RestApi` uses (overloaded to preserve the typed surface when the caller
- * passes a `keyof HawkiResourceSchemas`).
+ * passes a `keyof HawkiResourceSchemas`). Foundation schemas are discovered
+ * from `$lib/app/schemas/resources`; feature schemas belong to their plugin's
+ * `resourceSchemas()` hook.
  */
 export class ResourceSchemaExtension implements HawkiAppExtension {
     private readonly registry = new Map<string, z.ZodTypeAny>();

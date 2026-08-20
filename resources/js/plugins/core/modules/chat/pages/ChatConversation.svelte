@@ -30,11 +30,12 @@ exists; a generation started there keeps streaming through the store.
     const {params = {}}: Props = $props();
     const app = useApp();
     const store = useStore('chat');
+    const systemPromptStore = useStore('system-prompts');
     const router = useRouter();
     const toast = useToastContext();
     const {__} = useTranslator();
     const slug = $derived(typeof params.slug === 'string' ? params.slug : null);
-    const defaultPrompt = app.stores.get('system-prompts').getPromptByType('default')?.prompt ?? '';
+    const defaultPrompt = systemPromptStore.getPromptByType('default').prompt;
     const transport = new ChatTransport(app, store);
 
     let composer = $state<ComposerContext | null>(null);
@@ -134,7 +135,7 @@ exists; a generation started there keeps streaming through the store.
         if (!store.active) return;
         try {
             await store.remove(store.active.slug);
-            void router.goTo(router.p('/chat'));
+            void router.goToRoute('chat.index');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : String(error));
         }
@@ -295,7 +296,7 @@ exists; a generation started there keeps streaming through the store.
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (max-width: 640px) {
+    @media (--bp-sm-and-smaller) {
         .messages {
             padding-inline: var(--space-3);
             padding-top: var(--space-5);

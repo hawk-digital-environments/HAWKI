@@ -1,4 +1,5 @@
 <script lang="ts">
+    /** @todo Load the deployment-specific wordmark from frontend configuration. */
     interface Props {
         /** Accessible label for the wordmark. */
         label?: string;

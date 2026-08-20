@@ -1,4 +1,6 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
+import {z} from 'zod';
 
 export type AppTheme = 'dark' | 'light';
 
@@ -33,24 +35,34 @@ declare module '$lib/kernel/extendableTypes.js' {
 export class ThemeStore implements DataStore {
     public readonly name = 'theme';
 
-    constructor() {
+    private _theme = $state(detectAppTheme());
+    private app: HawkiApp | null = null;
+
+    public async loadData(app: HawkiApp): Promise<void> {
+        this.app = app;
+
         const observer = new MutationObserver(() => (this._theme = detectAppTheme()));
         observer.observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
 
-        // Apply a previously persisted preference; the `<html>` class rendered by the
-        // server does not know about it.
-        const persisted = readPersistedTheme();
+        // The server-rendered class cannot know a browser-only preference.
+        const persisted = themeSchema.safeParse(app.localStorage.getItem('theme')).data;
         if (persisted && persisted !== this._theme) {
             this.theme = persisted;
         }
     }
 
-    private _theme = $state(detectAppTheme());
-
     /** The currently active theme. Reactive — reading it inside a `$derived` or
      *  component template tracks it automatically. */
     public get theme(): AppTheme {
         return this._theme;
+    }
+
+    public get isDark(): boolean {
+        return this._theme === 'dark';
+    }
+
+    public get isLight(): boolean {
+        return this._theme === 'light';
     }
 
     /** Sets the active theme by toggling `darkMode` / `lightMode` on `<html>`,
@@ -59,30 +71,12 @@ export class ThemeStore implements DataStore {
         const className = value === 'dark' ? 'darkMode' : 'lightMode';
         document.documentElement.classList.add(className);
         document.documentElement.classList.remove(value === 'dark' ? 'lightMode' : 'darkMode');
-        // Same storage key/values the legacy theme switcher uses, so both UIs stay in sync.
-        try {
-            localStorage.setItem('darkMode', value === 'dark' ? 'enabled' : 'disabled');
-        } catch (e) {
-            // Storage may be unavailable (private mode/quota) — the theme still applies for this page.
-        }
+        this.app?.localStorage.setItem('theme', value);
         this._theme = value;
     }
 }
 
-function readPersistedTheme(): AppTheme | null {
-    try {
-        const stored = localStorage.getItem('darkMode');
-        if (stored === 'enabled') {
-            return 'dark';
-        }
-        if (stored === 'disabled') {
-            return 'light';
-        }
-    } catch (e) {
-        // Storage unavailable — fall through to detection.
-    }
-    return null;
-}
+const themeSchema = z.union([z.literal('dark'), z.literal('light')]);
 
 function detectAppTheme(): AppTheme {
     if (typeof document === 'undefined') {

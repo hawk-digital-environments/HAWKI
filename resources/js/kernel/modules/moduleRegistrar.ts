@@ -4,19 +4,6 @@ import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 
 /**
- * Copies a module, adding `props` on top of it.
- *
- * Modules are normally class instances, so `title()`, `icon()`, `description()`,
- * `routes()` and `sidebar()` live on the prototype. The copy therefore has to be
- * created *with that prototype in place* — a plain `Object.assign({}, module)`
- * copies own enumerable properties only, which keeps `name` but silently drops
- * every method the module declares.
- */
-function extendModule(module: HawkiModule, props: Record<string, unknown>): HawkiModule {
-    return Object.assign(Object.create(Object.getPrototypeOf(module)), module, props);
-}
-
-/**
  * Per-plugin registrar factory for the {@link ModuleExtension}.
  *
  * `createModuleRegistrar` is bound to a single plugin and exposes only `add`;
@@ -46,24 +33,28 @@ export function createModuleRegistrar(
             throw new Error(`Module with name "${fullModuleName}" is already registered.`);
         }
 
-        const instance = module;
-
-        if (module.routes) {
-            // Wrap the routes callback to automatically prefix the module's routes with the plugin and module name.
-            // Bound to the original instance, since it is handed on as a bare callback.
-            const innerRoutes = module.routes.bind(instance);
-            module = extendModule(module, {
-                routes: async (registrar: RouteRegistrar) => {
+        // Keep the original class instance intact. The stored adapter delegates
+        // optional methods explicitly, preserving their `this` binding while
+        // adding plugin metadata and the route namespace in one visible place.
+        const registeredModule: HawkiModuleWithPlugin = {
+            name: module.name,
+            plugin,
+            ...(module.title ? {title: module.title.bind(module)} : {}),
+            ...(module.description ? {description: module.description.bind(module)} : {}),
+            ...(module.icon ? {icon: module.icon.bind(module)} : {}),
+            ...(module.sidebar ? {sidebar: module.sidebar.bind(module)} : {}),
+            ...(module.routes ? {
+                routes: (registrar: RouteRegistrar) => {
                     registrar.group(
-                        getModuleRoutePrefix(plugin.name, instance.name, plugin.isCorePlugin),
-                        innerRoutes,
-                        {name: getModuleRouteGroupName(plugin.name, instance.name)}
+                        getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin),
+                        module.routes!.bind(module),
+                        {name: getModuleRouteGroupName(plugin.name, module.name)}
                     );
                 }
-            });
-        }
+            } : {})
+        };
 
-        modules.set(fullModuleName, extendModule(module, {plugin}) as HawkiModuleWithPlugin);
+        modules.set(fullModuleName, registeredModule);
     }
 
     return {

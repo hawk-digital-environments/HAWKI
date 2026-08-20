@@ -7,8 +7,8 @@ import {LocalesSchema} from '$lib/app/schemas/resources/compound/locales.schema.
  *
  * This is the config every `useConfig()` call (with no arguments) resolves
  * to; it is also what `app.config.get('hawki-core')` returns. The namespace
- * is populated from the server's `'configs'` resource (fetched once during
- * the bootstrapper's `preparation` stage by `ConfigurationExtension`) and
+ * is populated from the server's `'configs'` resource (fetched during the
+ * bootstrapper's `preparation` stage and after connection-type changes) and
  * parsed against this schema on first access.
  *
  * Fields marked `.optional()` are features/settings that may be disabled or

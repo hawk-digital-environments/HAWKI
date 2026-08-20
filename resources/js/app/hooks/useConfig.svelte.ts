@@ -6,7 +6,7 @@ import type {HawkiConfigSchemas} from '$lib/kernel/extendableTypes.js';
  * Hook that gives components access to server-provided, namespaced app
  * configuration (`app.config.get(namespace)`).
  *
- * Config is fetched once from the API and split into namespaces so that each
+ * Config is fetched during bootstrap and split into namespaces so that each
  * feature module can own and validate its own slice (e.g. `'hawki-core'` for
  * core settings such as locale/transfer/security, or a plugin-specific
  * namespace it registers itself — see `HawkiConfigSchemas` in
@@ -19,9 +19,10 @@ import type {HawkiConfigSchemas} from '$lib/kernel/extendableTypes.js';
  * pass a namespace key to get that namespace's config; the return type is
  * inferred from the matching Zod schema in either case.
  *
- * The returned value is a plain (non-reactive) object: config is fetched once
- * during bootstrap and parsed/cached per namespace, so it does not change
- * during a session — there is nothing to track reactively.
+ * Configuration state is reactive. When `refreshConnection()` observes a
+ * connection-type change, the extension refreshes config and updates
+ * already-returned namespace objects in place, so existing component
+ * references observe the new session.
  *
  * Throws if no schema is registered for the requested namespace.
  *

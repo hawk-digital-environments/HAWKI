@@ -94,7 +94,7 @@
         border: var(--divider);
         background: transparent;
         color: var(--color-text);
-        font-size: var(--font-size-nav);
+        font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
         text-align: left;
         cursor: pointer;

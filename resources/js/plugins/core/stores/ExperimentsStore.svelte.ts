@@ -1,4 +1,5 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 
 /** Union of all known experiment ids. Extend when adding a new experiment. */
 export type ExperimentId = 'modelPickerV2';
@@ -49,7 +50,13 @@ const STORAGE_KEY = 'hawkiExperiments';
 export class ExperimentsStore implements DataStore {
     public readonly name = 'experiments';
 
-    private _flags = $state<Partial<Record<ExperimentId, boolean>>>(readPersistedFlags());
+    private _flags = $state<Partial<Record<ExperimentId, boolean>>>({});
+    private app: HawkiApp | null = null;
+
+    public async loadData(app: HawkiApp): Promise<void> {
+        this.app = app;
+        this._flags = readPersistedFlags(app);
+    }
 
     /** All registered experiments, for the settings page. */
     public get list(): ExperimentDefinition[] {
@@ -65,24 +72,20 @@ export class ExperimentsStore implements DataStore {
     /** Enables/disables an experiment and persists the preference. */
     public setEnabled(id: ExperimentId, enabled: boolean): void {
         this._flags = {...this._flags, [id]: enabled};
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this._flags));
-        } catch (e) {
-            // Storage may be unavailable (private mode/quota) — the flag still applies for this page.
-        }
+        this.app?.localStorage.setItem(STORAGE_KEY, JSON.stringify(this._flags));
     }
 }
 
-function readPersistedFlags(): Partial<Record<ExperimentId, boolean>> {
+function readPersistedFlags(app: HawkiApp): Partial<Record<ExperimentId, boolean>> {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = app.localStorage.getItem(STORAGE_KEY);
         if (!raw) {
             return {};
         }
         const parsed = JSON.parse(raw);
         return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    } catch (e) {
-        // Storage unavailable or corrupt value — start with everything off.
+    } catch {
+        // A corrupt value starts with every experiment disabled.
         return {};
     }
 }

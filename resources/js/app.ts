@@ -30,12 +30,12 @@
  * instead. Only touch this file when you need to add a fundamentally new,
  * app-wide extension, or change the relative ordering of existing ones.
  */
-import {ConfigurationExtension} from '$lib/kernel/config/ConfigurationExtension.js';
+import {ConfigurationExtension} from '$lib/kernel/config/ConfigurationExtension.svelte.js';
 import {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import {ModuleExtension} from '$lib/kernel/modules/ModuleExtension.js';
 import {createApp} from '$lib/kernel/HawkiApp.js';
 import {MigrationExtension} from '$lib/kernel/migrations/MigrationExtension.js';
-import {ClientExtension} from '$lib/kernel/client/ClientExtension.js';
+import {ClientExtension} from '$lib/kernel/client/ClientExtension.svelte.js';
 import {ResourceSchemaExtension} from '$lib/kernel/resources/ResourceSchemaExtension.js';
 import {PluginExtension} from '$lib/kernel/plugins/PluginExtension.js';
 import {LocalizationExtension} from '$lib/kernel/localization/LocalizationExtension.svelte.js';
@@ -45,6 +45,8 @@ import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
 import {SnippetExtension} from '$lib/legacy/SnippetExtension.js';
 import {LegacyToastExtension} from '$lib/legacy/LegacyToastExtension.js';
 import {ShellExtension} from '$lib/kernel/shell/ShellExtension.svelte.js';
+import {StorageExtension} from '$lib/kernel/storage/StorageExtension.js';
+import {passkeySessionExtension} from '$lib/kernel/keychain/PasskeySessionExtension.svelte.js';
 
 declare global {
     interface Window {
@@ -67,6 +69,7 @@ provideLegacyGlobals();
         bootstrapper,
         [
             new ResourceSchemaExtension(),
+            passkeySessionExtension,
             new ClientExtension(),
             new PluginExtension(),
             new ConfigurationExtension(),
@@ -74,6 +77,7 @@ provideLegacyGlobals();
             new LocalizationExtension(),
             new ModuleExtension(),
             new RoutingExtension(),
+            new StorageExtension(),
             new StoreExtension(),
             new ShellExtension(),
             new SnippetExtension(),

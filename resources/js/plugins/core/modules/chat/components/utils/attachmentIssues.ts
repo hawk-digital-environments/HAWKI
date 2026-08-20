@@ -18,7 +18,10 @@ export function reportAttachmentIssues(
         if (issue.type === 'file_too_large') {
             toastContext.error(translator.translate('chat.attachments.fileTooLarge', {name: issue.file.name, size: String(issue.file.size), maxSize: String(issue.maxSize)}));
         } else if (issue.type === 'unsupported_file_type') {
-            toastContext.error(translator.translate('chat.attachments.unsupportedFileType', {name: issue.file.name, type: issue.file.type || 'unbekannt'}));
+            toastContext.error(translator.translate('chat.attachments.unsupportedFileType', {
+                name: issue.file.name,
+                type: issue.file.type || translator.translate('chat.composer.error.unknown_file')
+            }));
         }
     });
 }

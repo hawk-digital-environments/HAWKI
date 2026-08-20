@@ -100,7 +100,7 @@
         flex: 1;
         min-width: 0;
         max-width: 34rem;
-        font-size: var(--font-size-nav);
+        font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
     }
 

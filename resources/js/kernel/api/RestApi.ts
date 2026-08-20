@@ -67,6 +67,8 @@ export type GetFromResourceActionOptions = FetchOptions;
 
 export type PostToResourceActionOptions = FetchOptions;
 
+export type ResourceActionData = object;
+
 export class RestApi {
     constructor(
         private readonly uriBuilder: UriBuilder,
@@ -318,20 +320,20 @@ export class RestApi {
     public async postToResourceAction<S extends z.ZodTypeAny>(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         // Note: The options object MUST contain the 'schema' of type S
         options: PostToResourceActionOptions & { schema: S }
     ): Promise<z.infer<S>>;
     public async postToResourceAction(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         options?: PostToResourceActionOptions
     ): Promise<any>;
     public async postToResourceAction(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         options?: PostToResourceActionOptions
     ): Promise<any> {
         const url = this.uriBuilder.jsonApiUri(resourceType, action);
@@ -349,19 +351,19 @@ export class RestApi {
     public async patchToResourceAction<S extends z.ZodTypeAny>(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         options: PostToResourceActionOptions & { schema: S }
     ): Promise<z.infer<S>>;
     public async patchToResourceAction(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         options?: PostToResourceActionOptions
     ): Promise<any>;
     public async patchToResourceAction(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         options?: PostToResourceActionOptions
     ): Promise<any> {
         const url = this.uriBuilder.jsonApiUri(resourceType, action);

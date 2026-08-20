@@ -7,6 +7,7 @@ import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 import {AiModel} from '$lib/plugins/core/schemas/resources/ai-models.schema';
 import {type ResponseBody, SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
 import type {AiToolOrCapabilityWithState} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
+import {passkeySessionExtension} from '$lib/kernel/keychain/PasskeySessionExtension.svelte.js';
 
 export interface OldUiConversationMessage {
     author: {
@@ -197,13 +198,18 @@ export class OldUiBridge {
 
     /**
      * The user's decrypted passkey for the current session, `null` until the
-     * user unlocks. This is `$state`, so new Svelte code can read it
-     * reactively (e.g. `$derived(() => oldUiBridge.passkey)`). The **old** UI
-     * is the writer — see `public/js/encryption.js`, which sets
-     * `window.oldUiBridge.passkey = passKey` once the user unlocks/logs in.
-     * New code should only ever read this value, never assign to it.
+     * user unlocks. This accessor adapts the legacy global onto the
+     * frontend-owned `PasskeySessionExtension`; new Svelte code reads that
+     * application service directly. The **old** UI is the writer — see
+     * `public/js/encryption.js`, which assigns this property after unlock.
      */
-    public passkey = $state<string | null>(null);
+    public get passkey(): string | null {
+        return passkeySessionExtension.passkey;
+    }
+
+    public set passkey(value: string | null) {
+        passkeySessionExtension.passkey = value;
+    }
 
     /**
      * Asks the legacy UI to update the system prompt of the active conversation.

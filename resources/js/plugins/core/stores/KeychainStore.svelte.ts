@@ -1,5 +1,4 @@
 import {createKeychainHandle, type KeychainHandle, type RoomKeys} from '$lib/kernel/keychain/keychainHandle.js';
-import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {decryptSymmetric, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
@@ -17,7 +16,7 @@ declare module '$lib/kernel/extendableTypes.js' {
  * Holds the user's asymmetric keypair (`publicKey` / `privateKey`), the AI
  * conversation key (`aiConvKey`), and a map of per-room symmetric keys
  * (`roomKeys`). All values start as `null` / empty and are populated
- * asynchronously once a passkey becomes available on the legacy bridge.
+ * asynchronously once a passkey becomes available in the frontend session.
  *
  * On the SPA shell the store restores the session passkey from the same local
  * encrypted value used by the legacy UI. It then loads the keychain once an
@@ -73,19 +72,19 @@ export class KeychainStore implements DataStore {
     }
 
     /**
-     * Removes the locally stored passkey session (encrypted localStorage blob + legacy
-     * bridge). Server-side data is untouched — used before logout/profile-reset redirects.
+     * Removes the locally stored passkey session (encrypted localStorage blob +
+     * in-memory value). Server-side data is untouched.
      */
     public clearLocalSession(): void {
         try {
             const connection = this._app?.authenticatedConnection;
             if (connection) {
-                localStorage.removeItem(`${connection.userinfo.username}PK`);
+                this._app?.localStorage.removeItem(`${connection.userinfo.username}PK`);
             }
         } catch (error) {
             // No authenticated connection — nothing to clean up.
         }
-        oldUiBridge.passkey = null;
+        this._app?.passkeySession.clear();
     }
 
     /** Generates a fresh symmetric key pair for `slug` and persists it in the keychain. */
@@ -102,7 +101,7 @@ export class KeychainStore implements DataStore {
     public async loadData(app: HawkiApp) {
         this._app = app;
         this._handle = createKeychainHandle(app, () => {
-            const currentPasskey = oldUiBridge.passkey;
+            const currentPasskey = app.passkeySession.passkey;
             if (!currentPasskey) {
                 throw new Error('No passkey available to create keychain handle!');
             }
@@ -129,8 +128,8 @@ export class KeychainStore implements DataStore {
             try {
                 const connection = app.authenticatedConnection;
 
-                if (!oldUiBridge.passkey) {
-                    const storedPasskey = localStorage.getItem(`${connection.userinfo.username}PK`);
+                if (!app.passkeySession.passkey) {
+                    const storedPasskey = app.localStorage.getItem(`${connection.userinfo.username}PK`);
                     const passkeySalt = app.config.get().salts?.passkey;
                     if (!storedPasskey || !passkeySalt) {
                         return;
@@ -142,12 +141,12 @@ export class KeychainStore implements DataStore {
                         passkeySalt
                     );
                     const encryptedPasskey = loadSymmetricCryptoValueFromObject(JSON.parse(storedPasskey));
-                    oldUiBridge.passkey = await decryptSymmetric(encryptedPasskey, wrappingKey);
+                    app.passkeySession.passkey = await decryptSymmetric(encryptedPasskey, wrappingKey);
                 }
 
                 await handle.load();
             } catch (error) {
-                oldUiBridge.passkey = null;
+                app.passkeySession.clear();
                 console.warn('Could not restore the local HAWKI keychain session.', error);
             }
         })();

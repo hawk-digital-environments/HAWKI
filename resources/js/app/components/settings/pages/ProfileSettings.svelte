@@ -127,7 +127,12 @@
     </header>
 
     <div class="avatar-row">
-        <Avatar src={avatarUrl} name={name || info?.username || ''} size={48}/>
+        <Avatar
+            src={avatarUrl}
+            name={name || info?.username || ''}
+            label={name || info?.username || __('ui.profile.fallbackName')}
+            size={48}
+        />
         <div>
             <strong>{name}</strong>
             <span>{__('ui.settings.profile.avatarHint')}</span>
