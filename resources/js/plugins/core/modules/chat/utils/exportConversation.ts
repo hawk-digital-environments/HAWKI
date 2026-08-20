@@ -6,6 +6,9 @@ import type {OldUiExportType} from '$lib/legacy/OldUiBridge.svelte.js';
  * export menu. `print`/`pdf` route through the browser's print dialog (the
  * conversation page carries matching `@media print` styles); the other
  * formats download a generated file named after the conversation.
+ *
+ * @todo Restore feature parity with the legacy export. Include the prompts
+ * and generate a conversation summary for academic workflows.
  */
 export function exportConversation(conversation: ChatConversation, format: OldUiExportType): void {
     if (format === 'print' || format === 'pdf') {

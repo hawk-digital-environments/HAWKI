@@ -245,9 +245,6 @@ export class ComposerContext {
      *  interactions. Set to `true` when an external process is occupying the composer. */
     public forcedActive = $state(false);
 
-    /** A send owned by this conversation is continuing outside this composer instance. */
-    public backgroundActive = $state(false);
-
     /** Whether the current conversation allows sending messages. `false` for read-only
      *  conversations (e.g. shared/archived); updated via the `OldUiMessageHistory` bridge. */
     public hasWriteAccess = $state(true);

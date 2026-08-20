@@ -46,8 +46,8 @@ Rendered once per page for either an AI conversation or a group room chat (see
         onSystemPromptChange?: (prompt: string) => void;
         /** Native draft-improvement callback. */
         onImproveMessage?: (message: string, systemPrompt: string) => Promise<string>;
-        /** True when this conversation has a request running in another composer instance. */
-        backgroundActive?: boolean;
+        /** Forces the composer into its active state while an external request is running. */
+        forcedActive?: boolean;
         /** Gives the parent access to edit/regen mode controls. */
         onReady?: (context: ComposerContext) => void;
     }
@@ -58,7 +58,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
         initialSystemPrompt,
         onSystemPromptChange,
         onImproveMessage,
-        backgroundActive = false,
+        forcedActive = false,
         onReady
     }: Props = $props();
 
@@ -77,7 +77,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
     (() => onReady)()?.(chatContext);
 
     $effect(() => {
-        chatContext.backgroundActive = backgroundActive;
+        chatContext.forcedActive = forcedActive;
     });
 
     let textareaEl = $state(null as HTMLTextAreaElement | null);

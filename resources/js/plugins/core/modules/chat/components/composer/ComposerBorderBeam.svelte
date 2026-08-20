@@ -37,7 +37,7 @@
     const {children}: Props = $props();
 
     const isActive = $derived.by(() => {
-        if (composerContext.forcedActive || composerContext.backgroundActive) {
+        if (composerContext.forcedActive) {
             return true;
         }
 

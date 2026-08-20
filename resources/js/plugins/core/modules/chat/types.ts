@@ -12,6 +12,7 @@ export interface ChatMessage extends OldUiConversationMessage {
     citations?: UrlCitation[];
     /** Client-only message that is visible before it has been persisted. */
     isPending?: boolean;
+    /** Assistant response whose persisted content is still arriving from the stream. */
     isStreaming?: boolean;
     status?: string;
 }

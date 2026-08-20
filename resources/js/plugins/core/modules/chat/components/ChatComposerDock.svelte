@@ -25,37 +25,33 @@ padding so the composer stays aligned with the centred message column).
     let dock = $state<HTMLDivElement | null>(null);
     let scrollbarGutter = $state(0);
 
-    // The dock floats above the scroll region, so the pages reserve its height
-    // as bottom padding — track it since the composer grows with input.
     $effect(() => {
         const element = dock;
-        if (!element || typeof ResizeObserver === 'undefined') return;
-
-        const observer = new ResizeObserver(() => {
-            height = element.offsetHeight;
-        });
-        observer.observe(element);
-        return () => {
-            observer.disconnect();
-            height = 0;
-        };
-    });
-
-    // The messages centre themselves inside the scroll region minus its
-    // scrollbar, while the dock spans the full panel — mirror the scrollbar
-    // width as dock padding so the composer stays aligned with the text.
-    $effect(() => {
         const region = scrollRegion;
-        if (!region || typeof ResizeObserver === 'undefined') return;
+        if (typeof ResizeObserver === 'undefined') return;
 
-        // The content box shrinks when the scrollbar (dis)appears, so this
-        // also fires without the region's outer size changing.
-        const observer = new ResizeObserver(() => {
+        // The dock floats above the scroll region, so the pages reserve its
+        // height as bottom padding while the composer grows with input.
+        let dockObserver: ResizeObserver | null = null;
+        if (element) {
+            height = element.offsetHeight;
+            dockObserver = new ResizeObserver(() => height = element.offsetHeight);
+            dockObserver.observe(element);
+        }
+
+        // Mirror the scroll region's scrollbar width so the composer stays
+        // aligned with the centred message column.
+        let regionObserver: ResizeObserver | null = null;
+        if (region) {
             scrollbarGutter = region.offsetWidth - region.clientWidth;
-        });
-        observer.observe(region);
+            regionObserver = new ResizeObserver(() => scrollbarGutter = region.offsetWidth - region.clientWidth);
+            regionObserver.observe(region);
+        }
+
         return () => {
-            observer.disconnect();
+            dockObserver?.disconnect();
+            regionObserver?.disconnect();
+            height = 0;
             scrollbarGutter = 0;
         };
     });
