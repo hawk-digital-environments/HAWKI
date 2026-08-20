@@ -62,12 +62,13 @@ import {
 import {
   createOrUpdateAssistantAvatar
 } from "$plugins/assistants/api/resources/assistantAvatarClient";
-import {aiModelStore} from "$plugins/core/stores/AiModelStore.svelte";
 
 import { BuilderValidatorContext } from "./BuilderValidatorContext.svelte.js";
 import { clone, valuesEqual, IDENTITY_KEYS } from "./builderUtils.js";
 import { ApiError } from "$plugins/assistants/api/errors";
 import type {ToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
+import {useStore} from "$lib/app/hooks/useStore.svelte";
+import {useApp} from "$lib/app/hooks/useApp.svelte";
 
 export type BuilderMode = "init" | "create" | "edit" | "remix";
 
@@ -105,6 +106,7 @@ export class BuilderContext {
   private saving = false;
   private saveAgain = false;
 
+  private aiModelStore = useStore('ai-models');
   /** TODO: init what/for? */
   async init() {
     if (this.isNewDraft) {
@@ -210,11 +212,19 @@ export class BuilderContext {
   setModel(modelId: string): void {
     if (modelId === this.draft.model) return;
 
-    const model = aiModelStore.models.find((m) => m.modelId === modelId);
+    const model = this.aiModelStore.models.find((m) => m.id === modelId);
     const patch: Partial<Assistant> = { model: modelId };
     if (model) {
-      patch.temp = model.parameters.temp;
-      patch.topP = model.parameters.topP;
+      // `parameters` is a free-form map keyed by the wire's parameter names
+      // (`temperature` / `top_p`, not `temp` / `topP`) with `unknown` values —
+      // see `wellKnownAiModelParameters` in ai-models.schema.ts. Only seed the
+      // draft when the model actually declares a numeric default; otherwise
+      // leave whatever the draft already had rather than clobbering it with
+      // `undefined` (both fields are required, non-nullable numbers).
+      const temperature = model.parameters?.temperature;
+      const topP = model.parameters?.top_p;
+      if (typeof temperature === 'number') patch.temp = temperature;
+      if (typeof topP === 'number') patch.topP = topP;
     }
 
     this.draft = { ...this.draft, ...patch };

@@ -59,6 +59,26 @@ function modelHasTool(model: AiModel, tool: AiTool): boolean {
     return model.tool_ids.includes(parseInt(tool.id));
 }
 
+/**
+ * Whether `model` can actually use `tool` — offline tools are unusable unless
+ * `withOffline` is passed, a model with tool-calling switched off can't use
+ * any tool, and otherwise the model must have the tool in its `tool_ids`.
+ *
+ * This is what {@link AiToolWrapper.isAvailableFor} delegates to; exported
+ * standalone so callers that only have a plain {@link AiTool} (not the
+ * `AiToolOrCapability` wrapper — e.g. after a round-trip through
+ * `JSON.stringify`, which drops methods) can run the same check. See the
+ * assistant builder's `model.svelte` / `ModelToolConflictPanel.svelte` for
+ * such a caller: `Assistant.aiTools` is persisted to `sessionStorage`, so it
+ * can't be relied on to still carry the wrapper's methods.
+ */
+export function isAiToolAvailableFor(tool: AiTool, model: AiModel, withOffline?: boolean): boolean {
+    if ((withOffline !== true && tool.status === 'offline') || model.settings?.tool_calling === false) {
+        return false;
+    }
+    return modelHasTool(model, tool);
+}
+
 function createToolCapabilityWrapper(
     translator: Translator,
     capability: AiToolCapability,
@@ -126,10 +146,7 @@ function createToolCapabilityWrapper(
 
 function createToolWrapper(tool: AiTool): AiToolWrapper {
     function isAvailableFor(model: AiModel, withOffline?: boolean): boolean {
-        if ((withOffline !== true && tool.status === 'offline') || model.settings?.tool_calling === false) {
-            return false;
-        }
-        return modelHasTool(model, tool);
+        return isAiToolAvailableFor(tool, model, withOffline);
     }
 
     return {

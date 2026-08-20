@@ -209,7 +209,14 @@
                 "input_top_p_hint": "Niedrigere Werte machen das Sampling fokussierter, höhere Werte offener.",
                 "input_max_tokens": "Max. Ausgabelänge",
                 "input_max_tokens_description": "Maximale Tokenanzahl pro Antwort.",
-                "input_max_tokens_hint": "Höhere Werte ermöglichen längere Antworten, kosten aber mehr Zeit."
+                "input_max_tokens_hint": "Höhere Werte ermöglichen längere Antworten, kosten aber mehr Zeit.",
+                "conflict": {
+                    "titleSingle": ":model unterstützt :tool nicht",
+                    "titleMultiple": ":model unterstützt eines oder mehrere der ausgewählten Tools nicht",
+                    "singleModelCapable": "Dieses Modell kann alles was du brauchst.",
+                    "multipleModelsCapable": "Diese :count Modelle können alles was du brauchst.",
+                    "noModelsAvailable": "Kein verfügbares Modell unterstützt diese Kombination. Entferne ein Tool."
+                }
             },
             "tools": {
                 "title": "Tools & MCP",

@@ -209,7 +209,14 @@
                 "input_top_p_hint": "Lower values make sampling more focused, higher values more open.",
                 "input_max_tokens": "Max. output length",
                 "input_max_tokens_description": "Maximum number of tokens per answer.",
-                "input_max_tokens_hint": "Higher values allow longer answers but take more time."
+                "input_max_tokens_hint": "Higher values allow longer answers but take more time.",
+                "conflict": {
+                    "titleSingle": ":model does not support :tool",
+                    "titleMultiple": ":model does not support one or more of the selected tools",
+                    "singleModelCapable": "This model can do everything you need.",
+                    "multipleModelsCapable": "These :count models can do everything you need.",
+                    "noModelsAvailable": "No available model supports this combination. Remove a tool."
+                }
             },
             "tools": {
                 "title": "Tools & MCP",

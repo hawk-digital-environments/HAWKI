@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             AssistantCategorySeeder::class,
             AssistantSettingSeeder::class,
             AssistantSeeder::class,
+            AiToolSeeder::class,
         ]);
     }
 }

@@ -3,6 +3,7 @@
 
     import BuilderInput from "$plugins/assistants/components/assistantBuilderComponents/BuilderInput.svelte";
     import ModelSelector from "$plugins/assistants/components/modelSelector/ModelSelector.svelte";
+    import ModelToolConflictPanel from "$plugins/assistants/components/modelSelector/ModelToolConflictPanel.svelte";
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import ToolSelector from "$plugins/assistants/components/assistantBuilderComponents/aiToolComponents/ToolSelector.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
@@ -22,6 +23,7 @@
         <ModelSelector
             onchange={(modelId) => {builder.setModel(modelId)}}
         />
+        <ModelToolConflictPanel/>
 
         <BuilderInput
             type="fullWidthToggle"
