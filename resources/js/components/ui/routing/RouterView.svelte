@@ -22,6 +22,8 @@
     interface Props {
         /** The router instance to render (from `createRouter`/`createRouterFromRegistrar`, or `app.router`). */
         router: Router;
+        /** Translated accessible label for the navigation loading indicator. */
+        loadingLabel: string;
         /** Rendered when no route matches the current path. Defaults to `RouteNotFound`. */
         notFoundComponent?: Component;
         /** Rendered when resolution fails or a rendered route crashes. Defaults to `RouteError`. See `RouteError.svelte` for the `error`/`reset` contract. */
@@ -30,6 +32,7 @@
 
     const {
         router,
+        loadingLabel,
         notFoundComponent = RouteNotFound,
         errorComponent = RouteError
     }: Props = $props();
@@ -48,10 +51,6 @@
     const nodeParams = $derived(router.nodeParams);
     // One object for the whole chain, not one per node — see `Router.meta`.
     const meta = $derived(router.meta ?? {});
-    // Replacing Loader's children destroys the complete routed Svelte tree.
-    // Only do that before the first route exists; later navigations keep the
-    // current page mounted until the next component is ready.
-    const isInitialLoading = $derived(isLoading && !RouteComponent);
 
     // Makes this router the one a bare `useRouter()` below resolves to, and
     // every router above it still reachable by name. A nested `RouterView`
@@ -109,7 +108,7 @@
 {/snippet}
 
 <svelte:boundary onerror={handleError}>
-    <Loader active={isInitialLoading}>
+    <Loader active={isLoading} overlay label={loadingLabel}>
         {@render layoutStack(0)}
     </Loader>
     {#snippet failed(error, reset)}

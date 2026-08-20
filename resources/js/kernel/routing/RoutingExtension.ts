@@ -102,6 +102,7 @@ export class RoutingExtension implements HawkiAppExtension {
                 // @todo this is a temporary construct, we should read the base path from the config instead of hardcoding it here
                 basePath: '/new',
                 strategy: 'path',
+                lazyRootLayout: async () => (await import('$lib/app/components/AppLayout.svelte')).default,
                 // Supplies the `app`/`restApi` properties the `declare module`
                 // block above adds to `RouteContextExtensions`, so every
                 // middleware, route action and `loadData` resolved by this

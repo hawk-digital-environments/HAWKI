@@ -24,9 +24,11 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import ComposerAssistantButton from '$plugins/core/modules/chat/components/composer/ComposerAssistantButton.svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';
 
     const composerContext = useComposerContext();
-    const {__} = useTranslator();
+    const translator = useTranslator();
+    const {__} = translator;
 
     interface Props {
         /** Called when the user presses Enter (without Shift) to submit the message.
@@ -78,31 +80,12 @@
 
     const toastContext = useToastContext();
 
-    /** Renders the byte limit from a file issue as human-readable megabytes for the error toast. */
-    function formatMaxSize(maxSize: number | undefined): string {
-        if (maxSize === undefined || !Number.isFinite(maxSize)) {
-            return '';
-        }
-        return `${Math.round(maxSize / (1024 * 1024))} MB`;
-    }
-
     function handlePaste(e: ClipboardEvent) {
-        if (e.clipboardData && e.clipboardData.types[0] === "Files") {
-            e.preventDefault();
-            const files = e.clipboardData.files;
-            for (let file of files) {
-                const issues = composerContext.attachments.add(file)
-                if (issues !== true) {
-                    for (let issue of issues) {
-                        toastContext.error(__(`chat.composer.error.${issue.type}`, {
-                            name: issue.file.name,
-                            type: file.name.indexOf(".") !== -1 ? ("." + file.name.split('.').pop()) : __("chat.composer.error.unknown_file"),
-                            maxSize: formatMaxSize(issue.maxSize)
-                        }))
-                    }
-                }
-            }
-        }
+        const clipboard = e.clipboardData;
+        if (!clipboard || !Array.from(clipboard.types).includes('Files')) return;
+
+        e.preventDefault();
+        reportAttachmentIssues(translator, toastContext, composerContext.attachments.add(clipboard.files));
     }
 
 </script>

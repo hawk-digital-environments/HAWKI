@@ -12,7 +12,7 @@
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
   `composerContext.model.set(modelId)` (same contract as `ModelPicker`).
-  Favorites are persisted per browser via `modelFavorites` (localStorage).
+  Favorites are persisted per browser by the registered `model-favorites` store.
 
   Takes no props — it is a self-contained composer feature component.
 
@@ -39,7 +39,6 @@
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
     import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
-    import {modelFavorites} from '$plugins/core/modules/chat/components/composer/modelFavorites.svelte.js';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -47,6 +46,7 @@
 
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
+    const modelFavorites = useStore('model-favorites');
     const {__} = useTranslator();
 
     const FAVORITES_TAB = '__favorites__';

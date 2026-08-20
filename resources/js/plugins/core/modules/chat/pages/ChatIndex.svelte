@@ -27,14 +27,17 @@ from the store's in-flight cache.
     const {}: Props = $props();
     const app = useApp();
     const store = useStore('chat');
+    const systemPromptStore = useStore('system-prompts');
     const router = useRouter();
     const {__} = useTranslator();
-    const defaultPrompt = app.stores.get('system-prompts').getPromptByType('default')?.prompt ?? '';
+    const defaultPrompt = systemPromptStore.getPromptByType('default').prompt;
     const transport = new ChatTransport(app, store, {
         // Do not pull the user back if they switched chats while the
         // conversation was being created.
         onConversationCreated: createdSlug => {
-            if (router.isActive('/chat')) void router.goTo(router.p(`/chat/${createdSlug}`));
+            if (router.isActive('chat.index')) {
+                void router.goToRoute('chat.conversation', {slug: createdSlug});
+            }
         },
         onConversationPending: message => pendingMessage = message
     });
@@ -160,7 +163,7 @@ from the store's in-flight cache.
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (max-width: 640px) {
+    @media (--bp-sm-and-smaller) {
         .messages { padding-inline: var(--space-3); padding-top: var(--space-5); }
     }
 

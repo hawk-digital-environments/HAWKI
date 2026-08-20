@@ -17,7 +17,6 @@
     import {createToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import RouterView from '$lib/components/ui/routing/RouterView.svelte';
     import Loader from '$lib/components/ui/loader/Loader.svelte';
-    import AppLayout from '$lib/app/components/AppLayout.svelte';
 
     interface Props {
         /** The fully-assembled `HawkiApp` instance, passed in by `ShellExtension.mount()`. */
@@ -29,13 +28,15 @@
     // svelte-ignore state_referenced_locally
     provideApp(app);
     createToastContext();
+    const loadingLabel = $derived.by(() => {
+        if (app.isBooting) return 'Loading';
+        return app.localization.translator.translate('ui.loading');
+    });
 
 </script>
 
-<Loader active={app.isBooting}>
-    <AppLayout>
-        <RouterView router={(app as any).__router}/>
-    </AppLayout>
+<Loader active={app.isBooting} label={loadingLabel}>
+    <RouterView router={(app as any).__router} loadingLabel={loadingLabel}/>
 </Loader>
 
 <style>

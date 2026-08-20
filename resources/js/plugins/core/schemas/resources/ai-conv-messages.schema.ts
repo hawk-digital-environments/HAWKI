@@ -1,5 +1,5 @@
 import z from 'zod';
-import UsersSchema from '$lib/app/schemas/resources/users.schema.js';
+import UsersSchema from '$plugins/core/schemas/resources/users.schema.js';
 
 /**
  * Validates the `ai-conv-messages` JSON:API resource — a single message of a

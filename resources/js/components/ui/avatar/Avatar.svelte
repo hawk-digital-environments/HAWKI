@@ -1,16 +1,34 @@
+<!--
+  @component User avatar primitive. Displays an image when available and falls
+  back to initials, while callers provide the context-specific accessible name.
+-->
 <script lang="ts">
-    interface Props {
+    import type {HTMLAttributes} from 'svelte/elements';
+    import {mergeProps} from 'bits-ui';
+
+    interface Props extends HTMLAttributes<HTMLSpanElement> {
         /** Image URL. When omitted or it fails to load, initials are shown. */
         src?: string;
         /** Full name; used for the alt text and to derive initials. */
         name?: string;
+        /** Accessible name supplied by the translated calling context. */
+        label: string;
         /** Pixel diameter of the avatar. */
         size?: number;
         /** Color treatment for the initials fallback. */
         variant?: 'accent' | 'neutral';
     }
 
-    const {src, name = '', size = 32, variant = 'accent'}: Props = $props();
+    const {
+        src,
+        name = '',
+        label,
+        size = 32,
+        variant = 'accent',
+        class: className,
+        style,
+        ...rest
+    }: Props = $props();
 
     let failed = $state(false);
 
@@ -27,13 +45,22 @@
 </script>
 
 <span
-    class="avatar"
-    class:neutral={variant === 'neutral'}
-    style:width="{size}px"
-    style:height="{size}px"
-    style:font-size="{Math.round(size * 0.45)}px"
-    role="img"
-    aria-label={name || 'Avatar'}
+    {...mergeProps(
+        rest,
+        {
+            class: ['avatar', variant === 'neutral' && 'neutral', className],
+            style,
+            role: 'img',
+            'aria-label': label
+        },
+        {
+            style: {
+                width: `${size}px`,
+                height: `${size}px`,
+                fontSize: `${Math.round(size * 0.45)}px`
+            }
+        }
+    )}
 >
     {#if showImage}
         <img src={src} alt={name} onerror={() => (failed = true)} />

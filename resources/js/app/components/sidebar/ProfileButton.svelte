@@ -15,29 +15,28 @@
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {useConnectionWithUserInfo} from '$lib/app/hooks/useConnection.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useConnectionWithUserInfo} from '$lib/app/hooks/useConnection.svelte.js';
 
     const app = useApp();
-    const connection = useConnectionWithUserInfo();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
-
-    const userName = connection?.userinfo.name || __('ui.profile.fallbackName');
-    const userEmail = connection?.userinfo.email ?? '';
-    const avatarIdentifier = connection && 'avatar' in connection.userinfo && typeof connection.userinfo.avatar === 'string'
-        ? connection.userinfo.avatar
-        : null;
-    const avatarUrl = app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined;
+    const connection = useConnectionWithUserInfo();
+    const userName = $derived(connection?.userinfo.name || __('ui.profile.fallbackName'));
+    const userEmail = $derived(connection?.userinfo.email ?? '');
+    const avatarIdentifier = $derived(
+        connection && 'avatar' in connection.userinfo && typeof connection.userinfo.avatar === 'string'
+            ? connection.userinfo.avatar
+            : null
+    );
+    const avatarUrl = $derived(app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined);
 
     let menuOpen = $state(false);
     let settingsOpen = $state(false);
 
-    const isDark = $derived(themeStore.theme === 'dark');
-
     function toggleTheme(): void {
-        themeStore.theme = isDark ? 'light' : 'dark';
+        themeStore.theme = themeStore.isDark ? 'light' : 'dark';
     }
 
     function openSettings(): void {
@@ -46,7 +45,7 @@
     }
 
     function logout(): void {
-        window.location.href = app.uriBuilder.logoutUri();
+        app.logout();
     }
 </script>
 
@@ -63,7 +62,7 @@
     {#snippet trigger({props})}
         <SidebarItem label={userName} active={menuOpen} {...props}>
             {#snippet media()}
-                <Avatar src={avatarUrl} name={userName} size={22}/>
+                <Avatar src={avatarUrl} name={userName} label={userName} size={22}/>
             {/snippet}
             {#snippet trailing()}
                 <Settings03Icon size={16} strokeWidth={2}/>
@@ -72,7 +71,7 @@
     {/snippet}
 
     <div class="profile-summary">
-        <Avatar src={avatarUrl} name={userName} size={32}/>
+        <Avatar src={avatarUrl} name={userName} label={userName} size={32}/>
         <div class="profile-summary__text">
             <strong>{userName}</strong>
             {#if userEmail}<span>{userEmail}</span>{/if}
@@ -83,8 +82,8 @@
     <DropdownMenuItem icon={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
-    <DropdownMenuItem icon={isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
-        {isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
+    <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
     <DropdownMenuItem icon={Logout02Icon} onclick={logout}>

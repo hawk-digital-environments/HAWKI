@@ -1,6 +1,5 @@
 import {createKeychainHandle} from '$lib/kernel/keychain/keychainHandle.js';
 import {MigrationContext} from '$lib/kernel/migrations/MigrationExtension';
-import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
 
 /**
  * `after_passkey` migration: back-fills missing AI/legacy-AI room keys for rooms
@@ -17,13 +16,16 @@ import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
  * the missing AI/legacy-AI keys in a single deferred batch (see
  * `KeychainHandle.doUpdatesDeferred`). No-op when no rooms are broken.
  *
- * Contract (from {@link MigrationContext}): needs `app` (for config salts) and
- * `oldUiBridge.passkey` (the provider for the new `KeychainHandle`). It does
- * not consume `data` — broken rooms are detected purely from the current
- * keychain state.
+ * Contract (from {@link MigrationContext}): needs `app` for the current
+ * passkey session and config salts. It does not consume `data` — broken rooms
+ * are detected purely from the current keychain state.
  */
 export async function migrate({name, app}: MigrationContext) {
-    const keychainHandle = createKeychainHandle(app, () => oldUiBridge.passkey!);
+    const keychainHandle = createKeychainHandle(app, () => {
+        const passkey = app.passkeySession.passkey;
+        if (!passkey) throw new Error('No passkey available for migration.');
+        return passkey;
+    });
     await keychainHandle.load();
 
     const brokenRoomKeys = keychainHandle.brokenRoomKeys();

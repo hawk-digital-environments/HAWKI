@@ -18,23 +18,5 @@
         --space-12: 3.00rem; /* 48px */
         --space-16: 4.00rem; /* 64px */
 
-        /* Shared row height for the sidebar's vertical rhythm — nav rows, the
-           footer's profile row, the section switcher and the switcher's menu.
-           Lives at :root rather than on the layout because the menu is portalled
-           out of it and would not inherit a layout-scoped value. */
-        --nav-row-h: 2.25rem;
-
-        /* Vertical separation between the sidebar's groups — header to nav,
-           group to group, nav to footer, and between the footer's own rows.
-           One value so the whole column reads as a single rhythm; the tight
-           within-group row gap stays `--space-1` (see List). */
-        --nav-group-gap: var(--space-3);
-    }
-
-    /* Roomier rows for touch. */
-    @media (--bp-md-and-smaller) {
-        :root {
-            --nav-row-h: 2.5rem;
-        }
     }
 }

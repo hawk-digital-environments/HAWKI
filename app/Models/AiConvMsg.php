@@ -23,6 +23,7 @@ class AiConvMsg extends Model
     ];
 
     protected $casts = [
+        'completion' => 'boolean',
         'metadata' => 'array',
     ];
 

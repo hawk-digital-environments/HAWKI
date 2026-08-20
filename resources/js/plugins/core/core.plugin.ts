@@ -29,9 +29,11 @@ import {ThemeStore} from '$plugins/core/stores/ThemeStore.svelte.js';
 import {ExperimentsStore} from '$plugins/core/stores/ExperimentsStore.svelte.js';
 import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
+import {ModelFavoritesStore} from '$plugins/core/stores/ModelFavoritesStore.svelte.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import {ChatModule} from '$plugins/core/modules/chat/ChatModule.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
+import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
@@ -41,6 +43,12 @@ declare module '$lib/kernel/extendableTypes.js' {
 
 export default class CorePlugin implements HawkiCorePlugin {
     readonly name = 'core';
+
+    public resourceSchemas(registrar: ResourceSchemaRegistrar): void {
+        registrar.addFromModules(
+            import.meta.glob('$lib/plugins/core/schemas/resources/*.schema.{ts,js}', {eager: true})
+        );
+    }
 
     public migrations(registrar: MigrationRegistrar): void | Promise<void> {
         registrar.addFromModules(import.meta.glob('$lib/plugins/core/migrations/**/*.ts', {eager: false}));
@@ -62,6 +70,7 @@ export default class CorePlugin implements HawkiCorePlugin {
         add(new SystemPromptStore());
         add(new ThemeStore());
         add(new ExperimentsStore());
+        add(new ModelFavoritesStore());
         add(new ChatStore());
     }
 }

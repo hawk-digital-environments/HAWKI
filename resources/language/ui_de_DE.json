@@ -1,5 +1,6 @@
 {
     "ui": {
+        "loading": "Wird geladen…",
         "navigation": {
             "skipToContent": "Zum Hauptinhalt springen",
             "open": "Navigation öffnen",
@@ -7,7 +8,8 @@
             "collapse": "Seitenleiste einklappen",
             "expand": "Seitenleiste ausklappen",
             "search": "Suchen",
-            "newChat": "Neuer Chat"
+            "newChat": "Neuer Chat",
+            "label": "Navigation"
         },
         "dialog": {
             "closeLabel": "Schließen",

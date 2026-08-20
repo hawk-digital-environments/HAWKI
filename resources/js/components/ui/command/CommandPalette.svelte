@@ -359,7 +359,7 @@
         min-height: 2.25rem;
         padding: 0 var(--space-2) 0 var(--space-2_5);
         border-radius: var(--corner-sm);
-        font-size: var(--font-size-nav);
+        font-size: var(--font-size-xs);
         color: var(--color-text);
         cursor: pointer;
         outline: none;

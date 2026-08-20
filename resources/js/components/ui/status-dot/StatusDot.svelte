@@ -69,14 +69,18 @@
         if (status === 'offline') return tooltipOffline;
         if (status === 'unknown') return tooltipUnknown;
     });
+    const statusText = $derived(
+        typeof tooltip === 'string' ? tooltip : label || __('ui.statusDot.ariaLabel')
+    );
 </script>
 
-<Tooltip tooltip={tooltip} delayDuration={300} {focusable}>
+<Tooltip tooltip={tooltip} delayDuration={300} {focusable} hiddenLabel={statusText}>
     {#snippet children({props})}
         <div class="status-dot-wrapper status-dot-wrapper--{status}">
             <span
                 class="status-dot status-dot--{size}"
-                aria-label={label || __('ui.statusDot.ariaLabel')}
+                aria-label={focusable ? statusText : undefined}
+                aria-hidden={focusable ? undefined : 'true'}
                 {...props}
             ></span>
             {#if showLabel}

@@ -4,13 +4,14 @@ import type {
     AiStreamRequest,
     AiStreamResult
 } from '$lib/kernel/ai/types.js';
+import {ApiTransportError} from '$lib/kernel/api/errors.js';
+import type {ApiTransport} from '$lib/kernel/api/transport.js';
 
 const packetTypes = new Set(['header', 'message', 'citation', 'status', 'completion', 'error']);
 
 export interface AiApiOptions {
     endpoint?: string;
-    fetch?: typeof globalThis.fetch;
-    getCsrfToken?: () => string;
+    transport: ApiTransport;
 }
 
 export class AiApiError extends Error {
@@ -34,15 +35,11 @@ export class AiApiError extends Error {
  */
 export class AiApi {
     private readonly endpoint: string;
-    private readonly fetcher: typeof globalThis.fetch;
-    private readonly getCsrfToken: () => string;
+    private readonly transport: ApiTransport;
 
-    constructor(options: AiApiOptions = {}) {
+    constructor(options: AiApiOptions) {
         this.endpoint = options.endpoint ?? '/req/streamAI';
-        this.fetcher = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
-        this.getCsrfToken = options.getCsrfToken ?? (() =>
-            globalThis.document?.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? ''
-        );
+        this.transport = options.transport;
     }
 
     /**
@@ -50,21 +47,23 @@ export class AiApi {
      * the endpoint. Pass an AbortSignal to cancel both the request and stream.
      */
     public async *stream(request: AiStreamRequest, options: AiRequestOptions = {}): AsyncGenerator<AiStreamPacket> {
-        const response = await this.fetcher(this.endpoint, {
-            method: 'POST',
-            headers: this.headers(options.headers),
-            body: JSON.stringify(this.requestBody(request)),
-            signal: options.signal
-        });
-
-        if (!response.ok) {
-            throw await this.responseError(response);
+        let responseBody: ReadableStream<Uint8Array>;
+        try {
+            responseBody = await this.transport(this.endpoint, {
+                method: 'POST',
+                responseType: 'stream',
+                headers: this.headers(options.headers),
+                body: JSON.stringify(this.requestBody(request)),
+                signal: options.signal
+            });
+        } catch (error) {
+            if (error instanceof ApiTransportError) {
+                throw new AiApiError(error.message, error.status, error.body, {cause: error});
+            }
+            throw error;
         }
-        if (!response.body) {
-            throw new AiApiError('The AI response did not include a stream.', response.status);
-        }
 
-        yield* this.readPackets(response.body);
+        yield* this.readPackets(responseBody);
     }
 
     /** Collects a streamed request into its final text and citations. */
@@ -123,41 +122,7 @@ export class AiApi {
         const headers = new Headers(additionalHeaders);
         headers.set('Accept', 'application/json');
         headers.set('Content-Type', 'application/json');
-        headers.set('X-CSRF-TOKEN', this.getCsrfToken());
         return headers;
-    }
-
-    private async responseError(response: Response): Promise<AiApiError> {
-        const fallback = `AI request failed with status ${response.status}${response.statusText ? ` ${response.statusText}` : ''}.`;
-        let responseText: string;
-        let body: unknown;
-
-        try {
-            responseText = await response.text();
-        } catch {
-            return new AiApiError(fallback, response.status);
-        }
-
-        try {
-            body = responseText ? JSON.parse(responseText) : undefined;
-        } catch {
-            return new AiApiError(responseText || fallback, response.status, responseText);
-        }
-
-        if (!body || typeof body !== 'object') {
-            return new AiApiError(fallback, response.status, body);
-        }
-
-        const record = body as Record<string, unknown>;
-        const validationErrors = record.errors && typeof record.errors === 'object'
-            ? Object.values(record.errors as Record<string, unknown>).flat().filter(value => typeof value === 'string')
-            : [];
-        const message = validationErrors.join(' ')
-            || (typeof record.message === 'string' ? record.message : '')
-            || (typeof record.error === 'string' ? record.error : '')
-            || fallback;
-
-        return new AiApiError(message, response.status, body);
     }
 
     private async *readPackets(stream: ReadableStream<Uint8Array>): AsyncGenerator<AiStreamPacket> {

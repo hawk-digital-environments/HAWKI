@@ -37,7 +37,7 @@
     const open = $derived(sidebar.navOpen);
 
     function toggleNavigation() {
-        const returnFocus = sidebar.mobile.current && sidebar.navOpen;
+        const returnFocus = sidebar.mobile && sidebar.navOpen;
         sidebar.toggleNav();
         if (returnFocus) {
             setTimeout(() => document.getElementById('mobile-navigation-trigger')?.focus());
@@ -91,7 +91,7 @@
                 {...props}
                 id="app-navigation-toggle"
                 class="header-action collapse"
-                aria-label={sidebar.mobile.current
+                aria-label={sidebar.mobile
                     ? __('ui.navigation.close')
                     : open
                         ? __('ui.navigation.collapse')
