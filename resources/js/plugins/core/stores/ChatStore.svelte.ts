@@ -4,6 +4,13 @@ import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValue, loadSymmet
 import {decodeJsonApiResourceResponse} from '$lib/kernel/api/jsonApiEncoding.js';
 import AiConvMessageSchema, {type AiConvMessage} from '$plugins/core/schemas/resources/ai-conv-messages.schema.js';
 import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText} from '$plugins/core/modules/chat/types.js';
+import type {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
+
+type ChatStoreDependencies = {
+    restApi: HawkiApp['restApi'];
+    uriBuilder: HawkiApp['uriBuilder'];
+    keychain: KeychainStore;
+};
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiDataStores {
@@ -29,13 +36,17 @@ export class ChatStore implements DataStore {
     /** Conversation slugs with an AI request still running in this tab. */
     public generatingSlugs = $state<string[]>([]);
 
-    private _app: HawkiApp | null = null;
+    private _dependencies: ChatStoreDependencies | null = null;
     private activeLoad = 0;
     /** Keeps in-flight conversations alive when another chat becomes active. */
     private conversationCache = new Map<string, ChatConversation>();
 
     public async loadData(app: HawkiApp): Promise<void> {
-        this._app = app;
+        this._dependencies = {
+            restApi: app.restApi,
+            uriBuilder: app.uriBuilder,
+            keychain: app.stores.get('keychain')
+        };
         try {
             app.authenticatedConnection;
         } catch {
@@ -51,7 +62,7 @@ export class ChatStore implements DataStore {
             let page = 1;
 
             while (true) {
-                const collection = await this.app.restApi.getResourceCollection('ai-convs', {
+                const collection = await this.dependencies.restApi.getResourceCollection('ai-convs', {
                     query: {page: {number: page}}
                 });
                 conversations.push(...collection);
@@ -93,7 +104,7 @@ export class ChatStore implements DataStore {
         this.error = null;
         try {
             const key = await this.conversationKey();
-            const source = await this.app.restApi.getResource('ai-convs', slug, {
+            const source = await this.dependencies.restApi.getResource('ai-convs', slug, {
                 query: {include: 'messages.author'}
             });
             const conversation: ChatConversation = {
@@ -122,7 +133,7 @@ export class ChatStore implements DataStore {
 
     public async create(name: string, systemPrompt: string, activate = true): Promise<ChatConversation> {
         const encryptedPrompt = await this.encryptText(systemPrompt);
-        const resource = await this.app.restApi.createResource('ai-convs', {
+        const resource = await this.dependencies.restApi.createResource('ai-convs', {
             name,
             system_prompt: JSON.stringify(encryptedPrompt)
         });
@@ -143,7 +154,7 @@ export class ChatStore implements DataStore {
     }
 
     public async rename(slug: string, name: string): Promise<void> {
-        await this.app.restApi.updateResource('ai-convs', slug, {name});
+        await this.dependencies.restApi.updateResource('ai-convs', slug, {name});
         const conversation = this.getConversation(slug);
         if (conversation) conversation.name = name;
         const summary = this.conversations.find(item => item.slug === slug);
@@ -158,14 +169,14 @@ export class ChatStore implements DataStore {
 
     public async updateSystemPrompt(slug: string, prompt: string): Promise<void> {
         const encrypted = await this.encryptText(prompt);
-        await this.app.restApi.updateResource('ai-convs', slug, {
+        await this.dependencies.restApi.updateResource('ai-convs', slug, {
             system_prompt: JSON.stringify(encrypted)
         });
         if (this.active?.slug === slug) this.active.system_prompt = prompt;
     }
 
     public async remove(slug: string): Promise<void> {
-        await this.app.restApi.deleteResource('ai-convs', slug);
+        await this.dependencies.restApi.deleteResource('ai-convs', slug);
         this.conversations = this.conversations.filter(item => item.slug !== slug);
         this.conversationCache.delete(slug);
         if (this.active?.slug === slug) this.active = null;
@@ -174,7 +185,7 @@ export class ChatStore implements DataStore {
     public async removeMessage(messageId: string): Promise<void> {
         if (!this.active) return;
         const slug = this.active.slug;
-        await this.app.restApi.deleteFromResourceAction(
+        await this.dependencies.restApi.deleteFromResourceAction(
             'ai-convs',
             `${encodeURIComponent(slug)}/actions/messages/${encodeURIComponent(messageId)}`
         );
@@ -184,7 +195,7 @@ export class ChatStore implements DataStore {
     public async removeAttachment(messageId: string, fileId: string): Promise<void> {
         const slug = this.active?.slug;
         if (!slug) return;
-        await this.app.restApi.deleteFromResourceAction(
+        await this.dependencies.restApi.deleteFromResourceAction(
             'ai-convs',
             `actions/attachments/${encodeURIComponent(fileId)}`
         );
@@ -236,12 +247,12 @@ export class ChatStore implements DataStore {
         if (!this.getConversation(slug)) throw new Error('The target conversation is unavailable.');
         const {__plainText, __citations, message_id, ...requestPayload} = payload;
         const response = update
-            ? await this.app.restApi.patchToResourceAction(
+            ? await this.dependencies.restApi.patchToResourceAction(
                 'ai-convs',
                 `${encodeURIComponent(slug)}/actions/messages/${encodeURIComponent(String(message_id))}`,
                 requestPayload
             )
-            : await this.app.restApi.postToResourceAction(
+            : await this.dependencies.restApi.postToResourceAction(
                 'ai-convs',
                 `${encodeURIComponent(slug)}/actions/messages`,
                 requestPayload
@@ -273,12 +284,12 @@ export class ChatStore implements DataStore {
     public async upload(file: File, signal?: AbortSignal): Promise<string> {
         const form = new FormData();
         form.append('file', file);
-        const response = await this.app.restApi.postToResourceAction('ai-convs', 'actions/attachments', form, {signal});
+        const response = await this.dependencies.restApi.postToResourceAction('ai-convs', 'actions/attachments', form, {signal});
         return response.uuid;
     }
 
     private async conversationKey(): Promise<CryptoKey> {
-        const keychain = this.app.stores.get('keychain');
+        const keychain = this.dependencies.keychain;
         await keychain.waitingToLoad;
         if (!keychain.aiConvKey) throw new Error('The encrypted chat key is unavailable. Please sign in again.');
         return keychain.aiConvKey;
@@ -314,7 +325,7 @@ export class ChatStore implements DataStore {
             author: {
                 username: source.author.username,
                 name: source.author.display_name,
-                avatar_url: source.author.avatar ? (this.app.uriBuilder.storageFileUri(source.author.avatar) ?? '') : ''
+                avatar_url: source.author.avatar ? (this.dependencies.uriBuilder.storageFileUri(source.author.avatar) ?? '') : ''
             },
             completion: source.completion ? 1 : 0,
             content: {
@@ -326,7 +337,7 @@ export class ChatStore implements DataStore {
                         mime: attachment.mime,
                         type: attachment.type,
                         category: attachment.category,
-                        url: this.app.uriBuilder.storageFileUri(attachment.identifier) ?? ''
+                        url: this.dependencies.uriBuilder.storageFileUri(attachment.identifier) ?? ''
                     }
                 }))
             },
@@ -372,10 +383,10 @@ export class ChatStore implements DataStore {
         return error instanceof Error ? error.message : 'The conversation could not be loaded.';
     }
 
-    private get app(): HawkiApp {
-        if (!this._app) {
+    private get dependencies(): ChatStoreDependencies {
+        if (!this._dependencies) {
             throw new Error('The chat store has not been initialised.');
         }
-        return this._app;
+        return this._dependencies;
     }
 }
