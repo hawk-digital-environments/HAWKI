@@ -229,10 +229,10 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
-        'qwen3.6-27b' => [
-            'max_tokens' => 262000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.6-27B-FP8',
-            'description' => 'Qwen3.6-27B-FP8 is an open-weight text foundation model with strong performance in coding, reasoning, and agentic workflows. It features a 27B-parameter dense architecture, a native 262K-token context window (extendable beyond 1M tokens), and advanced tool calling. The FP8 quantized version reduces memory usage and improves inference efficiency while maintaining performance close to the original model.',
+        'qwen3.8-27b' => [
+            'max_tokens' => 262144,
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.8-27B',
+            'description' => 'Qwen3.8-27B is an open-weight text foundation model with strong performance in coding, reasoning, and agentic workflows. It features a 27B-parameter dense architecture, a native 262K-token context window (extendable beyond 1M tokens), and advanced tool calling. The FP8 quantized version reduces memory usage and improves inference efficiency while maintaining performance close to the original model.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,

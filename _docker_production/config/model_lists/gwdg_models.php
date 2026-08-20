@@ -286,11 +286,12 @@ return [
         ],
     ],
     [
-        'active' => env('MODELS_GWDG_QWEN_3.6_27B_ACTIVE', true),
-        'id' => 'qwen3.6-27b',
-        'label' => 'GWDG Qwen 3.6 27B',
+        'active' => env('MODELS_GWDG_QWEN_3.8_27B_ACTIVE', true),
+        'id' => 'qwen3.8-27b',
+        'label' => 'GWDG Qwen 3.8 27B',
         'input' => [
             'text',
+            'image'
         ],
         'output' => [
             'text',
@@ -298,12 +299,11 @@ return [
         'tools' => [
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN_3.6_27B_TOOLS_FILE_UPLOAD', true),
+            'file_upload' => env('MODELS_GWDG_QWEN_3.8_27B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            // vLLM examples for Qwen 3 Omni use temp=0.6 and top_p=0.95
-            'temp' => env('MODELS_GWDG_QWEN_3.6_27B_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GWDG_QWEN_3.6_27B_PARAMS_TOP_P', 0.95),
+            'temp' => env('MODELS_GWDG_QWEN_3.8_27B_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_QWEN_3.8_27B_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
