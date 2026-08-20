@@ -61,7 +61,7 @@
         {#if isAssistant}
             <span class="assistant-avatar" aria-hidden="true"><BotIcon size={18} /></span>
         {:else}
-            <Avatar src={message.author.avatar_url} name={message.author.name} size={32} />
+            <Avatar src={message.author.avatar_url} name={message.author.name} label={message.author.name} size={32} />
         {/if}
     </div>
     <div class="message-column">

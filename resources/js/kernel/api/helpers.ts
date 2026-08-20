@@ -1,6 +1,13 @@
 import z from 'zod';
 import {type JsonApiCollection} from '$lib/kernel/api/jsonApiEncoding.js';
-import type {FetchOptions, GetFromResourceActionOptions, GetResourceCollectionOptions, GetResourceOptions, PostToResourceActionOptions} from '$lib/kernel/api/RestApi.js';
+import type {
+    FetchOptions,
+    GetFromResourceActionOptions,
+    GetResourceCollectionOptions,
+    GetResourceOptions,
+    PostToResourceActionOptions,
+    ResourceActionData
+} from '$lib/kernel/api/RestApi.js';
 import type {HawkiResourceSchemas} from '$lib/kernel/extendableTypes.js';
 import {getHawkiApp} from '$lib/legacy/legacy.js';
 
@@ -158,7 +165,7 @@ export async function getFromResourceAction(
 export async function postToResourceAction<S extends z.ZodTypeAny>(
     resourceType: keyof HawkiResourceSchemas,
     action: string,
-    data: any,
+    data: ResourceActionData,
     // Note: The options object MUST contain the 'schema' of type S
     options: PostToResourceActionOptions & { schema: S }
 ): Promise<z.infer<S>>;
@@ -168,7 +175,7 @@ export async function postToResourceAction<S extends z.ZodTypeAny>(
 export async function postToResourceAction(
     resourceType: keyof HawkiResourceSchemas,
     action: string,
-    data: any,
+    data: ResourceActionData,
     options?: PostToResourceActionOptions
 ): Promise<any>;
 /**
@@ -177,7 +184,7 @@ export async function postToResourceAction(
 export async function postToResourceAction(
     resourceType: keyof HawkiResourceSchemas,
     action: string,
-    data: any,
+    data: ResourceActionData,
     options?: PostToResourceActionOptions
 ): Promise<any> {
     return getHawkiApp().restApi.postToResourceAction(resourceType, action, data, options);

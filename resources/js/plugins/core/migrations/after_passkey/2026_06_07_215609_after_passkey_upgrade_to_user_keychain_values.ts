@@ -1,4 +1,3 @@
-import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
 import {decryptSymmetric, loadSymmetricCryptoValue} from '$lib/kernel/encryption/symmetric.js';
 import {deriveKey} from '$lib/kernel/encryption/utils.js';
 import {createKeychainHandle} from '$lib/kernel/keychain/keychainHandle.js';
@@ -22,8 +21,8 @@ import type {UserKeychainValueType} from '$plugins/core/schemas/resources/user-k
  *     the user is new and already on the new system; the migration is a no-op.
  *   - `app.config.get().salts.userdata` — the salt used to re-derive the
  *     legacy keychain password.
- *   - `oldUiBridge.passkey` — the user's passkey, used both to derive the old
- *     password and as the provider for the new `KeychainHandle`.
+ *   - `app.passkeySession.passkey` — the user's passkey, used both to derive
+ *     the old password and as the provider for the new `KeychainHandle`.
  *
  * WHAT it converts: for every key in the decrypted legacy blob (except the
  * `username` / `time-signature` metadata entries) it re-imports the key —
@@ -40,19 +39,20 @@ export async function migrate({name, data, app}: MigrationContext) {
         return;
     }
 
-    if (`${oldUiBridge.passkey}` === '') {
+    const passkey = app.passkeySession.passkey;
+    if (!passkey) {
         throw new Error('No passkey available for migration, cannot proceed!');
     }
 
     const keychainPassword = await deriveKey(
-        oldUiBridge.passkey as string,
+        passkey,
         'keychain_encryptor',
         app.config.get().salts!.userdata);
 
     const decrypted = await decryptSymmetric(loadSymmetricCryptoValue(data.blob), keychainPassword);
     const decryptedKeychain = JSON.parse(decrypted);
 
-    const keychainHandle = createKeychainHandle(app, () => oldUiBridge.passkey!);
+    const keychainHandle = createKeychainHandle(app, () => passkey);
     await keychainHandle.doUpdate(async ({set, clear}) => {
         clear();
 

@@ -5,10 +5,10 @@
 -->
 <script lang="ts">
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
-    import List from '$lib/components/ui/list/List.svelte';
-    import ListItem from '$lib/components/ui/list/ListItem.svelte';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
+    import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
     import RouterView from '$lib/components/ui/routing/RouterView.svelte';
-    import {createRouter} from '$lib/components/ui/routing/logistics/router.svelte.js';
+    import {createRouter} from '$lib/components/ui/routing/index.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
@@ -40,16 +40,6 @@
         {path: '/profile', label: __('ui.settings.nav.profile'), icon: UserIcon},
         {path: '/experiments', label: __('ui.settings.nav.experiments'), icon: FlaskConicalIcon}
     ]);
-
-    $effect(() => {
-        if (!open) return;
-
-        const currentHashPath = window.location.hash.slice(1);
-        const knownPath = navItems.some((item) => item.path === currentHashPath);
-        if (!knownPath) {
-            void settingsRouter.handle.goTo('/general');
-        }
-    });
 
     function clearSettingsHash(): void {
         const path = window.location.hash.slice(1);
@@ -86,11 +76,11 @@
 
     <div class="settings-layout">
         <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
-            <List>
+            <MenuList>
                 {#each navItems as item (item.path)}
                     {@const Icon = item.icon}
-                    {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/general' && settingsRouter.handle.path === '/')}
-                    <ListItem {active}>
+                    {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/general' && settingsRouter.path === '/')}
+                    <MenuListItem {active}>
                         {#snippet children({attach})}
                             <button
                                 type="button"
@@ -103,13 +93,13 @@
                                 <span>{item.label}</span>
                             </button>
                         {/snippet}
-                    </ListItem>
+                    </MenuListItem>
                 {/each}
-            </List>
+            </MenuList>
         </nav>
 
         <main class="settings-panel">
-            <RouterView router={settingsRouter}/>
+            <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
         </main>
     </div>
 </Dialog>

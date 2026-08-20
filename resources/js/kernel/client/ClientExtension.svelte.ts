@@ -6,7 +6,11 @@ import type {HawkiClient} from '$lib/kernel/client/dummyClient.js';
 import {UriBuilder} from '$lib/kernel/api/UriBuilder.js';
 import type {LinkPreviewApi} from '$lib/kernel/api/LinkPreviewApi.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
-import type {Connection, InternalAuthenticatedConnection, InternalRegisteringUserConnection} from '$lib/app/schemas/resources/connections.schema.js';
+import type {
+    Connection,
+    InternalAuthenticatedConnection,
+    InternalRegisteringUserConnection
+} from '$lib/app/schemas/resources/connections.schema.js';
 import {AiApi} from '$lib/kernel/ai/AiApi.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -16,48 +20,32 @@ declare module '$lib/kernel/extendableTypes.js' {
         readonly aiApi: AiApi;
         readonly linkPreviewApi: LinkPreviewApi;
         readonly uriBuilder: UriBuilder;
-
-        /**
-         * Returns the current HAWKI connection information. This includes the API version and user info.
-         * The connection must be loaded first by calling `loadConnection()`.
-         *
-         * @throws Error if the connection has not been loaded yet.
-         */
         readonly connection: Connection;
-
-        /**
-         * Returns the current HAWKI connection information, but only if the client is authenticated. This includes the API version and user info.
-         * The connection must be loaded first by calling `loadConnection()`.
-         *
-         * @throws Error if the connection has not been loaded yet or if the client is not authenticated.
-         */
         readonly authenticatedConnection: InternalAuthenticatedConnection;
-        /**
-         * Returns the current HAWKI connection information, but only if the client is authenticated or in the process of registering a new user account. This includes the API version and user info.
-         * The connection must be loaded first by calling `loadConnection()`.
-         *
-         * @throws Error if the connection has not been loaded yet or if the client is not authenticated or registering a new user.
-         */
         readonly connectionWithUserInfo: InternalAuthenticatedConnection | InternalRegisteringUserConnection;
+        refreshConnection(): Promise<Connection>;
+        logout(): void;
     }
 }
 
 // @todo this extension is not really settled and WILL be refactored/changed in the future. Don't rely on it yet.
 
 export class ClientExtension implements HawkiAppExtension {
-    private currentConnection: Connection | null = null;
+    private currentConnection = $state<Connection | null>(null);
     private resourceSchemas: HawkiAppExtensions['resourceSchemas'] | null = null;
+    private app: UnfinishedHawkiApp | null = null;
 
-    public readonly uriBuilder: UriBuilder = new UriBuilder(window.location.origin);
+    public readonly uriBuilder = new UriBuilder(window.location.origin);
     public readonly client: HawkiClient;
 
-    constructor() {
+    public constructor() {
+        const transport = createDefaultTransport();
         const getConnection = () => this.getConnection();
         this.client = {
             restApi: new RestApi(
                 this.uriBuilder,
-                createDefaultTransport(),
-                () => getConnection(),
+                transport,
+                getConnection,
                 (resourceType: string) => {
                     if (!this.resourceSchemas) {
                         throw new Error('Resource schemas have not been loaded yet');
@@ -65,7 +53,7 @@ export class ClientExtension implements HawkiAppExtension {
                     return this.resourceSchemas.get(resourceType);
                 }
             ),
-            aiApi: new AiApi(),
+            aiApi: new AiApi({transport}),
             get connection() {
                 return getConnection();
             }
@@ -79,15 +67,36 @@ export class ClientExtension implements HawkiAppExtension {
         return this.currentConnection;
     }
 
-    public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper): void {
-        this.resourceSchemas = app.getOrFail('resourceSchemas');
+    public async refreshConnection(): Promise<Connection> {
+        const previousType = this.currentConnection?.type;
+        this.currentConnection = await this.client.restApi.getResource('connections', 'hawki');
 
+        // Public config is connection-dependent. Preserve the initial bootstrap
+        // ordering, but refresh it when an established session changes type
+        // (for example internal_registering_user -> internal_authenticated).
+        if (previousType && previousType !== this.currentConnection.type) {
+            await this.app?.config?.refresh();
+        }
+        return this.currentConnection;
+    }
+
+    public logout(): void {
+        if (this.app?.stores?.has('keychain')) {
+            this.app.stores.get('keychain').clearLocalSession();
+        }
+        this.app?.passkeySession?.clear();
+        window.location.assign(this.uriBuilder.logoutUri());
+    }
+
+    public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper): void {
+        this.app = app;
+        this.resourceSchemas = app.getOrFail('resourceSchemas');
         bootstrapper.onPreparationStage(async () => {
-            this.currentConnection = await this.client.restApi.getResource('connections', 'hawki');
+            await this.refreshConnection();
         });
     }
 
-    public provideProperties(): Record<string, any> {
+    public provideProperties(): Record<string, unknown> {
         const extension = this;
         return {
             get client(): HawkiClient {
@@ -118,7 +127,9 @@ export class ClientExtension implements HawkiAppExtension {
                     return connection;
                 }
                 throw new Error('Current connection does not contain user info');
-            }
+            },
+            refreshConnection: () => extension.refreshConnection(),
+            logout: () => extension.logout()
         };
     }
 }

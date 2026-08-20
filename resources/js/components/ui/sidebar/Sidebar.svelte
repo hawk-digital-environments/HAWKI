@@ -5,19 +5,23 @@
 -->
 <script lang="ts">
     import {tick, type Snippet} from 'svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
+    import {mergeProps} from 'bits-ui';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
 
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLElement> {
         /** Sidebar content, e.g. header / navigation items / footer. */
         children: Snippet;
+        /** Translated accessible name for the navigation landmark. */
+        label: string;
     }
 
-    const {children}: Props = $props();
+    const {children, label, class: className, ...rest}: Props = $props();
 
     const sidebar = useSidebar();
 
     async function handleKeyDown(event: KeyboardEvent) {
-        if (event.key !== 'Escape' || !sidebar.mobile.current || !sidebar.navOpen) return;
+        if (event.key !== 'Escape' || !sidebar.mobile || !sidebar.navOpen) return;
         event.preventDefault();
         sidebar.toggleNav();
         await tick();
@@ -28,10 +32,11 @@
 <svelte:window onkeydown={handleKeyDown} />
 
 <nav
-    id="app-navigation"
-    class="app-sidebar"
-    class:open={sidebar.navOpen}
-    aria-label="Navigation"
+    {...mergeProps(rest, {
+        id: 'app-navigation',
+        class: ['app-sidebar', sidebar.navOpen && 'open', className],
+        'aria-label': label
+    })}
 >
     <div class="inner">
         {@render children()}

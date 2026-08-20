@@ -8,7 +8,7 @@
     import type {Snippet} from 'svelte';
     import AppSidebar from '$lib/app/components/sidebar/AppSidebar.svelte';
     import SidebarContent from '$lib/components/ui/sidebar/SidebarContent.svelte';
-    import SidebarContext from '$lib/components/ui/sidebar/SidebarContext.svelte';
+    import SidebarRoot from '$lib/components/ui/sidebar/SidebarRoot.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import Toaster from '$lib/components/ui/toast/Toaster.svelte';
 
@@ -21,7 +21,7 @@
     const {__} = useTranslator();
 </script>
 
-<SidebarContext>
+<SidebarRoot>
     <a class="skip-link" href="#main-content">{__('ui.navigation.skipToContent')}</a>
     <AppSidebar />
     <SidebarContent>
@@ -29,7 +29,7 @@
     </SidebarContent>
 
     <Toaster />
-</SidebarContext>
+</SidebarRoot>
 
 <style>
     .skip-link {

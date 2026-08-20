@@ -1,55 +1,27 @@
 <!--
-  @component Scrollable list container with proximity hover. Owns the two
+  @component Scrollable menu-row container with proximity hover. Owns the two
   sliding highlights that sit behind the rows — one that follows the current
   selection, one that follows the row nearest the pointer — and the measuring
-  needed to keep them there. ListItem children register themselves through the
-  context exported here so the container can track them.
+  needed to keep them there. MenuListItem children register through a dedicated
+  context module so the container can track them.
 
   Rows are laid out as a vertical flex column; the highlight of a row marked
   `inset` is pulled in from the left by `--list-inset`, so nested rows can nest
   their highlight too.
 -->
-<script module lang="ts">
-    import {createContext} from 'svelte';
-
-    /** Per-row presentation flags the container needs to position highlights. */
-    export interface ListItemState {
-        /** Whether the row is the current selection. */
-        active: boolean;
-        /** Whether the row's highlight is indented (nested rows). */
-        inset: boolean;
-    }
-
-    /** Registration API exposed to descendant ListItem rows. */
-    export interface ListContextValue {
-        /** Register a row's element; returns its stable index. */
-        register: (el: HTMLElement) => number;
-        /** Release a previously registered index. */
-        unregister: (index: number) => void;
-        /** Report a row's current active/inset state. */
-        setState: (index: number, state: ListItemState) => void;
-    }
-
-    const [getListContext, setListContext] = createContext<ListContextValue>();
-
-    /** The enclosing list, or null for rows used standalone (e.g. in a footer). */
-    export function useList(): ListContextValue | null {
-        try {
-            return getListContext() ?? null;
-        } catch {
-            return null;
-        }
-    }
-</script>
-
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import type {Attachment} from 'svelte/attachments';
     import type {HTMLAttributes} from 'svelte/elements';
+    import {mergeProps} from 'bits-ui';
     import {createProximityHover} from '$lib/utils/proximityHover.svelte.js';
-    import { fade } from 'svelte/transition';
+    import {
+        type MenuListItemState,
+        provideMenuList
+    } from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
-        /** The rows (ListItem instances, or anything wrapping them). */
+        /** The rows (MenuListItem instances, or anything wrapping them). */
         children: Snippet;
         /** Suppress both sliding highlights (active selection + proximity hover),
             e.g. while the list is sliding through a transition. */
@@ -59,27 +31,17 @@
     const {children, paused = false, class: className, ...rest}: Props = $props();
 
     const hover = createProximityHover({axis: 'y'});
-    // Clear any lingering hover when suppression turns on, so nothing snaps back
-    // into place when it turns off again. On release, re-measure so the active
-    // highlight fades back in at the settled row positions rather than the stale
-    // mid-transition coordinates captured while the rows were moving.
-    $effect(() => {
-        if (paused) hover.handlers.onmouseleave();
-        else hover.measureItems();
-    });
-    let listEl = $state<HTMLElement | null>(null);
-    $effect(() => hover.setContainer(listEl));
 
     // Rows register in mount order; indices are handed out monotonically and
     // freed on unmount. Highlights are positioned from measured rects, so the
     // exact index values never need to stay contiguous.
     let nextIndex = 0;
-    let itemStates = $state<Record<number, ListItemState>>({});
+    let itemStates = $state<Record<number, MenuListItemState>>({});
     // The registered row elements, kept alongside the hover's own map so the
     // container can hit-test rows without reaching for a class selector.
     const itemElements = new Map<number, HTMLElement>();
 
-    setListContext({
+    provideMenuList({
         register(el) {
             const index = nextIndex++;
             itemElements.set(index, el);
@@ -104,13 +66,6 @@
         return null;
     });
 
-    // Keep the sliding active highlight on the selected row; depends on
-    // `itemStates` so it re-measures when rows are added or removed.
-    $effect(() => {
-        itemStates;
-        hover.setSelected(activeIndex);
-    });
-
     // While the list is reflowing (breakpoint change, container width animation)
     // the highlights snap to the new row positions instead of sliding across
     // from their now-stale coordinates.
@@ -121,16 +76,8 @@
     // child → parent as a rail collapses) even though that coincides with a
     // reflow. Track index changes so the snap-guard applies only to spurious
     // re-measures of the same row, never to a genuine selection move mid-flight.
-    // svelte-ignore state_referenced_locally -- intentional one-time initial value
-    let prevActiveIndex = activeIndex;
+    let previousActiveIndex: number | null | undefined;
     let selectionMoved = $state(false);
-
-    $effect(() => {
-        if (activeIndex !== prevActiveIndex) {
-            prevActiveIndex = activeIndex;
-            selectionMoved = true;
-        }
-    });
 
     function reflow() {
         reflowing = true;
@@ -144,27 +91,45 @@
         }, 120);
     }
 
-    $effect(() => {
-        const el = listEl;
-        if (!el) return;
+    const attachList: Attachment<HTMLDivElement> = (element) => {
+        hover.setContainer(element);
         // The observer fires for the container's own width animation and the
         // initial measure; `resize` covers reflows that change row heights
         // without changing the container box (e.g. a mobile font-size bump).
         const observer = new ResizeObserver(() => reflow());
-        observer.observe(el);
+        observer.observe(element);
         // Rows can also be reordered or swapped without any box changing (a
         // keyed list moving the current row to the top), which neither observer
         // above notices — the highlights would keep sitting on the row that
         // used to be there.
         const mutations = new MutationObserver(() => reflow());
-        mutations.observe(el, {childList: true, subtree: true});
+        mutations.observe(element, {childList: true, subtree: true});
         window.addEventListener('resize', reflow);
         return () => {
+            hover.setContainer(null);
             observer.disconnect();
             mutations.disconnect();
             window.removeEventListener('resize', reflow);
             if (settleTimer) clearTimeout(settleTimer);
         };
+    };
+
+    // One reactive synchronization point keeps the imperative hover helper in
+    // step with component inputs. DOM lifecycle/observer work lives in the
+    // attachment above instead of being split across several effects.
+    $effect(() => {
+        // Track registration changes too: the active index can stay the same
+        // while the corresponding DOM row is replaced.
+        void itemStates;
+
+        if (previousActiveIndex !== undefined && activeIndex !== previousActiveIndex) {
+            selectionMoved = true;
+        }
+        previousActiveIndex = activeIndex;
+        hover.setSelected(activeIndex);
+
+        if (paused) hover.handlers.onmouseleave();
+        else hover.measureItems();
     });
 
     // Regions inside the container that are not rows (e.g. a section picker or
@@ -224,12 +189,13 @@
      only drive the decorative proximity highlight; rows stay fully operable
      without them -->
 <div
-    {...rest}
-    class={['list', className]}
-    bind:this={listEl}
-    onmousemove={paused ? undefined : handleMousemove}
-    onmouseenter={paused ? undefined : handleMouseenter}
-    onmouseleave={hover.handlers.onmouseleave}
+    {...mergeProps(rest, {
+        class: ['list', className],
+        onmousemove: paused ? undefined : handleMousemove,
+        onmouseenter: paused ? undefined : handleMouseenter,
+        onmouseleave: hover.handlers.onmouseleave
+    })}
+    {@attach attachList}
 >
     {#if activeRect}
         <span

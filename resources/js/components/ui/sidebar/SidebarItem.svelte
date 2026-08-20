@@ -1,7 +1,7 @@
 <!--
   @component A single nav row. Renders an optional icon (or custom media) and a
   label — with neither, the row is label-only — and
-  registers itself as a ListItem so the enclosing SidebarItems can track it with
+  registers itself as a MenuListItem so the enclosing SidebarItems can track it with
   its proximity-hover and active highlights. When given `children` (its
   sub-items) it owns its own chevron and toggles the sub-tree inline — the
   layout never injects a trailing icon. In the collapsed rail it shrinks to an
@@ -15,8 +15,8 @@
     import {slide} from 'svelte/transition';
     import {cubicOut} from 'svelte/easing';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
-    import {useList} from '$lib/components/ui/list/List.svelte';
-    import ListItem from '$lib/components/ui/list/ListItem.svelte';
+    import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
+    import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import ChevronRightIcon from '$lib/components/ui/icons/iconset/ChevronRightIcon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
@@ -70,7 +70,7 @@
 
     // Optional: rows used outside a list container (e.g. a footer) have no
     // sliding highlight behind them, so they paint their own hover surface.
-    const standalone = !useList();
+    const standalone = !useMenuList();
 
     // The rail row still spans the full panel width, so a tooltip anchored to the
     // button would open a row's width away from the icon it describes. Anchor it
@@ -91,7 +91,7 @@
         // and never navigate, so the off-canvas nav stays open for them.
         if (hasChildren && !collapsed) {
             expanded = !expanded;
-        } else if (sidebar.mobile.current) {
+        } else if (sidebar.mobile) {
             // Tapping a leaf row navigates; collapse the off-canvas overlay so it
             // doesn't cover the destination.
             sidebar.navOpen = false;
@@ -142,7 +142,7 @@
     </button>
 {/snippet}
 
-<ListItem {active} inset={indent}>
+<MenuListItem {active} inset={indent}>
     {#snippet children({attach})}
         {#if collapsed}
             <Tooltip
@@ -160,7 +160,7 @@
             {@render row(attach)}
         {/if}
     {/snippet}
-</ListItem>
+</MenuListItem>
 
 {#if showChildren}
     <div class="subtree" transition:slide={{duration: 120, easing: cubicOut}}>
@@ -185,7 +185,7 @@
            way to the full text color: a list of chat titles is content, not
            chrome, so it stays comfortably readable while unselected. */
         color: color-mix(in oklab, var(--color-text) 60%, var(--color-text-muted));
-        font-size: var(--font-size-nav);
+        font-size: var(--font-size-xs);
         cursor: pointer;
         border-radius: var(--corner-sm);
         text-align: left;

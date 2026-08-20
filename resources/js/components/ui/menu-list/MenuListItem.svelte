@@ -1,14 +1,14 @@
 <!--
-  @component Registers a row with the enclosing List so the sliding highlights
+  @component Registers a row with the enclosing MenuList so the sliding highlights
   can track it. It renders no markup of its own: the row element is the
   consumer's, and gets wired up through the attachment handed to the children
   snippet.
 
-      <ListItem active={selected} inset={nested}>
+      <MenuListItem active={selected} inset={nested}>
           {#snippet children({attach})}
               <button {@attach attach}>…</button>
           {/snippet}
-      </ListItem>
+      </MenuListItem>
 
   Rows used outside a List simply render — the attachment is inert, so the same
   component works standalone (e.g. in a footer), just without a highlight
@@ -17,7 +17,7 @@
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import type {Attachment} from 'svelte/attachments';
-    import {useList} from '$lib/components/ui/list/List.svelte';
+    import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
 
     interface Props {
         /** Marks the row as the list's current selection. */
@@ -30,7 +30,7 @@
 
     const {active = false, inset = false, children}: Props = $props();
 
-    const list = useList();
+    const list = useMenuList();
     let index = $state(-1);
 
     const attach: Attachment<HTMLElement> = (element) => {

@@ -27,7 +27,11 @@ export function exportConversation(conversation: ChatConversation, format: OldUi
             messages: rows
         }, null, 2), 'application/json');
     } else if (format === 'csv') {
-        const quote = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+        const quote = (value: unknown) => {
+            const text = String(value ?? '');
+            const spreadsheetSafeText = /^[=+\-@]/.test(text) ? `'${text}` : text;
+            return `"${spreadsheetSafeText.replaceAll('"', '""')}"`;
+        };
         download(`${conversation.name}.csv`, [
             ['role', 'author', 'model', 'message', 'created_at'].map(quote).join(','),
             ...rows.map(row => Object.values(row).map(quote).join(','))

@@ -120,7 +120,7 @@ padding so the composer stays aligned with the centred message column).
         text-align: center;
     }
 
-    @media (max-width: 640px) {
+    @media (--bp-sm-and-smaller) {
         .composer-row { padding-inline: var(--space-3); }
     }
 

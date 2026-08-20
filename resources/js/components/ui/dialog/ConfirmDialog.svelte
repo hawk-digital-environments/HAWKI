@@ -18,7 +18,7 @@
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import Dialog from './Dialog.svelte';
-    import Button from '../button/Button.svelte';
+    import Button, {type ButtonVariant} from '../button/Button.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
@@ -37,9 +37,13 @@
         /** Label for the cancel button. @default "Abbrechen" */
         cancelLabel?: string;
         /** Called when the user clicks the confirm button. */
-        onConfirm?: () => void;
+        onConfirm?: () => unknown | Promise<unknown>;
         /** Called when the user clicks the cancel button. */
         onCancel?: () => void;
+        /** Prevents duplicate actions while an async confirmation is running. */
+        busy?: boolean;
+        /** Visual treatment for the confirmation action. */
+        confirmVariant?: ButtonVariant;
     }
 
     let {
@@ -50,7 +54,9 @@
         okLabel = __('ui.dialog.okLabel'),
         cancelLabel = __('ui.dialog.cancelLabel'),
         onConfirm,
-        onCancel
+        onCancel,
+        busy = false,
+        confirmVariant = 'fill'
     }: Props = $props();
 
     function handleOpenChange(isOpen: boolean) {
@@ -58,9 +64,9 @@
         onOpenChange?.(isOpen);
     }
 
-    function handleConfirm() {
+    async function handleConfirm() {
+        await onConfirm?.();
         handleOpenChange(false);
-        onConfirm?.();
     }
 
     function handleCancel() {
@@ -82,8 +88,8 @@
     }}
 >
     {#snippet footer()}
-        <Button variant="stroke" size="sm" onclick={handleCancel}>{cancelLabel}</Button>
-        <Button variant="fill" size="sm" autofocus onclick={handleConfirm}>{okLabel}</Button>
+        <Button variant="stroke" size="sm" disabled={busy} onclick={handleCancel}>{cancelLabel}</Button>
+        <Button variant={confirmVariant} size="sm" disabled={busy} autofocus onclick={handleConfirm}>{okLabel}</Button>
     {/snippet}
 </Dialog>
 

@@ -1,5 +1,9 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
-import type {SystemPrompt, WellKnownSystemPromptType} from '$plugins/core/schemas/resources/system-prompts.schema.js';
+import {
+    type SystemPrompt,
+    type WellKnownSystemPromptType,
+    WellKnownSystemPromptTypes
+} from '$plugins/core/schemas/resources/system-prompts.schema.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -13,13 +17,13 @@ declare module '$lib/kernel/extendableTypes.js' {
  *
  * Populated by {@link SystemPromptStore.loadData} during bootstrap (authenticated connections only).
  * Use {@link getPromptByType} to retrieve a prompt by its well-known type string instead of
- * filtering `prompts` manually. Even well-known types can be absent (the server syncs them
- * from its config via `ai:config:sync`), so callers must handle `null`.
+ * filtering `prompts` manually. Well-known types are part of the server's
+ * required configuration and fail loudly if that invariant is broken.
  *
  * @example
  * import {useStore} from '$lib/app/hooks/useStore.svelte.js';
  * const systemPromptStore = useStore('system-prompts');
- * const chatPrompt = systemPromptStore.getPromptByType('chat')?.prompt ?? '';
+ * const chatPrompt = systemPromptStore.getPromptByType('default').prompt;
  */
 export class SystemPromptStore implements DataStore {
     public readonly name = 'system-prompts';
@@ -38,14 +42,16 @@ export class SystemPromptStore implements DataStore {
     /**
      * Looks up a system prompt by its `prompt_type` string.
      *
-     * Returns `null` when no prompt of that type exists — this can happen even
-     * for well-known types when the server has not synced its prompt config
-     * yet, so callers must provide a fallback.
-     *
      * @todo this might break when the locale changes.
      */
+    public getPromptByType(type: WellKnownSystemPromptType): SystemPrompt;
+    public getPromptByType(type: string): SystemPrompt | null;
     public getPromptByType(type: WellKnownSystemPromptType | string): SystemPrompt | null {
-        return this.promptsByType.get(type) ?? null;
+        const prompt = this.promptsByType.get(type);
+        if (!prompt && WellKnownSystemPromptTypes.includes(type as WellKnownSystemPromptType)) {
+            throw new Error(`Required system prompt "${type}" is unavailable.`);
+        }
+        return prompt ?? null;
     }
 
     public async loadData(app: HawkiApp) {

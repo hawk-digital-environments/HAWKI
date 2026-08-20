@@ -99,6 +99,37 @@ class ReviewedApiEndpointsTest extends TestCase
             ->assertJsonPath('included.0.attributes.username', $user->username);
     }
 
+    public function testConversationCanIncludeMessagesAndTheirAuthors(): void
+    {
+        $user = User::factory()->create();
+        $conversation = AiConv::query()->create([
+            'conv_name' => 'Private',
+            'slug' => 'private-conversation',
+            'user_id' => $user->id,
+            'system_prompt' => null,
+        ]);
+        AiConvMsg::query()->create([
+            'conv_id' => $conversation->id,
+            'user_id' => $user->id,
+            'message_role' => 'user',
+            'message_id' => '1',
+            'iv' => 'iv',
+            'tag' => 'tag',
+            'content' => 'encrypted',
+            'completion' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson(
+                "/api/hawki/v1/ai-convs/{$conversation->slug}?include=messages.author",
+                $this->jsonApiHeaders(),
+            )
+            ->assertOk()
+            ->assertJsonPath('data.relationships.messages.data.0.type', 'ai-conv-messages')
+            ->assertJsonPath('included.0.attributes.completion', true)
+            ->assertJsonFragment(['username' => $user->username]);
+    }
+
     public function testDeletingConversationRemovesItsPolymorphicAttachments(): void
     {
         $user = User::factory()->create();

@@ -27,7 +27,7 @@
     id="main-content"
     class="content"
     tabindex="-1"
-    inert={sidebar.mobile.current && sidebar.navOpen}
+    inert={sidebar.mobile && sidebar.navOpen}
 >
     <button
         id="mobile-navigation-trigger"

@@ -125,12 +125,12 @@
                     role="group"
                     aria-label={__('chat.composer.modelConflict.modelListAriaLabel')}
                     bind:this={listEl}
-                    onkeydown={onListKeydown}
                 >
                     {#each usableModels as m, i (m.id)}
                         <button
                             onclick={() => composerContext.model.set(m.id)}
                             onfocus={() => activeIndex = i}
+                            onkeydown={onListKeydown}
                             class="conflict-model-card"
                             data-conflict-card
                             tabindex={i === activeIndex ? 0 : -1}

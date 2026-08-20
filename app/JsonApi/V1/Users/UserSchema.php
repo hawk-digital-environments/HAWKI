@@ -22,6 +22,9 @@ class UserSchema extends Schema
     {
         return [
             ID::make(),
+            // Expose the writable API field as display_name while persisting it
+            // to the model's existing name column. Identity/admin-only fields
+            // remain read-only so profile PATCHes cannot alter them.
             Str::make('display_name', 'name')->extractUsing(function (User $user) {
                 $displayName = $user->name ?: $user->username;
 
@@ -37,7 +40,7 @@ class UserSchema extends Schema
             Str::make('bio'),
             Str::make('avatar')->extractUsing(function (User $user) {
                 $identifier = StoredFileIdentifier::tryFromUserAvatar($user);
-                return $identifier ? (string)$identifier : null;
+                return $identifier;
             })->readOnly(),
             Str::make('employee_type')->hidden(UserCondition::isNonAdmin(...))->readOnly(),
             Str::make('created_at')->readOnly(),

@@ -5,15 +5,13 @@
     import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
-    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
+    import { fade } from 'svelte/transition';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 
     const store = useStore('chat');
-    // Rendered in the app sidebar, outside the RouterView subtree, so the
-    // router context set there is not reachable — the app-level handle is
-    // used instead.
-    const app = useApp();
+    const router = useRouter();
     const sidebar = useSidebar();
     const {__} = useTranslator();
     const toast = useToastContext();
@@ -57,8 +55,8 @@
             await store.remove(slug);
             // Only leave the conversation that just disappeared; deleting some
             // other row from the list must not navigate away.
-            if (app.router.isActive(`/chat/${slug}`)) {
-                void app.router.goTo(app.router.p('/chat'));
+            if (router.isActive('chat.conversation', {params: {slug}})) {
+                void router.goToRoute('chat.index');
             }
         } catch (error) {
             toast.error(error instanceof Error ? error.message : String(error));
@@ -67,7 +65,7 @@
 
     function newChat() {
         store.startNew();
-        void app.router.goTo(app.router.p('/chat'));
+        void router.goToRoute('chat.index');
     }
 </script>
 
@@ -99,11 +97,11 @@
                         <ChatHistoryItem
                             media={generating ? generatingIndicator : undefined}
                             name={conversation.name}
-                            active={app.router.isActive(`/chat/${conversation.slug}`)}
+                            active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
                             rowLabel={generating
                                 ? `${conversation.name}, ${__('chat.sidebar.generating')}`
                                 : conversation.name}
-                            onOpen={() => app.router.goTo(app.router.p(`/chat/${conversation.slug}`))}
+                            onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
                             onRename={name => renameConversation(conversation.slug, name)}
                             onDelete={() => removeConversation(conversation.slug)}
                         />
