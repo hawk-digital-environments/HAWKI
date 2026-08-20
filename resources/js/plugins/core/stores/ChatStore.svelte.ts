@@ -83,7 +83,7 @@ export class ChatStore implements DataStore {
         try {
             const key = await this.conversationKey();
             const source = await this.app!.restApi.getResource('ai-convs', slug, {
-                query: {include: 'messages'}
+                query: {include: 'messages.author'}
             });
             const conversation: ChatConversation = {
                 name: source.name,
@@ -303,8 +303,8 @@ export class ChatStore implements DataStore {
         return {
             author: {
                 username: source.author.username,
-                name: source.author.name,
-                avatar_url: source.author.avatar_url ?? ''
+                name: source.author.display_name,
+                avatar_url: source.author.avatar ? (this.app!.uriBuilder.storageFileUri(source.author.avatar) ?? '') : ''
             },
             completion: source.completion ? 1 : 0,
             content: {

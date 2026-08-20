@@ -33,6 +33,18 @@ class AttachmentRepository extends AbstractRepository
         return $this->getQuery()->where('uuid', $uuid)->where('category', $category->value)->first();
     }
 
+    public function delete(Attachment $attachment): void
+    {
+        $attachment->delete();
+    }
+
+    public function deleteForMessage(AiConvMsg|Message $message): void
+    {
+        foreach ($message->attachments as $attachment) {
+            $this->delete($attachment);
+        }
+    }
+
     public function assignToMessage(
         AiConvMsg|Message $message,
         StoredFile        $file,

@@ -6,13 +6,13 @@ namespace App\JsonApi\V1\AiConvMessages;
 
 use App\Models\AiConvMsg;
 use App\Services\Encryption\EncryptionUtils;
-use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use LaravelJsonApi\Eloquent\Fields\ArrayHash;
 use LaravelJsonApi\Eloquent\Fields\ArrayList;
 use LaravelJsonApi\Eloquent\Fields\Boolean;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
+use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Schema;
 
@@ -52,15 +52,7 @@ class AiConvMessageSchema extends Schema
                     $message->content
                 );
             }),
-            ArrayHash::make('author')->extractUsing(static function (AiConvMsg $message) {
-                $user = $message->user;
-                return [
-                    'username' => $user->username,
-                    'name' => $user->name,
-                    'avatar_url' => app(AvatarStorageService::class)
-                        ->retrieve(StoredFileIdentifier::tryFromUserAvatar($user))?->getUrl(),
-                ];
-            }),
+            BelongsTo::make('author', 'user')->type('users')->readOnly(),
             // Attachment metadata is embedded because it is always displayed
             // together with the message; the file itself is served through the
             // storage proxy using the identifier.

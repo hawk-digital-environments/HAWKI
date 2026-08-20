@@ -16,8 +16,8 @@ class UserPolicy
     /**
      * Users may only update their own profile.
      */
-    public function update(User $user, User $model): bool
+    public function update(User|null $user, User $model): bool
     {
-        return $user->id === $model->id;
+        return $this->isSameUser($user, $model);
     }
 }

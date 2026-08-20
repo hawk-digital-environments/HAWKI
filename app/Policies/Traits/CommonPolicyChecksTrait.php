@@ -12,6 +12,22 @@ use Illuminate\Auth\Access\Response;
 trait CommonPolicyChecksTrait
 {
     /**
+     * Checks if two users are the same.
+     *
+     * @param User|null $user The first user to check.
+     * @param User|int|null $otherUser The second user to check.
+     * @return bool True if both users are the same, false otherwise.
+     */
+    private function isSameUser(User|null $user, User|int|null $otherUser): bool
+    {
+        if ($user === null || $otherUser === null) {
+            return false;
+        }
+        $otherUserId = $otherUser instanceof User ? $otherUser->id : $otherUser;
+        return $user->id === $otherUserId;
+    }
+
+    /**
      * Checks if the user is authenticated.
      *
      * @param User|null $user The user to check.
@@ -88,7 +104,7 @@ trait CommonPolicyChecksTrait
      * @param \Closure(User $user):(bool|string) $additionalCheck A callable that takes a User and returns a boolean.
      * @param string|null $message An optional message for the denial response.
      * @param int|null $code An optional code for the denial response.
-     * @return Response An allow response if the user is an admin or satisfies the additional condition, otherwise a deny response with the provided message and code.
+     * @return Response An allow response if the user is an admin or satisfies an additional condition, otherwise a deny response with the provided message and code.
      * @see isAdminOr() for a boolean check that can be used in combination with other conditions.
      */
     private function isAdminOrResponse(User|null $user, \Closure $additionalCheck, string|null $message = null, int|null $code = null): Response
