@@ -27,7 +27,7 @@ export class GuardSlice {
      *  compatibility issues, and the current mode's own `canSend` check passes. */
     public readonly canSend = $derived.by(() => {
         const context = this.contextResolver();
-        if (context.forcedActive || context.backgroundActive) {
+        if (context.forcedActive) {
             return false;
         }
 
@@ -75,7 +75,7 @@ export class GuardSlice {
      *  (sending or responding), while `forcedActive` is set, or without write access. */
     public readonly canChangeMode = $derived.by(() => {
         const context = this.contextResolver();
-        return !(context.sendStatus?.active) && !context.forcedActive && !context.backgroundActive && context.hasWriteAccess;
+        return !(context.sendStatus?.active) && !context.forcedActive && context.hasWriteAccess;
     });
 
     /**
@@ -89,7 +89,7 @@ export class GuardSlice {
      */
     public disablesFeature(feature: DisabledChatFeature, disableWhileActive: boolean = true): boolean {
         const context = this.contextResolver();
-        if (disableWhileActive && (context.sendStatus?.sending || context.forcedActive || context.backgroundActive)) {
+        if (disableWhileActive && (context.sendStatus?.sending || context.forcedActive)) {
             return true;
         }
 

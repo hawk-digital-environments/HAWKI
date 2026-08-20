@@ -61,8 +61,14 @@ export function createHashRoutingStrategy(): RoutingStrategy {
                 if (window.location.hash !== '') {
                     // The router owns the fragment for its mounted lifetime.
                     // Remove it without adding an empty-fragment entry to the
-                    // browser history when the owning RouterView unmounts.
-                    window.location.replace(window.location.pathname + window.location.search);
+                    // browser history or navigating the document when the
+                    // owning RouterView unmounts.
+                    window.history.replaceState(
+                        window.history.state,
+                        '',
+                        window.location.pathname + window.location.search
+                    );
+                    currentPath = '';
                 }
             };
         }

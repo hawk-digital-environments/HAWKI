@@ -19,12 +19,8 @@
 
     const {conversation, onRename, onDelete, onExport, generating = false, onSkipToComposer}: Props = $props();
     const {__} = useTranslator();
-    let name = $state((() => conversation.name)());
+    let name = $derived(conversation.name);
     let deleteOpen = $state(false);
-
-    $effect(() => {
-        name = conversation.name;
-    });
 </script>
 
 <header>
