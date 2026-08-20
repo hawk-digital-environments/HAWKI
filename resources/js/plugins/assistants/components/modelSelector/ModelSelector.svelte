@@ -1,18 +1,21 @@
 <script lang="ts">
 
-import {aiModelsStore} from "$lib/stores/AiModelsStore.svelte.js";
-import type {AiModel} from "$lib/plugins/assistants/types/aiModel/AiModel";
-import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
+    import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
+    import {useApp} from "$lib/app/hooks/useApp.svelte";
+    import {useStore} from "$lib/app/hooks/useStore.svelte";
 
-const {
-    disabled = false,
-    onchange,
-} = $props<{
-    disabled?: boolean;
-    onchange?: (value: string) => void;
-}>();
+    const {
+        disabled = false,
+        onchange,
+    } = $props<{
+        disabled?: boolean;
+        onchange?: (value: string) => void;
+    }>();
 
-const builder = useBuilderContext();
+    const builder = useBuilderContext();
+
+    const modelStore = useStore('ai-models');
+    modelStore.loadData(useApp());
 
 </script>
 
@@ -29,12 +32,12 @@ const builder = useBuilderContext();
         {#if !builder.draft.model}
             <option disabled selected value>Select a Model</option>
         {/if}
-        {#each aiModelsStore.models as model}
+        {#each modelStore.models as model}
             {#if builder.draft.model &&
-                model.modelId === builder.draft.model}
-                <option value={model.modelId} selected>{model.label}</option>
+                model.id === builder.draft.model}
+                <option value={model.id} selected>{model.label}</option>
             {:else}
-                <option value={model.modelId}>{model.label}</option>
+                <option value={model.id}>{model.label}</option>
             {/if}
         {/each}
     </select>

@@ -18,7 +18,7 @@
 
 <script lang="ts">
     import { setContext } from 'svelte';
-    import { createProximityHover } from '$lib/utils/proximityHover.svelte.js';
+    import { createProximityHover } from '$lib/plugins/assistants/utils/proximityHover.svelte.js';
 
     let {
         value = $bindable<string | string[] | null>(null),

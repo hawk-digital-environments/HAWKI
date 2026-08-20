@@ -6,10 +6,9 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import ToolSelector from "$plugins/assistants/components/assistantBuilderComponents/aiToolComponents/ToolSelector.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
-const {__} = useTranslator();
-const builder = useBuilderContext();
 
-
+    const {__} = useTranslator();
+    const builder = useBuilderContext();
 </script>
 
 
@@ -68,11 +67,6 @@ const builder = useBuilderContext();
             <h3 class="page-title">{__('assistants.builder.tools.title')}</h3>
             <p class="page-description">{__('assistants.builder.tools.description')}</p>
         </div>
-
-<!--        <ReportPanel-->
-<!--                icon="build"-->
-<!--                label={1 + " Tools ausgewählt"}-->
-<!--        />-->
 
         <ToolSelector/>
 
