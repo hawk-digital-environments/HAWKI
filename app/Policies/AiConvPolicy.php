@@ -14,28 +14,28 @@ class AiConvPolicy
     use HandlesAuthorization;
     use AuthorizeViewAnyForUserTrait;
 
-    public function view(User $user, AiConv $conv): bool
+    public function view(User|null $user, AiConv $conv): bool
     {
-        return $conv->user_id === $user->id;
+        return $this->isSameUser($user, $conv->user_id);
     }
 
-    public function create(User $user): bool
+    public function create(User|null $user): bool
     {
-        return true;
+        return $this->isUser($user);
     }
 
-    public function update(User $user, AiConv $conv): bool
+    public function update(User|null $user, AiConv $conv): bool
     {
-        return $conv->user_id === $user->id;
+        return $this->isSameUser($user, $conv->user_id);
     }
 
-    public function delete(User $user, AiConv $conv): bool
+    public function delete(User|null $user, AiConv $conv): bool
     {
-        return $conv->user_id === $user->id;
+        return $this->isSameUser($user, $conv->user_id);
     }
 
-    public function viewMessages(User $user, AiConv $conv): bool
+    public function viewMessages(User|null $user, AiConv $conv): bool
     {
-        return $conv->user_id === $user->id;
+        return $this->isSameUser($user, $conv->user_id);
     }
 }
