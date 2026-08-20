@@ -16,13 +16,15 @@
         value?: string;
         /** Bindable reference to the underlying textarea element. */
         ref?: HTMLTextAreaElement | null;
+        /** Accessible label forwarded to the native textarea. */
+        ariaLabel?: string;
     }
 
-    let {value = $bindable(''), ref = $bindable(undefined), ...restProps}: Props = $props();
+    let {value = $bindable(''), ref = $bindable(undefined), ariaLabel, ...restProps}: Props = $props();
 </script>
 
 <textarea
-    {...mergeProps({class: 'textarea'}, restProps)}
+    {...mergeProps({class: 'textarea', 'aria-label': ariaLabel}, restProps)}
     bind:this={ref}
     bind:value
 ></textarea>

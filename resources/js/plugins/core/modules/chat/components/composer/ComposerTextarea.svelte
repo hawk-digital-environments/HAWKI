@@ -103,7 +103,7 @@
             onpaste={handlePaste}
             class="chat-textarea"
             rows={1}
-            aria-label={textareaLabel}
+            ariaLabel={textareaLabel}
             placeholder={textareaPlaceholder}
         />
     </div>

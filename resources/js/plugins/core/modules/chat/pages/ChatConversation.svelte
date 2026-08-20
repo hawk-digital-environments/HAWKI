@@ -217,7 +217,7 @@ exists; a generation started there keeps streaming through the store.
                     <ChatComposer
                         context="aiConv"
                         {transport}
-                        backgroundActive={store.isGenerating(store.active?.slug)}
+                        forcedActive={store.isGenerating(store.active?.slug)}
                         initialSystemPrompt={store.active?.system_prompt ?? defaultPrompt}
                         onSystemPromptChange={prompt => store.active && store.updateSystemPrompt(store.active.slug, prompt)}
                         onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}

@@ -347,7 +347,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
 
     private fallbackTitle(message: string): string {
         const compact = message.replace(/\s+/g, ' ').trim();
-        return compact.length > 52 ? compact.slice(0, 49) + '…' : compact || 'New chat';
+        return compact.length > 52 ? compact.slice(0, 49) + '…' : compact || this.app.translator.__('chat.page.newChat');
     }
 
     private errorMessage(error: unknown): string {
