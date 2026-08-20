@@ -4,19 +4,20 @@ namespace App\Services\Chat\AiConv;
 
 use App\Http\Resources\Legacy\AiConvResource;
 use App\Models\AiConv;
+use App\Services\Chat\AiConv\Repositories\AiConvRepository;
 use App\Services\Chat\Message\Handlers\PrivateMessageHandler;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 
 class AiConvService
 {
 
     public function __construct(
-        protected PrivateMessageHandler $messageHandler
+        protected PrivateMessageHandler $messageHandler,
+        protected AiConvRepository       $conversationRepository
     )
     {
     }
@@ -27,12 +28,10 @@ class AiConvService
             $validatedData['conv_name'] = 'New Chat';
         }
 
-        return AiConv::create([
-            'conv_name' => $validatedData['conv_name'],
-            'user_id' => Auth::id(), // Associate the conversation with the user
-            'slug' => Str::slug(Str::random(16)), // Create a unique slug
-            'system_prompt' => $validatedData['system_prompt'],
-        ]);
+        return $this->conversationRepository->create(
+            $validatedData['conv_name'],
+            $validatedData['system_prompt'],
+        );
     }
 
     public function load(string $slug): array

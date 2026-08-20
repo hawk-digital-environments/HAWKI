@@ -1,4 +1,5 @@
 import z from 'zod';
+import UsersSchema from '$lib/app/schemas/resources/users.schema.js';
 
 /**
  * Validates the `ai-conv-messages` JSON:API resource — a single message of a
@@ -22,10 +23,11 @@ const AiConvMessageSchema = z.object({
     completion: z.boolean(),
     metadata: z.record(z.string(), z.any()).nullable(),
     content: z.string(),
-    author: z.object({
-        username: z.string(),
-        name: z.string(),
-        avatar_url: z.string().nullable()
+    author: UsersSchema.pick({
+        id: true,
+        display_name: true,
+        username: true,
+        avatar: true
     }),
     attachments: z.array(z.object({
         uuid: z.string(),

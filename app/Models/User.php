@@ -37,6 +37,7 @@ class User extends Authenticatable
         'publicKey',
         'avatar_id',
         'bio',
+        'locale',
         'isRemoved'
     ];
 

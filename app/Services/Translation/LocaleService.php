@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Translation;
 
 
+use App\Services\System\UserTypes\UserContext;
 use App\Services\Translation\Config\LocaleConfig;
 use App\Services\Translation\Exception\SettingUnavailableLocaleException;
 use App\Services\Translation\Value\Locale;
@@ -27,7 +28,8 @@ class LocaleService
         private readonly Application  $application,
         private readonly Session      $session,
         private readonly CookieJar    $cookieJar,
-        private readonly LocaleConfig $localeConfig
+        private readonly LocaleConfig $localeConfig,
+        private readonly UserContext  $userContext
     )
     {
     }
@@ -81,9 +83,17 @@ class LocaleService
             );
         }
 
-        if ($persist && !$this->application->runningInConsole()) {
-            $this->setSessionLocale($validatedLocale);
-            $this->setLastLanguageCookieLocale($validatedLocale);
+        if ($persist) {
+            if (!$this->application->runningInConsole()) {
+                $this->setSessionLocale($validatedLocale);
+                $this->setLastLanguageCookieLocale($validatedLocale);
+            }
+
+            $user = $this->userContext->getAuthenticatedUser();
+            if ($user !== null) {
+                $user->locale = $validatedLocale->lang;
+                $user->save();
+            }
         }
 
         $this->currentLocale = $validatedLocale;
@@ -171,15 +181,26 @@ class LocaleService
     }
 
     /**
-     * Resolves the current locale by checking the session, then the lastLanguage_cookie, and finally falling back to the default locale.
+     * Resolves the current locale from the request/session, authenticated user,
+     * last-language cookie, or application default (in that order).
      * The resolved locale is stored in $this->resolvedCurrentLocale.
      * @return void
      */
     private function resolveCurrentLocale(): void
     {
         $this->currentLocale = $this->getSessionLocale()
+            ?? $this->getUserPreferredLocale()
             ?? $this->getLastLanguageCookieLocale()
             ?? $this->getDefaultLocale();
+    }
+
+    private function getUserPreferredLocale(): Locale|null
+    {
+        $preferredLocale = $this->userContext->getAuthenticatedUser()?->locale;
+
+        return $preferredLocale === null
+            ? null
+            : $this->resolveLocaleObject($preferredLocale);
     }
 
     /**

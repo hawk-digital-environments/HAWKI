@@ -39,7 +39,7 @@
 
         localeSaving = true;
         try {
-            await restApi.postToResourceAction('connections', 'actions/locale', {locale: lang});
+            await restApi.postToResourceAction('users', 'actions/locale', {locale: lang});
             await app.localization.setLocale(lang);
             // Keep subsequent API requests sending the new locale header.
             app.connection.locale = lang;
