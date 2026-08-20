@@ -13,15 +13,9 @@
     import VersionCard from "$lib/plugins/assistants/components/versionTimeline/VersionCard.svelte";
     import AssistantBanner from "$lib/plugins/assistants/components/avatarBuilder/AssistantBanner.svelte";
     import AssistantAvatarIcon from "$lib/plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte";
-    // import {toggleAssistantFavorite, assistantDependency} from "$lib/data/api/resources/assistant/assistantsClient";
-    // import {assistantListStore} from "$lib/stores/assistants/AssistantListStore.svelte";
-    // import {submitAssistantFeedbacks} from "$lib/data/api/resources/assistant/AssistantFeedbackClient";
-    // import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
-    // import {ApiError} from "$lib/data/api/errors";
+    import {submitAssistantFeedbacks} from "$plugins/assistants/api/resources/assistantFeedbackClient";
+    import {ApiError} from "$plugins/assistants/api/errors";
     import {ValidationState} from "$lib/plugins/assistants/types/enums/ValidationState";
-    import {assistantOptionsStore} from "$lib/plugins/assistants/stores/AssistantOptionsStore.svelte";
-    // import {assistantBuilderStore} from "$lib/plugins/assistants/stores/AssistantBuilderStore.svelte";
-    // import {goto, invalidate} from "$app/navigation";
     import {BACKGROUNDS} from "$lib/plugins/assistants/presets/backgrounds";
     import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
     import LinkSquare01Icon from "$lib/components/ui/icons/iconset/LinkSquare01Icon.svelte";
@@ -41,7 +35,9 @@
 
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
-    const {goToRoute, route, path, debug, params} = useRouter();
+    import {requestBuilderIntent} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte";
+    import Settings03Icon from "$lib/components/ui/icons/iconset/Settings03Icon.svelte";
+    const {goToRoute, params} = useRouter();
 
     const toast = useToastContext();
 
@@ -49,6 +45,7 @@
     let assistant = $state<Assistant | undefined>(undefined);
     let loading = $state(true);
     let error = $state<Error | null>(null);
+    let feedbacks = $state<AssistantFeedback[]>([]);
 
     // CHECK AWAIT Syntax from Svelte
     $effect(() => {
@@ -57,10 +54,30 @@
         getAssistant(params.id[0], {
             include: [...new Set([...ASSISTANT_DETAIL_INCLUDES])],
         })
-        .then(result => { assistant = result; })
+        .then(result => {
+            assistant = result;
+            // `assistant_feedback` is a permission-gated relationship
+            // (`viewAssistantFeedback`) — requesting it as part of the main
+            // include list would 403 the *whole* fetch when denied, so it's
+            // only loaded once the initial response confirms it's allowed.
+            if (result.actionPermissions?.viewAssistantFeedback) {
+                loadFeedbacks(result.id);
+            }
+        })
         .catch(err => { error = err; })
         .finally(() => { loading = false; });
     });
+
+    async function loadFeedbacks(id: string | null): Promise<void> {
+        if (!id) return;
+        try {
+            const withFeedback = await getAssistant(id, {include: ['assistant_feedback']});
+            feedbacks = withFeedback.feedbacks ?? [];
+        } catch (err) {
+            // Feedback is a secondary detail; don't fail the whole page over it.
+            console.error('Failed to load assistant feedback:', err);
+        }
+    }
 
 
     /** Persist the favourite toggle, surfacing any failure as a toast. */
@@ -89,33 +106,37 @@
             '—',
     );
 
+    /**
+     * `BuilderContext` can only be created during its owning layout's
+     * component initialization (`/builder/advanced/layout.svelte`) — never
+     * from here, a click handler on an unrelated page. Calling
+     * `createBuilderContext()` in this handler used to throw Svelte's
+     * `set_context_after_init` error, which the surrounding `try`/`catch`
+     * silently swallowed — that was the "silent failure". The fix is to not
+     * create a builder session here at all: stash the intent and let the
+     * builder layout's own `init()` (a valid place to create one) pick it up.
+     */
     const startRemix = async () => {
-        try {
-            // await assistantOptionsStore.load();
-            // await assistantBuilderStore.remix(assistant);
-            // await goto("/builder/advanced/general");
-        } catch {
-            // The failure is already reported to the user by the store that threw
-            // (assistantOptionsStore.load / assistantBuilderStore.startNew each push
-            // their own toast). Just swallow here so we don't navigate into a
-            // half-created builder or show a duplicate toast.
-        }
+        if (!assistant?.id) return;
+        requestBuilderIntent({type: "remix", id: assistant.id});
+        await goToRoute("/assistants/builder/advanced/general");
     };
 
     const startEdit = async () => {
-    //     await assistantOptionsStore.load();
-    //      await assistantBuilderStore.edit(assistant);
-    //     await goto("/builder/advanced/general");
-    }
+        if (!assistant?.id) return;
+        requestBuilderIntent({type: "edit", id: assistant.id});
+        await goToRoute("/assistants/builder/advanced/general");
+    };
 
     async function onFeedbackSend(value: string) {
-        // try {
-        //     const feedback = await submitAssistantFeedbacks(value, assistant);
-        //     feedbacks = [...feedbacks, feedback];
-        //     toast.success(__('assistants.detail.feedback_sent'));
-        // } catch (err) {
-        //     toast.error(ApiError.from(err).userMessage);
-        // }
+        if (!assistant) return;
+        try {
+            const feedback = await submitAssistantFeedbacks(value, assistant);
+            feedbacks = [...feedbacks, feedback];
+            toast.success(__('assistants.detail.feedback_sent'));
+        } catch (err) {
+            toast.error(ApiError.from(err).userMessage);
+        }
     }
 
     const usageLabel = $derived(
@@ -144,20 +165,20 @@
                     <ArrowLeft01Icon size="1em" />
                 </span>
             </button>
-            <!--{#if assistant.actionPermissions?.update === true}-->
-            <!--    <button-->
-            <!--        class="edit"-->
-            <!--        aria-label={__('assistants.detail.edit_aria')}-->
-            <!--        style:background="oklch(100% 0 0 / 0.9)"-->
-            <!--        onclick={startEdit}-->
-            <!--    >-->
-            <!--        <span class="icon" style:color="oklch(20% 0 0)">-->
-            <!--            <Settings03Icon size={18} />-->
-            <!--        </span>-->
-            <!--        <span class="label" style:color="oklch(20% 0 0)">{__('assistants.detail.edit')}</span>-->
-            <!--    </button>-->
-            <!--{/if}-->
-<!--            <AssistantBanner assistantAvatar={avatar} />-->
+            {#if assistant.actionPermissions?.update === true}
+                <button
+                    class="edit"
+                    aria-label={__('assistants.detail.edit_aria')}
+                    style:background="oklch(100% 0 0 / 0.9)"
+                    onclick={startEdit}
+                >
+                    <span class="icon" style:color="oklch(20% 0 0)">
+                        <Settings03Icon size={18} />
+                    </span>
+                    <span class="label" style:color="oklch(20% 0 0)">{__('assistants.detail.edit')}</span>
+                </button>
+            {/if}
+            <AssistantBanner assistantAvatar={avatar} />
         </div>
 
         <div class="overview">
@@ -275,11 +296,11 @@
         />
 
         <hr>
-        <!--{#if assistant.actionPermissions?.viewAssistantFeedback && feedbacks.length > 0}-->
-        <!--    <ReceivedFeedbackList-->
-        <!--        feedback={feedbacks}-->
-        <!--    />-->
-        <!--{/if}-->
+        {#if assistant.actionPermissions?.viewAssistantFeedback && feedbacks.length > 0}
+            <ReceivedFeedbackList
+                feedback={feedbacks}
+            />
+        {/if}
 
         {#if assistant.versions.length > 0}
             <hr>

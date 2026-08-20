@@ -6,6 +6,8 @@
     import InputError from "$lib/plugins/assistants/components/inputError/InputError.svelte";
     import {assistantOptionsStore} from "$lib/plugins/assistants/stores/AssistantOptionsStore.svelte.js";
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
+    import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
+    import {ApiError} from "$plugins/assistants/api/errors";
 
     interface Props {
         id?: string
@@ -19,6 +21,7 @@
     }: Props = $props();
 
     const builder = useBuilderContext();
+    const toast = useToastContext();
 
     // eslint-disable-next-line svelte/state_referenced_locally
     let tags = $derived<TagType[]>(builder.draft.tags);
@@ -45,17 +48,31 @@
             return;
         }
 
-        const newTag:TagType = await assistantOptionsStore.addTag(normalized);
+        builder.validator.clearError('tags');
 
-        tags = [...tags, newTag];
-        builder.set('tags', tags)
+        try {
+            const newTag: TagType = await assistantOptionsStore.addTag(normalized);
 
-        tick().then(() => {
-            tagsEl?.scrollTo({
-                left: tagsEl.scrollWidth,
-                behavior: 'smooth'
+            tags = [...tags, newTag];
+            builder.set('tags', tags)
+
+            tick().then(() => {
+                tagsEl?.scrollTo({
+                    left: tagsEl.scrollWidth,
+                    behavior: 'smooth'
+                });
             });
-        });
+        } catch (err) {
+            // A unique-name conflict (or any other field-scoped validation
+            // failure) belongs on the field itself; anything else (dropped
+            // connection, server error) has nowhere else to surface but a toast.
+            const apiErr = ApiError.from(err);
+            if (apiErr.isValidation) {
+                builder.validator.recordFieldError('tags', apiErr.fieldErrors[0]?.message ?? apiErr.userMessage);
+            } else {
+                toast.error(apiErr.userMessage);
+            }
+        }
     }
 
     function removeTag(value: string): void {

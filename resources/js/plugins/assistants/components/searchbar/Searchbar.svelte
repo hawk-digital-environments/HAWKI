@@ -28,6 +28,7 @@
             type="text"
             bind:this={inputEl}
             oninput={handleInput}
+            value={value}
     />
 </div>
 

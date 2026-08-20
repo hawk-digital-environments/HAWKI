@@ -30,7 +30,14 @@ export const ASSISTANT_LIST_INCLUDES = [
   "remixed_assistant",
 ] as const;
 
-/** Everything the detail page renders. */
+/**
+ * Everything the detail page renders unconditionally. `assistant_feedback` is
+ * deliberately NOT here: it's a permission-gated relationship
+ * (`viewAssistantFeedback` in the resource's `links`), and requesting a
+ * denied include rejects the *entire* request with a 403 — not just that one
+ * relationship. It's fetched separately, only after the initial response
+ * confirms the permission is granted (see `detail/page.svelte`).
+ */
 export const ASSISTANT_DETAIL_INCLUDES = [
   "creator",
   "assistant_category",

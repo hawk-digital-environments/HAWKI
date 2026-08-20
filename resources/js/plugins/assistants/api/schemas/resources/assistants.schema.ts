@@ -459,6 +459,17 @@ export const ASSISTANT_SETTING_KEYS = Object.keys(
  * name (the snake_case attribute/relationship name the server reports in an
  * error pointer) back to its `Assistant` key. Used to route server validation
  * errors to the right field. Keep in sync with `assistantToApi`.
+ *
+ * Only covers the main assistant PATCH (`updateAssistant`/`assistantToApi`) —
+ * its attribute/relationship names are the only ones that line up with this
+ * table. The sub-resource save calls (`updateAssistantSetting`,
+ * `createAssistantPrompts`/`removeAssistantPrompts`,
+ * `createOrUpdateAssistantAvatar`) hit *different* JSON:API resources whose
+ * own attribute names (`value`, `text`, `name`/`icon_css`) don't correspond
+ * to an `Assistant` field at all — some even collide with one (an avatar's
+ * `name` is not the assistant's `name`) — so those are routed directly via
+ * `BuilderValidatorContext.recordFieldError()` in `updateServer()` instead of
+ * through this table. Don't add sub-resource field names here.
  */
 const API_FIELD_TO_KEY: Record<string, keyof Assistant> = {
     name: 'name',
@@ -474,19 +485,11 @@ const API_FIELD_TO_KEY: Record<string, keyof Assistant> = {
     max_tokens: 'maxTokens',
     temp: 'temp',
     top_p: 'topP',
-    avatar: 'avatar',
     is_favorite: 'isFavorite',
     // relationships
     assistant_category: 'category',
-    tags: 'tags',
+    assistant_tags: 'tags',
     ai_tools: 'aiTools',
-    // settings options
-    formality: 'formality',
-    language: 'language',
-    answer_length: 'answerLength',
-    // starter prompts (sent via the user-prompts add/remove endpoint)
-    add: 'starterPrompts',
-    remove: 'starterPrompts',
 };
 
 /** Map a JSON:API error field name to its `Assistant` key, if known. */

@@ -5,7 +5,7 @@
     import type {Assistant} from "$lib/plugins/assistants/types/assistant/Assistant";
     import type {AssistantAvatar} from "$lib/plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$lib/plugins/assistants/components/favButton/FavButton.svelte";
-    // import {toggleAssistantFavorite, assistantDependency} from "$lib/data/api/resources/assistant/assistantsClient";
+    import {toggleAssistantFavorite} from "$lib/plugins/assistants/api/resources/assistantsClient";
     // import {assistantListStore} from "$lib/stores/assistants/AssistantListStore.svelte";
     // import {invalidate} from "$app/navigation";
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
@@ -52,17 +52,17 @@
     /** Persist the favourite toggle; the client throws an ApiError on failure,
         which we surface as a toast so the click isn't silently lost. */
     async function onFavoriteChange(active: boolean) {
-        // try {
-        //     // @todo: Double check assistant Dependency after integration in HAWKI.
-        //     await toggleAssistantFavorite(assistant, active);
-        //     // Keep the browsed list truthful …
-        //     assistantListStore.updateAssistant({ ...assistant, isFavorite: active });
-        //     // … and drop the detail page's preloaded data, which SvelteKit already
-        //     // fetched (with the old value) when the pointer entered this card.
-        //     await invalidate(assistantDependency(assistant.id));
-        // } catch (err) {
-        //     toast.error(ApiError.from(err).userMessage);
-        // }
+        try {
+            // @todo: Double check assistant Dependency after load function is implemented.
+            await toggleAssistantFavorite(assistant, active);
+            // Keep the browsed list truthful …
+            // assistantListStore.updateAssistant({ ...assistant, isFavorite: active });
+            // … and drop the detail page's preloaded data, which SvelteKit already
+            // fetched (with the old value) when the pointer entered this card.
+            // await invalidate(assistantDependency(assistant.id));
+        } catch (err) {
+            // toast.error(ApiError.from(err).userMessage);
+        }
     }
 
     // Fall back to a neutral appearance for legacy assistants that predate the

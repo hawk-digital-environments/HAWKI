@@ -72,6 +72,44 @@ import {useApp} from "$lib/app/hooks/useApp.svelte";
 
 export type BuilderMode = "init" | "create" | "edit" | "remix";
 
+const INTENT_STORAGE_KEY = "assistant_builder_intent";
+
+type BuilderIntent =
+  | { type: "edit"; id: string }
+  | { type: "remix"; id: string };
+
+/**
+ * Hands "open this assistant for edit/remix" off across a route navigation.
+ *
+ * `BuilderContext` can only be created during its owning layout's component
+ * *initialization* — `createContext`'s `set()` wraps Svelte's `setContext`,
+ * which throws `set_context_after_init` when called from anywhere else, e.g.
+ * an async `onclick` handler on an unrelated page (this is exactly what made
+ * the assistant detail page's old `startRemix()`/`startEdit()` silently fail:
+ * they called `createBuilderContext()` themselves, inside a click handler,
+ * and the resulting error was swallowed by an empty `catch {}`).
+ *
+ * So a page that wants to jump straight into edit/remix can't create/own a
+ * `BuilderContext` itself — it stashes the intent here right before
+ * navigating to the builder route, and `BuilderContext.init()` (called from
+ * the builder layout's own `onMount`, a valid place) picks it up via
+ * {@link consumeBuilderIntent}.
+ */
+export function requestBuilderIntent(intent: BuilderIntent): void {
+  sessionStorage.setItem(INTENT_STORAGE_KEY, JSON.stringify(intent));
+}
+
+function consumeBuilderIntent(): BuilderIntent | null {
+  const raw = sessionStorage.getItem(INTENT_STORAGE_KEY);
+  if (!raw) return null;
+  sessionStorage.removeItem(INTENT_STORAGE_KEY);
+  try {
+    return JSON.parse(raw) as BuilderIntent;
+  } catch {
+    return null;
+  }
+}
+
 export class BuilderContext {
   public constructor(
     private readonly toast: ToastContext,
@@ -113,7 +151,25 @@ export class BuilderContext {
       return;
     }
     this.mode = "init";
+
+    const intent = consumeBuilderIntent();
+    if (intent) {
+      try {
+        if (intent.type === "edit") {
+          await this.edit(intent.id);
+        } else {
+          await this.remix(intent.id);
+        }
+        return;
+      } catch (err) {
+        const apiErr = ApiError.from(err);
+        this.toast.error(`Could not open the assistant. ${apiErr.userMessage}`);
+        // Fall through to the normal restore-or-create path below.
+      }
+    }
+
     const restored = this.restoreFromSession();
+    // const restored = false;
     console.log('restored', restored);
     if (!restored) {
       console.log("could not retrieve from session");
@@ -153,11 +209,8 @@ export class BuilderContext {
    * non-creators; this refetch only runs on the owner-only edit path. Mirrors
    * the fetch-then-begin shape of {@see remix} and {@see startNew}.
    */
-  async edit(assistant: Assistant): Promise<void> {
-    if (!assistant.id) {
-      throw new Error("Cannot edit an assistant without an id");
-    }
-    const detailed = await getAssistant(assistant.id, {
+  async edit(id: string): Promise<void> {
+    const detailed = await getAssistant(id, {
       include: [
         "creator",
         "assistant_category",
@@ -171,11 +224,8 @@ export class BuilderContext {
   }
 
   /** Start a remix: a fresh record seeded from another assistant, then tweaked. */
-  async remix(assistant: Assistant): Promise<void> {
-    if (!assistant.id) {
-      throw new Error("Cannot remix an assistant without an id");
-    }
-    const remixAssistant = await requestRemix(assistant.id);
+  async remix(id: string): Promise<void> {
+    const remixAssistant = await requestRemix(id);
     this.begin(remixAssistant, "remix");
   }
 
@@ -277,6 +327,13 @@ export class BuilderContext {
     }
     this.saving = true;
 
+    // Tracks which single `Assistant` field the in-flight request is for, so
+    // a validation error can be routed straight to that field's inline error.
+    // Left `undefined` for the main assistant PATCH below, which can touch
+    // several fields in one request — that one is routed by parsing the
+    // JSON:API error pointer instead (see `reportSaveError`).
+    let currentField: keyof Assistant | undefined;
+
     try {
       // Snapshot the changed keys;
       const changedKeys = new Set(this.changedKeys);
@@ -295,6 +352,7 @@ export class BuilderContext {
       );
       for (const settingKey of assistantSettingKeys) {
         changedKeys.delete(settingKey);
+        currentField = settingKey;
         await updateAssistantSetting(
           draftId,
           settingKey as "formality" | "language" | "answerLength",
@@ -305,6 +363,7 @@ export class BuilderContext {
 
       if (changedKeys.has("starterPrompts")) {
         changedKeys.delete("starterPrompts");
+        currentField = "starterPrompts";
 
         const before = this.baseline.starterPrompts ?? [];
         const after = this.draft.starterPrompts ?? [];
@@ -322,7 +381,7 @@ export class BuilderContext {
 
       if(changedKeys.has("avatar")){
         changedKeys.delete("avatar");
-        //
+        currentField = "avatar";
         if(this.draft.avatar){
           const avatar = await createOrUpdateAssistantAvatar(
               draftId,
@@ -333,25 +392,15 @@ export class BuilderContext {
       }
 
       if (changedKeys.size) {
+        currentField = undefined;
         const body = assistantToApi(this.draft, changedKeys);
         await updateAssistant(draftId, body);
         this.commitKeys([...changedKeys]);
       }
-        console.log('update complete');
 
     } catch (err) {
       // Surface the error without losing the dirty state so the user can retry.
-      // Route any validation errors to their fields for inline display.
-      this.validator.recordServerErrors(err);
-      const apiErr = ApiError.from(err);
-      this.error = apiErr.message;
-      // Validation errors are already shown inline per-field; only the
-      // non-validation failures (connection dropped, server error, …) need a
-      // toast, since this save runs in the background with no other UI signal.
-      if (!apiErr.isValidation) {
-        this.toast.error(`Could not save your changes. ${apiErr.userMessage}`);
-      }
-      console.error("Failed to save assistant:", apiErr);
+      this.reportSaveError(err, currentField);
     } finally {
       this.saving = false;
       // Flush any change that arrived while this cycle was in flight.
@@ -359,6 +408,43 @@ export class BuilderContext {
         this.saveAgain = false;
         void this.updateServer();
       }
+    }
+  }
+
+  /**
+   * Routes a failed autosave to where the user will actually see it.
+   *
+   * - Connection/server errors (not validation) always go to a toast — the
+   *   save runs in the background with no other UI signal, and there's no
+   *   single field to blame.
+   * - A validation error on a sub-resource request (settings/prompts/avatar)
+   *   is routed straight to the known `fieldKey` — those requests' own
+   *   attribute names (`value`, `text`, `icon_css`, ...) belong to a
+   *   different JSON:API resource than `assistants` and would never match
+   *   `apiFieldToAssistantKey`'s pointer-based lookup.
+   * - A validation error on the main assistant PATCH (`fieldKey` undefined,
+   *   since it can touch several fields at once) is routed by parsing the
+   *   error pointer via `recordServerErrors`. If that can't match any known
+   *   field — an unmapped or unexpected pointer — it falls back to a toast
+   *   rather than failing silently.
+   */
+  private reportSaveError(err: unknown, fieldKey?: keyof Assistant): void {
+    const apiErr = ApiError.from(err);
+    this.error = apiErr.message;
+    console.error("Failed to save assistant:", apiErr);
+
+    if (!apiErr.isValidation) {
+      this.toast.error(`Could not save your changes. ${apiErr.userMessage}`);
+      return;
+    }
+
+    if (fieldKey) {
+      this.validator.recordFieldError(fieldKey, apiErr.fieldErrors[0]?.message ?? apiErr.userMessage);
+      return;
+    }
+
+    if (!this.validator.recordServerErrors(err)) {
+      this.toast.error(`Could not save your changes. ${apiErr.userMessage}`);
     }
   }
 

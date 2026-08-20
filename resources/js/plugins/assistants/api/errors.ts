@@ -1,3 +1,5 @@
+import { ApiTransportError } from '$lib/kernel/api/errors.js';
+
 /**
  * A single error entry as defined by the JSON:API spec.
  *
@@ -160,6 +162,9 @@ export class ApiError extends Error {
 	static from(err: unknown): ApiError {
 		if (err instanceof ApiError) return err;
 
+		const fromApiTransport = ApiError.fromApiTransportError(err);
+		if (fromApiTransport) return fromApiTransport;
+
 		const fromTransport = ApiError.fromTransportError(err);
 		if (fromTransport) return fromTransport;
 
@@ -197,18 +202,43 @@ export class ApiError extends Error {
 	}
 
 	/**
-	 * TEMPORARY — see TODO.txt, issue 2.
-	 *
-	 * This class was written against axios, which exposes `err.response.status`.
-	 * The kernel's `createDefaultTransport` instead throws a bare `Error` whose
-	 * message is `"API request failed with status 403: <detail>"`, so without
-	 * this every HTTP failure would land in the `status: 0` branch below and be
-	 * reported to the user as "Could not reach the server" — wrong for a 403 or
-	 * a 422, and it would silently disable the builder's inline field errors.
-	 *
-	 * Recovering the status from the message is deliberately narrow: it only
-	 * matches that exact prefix and gives up otherwise. Delete this once the
-	 * transport throws something structured.
+	 * The kernel's `createDefaultTransport` (`$lib/kernel/api/transport.ts`)
+	 * throws a structured `ApiTransportError` on any non-2xx response — it
+	 * already carries `.status` and, crucially, `.body`: the *full* raw
+	 * parsed JSON:API error document, `errors[].source.pointer` included.
+	 * `ApiTransportError.errors` (title/detail only, used for its own log
+	 * message) and {@link fromTransportError}'s regex-reconstructed fallback
+	 * both discard that pointer — which is why validation errors like "the
+	 * handle has already been taken" were never reaching their field's inline
+	 * error and silently fell back to nothing (the toast is suppressed for
+	 * validation errors, and `apiFieldToAssistantKey` had no pointer to key
+	 * off). Reading `.body.errors` directly keeps the pointer intact.
+	 */
+	private static fromApiTransportError(err: unknown): ApiError | null {
+		if (!(err instanceof ApiTransportError)) return null;
+
+		const body = err.body as { errors?: ApiErrorDetail[] } | undefined;
+		const errors: ApiErrorDetail[] = Array.isArray(body?.errors)
+			? body.errors
+			: err.errors.map((e): ApiErrorDetail => ({ title: e.title, detail: e.detail, status: String(err.status) }));
+
+		const first = errors[0];
+		const parts: string[] = [];
+		if (first?.title) parts.push(first.title);
+		if (first?.detail && first.detail !== first.title) parts.push(first.detail);
+		if (first?.source?.parameter) parts.push(`(parameter: ${first.source.parameter})`);
+		else if (first?.source?.pointer) parts.push(`(pointer: ${first.source.pointer})`);
+		const message = parts.length > 0 ? parts.join(' — ') : err.message;
+
+		return new ApiError(message, err.status, errors, err);
+	}
+
+	/**
+	 * Fallback for a bare `Error` shaped like `"API request failed with
+	 * status 403: <detail>"` with no structured body to fall back on (e.g. a
+	 * transport that isn't `ApiTransportError`). Lossy — at most one error
+	 * can be reconstructed, and it never has a `source.pointer` — so
+	 * {@link fromApiTransportError} is tried first and normally wins.
 	 */
 	private static fromTransportError(err: unknown): ApiError | null {
 		if (!(err instanceof Error) || 'response' in err) return null;

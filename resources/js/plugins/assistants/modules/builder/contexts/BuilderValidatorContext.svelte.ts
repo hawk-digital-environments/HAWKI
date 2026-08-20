@@ -88,8 +88,16 @@ export class BuilderValidatorContext {
         this.fieldErrors = next;
     }
 
-    /** Route a failed save's validation errors to their fields. */
-    recordServerErrors(err: unknown): void {
+    /**
+     * Route a failed save's validation errors to their fields, by parsing the
+     * JSON:API error pointers. Only meaningful for a request whose attribute
+     * names match `Assistant`'s own field names one-to-one — i.e. the main
+     * assistant PATCH, which can touch several different fields in one call.
+     * Returns whether at least one error was actually routed, so the caller
+     * can fall back to a toast rather than fail silently when the pointer
+     * didn't match anything known.
+     */
+    recordServerErrors(err: unknown): boolean {
         const apiError = ApiError.from(err);
         const patch: FieldErrorMap = {};
         for (const fe of apiError.fieldErrors) {
@@ -98,7 +106,21 @@ export class BuilderValidatorContext {
         }
         if (Object.keys(patch).length) {
             this.fieldErrors = { ...this.fieldErrors, ...patch };
+            return true;
         }
+        return false;
+    }
+
+    /**
+     * Set a field's inline error directly, bypassing pointer-parsing. Use
+     * this for sub-resource save requests (settings/prompts/avatar) whose
+     * own attribute names (`value`, `text`, `icon_css`, ...) belong to a
+     * *different* JSON:API resource than `assistants` and would never match
+     * {@link recordServerErrors}'s pointer-based lookup — the caller already
+     * knows exactly which `Assistant` field the request was for.
+     */
+    recordFieldError(key: keyof Assistant, message: string): void {
+        this.fieldErrors = { ...this.fieldErrors, [key]: message };
     }
 
     // ----- client-side completeness / required-field validation -----
