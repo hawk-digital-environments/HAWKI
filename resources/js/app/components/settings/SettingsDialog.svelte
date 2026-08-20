@@ -41,21 +41,8 @@
         {path: '/experiments', label: __('ui.settings.nav.experiments'), icon: FlaskConicalIcon}
     ]);
 
-    function clearSettingsHash(): void {
-        const path = window.location.hash.slice(1);
-        if (path !== '/' && !navItems.some((item) => item.path === path)) return;
-
-        window.history.replaceState(
-            window.history.state,
-            '',
-            `${window.location.pathname}${window.location.search}`
-        );
-        window.dispatchEvent(new HashChangeEvent('hashchange'));
-    }
-
     function handleOpenChange(isOpen: boolean): void {
         open = isOpen;
-        if (!isOpen) clearSettingsHash();
         onOpenChange?.(isOpen);
     }
 </script>
