@@ -6,8 +6,7 @@
 
     // Chatbox is the context provider: it owns the chat + config state and
     // exposes it to children via the useChatStore() / useChatConfig() hooks.
-    let {assistantHandle}: { assistantHandle?: string } = $props();
-    const config = provideChatConfig(() => assistantHandle);
+    const config = provideChatConfig();
     provideChatStore(config);
 </script>
 

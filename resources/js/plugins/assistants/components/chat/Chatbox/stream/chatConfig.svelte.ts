@@ -1,43 +1,31 @@
-import {getContext, setContext} from "svelte";
-import {getOpenAiApiBaseUrl} from "$lib/data/api/client";
-import {getAuthToken} from "$lib/data/api/auth";
-import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
+import { getContext, setContext } from "svelte";
+import { useBuilderContext } from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
+import type { Assistant } from "$plugins/assistants/types/assistant";
 
-export type ChatConfig = {
-    apiUrl: string;
-    token: string;
-    model: string;
-    assistantHandle: string;
-};
-
+/**
+ * The assistant under test. Reads the builder's live `draft` (not `baseline`)
+ * so the test chat reflects unsaved edits immediately — the streaming
+ * endpoint (`/req/streamAI`) takes the system prompt/model/params/tools
+ * straight in the request body and never resolves an assistant server-side
+ * (see `StreamController::handleStreamingRequest`, which never touches
+ * `slug`), so there's no need to save/release the assistant first.
+ */
 export type ChatConfigApi = {
-    readonly value: ChatConfig;
-    readonly hasHandle: boolean;
+    readonly assistant: Assistant;
+    readonly hasModel: boolean;
 };
 
 const KEY = Symbol("chat-config");
 
-export const provideChatConfig = (handleOverride?: () => string | undefined): ChatConfigApi => {
+export const provideChatConfig = (): ChatConfigApi => {
     const builder = useBuilderContext();
-    const value = $derived<ChatConfig>({
-        apiUrl: getOpenAiApiBaseUrl(),
-        token: getAuthToken() ?? "",
-        model: builder.baseline.model ?? "",
-        assistantHandle: (
-            handleOverride?.()?.trim() ||
-            builder.baseline.handle?.trim() ||
-            ""
-        ),
-    });
-
-    const hasHandle = $derived(value.assistantHandle.length > 0);
 
     const api: ChatConfigApi = {
-        get value(): ChatConfig {
-            return value;
+        get assistant(): Assistant {
+            return builder.draft;
         },
-        get hasHandle(): boolean {
-            return hasHandle;
+        get hasModel(): boolean {
+            return builder.draft.model.length > 0;
         },
     };
 

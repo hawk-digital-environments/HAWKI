@@ -1,97 +1,52 @@
 import type { AssistantTag } from "$plugins/assistants/types/assistant/AssistantTag";
-import {AssistantSetting, AssistantSettingSchema} from "$lib/plugins/assistants/types/assistant/AssistantSetting";
+import type { AssistantCategory } from "$plugins/assistants/types/assistant/AssistantCategory";
+import type { AssistantSetting } from "$plugins/assistants/types/assistant/AssistantSetting";
 import { useApp } from "$lib/app/hooks/useApp.svelte";
-import {AssistantCategory} from "$plugins/assistants/types/assistant/AssistantCategory";
+import { logApiError } from "$plugins/assistants/api/errors";
+import { tagToApi } from "$plugins/assistants/api/schemas/resources/assistant-tags.schema";
 
 const ASSISTANT_CATEGORIES = "assistant-categories";
 const ASSISTANT_TAGS = "assistant-tags";
-export const ASSISTANT_SETTING_VALUES = "assistant-setting-values";
 const ASSISTANT_SETTINGS = "assistant-settings";
-export const SETTING_ANSWER_LENGTH = "answer_length";
-export const SETTING_FORMALITY = "formality";
-export const SETTING_LANGUAGE = "language";
 
-export async function listCategories(): Promise<any[]> {
+export async function listCategories(): Promise<AssistantCategory[]> {
   try {
-    return await useApp().restApi.getResourceCollection(ASSISTANT_CATEGORIES);
+    // `getResourceCollection`'s untyped-string overload types its result as
+    // `JsonApiCollection<any[]>`, an artifact of the kernel generic (not
+    // meaningfully `any[]` per element) — the registered `assistant-categories`
+    // schema already maps each entry to a real `AssistantCategory` at runtime.
+    return Array.from(await useApp().restApi.getResourceCollection(ASSISTANT_CATEGORIES)) as unknown as AssistantCategory[];
   } catch (err) {
-    throw err;
+    throw logApiError("listCategories", err);
   }
 }
 
-export async function listTags(): Promise<any[]> {
+export async function listTags(): Promise<AssistantTag[]> {
   try {
-      return await useApp().restApi.getResourceCollection(ASSISTANT_TAGS);
+    return Array.from(await useApp().restApi.getResourceCollection(ASSISTANT_TAGS)) as unknown as AssistantTag[];
   } catch (err) {
-      throw err;
+    throw logApiError("listTags", err);
   }
 }
 
-export async function listSettings(): Promise<any[]> {
-    console.log('start')
-    try {
-        const collection = await useApp().restApi.getResourceCollection(ASSISTANT_SETTINGS);
-        console.log('settings', collection)
-        return Array.from(collection);
-    } catch (err) {
-        // throw logApiError("listSettings", err);
-        throw err;
-    }
+export async function listSettings(): Promise<AssistantSetting[]> {
+  try {
+    return Array.from(await useApp().restApi.getResourceCollection(ASSISTANT_SETTINGS)) as unknown as AssistantSetting[];
+  } catch (err) {
+    throw logApiError("listSettings", err);
+  }
 }
 
-// export const makeDefaultAssistantSettingValues = async (
-//   settings: ReadonlyArray<AssistantSetting>,
-//   assistantId: string,
-// ) => {
-//
-//   const defaultAssistantSettingValues = settings.map(
-//     ({ id: settingId, defaultValue }) => ({
-//       type: "assistant-setting-values",
-//       attributes: {
-//         value: defaultValue || "",
-//       },
-//       relationships: {
-//         assistant: {
-//           data: {
-//             type: "assistants",
-//             id: assistantId,
-//           },
-//         },
-//         setting: {
-//           data: {
-//             type: "assistant-settings",
-//             id: settingId,
-//           },
-//         },
-//       },
-//     }),
-//   );
-//   try {
-//     await Promise.all(
-//       defaultAssistantSettingValues.map((settingValue) =>
-//         getApi().postResource(ASSISTANT_SETTING_VALUES, settingValue),
-//       ),
-//     );
-//   } catch (err) {
-//     // throw logApiError("makeDefaultAssistantSettingValues", err, { assistantId });
-//       throw err;
-//   }
-// };
-
-// export async function createTag(
-//   assistantId: string,
-//   text: string,
-// ): Promise<AssistantTag> {
-//   try {
-//     const newTag = await getApi().postResource("assistant-tags", {
-//       type: "assistant-tags",
-//       attributes: {
-//         text,
-//       },
-//     });
-//     return toOption(newTag);
-//   } catch (err) {
-//     // throw logApiError("createTag", err, { assistantId });
-//       throw err;
-//   }
-// }
+/**
+ * Create a new, user-defined tag (backend enforces uniqueness on `text`).
+ * Tags aren't scoped to an assistant (see `AssistantTagRequest::rules()` —
+ * only `text` is validated), so nothing here takes an assistant id.
+ */
+export async function createTag(text: string): Promise<AssistantTag> {
+  try {
+    const body = tagToApi(text);
+    return await useApp().restApi.createResource(ASSISTANT_TAGS, body.attributes);
+  } catch (err) {
+    throw logApiError("createTag", err, { text });
+  }
+}

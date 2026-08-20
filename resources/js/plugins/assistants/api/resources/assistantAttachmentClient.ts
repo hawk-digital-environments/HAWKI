@@ -1,6 +1,7 @@
-import { ApiError, logApiError } from "$lib/plugins/assistants/api/errors";
+import { ApiError, logApiError } from "$plugins/assistants/api/errors";
+import { useApp } from "$lib/app/hooks/useApp.svelte";
 
-const TYPE = "assistants";
+const ASSISTANTS = "assistants";
 
 /**
  * Shape returned by a single attachment upload. `assistantId` is always
@@ -25,22 +26,20 @@ export interface AttachmentQueueResult {
 }
 
 /**
- * Upload a single file to an assistant's knowledge attachments, with upload
- * progress tracking and cancellation support.
- *
- * Unify with hawki frontend function `uploadFileToServer` when migrating to
- * hawki frontend. Ported from HAWKI/public/js/file_manager.js:9 — the raw
- * XHR transport is replaced by `getApi().axios`, `xhr.upload.onprogress` by
- * axios `onUploadProgress`, and `xhr.abort()` by `AbortController`/`signal`.
+ * Upload a single file to an assistant's knowledge attachments.
  *
  * Unlike the legacy endpoint (which resolved with `{ uuid }`), the JSON:API
  * action returns the full assistant resource; the request sends
  * `?include=attachments` so the uploaded file's uuid is read reliably from the
  * inlined `included` collection (see {@link readAttachmentUuid}).
  *
+ * `onProgress` is best-effort (0 then 100): the kernel's `fetch`-based
+ * transport has no upload-progress event, unlike the axios client this was
+ * originally written against.
+ *
  * @param assistantId  The assistant the file is attached to.
  * @param file         The file to upload.
- * @param onProgress   Optional callback receiving 0–100 percent.
+ * @param onProgress   Optional callback receiving 0 or 100 percent.
  * @param signal       Optional AbortSignal to cancel the upload.
  */
 export async function uploadAssistantAttachment(
@@ -49,29 +48,22 @@ export async function uploadAssistantAttachment(
     onProgress?: (progress: number) => void,
     signal?: AbortSignal,
 ): Promise<AttachmentUploadResult> {
-    const url = `${TYPE}/${assistantId}/actions/attachment`;
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-        const response = await getApi().axios.post(url, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-            // Request the attachments relationship inline so the uploaded file's
-            // uuid can be read reliably from `included` (the uploader is the
-            // creator, so the privileged include is permitted).
-            params: { include: "attachments" },
-            onUploadProgress: (event) => {
-                if (!onProgress || !event.total) return;
-                onProgress(Math.round((event.loaded / event.total) * 100));
-            },
-            signal,
-        });
+        onProgress?.(0);
+        const response = await useApp().restApi.postToResourceAction(
+            ASSISTANTS,
+            `${assistantId}/actions/attachment?include=attachments`,
+            formData,
+            { signal },
+        );
+        onProgress?.(100);
 
-        const data = response.data?.data ?? {};
-        const assistantIdOut = String(data.id ?? assistantId);
         return {
-            assistantId: assistantIdOut,
-            uuid: readAttachmentUuid(response.data, file.name),
+            assistantId: String(response?.data?.id ?? assistantId),
+            uuid: readAttachmentUuid(response, file.name),
         };
     } catch (err) {
         throw logApiError("uploadAssistantAttachment", err, { assistantId, file: file.name });
@@ -81,12 +73,6 @@ export async function uploadAssistantAttachment(
 /**
  * Upload every file in the queue to the assistant in parallel, invoking the
  * progress callback per file as each upload advances.
- *
- * Unify with hawki frontend function `uploadAttachmentQueue` when migrating
- * to hawki frontend. Ported from HAWKI/public/js/attachment_handler.js:145 —
- * the `Promise.all` fan-out and per-file uuid collection are preserved; the
- * `SendMessageStatus` side-effect object is replaced by an `onFileProgress`
- * callback and per-file `AbortSignal`s.
  *
  * @returns The list of per-file outcomes, in input order. Each entry carries
  *          either a server-assigned `uuid` (success) or an `error` (failure).
@@ -98,44 +84,36 @@ export async function uploadAssistantAttachmentQueue(
     onFileProgress?: (file: File, progress: number) => void,
     signal?: AbortSignal,
 ): Promise<AttachmentQueueResult[]> {
-    // const uploadTasks = files.map((file) =>
-    //     uploadAssistantAttachment(
-    //         assistantId,
-    //         file,
-    //         (progress) => onFileProgress?.(file, progress),
-    //         signal,
-    //     )
-    //         .then((result): AttachmentQueueResult => {
-    //             onFileProgress?.(file, 100);
-    //             return { uuid: result.uuid };
-    //         })
-    //         .catch((error): AttachmentQueueResult => {
-    //             console.error(`Upload failed for ${file.name}:`, error);
-    //             onFileProgress?.(file, 0);
-    //             const apiError = error instanceof ApiError ? error : ApiError.from(error);
-    //             return { error: apiError };
-    //         }),
-    // );
-    //
-    // return Promise.all(uploadTasks);
+    const uploadTasks = files.map((file) =>
+        uploadAssistantAttachment(
+            assistantId,
+            file,
+            (progress) => onFileProgress?.(file, progress),
+            signal,
+        )
+            .then((result): AttachmentQueueResult => ({ uuid: result.uuid }))
+            .catch((error): AttachmentQueueResult => {
+                onFileProgress?.(file, 0);
+                return { error: ApiError.from(error) };
+            }),
+    );
+
+    return Promise.all(uploadTasks);
 }
 
 /**
  * Delete an attachment from an assistant by its file id.
- *
- * Unify with hawki frontend function `requestAtchDelete` when migrating to
- * hawki frontend. Ported from HAWKI/public/js/attachment_handler.js:68 — the
- * CSRF meta-token header is dropped (bearer-token interceptor handles auth)
- * and `fetch` is replaced by `getApi().axios`. The `{ fileId }` JSON body is
- * preserved verbatim.
  */
 export async function deleteAssistantAttachment(
     assistantId: string,
     fileId: string,
 ): Promise<void> {
-    const url = `${TYPE}/${assistantId}/actions/attachment`;
     try {
-        await getApi().axios.delete(url, { data: { fileId } });
+        await useApp().restApi.deleteFromResourceAction(
+            ASSISTANTS,
+            `${assistantId}/actions/attachment`,
+            { body: JSON.stringify({ fileId }) },
+        );
     } catch (err) {
         throw logApiError("deleteAssistantAttachment", err, { assistantId, fileId });
     }

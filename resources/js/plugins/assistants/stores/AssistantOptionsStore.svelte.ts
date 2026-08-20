@@ -13,7 +13,7 @@ import {
   listCategories,
   listTags,
   listSettings,
-  // createTag,
+  createTag,
 } from "$plugins/assistants/api/resources/assistantOptionsClient";
 import { ApiError } from "$plugins/assistants/api/errors";
 import {DataStore} from "$lib/kernel/stores/types";
@@ -124,15 +124,11 @@ class AssistantOptionsStore implements DataStore{
         }
     }
 
-    async addTag(assistantId: string, normalizedTag: string): Promise<AssistantTag> {
+    async addTag(normalizedTag: string): Promise<AssistantTag> {
         const existing = this.tags.find((t) => t.text === normalizedTag);
         if (existing) return existing;
 
-        // const tag = await createTag(assistantId, normalizedTag);
-        const tag = {
-            id: '999',
-            text: 'newTag'
-        };
+        const tag = await createTag(normalizedTag);
         this.tags = [...this.tags, tag];
         return tag;
     }

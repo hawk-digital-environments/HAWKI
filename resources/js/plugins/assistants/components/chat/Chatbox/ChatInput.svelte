@@ -1,15 +1,15 @@
 <script lang="ts">
     import Button from "$lib/components/ui/button/Button.svelte";
     import SentIcon from "$lib/components/ui/icons/iconset/SentIcon.svelte";
-    import {resizeTextarea, watchManualResize} from "$lib/utils/textarea-resizer";
+    import {resizeTextarea, watchManualResize} from "./textarea-resizer";
     import {useChatStore} from "./stream/chatStore.svelte.js";
     import {useChatConfig} from "./stream/chatConfig.svelte.js";
 
     const chat = useChatStore();
     const config = useChatConfig();
-    const hasHandle = $derived(config.hasHandle);
+    const hasModel = $derived(config.hasModel);
 
-    const HINT = "Kein Assistant-Handle gesetzt — speichere den Assistenten, um ihn testen zu können.";
+    const HINT = "Kein Modell ausgewählt — wähle ein Modell aus, um den Assistenten zu testen.";
 
     let inputField = $state<HTMLTextAreaElement | null>(null);
     let minHeight = $state<number | null>(null);
@@ -30,7 +30,7 @@
 
     const send = (): void => {
         const text = value.trim();
-        if (!text || !hasHandle) return;
+        if (!text || !hasModel) return;
         chat.send(text);
         value = "";
         requestAnimationFrame(resize);
@@ -45,7 +45,7 @@
 </script>
 
 <div class="chatlog-input-container">
-    {#if !hasHandle}
+    {#if !hasModel}
         <p class="handle-hint">{HINT}</p>
     {/if}
     <textarea
@@ -53,18 +53,18 @@
         bind:value
         id="chatbox-input"
         class="chatbox-input"
-        placeholder={hasHandle ? "Nachricht schreiben…" : ""}
-        disabled={!hasHandle}
-        title={hasHandle ? "" : HINT}
+        placeholder={hasModel ? "Nachricht schreiben…" : ""}
+        disabled={!hasModel}
+        title={hasModel ? "" : HINT}
         rows="1"
         oninput={resize}
         onkeydown={handleKeydown}
     ></textarea>
-    <div class="send-btn-wrapper" title={hasHandle ? "" : HINT}>
+    <div class="send-btn-wrapper" title={hasModel ? "" : HINT}>
         <Button
             variant="fill"
             iconLeft={SentIcon}
-            disabled={!hasHandle}
+            disabled={!hasModel}
             onclick={send}
         />
     </div>

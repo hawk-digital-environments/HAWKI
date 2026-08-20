@@ -1,8 +1,10 @@
 import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
 import {logApiError} from "$plugins/assistants/api/errors";
 import {getAssistant} from "$plugins/assistants/api/resources/assistantsClient";
-import AssistantAvatarsSchema from "$plugins/assistants/api/schemas/resources/assistant-avatars.schema";
+import {useApp} from "$lib/app/hooks/useApp.svelte.js";
 import type {JsonApiResourceBody} from "$plugins/assistants/api/schemas/wireFragments";
+
+const ASSISTANT_AVATARS = "assistant-avatars";
 
 
 
@@ -45,19 +47,17 @@ export async function createOrUpdateAssistantAvatar(
     }
 }
 
-// @todo `getApi()` is not a defined helper anywhere in this codebase — these
-// two go through `useApp().restApi` (like every other client in this plugin)
-// once the create/update avatar endpoints are actually wired up. Left as-is
-// rather than guessed at: not part of this cleanup's scope (see the "post
-// functions aren't implemented yet" note this schema reorg was asked to keep
-// in mind). `AssistantAvatarsSchema.parse(...)` below assumes a jsona-decoded
-// response shape (flat `icon_css`, not the raw `{data: {attributes: {...}}}`
-// envelope `axios.post` would actually return) — whoever wires this up for
-// real should go through `restApi` instead, which decodes for you.
+/**
+ * `restApi.createResource`/`updateResource` already decode + validate the
+ * response through the registered `assistant-avatars` schema (see
+ * `AssistantAvatarsSchema` and `RestApi.writeResource`), so the result here
+ * is already a mapped `AssistantAvatar` — no manual parsing needed.
+ */
 async function createAssistantAvatar(body: JsonApiResourceBody): Promise<AssistantAvatar> {
     try {
-        const response = await getApi().axios.post(`assistant-avatars`, { data: body });
-        return AssistantAvatarsSchema.parse(response.data.data);
+        return await useApp().restApi.createResource(ASSISTANT_AVATARS, body.attributes ?? {}, {
+            relationships: body.relationships,
+        });
     } catch (err) {
         throw logApiError("createAssistantAvatar", err);
     }
@@ -65,8 +65,9 @@ async function createAssistantAvatar(body: JsonApiResourceBody): Promise<Assista
 
 async function updateAssistantAvatar(avatarId: string, body: JsonApiResourceBody): Promise<AssistantAvatar> {
     try {
-        const response = await getApi().axios.patch(`assistant-avatars/${avatarId}`, { data: body });
-        return AssistantAvatarsSchema.parse(response.data.data);
+        return await useApp().restApi.updateResource(ASSISTANT_AVATARS, avatarId, body.attributes ?? {}, {
+            relationships: body.relationships,
+        });
     } catch (err) {
         throw logApiError("updateAssistantAvatar", err, { avatarId });
     }

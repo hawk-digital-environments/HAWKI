@@ -67,6 +67,8 @@ export type GetFromResourceActionOptions = FetchOptions;
 
 export type PostToResourceActionOptions = FetchOptions;
 
+export type ResourceActionData = object;
+
 export class RestApi {
     constructor(
         private readonly uriBuilder: UriBuilder,
@@ -79,10 +81,12 @@ export class RestApi {
     /**
      * Low-level fetch wrapper used by all higher-level API helpers.
      *
-     * Sets the required JSON:API `Accept` header, checks for HTTP errors, and
-     * attempts to extract a human-readable message from the JSON:API `errors`
-     * array before throwing — so callers get "400: Validation failed" rather than
-     * a generic status code.
+     * Sets the required JSON:API `Accept`/`Content-Type`/locale headers, then
+     * delegates the actual network call to the injected {@link ApiTransport} —
+     * it, not this method, checks the HTTP status and throws an `ApiTransportError`
+     * with a human-readable message extracted from the JSON:API `errors` array.
+     * Once the transport resolves, the response runs through `beforeSchema` →
+     * `schema.parse` → `afterSchema` in that order.
      */
     public async fetch<S extends z.ZodTypeAny>(
         path: string,
@@ -99,7 +103,9 @@ export class RestApi {
         const fetchOptions: RequestInit = {
             ...(options || {}),
             headers: {
-                'Content-Type': 'application/json',
+                // Multipart bodies must not get a manual Content-Type; the
+                // browser sets it together with the form boundary.
+                ...(options?.body instanceof FormData ? {} : {'Content-Type': 'application/json'}),
                 'Accept': 'application/vnd.api+json,application/json',
                 'X-App-Locale': this.getLocaleString(options || {}),
                 ...(options?.headers || {})
@@ -118,11 +124,11 @@ export class RestApi {
     /**
      * Fetches a single resource by ID from the API.
      *
-     * Works the same as {@link getResourceCollectionFromApi} but hits `/{resourceType}/{id}`
+     * Works the same as {@link getResourceCollection} but hits `/{resourceType}/{id}`
      * and returns a single object rather than an array.
      *
      * @example
-     * const connection = await getResourceFromApi('connections', 42);
+     * const connection = await restApi.getResource('connections', 42);
      */
     async getResource<R extends keyof HawkiResourceSchemas>(
         resourceType: R,
@@ -139,7 +145,7 @@ export class RestApi {
         id: string | number,
         options?: GetResourceOptions
     ): Promise<any> {
-        const url = this.uriBuilder.jsonApiUri(resourceType, id, options?.query);
+        const url = this.uriBuilder.jsonApiUri(resourceType, id.toString()) + buildQueryString(options?.query);
         const fetchOptions: FetchOptions = {
             ...options,
             beforeSchema: decodeJsonApiResourceResponse
@@ -178,7 +184,7 @@ export class RestApi {
         resourceType: string,
         options?: GetResourceCollectionOptions
     ): Promise<JsonApiCollection<any>> {
-        const url = this.uriBuilder.jsonApiUri(resourceType, options?.query);
+        const url = this.uriBuilder.jsonApiUri(resourceType) + buildQueryString(options?.query);
         const fetchOptions: FetchOptions = {
             ...options,
             beforeSchema: decodeJsonApiIndexResponse,
@@ -189,6 +195,100 @@ export class RestApi {
             if (schema) fetchOptions.schema = z.array(extendResourceSchema(schema));
         }
         return await this.fetch(url, {method: 'GET', ...fetchOptions});
+    }
+
+    /**
+     * Creates a resource via a JSON:API `POST /{resourceType}` request and
+     * returns the decoded created resource (`{ id, ...attributes }`).
+     *
+     * Pass `options.relationships` for resources whose create/update rules
+     * require a relationship alongside attributes (e.g. a `belongsTo` set on
+     * create) — it's merged into the request document as JSON:API's
+     * `data.relationships`, the same shape `assistantToApi()`-style mappers
+     * already produce.
+     *
+     * @example
+     * const conversation = await createResource('ai-convs', {name: 'New chat'});
+     * @example
+     * const prompt = await createResource('assistant-user-prompts', {text}, {
+     *     relationships: {assistant: {data: {type: 'assistants', id}}}
+     * });
+     */
+    public async createResource(
+        resourceType: string,
+        attributes: Record<string, unknown>,
+        options?: CommonGetResourceOptions & { relationships?: Record<string, unknown> }
+    ): Promise<any> {
+        return this.writeResource('POST', this.uriBuilder.jsonApiUri(resourceType), resourceType, {
+            data: {
+                type: resourceType,
+                attributes,
+                ...(options?.relationships ? {relationships: options.relationships} : {})
+            }
+        }, options);
+    }
+
+    /**
+     * Updates a resource via a JSON:API `PATCH /{resourceType}/{id}` request and
+     * returns the decoded updated resource (`{ id, ...attributes }`).
+     *
+     * Pass `options.relationships` to update relationships alongside
+     * attributes in the same request — see {@link createResource}.
+     *
+     * @example
+     * await updateResource('ai-convs', slug, {name: 'Renamed chat'});
+     */
+    public async updateResource(
+        resourceType: string,
+        id: string | number,
+        attributes: Record<string, unknown>,
+        options?: CommonGetResourceOptions & { relationships?: Record<string, unknown> }
+    ): Promise<any> {
+        return this.writeResource('PATCH', this.uriBuilder.jsonApiUri(resourceType, id.toString()), resourceType, {
+            data: {
+                type: resourceType,
+                id: id.toString(),
+                attributes,
+                ...(options?.relationships ? {relationships: options.relationships} : {})
+            }
+        }, options);
+    }
+
+    /**
+     * Deletes a resource via a JSON:API `DELETE /{resourceType}/{id}` request.
+     */
+    public async deleteResource(resourceType: string, id: string | number, options?: RequestInit): Promise<void> {
+        await this.fetch(this.uriBuilder.jsonApiUri(resourceType, id.toString()), {
+            method: 'DELETE',
+            ...options
+        });
+    }
+
+    private async writeResource(
+        method: 'POST' | 'PATCH',
+        url: string,
+        resourceType: string,
+        document: Record<string, unknown>,
+        options?: CommonGetResourceOptions
+    ): Promise<any> {
+        const fetchOptions: FetchOptions = {
+            ...options,
+            beforeSchema: decodeJsonApiResourceResponse
+        };
+        if (options?.validateSchema !== false) {
+            const schema = this.getResourceSchema(resourceType);
+            if (schema) fetchOptions.schema = extendResourceSchema(schema);
+        }
+        return this.fetch(url, {
+            method,
+            body: JSON.stringify(document),
+            ...fetchOptions,
+            headers: {
+                // The backend rejects JSON:API write requests with any other content type.
+                'Content-Type': 'application/vnd.api+json',
+                ...(options?.headers as Record<string, string> | undefined ?? {})
+            }
+        });
     }
 
     /**
@@ -242,33 +342,89 @@ export class RestApi {
     public async postToResourceAction<S extends z.ZodTypeAny>(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         // Note: The options object MUST contain the 'schema' of type S
         options: PostToResourceActionOptions & { schema: S }
     ): Promise<z.infer<S>>;
     public async postToResourceAction(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         options?: PostToResourceActionOptions
     ): Promise<any>;
     public async postToResourceAction(
         resourceType: keyof HawkiResourceSchemas,
         action: string,
-        data: any,
+        data: ResourceActionData,
         options?: PostToResourceActionOptions
     ): Promise<any> {
         const url = this.uriBuilder.jsonApiUri(resourceType, action);
         return await this.fetch(url, {
             method: 'POST',
-            body: JSON.stringify(data),
-            ...options
+            body: data instanceof FormData ? data : JSON.stringify(data),
+            ...options,
+            headers: {
+                // Custom actions still live under the JSON:API server prefix, which
+                // rejects write requests with any other content type — same reason
+                // writeResource() sets this for plain create/update.
+                ...(data instanceof FormData ? {} : {'Content-Type': 'application/vnd.api+json'}),
+                ...(options?.headers as Record<string, string> | undefined ?? {})
+            }
         });
     }
 
     /**
+     * Same as {@link postToResourceAction} but issues a `PATCH` request, for
+     * RPC-style actions that update an existing entity.
+     */
+    public async patchToResourceAction<S extends z.ZodTypeAny>(
+        resourceType: keyof HawkiResourceSchemas,
+        action: string,
+        data: ResourceActionData,
+        options: PostToResourceActionOptions & { schema: S }
+    ): Promise<z.infer<S>>;
+    public async patchToResourceAction(
+        resourceType: keyof HawkiResourceSchemas,
+        action: string,
+        data: ResourceActionData,
+        options?: PostToResourceActionOptions
+    ): Promise<any>;
+    public async patchToResourceAction(
+        resourceType: keyof HawkiResourceSchemas,
+        action: string,
+        data: ResourceActionData,
+        options?: PostToResourceActionOptions
+    ): Promise<any> {
+        const url = this.uriBuilder.jsonApiUri(resourceType, action);
+        return await this.fetch(url, {
+            method: 'PATCH',
+            body: data instanceof FormData ? data : JSON.stringify(data),
+            ...options,
+            headers: {
+                ...(data instanceof FormData ? {} : {'Content-Type': 'application/vnd.api+json'}),
+                ...(options?.headers as Record<string, string> | undefined ?? {})
+            }
+        });
+    }
+
+    /**
+     * Same as {@link postToResourceAction} but issues a `DELETE` request, for
+     * RPC-style actions that remove an entity addressed by the action path.
+     */
+    public async deleteFromResourceAction(
+        resourceType: keyof HawkiResourceSchemas,
+        action: string,
+        options?: PostToResourceActionOptions
+    ): Promise<any> {
+        const url = this.uriBuilder.jsonApiUri(resourceType, action);
+        return await this.fetch(url, {method: 'DELETE', ...options});
+    }
+
+    /**
      * Returns the locale string to use for API requests, based on the provided options or the default connection locale.
-     * @param options
+     *
+     * Swallows the "connection not loaded yet" error and returns `''` — happens
+     * during early bootstrap, before `ClientExtension` has fetched the connection.
      */
     private getLocaleString(options: FetchOptions): string {
         let locale = options?.locale;

@@ -1,19 +1,11 @@
 <script lang="ts">
-
     import Wrench01Icon from '$lib/components/ui/icons/iconset/Wrench01Icon.svelte';
-    let {toolName, input}: { toolName: string; input: unknown } = $props();
-
-    let hasArgs = $derived(
-        input !== undefined && input !== null && typeof input === "object" && Object.keys(input as object).length > 0,
-    );
+    let {name}: { name: string } = $props();
 </script>
 
 <div class="tool-call">
     <span class="icon"><Wrench01Icon size="1em" /></span>
-    <span class="name">{toolName}</span>
-    {#if hasArgs}
-        <code class="args">{JSON.stringify(input)}</code>
-    {/if}
+    <span class="name">{name}</span>
 </div>
 
 <style>
@@ -31,11 +23,5 @@
     }
     .name {
         font-weight: 600;
-    }
-    .args {
-        font-family: "Fira Mono", ui-monospace, monospace;
-        background: var(--color-bg-secondary);
-        padding: .1rem .35rem;
-        border-radius: var(--corner-sm);
     }
 </style>

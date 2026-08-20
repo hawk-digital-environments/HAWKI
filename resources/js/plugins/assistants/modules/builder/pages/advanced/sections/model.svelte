@@ -25,13 +25,17 @@
         />
         <ModelToolConflictPanel/>
 
-        <BuilderInput
-            type="fullWidthToggle"
-            label={__('assistants.builder.model.input_allow_model_select')}
-            description={__('assistants.builder.model.input_allow_model_select_description')}
-            assistantValueKey="allowModelSelect"
-            disabled={true}
-        />
+
+<!-- @note: allow model select is left out for now. Needs to be decide if keeping or completely removing the feature in the future.
+     also @see: assistant.schema.ts
+-->
+<!--        <BuilderInput-->
+<!--            type="fullWidthToggle"-->
+<!--            label={__('assistants.builder.model.input_allow_model_select')}-->
+<!--            description={__('assistants.builder.model.input_allow_model_select_description')}-->
+<!--            assistantValueKey="allowModelSelect"-->
+<!--            disabled={true}-->
+<!--        />-->
 
 
         <BuilderInput

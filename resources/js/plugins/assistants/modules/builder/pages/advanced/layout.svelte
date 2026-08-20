@@ -19,10 +19,7 @@
     const builder = createBuilderContext(useToastContext(), __);
 
     onMount(() => {
-        console.log('mount')
         assistantOptionsStore.load();
-        // @todo wire up aiModelStore / aiToolStore loading here once the
-        // intended lifecycle (registrar-driven vs. per-page) is confirmed.
         builder.init();
     });
 </script>

@@ -1,15 +1,19 @@
-import z from "zod";
 import { useApp } from "$lib/app/hooks/useApp.svelte.js";
 import type { FetchCollectionQuery, FetchResourceQuery } from "$lib/kernel/api/buildQueryString.js";
-import type { JsonApiCollection, JsonApiPagination } from "$lib/kernel/api/jsonApiEncoding.js";
+import type { JsonApiPagination } from "$lib/kernel/api/jsonApiEncoding.js";
 import { logApiError } from "$plugins/assistants/api/errors";
 import type { Assistant } from "$plugins/assistants/types/assistant";
-// import {ASSISTANT_SETTING_KEY_MAP} from "$plugins/assistants/api/schemas/resources/assistants.schema"
-// import { ASSISTANT_SETTING_VALUES } from "./assistantOptionsClient";
-// import lodash from "lodash";
+import {
+  assistantToApi,
+  AssistantResourceSchema,
+  ASSISTANT_SETTING_KEY_MAP,
+} from "$plugins/assistants/api/schemas/resources/assistants.schema.js";
+import type { JsonApiResourceBody } from "$plugins/assistants/api/schemas/wireFragments.js";
+import { assistantOptionsStore } from "$plugins/assistants/stores/AssistantOptionsStore.svelte.js";
 
 const ASSISTANTS = "assistants";
 const ASSISTANT_USER_PROMPTS = "assistant-user-prompts";
+const ASSISTANT_SETTING_VALUES = "assistant-setting-values";
 
 /**
  * Relationships worth loading for a list view: enough to render a card without
@@ -131,159 +135,210 @@ export async function listAssistants(
   }
 }
 
-// export async function createAssistant(
-//   assistantResource: JsonApiResourceBody,
-// ): Promise<Assistant> {
-  // try {
-  //   const resource = await  useApp().restApi.postResource(
-  //     TYPE,
-  //     lodash.omit(assistantResource, "id"),
-  //   );
-  //   return assistantFromApi(resource);
-  // } catch (err) {
-  //   throw logApiError("createAssistant", err);
-  // }
-// }
+/**
+ * Mints a new assistant record. `restApi.createResource` sends whatever
+ * object it's given straight through as `data.attributes` with no shaping —
+ * it must already be wire-shaped (snake_case, no relationships/read-only
+ * fields), which is exactly what {@link assistantToApi} produces. Passing the
+ * raw domain `Assistant` here previously sent camelCase field names and
+ * nested domain objects (`avatar`, `creator`, `versions`, ...) as attributes,
+ * which the backend rejected with a 400 pointing at `/data/attributes`.
+ *
+ * `assistantToApi`'s `relationships` half is dropped: `createResource` has no
+ * way to send them, and a brand-new draft has nothing to relate yet anyway
+ * (`createEmptyAssistant()`'s `category`/`aiTools` are empty/null, and its
+ * `tags: []` relationship would be a no-op even if it could be sent).
+ */
+export async function createAssistant(
+  assistantResource: Assistant,
+): Promise<Assistant> {
+  try {
+    return await useApp().restApi.createResource(
+        ASSISTANTS,
+        assistantToApi(assistantResource).attributes ?? {}
+    );
+  } catch (err) {
+    throw logApiError("createAssistant", err);
+  }
+}
 
-// export async function updateAssistant(
-//   id: string,
-//   body: JsonApiResourceBody,
-// ): Promise<void> {
-  // try {
-  //   const response = await  useApp().restApi.patchResource(TYPE, id, body);
-  //   console.log(response);
-  // } catch (err) {
-  //   throw logApiError("updateAssistant", err, { id });
-  // }
-// }
-// /${assistant.id}/actions/release
-// export async function requestAssistantRelease(assistant: Assistant): Promise<boolean> {
-//   const response = await  useApp().restApi.postToResourceAction(`${TYPE}`,'actions/release',
-//       {
-//         data:{
-//           "attributes": {
-//             "release_stage": assistant.releaseStage,
-//           }
-//         }
-//       });
-//   return response.status == 200;
-// }
+/**
+ * Persists a partial (or full) change to an existing assistant. `body` is
+ * whatever {@link assistantToApi} produced — `attributes` and `relationships`
+ * are sent in the same PATCH so a single autosave cycle can update scalar
+ * fields (`name`, `temp`, ...) and relationships (`assistant_category`,
+ * `assistant_tags`, `ai_tools`) together.
+ */
+export async function updateAssistant(
+  id: string,
+  body: JsonApiResourceBody,
+): Promise<Assistant> {
+  try {
+    return await useApp().restApi.updateResource(ASSISTANTS, id, body.attributes ?? {}, {
+      relationships: body.relationships,
+    });
+  } catch (err) {
+    throw logApiError("updateAssistant", err, { id });
+  }
+}
+
+/**
+ * Requests a release stage via the dedicated `actions/release` endpoint —
+ * `release_stage` is `readOnly()` on the main resource (see
+ * `ReleaseAssistantRequest::rules()`, which validates exactly
+ * `data.attributes.release_stage`), so it can't be sent through
+ * {@link updateAssistant}. `postToResourceAction` doesn't decode the
+ * response, but nothing here needs it: a non-2xx status throws (see
+ * `RestApi.fetch`'s doc comment), so resolving at all means success.
+ */
+export async function requestAssistantRelease(assistant: Assistant): Promise<boolean> {
+  if (!assistant.id) return false;
+  try {
+    await useApp().restApi.postToResourceAction(
+      ASSISTANTS,
+      `${assistant.id}/actions/release`,
+      {
+        data: {
+          type: "assistants",
+          attributes: {
+            release_stage: assistant.releaseStage,
+          },
+        },
+      },
+    );
+    return true;
+  } catch (err) {
+    throw logApiError("requestAssistantRelease", err, { id: assistant.id });
+  }
+}
+
+/**
+ * Remixes an assistant into a fresh, personally-owned draft via the
+ * `actions/remix` endpoint. The action response isn't JSON:API-decoded (see
+ * {@link RestApi.postToResourceAction}), so this only reads the new
+ * resource's raw `data.id` off it and refetches the full, mapped assistant
+ * through {@link getAssistant} — mirroring the fetch-then-map shape every
+ * other read in this file already goes through.
+ */
+export async function requestRemix(id: string): Promise<Assistant> {
+  try {
+    const response = await useApp().restApi.postToResourceAction(
+      ASSISTANTS,
+      `${id}/actions/remix`,
+      { data: {} },
+    );
+    return await getAssistant(response.data.id, {
+      include: [...ASSISTANT_EDIT_INCLUDES],
+    });
+  } catch (err) {
+    throw logApiError("requestRemix", err, { id });
+  }
+}
 
 
-// export async function requestRemix (
-//     id: string
-// ){
-  // try{
-  //   const response =  await  useApp().restApi.postToResourceAction( 'assistants',  'actions/remix', {})
-  //   const detailedData = await getAssistant(response.data.data.id, {
-  //     include: [
-  //         'creator',
-  //         'assistant_category',
-  //         'assistant_tags',
-  //         'assistant_avatar',
-  //         'assistant_setting_values.setting',
-  //         'assistant_user_prompts',
-  //         'assistant_versions',
-  //     ],
-  //   });
-  //   return detailedData;
-  // } catch(err){
-  //   throw err;
-  // }
-// }
-
-
+/**
+ * Sets one setting value (formality / language / answer length) on an
+ * assistant. `assistant-setting-values` is a separate resource keyed by
+ * `(assistant, setting)` with a uniqueness constraint enforced server-side
+ * (see `AssistantSettingValueRequest::rules()`), so this is an upsert: PATCH
+ * the existing row's `value` if one exists for this key, otherwise POST a new
+ * row with both relationships.
+ *
+ * The domain `Assistant` only ever carries the *flattened* value
+ * (`formality`/`answerLength`/`language`) — `assistants.schema.ts`'s
+ * transform consumes `assistant_setting_values` to produce it and discards
+ * the row ids. Finding the existing row therefore needs a fresh, *unmapped*
+ * fetch — `getResource(..., {validateSchema: false})` returns the raw wire
+ * response, which {@link AssistantResourceSchema} (the pre-transform half of
+ * that same schema) can validate on its own without running the transform.
+ */
 export async function updateAssistantSetting(
   id: string,
   settingKey: "formality" | "language" | "answerLength",
   settingValue: string,
 ): Promise<void> {
-  // try {
-  //   const apiKeyLookup = ASSISTANT_SETTING_KEY_MAP[settingKey];
-  //   const assistant = await  useApp().restApi.getResource(TYPE, id,
-  //       {
-  //           include: "assistant_setting_values.setting",
-  //       });
-  //   const assistantSettingValue = assistant
-  //     .get("assistantSettingValues")
-  //     .find((sVal: any) => sVal["setting"]["key"] === apiKeyLookup);
-  //   await  useApp().restApi.patchResource(
-  //     ASSISTANT_SETTING_VALUES,
-  //     assistantSettingValue["id"],
-  //     {
-  //       type: "assistant-setting-values",
-  //       id: assistantSettingValue["id"],
-  //       attributes: {
-  //         value: settingValue,
-  //       },
-  //       relationships: {
-  //         assistant: {
-  //           data: {
-  //             type: "assistants",
-  //             id: id,
-  //           },
-  //         },
-  //         setting: {
-  //           data: {
-  //             type: "assistant-settings",
-  //             id: assistantSettingValue["setting"]["id"],
-  //           },
-  //         },
-  //       },
-  //     },
-  //   );
-  // } catch (err) {
-  //   throw logApiError("updateAssistantSetting", err, { id, settingKey });
-  // }
+  try {
+    const apiKey = ASSISTANT_SETTING_KEY_MAP[settingKey];
+    if (!apiKey) return;
+
+    const setting = assistantOptionsStore.settings.find((s) => s.key === apiKey);
+    if (!setting) {
+      throw new Error(`Unknown assistant setting "${apiKey}" (has assistantOptionsStore.load() run?)`);
+    }
+
+    const raw = await useApp().restApi.getResource(ASSISTANTS, id, {
+      query: { include: "assistant_setting_values.setting" },
+      validateSchema: false,
+    });
+    const wire = AssistantResourceSchema.parse(raw);
+    const existing = wire.assistant_setting_values?.find(
+      (sv) => sv.setting?.key === apiKey,
+    );
+
+    if (existing) {
+      await useApp().restApi.updateResource(ASSISTANT_SETTING_VALUES, existing.id, {
+        value: settingValue,
+      });
+    } else {
+      await useApp().restApi.createResource(ASSISTANT_SETTING_VALUES, {
+        value: settingValue,
+      }, {
+        relationships: {
+          assistant: { data: { type: "assistants", id } },
+          setting: { data: { type: "assistant-settings", id: setting.id } },
+        },
+      });
+    }
+  } catch (err) {
+    throw logApiError("updateAssistantSetting", err, { id, settingKey });
+  }
 }
+
 export async function createAssistantPrompts(
   id: string,
   promptsAdded: ReadonlyArray<string>,
 ): Promise<void> {
-  // try {
-  //   await Promise.all(
-  //     promptsAdded.map((text) =>
-  //        useApp().restApi.postResource(ASSISTANT_USER_PROMPTS, {
-  //         type: ASSISTANT_USER_PROMPTS,
-  //         attributes: {
-  //           text,
-  //         },
-  //         relationships: {
-  //           assistant: {
-  //             data: {
-  //               type: "assistants",
-  //               id,
-  //             },
-  //           },
-  //         },
-  //       }),
-  //     ),
-  //   );
-  // } catch (err) {
-  //   throw logApiError("createAssistantPrompts", err, { id });
-  // }
+  try {
+    await Promise.all(
+      promptsAdded.map((text) =>
+        useApp().restApi.createResource(ASSISTANT_USER_PROMPTS, { text }, {
+          relationships: {
+            assistant: { data: { type: "assistants", id } },
+          },
+        }),
+      ),
+    );
+  } catch (err) {
+    throw logApiError("createAssistantPrompts", err, { id });
+  }
 }
 
+/**
+ * Prompts are tracked by their text (see `Assistant.starterPrompts:
+ * string[]`), not by id, so removal needs the same raw-wire lookup as
+ * {@link updateAssistantSetting} to resolve which `assistant-user-prompts`
+ * rows to delete.
+ */
 export async function removeAssistantPrompts(
   id: string,
   promptsRemoved: ReadonlyArray<string>,
 ): Promise<void> {
-  // try {
-  //   const assistant = await  useApp().restApi.getResource(TYPE, id, {
-  //     include: "assistant_user_prompts",
-  //   });
-  //   const promptsToRemoveSet = new Set(promptsRemoved);
-  //   const toRemove = assistant
-  //     .get("assistantUserPrompts")
-  //     .filter(({ text }: { text: string }) => promptsToRemoveSet.has(text));
-  //   await Promise.all(
-  //     toRemove.map(({ id }: { id: string }) =>
-  //        useApp().restApi.axios.delete(`${ASSISTANT_USER_PROMPTS}/${id}`),
-  //     ),
-  //   );
-  // } catch (err) {
-  //   throw logApiError("removeAssistantPrompts", err, { id });
-  // }
+  try {
+    const raw = await useApp().restApi.getResource(ASSISTANTS, id, {
+      query: { include: "assistant_user_prompts" },
+      validateSchema: false,
+    });
+    const wire = AssistantResourceSchema.parse(raw);
+    const promptsToRemoveSet = new Set(promptsRemoved);
+    const toRemove = (wire.assistant_user_prompts ?? []).filter((p) =>
+      promptsToRemoveSet.has(p.text),
+    );
+    await Promise.all(
+      toRemove.map((p) => useApp().restApi.deleteResource(ASSISTANT_USER_PROMPTS, p.id)),
+    );
+  } catch (err) {
+    throw logApiError("removeAssistantPrompts", err, { id });
+  }
 }
 
 
@@ -291,13 +346,18 @@ export async function toggleAssistantFavorite(
     assistant: Assistant,
     active: boolean,
 ): Promise<void> {
-  const method = active ? 'post' : 'delete';
-  // try {
-  //   await  useApp().restApi.axios[method](`${TYPE}/${assistant.id}/actions/favorite`);
-  // } catch (err) {
-  //   throw logApiError("toggleAssistantFavorite", err, {
-  //     id: assistant.id,
-  //     active,
-  //   });
-  // }
+  if (!assistant.id) return;
+  const action = `${assistant.id}/actions/favorite`;
+  try {
+    if (active) {
+      await useApp().restApi.postToResourceAction(ASSISTANTS, action, { data: {} });
+    } else {
+      await useApp().restApi.deleteFromResourceAction(ASSISTANTS, action);
+    }
+  } catch (err) {
+    throw logApiError("toggleAssistantFavorite", err, {
+      id: assistant.id,
+      active,
+    });
+  }
 }

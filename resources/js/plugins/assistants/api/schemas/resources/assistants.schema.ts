@@ -220,7 +220,8 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
     description: wire.description ?? '',
     detailDescription: wire.detail_description ?? '',
     allowRemix: wire.allow_remix ?? false,
-    allowModelSelect: wire.allow_model_select ?? false,
+    // allowModelSelect: wire.allow_model_select ?? false,
+    allowModelSelect: false,
     releaseStage: wire.release_stage ?? ReleaseMode.DRAFT,
     requested_release_stage: wire.requested_release_stage ?? null,
 
@@ -361,6 +362,17 @@ export function createEmptyAssistant(): Assistant {
     };
 }
 
+/**
+ * Domain-to-wire mapping for {@link assistantToApi}. Deliberately excludes
+ * every attribute the backend marks `readOnly()` on `AssistantSchema::fields()`
+ * — `release_stage`, `requested_release_stage`, `created_at`, `updated_at`,
+ * `is_favorite` — even in "send everything" mode (`changedKeys` omitted):
+ * submitting a read-only attribute is a validation error regardless of
+ * whether the value actually changed, so there's never a correct time to
+ * write these. `release_stage` has its own write path — the `actions/release`
+ * endpoint via {@link BuilderContext.requestRelease} — not a plain attribute
+ * PATCH.
+ */
 export function assistantToApi(
     assistant: Assistant,
     changedKeys?: Set<AssistantKey>,
@@ -381,16 +393,13 @@ export function assistantToApi(
             }),
             ...(include('allowRemix') && { allow_remix: assistant.allowRemix }),
             ...(include('allowModelSelect') && {
-                allow_model_select: assistant.allowModelSelect,
+                // allow_model_select: assistant.allowModelSelect,
+                allow_model_select: false,
             }),
-            ...(include('releaseStage') && { release_stage: assistant.releaseStage }),
             ...(include('model') && { model: assistant.model }),
             ...(include('maxTokens') && { max_tokens: assistant.maxTokens }),
             ...(include('temp') && { temp: assistant.temp }),
             ...(include('topP') && { top_p: assistant.topP }),
-            ...(include('createdAt') && { created_at: assistant.createdAt }),
-            ...(include('updatedAt') && { updated_at: assistant.updatedAt }),
-            ...(include('isFavorite') && { is_favorite: assistant.isFavorite }),
         },
         relationships: {
             ...(include('category') &&

@@ -3,7 +3,6 @@
     import TextPart from "./parts/TextPart.svelte";
     import ReasoningPart from "./parts/ReasoningPart.svelte";
     import ToolCallPart from "./parts/ToolCallPart.svelte";
-    import ToolResultPart from "./parts/ToolResultPart.svelte";
 
     let {message} = $props<{ message: ChatMessage }>();
 </script>
@@ -11,13 +10,11 @@
 <div class="ai-message">
     {#each message.parts as part, i (i)}
         {#if part.type === "text"}
-            <TextPart text={part.text}/>
+            <TextPart text={part.text} streaming={message.streaming}/>
         {:else if part.type === "reasoning"}
             <ReasoningPart text={part.text}/>
         {:else if part.type === "tool-call"}
-            <ToolCallPart toolName={part.toolName} input={part.input}/>
-        {:else if part.type === "tool-result"}
-            <ToolResultPart toolName={part.toolName} output={part.output}/>
+            <ToolCallPart name={part.name}/>
         {/if}
     {/each}
     {#if message.streaming && message.parts.length === 0}

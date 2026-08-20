@@ -45,7 +45,7 @@
             return;
         }
 
-        const newTag:TagType = await assistantOptionsStore.addTag(builder.draft.id, normalized);
+        const newTag:TagType = await assistantOptionsStore.addTag(normalized);
 
         tags = [...tags, newTag];
         builder.set('tags', tags)

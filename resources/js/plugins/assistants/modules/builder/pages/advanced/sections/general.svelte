@@ -6,7 +6,6 @@
     import AvatarBuilderPanel from "$plugins/assistants/components/avatarBuilder/AvatarBuilderPanel.svelte";
 
     const {__} = useTranslator();
-    console.log((assistantOptionsStore.getSetting('language')))
 </script>
 
 <div class="page-wrapper">

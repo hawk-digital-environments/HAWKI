@@ -50,13 +50,13 @@ import {
 } from "$plugins/assistants/api/schemas/resources/assistants.schema";
 import {avatarToApi} from "$plugins/assistants/api/schemas/resources/assistant-avatars.schema"
 import {
-  // createAssistant,
-  // updateAssistant,
-  // requestAssistantRelease,
+  createAssistant,
+  updateAssistant,
+  requestAssistantRelease,
   updateAssistantSetting,
   createAssistantPrompts,
   removeAssistantPrompts,
-  // requestRemix,
+  requestRemix,
   getAssistant,
 } from "$plugins/assistants/api/resources/assistantsClient";
 import {
@@ -114,6 +114,7 @@ export class BuilderContext {
     }
     this.mode = "init";
     const restored = this.restoreFromSession();
+    console.log('restored', restored);
     if (!restored) {
       console.log("could not retrieve from session");
       await this.startNew();
@@ -130,9 +131,7 @@ export class BuilderContext {
       console.log("start building assistant...");
       this.removeStoredData();
 
-      const assistant = await createAssistant(
-        assistantToApi(createEmptyAssistant()),
-      );
+      const assistant = await createAssistant(createEmptyAssistant());
       this.begin(assistant, "create");
     } catch (err) {
       const apiErr = ApiError.from(err);
@@ -155,6 +154,9 @@ export class BuilderContext {
    * the fetch-then-begin shape of {@see remix} and {@see startNew}.
    */
   async edit(assistant: Assistant): Promise<void> {
+    if (!assistant.id) {
+      throw new Error("Cannot edit an assistant without an id");
+    }
     const detailed = await getAssistant(assistant.id, {
       include: [
         "creator",
@@ -170,6 +172,9 @@ export class BuilderContext {
 
   /** Start a remix: a fresh record seeded from another assistant, then tweaked. */
   async remix(assistant: Assistant): Promise<void> {
+    if (!assistant.id) {
+      throw new Error("Cannot remix an assistant without an id");
+    }
     const remixAssistant = await requestRemix(assistant.id);
     this.begin(remixAssistant, "remix");
   }
@@ -263,6 +268,13 @@ export class BuilderContext {
       this.saveAgain = true;
       return;
     }
+    // `updateServer` only ever runs after `begin()` has installed a
+    // server-issued draft, so a missing id here means it fired before that —
+    // skip rather than send a request the backend can't route.
+    const draftId = this.draft.id;
+    if (!draftId) {
+      return;
+    }
     this.saving = true;
 
     try {
@@ -284,7 +296,7 @@ export class BuilderContext {
       for (const settingKey of assistantSettingKeys) {
         changedKeys.delete(settingKey);
         await updateAssistantSetting(
-          this.draft.id,
+          draftId,
           settingKey as "formality" | "language" | "answerLength",
           this.draft[settingKey] as string,
         );
@@ -300,10 +312,10 @@ export class BuilderContext {
         const removed = before.filter((p) => !after.includes(p));
 
         if (added.length) {
-          await createAssistantPrompts(this.draft.id, added);
+          await createAssistantPrompts(draftId, added);
         }
         if (removed.length) {
-          await removeAssistantPrompts(this.draft.id, removed);
+          await removeAssistantPrompts(draftId, removed);
         }
         this.commitKeys(["starterPrompts"]);
       }
@@ -313,7 +325,7 @@ export class BuilderContext {
         //
         if(this.draft.avatar){
           const avatar = await createOrUpdateAssistantAvatar(
-              this.draft.id,
+              draftId,
               avatarToApi(this.draft, this.draft.avatar))
           this.draft.avatar.id = avatar.id;
           this.commitKeys(["avatar"]);
@@ -322,10 +334,10 @@ export class BuilderContext {
 
       if (changedKeys.size) {
         const body = assistantToApi(this.draft, changedKeys);
-        await updateAssistant(this.draft.id, body);
+        await updateAssistant(draftId, body);
         this.commitKeys([...changedKeys]);
       }
-
+        console.log('update complete');
 
     } catch (err) {
       // Surface the error without losing the dirty state so the user can retry.
