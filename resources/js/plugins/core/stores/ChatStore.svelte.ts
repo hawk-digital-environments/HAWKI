@@ -105,7 +105,7 @@ export class ChatStore implements DataStore {
         try {
             const key = await this.conversationKey();
             const source = await this.dependencies.restApi.getResource('ai-convs', slug, {
-                query: {include: 'messages.author'}
+                query: {include: 'messages.author,messages.attachments'}
             });
             const conversation: ChatConversation = {
                 name: source.name,
