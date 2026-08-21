@@ -67,7 +67,7 @@ class AiConvController extends Controller
     {
         $message = $this->messageHandler->create($conv, $request->validated(), $request->user());
 
-        return DataResponse::make($message)->withIncludePaths(['author'])->didCreate();
+        return DataResponse::make($message)->withIncludePaths(['author', 'attachments'])->didCreate();
     }
 
     #[Authorize('update', 'ai_conv')]
@@ -83,7 +83,7 @@ class AiConvController extends Controller
             abort(404, 'The message does not exist in this conversation.');
         }
 
-        return DataResponse::make($message)->withIncludePaths(['author']);
+        return DataResponse::make($message)->withIncludePaths(['author', 'attachments']);
     }
 
     #[Authorize('update', 'ai_conv')]
@@ -116,8 +116,6 @@ class AiConvController extends Controller
     #[Authorize('view', User::class)]
     public function deleteAttachment(Request $request, string $uuid): Response
     {
-        abort_if($request->user() === null, 401);
-
         $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, $uuid);
         $attachment = $this->attachmentRepository->findOneByStoredFileIdentifier($identifier);
         abort_if(null === $attachment, 404);

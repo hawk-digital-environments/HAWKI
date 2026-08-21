@@ -9,8 +9,10 @@ import UsersSchema from '$plugins/core/schemas/resources/users.schema.js';
  * `content` is the encrypted message body in the portable
  * `base64(iv)|base64(tag)|base64(ciphertext)` string format (see
  * `loadSymmetricCryptoValue`); decryption happens client-side in the chat
- * store. Attachment files are served through the storage proxy using the
- * embedded `identifier`.
+ * store. Attachments are a JSON:API relationship, so requests must ask for
+ * them explicitly (`include=messages.attachments` / `include=attachments`);
+ * the files themselves are served through the storage proxy using the
+ * `identifier` of each attachment resource.
  *
  * Registers the resource under the key `'ai-conv-messages'` in
  * `HawkiResourceSchemas` (see the `declare module` augmentation below).
