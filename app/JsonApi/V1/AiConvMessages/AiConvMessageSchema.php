@@ -6,13 +6,12 @@ namespace App\JsonApi\V1\AiConvMessages;
 
 use App\Models\AiConvMsg;
 use App\Services\Encryption\EncryptionUtils;
-use App\Services\Storage\Values\StoredFileIdentifier;
 use LaravelJsonApi\Eloquent\Fields\ArrayHash;
-use LaravelJsonApi\Eloquent\Fields\ArrayList;
 use LaravelJsonApi\Eloquent\Fields\Boolean;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
+use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Schema;
 
@@ -53,19 +52,7 @@ class AiConvMessageSchema extends Schema
                 );
             }),
             BelongsTo::make('author', 'user')->type('users')->readOnly(),
-            // Attachment metadata is embedded because it is always displayed
-            // together with the message; the file itself is served through the
-            // storage proxy using the identifier.
-            ArrayList::make('attachments')->extractUsing(static function (AiConvMsg $message) {
-                return $message->attachments->map(static fn($attachment) => [
-                    'uuid' => $attachment->uuid,
-                    'name' => $attachment->name,
-                    'category' => $attachment->category,
-                    'type' => $attachment->type,
-                    'mime' => $attachment->mime,
-                    'identifier' => (string)StoredFileIdentifier::fromAttachment($attachment),
-                ])->values()->all();
-            }),
+            HasMany::make('attachments')->type('attachments')->readOnly(),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
         ];

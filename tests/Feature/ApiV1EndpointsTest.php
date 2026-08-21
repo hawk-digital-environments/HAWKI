@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
 #[CoversNothing()]
-class ReviewedApiEndpointsTest extends TestCase
+class ApiV1EndpointsTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -99,7 +99,7 @@ class ReviewedApiEndpointsTest extends TestCase
             ->assertJsonPath('included.0.attributes.username', $user->username);
     }
 
-    public function testConversationCanIncludeMessagesAndTheirAuthors(): void
+    public function testConversationCanIncludeMessagesTheirAuthorsAndAttachments(): void
     {
         $user = User::factory()->create();
         $conversation = AiConv::query()->create([
@@ -108,7 +108,7 @@ class ReviewedApiEndpointsTest extends TestCase
             'user_id' => $user->id,
             'system_prompt' => null,
         ]);
-        AiConvMsg::query()->create([
+        $message = AiConvMsg::query()->create([
             'conv_id' => $conversation->id,
             'user_id' => $user->id,
             'message_role' => 'user',
@@ -118,16 +118,25 @@ class ReviewedApiEndpointsTest extends TestCase
             'content' => 'encrypted',
             'completion' => true,
         ]);
+        $message->attachments()->create([
+            'uuid' => '00000000-0000-0000-0000-000000000001',
+            'name' => 'review.txt',
+            'category' => 'private',
+            'type' => 'document',
+            'mime' => 'text/plain',
+            'user_id' => $user->id,
+        ]);
 
         $this->actingAs($user)
             ->getJson(
-                "/api/hawki/v1/ai-convs/{$conversation->slug}?include=messages.author",
+                "/api/hawki/v1/ai-convs/{$conversation->slug}?include=messages.author,messages.attachments",
                 $this->jsonApiHeaders(),
             )
             ->assertOk()
             ->assertJsonPath('data.relationships.messages.data.0.type', 'ai-conv-messages')
             ->assertJsonPath('included.0.attributes.completion', true)
-            ->assertJsonFragment(['username' => $user->username]);
+            ->assertJsonFragment(['username' => $user->username])
+            ->assertJsonFragment(['name' => 'review.txt', 'mime' => 'text/plain']);
     }
 
     public function testDeletingConversationRemovesItsPolymorphicAttachments(): void
