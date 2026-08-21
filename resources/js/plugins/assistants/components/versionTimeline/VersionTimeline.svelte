@@ -11,8 +11,6 @@
 
 
 <div class="input-container renderBlock">
-    <div class="label">Änderungsverlauf</div>
-
     <div class="version-list">
         {@render children()}
     </div>
