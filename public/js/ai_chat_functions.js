@@ -161,7 +161,6 @@ async function sendMessageConv(payload) {
             }
         };
         await buildRequestObjectForAiConv(response, msgAttributes);
-        response.triggerReceived();
     });
 }
 
@@ -205,7 +204,9 @@ async function buildRequestObjectForAiConv(
                     window.oldUiBridge.triggerSendToast(
                         data.content, 'error'
                     );
-                    response.triggerReceived();
+                    if (!response.done) {
+                        response.triggerReceived();
+                    }
                     resolve();
                     return;
                 } else if (data.type === 'header') {
@@ -276,6 +277,10 @@ async function buildRequestObjectForAiConv(
                 }
 
                 if (!headerReceived || !messageElement || !messageObj) {
+                    if (!response.done) {
+                        response.triggerReceived();
+                    }
+                    resolve();
                     return;
                 }
 
@@ -331,12 +336,16 @@ async function buildRequestObjectForAiConv(
                     isDone(true);
                 }
 
-                response.triggerReceived();
+                if (!response.done) {
+                    response.triggerReceived();
+                }
 
                 resolve();
             }
         }, () => {
-            response.triggerError(window.__('legacy.aiChat.streamProcessingError'));
+            if (!response.done) {
+                response.triggerError(window.__('legacy.aiChat.streamProcessingError'));
+            }
             if (!isUpdate && messageElement) {
                 messageElement.remove();
             }
