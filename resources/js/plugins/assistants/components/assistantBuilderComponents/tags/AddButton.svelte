@@ -92,6 +92,10 @@
         value = '';
     }
     function autoFill(): void {
+        if (autoFillVals.length === 0) {
+            confirm();
+            return;
+        }
         selectSuggestion(autoFillVals[0]);
     }
     function selectSuggestion(tag: string): void {
