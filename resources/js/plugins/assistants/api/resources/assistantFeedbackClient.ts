@@ -9,8 +9,8 @@ const ASSISTANT_FEEDBACK = "assistant-feedback";
  * `assistant-feedback` only registers `store` (see `routes/api.php`) — there
  * is no standalone index endpoint. Feedback for an assistant arrives inlined
  * on the assistant resource instead (`getAssistant(id, {include:
- * 'assistant_feedback'})` → `Assistant.feedbacks`, mapped by
- * `assistants.schema.ts`); read it from there rather than here.
+ * ['assistant_feedback', 'assistant_feedback.user']})` → `Assistant.feedbacks`,
+ * mapped by `assistants.schema.ts`); read it from there rather than here.
  */
 export async function submitAssistantFeedbacks(
     text: string,

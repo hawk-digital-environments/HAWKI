@@ -71,7 +71,9 @@
     async function loadFeedbacks(id: string | null): Promise<void> {
         if (!id) return;
         try {
-            const withFeedback = await getAssistant(id, {include: ['assistant_feedback']});
+            const withFeedback = await getAssistant(id, {
+                include: ['assistant_feedback', 'assistant_feedback.user'],
+            });
             feedbacks = withFeedback.feedbacks ?? [];
         } catch (err) {
             // Feedback is a secondary detail; don't fail the whole page over it.
@@ -312,7 +314,7 @@
                         <VersionCard
                             version={version.version}
                             date={new Date(version.createdAt).toLocaleDateString('de-DE')}
-                            note={version.changedKeys ?? version.text}
+                            note={version.text}
                         />
                     {/each}
                 </VersionTimeline>
