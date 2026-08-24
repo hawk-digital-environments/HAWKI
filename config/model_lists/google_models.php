@@ -3,7 +3,7 @@ return [
     [
         'active' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_ACTIVE', true),
         'id' => 'gemini-3.5-flash',
-        'label' => 'Google Gemini 3.5 Flash',
+        'label' => 'Gemini 3.5 Flash',
         "input" => [
             "text",
             "image"
@@ -26,7 +26,7 @@ return [
     [
         'active' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_LITE_ACTIVE', true),
         'id' => 'gemini-3.1-flash-lite',
-        'label' => 'Google Gemini 3.1 Flash Lite',
+        'label' => 'Gemini 3.1 Flash Lite',
         "input" => [
             "text",
             "image"
@@ -49,7 +49,7 @@ return [
     [
         'active' => env('MODELS_GOOGLE_GEMINI_3_1_PRO_ACTIVE', true),
         'id' => 'gemini-3.1-pro-preview',
-        'label' => 'Google Gemini 3.1 Pro',
+        'label' => 'Gemini 3.1 Pro',
         "input" => [
             "text",
             "image"
@@ -67,7 +67,7 @@ return [
     [
         'active' => env('MODELS_GOOGLE_GEMINI_2_5_PRO_ACTIVE', true),
         'id' => 'gemini-2.5-pro',
-        'label' => 'Google Gemini 2.5 Pro',
+        'label' => 'Gemini 2.5 Pro',
         "input" => [
             "text",
             "image"

@@ -3,7 +3,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_GPT5_2_ACTIVE', true),
         'id' => 'gpt-5.2',
-        'label' => 'OpenAI GPT 5.2',
+        'label' => 'GPT 5.2',
         "input" => [
             "text",
             "image"
@@ -27,7 +27,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_GPT5_ACTIVE', true),
         'id' => 'gpt-5',
-        'label' => 'OpenAI GPT 5',
+        'label' => 'GPT 5',
         "input" => [
             "text",
             "image"
@@ -51,7 +51,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_GPT4_1_ACTIVE', default: true),
         'id' => 'gpt-4.1',
-        'label' => 'OpenAI GPT 4.1',
+        'label' => 'GPT 4.1',
         "input" => [
             "text",
             "image"
@@ -75,7 +75,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_GPT4_1_NANO_ACTIVE', true),
         'id' => 'gpt-4.1-nano',
-        'label' => 'OpenAI GPT 4.1 Nano',
+        'label' => 'GPT 4.1 Nano',
         "input" => [
             "text",
             "image"
@@ -98,7 +98,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_O4_MINI_ACTIVE', true),
         'id' => 'o4-mini',
-        'label' => 'OpenAI o4 mini',
+        'label' => 'o4 mini',
         "input" => [
             "text",
             "image"
@@ -121,7 +121,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_GPT5_6_LUNA_ACTIVE', true),
         'id' => 'gpt-5.6-luna',
-        'label' => 'OpenAI GPT-5.6 Luna',
+        'label' => 'GPT-5.6 Luna',
         "input" => [
             "text",
             "image"
@@ -142,7 +142,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_GPT5_6_TERRA_ACTIVE', true),
         'id' => 'gpt-5.6-terra',
-        'label' => 'OpenAI GPT-5.6 Terra',
+        'label' => 'GPT-5.6 Terra',
         "input" => [
             "text",
             "image"
@@ -163,7 +163,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_GPT5_6_SOL_ACTIVE', true),
         'id' => 'gpt-5.6-sol',
-        'label' => 'OpenAI GPT-5.6 Sol',
+        'label' => 'GPT-5.6 Sol',
         "input" => [
             "text",
             "image"
