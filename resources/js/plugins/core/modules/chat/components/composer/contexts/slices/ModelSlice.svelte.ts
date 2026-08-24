@@ -30,9 +30,10 @@ export class ModelSlice implements CheckpointingInterface<ModelSliceCheckpoint> 
     constructor(
         private modelStore: AiModelStore,
         private parameterSliceProvider: () => ModelParameterSlice,
-        private onUpdateCurrentModel: (model: AiModel) => void
+        private onUpdateCurrentModel: (model: AiModel) => void,
+        initialModel: AiModel | null = null
     ) {
-        this._current = $state(modelStore.getSystemModelByType('default')!);
+        this._current = $state(initialModel ?? modelStore.getSystemModelByType('default')!);
     }
 
     private _current: AiModel;

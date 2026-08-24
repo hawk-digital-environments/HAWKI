@@ -456,13 +456,21 @@ export function createComposerContext(
     const aiToolStore = app.stores.get('ai-tools');
     const systemPromptStore = app.stores.get('system-prompts');
     const aiHandleStore = app.stores.get('ai-handle');
+    const modelSelectionStore = app.stores.get('model-selection');
+
+    // Start on the model the user last picked (persisted per browser) so a
+    // rebuilt composer — new chat, conversation switch, reload — keeps the
+    // selection instead of falling back to the system default model.
+    const rememberedModel = modelSelectionStore.modelId ? aiModelStore.getOneById(modelSelectionStore.modelId) : null;
 
     const modelContext = new ModelSlice(
         aiModelStore,
         parameterContextFactory,
         (model) => {
+            modelSelectionStore.remember(model.model_id);
             if (options.useLegacyBridge !== false) oldUiBridge.updateCurrentChatModelId(model.model_id);
-        }
+        },
+        rememberedModel?.status !== 'offline' ? rememberedModel : null
     );
 
     parameterContext = new ModelParameterSlice(modelContext);
