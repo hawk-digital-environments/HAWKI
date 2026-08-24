@@ -106,10 +106,12 @@ export function extendResourceCollection<T>(response: Record<string, any>, colle
         _meta: meta,
         _links: response.links,
         _pagination: meta ? {
-            page: pagination.page ?? 1,
-            pages: pagination.pages ?? 1,
-            pageSize: pagination.pageSize ?? collection.length,
-            itemCount: pagination.itemCount ?? collection.length,
+            // Laravel-JSON:API emits camelCase keys (currentPage, lastPage, perPage,
+            // total); lastPage/total are null for non-length-aware paginators.
+            page: pagination.currentPage ?? pagination.page ?? 1,
+            pages: pagination.lastPage ?? pagination.pages ?? 1,
+            pageSize: pagination.perPage ?? pagination.pageSize ?? collection.length,
+            itemCount: pagination.total ?? pagination.itemCount ?? collection.length,
             hasNextPage: !!(links?.next),
             hasPreviousPage: !!(links?.prev)
         } : undefined

@@ -67,6 +67,12 @@ export type GetFromResourceActionOptions = FetchOptions;
 
 export type PostToResourceActionOptions = FetchOptions;
 
+/**
+ * Body of an RPC-style resource action request. Unlike the CRUD helpers,
+ * action endpoints take a plain, action-specific JSON payload or `FormData`
+ * for uploads. They do not use a JSON:API resource document, so no
+ * `{data: {type, attributes}}` envelope applies here.
+ */
 export type ResourceActionData = object;
 
 export class RestApi {

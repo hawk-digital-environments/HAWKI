@@ -24,16 +24,20 @@
 
     const app = useApp();
     const config = useConfig();
-    const connection = useAuthenticatedConnection();
+    const connectionBox = useAuthenticatedConnection();
+    const connection = $derived(connectionBox.current);
     const restApi = useRestApi();
     const toast = useToastContext();
     const {__} = useTranslator();
 
-    const info = connection?.userinfo;
+    const info = $derived(connection?.userinfo);
 
-    let name = $state(info?.name ?? '');
-    let bio = $state(info?.bio ?? '');
-    let avatarIdentifier = $state(info?.avatar ?? null);
+    // The form fields deliberately seed from the profile as it was on mount;
+    // a later connection refresh must not clobber the user's unsaved edits.
+    const initialInfo = connectionBox.current?.userinfo;
+    let name = $state(initialInfo?.name ?? '');
+    let bio = $state(initialInfo?.bio ?? '');
+    let avatarIdentifier = $state(initialInfo?.avatar ?? null);
     let saving = $state(false);
     let uploading = $state(false);
     let fileInput = $state<HTMLInputElement | null>(null);

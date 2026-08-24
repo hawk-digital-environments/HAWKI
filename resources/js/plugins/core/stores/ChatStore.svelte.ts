@@ -68,7 +68,7 @@ export class ChatStore implements DataStore {
                 conversations.push(...collection);
 
                 if (!collection._pagination?.hasNextPage) break;
-                page = collection._pagination.page + 1;
+                page += 1;
             }
 
             this.conversations = conversations.map(conversation => ({

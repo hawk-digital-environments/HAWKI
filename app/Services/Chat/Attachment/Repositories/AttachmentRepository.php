@@ -52,14 +52,21 @@ class AttachmentRepository extends AbstractRepository
     ): bool
     {
         try {
-            $message->attachments()->create([
+            $attributes = [
                 'uuid' => $file->getUuid(),
                 'name' => $file->getOriginalFilename(),
                 'category' => $file->getCategory()->value,
                 'mime' => $file->getMimeType(),
                 'type' => AttachmentType::fromFileType($file->getFileType())->value,
                 'user_id' => $user->id
-            ]);
+            ];
+
+            if ($message instanceof AiConvMsg) {
+                // The polymorphic attachable_id cannot carry a foreign key.
+                $attributes['ai_conv_msg_id'] = $message->id;
+            }
+
+            $message->attachments()->create($attributes);
 
             return true;
         } catch (Exception $e) {
