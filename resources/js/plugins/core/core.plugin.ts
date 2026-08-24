@@ -30,6 +30,7 @@ import {ExperimentsStore} from '$plugins/core/stores/ExperimentsStore.svelte.js'
 import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {ModelFavoritesStore} from '$plugins/core/stores/ModelFavoritesStore.svelte.js';
+import {ModelSelectionStore} from '$plugins/core/stores/ModelSelectionStore.svelte.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import {ChatModule} from '$plugins/core/modules/chat/ChatModule.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
@@ -71,6 +72,7 @@ export default class CorePlugin implements HawkiCorePlugin {
         add(new ThemeStore());
         add(new ExperimentsStore());
         add(new ModelFavoritesStore());
+        add(new ModelSelectionStore());
         add(new ChatStore());
     }
 }

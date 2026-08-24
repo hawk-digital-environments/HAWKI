@@ -1,8 +1,8 @@
 <!--
 @component Page component for the chat module's `/:slug` conversation route
 (route name `chat.conversation`, see `ChatModule.ts`). Loads and renders one
-existing conversation: the header with rename/export/delete, the scrollable,
-bottom-pinned message log, and the docked composer. New chats start on the
+existing conversation: the header with rename/export/delete, the scrollable
+message log, and the docked composer. New chats start on the
 sibling `ChatIndex.svelte` page and navigate here once the conversation
 exists; a generation started there keeps streaming through the store.
 -->
@@ -43,12 +43,17 @@ exists; a generation started there keeps streaming through the store.
     let scrollRegion = $state<HTMLDivElement | null>(null);
     let messagesElement = $state<HTMLDivElement | null>(null);
     let composerDockHeight = $state(0);
+    let scrollRegionHeight = $state(0);
+    let newTurnActive = $state(false);
     let previousConversationSlug: string | null = null;
     let previousMessageCount = 0;
-    let keepScrolledToBottom = false;
     let liveAnnouncement = $state('');
     let announcementConversationSlug: string | null = null;
     let wasGenerating = false;
+
+    // No messages yet: welcome text and composer are centred as one block
+    // instead of the composer docking to the bottom of the scroll region.
+    const isEmpty = $derived(!store.loading && !store.error && (!store.active || store.active.messages.length === 0));
 
     $effect(() => {
         const requestedSlug = slug;
@@ -67,43 +72,39 @@ exists; a generation started there keeps streaming through the store.
         if (!conversationSlug) {
             previousConversationSlug = null;
             previousMessageCount = 0;
-            keepScrolledToBottom = false;
+            newTurnActive = false;
             return;
         }
         if (store.loading || !region || !messages) return;
 
         const conversationOpened = conversationSlug !== previousConversationSlug;
         const messageAdded = !conversationOpened && count > previousMessageCount;
+        const lastMessage = store.active?.messages[count - 1] ?? null;
 
-        if (conversationOpened || messageAdded) {
-            keepScrolledToBottom = true;
+        if (conversationOpened) {
+            newTurnActive = false;
             requestAnimationFrame(() => {
                 if (store.active?.slug === conversationSlug && scrollRegion === region) {
-                    if (conversationOpened) {
-                        region.scrollTop = region.scrollHeight;
-                    } else {
-                        region.scrollTo({top: region.scrollHeight, behavior: 'smooth'});
-                    }
+                    region.scrollTop = region.scrollHeight;
                 }
+            });
+        } else if (messageAdded && lastMessage?.message_role === 'user') {
+            // A freshly sent message starts a new turn: `new-turn` reserves a
+            // screen of space below it, and this single scroll aligns it with
+            // the top of the region. The streaming response then renders into
+            // the reserved space — there is no follow-up or sticky scrolling.
+            newTurnActive = true;
+            requestAnimationFrame(() => {
+                if (store.active?.slug !== conversationSlug || scrollRegion !== region) return;
+                const turn = messages.lastElementChild;
+                if (!(turn instanceof HTMLElement)) return;
+                const top = turn.getBoundingClientRect().top - region.getBoundingClientRect().top + region.scrollTop;
+                region.scrollTo({top, behavior: 'smooth'});
             });
         }
 
         previousConversationSlug = conversationSlug;
         previousMessageCount = count;
-    });
-
-    $effect(() => {
-        const region = scrollRegion;
-        const messages = messagesElement;
-        if (!region || !messages || typeof ResizeObserver === 'undefined') return;
-
-        const observer = new ResizeObserver(() => {
-            if (keepScrolledToBottom) region.scrollTop = region.scrollHeight;
-        });
-        // border-box, so the pin also fires when the reserved composer-dock
-        // padding is measured/updated after the messages already rendered.
-        observer.observe(messages, {box: 'border-box'});
-        return () => observer.disconnect();
     });
 
     $effect(() => {
@@ -124,12 +125,6 @@ exists; a generation started there keeps streaming through the store.
         }
         wasGenerating = generating;
     });
-
-    function updateBottomPin() {
-        if (!scrollRegion) return;
-        const remaining = scrollRegion.scrollHeight - scrollRegion.clientHeight - scrollRegion.scrollTop;
-        keepScrolledToBottom = remaining <= 2;
-    }
 
     async function removeConversation() {
         if (!store.active) return;
@@ -161,7 +156,11 @@ exists; a generation started there keeps streaming through the store.
     }
 </script>
 
-<section class="chat-page" style:--composer-dock-height="{composerDockHeight}px">
+<section
+    class="chat-page"
+    style:--composer-dock-height="{composerDockHeight}px"
+    style:--scroll-region-height="{scrollRegionHeight}px"
+>
     <div class="u-sr-only" role="status" aria-live="polite" aria-atomic="true">
         {liveAnnouncement}
     </div>
@@ -180,8 +179,8 @@ exists; a generation started there keeps streaming through the store.
         <header class="placeholder-header" aria-hidden="true"></header>
     {/if}
 
-    <div class="chat-body">
-        <div class="scroll-region" bind:this={scrollRegion} onscroll={updateBottomPin}>
+    <div class="chat-body" class:empty={isEmpty}>
+        <div class="scroll-region" bind:this={scrollRegion} bind:clientHeight={scrollRegionHeight}>
             {#if store.loading}
                 <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
             {:else if store.error}
@@ -198,6 +197,7 @@ exists; a generation started there keeps streaming through the store.
             {:else}
                 <div
                     class="messages"
+                    class:new-turn={newTurnActive}
                     bind:this={messagesElement}
                     role="log"
                     aria-live="polite"
@@ -258,6 +258,26 @@ exists; a generation started there keeps streaming through the store.
         border-bottom: var(--divider);
     }
 
+    /* Empty chat: the scroll region shrinks to its content so the welcome
+       block and the composer sit together in the middle of the panel. */
+    .chat-body.empty {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow-y: auto;
+    }
+
+    .empty .scroll-region { height: auto; flex: 0 0 auto; overflow: visible; }
+
+    .empty :global(.welcome) {
+        height: auto;
+        min-height: 0;
+        padding-bottom: var(--space-6);
+    }
+
+    .empty :global(.composer-dock) { position: static; padding-bottom: 0; }
+    .empty :global(.composer-dock::before) { display: none; }
+
     .scroll-region { height: 100%; overflow-y: auto; }
 
     .messages {
@@ -267,6 +287,15 @@ exists; a generation started there keeps streaming through the store.
         padding: var(--space-8) var(--space-5) calc(var(--composer-dock-height, 0px) + var(--space-5));
         flex-direction: column;
         gap: var(--space-7);
+    }
+
+    /* While a turn started in this session is the tail of the log, the last
+       message reserves a screen of height. That gives the one-time scroll on
+       send enough room to align the sent message with the top of the region,
+       and the response streams into the reserved space without further
+       scrolling. */
+    .messages.new-turn > :global(:last-child) {
+        min-height: calc(var(--scroll-region-height, 100dvh) - var(--composer-dock-height, 0px) - var(--space-8));
     }
 
     .state {
