@@ -4,7 +4,7 @@ return [
     [
         'active' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_ACTIVE', true),
         'id' => 'apertus-70b-instruct-2509',
-        'label' => 'GWDG Apertus 70B Instruct 2509',
+        'label' => 'Apertus 70B Instruct 2509',
         'input' => [
             'text',
         ],
@@ -25,7 +25,7 @@ return [
     [
         'active' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_ACTIVE', true),
         'id' => 'deepseek-v4-flash-0731',
-        'label' => 'GWDG DeepSeek V4 Flash',
+        'label' => 'DeepSeek V4 Flash',
         'input' => [
             'text',
         ],
@@ -46,7 +46,7 @@ return [
     [
         'active' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_ACTIVE', true),
         'id' => 'devstral-2-123b-instruct-2512',
-        'label' => 'GWDG Devstral 2 123B Instruct 2512',
+        'label' => 'Devstral 2 123B Instruct 2512',
         'input' => [
             'text',
         ],
@@ -67,7 +67,7 @@ return [
     [
         'active' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_ACTIVE', true),
         'id' => 'gemma-4-31b-it',
-        'label' => 'GWDG Gemma 4 31B Instruct',
+        'label' => 'Gemma 4 31B Instruct',
         'input' => [
             'text',
             'image',
@@ -89,7 +89,7 @@ return [
     [
         'active' => env('MODELS_GWDG_GLM_4_7_ACTIVE', true),
         'id' => 'glm-4.7',
-        'label' => 'GWDG GLM 4.7',
+        'label' => 'GLM 4.7',
         'input' => [
             'text',
         ],
@@ -110,7 +110,7 @@ return [
     [
         'active' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_ACTIVE', true),
         'id' => 'meta-llama-3.1-8b-instruct',
-        'label' => 'GWDG Meta Llama 3.1 8B Instruct',
+        'label' => 'Meta Llama 3.1 8B Instruct',
         'input' => [
             'text',
         ],
@@ -131,7 +131,7 @@ return [
     [
         'active' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_ACTIVE', true),
         'id' => 'mistral-medium-3.5-128b',
-        'label' => 'GWDG Mistral Medium 3.5 128B',
+        'label' => 'Mistral Medium 3.5 128B',
         'input' => [
             'text',
             'image'
@@ -153,7 +153,7 @@ return [
     [
         'active' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_ACTIVE', true),
         'id' => 'openai-gpt-oss-120b',
-        'label' => 'GWDG OpenAI GPT OSS 120B',
+        'label' => 'OpenAI GPT OSS 120B',
         'input' => [
             'text',
         ],
@@ -174,7 +174,7 @@ return [
     [
         'active' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_ACTIVE', true),
         'id' => 'qwen3-30b-a3b-instruct-2507',
-        'label' => 'GWDG Qwen 3 30B A3B Instruct 2507',
+        'label' => 'Qwen 3 30B A3B Instruct 2507',
         'input' => [
             'text',
         ],
@@ -195,7 +195,7 @@ return [
     [
         'active' => env('MODELS_GWDG_QWEN3_CODER_NEXT_FP8_ACTIVE', true),
         'id' => 'qwen3-coder-next',
-        'label' => 'GWDG Qwen 3 Coder Next',
+        'label' => 'Qwen 3 Coder Next',
         'input' => [
             'text',
         ],
@@ -216,7 +216,7 @@ return [
     [
         'active' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_ACTIVE', true),
         'id' => 'qwen3-omni-30b-a3b-instruct',
-        'label' => 'GWDG Qwen 3 Omni 30B A3B Instruct',
+        'label' => 'Qwen 3 Omni 30B A3B Instruct',
         'input' => [
             'text',
             'image',
@@ -240,7 +240,7 @@ return [
     [
         'active' => env('MODELS_GWDG_QWEN35_122B_A10B_ACTIVE', true),
         'id' => 'qwen3.5-122b-a10b',
-        'label' => 'GWDG Qwen 3.5 122B A10B',
+        'label' => 'Qwen 3.5 122B A10B',
         'input' => [
             'text',
             'image',
@@ -264,7 +264,7 @@ return [
     [
         'active' => env('MODELS_GWDG_QWEN35_397B_A17B_ACTIVE', true),
         'id' => 'qwen3.5-397b-a17b',
-        'label' => 'GWDG Qwen 3.5 397B A17B',
+        'label' => 'Qwen 3.5 397B A17B',
         'input' => [
             'text',
             'image',
@@ -288,7 +288,7 @@ return [
     [
         'active' => env('MODELS_GWDG_QWEN_3.8_27B_ACTIVE', true),
         'id' => 'qwen3.8-27b',
-        'label' => 'GWDG Qwen 3.8 27B',
+        'label' => 'Qwen 3.8 27B',
         'input' => [
             'text',
             'image'
@@ -310,7 +310,7 @@ return [
     [
         'active' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_ACTIVE', true),
         'id' => 'qwen3.6-35b-a3b',
-        'label' => 'GWDG Qwen 3.6 35B A3B',
+        'label' => 'Qwen 3.6 35B A3B',
         'input' => [
             'text',
             'image',
