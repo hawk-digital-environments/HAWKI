@@ -34,6 +34,7 @@
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import SearchIcon from '$lib/components/ui/icons/iconset/SearchIcon.svelte';
     import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
@@ -169,14 +170,6 @@
         if (e.defaultPrevented) {
             return;
         }
-        if (e.ctrlKey && /^[1-9]$/.test(e.key)) {
-            const model = selectableModels[Number(e.key) - 1];
-            if (model) {
-                e.preventDefault();
-                selectModel(model);
-            }
-            return;
-        }
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
             moveHighlight(e.key === 'ArrowDown' ? 1 : -1);
@@ -287,7 +280,10 @@
                         {/if}
                             <StatusDotForModel model={model} focusable={false}/>
                             {#if kbdIndex}
-                            <kbd class="mp2-kbd">Ctrl+{kbdIndex}</kbd>
+                            <!-- Handles the Ctrl+N quick-select itself: listens
+                                 globally while the row is mounted and shows the
+                                 combination only while Ctrl (⌘ on Apple) is held. -->
+                            <Kbd key={String(kbdIndex)} ctrl onPress={() => selectModel(model)}/>
                         {/if}
                             <button
                                 type="button"
@@ -698,18 +694,6 @@
 
     .mp2-row-side :global(.mp2-row-check) {
         color: var(--color-text-muted);
-    }
-
-    .mp2-kbd {
-        font-family: inherit;
-        font-size: var(--font-size-xxs);
-        color: var(--color-text-muted);
-        border: var(--border);
-        border-radius: var(--corner-sm);
-        padding: 0 var(--space-1);
-        line-height: 1.4;
-        pointer-events: none;
-        user-select: none;
     }
 
     .mp2-star {

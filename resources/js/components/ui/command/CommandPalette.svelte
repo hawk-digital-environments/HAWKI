@@ -34,6 +34,7 @@
     } from 'bits-ui';
     import type {Snippet} from 'svelte';
     import TickIcon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
+    import {isApple} from '$lib/utils/platform.js';
 
     interface Props {
         /** Rows to show, in display order. */
@@ -82,14 +83,8 @@
         return Array.from(buckets, ([groupLabel, groupItems]) => ({groupLabel, items: groupItems}));
     });
 
-    // ⌘ on Apple platforms, Ctrl elsewhere. Resolved after mount so the server
-    // render stays platform-neutral.
-    let isApple = $state(false);
-    $effect(() => {
-        isApple = /mac|iphone|ipad|ipod/i.test(navigator.userAgent);
-    });
-
-    const shortcutKeys = $derived(isApple ? ['⌘', 'K'] : ['Strg', 'K']);
+    // ⌘ on Apple platforms, Ctrl elsewhere.
+    const shortcutKeys = isApple ? ['⌘', 'K'] : ['Strg', 'K'];
 
     // Focus target when the palette opens. Command binds its arrow/Enter
     // handling to the *root* (which carries tabindex="-1"), so focusing the root
