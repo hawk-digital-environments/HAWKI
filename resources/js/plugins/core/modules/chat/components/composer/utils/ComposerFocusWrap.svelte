@@ -79,6 +79,15 @@
         doFocus();
     }
 
+    function focusFromKey(e: KeyboardEvent) {
+        if (e.code.startsWith("Key") || e.code.startsWith("Digit")) {
+            if (e.target != textareaEl) {
+                doFocus();
+                composerContext.message = composerContext.message + e.key;
+            }
+        }
+    }
+
     $effect(() => composerContext.onFocusInput(doFocus));
 </script>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -86,6 +95,7 @@
 <div
     class={cssClass}
     onclick={focusTextareaFromComposer}
+    onkeydown={focusFromKey}
 >
     {@render children()}
 </div>
