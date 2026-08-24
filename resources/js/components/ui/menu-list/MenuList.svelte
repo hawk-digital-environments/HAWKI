@@ -25,10 +25,10 @@
         children: Snippet;
         /** Suppress both sliding highlights (active selection + proximity hover),
             e.g. while the list is sliding through a transition. */
-        paused?: boolean;
+        disabled?: boolean;
     }
 
-    const {children, paused = false, class: className, ...rest}: Props = $props();
+    const {children, disabled = false, class: className, ...rest}: Props = $props();
 
     const hover = createProximityHover({axis: 'y'});
 
@@ -128,7 +128,7 @@
         previousActiveIndex = activeIndex;
         hover.setSelected(activeIndex);
 
-        if (paused) hover.handlers.onmouseleave();
+        if (disabled) hover.handlers.onmouseleave();
         else hover.measureItems();
     });
 
@@ -191,8 +191,8 @@
 <div
     {...mergeProps(rest, {
         class: ['list', className],
-        onmousemove: paused ? undefined : handleMousemove,
-        onmouseenter: paused ? undefined : handleMouseenter,
+        onmousemove: disabled ? undefined : handleMousemove,
+        onmouseenter: disabled ? undefined : handleMouseenter,
         onmouseleave: hover.handlers.onmouseleave
     })}
     {@attach attachList}
@@ -201,13 +201,13 @@
         <span
             class="active-bg"
             class:inset={activeInset}
-            class:hidden={paused}
-            class:no-transition={paused || (reflowing && !selectionMoved)}
+            class:hidden={disabled}
+            class:no-transition={disabled || (reflowing && !selectionMoved)}
             style:top="{activeRect.top}px"
             style:height="{activeRect.height}px"
         ></span>
     {/if}
-    {#if hoverRect && !paused}
+    {#if hoverRect && !disabled}
         <span
             class="hover-bg"
             class:on-active={hoverOnActive}

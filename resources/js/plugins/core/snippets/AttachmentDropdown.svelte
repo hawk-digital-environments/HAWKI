@@ -29,7 +29,8 @@ Usage (embedded in the legacy attachment template — see
         fileData: OldUiFileData;
     }
 
-    const connection = useAuthenticatedConnection();
+    const connectionBox = useAuthenticatedConnection();
+    const connection = $derived(connectionBox.current);
 
     const {
         fileData

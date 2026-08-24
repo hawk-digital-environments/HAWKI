@@ -8,6 +8,10 @@ use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
 
 
+/**
+ * @deprecated Only used by the legacy controllers. The content rules now live in
+ *             {@see \App\Http\Requests\Api\V1\AbstractAiConvMessageRequest}.
+ */
 readonly class MessageContentValidator
 {
     public function __construct(
