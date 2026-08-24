@@ -201,26 +201,8 @@
         color: var(--color-active-text);
     }
 
-    /* A gradient can't be interpolated, but registered color properties can — so
-       the ramp is built from three @property stops and the hover animates those
-       instead of swapping one background image for another. */
-    @property --drill-stop-1 {
-        syntax: '<color>';
-        inherits: false;
-        initial-value: transparent;
-    }
-
-    @property --drill-stop-2 {
-        syntax: '<color>';
-        inherits: false;
-        initial-value: transparent;
-    }
-
-    @property --drill-stop-3 {
-        syntax: '<color>';
-        inherits: false;
-        initial-value: transparent;
-    }
+    /* The --drill-stop-* properties are registered in resources/css/properties.css;
+       a gradient can't be interpolated, but registered color properties can. */
 
     /* Drill-ins lead somewhere new rather than switching the current view, so
        they read as an action — the one row in the sidebar carrying the brand

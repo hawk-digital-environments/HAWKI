@@ -137,7 +137,7 @@
         position: fixed;
         inset-block-start: var(--space-4, 1rem);
         inset-inline-start: 50%;
-        z-index: 100;
+        z-index: var(--layer-toast);
         pointer-events: none;
 
         &:not(.toaster--expanded) .toast:not(:last-of-type) {

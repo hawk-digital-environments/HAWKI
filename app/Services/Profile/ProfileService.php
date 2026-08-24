@@ -5,6 +5,7 @@ namespace App\Services\Profile;
 
 use App\Models\PasskeyBackup;
 use App\Models\User;
+use App\Services\Chat\AiConv\Repositories\AiConvRepository;
 use App\Services\Chat\Room\RoomService;
 use App\Services\Frontend\Migrations\Repositories\AppliedFrontendMigrationRepository;
 use App\Services\Frontend\Migrations\Repositories\FrontendMigrationUserdataRepository;
@@ -102,9 +103,12 @@ class ProfileService
 
             $convs = $user->conversations()->get();
 
+            // Route through the repository: a bulk delete on the messages would
+            // skip AttachmentDeleting, leaving the stored files behind even
+            // though the database cascades the attachment rows away.
+            $conversationRepository = $this->getService(AiConvRepository::class);
             foreach ($convs as $conv) {
-                $conv->messages()->delete();
-                $conv->delete();
+                $conversationRepository->delete($conv);
             }
 
             $invitations = $user->invitations()->get();

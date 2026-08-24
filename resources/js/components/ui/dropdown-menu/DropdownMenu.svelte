@@ -143,7 +143,7 @@
 
         /* Above sticky/faded chrome like the chat header overlay. bits-ui copies
            this z-index onto the floating wrapper it positions the panel with. */
-        z-index: 50;
+        z-index: var(--layer-overlay);
         min-width: 8rem;
         border-radius: var(--corner-md);
         border: var(--border);

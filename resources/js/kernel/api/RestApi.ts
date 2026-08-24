@@ -73,7 +73,7 @@ export type PostToResourceActionOptions = FetchOptions;
  * for uploads. They do not use a JSON:API resource document, so no
  * `{data: {type, attributes}}` envelope applies here.
  */
-export type ResourceActionData = object;
+export type ResourceActionData = Record<string, unknown> | FormData;
 
 export class RestApi {
     constructor(

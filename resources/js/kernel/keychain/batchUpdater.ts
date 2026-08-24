@@ -33,7 +33,7 @@ interface ValueToRemove {
     type: UserKeychainValueType;
 }
 
-interface BatchUpdatePayload {
+type BatchUpdatePayload = {
     set?: ValueToSet[],
     remove?: ValueToRemove[],
     publicKey?: string,

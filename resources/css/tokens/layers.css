@@ -1,0 +1,19 @@
+/* ==========================================================================
+   Stacking Layer Tokens
+
+   One scale for everything that escapes the normal document flow. Values are
+   coarse on purpose — components inside a layer stack among themselves with
+   local z-index, so only cross-layer ordering belongs here.
+
+   Note: floating panels from bits-ui inherit the value we set on the panel
+   itself, because bits-ui copies it onto the wrapper it positions.
+   ========================================================================== */
+
+@layer tokens {
+    :root {
+        --layer-overlay: 50;    /* dropdown, popover, select, command palette, dialog */
+        --layer-app-chrome: 100; /* app frame that must sit above page content */
+        --layer-toast: 100;
+        --layer-tooltip: 100;
+    }
+}
