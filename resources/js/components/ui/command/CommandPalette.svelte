@@ -257,7 +257,7 @@
     /* The content is portalled out of this subtree, so everything below is
        addressed globally under the palette's own class. */
     :global(.command-palette) {
-        z-index: 50;
+        z-index: var(--layer-overlay);
         display: flex;
         flex-direction: column;
         min-width: 15rem;

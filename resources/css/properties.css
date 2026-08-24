@@ -1,0 +1,44 @@
+/* ==========================================================================
+   Global Custom Property Registrations
+
+   @property is always globally scoped — a registration inside a component's
+   <style> block still applies document-wide, it is just harder to find. They
+   live here instead, next to each other.
+
+   Cannot be wrapped in @layer: @property is not a conditional rule.
+   ========================================================================== */
+
+/* A gradient can't be interpolated, but registered color properties can — so
+   the sidebar drill-in ramp is built from three stops and the hover animates
+   those instead of swapping one background image for another. */
+@property --drill-stop-1 {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: transparent;
+}
+
+@property --drill-stop-2 {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: transparent;
+}
+
+@property --drill-stop-3 {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: transparent;
+}
+
+/* Sidebar column widths. Registered as <length> so they animate; inherited so
+   nested rows can read the track they sit in. */
+@property --nav-track {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 256px;
+}
+
+@property --aside-track {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+}
