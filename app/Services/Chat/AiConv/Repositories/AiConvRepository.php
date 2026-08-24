@@ -43,13 +43,10 @@ class AiConvRepository extends AbstractRepository
 
     public function delete(AiConv $conversation): void
     {
-        // Attachments use a polymorphic attachable relation, so the database
-        // cannot define a foreign-key cascade to multiple parent tables. Delete
-        // them through their repository so AttachmentDeleting also removes the
-        // stored files before the conversation/message rows disappear.
+        // Database cascades do not dispatch AttachmentDeleting. Delete the
+        // attachments through their repository so the stored files are removed.
         foreach ($conversation->messages()->with('attachments')->get() as $message) {
             $this->attachmentRepository->deleteForMessage($message);
-            $message->delete();
         }
 
         $conversation->delete();

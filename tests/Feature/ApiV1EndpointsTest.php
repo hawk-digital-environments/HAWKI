@@ -119,6 +119,7 @@ class ApiV1EndpointsTest extends TestCase
             'completion' => true,
         ]);
         $message->attachments()->create([
+            'ai_conv_msg_id' => $message->id,
             'uuid' => '00000000-0000-0000-0000-000000000001',
             'name' => 'review.txt',
             'category' => 'private',
@@ -159,6 +160,7 @@ class ApiV1EndpointsTest extends TestCase
             'completion' => true,
         ]);
         $attachment = $message->attachments()->create([
+            'ai_conv_msg_id' => $message->id,
             'uuid' => '00000000-0000-0000-0000-000000000001',
             'name' => 'review.txt',
             'category' => 'private',

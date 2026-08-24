@@ -22,6 +22,7 @@ class Attachment extends Model
         'type',
         'mime',
         'user_id',
+        'ai_conv_msg_id',
     ];
 
     /**

@@ -22,7 +22,8 @@
     const app = useApp();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
-    const connection = useConnectionWithUserInfo();
+    const connectionBox = useConnectionWithUserInfo();
+    const connection = $derived(connectionBox.current);
     const userName = $derived(connection?.userinfo.name || __('ui.profile.fallbackName'));
     const userEmail = $derived(connection?.userinfo.email ?? '');
     const avatarIdentifier = $derived(

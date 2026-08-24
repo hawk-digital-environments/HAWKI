@@ -57,7 +57,10 @@
          * The tooltip still opens on hover and on focus of the surrounding control.
          */
         focusable?: boolean;
-        /** Screen-reader text used when the tooltip trigger is not independently focusable. */
+        /**
+         * Screen-reader text used when the tooltip trigger is not independently focusable.
+         * Falls back to the `tooltip` prop when that is a plain string.
+         */
         hiddenLabel?: string;
         /**
          * The content that triggers the tooltip, typically an icon or button. Can be a string or a Svelte snippet.
@@ -79,6 +82,10 @@
         hiddenLabel,
         ...restProps
     }: Props = $props();
+
+    // A snippet tooltip can't be flattened to text, so only a plain string may
+    // stand in for a missing hiddenLabel.
+    const srOnlyLabel = $derived(hiddenLabel ?? (typeof tooltip === 'string' ? tooltip : undefined));
 
     // bits-ui makes every trigger focusable. For decorative triggers inside another
     // control that would add a redundant tab stop, so strip the tabindex it injects.
@@ -149,8 +156,8 @@
         </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>
 </TooltipPrimitive.Provider>
-{#if (!focusable || disabled) && hiddenLabel}
-    <span class="u-sr-only">{hiddenLabel}</span>
+{#if (!focusable || disabled) && srOnlyLabel}
+    <span class="u-sr-only">{srOnlyLabel}</span>
 {/if}
 
 <style>

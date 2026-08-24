@@ -64,7 +64,7 @@
 
 <Tooltip tooltip={tooltip} {focusable}>
     {#snippet children({props})}
-        <span class="load-bars" aria-label={__('chat.composer.demandBars.ariaLabel', {label})} {...props}>
+        <span class="load-bars" {...props}>
             {#each bars as i (i)}
                 <span
                     class="load-bar load-bar--h{i + 1} {i < filled ? 'load-bar--active' : 'load-bar--inactive'}"
