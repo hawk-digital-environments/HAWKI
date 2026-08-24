@@ -166,11 +166,11 @@
                 "switchModel": "Aktuelles Modell wechseln",
                 "placeholder": "Modellauswahl",
                 "searchPlaceholder": "Modelle durchsuchen…",
-                "favoritesTab": "Favoriten",
+                "allTab": "Alle",
                 "otherProvider": "Sonstige",
                 "providerTab": "Modelle von :provider anzeigen",
-                "noFavorites": "Noch keine Favoriten. Tippe auf den Stern neben einem Modell, um es hier anzuheften.",
                 "noResults": "Keine Modelle gefunden.",
+                "favorites": "Favoriten",
                 "addFavorite": ":model zu Favoriten hinzufügen",
                 "removeFavorite": ":model aus Favoriten entfernen",
                 "listAriaLabel": "Verfügbare Modelle"

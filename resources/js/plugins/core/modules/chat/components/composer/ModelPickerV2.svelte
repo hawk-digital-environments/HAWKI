@@ -3,7 +3,8 @@
   `modelPickerV2` experiments flag; the stable counterpart is `ModelPicker`).
 
   A richer picker in the style of a command palette: a provider tab rail
-  (first tab: favorites), a search input that filters across all providers,
+  (first tab: all models, favorites first), a search input that filters
+  across all providers,
   a fixed-height result list and per-row extras (demand bars, status dot,
   favorite star, Ctrl+1..9 quick-select). Desktop renders a two-column
   popover, below the `md` breakpoint a bottom sheet with a horizontal
@@ -43,21 +44,23 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
+    import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
     const {__} = useTranslator();
 
-    const FAVORITES_TAB = '__favorites__';
+    const ALL_TAB = '__all__';
     const OTHER_TAB = '__other__';
+    const HIDE_PROVIDER = '__hidden__';
 
     const uid = $props.id();
     const listId = `mp2-list-${uid}`;
 
     let open = $state(false);
     let query = $state('');
-    let activeTab = $state<string>(FAVORITES_TAB);
+    let activeTab = $state<string>(ALL_TAB);
     let highlightedId = $state<string | null>(null);
     let searchInputEl = $state<HTMLInputElement | null>(null);
 
@@ -82,16 +85,16 @@
     const visibleModels = $derived.by(() => {
         if (searching) {
             const q = query.trim().toLowerCase();
-            return aiModelStore.models.filter(model =>
-                `${model.label} ${model.provider?.name ?? ''} ${model.model_id}`.toLowerCase().includes(q));
+            return Map.groupBy(aiModelStore.models.filter(model => `${model.label} ${model.provider?.name ?? ''} ${model.model_id}`.toLowerCase().includes(q)), () => HIDE_PROVIDER);
         }
-        if (activeTab === FAVORITES_TAB) {
-            return aiModelStore.models.filter(model => modelFavorites.has(model.model_id));
+        const favoritesFirst = (a: AiModel, b: AiModel) => Number(modelFavorites.has(b.model_id)) - Number(modelFavorites.has(a.model_id));
+        if (activeTab === ALL_TAB) {
+            return Map.groupBy(aiModelStore.models.toSorted(favoritesFirst), (model) => modelFavorites.has(model.model_id) ? __('chat.composer.modelPicker.favorites') : model.provider!.name);
         }
-        return aiModelStore.models.filter(model => (model.provider?.provider_id ?? OTHER_TAB) === activeTab);
+        return Map.groupBy(aiModelStore.models.filter(model => (model.provider?.provider_id ?? OTHER_TAB) === activeTab).toSorted(favoritesFirst), () => HIDE_PROVIDER);
     });
 
-    const selectableModels = $derived(visibleModels.filter(model => model.status !== 'offline'));
+    const selectableModels = $derived(visibleModels.entries().flatMap(([_, models]) => models).filter((model) => model.status !== 'offline').toArray());
 
     // Ctrl+N quick-select targets: the first 9 selectable visible rows.
     const kbdIndexById = $derived.by(() => {
@@ -106,15 +109,15 @@
     });
 
     // On open (popover and sheet share `open`): clear the query and land on the
-    // favorites tab if any exist, otherwise on the current model's provider.
+    // all tab if any favorites exist, otherwise on the current model's provider.
     let wasOpen = false;
     $effect(() => {
         const isOpen = open;
         if (isOpen && !wasOpen) {
             query = '';
             activeTab = modelFavorites.ids.length > 0
-                ? FAVORITES_TAB
-                : (current?.provider?.provider_id ?? providers[0]?.id ?? FAVORITES_TAB);
+                ? ALL_TAB
+                : (current?.provider?.provider_id ?? providers[0]?.id ?? ALL_TAB);
         }
         wasOpen = isOpen;
     });
@@ -239,71 +242,72 @@
         role="listbox"
         aria-label={__('chat.composer.modelPicker.listAriaLabel')}
     >
-        {#if visibleModels.length === 0}
+        {#if visibleModels.size === 0}
             <div class="mp2-empty">
-                {#if !searching && activeTab === FAVORITES_TAB}
-                    {__('chat.composer.modelPicker.noFavorites')}
-                {:else}
-                    {__('chat.composer.modelPicker.noResults')}
-                {/if}
+                {__('chat.composer.modelPicker.noResults')}
             </div>
         {:else}
-            {#each visibleModels as model (model.model_id)}
-                {@const offline = model.status === 'offline'}
-                {@const selected = model.model_id === current.model_id}
-                {@const favorite = modelFavorites.has(model.model_id)}
-                {@const kbdIndex = layout === 'popover' ? kbdIndexById.get(model.model_id) : undefined}
-                <!-- Keyboard interaction lives on the panel (aria-activedescendant pattern),
-                     so the option row itself only needs a click handler. -->
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <div
-                    id={optionDomId(model.model_id)}
-                    data-model-id={model.model_id}
-                    class="mp2-row"
-                    class:mp2-row--highlighted={model.model_id === highlightedId}
-                    class:mp2-row--offline={offline}
-                    role="option"
-                    tabindex={-1}
-                    aria-selected={selected}
-                    aria-disabled={offline || undefined}
-                    onclick={() => selectModel(model)}
-                    onmouseenter={() => {
+            {#each visibleModels.entries() as [provider, models] (provider)}
+                {#if provider !== HIDE_PROVIDER}
+                    <div class="mp2-row mp2-provider">{provider}</div>
+                {/if}
+                {#each models as model (model.model_id)}
+                    {@const offline = model.status === 'offline'}
+                    {@const selected = model.model_id === current.model_id}
+                    {@const favorite = modelFavorites.has(model.model_id)}
+                    {@const kbdIndex = layout === 'popover' ? kbdIndexById.get(model.model_id) : undefined}
+                    <!-- Keyboard interaction lives on the panel (aria-activedescendant pattern),
+                         so the option row itself only needs a click handler. -->
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <div
+                        id={optionDomId(model.model_id)}
+                        data-model-id={model.model_id}
+                        class="mp2-row"
+                        class:mp2-row--highlighted={model.model_id === highlightedId}
+                        class:mp2-row--offline={offline}
+                        role="option"
+                        tabindex={-1}
+                        aria-selected={selected}
+                        aria-disabled={offline || undefined}
+                        onclick={() => selectModel(model)}
+                        onmouseenter={() => {
                         if (!offline) highlightedId = model.model_id;
                     }}
-                >
+                    >
                     <span class="mp2-row-text">
                         <span class="mp2-row-label">{model.label}</span>
                         <span class="mp2-row-provider">{model.provider?.name ?? __('chat.composer.modelPicker.otherProvider')}</span>
                     </span>
-                    <span class="mp2-row-side">
-                        {#if !offline}
-                            <ModelDemandBars model={model} focusable={false}/>
-                        {/if}
-                        <StatusDotForModel model={model} focusable={false}/>
+                        <span class="mp2-row-side">
                         {#if selected}
                             <Tick02Icon size={16} class="mp2-row-check"/>
                         {/if}
-                        {#if kbdIndex}
+                            {#if !offline}
+                            <ModelDemandBars model={model} focusable={false}/>
+                        {/if}
+                            <StatusDotForModel model={model} focusable={false}/>
+                            {#if kbdIndex}
                             <kbd class="mp2-kbd">Ctrl+{kbdIndex}</kbd>
                         {/if}
-                        <button
-                            type="button"
-                            class="mp2-star"
-                            class:mp2-star--active={favorite}
-                            aria-label={__(
+                            <button
+                                type="button"
+                                class="mp2-star"
+                                class:mp2-star--active={favorite}
+                                aria-label={__(
                                 favorite
                                     ? 'chat.composer.modelPicker.removeFavorite'
                                     : 'chat.composer.modelPicker.addFavorite',
                                 {model: model.label}
                             )}
-                            aria-pressed={favorite}
-                            onmousedown={(e) => e.preventDefault()}
-                            onclick={(e) => toggleFavorite(e, model)}
-                        >
+                                aria-pressed={favorite}
+                                onmousedown={(e) => e.preventDefault()}
+                                onclick={(e) => toggleFavorite(e, model)}
+                            >
                             <StarIcon size={16}/>
                         </button>
                     </span>
-                </div>
+                    </div>
+                {/each}
             {/each}
         {/if}
     </div>
@@ -314,17 +318,17 @@
     <div class={`mp2-panel mp2-panel--${layout}`} onkeydown={onPanelKeydown}>
         {#if layout === 'popover'}
             <div class="mp2-rail">
-                <Tooltip tooltip={__('chat.composer.modelPicker.favoritesTab')} side="right" delayDuration={300}>
+                <Tooltip tooltip={__('chat.composer.modelPicker.allTab')} side="right" delayDuration={300}>
                     {#snippet children(t)}
                         <button
                             type="button"
                             class="mp2-tab"
-                            class:mp2-tab--active={!searching && activeTab === FAVORITES_TAB}
-                            aria-label={__('chat.composer.modelPicker.favoritesTab')}
-                            aria-pressed={!searching && activeTab === FAVORITES_TAB}
-                            {...mergeProps(t.props, {onclick: () => selectTab(FAVORITES_TAB)})}
+                            class:mp2-tab--active={!searching && activeTab === ALL_TAB}
+                            aria-label={__('chat.composer.modelPicker.allTab')}
+                            aria-pressed={!searching && activeTab === ALL_TAB}
+                            {...mergeProps(t.props, {onclick: () => selectTab(ALL_TAB)})}
                         >
-                            <StarIcon size={18}/>
+                            <AppleReminderIcon size={18}/>
                         </button>
                     {/snippet}
                 </Tooltip>
@@ -357,12 +361,12 @@
                 <button
                     type="button"
                     class="mp2-pill"
-                    class:mp2-pill--active={!searching && activeTab === FAVORITES_TAB}
-                    aria-pressed={!searching && activeTab === FAVORITES_TAB}
-                    onclick={() => selectTab(FAVORITES_TAB)}
+                    class:mp2-pill--active={!searching && activeTab === ALL_TAB}
+                    aria-pressed={!searching && activeTab === ALL_TAB}
+                    onclick={() => selectTab(ALL_TAB)}
                 >
                     <StarIcon size={14}/>
-                    {__('chat.composer.modelPicker.favoritesTab')}
+                    {__('chat.composer.modelPicker.allTab')}
                 </button>
                 {#each providers as provider (provider.id)}
                     <button
@@ -629,7 +633,7 @@
         min-height: 6rem;
         padding: var(--space-4);
         text-align: center;
-        color: var(--color-text-muted);
+        color: var(--color-text);
         font-size: var(--font-size-xs);
     }
 
@@ -640,6 +644,12 @@
         padding: var(--space-1_5) var(--space-2_5);
         border-radius: var(--corner-sm);
         cursor: pointer;
+    }
+
+    .mp2-provider {
+        color: var(--color-text-muted);
+        cursor: default;
+        padding: 0;
     }
 
     .mp2-row--highlighted {
