@@ -36,7 +36,7 @@
         position: fixed;
         top: var(--space-2);
         left: var(--space-2);
-        z-index: 100;
+        z-index: var(--layer-app-chrome);
         padding: var(--space-2) var(--space-3);
         border-radius: var(--corner-sm);
         background: var(--color-interactive);

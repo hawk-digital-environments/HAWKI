@@ -110,7 +110,7 @@
     :global(.popover-content) {
         --popover-bg: var(--color-surface-raised);
 
-        z-index: 50;
+        z-index: var(--layer-overlay);
         width: calc(0.25rem * 72);
         border-radius: var(--corner-md);
         border: var(--border);

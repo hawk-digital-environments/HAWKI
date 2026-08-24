@@ -160,7 +160,7 @@
         position: fixed;
         top: 50%;
         left: 50%;
-        z-index: 50;
+        z-index: var(--layer-overlay);
         display: grid;
         width: 100%;
         max-width: 32rem;
@@ -237,7 +237,7 @@
     :global(.dialog-overlay) {
         position: fixed;
         inset: 0;
-        z-index: 50;
+        z-index: var(--layer-overlay);
         background-color: color-mix(in oklch, var(--color-bg) 80%, transparent);
 
         &[data-state="open"] {

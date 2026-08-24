@@ -300,7 +300,7 @@
     :global(.select-content.select-content--dropdown) {
         --select-bg: var(--color-surface-raised);
 
-        z-index: 50;
+        z-index: var(--layer-overlay);
         position: relative;
         max-height: calc(var(--bits-floating-available-height, 999px) - var(--space-4));
         overflow: hidden;

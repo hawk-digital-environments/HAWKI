@@ -7,14 +7,14 @@ namespace Tests\Feature;
 use App\Models\AiConv;
 use App\Models\AiConvMsg;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
 #[CoversNothing()]
 class ApiV1EndpointsTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function testConversationCreationAssignsTheAuthenticatedOwnerAndServerGeneratedSlug(): void
     {

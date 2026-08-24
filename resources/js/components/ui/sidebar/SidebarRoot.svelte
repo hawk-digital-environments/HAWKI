@@ -49,17 +49,7 @@
 </div>
 
 <style>
-    @property --nav-track {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 256px;
-    }
-
-    @property --aside-track {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 0px;
-    }
+    /* --nav-track / --aside-track are registered in resources/css/properties.css. */
 
     :global(:root) {
         --nav-row-h: 2.25rem;

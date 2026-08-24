@@ -19,6 +19,9 @@
 @import './tokens/borders.css';
 @import './tokens/shadows.css';
 @import './tokens/transitions.css';
+@import './tokens/layers.css';
+/* Global @property registrations — cannot live in a cascade layer. */
+@import './properties.css';
 @import './layers/reset.css';
 @import './layers/base.css';
 @import './utilities.css';

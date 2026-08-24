@@ -175,7 +175,7 @@
         background-color: var(--tooltip-bg);
         color: var(--tooltip-text);
         box-shadow: var(--elevation-1);
-        z-index: 100;
+        z-index: var(--layer-tooltip);
         max-width: 300px;
 
         &[data-state="delayed-open"],
