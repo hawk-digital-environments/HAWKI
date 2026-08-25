@@ -25,7 +25,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const models = this.app.stores.get('ai-models');
         const prompts = this.app.stores.get('system-prompts');
         const model = models.getSystemModelByType('prompt_improvement') ?? models.getSystemModelByType('default') ?? models.models[0];
-        if (!model) throw new Error('No model is available to improve the message.');
+        if (!model) throw new Error(this.app.translator.__('chat.page.noImprovementModel'));
 
         const systemPrompt = `${prompts.getPromptByType('prompt_improvement').prompt}\n\n` +
             'You are currently in a one-on-one chat. Improve the user message for an AI assistant.\n' +
@@ -48,7 +48,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
 
         if (context.mode.isEdit) {
             if (!targetSlug) {
-                setResponseFailed('No conversation is open.');
+                setResponseFailed(this.app.translator.__('chat.page.noConversationOpen'));
                 return;
             }
             try {
@@ -246,7 +246,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 messageId: regenState?.messageId ?? null
             }, {signal: controller.signal})) {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
-                if (packet.type === 'error') throw new Error(String(packet.content ?? 'The AI request failed.'));
+                if (packet.type === 'error') throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
                 if (packet.type === 'status') {
                     const status = typeof packet.status === 'string' ? packet.status : packet.status?.key;
                     this.store.patchMessage(conversationSlug, temporaryId, {status: status ?? 'running'});

@@ -22,6 +22,9 @@
             "loadError": "The conversation could not be loaded.",
             "sendError": "The message could not be sent.",
             "noResponse": "The model returned no response.",
+            "noImprovementModel": "No model is available to improve the message.",
+            "noConversationOpen": "No conversation is open.",
+            "requestFailed": "The AI request failed.",
             "welcomeTitle": "How can I help?",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
             "disclaimer": "AI can make mistakes. Check important information."
