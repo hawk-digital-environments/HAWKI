@@ -17,7 +17,7 @@ class UserRequest extends ResourceRequest
     public function rules(): array
     {
         return [
-            'display_name' => ['sometimes', 'required', 'string', 'max:20'],
+            'name' => ['sometimes', 'required', 'string', 'max:20'],
             'bio' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
     }
