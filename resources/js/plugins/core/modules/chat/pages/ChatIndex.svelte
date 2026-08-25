@@ -366,6 +366,11 @@
     .empty .composer-dock { position: static; padding-bottom: 0; }
     .empty .composer-dock::before { display: none; }
 
+    /* No messages to line up with, so drop the avatar column — otherwise the
+       composer sits offset to the right of the centred welcome block. */
+    .empty .composer-row { grid-template-columns: minmax(0, 1fr); }
+    .empty .composer-row :global(.chat-composer-wrapper) { grid-column: 1; }
+
     .scroll-region { height: 100%; overflow-y: auto; }
 
     .messages {
@@ -469,7 +474,7 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (max-width: 640px) {
+    @media (--bp-sm-and-smaller) {
         .messages, .composer-row { padding-inline: var(--space-3); }
         .messages { padding-top: var(--space-5); }
     }
