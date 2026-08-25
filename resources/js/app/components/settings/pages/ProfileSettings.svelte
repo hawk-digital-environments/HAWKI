@@ -57,7 +57,7 @@
         saving = true;
         try {
             await restApi.updateResource('users', String(info.id), {
-                display_name: trimmedName,
+                name: trimmedName,
                 bio: bio.trim()
             });
             // Keep the cached connection in sync so freshly mounted components see the change.

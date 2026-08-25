@@ -324,7 +324,7 @@ export class ChatStore implements DataStore {
         return {
             author: {
                 username: source.author.username,
-                name: source.author.display_name,
+                name: source.author.name,
                 avatar_url: source.author.avatar ? (this.dependencies.uriBuilder.storageFileUri(source.author.avatar) ?? '') : ''
             },
             completion: source.completion ? 1 : 0,

@@ -98,7 +98,10 @@ exists; a generation started there keeps streaming through the store.
                 if (store.active?.slug !== conversationSlug || scrollRegion !== region) return;
                 const turn = messages.lastElementChild;
                 if (!(turn instanceof HTMLElement)) return;
-                const top = turn.getBoundingClientRect().top - region.getBoundingClientRect().top + region.scrollTop;
+                // Leave room for the header fade that overhangs the scroll
+                // region so the sent message is not covered by it.
+                const offset = parseFloat(getComputedStyle(messages).getPropertyValue('--new-turn-scroll-offset')) || 0;
+                const top = turn.getBoundingClientRect().top - region.getBoundingClientRect().top + region.scrollTop - offset;
                 region.scrollTo({top, behavior: 'smooth'});
             });
         }
@@ -281,6 +284,10 @@ exists; a generation started there keeps streaming through the store.
     .scroll-region { height: 100%; overflow-y: auto; }
 
     .messages {
+        /* Pixel value, read by the send-scroll: the header fade overhangs the
+           scroll region by 3rem, so the sent message stops that far below the
+           top edge instead of flush against it. */
+        --new-turn-scroll-offset: 42px;
         display: flex;
         width: min(100%, 52rem);
         margin: 0 auto;
@@ -295,7 +302,7 @@ exists; a generation started there keeps streaming through the store.
        and the response streams into the reserved space without further
        scrolling. */
     .messages.new-turn > :global(:last-child) {
-        min-height: calc(var(--scroll-region-height, 100dvh) - var(--composer-dock-height, 0px) - var(--space-8));
+        min-height: calc(var(--scroll-region-height, 100dvh) - var(--composer-dock-height, 0px) - var(--space-8) - var(--new-turn-scroll-offset));
     }
 
     .state {
