@@ -18,7 +18,16 @@ type ExportMessage = {
     attachments: Array<{name: string; mime: string; url: string}>;
 };
 
-/** Exports the current decrypted conversation without reading the rendered DOM. */
+/**
+ * Exports the current decrypted conversation without reading the rendered DOM.
+ *
+ * @todo This is the weakest port of the legacy export (`public/js/export.js`) and
+ *   one of the most important features for academic use. Still missing compared
+ *   to the old implementation:
+ *   - AI-generated summary of the conversation (PDF/Word header section)
+ *   - markdown rendering in Word (headings, lists, code) instead of plain text
+ *   - inline attachment previews/images
+ */
 export async function exportConversation(
     conversation: ChatConversation,
     format: ConversationExportFormat,
@@ -94,45 +103,75 @@ async function exportPdf(
     filename: string,
     labels: ConversationExportLabels
 ): Promise<void> {
-    const {default: JsPdf} = await import('jspdf');
-    const document = new JsPdf();
-    const margin = 20;
-    const pageWidth = document.internal.pageSize.getWidth();
-    const pageHeight = document.internal.pageSize.getHeight();
-    const contentWidth = pageWidth - margin * 2;
-    let y = margin;
+    const {jsPDF: JsPdf} = await import('jspdf');
+    const pdf = new JsPdf();
+    const content = document.createElement('article');
+    content.style.cssText = [
+        'width: 794px',
+        'padding: 48px',
+        'box-sizing: border-box',
+        'background: white',
+        'color: black',
+        'font: 16px/1.5 Arial, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'
+    ].join(';');
+    const existingOverlays = new Set(document.querySelectorAll('.html2pdf__overlay'));
 
-    const write = (text: string, fontSize = 11, bold = false, gap = 5) => {
-        document.setFont('helvetica', bold ? 'bold' : 'normal');
-        document.setFontSize(fontSize);
-        const lines = document.splitTextToSize(text || ' ', contentWidth) as string[];
-        const lineHeight = fontSize * 0.45;
-        for (const line of lines) {
-            if (y + lineHeight > pageHeight - margin) {
-                document.addPage();
-                y = margin;
-            }
-            document.text(line, margin, y);
-            y += lineHeight;
-        }
-        y += gap;
-    };
-
-    write(conversation.name, 18, true, 8);
+    appendPdfText(content, 'h1', conversation.name);
     if (conversation.system_prompt) {
-        write(labels.systemPrompt, 13, true, 3);
-        write(conversation.system_prompt, 10, false, 8);
+        appendPdfText(content, 'h2', labels.systemPrompt);
+        appendPdfText(content, 'p', conversation.system_prompt);
     }
+    appendPdfText(content, 'h2', labels.conversation);
     for (const message of messages) {
         const heading = message.model ? `${message.author} (${message.model})` : message.author;
-        write(heading, 12, true, 2);
-        write(message.message, 10, false, 2);
+        const section = document.createElement('section');
+        section.style.cssText = 'break-inside: avoid-page; margin: 0 0 20px';
+        appendPdfText(section, 'h3', heading);
+        appendPdfText(section, 'p', message.message);
         if (message.attachments.length > 0) {
-            write(`${labels.attachments}: ${message.attachments.map(attachment => attachment.name).join(', ')}`, 9, false, 6);
+            const attachments = appendPdfText(
+                section,
+                'p',
+                `${labels.attachments}: ${message.attachments.map(attachment => attachment.name).join(', ')}`
+            );
+            attachments.style.fontStyle = 'italic';
         }
+        content.append(section);
     }
 
-    document.save(`${filename}.pdf`);
+    try {
+        await pdf.html(content, {
+            autoPaging: 'text',
+            html2canvas: {
+                backgroundColor: '#ffffff',
+                scale: 1,
+                useCORS: true,
+                onclone: clonedDocument => {
+                    clonedDocument.querySelectorAll('link[rel="stylesheet"], style').forEach(stylesheet => stylesheet.remove());
+                    clonedDocument.documentElement.style.backgroundColor = '#ffffff';
+                    clonedDocument.body.style.backgroundColor = '#ffffff';
+                }
+            },
+            margin: [10, 10, 10, 10],
+            width: 190,
+            windowWidth: 794
+        });
+        pdf.save(`${filename}.pdf`);
+    } finally {
+        content.remove();
+        document.querySelectorAll('.html2pdf__overlay').forEach(overlay => {
+            if (!existingOverlays.has(overlay)) overlay.remove();
+        });
+    }
+}
+
+function appendPdfText(parent: HTMLElement, tag: 'h1' | 'h2' | 'h3' | 'p', text: string): HTMLElement {
+    const element = document.createElement(tag);
+    element.textContent = text || ' ';
+    element.style.whiteSpace = 'pre-wrap';
+    element.style.overflowWrap = 'anywhere';
+    parent.append(element);
+    return element;
 }
 
 async function exportWord(

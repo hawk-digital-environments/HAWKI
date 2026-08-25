@@ -22,6 +22,9 @@
             "loadError": "Die Unterhaltung konnte nicht geladen werden.",
             "sendError": "Die Nachricht konnte nicht gesendet werden.",
             "noResponse": "Das Modell hat keine Antwort zurückgegeben.",
+            "noImprovementModel": "Es ist kein Modell verfügbar, um die Nachricht zu verbessern.",
+            "noConversationOpen": "Es ist keine Unterhaltung geöffnet.",
+            "requestFailed": "Die KI-Anfrage ist fehlgeschlagen.",
             "welcomeTitle": "Wie kann ich helfen?",
             "welcomeDescription": "Starte eine private, verschlüsselte Unterhaltung mit HAWKI.",
             "disclaimer": "KI kann Fehler machen. Prüfe wichtige Informationen."
