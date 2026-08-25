@@ -171,7 +171,9 @@
 <style>
     .sidebar-item {
         position: relative;
-        z-index: 1;
+        /* Rows paint above the sliding highlight behind them. */
+        --sidebar-item-z: 1;
+        z-index: var(--sidebar-item-z);
         display: flex;
         align-items: center;
         gap: var(--space-2_5);
@@ -319,8 +321,8 @@
         }
 
         .icon-wrap :global(svg) {
-            width: 20px;
-            height: 20px;
+            width: var(--space-5);
+            height: var(--space-5);
         }
     }
 </style>

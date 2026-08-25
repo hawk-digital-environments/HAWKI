@@ -123,7 +123,9 @@
 
     .settings-nav button {
         position: relative;
-        z-index: 1;
+        /* Above the sliding highlight behind the nav rows. */
+        --settings-nav-button-z: 1;
+        z-index: var(--settings-nav-button-z);
         display: flex;
         align-items: center;
         gap: var(--space-2);

@@ -168,7 +168,6 @@ from the store's in-flight cache.
     }
 
     @media print {
-        :global(.app-sidebar), :global(.composer-dock) { display: none !important; }
         .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
     }
 </style>

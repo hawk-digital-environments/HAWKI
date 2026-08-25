@@ -21,6 +21,8 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import AiConvNameMenu from '$plugins/core/modules/chat/components/nameMenu/AiConvNameMenu.svelte';
     import RoomNameMenu from '$plugins/core/modules/chat/components/nameMenu/RoomNameMenu.svelte';
     import ExportMenu from '$plugins/core/modules/chat/components/header/ExportMenu.svelte';
+    import {exportConversation} from '$plugins/core/modules/chat/utils/exportConversation.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         /** Which kind of chat this header belongs to ('aiConv' for a 1:1 AI conversation, 'room' for a group room); selects between `AiConvNameMenu` and `RoomNameMenu`. */
@@ -28,9 +30,15 @@ Rendered once per page for either an AI conversation or a group room chat (see
     }
 
     const {context: contextType = 'aiConv'}: Props = $props();
+    const {__} = useTranslator();
 
     const name = $derived(oldUiMessageHistory.conversationName);
     const slug = $derived(oldUiMessageHistory.conversationSlug);
+    const exportLabels = $derived({
+        systemPrompt: __('chat.export.systemPrompt'),
+        conversation: __('chat.export.conversation'),
+        attachments: __('chat.export.attachments')
+    });
 
     const sharedProps: ComponentProps<typeof RoomNameMenu | typeof AiConvNameMenu> = $derived.by(() => ({
         slug,
@@ -48,7 +56,11 @@ Rendered once per page for either an AI conversation or a group room chat (see
             {/if}
         </div>
         <div class="right-section">
-            <ExportMenu/>
+            <ExportMenu onExport={format => {
+                if (oldUiMessageHistory.conversation) {
+                    return exportConversation(oldUiMessageHistory.conversation, format, exportLabels);
+                }
+            }}/>
         </div>
     </div>
 {/if}

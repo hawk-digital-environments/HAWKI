@@ -242,7 +242,9 @@
         position: absolute;
         left: 0;
         right: 0;
-        z-index: 0;
+        /* Highlights paint below the rows (which are positioned at 1). */
+        --menu-list-highlight-z: 0;
+        z-index: var(--menu-list-highlight-z);
         pointer-events: none;
         background: var(--color-active-surface);
         border-radius: var(--corner-sm);
@@ -268,7 +270,7 @@
         position: absolute;
         left: 0;
         right: 0;
-        z-index: 0;
+        z-index: var(--menu-list-highlight-z, 0);
         pointer-events: none;
         background: var(--color-hover);
         border-radius: var(--corner-sm);

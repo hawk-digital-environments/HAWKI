@@ -4,6 +4,8 @@ import type {MessageSenderTransportInterface, MessageSenderTransportOptions} fro
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
 import type {AiMessage} from '$lib/kernel/ai/types.js';
+import type {SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
+import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
 interface ChatTransportOptions {
     onConversationCreated?: (slug: string) => void;
@@ -196,7 +198,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             .filter((uuid): uuid is string => uuid !== null);
     }
 
-    private async streamAssistant(conversationSlug: string, opt: MessageSenderTransportOptions, responseWriter: any): Promise<void> {
+    private async streamAssistant(conversationSlug: string, opt: MessageSenderTransportOptions, responseWriter: SendMessageResponse): Promise<void> {
         const {context} = opt;
         const controller = new AbortController();
         responseWriter.setAbortController(controller);
@@ -231,7 +233,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         else this.store.appendMessage(conversationSlug, temporary);
 
         let text = '';
-        let citations: any[] = [];
+        let citations: UrlCitation[] = [];
         let completion = false;
         try {
             for await (const packet of this.app.aiApi.stream({
@@ -252,14 +254,14 @@ export class ChatTransport implements MessageSenderTransportInterface {
                     text += aiPacketText(packet.content);
                     this.store.patchMessage(conversationSlug, temporaryId, {content: {...temporary.content, text}});
                 } else if (packet.type === 'citation' && packet.content) {
-                    citations = [...citations, packet.content];
+                    citations = [...citations, packet.content as UrlCitation];
                     this.store.patchMessage(conversationSlug, temporaryId, {citations});
                 } else if (packet.type === 'completion') {
                     completion = Boolean(packet.isDone);
                 }
             }
 
-            const finalText = text.trim() ? text : 'The model returned no response.';
+            const finalText = text.trim() ? text : this.app.translator.__('chat.page.noResponse');
             const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations}));
             const saved = await this.store.persistMessage(conversationSlug, {
                 isAi: true,
@@ -351,6 +353,6 @@ export class ChatTransport implements MessageSenderTransportInterface {
     }
 
     private errorMessage(error: unknown): string {
-        return error instanceof Error ? error.message : 'The message could not be sent.';
+        return error instanceof Error ? error.message : this.app.translator.__('chat.page.sendError');
     }
 }

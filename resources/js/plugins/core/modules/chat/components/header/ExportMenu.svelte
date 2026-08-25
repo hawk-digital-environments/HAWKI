@@ -3,33 +3,39 @@
 
   Renders a `ButtonWithTooltip` trigger (label hidden on small screens via
   `Breakpoint`) inside a `DropdownMenu`, with one item per supported export
-  format (print, pdf, word, csv, json). Selecting an item forwards the format
-  to the legacy UI via `oldUiBridge.triggerExport` — the actual export work
-  still lives in the old UI; this component is just the new-Svelte entry point.
+  format (print, pdf, word, csv, json). Selecting an item calls `onExport`
+  with the chosen format; the caller decides how the export is produced.
 
   @example
-  <ExportMenu />
+  <ExportMenu onExport={format => exportConversation(format)} />
 -->
 <script lang="ts">
 
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import {oldUiBridge, type OldUiExportType} from '$lib/legacy/OldUiBridge.svelte.js';
+    import type {ConversationExportFormat} from '$plugins/core/modules/chat/utils/exportConversation.js';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import FileExportIcon from '$lib/components/ui/icons/iconset/FileExportIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 
     const {__} = useTranslator();
+    const toast = useToastContext();
     
     interface Props {
-        onExport?: (format: OldUiExportType) => void;
+        /** Called with the chosen export format. */
+        onExport: (format: ConversationExportFormat) => void | Promise<void>;
     }
 
-    const {onExport = (format) => oldUiBridge.triggerExport(format)}: Props = $props();
+    const {onExport}: Props = $props();
 
-    function handleExport(format: OldUiExportType) {
-        onExport(format);
+    async function handleExport(format: ConversationExportFormat) {
+        try {
+            await onExport(format);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : __('chat.export.error'));
+        }
     }
 
 </script>

@@ -1,14 +1,20 @@
+<!--
+  @component Inline HAWKI wordmark rendered as an SVG with an accessible label.
+  Sized through the surrounding font-size/line-height, coloured via `currentColor`.
+-->
 <script lang="ts">
+    import type {HTMLAttributes} from 'svelte/elements';
+
     /** @todo Load the deployment-specific wordmark from frontend configuration. */
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLSpanElement> {
         /** Accessible label for the wordmark. */
         label?: string;
     }
 
-    const {label = 'hawki'}: Props = $props();
+    const {label = 'hawki', class: className, ...restProps}: Props = $props();
 </script>
 
-<span class="logo" role="img" aria-label={label}>
+<span {...restProps} class={["logo", className]} role="img" aria-label={label}>
     <svg class="mark" viewBox="0 0 336 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M36.48 23.04C41.856 23.04 46.6347 24.192 50.816 26.496C55.0827 28.8 58.4107 32.2133 60.8 36.736C63.2747 41.2587 64.512 46.72 64.512 53.12V94.72H50.048V55.296C50.048 48.9813 48.4693 44.16 45.312 40.832C42.1547 37.4187 37.8453 35.712 32.384 35.712C26.9227 35.712 22.5707 37.4187 19.328 40.832C16.1707 44.16 14.592 48.9813 14.592 55.296V94.72H0V0H14.592V32.384C17.0667 29.3973 20.1813 27.0933 23.936 25.472C27.776 23.8507 31.9573 23.04 36.48 23.04Z" fill="currentColor"/>
         <path d="M71.861 59.136C71.861 52.0533 73.3117 45.7813 76.213 40.32C79.1997 34.8587 83.2103 30.6347 88.245 27.648C93.365 24.576 98.997 23.04 105.141 23.04C110.688 23.04 115.509 24.1493 119.605 26.368C123.786 28.5013 127.114 31.1893 129.589 34.432V24.192H144.309V94.72H129.589V84.224C127.114 87.552 123.744 90.3253 119.477 92.544C115.21 94.7627 110.346 95.872 104.885 95.872C98.8263 95.872 93.2797 94.336 88.245 91.264C83.2103 88.1067 79.1997 83.7547 76.213 78.208C73.3117 72.576 71.861 66.2187 71.861 59.136ZM129.589 59.392C129.589 54.528 128.565 50.304 126.517 46.72C124.554 43.136 121.952 40.4053 118.709 38.528C115.466 36.6507 111.968 35.712 108.213 35.712C104.458 35.712 100.96 36.6507 97.717 38.528C94.4743 40.32 91.829 43.008 89.781 46.592C87.8183 50.0907 86.837 54.272 86.837 59.136C86.837 64 87.8183 68.2667 89.781 71.936C91.829 75.6053 94.4743 78.4213 97.717 80.384C101.045 82.2613 104.544 83.2 108.213 83.2C111.968 83.2 115.466 82.2613 118.709 80.384C121.952 78.5067 124.554 75.776 126.517 72.192C128.565 68.5227 129.589 64.256 129.589 59.392Z" fill="currentColor"/>
