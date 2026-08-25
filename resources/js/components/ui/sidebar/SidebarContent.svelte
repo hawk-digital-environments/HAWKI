@@ -33,7 +33,7 @@
 >
     <button
         id="mobile-navigation-trigger"
-        class="mobile-navigation-trigger"
+        class="mobile-navigation-trigger u-print-hidden"
         type="button"
         aria-label={__('ui.navigation.open')}
         aria-controls="app-navigation"
