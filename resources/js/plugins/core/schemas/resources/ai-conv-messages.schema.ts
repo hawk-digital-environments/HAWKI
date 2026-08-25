@@ -27,7 +27,7 @@ const AiConvMessageSchema = z.object({
     content: z.string(),
     author: UsersSchema.pick({
         id: true,
-        display_name: true,
+        name: true,
         username: true,
         avatar: true
     }),
