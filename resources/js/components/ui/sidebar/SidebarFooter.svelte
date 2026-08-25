@@ -4,16 +4,17 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
 
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Footer content (e.g. the profile row). */
         children: Snippet;
     }
 
-    const {children}: Props = $props();
+    const {children, class: className, ...restProps}: Props = $props();
 </script>
 
-<div class="sidebar-footer">
+<div {...restProps} class={["sidebar-footer", className]}>
     {@render children()}
 </div>
 

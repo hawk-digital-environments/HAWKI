@@ -1,29 +1,35 @@
+<!--
+  @component Header of a routed chat page: editable conversation name with
+  rename/delete menu, export menu, optional skip-to-composer link and a
+  fading backdrop over the scrolling message log.
+-->
 <script lang="ts">
     import ChatNameMenu from '$plugins/core/modules/chat/components/nameMenu/ChatNameMenu.svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
     import ExportMenu from '$plugins/core/modules/chat/components/header/ExportMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
-    import type {OldUiExportType} from '$lib/legacy/OldUiBridge.svelte.js';
+    import type {ConversationExportFormat} from '$plugins/core/modules/chat/utils/exportConversation.js';
     import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLElement> {
         conversation: ChatConversation;
         onRename: (name: string) => void | Promise<void>;
         onDelete: () => void | Promise<void>;
-        onExport: (format: OldUiExportType) => void;
+        onExport: (format: ConversationExportFormat) => void | Promise<void>;
         generating?: boolean;
         /** When set, renders a visually hidden skip link (after the title) that jumps focus past the message log into the composer. */
         onSkipToComposer?: () => void;
     }
 
-    const {conversation, onRename, onDelete, onExport, generating = false, onSkipToComposer}: Props = $props();
+    const {conversation, onRename, onDelete, onExport, generating = false, onSkipToComposer, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     let name = $derived(conversation.name);
     let deleteOpen = $state(false);
 </script>
 
-<header>
+<header {...restProps} class={["u-print-hidden", className]}>
     <h1 class="u-sr-only">{conversation.name}</h1>
     <div class="name">
         <ChatNameMenu
@@ -56,7 +62,8 @@
     header {
         position: relative;
         /* Above the scroll region so the fade can overhang the messages. */
-        z-index: 1;
+        --chat-header-z: 1;
+        z-index: var(--chat-header-z);
         display: flex;
         min-height: 3.75rem;
         align-items: center;
@@ -72,7 +79,9 @@
         content: '';
         position: absolute;
         inset: 0 0 -3rem;
-        z-index: -1;
+        /* Behind the header's own content, inside its stacking context. */
+        --chat-header-fade-z: -1;
+        z-index: var(--chat-header-fade-z);
         pointer-events: none;
         background: color-mix(in oklch, var(--panel-bg) 88%, transparent);
         backdrop-filter: blur(12px);
@@ -106,7 +115,9 @@
         position: absolute;
         top: calc(100% + var(--space-2));
         left: var(--space-5);
-        z-index: 10;
+        /* Focused skip pill sits over the message log below the header. */
+        --skip-to-composer-z: 10;
+        z-index: var(--skip-to-composer-z);
         padding: var(--space-2) var(--space-3);
         border: none;
         border-radius: var(--corner-sm);

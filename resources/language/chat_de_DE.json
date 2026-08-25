@@ -19,6 +19,9 @@
             "responseReady": "Die Antwort ist vollständig.",
             "messageHistory": "Nachrichtenverlauf",
             "skipToComposer": "Zur Nachrichteneingabe springen",
+            "loadError": "Die Unterhaltung konnte nicht geladen werden.",
+            "sendError": "Die Nachricht konnte nicht gesendet werden.",
+            "noResponse": "Das Modell hat keine Antwort zurückgegeben.",
             "welcomeTitle": "Wie kann ich helfen?",
             "welcomeDescription": "Starte eine private, verschlüsselte Unterhaltung mit HAWKI.",
             "disclaimer": "KI kann Fehler machen. Prüfe wichtige Informationen."
@@ -72,7 +75,11 @@
             "pdf": "PDF",
             "word": "WORD",
             "csv": "CSV",
-            "json": "JSON"
+            "json": "JSON",
+            "systemPrompt": "System-Prompt",
+            "conversation": "Unterhaltung",
+            "attachments": "Anhänge",
+            "error": "Die Unterhaltung konnte nicht exportiert werden."
         },
         "composer": {
             "textareaLabel": "Nachricht an HAWKI",

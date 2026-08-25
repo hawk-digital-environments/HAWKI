@@ -5,11 +5,13 @@ import {decodeJsonApiResourceResponse} from '$lib/kernel/api/jsonApiEncoding.js'
 import AiConvMessageSchema, {type AiConvMessage} from '$plugins/core/schemas/resources/ai-conv-messages.schema.js';
 import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText} from '$plugins/core/modules/chat/types.js';
 import type {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
+import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
 type ChatStoreDependencies = {
     restApi: HawkiApp['restApi'];
     uriBuilder: HawkiApp['uriBuilder'];
     keychain: KeychainStore;
+    translator: HawkiApp['translator'];
 };
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -45,7 +47,8 @@ export class ChatStore implements DataStore {
         this._dependencies = {
             restApi: app.restApi,
             uriBuilder: app.uriBuilder,
-            keychain: app.stores.get('keychain')
+            keychain: app.stores.get('keychain'),
+            translator: app.translator
         };
         try {
             app.authenticatedConnection;
@@ -258,7 +261,7 @@ export class ChatStore implements DataStore {
                 requestPayload
             );
         const resource = AiConvMessageSchema.parse(decodeJsonApiResourceResponse(response));
-        return this.normalisePlainMessage(resource, __plainText as string | undefined, __citations as any[] | undefined);
+        return this.normalisePlainMessage(resource, __plainText as string | undefined, __citations as UrlCitation[] | undefined);
     }
 
     public isGenerating(slug: string | null | undefined): boolean {
@@ -303,7 +306,7 @@ export class ChatStore implements DataStore {
     private async decryptMessage(source: AiConvMessage, key: CryptoKey): Promise<ChatMessage> {
         const raw = await decryptSymmetric(loadSymmetricCryptoValue(source.content), key);
         let text = raw;
-        let citations: any[] = [];
+        let citations: UrlCitation[] = [];
         try {
             const parsed = JSON.parse(raw);
             if (parsed && typeof parsed === 'object' && typeof parsed.text === 'string') {
@@ -316,11 +319,11 @@ export class ChatStore implements DataStore {
         return this.toChatMessage(source, decodeLegacyHtml(text), citations);
     }
 
-    private normalisePlainMessage(source: AiConvMessage, text?: string, citations: any[] = []): ChatMessage {
+    private normalisePlainMessage(source: AiConvMessage, text?: string, citations: UrlCitation[] = []): ChatMessage {
         return this.toChatMessage(source, text ?? '', citations);
     }
 
-    private toChatMessage(source: AiConvMessage, text: string, citations: any[]): ChatMessage {
+    private toChatMessage(source: AiConvMessage, text: string, citations: UrlCitation[]): ChatMessage {
         return {
             author: {
                 username: source.author.username,
@@ -380,7 +383,7 @@ export class ChatStore implements DataStore {
     }
 
     private errorMessage(error: unknown): string {
-        return error instanceof Error ? error.message : 'The conversation could not be loaded.';
+        return error instanceof Error ? error.message : this.dependencies.translator.__('chat.page.loadError');
     }
 
     private get dependencies(): ChatStoreDependencies {

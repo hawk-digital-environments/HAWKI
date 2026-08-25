@@ -34,7 +34,7 @@
 <nav
     {...mergeProps(rest, {
         id: 'app-navigation',
-        class: ['app-sidebar', sidebar.navOpen && 'open', className],
+        class: ['app-sidebar', 'u-print-hidden', sidebar.navOpen && 'open', className],
         'aria-label': label
     })}
 >
@@ -68,7 +68,9 @@
             left: 0;
             bottom: 0;
             width: min(18rem, 80vw);
-            z-index: 20;
+            /* Off-canvas drawer: above the page content it slides over. */
+            --app-sidebar-z: 20;
+            z-index: var(--app-sidebar-z);
             background: var(--color-surface-raised);
             transform: translateX(-100%);
             visibility: hidden;

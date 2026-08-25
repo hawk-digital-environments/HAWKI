@@ -14,6 +14,18 @@ class Attachment extends Model
         'deleting' => AttachmentDeleting::class,
     ];
 
+    protected static function booted(): void
+    {
+        // The cascading FK column mirrors the polymorphic pair for AI conversation
+        // messages, so attachments created through `$message->attachments()`
+        // alone still get removed with their conversation.
+        static::creating(function (Attachment $attachment): void {
+            if ($attachment->ai_conv_msg_id === null && $attachment->attachable_type === AiConvMsg::class) {
+                $attachment->ai_conv_msg_id = $attachment->attachable_id;
+            }
+        });
+    }
+
     protected $fillable =
     [
         'uuid',

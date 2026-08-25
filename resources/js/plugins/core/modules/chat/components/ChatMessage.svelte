@@ -1,5 +1,11 @@
+<!--
+  @component One message in the chat log: avatar, author/timestamp line, the
+  rendered body (Markdown, citations, attachments) and the per-message action
+  bar (copy, edit, regenerate, delete). Marks itself busy while pending.
+-->
 <script lang="ts">
     import Avatar from '$lib/components/ui/avatar/Avatar.svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
     import Copy01Icon from '$lib/components/ui/icons/iconset/Copy01Icon.svelte';
@@ -15,14 +21,14 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {formatDateTime} from '$lib/utils/date.js';
 
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLElement> {
         message: ChatMessageType;
         composer?: ComposerContext | null;
         onDelete: (message: ChatMessageType) => void;
         onDeleteAttachment: (message: ChatMessageType, fileId: string) => void;
     }
 
-    const {message, composer = null, onDelete, onDeleteAttachment}: Props = $props();
+    const {message, composer = null, onDelete, onDeleteAttachment, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
     const isAssistant = $derived(message.message_role === 'assistant');
@@ -42,7 +48,7 @@
     }
 </script>
 
-<article class="message" class:user={!isAssistant} class:assistant={isAssistant} class:pending={message.isPending} aria-busy={message.isPending}>
+<article {...restProps} class={["message", className]} class:user={!isAssistant} class:assistant={isAssistant} class:pending={message.isPending} aria-busy={message.isPending}>
     <div class="avatar-wrap">
         {#if isAssistant}
             <span class="assistant-avatar" aria-hidden="true"><BotIcon size={18} /></span>

@@ -1,3 +1,8 @@
+<!--
+  @component Chat module's sidebar section: "new chat" action plus the
+  scrollable conversation history with rename/delete per row. The list edges
+  fade only where more content exists in that direction.
+-->
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import ChatHistoryItem from '$plugins/core/modules/chat/components/ChatHistoryItem.svelte';
@@ -9,6 +14,11 @@
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import { fade } from 'svelte/transition';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import type {HTMLAttributes} from 'svelte/elements';
+
+    interface Props extends HTMLAttributes<HTMLDivElement> {}
+
+    const {class: className, ...restProps}: Props = $props();
 
     const store = useStore('chat');
     const router = useRouter();
@@ -69,7 +79,7 @@
     }
 </script>
 
-<div class="chat-sidebar">
+<div {...restProps} class={["chat-sidebar", className]}>
     {#if expanded}
         <div
             class="history"

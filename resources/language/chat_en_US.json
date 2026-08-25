@@ -19,6 +19,9 @@
             "responseReady": "The response is complete.",
             "messageHistory": "Message history",
             "skipToComposer": "Skip to message input",
+            "loadError": "The conversation could not be loaded.",
+            "sendError": "The message could not be sent.",
+            "noResponse": "The model returned no response.",
             "welcomeTitle": "How can I help?",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
             "disclaimer": "AI can make mistakes. Check important information."
@@ -72,7 +75,11 @@
             "pdf": "PDF",
             "word": "WORD",
             "csv": "CSV",
-            "json": "JSON"
+            "json": "JSON",
+            "systemPrompt": "System prompt",
+            "conversation": "Conversation",
+            "attachments": "Attachments",
+            "error": "The conversation could not be exported."
         },
         "composer": {
             "textareaLabel": "Message to HAWKI",

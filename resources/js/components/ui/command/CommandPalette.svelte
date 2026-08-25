@@ -1,5 +1,5 @@
 <script module lang="ts">
-    import type { Component } from 'svelte';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     /** One row of the palette. */
     export interface CommandItemDefinition {
@@ -7,8 +7,8 @@
         value: string;
         /** Text shown in the row. */
         label: string;
-        /** Leading icon. */
-        icon?: any;
+        /** Leading icon; rendered with the palette's own size/stroke. */
+        icon?: IconComponent;
         /** Groups rows under a heading. Groups keep the order they first appear in. */
         groupLabel?: string;
         /** Non-selectable row. */
@@ -336,7 +336,9 @@
         position: absolute;
         left: 0;
         right: 0;
-        z-index: 0;
+        /* Highlight paints below the rows, which sit at --command-item-z. */
+        --command-hover-bg-z: 0;
+        z-index: var(--command-hover-bg-z);
         pointer-events: none;
         background: var(--color-hover);
         border-radius: var(--corner-sm);
@@ -347,7 +349,8 @@
 
     :global(.command-palette .command-item) {
         position: relative;
-        z-index: 1;
+        --command-item-z: 1;
+        z-index: var(--command-item-z);
         display: flex;
         align-items: center;
         gap: var(--space-2_5);

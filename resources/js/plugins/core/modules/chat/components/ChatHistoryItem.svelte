@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
@@ -21,7 +22,7 @@
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import type {Snippet} from 'svelte';
 
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLDivElement> {
         name: string;
         active?: boolean;
         /** Leading visual, e.g. the "still generating" indicator. */
@@ -33,7 +34,7 @@
         onDelete: () => void | Promise<void>;
     }
 
-    const {name, active = false, media, rowLabel, onOpen, onRename, onDelete}: Props = $props();
+    const {name, active = false, media, rowLabel, onOpen, onRename, onDelete, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const toast = useToastContext();
 
@@ -73,7 +74,7 @@
     });
 </script>
 
-<div class="history-row" class:menu-open={menuOpen} class:active>
+<div {...restProps} class={["history-row", className]} class:menu-open={menuOpen} class:active>
     {#if renaming}
         <input
             class="rename-input"
@@ -145,7 +146,9 @@
         top: 0;
         bottom: 0;
         right: var(--action-gap);
-        z-index: 2;
+        /* Above the row (1) and its highlight (0) so the trigger stays clickable. */
+        --history-actions-z: 2;
+        z-index: var(--history-actions-z);
         display: flex;
         align-items: center;
         /* Hidden at rest — the list stays quiet until a row is pointed at. */
