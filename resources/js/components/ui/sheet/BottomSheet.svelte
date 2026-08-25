@@ -174,6 +174,9 @@
     :global(.sheet-overlay) {
         position: fixed;
         inset: 0;
+        /* Same layer as Dialog/Popover/DropdownMenu so the sheet stacks above
+           app chrome such as the composer. */
+        z-index: 50;
         background-color: color-mix(in oklch, var(--color-bg) 55%, transparent);
 
         &[data-state='open'] {
@@ -193,6 +196,7 @@
         position: fixed;
         inset-inline: 0;
         bottom: 0;
+        z-index: 50;
         display: flex;
         flex-direction: column;
         max-height: min(85vh, 40rem);
