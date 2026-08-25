@@ -154,6 +154,12 @@
         overflow: auto;
     }
 
+    /* In sheet mode the panel is just the item list — the sheet supplies the
+       surface, so it must fill it rather than keep the dropdown's own width. */
+    :global(.dropdown-content.dropdown-content--sheet) {
+        width: 100%;
+    }
+
     :global(.dropdown-content[data-state="open"]) {
         animation: dropdown-in var(--duration-fast, 150ms) var(--easing-default, ease);
     }
