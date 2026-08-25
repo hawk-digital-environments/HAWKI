@@ -68,6 +68,8 @@ export class OldUiMessageHistory {
     public readonly conversationSlug = $derived.by(() => this._conversation?.slug ?? '');
     /** `true` while a conversation is open. Use this to gate UI that would otherwise render an empty header/composer. */
     public readonly isInConversation = $derived.by(() => this._isInConversation);
+    /** The conversation currently mirrored from the old UI. */
+    public readonly conversation = $derived.by(() => this._conversation);
     /** System prompt of the open conversation; empty string when none is open. */
     public readonly systemPrompt = $derived.by(() => this._systemPrompt);
     /**

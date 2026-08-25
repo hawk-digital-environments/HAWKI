@@ -118,7 +118,7 @@
             class="toast toast--{toast.variant}"
             class:toast--hidden={!expanded && depth >= MAX_VISIBLE}
             role="status"
-            style="--depth: {depth}; --expanded-offset: {expandedOffset(i)}px; z-index: {100 - depth};"
+            style="--depth: {depth}; --expanded-offset: {expandedOffset(i)}px;"
             in:springIn
             out:springOut
             bind:clientHeight={heights[toast.id]}
@@ -164,6 +164,9 @@
         position: absolute;
         inset-block-start: 0;
         inset-inline-start: 0;
+        /* Newest toast (depth 0) paints over the ones stacked behind it. */
+        --toast-z: calc(100 - var(--depth));
+        z-index: var(--toast-z);
         display: flex;
         align-items: center;
         gap: var(--space-2, 0.5rem);

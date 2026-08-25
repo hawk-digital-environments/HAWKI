@@ -4,16 +4,17 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
     import PanelLeftIcon from '$lib/components/ui/icons/iconset/PanelLeftIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
 
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLElement> {
         /** Page content. */
         children: Snippet;
     }
 
-    const {children}: Props = $props();
+    const {children, class: className, ...restProps}: Props = $props();
     const sidebar = useSidebar();
     const {__} = useTranslator();
 
@@ -24,8 +25,9 @@
 </script>
 
 <main
+    {...restProps}
     id="main-content"
-    class="content"
+    class={["content", className]}
     tabindex="-1"
     inert={sidebar.mobile && sidebar.navOpen}
 >
@@ -56,7 +58,9 @@
         position: absolute;
         top: var(--space-2_5);
         left: var(--space-3);
-        z-index: 10;
+        /* Floats over the page content it opens the drawer for. */
+        --mobile-navigation-trigger-z: 10;
+        z-index: var(--mobile-navigation-trigger-z);
         display: none;
         /* Only ever shown at md-and-smaller, where the nav row token is the
            same 2.5rem square this button used to hardcode. */

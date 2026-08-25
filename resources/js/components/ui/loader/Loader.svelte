@@ -55,7 +55,9 @@
     .loader--overlay {
         position: absolute;
         inset: 0;
-        z-index: 1;
+        /* Covers the host's content while it loads. */
+        --loader-overlay-z: 1;
+        z-index: var(--loader-overlay-z);
         background: color-mix(in oklch, var(--color-bg) 65%, transparent);
         backdrop-filter: blur(1px);
     }

@@ -18,49 +18,86 @@ class AiConvDeletionCascadeTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function testDatabaseCascadeDeletesMessagesAndAttachmentsWithConversation(): void
+    public function testItCascadesMessagesAndAttachmentsWhenTheConversationRowIsDeleted(): void
     {
         $user = User::factory()->create();
-        $conversation = AiConv::query()->create([
+        $conversation = $this->createConversation($user);
+        $uuids = [
+            $this->createMessageWithAttachment($conversation, $user, 1),
+            $this->createMessageWithAttachment($conversation, $user, 2),
+        ];
+
+        DB::table('ai_convs')->where('id', $conversation->id)->delete();
+
+        static::assertDatabaseMissing('ai_convs', ['id' => $conversation->id]);
+        static::assertDatabaseMissing('ai_conv_msgs', ['conv_id' => $conversation->id]);
+        foreach ($uuids as $uuid) {
+            static::assertDatabaseMissing('attachments', ['uuid' => $uuid]);
+        }
+    }
+
+    public function testItMirrorsTheMessageIdOntoAttachmentsCreatedThroughThePolymorphicRelation(): void
+    {
+        $user = User::factory()->create();
+        $message = $this->createMessage($this->createConversation($user), $user, 1);
+
+        $attachment = $message->attachments()->create($this->attachmentAttributes($user, (string) Str::uuid(), 'plain.txt'));
+
+        static::assertSame($message->id, $attachment->fresh()->ai_conv_msg_id);
+    }
+
+    // =========================================================================
+
+    private function createConversation(User $user): AiConv
+    {
+        return AiConv::query()->create([
             'conv_name' => 'Cascade test',
             'slug' => Str::slug(Str::random(16)),
             'user_id' => $user->id,
             'system_prompt' => null,
         ]);
+    }
 
-        $uuids = [];
+    private function createMessage(AiConv $conversation, User $user, int $index): AiConvMsg
+    {
+        return AiConvMsg::query()->create([
+            'conv_id' => $conversation->id,
+            'user_id' => $user->id,
+            'message_role' => 'user',
+            'message_id' => (string) $index,
+            'iv' => 'iv',
+            'tag' => 'tag',
+            'content' => 'encrypted',
+            'completion' => true,
+        ]);
+    }
 
-        foreach ([1, 2] as $index) {
-            $message = AiConvMsg::query()->create([
-                'conv_id' => $conversation->id,
-                'user_id' => $user->id,
-                'message_role' => 'user',
-                'message_id' => (string) $index,
-                'iv' => 'iv',
-                'tag' => 'tag',
-                'content' => 'encrypted',
-                'completion' => true,
-            ]);
-            $uuid = (string) Str::uuid();
-            $message->attachments()->create([
-                'ai_conv_msg_id' => $message->id,
-                'uuid' => $uuid,
-                'name' => "cascade-{$index}.txt",
-                'category' => 'private',
-                'type' => 'document',
-                'mime' => 'text/plain',
-                'user_id' => $user->id,
-            ]);
-            $uuids[] = $uuid;
-        }
+    /**
+     * @return string The attachment uuid.
+     */
+    private function createMessageWithAttachment(AiConv $conversation, User $user, int $index): string
+    {
+        $message = $this->createMessage($conversation, $user, $index);
+        $uuid = (string) Str::uuid();
+        $message->attachments()->create(
+            ['ai_conv_msg_id' => $message->id] + $this->attachmentAttributes($user, $uuid, "cascade-{$index}.txt"),
+        );
 
-        DB::table('ai_convs')->where('id', $conversation->id)->delete();
+        return $uuid;
+    }
 
-        $this->assertDatabaseMissing('ai_convs', ['id' => $conversation->id]);
-        $this->assertDatabaseMissing('ai_conv_msgs', ['conv_id' => $conversation->id]);
-
-        foreach ($uuids as $uuid) {
-            $this->assertDatabaseMissing('attachments', ['uuid' => $uuid]);
-        }
+    /**
+     * @return array<string, mixed>
+     */
+    private function attachmentAttributes(User $user, string $uuid, string $name): array
+    {
+        return [
+            'uuid' => $uuid,
+            'name' => $name,
+            'category' => 'private',
+            'type' => 'document',
+            'mime' => 'text/plain',
+            'user_id' => $user->id,
+        ];
     }
 }

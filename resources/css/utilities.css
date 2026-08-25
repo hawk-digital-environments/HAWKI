@@ -23,6 +23,13 @@
         display: none;
     }
 
+    /* Chrome that must not appear on paper (sidebar, chat header, composer). */
+    @media print {
+        .u-print-hidden {
+            display: none;
+        }
+    }
+
     .u-sr-only {
         position: absolute;
         width: 1px;

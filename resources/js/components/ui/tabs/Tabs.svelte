@@ -139,12 +139,15 @@
         border-radius: var(--corner-full);
         box-shadow: var(--elevation-1);
         pointer-events: none;
-        z-index: 0;
+        /* Indicator slides below the tabs, which sit at --tab-z. */
+        --tab-indicator-z: 0;
+        z-index: var(--tab-indicator-z);
     }
 
     .tab {
         position: relative;
-        z-index: 1;
+        --tab-z: 1;
+        z-index: var(--tab-z);
         flex: 1;
         appearance: none;
         border: none;

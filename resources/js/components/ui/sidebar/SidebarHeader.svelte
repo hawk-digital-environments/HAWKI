@@ -6,13 +6,14 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import PanelLeftIcon from '$lib/components/ui/icons/iconset/PanelLeftIcon.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Brand/logo content, shown only while the nav is open. */
         children?: Snippet;
         /** Turns the brand box itself into a link to this target. */
@@ -24,7 +25,7 @@
         onSearch?: () => void;
     }
 
-    const {children, brandHref, onBrandClick, onSearch}: Props = $props();
+    const {children, brandHref, onBrandClick, onSearch, class: className, ...restProps}: Props = $props();
 
     const sidebar = useSidebar();
     const {__} = useTranslator();
@@ -45,7 +46,7 @@
     }
 </script>
 
-<div class="sidebar-header" class:open>
+<div {...restProps} class={["sidebar-header", className]} class:open>
     {#if children}
         <svelte:element
             this={brandHref ? 'a' : 'div'}
@@ -271,8 +272,8 @@
        (and the brand's max-width, which reads the same var) with it. */
     @media (--bp-md-and-smaller) {
         .header-action :global(svg) {
-            width: 20px;
-            height: 20px;
+            width: var(--space-5);
+            height: var(--space-5);
         }
     }
 </style>

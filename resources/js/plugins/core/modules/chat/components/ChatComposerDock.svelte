@@ -8,9 +8,10 @@ padding so the composer stays aligned with the centred message column).
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
-    interface Props {
+    interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Scroll region behind the dock — used to measure the scrollbar gutter. */
         scrollRegion?: HTMLElement | null;
         /** Measured dock height in px (bindable, written by the dock). */
@@ -19,7 +20,7 @@ padding so the composer stays aligned with the centred message column).
         children: Snippet;
     }
 
-    let {scrollRegion = null, height = $bindable(0), children}: Props = $props();
+    let {scrollRegion = null, height = $bindable(0), children, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
 
     let dock = $state<HTMLDivElement | null>(null);
@@ -57,7 +58,7 @@ padding so the composer stays aligned with the centred message column).
     });
 </script>
 
-<div class="composer-dock" bind:this={dock} style:--scrollbar-gutter="{scrollbarGutter}px">
+<div {...restProps} class={["composer-dock u-print-hidden", className]} bind:this={dock} style:--scrollbar-gutter="{scrollbarGutter}px">
     <div class="composer-row">
         {@render children()}
     </div>
@@ -86,7 +87,9 @@ padding so the composer stays aligned with the centred message column).
         right: var(--scrollbar-gutter, 0px);
         bottom: 0;
         height: 5rem;
-        z-index: -1;
+        /* Gradient backdrop behind the composer, inside the dock's stacking context. */
+        --composer-dock-fade-z: -1;
+        z-index: var(--composer-dock-fade-z);
         background: linear-gradient(to top, var(--color-surface-raised) 55%, transparent);
     }
 
@@ -118,9 +121,5 @@ padding so the composer stays aligned with the centred message column).
 
     @media (--bp-sm-and-smaller) {
         .composer-row { padding-inline: var(--space-3); }
-    }
-
-    @media print {
-        .composer-dock { display: none !important; }
     }
 </style>

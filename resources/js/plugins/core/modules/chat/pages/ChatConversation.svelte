@@ -34,6 +34,11 @@ exists; a generation started there keeps streaming through the store.
     const router = useRouter();
     const toast = useToastContext();
     const {__} = useTranslator();
+    const exportLabels = $derived({
+        systemPrompt: __('chat.export.systemPrompt'),
+        conversation: __('chat.export.conversation'),
+        attachments: __('chat.export.attachments')
+    });
     const slug = $derived(typeof params.slug === 'string' ? params.slug : null);
     const defaultPrompt = systemPromptStore.getPromptByType('default').prompt;
     const transport = new ChatTransport(app, store);
@@ -173,7 +178,9 @@ exists; a generation started there keeps streaming through the store.
             generating={store.isGenerating(store.active.slug)}
             onRename={name => store.rename(store.active!.slug, name)}
             onDelete={removeConversation}
-            onExport={format => store.active && exportConversation(store.active, format)}
+            onExport={format => {
+                if (store.active) return exportConversation(store.active, format, exportLabels);
+            }}
             onSkipToComposer={() => composer?.focusInput()}
         />
     {:else}
@@ -340,8 +347,6 @@ exists; a generation started there keeps streaming through the store.
     }
 
     @media print {
-        :global(.app-sidebar) { display: none !important; }
-        .chat-page > :global(header) { display: none !important; }
         .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
         .messages { padding-bottom: var(--space-5); }
     }

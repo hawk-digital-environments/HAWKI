@@ -176,8 +176,8 @@
         }
 
         .icon-wrap :global(svg) {
-            width: 20px;
-            height: 20px;
+            width: var(--space-5);
+            height: var(--space-5);
         }
     }
 </style>
