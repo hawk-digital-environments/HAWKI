@@ -36,7 +36,71 @@ describe("Addons", () => {
             // Assert the exact mapping logic inside your addon.action()
             expect(
                 mockContext.docker.executeCommandInService,
-            ).toHaveBeenCalledWith("app", ["php", "artisan", "test"], {
+            ).toHaveBeenCalledWith("app", ["gosu", "www-data", "php", "artisan", "test"], {
+                interactive: true,
+            });
+        });
+    });
+
+    describe("Js test commands", () => {
+        let program: Command;
+        let mockContext: any;
+
+        beforeEach(async () => {
+            program = new Command();
+            mockContext = {
+                docker: {
+                    executeCommandInService: jest
+                        .fn<any>()
+                        .mockResolvedValue(undefined as any),
+                },
+                paths: { projectDir: "/tmp/project" },
+                composer: {
+                    exec: jest.fn<any>().mockResolvedValue(undefined as any),
+                },
+            };
+            const addonInstance = await addon(mockContext);
+            if (addonInstance.commands) {
+                await addonInstance.commands(program);
+            }
+        });
+
+        it('should translate "./env test js" to the correct docker call', async () => {
+            await program.parseAsync(["node", "index.ts", "test", "js"]);
+
+            expect(
+                mockContext.docker.executeCommandInService,
+            ).toHaveBeenCalledWith("node", ["npm", "test", "--"], {
+                interactive: true,
+            });
+        });
+
+        it('should translate "./env test js coverage" to the correct docker call', async () => {
+            await program.parseAsync(["node", "index.ts", "test", "js", "coverage"]);
+
+            expect(
+                mockContext.docker.executeCommandInService,
+            ).toHaveBeenCalledWith("node", ["npm", "run", "test:coverage", "--"], {
+                interactive: true,
+            });
+        });
+
+        it('should translate "./env test js watch" to the correct docker call', async () => {
+            await program.parseAsync(["node", "index.ts", "test", "js", "watch"]);
+
+            expect(
+                mockContext.docker.executeCommandInService,
+            ).toHaveBeenCalledWith("node", ["npm", "run", "test:watch", "--"], {
+                interactive: true,
+            });
+        });
+
+        it('should forward extra arguments to npm test', async () => {
+            await program.parseAsync(["node", "index.ts", "test", "js", "run", "--", "-t", "placeholder"]);
+
+            expect(
+                mockContext.docker.executeCommandInService,
+            ).toHaveBeenCalledWith("node", ["npm", "test", "--", "-t", "placeholder"], {
                 interactive: true,
             });
         });

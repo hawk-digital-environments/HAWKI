@@ -150,6 +150,46 @@ export const addon: AddonEntrypoint = async (context) => ({
                 await context.composer.exec(['run', script, ...command.args]);
             });
 
+        const jsTests = tests
+            .command('js')
+            .description('runs the vitest test suite inside the node container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.docker.executeCommandInService('node', ['npm', 'test', '--', ...command.args], {interactive: true});
+            });
+
+        jsTests
+            .command('run')
+            .description('runs the vitest test suite inside the node container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.docker.executeCommandInService('node', ['npm', 'test', '--', ...command.args], {interactive: true});
+            });
+
+        jsTests
+            .command('coverage')
+            .description('runs the vitest test suite with a coverage report inside the node container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.docker.executeCommandInService('node', ['npm', 'run', 'test:coverage', '--', ...command.args], {interactive: true});
+            });
+
+        jsTests
+            .command('watch')
+            .description('runs the vitest test suite in watch mode inside the node container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.docker.executeCommandInService('node', ['npm', 'run', 'test:watch', '--', ...command.args], {interactive: true});
+            });
+
         phpTests
             .command('all')
             .description('runs all tests (phpstan and phpunit) inside the app container')

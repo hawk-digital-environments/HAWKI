@@ -28,6 +28,9 @@ auth.json
 .phpunit.result.cache
 .phpunit.cache
 
+# Vitest
+coverage
+
 # PHP CS Fixer
 .php-cs-fixer.cache
 
@@ -58,3 +61,4 @@ _docker_production_test
 .devcontainer
 .agents
 skills-lock.json
+.opencode
