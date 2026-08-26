@@ -56,7 +56,7 @@ export interface MessageStats {
     outputTokens: number | null;
     /** Prompt tokens reported by the provider; `null` while streaming or when the provider did not report usage. */
     promptTokens: number | null;
-    /** Output tokens per second, measured from the first text chunk to the end of the stream. */
+    /** Output tokens (incl. reasoning) divided by the total request duration. */
     tokensPerSecond: number | null;
     /** Milliseconds from sending the request until the first text chunk arrived. */
     timeToFirstTokenMs: number | null;
