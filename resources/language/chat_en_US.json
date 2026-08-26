@@ -27,6 +27,17 @@
             "loadError": "The conversation could not be loaded.",
             "sendError": "The message could not be sent.",
             "noResponse": "The model returned no response.",
+            "stats": {
+                "label": "Generation statistics",
+                "outputTokens": "Output tokens",
+                "promptTokens": "Input tokens",
+                "tokensPerSecond": "Tokens per second",
+                "timeToFirstToken": "Time to first token",
+                "duration": "Total time",
+                "characters": "Characters",
+                "chunks": "Chunks",
+                "unknown": "n/a"
+            },
             "noImprovementModel": "No model is available to improve the message.",
             "noConversationOpen": "No conversation is open.",
             "requestFailed": "The AI request failed.",

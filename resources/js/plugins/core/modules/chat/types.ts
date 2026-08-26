@@ -46,6 +46,26 @@ export interface ChatMessage {
     status?: string;
     /** Model reasoning (thinking) steps streamed alongside the answer. Stored inside the encrypted message content. */
     reasoning?: ReasoningPart[];
+    /** Generation metrics for the "Stats for Nerds" experiment. Stored inside the encrypted message content. */
+    stats?: MessageStats;
+}
+
+/** Metrics collected while an assistant response streamed in. */
+export interface MessageStats {
+    /** Output tokens reported by the provider; `null` while streaming or when the provider did not report usage. */
+    outputTokens: number | null;
+    /** Prompt tokens reported by the provider; `null` while streaming or when the provider did not report usage. */
+    promptTokens: number | null;
+    /** Output tokens per second, measured from the first text chunk to the end of the stream. */
+    tokensPerSecond: number | null;
+    /** Milliseconds from sending the request until the first text chunk arrived. */
+    timeToFirstTokenMs: number | null;
+    /** Total milliseconds from sending the request until the stream ended. */
+    durationMs: number;
+    /** Number of characters in the generated answer. */
+    characters: number;
+    /** Number of text chunks received from the stream. */
+    chunks: number;
 }
 
 /** One step of the model's reasoning: a block of thinking text or a web search it performed. */

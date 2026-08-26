@@ -16,6 +16,7 @@
     import VolumeHighIcon from '$lib/components/ui/icons/iconset/VolumeHighIcon.svelte';
     import MessageBody from '$plugins/core/modules/chat/components/message/MessageBody.svelte';
     import MessageReasoning from '$plugins/core/modules/chat/components/message/MessageReasoning.svelte';
+    import MessageStats from '$plugins/core/modules/chat/components/message/MessageStats.svelte';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -32,7 +33,9 @@
     const {message, composer = null, onDelete, onDeleteAttachment, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
+    const experiments = useStore('experiments');
     const isAssistant = $derived(message.message_role === 'assistant');
+    const showStats = $derived(isAssistant && experiments.isEnabled('statsForNerds') && Boolean(message.stats));
     const isReasoning = $derived(message.status === 'reasoning' || message.status === 'reasoning_delta');
     const streamStatusLabel = $derived(
         isReasoning || !message.status || message.status === 'running' ? __('chat.page.thinking') : __('chat.page.generating')
@@ -96,6 +99,10 @@
 
             {#if message.isStreaming && !message.content.text && !message.reasoning?.length}
                 <span class="stream-status">{streamStatusLabel}</span>
+            {/if}
+
+            {#if showStats && message.stats}
+                <MessageStats stats={message.stats} />
             {/if}
         </div>
 
