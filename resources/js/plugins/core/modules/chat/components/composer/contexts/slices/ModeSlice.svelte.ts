@@ -7,7 +7,7 @@ import {ChatEditMode} from '$plugins/core/modules/chat/components/composer/conte
 import {ChatInThreadMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
 import type {ChatRegenMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
+import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 
 export interface ComposerModeRegistry {
@@ -19,7 +19,7 @@ export interface ComposerModeRegistry {
     edit: {
         mode: ChatEditMode;
         state: ReturnType<ChatEditMode['enter']>;
-        data: OldUiConversationMessage
+        data: ChatMessage
     };
     thread: {
         mode: ChatInThreadMode;
@@ -29,7 +29,7 @@ export interface ComposerModeRegistry {
     regen: {
         mode: ChatRegenMode;
         state: ReturnType<ChatRegenMode['enter']>;
-        data: OldUiConversationMessage;
+        data: ChatMessage;
     };
 }
 

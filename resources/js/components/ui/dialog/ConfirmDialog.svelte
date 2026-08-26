@@ -59,14 +59,24 @@
         confirmVariant = 'fill'
     }: Props = $props();
 
+    let confirming = $state(false);
+    const isBusy = $derived(busy || confirming);
+
     function handleOpenChange(isOpen: boolean) {
         open = isOpen;
         onOpenChange?.(isOpen);
     }
 
     async function handleConfirm() {
-        await onConfirm?.();
-        handleOpenChange(false);
+        if (isBusy) return;
+
+        confirming = true;
+        try {
+            await onConfirm?.();
+            handleOpenChange(false);
+        } finally {
+            confirming = false;
+        }
     }
 
     function handleCancel() {
@@ -88,8 +98,8 @@
     }}
 >
     {#snippet footer()}
-        <Button variant="stroke" size="sm" disabled={busy} onclick={handleCancel}>{cancelLabel}</Button>
-        <Button variant={confirmVariant} size="sm" disabled={busy} autofocus onclick={handleConfirm}>{okLabel}</Button>
+        <Button variant="stroke" size="sm" disabled={isBusy} onclick={handleCancel}>{cancelLabel}</Button>
+        <Button variant={confirmVariant} size="sm" disabled={isBusy} autofocus onclick={handleConfirm}>{okLabel}</Button>
     {/snippet}
 </Dialog>
 

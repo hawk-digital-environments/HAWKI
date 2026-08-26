@@ -56,6 +56,12 @@ use Symfony\Component\Filesystem\Path;
 abstract class AbstractFileStorage implements StorageServiceInterface
 {
     /**
+     * How long a temporary upload may wait before being attached to a resource. Shared by the
+     * temp-file cleanup and {@see TemporaryUploadOwnership} so both expire together.
+     */
+    public const int TEMPORARY_FILE_TTL_SECONDS = 24 * 60 * 60;
+
+    /**
      * The name of the metadata file stored alongside files.
      */
     public const META_FILE_NAME = '.meta.json';
@@ -331,9 +337,8 @@ abstract class AbstractFileStorage implements StorageServiceInterface
 
     /**
      * Removes files from the `temp/` area that have not been moved to permanent storage within
-     * five minutes of being written, then cleans up any resulting empty directories.
+     * {@see self::TEMPORARY_FILE_TTL_SECONDS}, then cleans up any resulting empty directories.
      *
-     * The five-minute buffer prevents accidentally deleting a file that is still mid-upload.
      * This method is intended to be called by a scheduled command, not on every request.
      *
      * @return bool True if at least one file was deleted, false when nothing expired.
@@ -341,8 +346,7 @@ abstract class AbstractFileStorage implements StorageServiceInterface
     public function deleteTempExpiredFiles(): bool
     {
         $tempFolder = 'temp';
-        // 5 Minutes buffer time to prevent accidentally deleting temp files that were in upload process.
-        $ttl = 5 * 60;
+        $ttl = self::TEMPORARY_FILE_TTL_SECONDS;
         $now = time();
         $deleted = false;
 

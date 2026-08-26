@@ -138,7 +138,8 @@ export class ShellExtension implements HawkiAppExtension {
         this._svelteAppInstance = mount(Shell, {
             target: mountPoint,
             props: {
-                app: this.app
+                app: this.app,
+                bootstrapLoadingLabel: mountPoint.dataset.loadingLabel ?? ''
             }
         });
 

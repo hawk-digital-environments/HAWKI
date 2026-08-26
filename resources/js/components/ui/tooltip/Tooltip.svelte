@@ -156,7 +156,7 @@
         </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>
 </TooltipPrimitive.Provider>
-{#if (!focusable || disabled) && srOnlyLabel}
+{#if !focusable && srOnlyLabel}
     <span class="u-sr-only">{srOnlyLabel}</span>
 {/if}
 
