@@ -2,7 +2,7 @@ import type {ComposerContext} from '$plugins/core/modules/chat/components/compos
 import type {DisabledChatFeature} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
 import {AbstractMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/AbstractMode.js';
 import {RemoteFile} from '$plugins/core/modules/chat/components/composer/utils/RemoteFile.js';
-import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
+import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
 
 export interface ChatEditModeState {
     messageId: string;
@@ -19,7 +19,7 @@ export interface ChatEditModeState {
  * message inconsistent with the original. Blocks send until the user actually
  * changes the text or attachments.
  */
-export class ChatEditMode extends AbstractMode<OldUiConversationMessage, ChatEditModeState> {
+export class ChatEditMode extends AbstractMode<ChatMessage, ChatEditModeState> {
     public canSend(context: ComposerContext, state: ChatEditModeState): boolean {
         return (context.message.trim() !== state.originalMessage.trim())
             || (context.attachments.list.length !== state.originalAttachments.length)
@@ -30,7 +30,7 @@ export class ChatEditMode extends AbstractMode<OldUiConversationMessage, ChatEdi
         return ['models', 'settings', 'tools'].includes(feature);
     }
 
-    public enter(context: ComposerContext, data: OldUiConversationMessage): ChatEditModeState {
+    public enter(context: ComposerContext, data: ChatMessage): ChatEditModeState {
         if (data.message_role === 'assistant') {
             throw new Error('Editing assistant messages is not supported');
         }

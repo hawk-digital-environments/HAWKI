@@ -1,5 +1,4 @@
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
-import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
 
 export interface ChatSummary {
     name: string;
@@ -8,7 +7,35 @@ export interface ChatSummary {
     updated_at: string | null;
 }
 
-export interface ChatMessage extends OldUiConversationMessage {
+export interface ChatMessage {
+    author: {
+        username: string;
+        name: string;
+        avatar_url: string;
+    };
+    completion: number;
+    content: {
+        text: string;
+        attachments: Array<{
+            fileData: {
+                uuid: string;
+                name: string;
+                mime: string;
+                type: string;
+                url: string;
+                category: string;
+            };
+        }>;
+    };
+    created_at: string;
+    message_id: string;
+    message_role: 'user' | 'assistant';
+    metadata: {
+        tools: null | Record<string, unknown>;
+        params: null | Record<string, unknown>;
+    };
+    model: null | string;
+    updated_at: string;
     citations?: UrlCitation[];
     /** Client-only message that is visible before it has been persisted. */
     isPending?: boolean;

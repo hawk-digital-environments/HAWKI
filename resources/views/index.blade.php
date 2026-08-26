@@ -15,6 +15,6 @@
     @vite('resources/css/app.css')
 </head>
 <body>
-<div id="hawki-app"></div>
+<div id="hawki-app" data-loading-label="{{ __('ui.loading') }}"></div>
 </body>
 </html>

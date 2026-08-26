@@ -23,7 +23,9 @@
 
 {#if overlay}
     <div {...mergeProps(rest, {class: ['loader-host', className], 'aria-busy': active})}>
-        {@render children()}
+        <div class="loader-content" inert={active}>
+            {@render children()}
+        </div>
         {#if active}
             <div class="loader loader--overlay" role="status" aria-label={label}>
                 <span class="spinner" aria-hidden="true"></span>
@@ -44,6 +46,10 @@
         min-width: 0;
         min-height: 0;
         height: 100%;
+    }
+
+    .loader-content {
+        display: contents;
     }
 
     .loader {

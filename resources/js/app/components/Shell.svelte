@@ -21,15 +21,17 @@
     interface Props {
         /** The fully-assembled `HawkiApp` instance, passed in by `ShellExtension.mount()`. */
         app: HawkiApp;
+        /** Server-rendered label used before frontend translations have loaded. */
+        bootstrapLoadingLabel: string;
     }
 
-    const {app}: Props = $props();
+    const {app, bootstrapLoadingLabel}: Props = $props();
 
     // svelte-ignore state_referenced_locally
     provideApp(app);
     createToastContext();
     const loadingLabel = $derived.by(() => {
-        if (app.isBooting) return 'Loading';
+        if (app.isBooting) return bootstrapLoadingLabel;
         return app.localization.translator.translate('ui.loading');
     });
 
