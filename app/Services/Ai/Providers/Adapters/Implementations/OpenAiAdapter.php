@@ -6,6 +6,8 @@ namespace App\Services\Ai\Providers\Adapters\Implementations;
 
 
 use App\Models\Ai\AiProvider;
+use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
+use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\LaravelAi\Drivers\OpenAiExtended\ExtendedOpenAiGateway;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
@@ -14,6 +16,7 @@ use App\Services\Ai\Providers\Adapters\Traits\OpenAiModelListTrait;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Collection;
+use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\OpenAi\Concerns\CreatesOpenAiClient;
 use Laravel\Ai\Providers\OpenAiProvider;
@@ -66,6 +69,31 @@ class OpenAiAdapter extends AbstractProviderAdapter
     public function getModels(AiProviderProxy $provider): Collection
     {
         return $this->fetchOpenAiModelList($provider, $this->createModelListClient($this->client($provider->driver)));
+    }
+
+    /**
+     * Requests reasoning summaries for reasoning-capable models so the Responses API
+     * streams `response.reasoning_summary_text.delta` events. Without `reasoning.summary`
+     * OpenAI never exposes the model's thinking, and the gateway cannot emit
+     * {@see \Laravel\Ai\Streaming\Events\ReasoningDelta} events for the UI.
+     *
+     * Only applies to text-generating agents on models flagged with
+     * {@see \App\Services\Ai\Models\Flags\Values\WellKnownModelFlags::FEATURE_REASONING};
+     * non-reasoning models reject the `reasoning` parameter.
+     */
+    public function getAdditionalDriverOptions(Agent $agent, AgentRequestContext $context): array
+    {
+        if ($agent instanceof AbstractTextGeneratingAgent && $context->model->flags->hasStrengthReasoning()) {
+            return [
+                'reasoning' => [
+                    'summary' => 'auto',
+                ],
+                // Expose the sources a native web search found, so the UI can show them alongside the reasoning.
+                'include' => ['web_search_call.action.sources'],
+            ];
+        }
+
+        return [];
     }
 
     /**
