@@ -90,6 +90,7 @@
             "textareaPlaceholder": "Hier kannst du deine Anfrage stellen…",
             "textareaPlaceholderRoom": "Schreibe eine Gruppennachricht oder nutze die KI mit @hawki...",
             "attachFileTooltip": "Datei anhängen",
+            "pastedTextFileName": "Eingefügter Text",
             "error": {
                 "unsupported_file_type": "Dateien vom Typ „:type“ können nicht angehängt werden.",
                 "file_too_large": "Die Datei „:name“ ist zu groß. Maximal erlaubt sind :maxSize.",
