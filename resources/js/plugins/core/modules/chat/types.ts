@@ -41,6 +41,8 @@ export interface ChatMessage {
     isPending?: boolean;
     /** Assistant response whose persisted content is still arriving from the stream. */
     isStreaming?: boolean;
+    /** Stable render key for a message whose `message_id` changes once it is persisted (pending/streaming → saved). */
+    clientKey?: string;
     status?: string;
     /** Model reasoning (thinking) steps streamed alongside the answer. Stored inside the encrypted message content. */
     reasoning?: ReasoningPart[];
