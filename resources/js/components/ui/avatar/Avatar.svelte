@@ -32,6 +32,11 @@
 
     let failed = $state(false);
 
+    $effect(() => {
+        src;
+        failed = false;
+    });
+
     const initials = $derived(
         name
             .split(/\s+/)

@@ -80,7 +80,11 @@
     }
 
     function focusFromKey(e: KeyboardEvent) {
-        if (e.code.startsWith("Key") || e.code.startsWith("Digit")) {
+        if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) {
+            return;
+        }
+
+        if (e.code.startsWith('Key') || e.code.startsWith('Digit')) {
             if (e.target != textareaEl) {
                 doFocus();
                 composerContext.message = composerContext.message + e.key;

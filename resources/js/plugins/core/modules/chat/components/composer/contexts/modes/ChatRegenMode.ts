@@ -1,4 +1,4 @@
-import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
+import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
 import {type ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import type {DisabledChatFeature} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
@@ -21,7 +21,7 @@ export interface ChatRegenModeState {
  * an info toast. Locks attachments, the message input, and suggestions — only
  * model and parameter selection are exposed. Exits after send.
  */
-export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRegenModeState> {
+export class ChatRegenMode extends AbstractMode<ChatMessage, ChatRegenModeState> {
     constructor(
         private modelStore: AiModelStore,
         private toast: ToastContext,
@@ -46,7 +46,7 @@ export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRe
         return ['attachments', 'input', 'suggestions'].includes(feature);
     }
 
-    public canEnter(context: ComposerContext, data: OldUiConversationMessage): boolean | string {
+    public canEnter(context: ComposerContext, data: ChatMessage): boolean | string {
         if (data.message_role !== 'assistant') {
             return this.translator.translate('chat.composer.regen.onlyAssistantMessages');
         }
@@ -54,7 +54,7 @@ export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRe
         return true;
     }
 
-    public enter(context: ComposerContext, data: OldUiConversationMessage): ChatRegenModeState {
+    public enter(context: ComposerContext, data: ChatMessage): ChatRegenModeState {
         context.reset();
 
         if (data.model) {
