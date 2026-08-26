@@ -15,6 +15,7 @@
     import MessageCircleReplyIcon from '$lib/components/ui/icons/iconset/MessageCircleReplyIcon.svelte';
     import VolumeHighIcon from '$lib/components/ui/icons/iconset/VolumeHighIcon.svelte';
     import MessageBody from '$plugins/core/modules/chat/components/message/MessageBody.svelte';
+    import MessageReasoning from '$plugins/core/modules/chat/components/message/MessageReasoning.svelte';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -32,6 +33,10 @@
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
     const isAssistant = $derived(message.message_role === 'assistant');
+    const isReasoning = $derived(message.status === 'reasoning' || message.status === 'reasoning_delta');
+    const streamStatusLabel = $derived(
+        isReasoning || !message.status || message.status === 'running' ? __('chat.page.thinking') : __('chat.page.generating')
+    );
     const authorName = $derived(
         isAssistant
             ? aiModelStore.getOneById(message.model ?? '')?.label ?? message.model ?? 'HAWKI'
@@ -65,6 +70,9 @@
         </div>
 
         <div class="content">
+            {#if isAssistant && message.reasoning?.length}
+                <MessageReasoning parts={message.reasoning} active={Boolean(message.isStreaming && !message.content.text)} />
+            {/if}
             {#if isAssistant}
                 <MessageBody message={message.content.text} citations={message.citations} isStreaming={message.isStreaming} />
             {:else}
@@ -86,8 +94,8 @@
                 </div>
             {/if}
 
-            {#if message.isStreaming && !message.content.text}
-                <span class="stream-status">{message.status ?? __('chat.page.thinking')}</span>
+            {#if message.isStreaming && !message.content.text && !message.reasoning?.length}
+                <span class="stream-status">{streamStatusLabel}</span>
             {/if}
         </div>
 
