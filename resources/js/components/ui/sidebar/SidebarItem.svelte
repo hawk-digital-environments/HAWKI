@@ -60,7 +60,6 @@
         expanded = $bindable(defaultExpanded),
         children,
         onclick,
-        trailing,
         class: className,
         ...rest
     }: Props = $props();

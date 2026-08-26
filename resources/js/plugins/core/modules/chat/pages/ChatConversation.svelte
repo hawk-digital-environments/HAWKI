@@ -269,11 +269,14 @@ exists; a generation started there keeps streaming through the store.
     }
 
     /* Empty chat: the scroll region shrinks to its content so the welcome
-       block and the composer sit together in the middle of the panel. */
+       block and the composer sit together in the middle of the panel.
+       The block is nudged above the true centre — the disclaimer adds
+       visual weight at the bottom, so geometric centring reads as low. */
     .chat-body.empty {
         display: flex;
         flex-direction: column;
         justify-content: center;
+        padding-bottom: var(--space-10);
         overflow-y: auto;
     }
 

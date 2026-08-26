@@ -222,6 +222,12 @@ async function resetToRootOnly(state: RouterState): Promise<void> {
     // the root layout as props, which would otherwise still describe the
     // last route that resolved successfully.
     state.currentContext = null;
+    // Also drops the last successful page: a stale component behind the
+    // 404/error page would render with the cleared node data below, and
+    // `RouterView` relies on `component` being gone to treat the next
+    // navigation as a recovery load (full loader) instead of keeping a
+    // broken page mounted.
+    state.currentComponent = null;
     state.currentMeta = null;
     state.currentLayouts = await state.nodeTree.buildRootLayoutComponents();
     state.currentNodeData = [];

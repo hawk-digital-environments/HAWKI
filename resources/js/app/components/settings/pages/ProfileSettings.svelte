@@ -13,9 +13,9 @@
     import {useRestApi} from '$lib/app/hooks/useApi.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import type {RouteComponentProps} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+    import type {RouteProps} from '$lib/components/ui/routing/index.js';
 
-    const {}: RouteComponentProps = $props();
+    const {}: RouteProps = $props();
 
     const NAME_MAX_LENGTH = 20;
     const BIO_MAX_LENGTH = 255;

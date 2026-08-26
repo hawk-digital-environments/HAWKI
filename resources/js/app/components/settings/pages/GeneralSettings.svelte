@@ -14,9 +14,9 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
-    import type {RouteComponentProps} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+    import type {RouteProps} from '$lib/components/ui/routing/index.js';
 
-    const {}: RouteComponentProps = $props();
+    const {}: RouteProps = $props();
 
     const app = useApp();
     const config = useConfig();
