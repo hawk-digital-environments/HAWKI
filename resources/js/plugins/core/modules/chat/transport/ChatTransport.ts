@@ -116,7 +116,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                     __plainText: sentMessage
                 });
                 if (optimisticMessage) {
-                    this.store.replaceMessage(targetSlug, optimisticMessage.message_id, userMessage);
+                    this.store.replaceMessage(targetSlug, optimisticMessage.message_id, {...userMessage, clientKey: optimisticMessage.clientKey});
                 } else {
                     this.store.appendMessage(targetSlug, userMessage);
                 }
@@ -147,6 +147,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
     private optimisticUserMessage(opt: MessageSenderTransportOptions): ChatMessage {
         const user = this.app.authenticatedConnection.userinfo;
         const timestamp = new Date().toISOString();
+        const pendingId = `pending-${crypto.randomUUID()}`;
 
         return {
             author: {
@@ -169,7 +170,8 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 }))
             },
             created_at: timestamp,
-            message_id: `pending-${crypto.randomUUID()}`,
+            message_id: pendingId,
+            clientKey: pendingId,
             message_role: 'user',
             metadata: {tools: null, params: null},
             model: null,
@@ -221,6 +223,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             content: {text: '', attachments: []},
             created_at: new Date().toISOString(),
             message_id: temporaryId,
+            clientKey: temporaryId,
             message_role: 'assistant',
             metadata: {tools: null, params: null},
             model: context.model.current?.model_id ?? null,
@@ -296,7 +299,9 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 __citations: citations,
                 __reasoning: reasoning.length ? reasoning : undefined
             }, Boolean(regenState));
-            this.store.replaceMessage(conversationSlug, temporaryId, saved);
+            // Keep the render key of the streamed message so the keyed list
+            // does not remount it when the persisted id replaces the temporary one.
+            this.store.replaceMessage(conversationSlug, temporaryId, {...saved, clientKey: temporaryId});
             responseWriter.triggerReceived();
         } catch (error) {
             if (controller.signal.aborted) {

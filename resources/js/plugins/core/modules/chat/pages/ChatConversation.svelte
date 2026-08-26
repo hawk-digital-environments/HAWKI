@@ -52,6 +52,10 @@ exists; a generation started there keeps streaming through the store.
     let newTurnActive = $state(false);
     let previousConversationSlug: string | null = null;
     let previousMessageCount = 0;
+    // True from opening a conversation until the user scrolls up or sends a
+    // message: the log keeps following its bottom edge while the messages
+    // finish rendering (markdown, KaTeX, reasoning blocks) and grow in height.
+    let pinToBottom = false;
     let liveAnnouncement = $state('');
     let announcementConversationSlug: string | null = null;
     let wasGenerating = false;
@@ -88,12 +92,14 @@ exists; a generation started there keeps streaming through the store.
 
         if (conversationOpened) {
             newTurnActive = false;
+            pinToBottom = true;
             requestAnimationFrame(() => {
                 if (store.active?.slug === conversationSlug && scrollRegion === region) {
                     region.scrollTop = region.scrollHeight;
                 }
             });
         } else if (messageAdded && lastMessage?.message_role === 'user') {
+            pinToBottom = false;
             // A freshly sent message starts a new turn: `new-turn` reserves a
             // screen of space below it, and this single scroll aligns it with
             // the top of the region. The streaming response then renders into
@@ -114,6 +120,28 @@ exists; a generation started there keeps streaming through the store.
         previousConversationSlug = conversationSlug;
         previousMessageCount = count;
     });
+
+    // Messages keep growing after the open-scroll above (async markdown and
+    // formula rendering, fonts, collapsed reasoning). Follow the bottom edge
+    // for as long as the view is pinned there.
+    $effect(() => {
+        const region = scrollRegion;
+        const messages = messagesElement;
+        if (!region || !messages) return;
+
+        const observer = new ResizeObserver(() => {
+            if (pinToBottom) region.scrollTop = region.scrollHeight;
+        });
+        observer.observe(messages);
+        return () => observer.disconnect();
+    });
+
+    // Any scroll that leaves the bottom edge is the user's: release the pin.
+    function releasePinOnUserScroll() {
+        if (!pinToBottom || !scrollRegion) return;
+        const remaining = scrollRegion.scrollHeight - scrollRegion.clientHeight - scrollRegion.scrollTop;
+        if (remaining > 2) pinToBottom = false;
+    }
 
     $effect(() => {
         const conversationSlug = store.active?.slug ?? null;
@@ -190,7 +218,7 @@ exists; a generation started there keeps streaming through the store.
     {/if}
 
     <div class="chat-body" class:empty={isEmpty}>
-        <div class="scroll-region" bind:this={scrollRegion} bind:clientHeight={scrollRegionHeight}>
+        <div class="scroll-region" bind:this={scrollRegion} bind:clientHeight={scrollRegionHeight} onscroll={releasePinOnUserScroll}>
             {#if store.loading}
                 <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
             {:else if store.error}
@@ -214,7 +242,7 @@ exists; a generation started there keeps streaming through the store.
                     aria-relevant="additions"
                     aria-label={__('chat.page.messageHistory')}
                 >
-                    {#each store.active.messages as message (message.message_id)}
+                    {#each store.active.messages as message (message.clientKey ?? message.message_id)}
                         <ChatMessage {message} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
                     {/each}
                 </div>
