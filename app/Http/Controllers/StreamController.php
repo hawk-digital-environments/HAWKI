@@ -322,7 +322,14 @@ class StreamController extends Controller
                 }
             }
 
-            yield $formatData(content: $res->text, type: 'completion', isDone: true);
+            // Token usage is only known once the stream is fully consumed. It rides
+            // along on the completion packet so clients can show per-response metrics.
+            yield $formatData(
+                content: $res->text,
+                type: 'completion',
+                isDone: true,
+                additionalData: ['usage' => $agent->getUsage()->toArray()]
+            );
 
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [

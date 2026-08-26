@@ -43,7 +43,15 @@ interface AiStreamPacketBase {
 export type AiStreamPacket = AiStreamPacketBase & {
     type: 'header' | 'message' | 'citation' | 'status' | 'completion' | 'error';
     content?: unknown;
+    /** Token usage of the response; only present on the `completion` packet. */
+    usage?: AiStreamUsage | null;
 };
+
+export interface AiStreamUsage {
+    model?: string;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+}
 
 export interface AiStreamResult {
     text: string;
