@@ -1,25 +1,29 @@
 <!--
-  @component Trigger + panel for the composer's model settings. Shown as a
-  `Popover` on `bpMd`-and-bigger viewports, a `BottomSheet` below that (via
-  `Breakpoint`) — the same `settingsBody` snippet is rendered into both.
+  @component Trigger + panel for the composer's model settings, built on the
+  `DropdownMenu` family (floating menu on `bpMd`-and-bigger viewports, a
+  `BottomSheet` below that — handled by `DropdownMenu` itself).
 
   The panel is composed of three sections, each owning its own state and
   styles and talking to `ComposerContext` directly:
   - `SettingsMenuSystemPrompt` — preview, reset and dialog for the system prompt.
-  - `SettingsMenuReasoning` — reasoning effort row (hidden for models without
-    adjustable reasoning).
+  - `SettingsMenuReasoning` — reasoning effort as a `DropdownMenuSub` (hidden
+    for models without adjustable reasoning).
   - `SettingsMenuSampling` — temperature/Top P presets and sliders.
 
   The "Settings" heading's reset button restores the model's default
   parameters via `modelParameters.reset()`. Disabled as a whole when
   `composerContext.guard.disablesFeature('settings')` is true (e.g. during
   edit/regen mode). Takes no props.
+
+  Keyboard: bits-ui menus move focus with ↑/↓ between menu items only and
+  treat Tab as "leave the menu". Since this panel also contains plain
+  controls (system prompt preview, expander, sliders, tabs), Tab/Shift+Tab is
+  intercepted on the panel body (before it bubbles to the menu content) and
+  cycles through every focusable control inside the panel instead.
 -->
 <script lang="ts">
-    import Popover from '$lib/components/ui/popover/Popover.svelte';
-    import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
+    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import SettingsMenuSectionHeader from '$plugins/core/modules/chat/components/composer/SettingsMenuSectionHeader.svelte';
@@ -34,10 +38,48 @@
     let settingsOpen = $state(false);
 
     const modifiedParameters = $derived.by(() => composerContext.modelParameters.isModified);
+
+    const FOCUSABLE = [
+        'button:not([disabled]):not([aria-disabled="true"]):not([tabindex="-1"])',
+        '[role="menuitem"]:not([data-disabled])',
+        '[role="slider"]',
+        '[role="tab"][tabindex="0"]'
+    ].join(', ');
+
+    function cycleFocusOnTab(event: KeyboardEvent) {
+        if (event.key !== 'Tab' || !(event.currentTarget instanceof HTMLElement)) return;
+        const focusables = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE));
+        if (focusables.length === 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const current = focusables.indexOf(document.activeElement as HTMLElement);
+        const step = event.shiftKey ? -1 : 1;
+        focusables[(current + step + focusables.length) % focusables.length].focus();
+    }
 </script>
 
-{#snippet settingsBody()}
-    <div class="settings-body">
+<DropdownMenu
+    bind:open={settingsOpen}
+    side="top"
+    align="end"
+    disabled={composerContext.guard.disablesFeature('settings')}
+    contentProps={{
+        class: 'model-settings-content',
+        onCloseAutoFocus: (e) => e.preventDefault()
+    }}
+>
+    {#snippet trigger({props})}
+        <ButtonWithTooltip
+            tooltip={__('chat.composer.settings.adjustSettingsTooltip')}
+            variant="ghost"
+            iconLeft={Settings01Icon}
+            highlight={settingsOpen}
+            {...props}/>
+    {/snippet}
+
+    <!-- Keydown only redirects Tab between the child controls; the div itself is not interactive. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="settings-body" onkeydown={cycleFocusOnTab}>
         <SettingsMenuSystemPrompt/>
 
         <div class="settings-parameters">
@@ -51,46 +93,7 @@
             <SettingsMenuSampling/>
         </div>
     </div>
-{/snippet}
-
-<Breakpoint>
-    {#snippet bpSmallerThanMd()}
-        <ButtonWithTooltip
-            tooltip={__('chat.composer.settings.adjustSettingsTooltip')}
-            variant="ghost"
-            iconLeft={Settings01Icon}
-            disabled={composerContext.guard.disablesFeature('settings')}
-            highlight={settingsOpen}
-            onclick={() => (settingsOpen = true)}
-        />
-        <BottomSheet bind:open={settingsOpen} title={__('chat.composer.settings.settingsTitle')}>
-            {@render settingsBody()}
-        </BottomSheet>
-    {/snippet}
-    {#snippet children()}
-        <Popover
-            align="end"
-            sideOffset={4}
-            contentProps={{
-                class: 'model-settings-content',
-                onCloseAutoFocus: (e) => e.preventDefault()
-            }}
-        >
-            {#snippet children({props})}
-                <ButtonWithTooltip
-                    tooltip={__('chat.composer.settings.adjustSettingsTooltip')}
-                    variant="ghost"
-                    iconLeft={Settings01Icon}
-                    disabled={composerContext.guard.disablesFeature('settings')}
-                    highlight={props['data-state']}
-                    {...props}/>
-            {/snippet}
-            {#snippet popover()}
-                {@render settingsBody()}
-            {/snippet}
-        </Popover>
-    {/snippet}
-</Breakpoint>
+</DropdownMenu>
 
 <style>
     .settings-body {
@@ -105,7 +108,7 @@
         gap: var(--space-3, calc(0.25rem * 3));
     }
 
-    :global(.model-settings-content) {
+    :global(.dropdown-content.model-settings-content) {
         padding: var(--space-2, calc(0.25rem * 2));
         width: calc(0.25rem * 64);
     }
