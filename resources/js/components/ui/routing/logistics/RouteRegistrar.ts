@@ -269,6 +269,21 @@ export interface RegisteredRouteGroupOptions extends RouteGroupOptions {
     children: (registrar: RouteRegistrar) => void;
 }
 
+/** Options for a {@link RouteRegistrar}; inherited by every nested registrar a {@link RouteRegistrar.group} creates. */
+export interface RouteRegistrarOptions {
+    /**
+     * Called once per registered *route* while {@link RouteRegistrar.build}
+     * compiles it, with that route's registration; the returned middlewares
+     * are placed in front of the route's own `middlewares`. This is how an
+     * application attaches a guard to every route without each plugin having
+     * to list it: the guard still lives in each route's own stack — there is
+     * no router-wide middleware — and, because the callback sees the route's
+     * `meta`, a route can opt out through it. Groups are not consulted; they
+     * carry no meta.
+     */
+    routeMiddlewares?: (route: RegisteredRouteOptions) => RouteMiddleware[];
+}
+
 /**
  * Mints ids for {@link RouteNode}s. Module-level, not a `RouteRegistrar`
  * instance field: {@link RouteRegistrar.group} builds each nested group with
@@ -327,6 +342,9 @@ function buildRouteNode(kind: RouteNodeKind, componentOrLoader: ComponentOrLoade
 export class RouteRegistrar {
     private readonly routes = new Map<string, RegisteredRouteOptions>();
     private readonly groups = new Map<string, RegisteredRouteGroupOptions>();
+
+    public constructor(private readonly options: RouteRegistrarOptions = {}) {
+    }
 
     /**
      * Registers a route that renders an already-imported component.
@@ -493,7 +511,13 @@ export class RouteRegistrar {
             children: options.catchAll ? [] : undefined
         };
 
-        return buildMiddlewareStack(innerRoute, options);
+        return buildMiddlewareStack(innerRoute, {
+            ...options,
+            middlewares: [
+                ...(this.options.routeMiddlewares?.(options) ?? []),
+                ...(options.middlewares ?? [])
+            ]
+        });
     }
 
     /**
@@ -504,7 +528,7 @@ export class RouteRegistrar {
      * the children.
      */
     private buildRouteGroupFromOptions(options: RegisteredRouteGroupOptions) {
-        const innerRegistrar = new RouteRegistrar();
+        const innerRegistrar = new RouteRegistrar(this.options);
         options.children(innerRegistrar);
         const innerRoutes = innerRegistrar.build();
         const layout = resolveLayoutOption(options.layout, options.lazyLayout, `Group "${options.path}"`);

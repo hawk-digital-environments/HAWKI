@@ -68,12 +68,18 @@ export class StoreExtension implements HawkiAppExtension {
     }
 
     /**
-     * As soon as the `main` bootstrap stage is reached, schedules a
+     * Runs every store's `init(app)` right away (the app is assembled, no
+     * bootstrap stage has started yet), then, as soon as the `main` bootstrap
+     * stage is reached, schedules a
      * `store.loadData(app)` call (still within the `main` stage, so it runs
      * concurrently with other `main`-stage work) for every registered store
      * that implements `loadData`. Stores without `loadData` are skipped.
      */
     public ready(app: HawkiApp, bootstrapper: Bootstrapper) {
+        for (const store of this.stores.values()) {
+            store.init?.(app);
+        }
+
         bootstrapper.onStageReached('main', async () => {
             for (const store of this.stores.values()) {
                 if (typeof store.loadData !== 'function') {

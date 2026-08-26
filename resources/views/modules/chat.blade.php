@@ -58,6 +58,12 @@
                     </div>
 
                     <h1 id="start-title">{{ __("StartBanner") }}</h1>
+                    <!-- TODO: For Testing only -->
+                    <div style="display: flex; justify-content: center;">
+                        <a href="/new/chat" class="start-title">
+                            <button class="btn-md-stroke">Zur neuen Oberfläche</button>
+                        </a>
+                    </div>
 
                     <x-svelte type="ChatHeader" :props="['context' => 'aiConv']"/>
                 </div>

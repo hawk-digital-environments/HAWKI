@@ -47,6 +47,7 @@ export {
     RouteRegistrar,
     type HawkiRoute,
     type HawkiRouteContext,
+    type RegisteredRouteOptions,
     type RouteComponent,
     type RouteComponentLoader,
     type RouteComponentOrLoader,
@@ -57,6 +58,7 @@ export {
     type RouteMeta,
     type RouteMiddleware,
     type RouteOptions,
+    type RouteRegistrarOptions,
     type RouteRegistrationCallback,
     type RouteResult,
     type RouteResultBody
