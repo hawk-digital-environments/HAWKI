@@ -48,13 +48,11 @@
 
 <div {...restProps} class={["sidebar-header", className]} class:open>
     {#if children}
-        <svelte:element
-            this={brandHref ? 'a' : 'div'}
-            class="brand"
-            href={brandHref}
-            onclick={onBrandClick}
-            inert={!open}
-        >{@render children()}</svelte:element>
+        {#if brandHref}
+            <a class="brand" href={brandHref} onclick={onBrandClick} inert={!open}>{@render children()}</a>
+        {:else}
+            <div class="brand" inert={!open}>{@render children()}</div>
+        {/if}
     {/if}
     {#if onSearch}
         <Tooltip

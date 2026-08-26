@@ -9,9 +9,9 @@
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import type {RouteComponentProps} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+    import type {RouteProps} from '$lib/components/ui/routing/index.js';
 
-    const {}: RouteComponentProps = $props();
+    const {}: RouteProps = $props();
 
     const experiments = useStore('experiments');
     const {__} = useTranslator();

@@ -136,33 +136,6 @@
         white-space: nowrap;
     }
 
-    .generating {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1_5);
-        flex-shrink: 0;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-xs);
-    }
-
-    .generating-spinner {
-        width: 0.75rem;
-        height: 0.75rem;
-        border: 2px solid var(--color-border);
-        border-top-color: var(--color-interactive);
-        border-radius: 50%;
-        animation: generation-spin 700ms linear infinite;
-    }
-
-    @keyframes generation-spin { to { transform: rotate(360deg); } }
-
-    @media (prefers-reduced-motion: reduce) {
-        .generating-spinner {
-            border-color: var(--color-interactive);
-            animation: none;
-        }
-    }
-
     @media (--bp-md-and-smaller) {
         header {
             padding-right: var(--space-3);
