@@ -5,6 +5,10 @@
   bits-ui `RadioItem` primitive, which reads the group's shared value from
   context.
 
+  The selected state is shown either as a dot on the left (`indicator="dot"`,
+  the default) or as a check mark on the right (`indicator="check"`, matching
+  `DropdownMenuCheckboxItem` — use it for pickers in a `DropdownMenuSub`).
+
   ```svelte
   <DropdownMenuRadioGroup bind:value={sortOrder}>
       <DropdownMenuRadioItem value="name">{__('menu.sortByName')}</DropdownMenuRadioItem>
@@ -16,12 +20,17 @@
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
+    import Tick02Icon from '../icons/iconset/Tick02Icon.svelte';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** The value this item represents. Must be unique within its DropdownMenuRadioGroup. */
         value: string;
         /** When true, the item cannot be interacted with. */
         disabled?: boolean;
+        /** How the selected state is displayed. @defaultValue 'dot' */
+        indicator?: 'dot' | 'check';
+        /** When false, the menu stays open after selection. @defaultValue true */
+        closeOnSelect?: boolean;
         /** Item label content. */
         children?: Snippet;
     }
@@ -29,18 +38,24 @@
     const {
         value,
         disabled = false,
+        indicator = 'dot',
+        closeOnSelect = true,
         children,
         class: className,
         ...restProps
     }: Props = $props();
 </script>
 
-<DropdownMenuPrimitive.RadioItem {value} {disabled}>
+<DropdownMenuPrimitive.RadioItem {value} {disabled} {closeOnSelect}>
     {#snippet child({props, checked: isChecked})}
-        <div {...mergeProps({class: `dropdown-radio-item${className ? ` ${className}` : ''}`}, restProps, props)}>
+        <div {...mergeProps({class: `dropdown-radio-item indicator--${indicator}${className ? ` ${className}` : ''}`}, restProps, props)}>
             <span class="dropdown-item-indicator">
                 {#if isChecked}
-                    <span class="dropdown-radio-dot"></span>
+                    {#if indicator === 'check'}
+                        <Tick02Icon size={12}/>
+                    {:else}
+                        <span class="dropdown-radio-dot"></span>
+                    {/if}
                 {/if}
             </span>
             {@render children?.()}
@@ -65,6 +80,11 @@
         transition: background-color var(--duration-fast, 150ms);
     }
 
+    .dropdown-radio-item.indicator--check {
+        padding-right: var(--space-8, calc(0.25rem * 8));
+        padding-left: var(--space-2, calc(0.25rem * 2));
+    }
+
     .dropdown-radio-item[data-highlighted] {
         background-color: var(--color-hover);
         color: var(--color-text);
@@ -83,6 +103,12 @@
         width: calc(0.25rem * 3.5);
         align-items: center;
         justify-content: center;
+    }
+
+    .indicator--check .dropdown-item-indicator {
+        left: auto;
+        right: var(--space-2, calc(0.25rem * 2));
+        color: var(--color-text);
     }
 
     .dropdown-radio-dot {
