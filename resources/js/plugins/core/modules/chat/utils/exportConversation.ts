@@ -140,7 +140,7 @@ async function exportPdf(
         'box-sizing: border-box',
         'background: white',
         'color: black',
-        'font: 16px/1.5 Arial, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'
+        'font: 14px/1.5 Arial, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'
     ].join(';');
     const existingOverlays = new Set(document.querySelectorAll('.html2pdf__overlay'));
 
@@ -172,7 +172,6 @@ async function exportPdf(
             autoPaging: 'text',
             html2canvas: {
                 backgroundColor: '#ffffff',
-                scale: 1,
                 useCORS: true,
                 onclone: clonedDocument => {
                     clonedDocument.querySelectorAll('link[rel="stylesheet"], style').forEach(stylesheet => stylesheet.remove());
