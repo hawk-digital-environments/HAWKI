@@ -9,8 +9,8 @@
   Compose it with the other family members as `children`:
   `DropdownMenuItem`, `DropdownMenuGroup`, `DropdownMenuLabel`,
   `DropdownMenuSeparator`, `DropdownMenuCheckboxItem`, `DropdownMenuSwitchItem`,
-  `DropdownMenuRadioGroup` + `DropdownMenuRadioItem`, and
-  `DropdownMenuDetailView` for a nested two-panel picker.
+  `DropdownMenuRadioGroup` + `DropdownMenuRadioItem`, `DropdownMenuSub` for a
+  hover-opening submenu, and `DropdownMenuDetailView` for a nested two-panel picker.
 
   ```svelte
   <DropdownMenu bind:open title={__('chat.export.title')} align="end">
