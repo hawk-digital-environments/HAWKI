@@ -3,7 +3,7 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValue, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
 import {decodeJsonApiResourceResponse} from '$lib/kernel/api/jsonApiEncoding.js';
 import AiConvMessageSchema, {type AiConvMessage} from '$plugins/core/schemas/resources/ai-conv-messages.schema.js';
-import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText} from '$plugins/core/modules/chat/types.js';
+import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText, ReasoningPart} from '$plugins/core/modules/chat/types.js';
 import type {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
@@ -248,7 +248,7 @@ export class ChatStore implements DataStore {
 
     public async persistMessage(slug: string, payload: Record<string, unknown>, update = false): Promise<ChatMessage> {
         if (!this.getConversation(slug)) throw new Error('The target conversation is unavailable.');
-        const {__plainText, __citations, message_id, ...requestPayload} = payload;
+        const {__plainText, __citations, __reasoning, message_id, ...requestPayload} = payload;
         const response = update
             ? await this.dependencies.restApi.patchToResourceAction(
                 'ai-convs',
@@ -261,7 +261,7 @@ export class ChatStore implements DataStore {
                 requestPayload
             );
         const resource = AiConvMessageSchema.parse(decodeJsonApiResourceResponse(response));
-        return this.normalisePlainMessage(resource, __plainText as string | undefined, __citations as UrlCitation[] | undefined);
+        return this.normalisePlainMessage(resource, __plainText as string | undefined, __citations as UrlCitation[] | undefined, __reasoning as ReasoningPart[] | undefined);
     }
 
     public isGenerating(slug: string | null | undefined): boolean {
@@ -307,23 +307,27 @@ export class ChatStore implements DataStore {
         const raw = await decryptSymmetric(loadSymmetricCryptoValue(source.content), key);
         let text = raw;
         let citations: UrlCitation[] = [];
+        let reasoning: ReasoningPart[] | undefined;
         try {
             const parsed = JSON.parse(raw);
             if (parsed && typeof parsed === 'object' && typeof parsed.text === 'string') {
                 text = parsed.text;
                 citations = Array.isArray(parsed.citations) ? parsed.citations : [];
+                reasoning = Array.isArray(parsed.reasoning) && parsed.reasoning.length
+                    ? parsed.reasoning
+                    : (typeof parsed.reasoning === 'string' && parsed.reasoning ? [{type: 'text', text: parsed.reasoning}] : undefined);
             }
         } catch {
             // User messages in the legacy format are plain encrypted strings.
         }
-        return this.toChatMessage(source, decodeLegacyHtml(text), citations);
+        return this.toChatMessage(source, decodeLegacyHtml(text), citations, reasoning);
     }
 
-    private normalisePlainMessage(source: AiConvMessage, text?: string, citations: UrlCitation[] = []): ChatMessage {
-        return this.toChatMessage(source, text ?? '', citations);
+    private normalisePlainMessage(source: AiConvMessage, text?: string, citations: UrlCitation[] = [], reasoning?: ReasoningPart[]): ChatMessage {
+        return this.toChatMessage(source, text ?? '', citations, reasoning);
     }
 
-    private toChatMessage(source: AiConvMessage, text: string, citations: UrlCitation[]): ChatMessage {
+    private toChatMessage(source: AiConvMessage, text: string, citations: UrlCitation[], reasoning?: ReasoningPart[]): ChatMessage {
         return {
             author: {
                 username: source.author.username,
@@ -353,7 +357,8 @@ export class ChatStore implements DataStore {
             },
             model: source.model,
             updated_at: source.updated_at ?? '',
-            citations
+            citations,
+            ...(reasoning?.length ? {reasoning} : {})
         };
     }
 

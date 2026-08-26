@@ -1,5 +1,5 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
-import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
+import type {ChatMessage, ReasoningPart} from '$plugins/core/modules/chat/types.js';
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
@@ -233,6 +233,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         else this.store.appendMessage(conversationSlug, temporary);
 
         let text = '';
+        let reasoning: ReasoningPart[] = [];
         let citations: UrlCitation[] = [];
         let completion = false;
         try {
@@ -249,7 +250,25 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 if (packet.type === 'error') throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
                 if (packet.type === 'status') {
                     const status = typeof packet.status === 'string' ? packet.status : packet.status?.key;
-                    this.store.patchMessage(conversationSlug, temporaryId, {status: status ?? 'running'});
+                    const value = typeof packet.status === 'object' ? packet.status?.value : undefined;
+                    if (status === 'reasoning_delta' && typeof value === 'string') {
+                        const last = reasoning.at(-1);
+                        reasoning = last?.type === 'text'
+                            ? [...reasoning.slice(0, -1), {type: 'text', text: last.text + value}]
+                            : [...reasoning, {type: 'text', text: value}];
+                        this.store.patchMessage(conversationSlug, temporaryId, {status, reasoning});
+                    } else if (status === 'web_search' && value && typeof value === 'object') {
+                        const search = value as {type?: unknown; query?: unknown; sources?: unknown};
+                        reasoning = [...reasoning, {
+                            type: 'web_search',
+                            action: typeof search.type === 'string' ? search.type : 'search',
+                            query: typeof search.query === 'string' ? search.query : null,
+                            sources: Array.isArray(search.sources) ? search.sources.filter((url): url is string => typeof url === 'string') : []
+                        }];
+                        this.store.patchMessage(conversationSlug, temporaryId, {status, reasoning});
+                    } else {
+                        this.store.patchMessage(conversationSlug, temporaryId, {status: status ?? 'running'});
+                    }
                 } else if (packet.type === 'message') {
                     text += aiPacketText(packet.content);
                     this.store.patchMessage(conversationSlug, temporaryId, {content: {...temporary.content, text}});
@@ -262,7 +281,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             }
 
             const finalText = text.trim() ? text : this.app.translator.__('chat.page.noResponse');
-            const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations}));
+            const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations, ...(reasoning.length ? {reasoning} : {})}));
             const saved = await this.store.persistMessage(conversationSlug, {
                 isAi: true,
                 ...(regenState ? {message_id: regenState.messageId} : {threadId: Number.isFinite(threadId) ? threadId : 0}),
@@ -274,7 +293,8 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 model: context.model.current.model_id,
                 completion,
                 __plainText: finalText,
-                __citations: citations
+                __citations: citations,
+                __reasoning: reasoning.length ? reasoning : undefined
             }, Boolean(regenState));
             this.store.replaceMessage(conversationSlug, temporaryId, saved);
             responseWriter.triggerReceived();
