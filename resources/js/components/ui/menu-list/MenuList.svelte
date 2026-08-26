@@ -213,7 +213,6 @@
             class:on-active={hoverOnActive}
             class:inset={hoverInset}
             class:no-transition={reflowing}
-            transition:fade={{ duration: 50 }}
             style:top="{hoverRect.top}px"
             style:height="{hoverRect.height}px"
         ></span>
