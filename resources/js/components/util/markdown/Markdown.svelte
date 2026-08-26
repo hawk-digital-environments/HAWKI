@@ -76,7 +76,7 @@
 <MarkdownRender
     content={message}
     isDark={themeStore.theme === 'dark'}
-    final={!!isStreaming}
+    final={!isStreaming}
     showTooltips={false}
     customComponents={{link: ExtendedLinkNode}}
     typewriter={!!isStreaming}
