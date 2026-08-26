@@ -151,7 +151,19 @@
                 "topPInfo": "Begrenzt die Auswahlmöglichkeiten der KI auf die wahrscheinlichsten Wörter, deren Gesamtwahrscheinlichkeit diesen Wert nicht überschreitet. Ein niedrigerer Top_P-Wert (z. B. 0,7) führt zu zurückhaltenderen Antworten; höhere Werte (z. B. 0,9) ermöglichen eine größere Vielfalt.",
                 "topPAriaLabel": "Top P einstellen",
                 "adjustSettingsTooltip": "Modelleinstellungen anpassen",
-                "settingsTitle": "Modelleinstellungen"
+                "settingsTitle": "Modelleinstellungen",
+                "advancedSettings": "Erweiterte Einstellungen",
+                "reasoningHeading": "Denkaufwand",
+                "reasoningInfo": "Legt fest, wie intensiv das Modell nachdenkt, bevor es antwortet. Höherer Aufwand liefert gründlichere Antworten, dauert aber länger und verbraucht mehr Tokens.",
+                "reasoningDefault": "Standard",
+                "reasoningAriaLabel": "Denkaufwand einstellen",
+                "reasoningLevelNone": "Sofort",
+                "reasoningLevelMinimal": "Minimal",
+                "reasoningLevelLow": "Niedrig",
+                "reasoningLevelMedium": "Mittel",
+                "reasoningLevelHigh": "Hoch",
+                "reasoningLevelXhigh": "Sehr hoch",
+                "reasoningLevelMax": "Maximal"
             },
             "statusDot": {
                 "onlineLabel": "Online",
