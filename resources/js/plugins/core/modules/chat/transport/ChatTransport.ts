@@ -1,5 +1,5 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
-import type {ChatMessage, ReasoningPart} from '$plugins/core/modules/chat/types.js';
+import type {ChatMessage, MessageStats, ReasoningPart} from '$plugins/core/modules/chat/types.js';
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
@@ -239,6 +239,26 @@ export class ChatTransport implements MessageSenderTransportInterface {
         let reasoning: ReasoningPart[] = [];
         let citations: UrlCitation[] = [];
         let completion = false;
+        // Generation metrics for the "Stats for Nerds" experiment. Timing is
+        // always collected (it is cheap); the UI decides whether to show it.
+        const startedAt = performance.now();
+        let firstTokenAt: number | null = null;
+        let chunks = 0;
+        let usage: {promptTokens: number | null; completionTokens: number | null} = {promptTokens: null, completionTokens: null};
+        const buildStats = (): MessageStats => {
+            const now = performance.now();
+            const generationSeconds = firstTokenAt === null ? 0 : (now - firstTokenAt) / 1000;
+            const outputTokens = usage.completionTokens;
+            return {
+                outputTokens,
+                promptTokens: usage.promptTokens,
+                tokensPerSecond: outputTokens !== null && generationSeconds > 0 ? outputTokens / generationSeconds : null,
+                timeToFirstTokenMs: firstTokenAt === null ? null : Math.round(firstTokenAt - startedAt),
+                durationMs: Math.round(now - startedAt),
+                characters: text.length,
+                chunks
+            };
+        };
         try {
             for await (const packet of this.app.aiApi.stream({
                 model: context.model.current.model_id,
@@ -273,18 +293,28 @@ export class ChatTransport implements MessageSenderTransportInterface {
                         this.store.patchMessage(conversationSlug, temporaryId, {status: status ?? 'running'});
                     }
                 } else if (packet.type === 'message') {
-                    text += aiPacketText(packet.content);
-                    this.store.patchMessage(conversationSlug, temporaryId, {content: {...temporary.content, text}});
+                    const delta = aiPacketText(packet.content);
+                    if (delta) {
+                        chunks++;
+                        firstTokenAt ??= performance.now();
+                    }
+                    text += delta;
+                    this.store.patchMessage(conversationSlug, temporaryId, {content: {...temporary.content, text}, stats: buildStats()});
                 } else if (packet.type === 'citation' && packet.content) {
                     citations = [...citations, packet.content as UrlCitation];
                     this.store.patchMessage(conversationSlug, temporaryId, {citations});
                 } else if (packet.type === 'completion') {
                     completion = Boolean(packet.isDone);
+                    usage = {
+                        promptTokens: typeof packet.usage?.prompt_tokens === 'number' ? packet.usage.prompt_tokens : null,
+                        completionTokens: typeof packet.usage?.completion_tokens === 'number' ? packet.usage.completion_tokens : null
+                    };
                 }
             }
+            const stats = buildStats();
 
             const finalText = text.trim() ? text : this.app.translator.__('chat.page.noResponse');
-            const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations, ...(reasoning.length ? {reasoning} : {})}));
+            const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations, ...(reasoning.length ? {reasoning} : {}), stats}));
             const saved = await this.store.persistMessage(conversationSlug, {
                 isAi: true,
                 ...(regenState ? {message_id: regenState.messageId} : {threadId: Number.isFinite(threadId) ? threadId : 0}),
@@ -297,7 +327,8 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 completion,
                 __plainText: finalText,
                 __citations: citations,
-                __reasoning: reasoning.length ? reasoning : undefined
+                __reasoning: reasoning.length ? reasoning : undefined,
+                __stats: stats
             }, Boolean(regenState));
             // Keep the render key of the streamed message so the keyed list
             // does not remount it when the persisted id replaces the temporary one.

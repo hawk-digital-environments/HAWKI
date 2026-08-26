@@ -92,6 +92,10 @@
                     "modelPickerV2": {
                         "title": "Neue Modellauswahl",
                         "description": "Eine erweiterte Modellauswahl mit Anbieter-Tabs, Suche, Favoriten und Tastaturkürzeln."
+                    },
+                    "statsForNerds": {
+                        "title": "Statistiken für Nerds",
+                        "description": "Zeigt Token-Anzahl, Tokens pro Sekunde und Zeitangaben unter jeder KI-Antwort."
                     }
                 }
             }
