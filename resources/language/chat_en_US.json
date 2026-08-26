@@ -151,7 +151,19 @@
                 "topPInfo": "Limits the AI's choices to the most probable words whose combined probability does not exceed this value. A lower Top P value (e.g. 0.7) leads to more conservative responses; higher values (e.g. 0.9) allow greater variety.",
                 "topPAriaLabel": "Adjust Top P",
                 "adjustSettingsTooltip": "Adjust model settings",
-                "settingsTitle": "Model settings"
+                "settingsTitle": "Model settings",
+                "advancedSettings": "Advanced settings",
+                "reasoningHeading": "Reasoning effort",
+                "reasoningInfo": "Controls how much the model thinks before answering. Higher effort gives more thorough answers but takes longer and uses more tokens.",
+                "reasoningDefault": "Default",
+                "reasoningAriaLabel": "Adjust reasoning effort",
+                "reasoningLevelNone": "Instant",
+                "reasoningLevelMinimal": "Minimal",
+                "reasoningLevelLow": "Low",
+                "reasoningLevelMedium": "Medium",
+                "reasoningLevelHigh": "High",
+                "reasoningLevelXhigh": "Very high",
+                "reasoningLevelMax": "Max"
             },
             "statusDot": {
                 "onlineLabel": "Online",

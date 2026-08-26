@@ -247,12 +247,14 @@ export class ChatTransport implements MessageSenderTransportInterface {
         let usage: {promptTokens: number | null; completionTokens: number | null} = {promptTokens: null, completionTokens: null};
         const buildStats = (): MessageStats => {
             const now = performance.now();
-            const generationSeconds = firstTokenAt === null ? 0 : (now - firstTokenAt) / 1000;
+            // Output tokens include reasoning tokens (folded in server-side), so the
+            // rate uses the whole request time rather than just the visible text phase.
+            const totalSeconds = (now - startedAt) / 1000;
             const outputTokens = usage.completionTokens;
             return {
                 outputTokens,
                 promptTokens: usage.promptTokens,
-                tokensPerSecond: outputTokens !== null && generationSeconds > 0 ? outputTokens / generationSeconds : null,
+                tokensPerSecond: outputTokens !== null && totalSeconds > 0 ? outputTokens / totalSeconds : null,
                 timeToFirstTokenMs: firstTokenAt === null ? null : Math.round(firstTokenAt - startedAt),
                 durationMs: Math.round(now - startedAt),
                 characters: text.length,
@@ -264,7 +266,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 model: context.model.current.model_id,
                 messages: this.messageHistory(conversationSlug, context.systemPrompt, threadId, regenState?.messageId),
                 tools: context.tools.active.map(tool => tool.toTransferString()),
-                params: context.modelParameters.list,
+                params: context.modelParameters.requestParameters,
                 threadIndex: Number.isFinite(threadId) ? threadId : 0,
                 isUpdate: Boolean(regenState),
                 messageId: regenState?.messageId ?? null
@@ -321,7 +323,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 content: {text: encrypted},
                 metadata: {
                     tools: context.tools.active.map(tool => tool.toTransferString()),
-                    params: context.modelParameters.list
+                    params: context.modelParameters.requestParameters
                 },
                 model: context.model.current.model_id,
                 completion,
