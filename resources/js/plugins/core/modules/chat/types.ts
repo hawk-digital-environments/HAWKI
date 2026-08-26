@@ -42,7 +42,22 @@ export interface ChatMessage {
     /** Assistant response whose persisted content is still arriving from the stream. */
     isStreaming?: boolean;
     status?: string;
+    /** Model reasoning (thinking) steps streamed alongside the answer. Stored inside the encrypted message content. */
+    reasoning?: ReasoningPart[];
 }
+
+/** One step of the model's reasoning: a block of thinking text or a web search it performed. */
+export type ReasoningPart =
+    | {type: 'text'; text: string}
+    | {
+        type: 'web_search';
+        /** What the model did: a search, opening a page or searching within a page. */
+        action: 'search' | 'open_page' | 'find_in_page' | string;
+        /** The search query, only present for `search` actions. */
+        query: string | null;
+        /** URLs the model found or looked at. */
+        sources: string[];
+    };
 
 export interface ChatConversation {
     name: string;

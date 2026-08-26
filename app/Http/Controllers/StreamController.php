@@ -290,6 +290,25 @@ class StreamController extends Controller
                         break;
                     case $chunk instanceof ProviderToolEvent:
                         yield $formatStatus('provider_tool_call', $chunk->type);
+                        if ($chunk->type === 'web_search_call' && $chunk->status === 'completed') {
+                            $action = data_get($chunk->data, 'action', []);
+                            $sources = collect(data_get($action, 'sources', []))
+                                ->map(static fn($source) => is_array($source) ? ($source['url'] ?? null) : (is_string($source) ? $source : null))
+                                ->filter()
+                                ->unique()
+                                ->values();
+                            if (is_string($action['url'] ?? null) && $sources->isEmpty()) {
+                                $sources->push($action['url']);
+                            }
+                            $query = data_get($action, 'query');
+                            if ($sources->isNotEmpty() || (is_string($query) && $query !== '')) {
+                                yield $formatStatus('web_search', [
+                                    'type' => data_get($action, 'type', 'search'),
+                                    'query' => is_string($query) ? $query : null,
+                                    'sources' => $sources->all(),
+                                ]);
+                            }
+                        }
                         break;
                     case $chunk instanceof ToolCall:
                         yield $formatStatus('tool_call', $chunk->name);
