@@ -235,7 +235,6 @@
 
     .marker {
         position: relative;
-        z-index: 1;
         justify-self: center;
         margin-top: calc(0.6em - var(--marker-size) / 2);
         width: var(--marker-size);
