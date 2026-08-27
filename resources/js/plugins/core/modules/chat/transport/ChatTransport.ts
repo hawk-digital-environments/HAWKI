@@ -247,7 +247,6 @@ export class ChatTransport implements MessageSenderTransportInterface {
         // always collected (it is cheap); the UI decides whether to show it.
         const startedAt = performance.now();
         let firstTokenAt: number | null = null;
-        let chunks = 0;
         let usage: {promptTokens: number | null; completionTokens: number | null} = {promptTokens: null, completionTokens: null};
         const buildStats = (): MessageStats => {
             const now = performance.now();
@@ -260,9 +259,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 promptTokens: usage.promptTokens,
                 tokensPerSecond: outputTokens !== null && totalSeconds > 0 ? outputTokens / totalSeconds : null,
                 timeToFirstTokenMs: firstTokenAt === null ? null : Math.round(firstTokenAt - startedAt),
-                durationMs: Math.round(now - startedAt),
-                characters: text.length,
-                chunks
+                durationMs: Math.round(now - startedAt)
             };
         };
         try {
@@ -300,10 +297,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                     }
                 } else if (packet.type === 'message') {
                     const delta = aiPacketText(packet.content);
-                    if (delta) {
-                        chunks++;
-                        firstTokenAt ??= performance.now();
-                    }
+                    if (delta) firstTokenAt ??= performance.now();
                     text += delta;
                     this.store.patchMessage(conversationSlug, temporaryId, {content: {...temporary.content, text}, stats: buildStats()});
                 } else if (packet.type === 'citation' && packet.content) {
