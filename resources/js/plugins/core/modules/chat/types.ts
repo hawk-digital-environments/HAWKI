@@ -62,10 +62,6 @@ export interface MessageStats {
     timeToFirstTokenMs: number | null;
     /** Total milliseconds from sending the request until the stream ended. */
     durationMs: number;
-    /** Number of characters in the generated answer. */
-    characters: number;
-    /** Number of text chunks received from the stream. */
-    chunks: number;
 }
 
 /** One step of the model's reasoning: a block of thinking text or a web search it performed. */

@@ -34,8 +34,6 @@
                 "tokensPerSecond": "Tokens per second",
                 "timeToFirstToken": "Time to first token",
                 "duration": "Total time",
-                "characters": "Characters",
-                "chunks": "Chunks",
                 "unknown": "n/a"
             },
             "noImprovementModel": "No model is available to improve the message.",

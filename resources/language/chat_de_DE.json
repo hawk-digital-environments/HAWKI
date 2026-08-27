@@ -34,8 +34,6 @@
                 "tokensPerSecond": "Tokens pro Sekunde",
                 "timeToFirstToken": "Zeit bis zum ersten Token",
                 "duration": "Gesamtdauer",
-                "characters": "Zeichen",
-                "chunks": "Chunks",
                 "unknown": "k. A."
             },
             "noImprovementModel": "Es ist kein Modell verfügbar, um die Nachricht zu verbessern.",
