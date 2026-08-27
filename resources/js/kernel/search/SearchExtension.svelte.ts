@@ -1,9 +1,9 @@
-import type {DataStore} from '$lib/kernel/stores/types.js';
+import type {HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiDataStores {
-        search: SearchStore;
+    interface HawkiAppExtensions {
+        search: WithoutAppExtensionInternals<SearchExtension>;
     }
 }
 
@@ -28,9 +28,11 @@ export interface SearchItem {
 /**
  * A named collection of items contributed by a plugin or module. Both
  * `label` and `items` are getters, not values: the palette evaluates them
- * inside a `$derived`, so whatever reactive state they read (a store's list,
- * the current locale) keeps the palette current without the contributor
- * having to re-register anything.
+ * inside a `$derived`, so whatever reactive (`$state`) data they read — a
+ * store's list, the current locale — keeps the palette current without the
+ * contributor having to re-register or "update" anything. A group backed by
+ * plain, non-reactive data is a snapshot; wrap that data in `$state` (or
+ * remove and re-add the group) if it must change.
  */
 export interface SearchGroup {
     /** Unique across all groups, e.g. `core:chat.conversations`. */
@@ -49,12 +51,15 @@ export interface SearchGroupResult {
 }
 
 /**
- * Registry behind `SearchDialog`: plugins and modules add groups here (usually
- * from the plugin's `ready()` hook, once the stores they read from exist), and
- * the dialog renders whatever is registered, in registration order.
+ * App extension that owns the registry behind the search palette
+ * (`SearchDialog`), reachable as `app.search`. It lives in the kernel rather
+ * than in a plugin so the palette works no matter which plugins are enabled:
+ * plugins and modules only *contribute* groups (usually from the plugin's
+ * `ready()` hook, once the stores they read from exist), and the dialog
+ * renders whatever is registered, in registration order.
  *
  * @example
- * app.stores.get('search').addGroup({
+ * app.search.addGroup({
  *     id: 'core:chat.conversations',
  *     label: () => app.translator.translate('ui.search.conversations'),
  *     items: () => chatStore.conversations.map(c => ({
@@ -65,24 +70,40 @@ export interface SearchGroupResult {
  *     }))
  * });
  */
-export class SearchStore implements DataStore {
-    public readonly name = 'search';
-
+export class SearchExtension implements HawkiAppExtension {
     private _groups = $state<SearchGroup[]>([]);
 
+    /** All registered groups, in registration order. Reactive. */
     public get groups(): readonly SearchGroup[] {
         return this._groups;
     }
 
+    /** Whether a group with the given id is registered. */
+    public hasGroup(id: string): boolean {
+        return this._groups.some(group => group.id === id);
+    }
+
+    /** Registers a group; throws if its id is already taken. */
     public addGroup(group: SearchGroup): void {
-        if (this._groups.some(existing => existing.id === group.id)) {
+        if (this.hasGroup(group.id)) {
             throw new Error(`Search group "${group.id}" is already registered.`);
         }
         this._groups = [...this._groups, group];
     }
 
+    /** Removes the group with the given id; a no-op if none is registered. */
     public removeGroup(id: string): void {
         this._groups = this._groups.filter(group => group.id !== id);
+    }
+
+    /** Exposes this extension as `app.search`. */
+    public provideProperties(): Record<string, any> {
+        const extension = this;
+        return {
+            get search() {
+                return extension;
+            }
+        };
     }
 }
 
