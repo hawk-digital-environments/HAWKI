@@ -72,42 +72,43 @@ padding so the composer stays aligned with the centred message column).
         bottom: 0;
         padding-bottom: var(--space-3);
         padding-right: var(--scrollbar-gutter, 0px);
+        /* Own stacking context so the ::before backdrop (z-index -1) sits
+           behind the composer but still above the scroll region. */
+        isolation: isolate;
         /* Let wheel/click events in the gutters reach the chat behind the
            dock; the composer row and disclaimer stay interactive. */
         pointer-events: none;
     }
 
-    /* The messages stay visible through the translucent composer card; only
-       the very bottom (disclaimer strip) fades them out. Stops short of the
-       scrollbar so it doesn't get tinted by the fade. */
+    /* Blurred, tinted backdrop behind the whole dock so no message text is
+       readable underneath the composer; the mask fades it in softly at the
+       top edge. Stops short of the scrollbar so it doesn't get tinted. */
     .composer-dock::before {
         content: '';
         position: absolute;
-        left: 0;
+        inset: 0;
         right: var(--scrollbar-gutter, 0px);
-        bottom: 0;
-        height: 5rem;
-        /* Gradient backdrop behind the composer, inside the dock's stacking context. */
+        /* Backdrop inside the dock's stacking context. */
         --composer-dock-fade-z: -1;
         z-index: var(--composer-dock-fade-z);
-        background: linear-gradient(to top, var(--color-surface-raised) 55%, transparent);
+        background: linear-gradient(to top, var(--color-surface-raised) 45%, color-mix(in srgb, var(--color-surface-raised) 70%, transparent) 85%, transparent);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        mask-image: linear-gradient(to top, black 80%, transparent);
+        -webkit-mask-image: linear-gradient(to top, black 80%, transparent);
     }
 
     .composer-dock > * { pointer-events: auto; }
 
-    /* Mirror a message row's grid (avatar column + content) so the composer
-       card lines up exactly with the message text column. */
+    /* Slightly wider than a message row (52rem) so the composer card
+       overhangs the message column on both sides. */
     .composer-row {
-        display: grid;
-        grid-template-columns: 2rem minmax(0, 1fr);
-        gap: var(--space-3);
-        width: min(100%, 52rem);
+        width: min(100%, 56rem);
         margin-inline: auto;
-        padding-inline: var(--space-5);
+        padding-inline: var(--space-3);
     }
 
     .composer-row :global(.chat-composer-wrapper) {
-        grid-column: 2;
         max-width: none;
         min-width: 0;
     }
@@ -120,6 +121,6 @@ padding so the composer stays aligned with the centred message column).
     }
 
     @media (--bp-sm-and-smaller) {
-        .composer-row { padding-inline: var(--space-3); }
+        .composer-row { padding-inline: var(--space-1); }
     }
 </style>

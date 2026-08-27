@@ -132,7 +132,6 @@
     .chat-drop-overlay {
         position: absolute;
         inset: 0;
-        z-index: 2;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -178,7 +177,6 @@
         --fan-x: 0;
         --fan-y: 0;
         animation-delay: 40ms;
-        z-index: 4;
     }
 
     .chat-drop-page--1 {
@@ -186,7 +184,6 @@
         --fan-x: 0.32rem;
         --fan-y: -0.1rem;
         animation-delay: 80ms;
-        z-index: 3;
     }
 
     .chat-drop-page--2 {
@@ -194,7 +191,6 @@
         --fan-x: 0.6rem;
         --fan-y: -0.18rem;
         animation-delay: 120ms;
-        z-index: 2;
     }
 
     .chat-drop-page--3 {
@@ -202,7 +198,6 @@
         --fan-x: 0.82rem;
         --fan-y: -0.22rem;
         animation-delay: 160ms;
-        z-index: 1;
     }
 
     @keyframes composer-page-fan {
