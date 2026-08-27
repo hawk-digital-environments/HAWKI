@@ -1,7 +1,7 @@
 <!--
   @component Spotlight-style search: a centred modal with a single text field
-  that filters the search groups registered in the `search` store (see
-  `SearchStore.svelte.ts`) as the user types. Arrow keys / Enter pick a row;
+  that filters the search groups registered on the kernel's `app.search` (see
+  `kernel/search/SearchExtension.svelte.ts`) as the user types. Arrow keys / Enter pick a row;
   the dialog closes itself and then runs the item's `onSelect`. Opened from
   the sidebar's search action or with Ctrl/⌘ + K.
 
@@ -10,7 +10,7 @@
   padding is right for confirmation dialogs but wrong for a palette, where the
   input *is* the header.
 
-  Filtering is done by the store (`matchSearchGroups`: literal substring over
+  Filtering is done by the kernel (`matchSearchGroups`: literal substring over
   title and keywords, case-insensitive) with Command's own filter switched
   off, so each group keeps the order its contributor chose instead of being
   re-ranked by fuzzy score. Groups with no matching row are dropped entirely.
@@ -22,9 +22,9 @@
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import CommandResults, {type CommandGroupDefinition} from '$lib/components/ui/command/CommandResults.svelte';
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
-    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {matchSearchGroups, type SearchItem} from '$plugins/core/stores/SearchStore.svelte.js';
+    import {matchSearchGroups, type SearchItem} from '$lib/kernel/search/SearchExtension.svelte.js';
 
     interface Props {
         /** Whether the dialog is open. Supports bind:open. */
@@ -33,12 +33,12 @@
 
     let {open = $bindable(false)}: Props = $props();
 
-    const searchStore = useStore('search');
+    const search = useApp().search;
     const {__} = useTranslator();
 
     let query = $state('');
 
-    const results = $derived(matchSearchGroups(searchStore.groups, query));
+    const results = $derived(matchSearchGroups(search.groups, query));
 
     /** Matching rows by id, so a chosen `value` maps back to its item. */
     const itemsById = $derived(
