@@ -36,9 +36,7 @@
         {key: 'promptTokens', label: __('chat.page.stats.promptTokens'), value: integer(stats.promptTokens)},
         {key: 'tokensPerSecond', label: __('chat.page.stats.tokensPerSecond'), value: stats.tokensPerSecond === null ? unknown : `${stats.tokensPerSecond.toFixed(1)} tok/s`},
         {key: 'timeToFirstToken', label: __('chat.page.stats.timeToFirstToken'), value: seconds(stats.timeToFirstTokenMs)},
-        {key: 'duration', label: __('chat.page.stats.duration'), value: seconds(stats.durationMs)},
-        {key: 'characters', label: __('chat.page.stats.characters'), value: integer(stats.characters)},
-        {key: 'chunks', label: __('chat.page.stats.chunks'), value: integer(stats.chunks)}
+        {key: 'duration', label: __('chat.page.stats.duration'), value: seconds(stats.durationMs)}
     ]);
 </script>
 
