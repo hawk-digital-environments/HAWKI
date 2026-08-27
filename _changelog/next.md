@@ -10,7 +10,9 @@
 
 ### Bugfix
 
-[//]: # (- List of bugs that have been fixed in this version.)
+- Fixed attachments never reaching the AI conversation when `STORAGE_DISK` uses an s3-compatible server (e.g. garage, MinIO): uploaded files were never persisted from the temp area because whole "directory" moves are silently ignored by s3 drivers, so the attachment was never linked to the message. Each file is now copied individually instead.
+- The `s3` disk in `config/filesystems.php` now fails loudly on storage errors and works on s3 servers without ACL support (see Internals section for details).
+- The `check:storage` artisan command now respects the configured `S3_ENDPOINT` and path-style addressing instead of always probing `amazonaws.com`.
 
 ### Internals
 
@@ -29,6 +31,9 @@
 - Added a `canHandlePath()` hook to the `RoutingStrategy` interface (default: paths starting with `/`) so strategies can distinguish routable paths from local hrefs such as hash anchors or query-only links; `RouterHandle` and `Link.svelte` use it to decide whether to intercept a click or let the browser handle it.
 - `RoutingExtension`'s public `app.router` is now typed as `RouterHandle` instead of the raw `universal-router` instance, removing an internal-only escape hatch from the public API. An `app.__router` field (marked `@internal`) still exposes the full router for `Shell.svelte`'s bootstrap.
 - `UserContext` now injects the Laravel auth `Factory` and gained `getAuthenticatedUser()` (returns the resolved `User` model or `null`) and `getUser()` (returns whichever identity shape currently applies: `RegisteringUser`, `User`, or `null`), complementing the existing `getRegisteringUser()`.
+- **Storage: driver-agnostic file persistence** (`app/Services/Storage/AbstractFileStorage.php`): `persistTemporaryFile` previously moved the whole temp *directory*, which only works on local disks (via `rename()`); s3-style drivers treat directories as key prefixes and silently ignore such moves. It now copies each file individually (`allFiles()` + `copy()` + one `deleteDirectory()`), which Laravel's contract guarantees for every driver — a server-side `CopyObject` on s3, a native copy on local disks.
+- **Storage: hardened s3 disk config** (`config/filesystems.php`): `throw => true` turns failed Flysystem operations into logged exceptions instead of unchecked `false` returns (the reason the original bug stayed invisible); `retain_visibility => false` skips the `GetObjectAcl` pre-check before each `copy()`, which ACL-less s3 servers (garage, Cloudflare R2) reject.
+- **Storage: `check:storage` now honors custom s3 endpoints** (`app/Console/Commands/CheckStorageConnection.php`) by forwarding the disk's `endpoint`/`use_path_style_endpoint` to its `S3Client` instead of always probing `amazonaws.com`.
 
 ### Deprecation
 

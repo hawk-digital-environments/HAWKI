@@ -71,14 +71,17 @@ class CheckStorageConnection extends Command
                 ];
             }
 
-            $client = new S3Client([
+            $client = new S3Client(array_merge([
                 'credentials' => [
                     'key' => $config['key'],
                     'secret' => $config['secret'],
                 ],
                 'region' => $config['region'],
                 'version' => $config['version'] ?? 'latest',
-            ]);
+            ], array_filter([
+                'endpoint' => $config['endpoint'] ?? null,
+                'use_path_style_endpoint' => $config['use_path_style_endpoint'] ?? false,
+            ])));
 
             $adapter = new AwsS3V3Adapter($client, $config['bucket'], $config['prefix'] ?? '');
 

@@ -125,6 +125,12 @@ return [
             'endpoint' => env('S3_ENDPOINT'),
             'use_path_style_endpoint' => true,
             'visibility' => 'private',
+            // File operations fail loudly for failed file operations.
+            'throw' => true,
+            // Set to true to enforce the ACL "GetObjectAcl" check flysystem performs before every copy() call. 
+            // Many s3-compatible servers (garage, cloudflare r2 , ...) do not implement ACLs and would fail otherwise.
+            // All files are private anyway. Default is false for max compatiblity.
+            'retain_visibility' => false,
         ],
 
         'nextcloud' => [
