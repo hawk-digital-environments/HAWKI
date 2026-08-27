@@ -12,8 +12,9 @@ readonly class PluginMigrationHookEnsurer
 {
     public function __construct(
         private Filesystem $files,
-        private PluginFs $pluginFs,
-    ) {
+        private PluginFs   $pluginFs,
+    )
+    {
     }
 
     /**
@@ -31,28 +32,39 @@ readonly class PluginMigrationHookEnsurer
             return new EnsuredPluginMigrationHook($pluginFile, EnsuredPluginMigrationHook::STATUS_ALREADY_CONFIGURED);
         }
 
-        if (preg_match('/\bmigrations\s*\(/', $content) === 1) {
-            $this->files->put($pluginFile, $this->updateGlob($content, $expectedGlob));
+        // 1) Match method definitions in core plugin
+        // Similar regex to "updateGlob", but is more forgiving, so even if there is a "migrations" method,
+        // that does not contain an access modifier, it will still trigger the exception.
+        if (preg_match('/^\s+(public\s+)?migrations\s*\(/', $content) === 1) {
+            $updated = $this->updateGlob($content, $expectedGlob);
 
+            // 2) Throw for unexpected migration globs
+            if ($updated === null) {
+                throw new \RuntimeException(
+                    "Found a migrations() hook in {$pluginFile} but could not safely update its glob. Please wire it manually to: {$expectedGlob}"
+                );
+            }
+
+            $this->files->put($pluginFile, $updated);
             return new EnsuredPluginMigrationHook($pluginFile, EnsuredPluginMigrationHook::STATUS_UPDATED_GLOB);
         }
 
         $this->files->put($pluginFile, $this->addMigrationHook($content, $expectedGlob));
-
         return new EnsuredPluginMigrationHook($pluginFile, EnsuredPluginMigrationHook::STATUS_ADDED_HOOK);
     }
 
-        $offset = 0;
-
-        if (preg_match('/\bmigrations\s*\(/', $content, $migrationMatch, \PREG_OFFSET_CAPTURE) === 1) {
-            $offset = $migrationMatch[0][1];
+    private function updateGlob(string $content, string $glob): ?string
+    {
+        // Definition-anchored match; null-return means "not found", never fall back to offset 0
+        if (preg_match('/public\s+migrations\s*\(/', $content, $migrationMatch, \PREG_OFFSET_CAPTURE) !== 1) {
+            return null;
         }
 
-        if (preg_match('/import\.meta\.glob\(\s*[\'\"][^\'\"]*[\'\"]/', $content, $matches, \PREG_OFFSET_CAPTURE, $offset) === 1) {
-            return substr_replace($content, "import.meta.glob('" . $glob . "'", $matches[0][1], \strlen($matches[0][0]));
+        if (preg_match('/import\.meta\.glob\(\s*[\'"][^\'"]*[\'"]/', $content, $matches, \PREG_OFFSET_CAPTURE, $migrationMatch[0][1]) !== 1) {
+            return null; // hook exists but contains no glob — refuse to guess
         }
 
-        return $content;
+        return substr_replace($content, "import.meta.glob('" . $glob . "')", $matches[0][1], \strlen($matches[0][0]));
     }
 
     private function addMigrationHook(string $content, string $glob): string
