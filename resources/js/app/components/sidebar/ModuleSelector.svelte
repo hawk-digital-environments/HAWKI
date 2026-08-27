@@ -53,7 +53,7 @@
     const currentModuleItem = $derived(findModuleItem(current));
 </script>
 
-<CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule}>
+<CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule} shortcut={false}>
     {#snippet trigger({ props })}
         <CommandPaletteTrigger
             label={currentModuleItem?.label ?? current ?? ''}
