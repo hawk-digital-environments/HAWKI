@@ -1,13 +1,16 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
+import ChatAddIcon from '$lib/components/ui/icons/iconset/ChatAddIcon.svelte';
 import type {ChatSummary} from '$plugins/core/modules/chat/types.js';
 
+const ACTIONS_GROUP_ID = 'core:chat.actions';
 const GROUP_ID = 'core:chat.conversations';
 
 /**
- * Contributes the user's conversations to the search palette as the
- * "Conversations" group on the kernel's `app.search`. Called from
- * `CorePlugin.ready()`, once the `chat` store exists. The group reads
+ * Contributes the chat module's entries to the search palette on the
+ * kernel's `app.search`: a "Chat" group with the new-chat action, and the
+ * "Conversations" group listing the user's chats. Called from
+ * `CorePlugin.ready()`, once the `chat` store exists. The latter group reads
  * `chatStore.conversations` lazily (it is `$state`, and the palette evaluates
  * the getter in a `$derived`), so it stays current as chats are created,
  * renamed, or deleted, and
@@ -18,6 +21,20 @@ const GROUP_ID = 'core:chat.conversations';
  */
 export function registerChatSearch(app: HawkiApp): void {
     const chatStore = app.stores.get('chat');
+
+    app.search.addGroup({
+        id: ACTIONS_GROUP_ID,
+        label: () => app.translator.translate('chat.module.title'),
+        items: () => [{
+            id: `${ACTIONS_GROUP_ID}/new`,
+            title: app.translator.translate('chat.sidebar.newChat'),
+            icon: ChatAddIcon,
+            onSelect: () => {
+                chatStore.startNew();
+                void app.router.goToRoute('chat.index');
+            }
+        }]
+    });
 
     app.search.addGroup({
         id: GROUP_ID,
