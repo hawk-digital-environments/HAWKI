@@ -20,6 +20,7 @@
  */
 import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
 import {AiHandleStore} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
@@ -31,6 +32,8 @@ import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {ModelFavoritesStore} from '$plugins/core/stores/ModelFavoritesStore.svelte.js';
 import {ModelSelectionStore} from '$plugins/core/stores/ModelSelectionStore.svelte.js';
+import {SearchStore} from '$plugins/core/stores/SearchStore.svelte.js';
+import {registerChatSearch} from '$plugins/core/modules/chat/search.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import {ChatModule} from '$plugins/core/modules/chat/ChatModule.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
@@ -74,5 +77,10 @@ export default class CorePlugin implements HawkiCorePlugin {
         add(new ModelFavoritesStore());
         add(new ModelSelectionStore());
         add(new ChatStore());
+        add(new SearchStore());
+    }
+
+    public ready(app: HawkiApp): void {
+        registerChatSearch(app);
     }
 }

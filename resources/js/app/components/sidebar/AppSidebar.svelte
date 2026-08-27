@@ -12,6 +12,7 @@
     import ModuleSelector from '$lib/app/components/sidebar/ModuleSelector.svelte';
     import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
     import MobileNavCollapse from '$lib/app/components/sidebar/MobileNavCollapse.svelte';
+    import SearchDialog from '$lib/app/components/search/SearchDialog.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -30,6 +31,7 @@
     const ModuleSidebar = $derived(activeModule?.sidebar?.(app.localization.locale) ?? null);
 
     const chatPath = router.getPath('chat.index');
+    let searchOpen = $state(false);
 
     function startNewChat(event: MouseEvent) {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
@@ -42,7 +44,7 @@
 
 <Sidebar label={__('ui.navigation.label')}>
     <MobileNavCollapse />
-    <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
+    <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat} onSearch={() => searchOpen = true}>
         <HawkLogo label={__('ui.navigation.newChat')} />
     </SidebarHeader>
     <div class="module-selector">
@@ -57,6 +59,8 @@
         <ProfileButton/>
     </SidebarFooter>
 </Sidebar>
+
+<SearchDialog bind:open={searchOpen} />
 
 <style>
     .module-sidebar {
