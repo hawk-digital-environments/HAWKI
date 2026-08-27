@@ -10,10 +10,12 @@
   padding is right for confirmation dialogs but wrong for a palette, where the
   input *is* the header.
 
-  Filtering is done by the kernel (`matchSearchGroups`: literal substring over
-  title and keywords, case-insensitive) with Command's own filter switched
-  off, so each group keeps the order its contributor chose instead of being
-  re-ranked by fuzzy score. Groups with no matching row are dropped entirely.
+  Filtering and ranking are done by the kernel: `buildSearchIndex` puts every
+  registered row into a MiniSearch index (rebuilt only when the rows change),
+  `matchSearchGroups` queries it per keystroke with prefix and fuzzy matching
+  and orders rows and groups by relevance. Command's own filter is switched
+  off so it does not re-rank on top. Groups with no matching row are dropped
+  entirely; an empty query shows everything in contributor order.
   The rows themselves are rendered by the shared `CommandResults`; only the
   modal shell, the input and the hover treatment live here.
 -->
@@ -24,7 +26,7 @@
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {matchSearchGroups, type SearchItem} from '$lib/kernel/search/SearchExtension.svelte.js';
+    import {buildSearchIndex, matchSearchGroups, type SearchItem} from '$lib/kernel/search/SearchExtension.svelte.js';
 
     interface Props {
         /** Whether the dialog is open. Supports bind:open. */
@@ -38,7 +40,8 @@
 
     let query = $state('');
 
-    const results = $derived(matchSearchGroups(search.groups, query));
+    const index = $derived(buildSearchIndex(search.groups));
+    const results = $derived(matchSearchGroups(index, query));
 
     /** Matching rows by id, so a chosen `value` maps back to its item. */
     const itemsById = $derived(
