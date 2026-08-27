@@ -6,6 +6,8 @@
   (`openDelay`), stays open while the pointer travels into it, closes when the
   pointer leaves both, and can be opened with →/Enter/Space and closed with ←.
   The panel is portaled so the parent menu's scroll container does not clip it.
+  Below `bpMd` (where the parent menu renders as a `BottomSheet`) the panel
+  opens below the row at the row's full width instead of to the side.
 
   Compose the panel from other family members, typically
   `DropdownMenuRadioGroup` + `DropdownMenuRadioItem` for a single choice:
@@ -27,6 +29,7 @@
     import type {Snippet} from 'svelte';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Whether the submenu is open. Supports bind:open. */
@@ -57,9 +60,13 @@
         ...restProps
     }: Props = $props();
 
+    const breakpoint = useBreakpoint();
+
     const fullContentProps = $derived.by(() => mergeProps(
+        breakpoint.is('bpSmallerThanMd')
+            ? {side: 'bottom', align: 'end', sideOffset: 4}
+            : {sideOffset: 8},
         {
-            sideOffset: 8,
             class: 'dropdown-content dropdown-content--dropdown dropdown-sub-content'
         },
         contentProps ?? {}
@@ -134,5 +141,11 @@
 
     :global(.dropdown-sub-content) {
         min-width: calc(0.25rem * 40);
+    }
+
+    @media (--bp-smaller-than-md) {
+        :global(.dropdown-sub-content) {
+            width: var(--bits-floating-anchor-width);
+        }
     }
 </style>
