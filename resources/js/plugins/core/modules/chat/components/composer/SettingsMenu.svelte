@@ -110,6 +110,9 @@
 
     :global(.dropdown-content.model-settings-content) {
         padding: var(--space-2, calc(0.25rem * 2));
+    }
+
+    :global(.dropdown-content--dropdown.model-settings-content) {
         width: calc(0.25rem * 64);
     }
 </style>
