@@ -99,6 +99,15 @@
                     }
                 }
             }
+        },
+        "search": {
+            "title": "Search",
+            "placeholder": "Search…",
+            "closeHint": "Press Escape to close",
+            "closeKey": "Esc",
+            "conversations": "Conversations",
+            "noResults": "Nothing matches “:query”.",
+            "empty": "Nothing to search yet."
         }
     }
 }

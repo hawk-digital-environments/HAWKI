@@ -99,6 +99,15 @@
                     }
                 }
             }
+        },
+        "search": {
+            "title": "Suche",
+            "placeholder": "Suchen…",
+            "closeHint": "Esc drücken zum Schließen",
+            "closeKey": "Esc",
+            "conversations": "Unterhaltungen",
+            "noResults": "Nichts passt zu „:query“.",
+            "empty": "Noch nichts zum Durchsuchen."
         }
     }
 }
