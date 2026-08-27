@@ -109,6 +109,11 @@
             "closeHint": "Esc drücken zum Schließen",
             "closeKey": "Esc",
             "conversations": "Unterhaltungen",
+            "settings": {
+                "label": "Einstellungen",
+                "general": "Allgemeine Einstellungen",
+                "profile": "Profileinstellungen"
+            },
             "noResults": "Nichts passt zu „:query“.",
             "empty": "Noch nichts zum Durchsuchen."
         }
