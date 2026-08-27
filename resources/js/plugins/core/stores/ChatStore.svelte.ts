@@ -166,12 +166,19 @@ export class ChatStore implements DataStore {
         return conversation;
     }
 
+    /**
+     * Renames the conversation and, like the server (a PATCH bumps
+     * `updated_at`, and the index lists newest first), moves it to the front
+     * of `conversations` with the server's timestamp — so the local order
+     * already matches what a reload would show.
+     */
     public async rename(slug: string, name: string): Promise<void> {
-        await this.dependencies.restApi.updateResource('ai-convs', slug, {name});
+        const updated = await this.dependencies.restApi.updateResource('ai-convs', slug, {name});
         const conversation = this.getConversation(slug);
         if (conversation) conversation.name = name;
         const summary = this.conversations.find(item => item.slug === slug);
         if (summary) summary.name = name;
+        this.touch(slug, typeof updated?.updated_at === 'string' ? updated.updated_at : undefined);
     }
 
     public conversationName(slug: string): string | null {
@@ -393,10 +400,15 @@ export class ChatStore implements DataStore {
         return this.conversationCache.get(slug) ?? null;
     }
 
-    private touch(slug: string): void {
+    /**
+     * Marks the conversation as the most recently updated one: stamps
+     * `updated_at` (with `at`, e.g. the server's value, or now) and moves the
+     * summary to the front of `conversations`.
+     */
+    private touch(slug: string, at: string = new Date().toISOString()): void {
         const summary = this.conversations.find(item => item.slug === slug);
         if (!summary) return;
-        summary.updated_at = new Date().toISOString();
+        summary.updated_at = at;
         this.conversations = [summary, ...this.conversations.filter(item => item.slug !== summary.slug)];
     }
 
