@@ -6,9 +6,11 @@ const GROUP_ID = 'core:chat.conversations';
 
 /**
  * Contributes the user's conversations to the search palette as the
- * "Conversations" group. Called from `CorePlugin.ready()`, after both the
- * `chat` and `search` stores exist. The group reads `chatStore.conversations`
- * lazily, so it stays current as chats are created, renamed, or deleted, and
+ * "Conversations" group on the kernel's `app.search`. Called from
+ * `CorePlugin.ready()`, once the `chat` store exists. The group reads
+ * `chatStore.conversations` lazily (it is `$state`, and the palette evaluates
+ * the getter in a `$derived`), so it stays current as chats are created,
+ * renamed, or deleted, and
  * lists them newest first by the store's `updated_at` (which `ChatStore` bumps
  * on creation, activity, and rename — the same events that move a chat up on
  * the server). Ties keep the store's own order. The store's list is copied before sorting — rendering never
@@ -17,7 +19,7 @@ const GROUP_ID = 'core:chat.conversations';
 export function registerChatSearch(app: HawkiApp): void {
     const chatStore = app.stores.get('chat');
 
-    app.stores.get('search').addGroup({
+    app.search.addGroup({
         id: GROUP_ID,
         label: () => app.translator.translate('ui.search.conversations'),
         items: () => [...chatStore.conversations].sort(byNewestFirst).map(conversation => ({

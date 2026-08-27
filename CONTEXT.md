@@ -24,7 +24,9 @@ what things *are*, not how they are built.
   one Plugin or Module (e.g. *Conversations* contributed by Chat). Groups are
   shown with a heading in registration order. A Group is a *live* source: its
   Items reflect the current state of whatever it represents, not a snapshot
-  taken when it was contributed.
+  taken when it was contributed. The registry Groups are contributed to is
+  part of the platform itself, not of any Plugin, so the palette exists even
+  when no Plugin contributes anything.
 - **Search Item** — One selectable row in the palette. Has a stable identity,
   a title, an optional icon, optional keywords, and an action. Two Items may
   share a title (two chats named "Test") but never an identity.
