@@ -99,7 +99,27 @@
                     "statsForNerds": {
                         "title": "Statistiken für Nerds",
                         "description": "Zeigt Token-Anzahl, Tokens pro Sekunde und Zeitangaben unter jeder KI-Antwort."
+                    },
+                    "chatIndex": {
+                        "title": "Chat-Index (Nachrichtensuche)",
+                        "description": "Legt einen verschlüsselten Index der Nachrichtentexte im Browser an, damit die Suche auch Inhalte deiner Chats findet. Der Index wächst beim Öffnen von Chats mit oder wird auf Wunsch aus allen Chats erstellt."
                     }
+                },
+                "chatIndex": {
+                    "title": "Chat-Index",
+                    "empty": "Noch kein Index vorhanden.",
+                    "status": ":conversations Unterhaltungen mit :messages Nachrichten indexiert.",
+                    "building": "Index wird erstellt… :done von :total Unterhaltungen geladen.",
+                    "builtAt": "Zuletzt vollständig aufgebaut: :date",
+                    "build": "Index erstellen",
+                    "refresh": "Index aktualisieren",
+                    "clear": "Index löschen",
+                    "later": "Später",
+                    "promptText": "Du hast :count Unterhaltungen, aber noch keinen Suchindex. Alle Chats laden, um auch Nachrichten zu durchsuchen?",
+                    "notPersistent": "Der Browser hat keinen dauerhaften Speicher gewährt – der Index kann bei Speichermangel gelöscht werden.",
+                    "unavailable": "Dieser Browser bietet keinen lokalen Speicher für den Index.",
+                    "error": "Fehler: :message",
+                    "export": "Index exportieren (JSON)"
                 }
             }
         },
@@ -115,7 +135,9 @@
                 "profile": "Profileinstellungen"
             },
             "noResults": "Nichts passt zu „:query“.",
-            "empty": "Noch nichts zum Durchsuchen."
+            "empty": "Noch nichts zum Durchsuchen.",
+            "messages": "Nachrichten",
+            "inConversation": "in „:name“"
         }
     }
 }

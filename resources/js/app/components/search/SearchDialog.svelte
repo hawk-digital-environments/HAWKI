@@ -10,11 +10,14 @@
   padding is right for confirmation dialogs but wrong for a palette, where the
   input *is* the header.
 
-  Filtering and ranking are done by the kernel: `buildSearchIndex` puts every
-  registered row into a MiniSearch index (rebuilt only when the rows change),
-  `matchSearchGroups` queries it per keystroke with prefix and fuzzy matching
-  and orders rows and groups by relevance. Command's own filter is switched
-  off so it does not re-rank on top. Groups with no matching row are dropped
+  Filtering and ranking are done by the kernel, off the main thread:
+  `resolveSearchGroups` collects every registered row (only when the rows
+  change) and hands the documents to a `SearchMatcher`, which indexes and
+  queries them with MiniSearch in a Web Worker. Each keystroke asks the
+  matcher asynchronously once typing pauses for a moment (debounced); an
+  answer for an older query than the one in the field is dropped, and `rankSearchGroups` orders rows and groups by
+  relevance. Command's own filter is switched off so it does not re-rank on
+  top. Groups with no matching row are dropped
   entirely; an empty query shows everything in contributor order.
   The rows themselves are rendered by the shared `CommandResults`; only the
   modal shell, the input and the hover treatment live here.
@@ -24,9 +27,13 @@
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import CommandResults, {type CommandGroupDefinition} from '$lib/components/ui/command/CommandResults.svelte';
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
+    import ChatIndexPanel from '$plugins/core/modules/chat/components/ChatIndexPanel.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {buildSearchIndex, matchSearchGroups, type SearchItem} from '$lib/kernel/search/SearchExtension.svelte.js';
+    import {rankSearchGroups, resolveSearchGroups, type ResolvedSearchGroups, type SearchGroupResult, type SearchItem} from '$lib/kernel/search/SearchExtension.svelte.js';
+    import {SearchMatcher} from '$lib/kernel/search/SearchMatcher.js';
+    import {debounce} from '$lib/utils/debounce.js';
+    import {onDestroy} from 'svelte';
 
     interface Props {
         /** Whether the dialog is open. Supports bind:open. */
@@ -35,13 +42,50 @@
 
     let {open = $bindable(false)}: Props = $props();
 
-    const search = useApp().search;
+    const app = useApp();
+    const search = app.search;
+    // The chat index prompt (build the message index?) is only offered when
+    // the experiment is on and no full index exists yet.
+    const chatIndex = app.stores.has('chat-index') ? app.stores.get('chat-index') : null;
+    const showIndexPrompt = $derived(Boolean(chatIndex && (chatIndex.needsBuild || (chatIndex.enabled && chatIndex.building))));
     const {__} = useTranslator();
 
     let query = $state('');
 
-    const index = $derived(buildSearchIndex(search.groups));
-    const results = $derived(matchSearchGroups(index, query));
+    const matcher = new SearchMatcher();
+    onDestroy(() => matcher.dispose());
+
+    const resolved = $derived(resolveSearchGroups(search.groups));
+    let results = $state<SearchGroupResult[]>([]);
+
+    // Re-index when the rows change, and re-query: the scores of the old
+    // index no longer map onto the new rows.
+    $effect(() => {
+        matcher.replace(resolved.documents);
+    });
+
+    // Ask the matcher once typing pauses (debounced), not per keystroke.
+    // Answers arrive later and possibly out of step with typing, so each one
+    // is checked against the field's current query before it is shown; the
+    // last results stay on screen until then. A blank query needs no matcher.
+    const SEARCH_DEBOUNCE_MS = 150;
+    const askMatcher = debounce((current: string, rows: ResolvedSearchGroups) => {
+        if (current !== query || rows !== resolved) return;
+        void matcher.search(current).then(scores => {
+            if (current !== query || rows !== resolved) return;
+            results = rankSearchGroups(rows, scores);
+        });
+    }, SEARCH_DEBOUNCE_MS);
+
+    $effect(() => {
+        const current = query;
+        const rows = resolved;
+        if (current.trim() === '') {
+            results = rankSearchGroups(rows, null);
+            return;
+        }
+        askMatcher(current, rows);
+    });
 
     /** Matching rows by id, so a chosen `value` maps back to its item. */
     const itemsById = $derived(
@@ -55,6 +99,7 @@
             items: group.items.map(item => ({
                 value: item.id,
                 label: item.title,
+                description: item.description,
                 icon: item.icon,
                 keywords: item.keywords
             }))
@@ -106,6 +151,9 @@
                         <Kbd key="Escape" label={__('ui.search.closeKey')} alwaysVisible />
                     </span>
                 </div>
+                {#if showIndexPrompt}
+                    <ChatIndexPanel compact />
+                {/if}
                 <CommandResults {groups} onSelect={select}>
                     {#snippet empty()}
                         <p class="search-empty">
