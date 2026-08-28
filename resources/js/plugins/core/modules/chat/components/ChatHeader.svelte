@@ -19,7 +19,7 @@
         onDelete: () => void | Promise<void>;
         onExport: (format: ConversationExportFormat) => void | Promise<void>;
         generating?: boolean;
-        /** When set, renders a visually hidden skip link (after the title) that jumps focus past the message log into the composer. */
+        /** When set, renders a visually hidden skip link that jumps focus past the message log into the composer. */
         onSkipToComposer?: () => void;
     }
 
@@ -30,7 +30,6 @@
 </script>
 
 <header {...restProps} class={["u-print-hidden", className]}>
-    <h1 class="u-sr-only">{conversation.name}</h1>
     <div class="name">
         <ChatNameMenu
             bind:name

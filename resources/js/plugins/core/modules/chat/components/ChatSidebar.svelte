@@ -93,6 +93,7 @@
     }
 
     function newChat() {
+        if (sidebar.mobile) sidebar.navOpen = false;
         store.startNew();
         void router.goToRoute('chat.index');
     }

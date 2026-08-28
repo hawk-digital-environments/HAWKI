@@ -11,6 +11,7 @@ from the store's in-flight cache.
     import ChatComposerDock from '$plugins/core/modules/chat/components/ChatComposerDock.svelte';
     import ChatMessageView from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import ChatWelcome from '$plugins/core/modules/chat/components/ChatWelcome.svelte';
+    import Page from '$lib/components/ui/page/Page.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
@@ -63,50 +64,46 @@ from the store's in-flight cache.
     });
 </script>
 
-<section class="chat-page" style:--composer-dock-height="{composerDockHeight}px">
-    <div class="chat-body" class:empty={isEmpty}>
-        <div class="scroll-region" bind:this={scrollRegion}>
-            {#if pendingMessage}
-                <div class="messages" role="log" aria-live="polite" aria-label={__('chat.page.messageHistory')}>
-                    <ChatMessageView
-                        message={pendingMessage}
-                        onDelete={() => undefined}
-                        onDeleteAttachment={() => undefined}
-                    />
-                    <div class="pending-response" role="status">
-                        <span class="spinner" aria-hidden="true"></span>
-                        <span>{__('chat.page.generating')}</span>
+<Page>
+    {#snippet body()}
+        <div class="chat-body" class:empty={isEmpty} style:--composer-dock-height="{composerDockHeight}px">
+            <div class="scroll-region" bind:this={scrollRegion}>
+                {#if pendingMessage}
+                    <div class="messages" role="log" aria-live="polite" aria-label={__('chat.page.messageHistory')}>
+                        <ChatMessageView
+                            message={pendingMessage}
+                            onDelete={() => undefined}
+                            onDeleteAttachment={() => undefined}
+                        />
+                        <div class="pending-response" role="status">
+                            <span class="spinner" aria-hidden="true"></span>
+                            <span>{__('chat.page.generating')}</span>
+                        </div>
                     </div>
-                </div>
-            {:else}
-                <ChatWelcome />
-            {/if}
-        </div>
+                {:else}
+                    <ChatWelcome />
+                {/if}
+            </div>
 
-        <ChatComposerDock {scrollRegion} bind:height={composerDockHeight}>
-            <ChatComposer
-                context="aiConv"
-                {transport}
-                initialSystemPrompt={defaultPrompt}
-                onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
-                onReady={value => composer = value}
-            />
-        </ChatComposerDock>
-    </div>
-</section>
+            <ChatComposerDock {scrollRegion} bind:height={composerDockHeight}>
+                <ChatComposer
+                    context="aiConv"
+                    {transport}
+                    initialSystemPrompt={defaultPrompt}
+                    onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
+                    onReady={value => composer = value}
+                />
+            </ChatComposerDock>
+        </div>
+    {/snippet}
+</Page>
 
 <style>
-    .chat-page {
-        display: grid;
-        grid-template-rows: minmax(0, 1fr);
-        height: 100%;
-        min-height: 0;
-        background: var(--color-surface-raised);
-    }
-
-    /* Shared canvas for the scroll region and the floating composer. */
+    /* Shared canvas for the scroll region and the floating composer. Fills the
+       Page shell's body area. */
     .chat-body {
         position: relative;
+        height: 100%;
         min-height: 0;
     }
 
@@ -164,10 +161,19 @@ from the store's in-flight cache.
     @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (--bp-sm-and-smaller) {
-        .messages { padding-inline: var(--space-3); padding-top: var(--space-5); }
+        .messages { padding-inline: var(--space-3); }
+    }
+
+    /* Mobile: the floating nav toggle overlays the content top, so the message
+       list and the empty-state welcome reserve room to clear it (toggle inset +
+       height + gap) while still letting content scroll up under the
+       SidebarContent fade overlay. */
+    @media (--bp-md-and-smaller) {
+        .messages { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
+        .empty :global(.welcome) { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
     }
 
     @media print {
-        .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
+        .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
     }
 </style>
