@@ -2,11 +2,14 @@
   @component Client-side experiments for the new UI. Renders one toggle row per
   entry in the `experiments` store's registry; the empty-state alert only shows
   when no experiments are registered. Flags are persisted in localStorage.
+  The "Chat Index" experiment adds its status/refresh panel below the list
+  while it is enabled.
 -->
 <script lang="ts">
     import Alert from '$lib/components/ui/alert/Alert.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
+    import ChatIndexPanel from '$plugins/core/modules/chat/components/ChatIndexPanel.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {RouteProps} from '$lib/components/ui/routing/index.js';
@@ -48,6 +51,9 @@
                 </li>
             {/each}
         </ul>
+        {#if experiments.isEnabled('chatIndex')}
+            <ChatIndexPanel />
+        {/if}
     {/if}
 </section>
 
