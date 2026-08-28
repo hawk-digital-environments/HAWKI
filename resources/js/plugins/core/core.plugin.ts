@@ -5,7 +5,7 @@
  * foundational, always-on features of the frontend:
  *   - **Stores**: registers the core reactive stores ({@link KeychainStore},
  *     {@link AiHandleStore}, {@link AiModelStore}, {@link AiToolStore},
- *     {@link SystemPromptStore}, {@link ThemeStore}, {@link ExperimentsStore}) with
+ *     {@link SystemPromptStore}, {@link ThemeStore}, {@link ExperimentsStore}, {@link ChatIndexStore}) with
  *     the kernel's `StoreExtension` so their `loadData` runs on the bootstrapper's main stage.
  *   - **Migrations**: lazy-globs the `plugins/core/migrations/` directory and
  *     hands the loaders to the `MigrationExtension` for the keychain/encryption
@@ -30,6 +30,7 @@ import {ThemeStore} from '$plugins/core/stores/ThemeStore.svelte.js';
 import {ExperimentsStore} from '$plugins/core/stores/ExperimentsStore.svelte.js';
 import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
+import {ChatIndexStore} from '$plugins/core/stores/ChatIndexStore.svelte.js';
 import {ModelFavoritesStore} from '$plugins/core/stores/ModelFavoritesStore.svelte.js';
 import {ModelSelectionStore} from '$plugins/core/stores/ModelSelectionStore.svelte.js';
 import {registerChatSearch} from '$plugins/core/modules/chat/search.js';
@@ -76,6 +77,7 @@ export default class CorePlugin implements HawkiCorePlugin {
         add(new ModelFavoritesStore());
         add(new ModelSelectionStore());
         add(new ChatStore());
+        add(new ChatIndexStore());
     }
 
     public ready(app: HawkiApp): void {
