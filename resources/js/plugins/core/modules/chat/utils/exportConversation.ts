@@ -1,4 +1,5 @@
 import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
+import {downloadBlob, downloadText as download} from '$lib/utils/download.js';
 
 export type ConversationExportFormat = 'print' | 'pdf' | 'word' | 'json' | 'csv';
 
@@ -240,19 +241,6 @@ async function exportWord(
 
     const document = new Document({sections: [{children}]});
     downloadBlob(`${filename}.docx`, await Packer.toBlob(document));
-}
-
-function download(filename: string, content: string, type: string): void {
-    downloadBlob(filename, new Blob([content], {type}));
-}
-
-function downloadBlob(filename: string, blob: Blob): void {
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.download = filename;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url));
 }
 
 function safeFilename(value: string): string {
