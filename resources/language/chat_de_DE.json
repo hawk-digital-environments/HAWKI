@@ -8,7 +8,14 @@
             "history": "Chatverlauf",
             "loading": "Chats werden geladen…",
             "generating": "Antwort wird generiert",
-            "empty": "Deine Unterhaltungen erscheinen hier."
+            "empty": "Deine Unterhaltungen erscheinen hier.",
+            "groups": {
+                "today": "Heute",
+                "yesterday": "Gestern",
+                "last7Days": "Letzte 7 Tage",
+                "last30Days": "Letzte 30 Tage",
+                "older": "Älter"
+            }
         },
         "page": {
             "newChat": "Neuer Chat",
