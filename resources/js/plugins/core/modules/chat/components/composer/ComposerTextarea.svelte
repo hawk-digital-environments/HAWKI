@@ -68,6 +68,9 @@
             e.preventDefault();
             composerContext.mode.exit();
         }
+        // The paste event carries no modifier state, so remember Ctrl/Cmd+Shift+V
+        // here; any other keystroke clears it again.
+        forceInlinePaste = e.shiftKey && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v';
     }
 
     let oldMessage = composerContext.message;
@@ -83,7 +86,13 @@
     /** Pasted plain text longer than this (in characters) is attached as a `.txt` file instead of inserted inline. */
     const PASTE_AS_FILE_THRESHOLD = 1000;
 
+    /** True while the pending paste was triggered via Ctrl/Cmd+Shift+V, which forces inline text insertion. */
+    let forceInlinePaste = false;
+
     function handlePaste(e: ClipboardEvent) {
+        const pasteInline = forceInlinePaste;
+        forceInlinePaste = false;
+
         const clipboard = e.clipboardData;
         if (!clipboard) return;
 
@@ -92,6 +101,8 @@
             reportAttachmentIssues(translator, toastContext, composerContext.attachments.add(clipboard.files));
             return;
         }
+
+        if (pasteInline) return;
 
         const text = clipboard.getData('text/plain');
         if (text.length <= PASTE_AS_FILE_THRESHOLD || composerContext.guard.disablesFeature('attachments')) return;
