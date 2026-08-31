@@ -14,6 +14,7 @@
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import { fade } from 'svelte/transition';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import {HISTORY_BUCKETS, historyBucket, type HistoryBucket} from '$lib/utils/date.js';
     import type {HTMLAttributes} from 'svelte/elements';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {}
@@ -26,6 +27,24 @@
     const {__} = useTranslator();
     const toast = useToastContext();
     const expanded = $derived(sidebar.navOpen);
+
+    // The history grouped by age (today / yesterday / …), empty buckets
+    // dropped. The store list is already newest-first, so pushing in order
+    // keeps each bucket sorted. A conversation without any timestamp cannot
+    // be placed and lands in "older".
+    const groups = $derived.by(() => {
+        const byBucket = new Map<HistoryBucket, typeof store.conversations>();
+        for (const conversation of store.conversations) {
+            const bucket = historyBucket(conversation.updated_at ?? conversation.created_at ?? NaN);
+            const members = byBucket.get(bucket);
+            if (members) members.push(conversation);
+            else byBucket.set(bucket, [conversation]);
+        }
+        return HISTORY_BUCKETS.flatMap(bucket => {
+            const conversations = byBucket.get(bucket);
+            return conversations ? [{bucket, conversations}] : [];
+        });
+    });
 
     // Fade the list edge only where there is actually more content in that
     // direction, so a short (or fully scrolled) list shows no fade at all.
@@ -95,26 +114,34 @@
                 <p class="hint">{__('chat.sidebar.empty')}</p>
             {:else}
                 <SidebarItems>
-                    {#each store.conversations as conversation (conversation.slug)}
-                        {@const generating = store.isGenerating(conversation.slug)}
-                        <!-- History rows are label-only: with every row carrying
-                             the same message icon it added no information. The
-                             leading slot is used solely to mark a conversation
-                             that is still generating. -->
-                        {#snippet generatingIndicator()}
-                            <span class="generation-indicator" aria-hidden="true"></span>
-                        {/snippet}
-                        <ChatHistoryItem
-                            media={generating ? generatingIndicator : undefined}
-                            name={conversation.name}
-                            active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
-                            rowLabel={generating
-                                ? `${conversation.name}, ${__('chat.sidebar.generating')}`
-                                : conversation.name}
-                            onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
-                            onRename={name => renameConversation(conversation.slug, name)}
-                            onDelete={() => removeConversation(conversation.slug)}
-                        />
+                    {#each groups as group (group.bucket)}
+                        <!-- Non-interactive age divider; opts out of the list's
+                             proximity hover so the highlight does not reach for
+                             a neighbouring row while the pointer rests here. -->
+                        <h3 class="group-label" data-list-no-hover>
+                            {__(`chat.sidebar.groups.${group.bucket}`)}
+                        </h3>
+                        {#each group.conversations as conversation (conversation.slug)}
+                            {@const generating = store.isGenerating(conversation.slug)}
+                            <!-- History rows are label-only: with every row carrying
+                                 the same message icon it added no information. The
+                                 leading slot is used solely to mark a conversation
+                                 that is still generating. -->
+                            {#snippet generatingIndicator()}
+                                <span class="generation-indicator" aria-hidden="true"></span>
+                            {/snippet}
+                            <ChatHistoryItem
+                                media={generating ? generatingIndicator : undefined}
+                                name={conversation.name}
+                                active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
+                                rowLabel={generating
+                                    ? `${conversation.name}, ${__('chat.sidebar.generating')}`
+                                    : conversation.name}
+                                onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
+                                onRename={name => renameConversation(conversation.slug, name)}
+                                onDelete={() => removeConversation(conversation.slug)}
+                            />
+                        {/each}
                     {/each}
                 </SidebarItems>
             {/if}
@@ -180,6 +207,26 @@
        the history above it is not rendered at all. */
     .new-chat {
         margin-top: auto;
+    }
+
+    .group-label {
+        margin: 0;
+        /* Matches the horizontal rhythm of the rows (SidebarItem) so the label
+           aligns with the row text; the top margin separates it from the
+           previous group without touching the list's own row gap. */
+        padding: 0 var(--space-2_5) var(--space-1) var(--nav-item-pad-x);
+        margin-top: var(--space-3);
+        font-size: var(--font-size-xxs);
+        font-weight: var(--font-weight-medium, 500);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+    }
+
+    /* Not :first-child — the MenuList container renders its sliding highlight
+       spans before the rows, so the first label is never the first child. */
+    .group-label:first-of-type {
+        margin-top: 0;
     }
 
     .hint {

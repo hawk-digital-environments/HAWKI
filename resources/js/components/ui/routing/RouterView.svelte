@@ -18,7 +18,6 @@
     import Loader from '$lib/components/ui/loader/Loader.svelte';
     import type {Router} from '$lib/components/ui/routing/logistics/router.js';
     import {provideRouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
-    import {recoverFromStaleHmrContext} from '$lib/utils/staleHmrContextRecovery.js';
 
     interface Props {
         /** The router instance to render (from `createRouter`/`createRouterFromRegistrar`, or `app.router`). */
@@ -64,9 +63,6 @@
     router.bind();
 
     function handleError(error: unknown) {
-        // Dev-only: a `missing_context` after an HMR update means the module
-        // graph holds stale context keys — a one-shot reload fixes that.
-        if (recoverFromStaleHmrContext(error)) return;
         console.error('Error while rendering route component', error);
     }
 </script>
