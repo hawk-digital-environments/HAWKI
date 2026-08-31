@@ -128,7 +128,8 @@ export class MigrationExtension implements HawkiAppExtension {
 
     private getNumberOfNotAppliedMigrations(): number {
         try {
-            return this.app.authenticatedConnection.migrations_to_apply || 0;
+            const connection = this.app.connection;
+            return connection.isAuthenticated ? connection.migrations_to_apply || 0 : 0;
         } catch (e) {
             return 0;
         }

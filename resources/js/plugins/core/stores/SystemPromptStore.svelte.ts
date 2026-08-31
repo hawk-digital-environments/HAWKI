@@ -55,9 +55,7 @@ export class SystemPromptStore implements DataStore {
     }
 
     public async loadData(app: HawkiApp) {
-        try {
-            app.authenticatedConnection;
-        } catch {
+        if (!app.connection.isAuthenticated) {
             return;
         }
 

@@ -8,7 +8,7 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {useAuthenticatedConnection} from '$lib/app/hooks/useConnection.svelte.js';
+    import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
     import {useConfig} from '$lib/app/hooks/useConfig.svelte.js';
     import {useRestApi} from '$lib/app/hooks/useApi.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -24,17 +24,16 @@
 
     const app = useApp();
     const config = useConfig();
-    const connectionBox = useAuthenticatedConnection();
-    const connection = $derived(connectionBox.current);
+    const connection = useConnection();
     const restApi = useRestApi();
     const toast = useToastContext();
     const {__} = useTranslator();
 
-    const info = $derived(connection?.userinfo);
+    const info = $derived(connection.isAuthenticated ? connection.userinfo : undefined);
 
     // The form fields deliberately seed from the profile as it was on mount;
     // a later connection refresh must not clobber the user's unsaved edits.
-    const initialInfo = connectionBox.current?.userinfo;
+    const initialInfo = connection.isAuthenticated ? connection.userinfo : undefined;
     let name = $state(initialInfo?.name ?? '');
     let bio = $state(initialInfo?.bio ?? '');
     let avatarIdentifier = $state(initialInfo?.avatar ?? null);

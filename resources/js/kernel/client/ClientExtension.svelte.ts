@@ -6,12 +6,9 @@ import type {HawkiClient} from '$lib/kernel/client/dummyClient.js';
 import {UriBuilder} from '$lib/kernel/api/UriBuilder.js';
 import type {LinkPreviewApi} from '$lib/kernel/api/LinkPreviewApi.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
-import type {
-    Connection,
-    InternalAuthenticatedConnection,
-    InternalRegisteringUserConnection
-} from '$lib/app/schemas/resources/connections.schema.js';
+import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
 import {AiApi} from '$lib/kernel/ai/AiApi.js';
+import {updateObject} from '$lib/utils/objects.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
@@ -21,8 +18,6 @@ declare module '$lib/kernel/extendableTypes.js' {
         readonly linkPreviewApi: LinkPreviewApi;
         readonly uriBuilder: UriBuilder;
         readonly connection: Connection;
-        readonly authenticatedConnection: InternalAuthenticatedConnection;
-        readonly connectionWithUserInfo: InternalAuthenticatedConnection | InternalRegisteringUserConnection;
         refreshConnection(): Promise<Connection>;
         logout(): void;
     }
@@ -69,7 +64,16 @@ export class ClientExtension implements HawkiAppExtension {
 
     public async refreshConnection(): Promise<Connection> {
         const previousType = this.currentConnection?.type;
-        this.currentConnection = await this.client.restApi.getResource('connections', 'hawki');
+        const next = await this.client.restApi.getResource('connections', 'hawki');
+
+        // Preserve the identity of the connection object, so components holding
+        // `const connection = useConnection()` observe the refreshed session
+        // instead of a detached snapshot.
+        if (this.currentConnection === null) {
+            this.currentConnection = next;
+        } else {
+            updateObject(this.currentConnection, next);
+        }
 
         // Public config is connection-dependent. Preserve the initial bootstrap
         // ordering, but refresh it when an established session changes type
@@ -113,20 +117,6 @@ export class ClientExtension implements HawkiAppExtension {
             },
             get connection(): Connection {
                 return extension.getConnection();
-            },
-            get authenticatedConnection(): InternalAuthenticatedConnection {
-                const connection = extension.getConnection();
-                if (connection.type !== 'internal_authenticated') {
-                    throw new Error('Current connection is not authenticated');
-                }
-                return connection;
-            },
-            get connectionWithUserInfo(): InternalAuthenticatedConnection | InternalRegisteringUserConnection {
-                const connection = extension.getConnection();
-                if (connection.type === 'internal_authenticated' || connection.type === 'internal_registering_user') {
-                    return connection;
-                }
-                throw new Error('Current connection does not contain user info');
             },
             refreshConnection: () => extension.refreshConnection(),
             logout: () => extension.logout()

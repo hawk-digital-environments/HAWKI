@@ -39,14 +39,26 @@ const BaseConnectionSchema = z.object({
     locale: z.string()
 }).strict();
 
+/**
+ * Client-side narrowing flags. The backend does not send these — they are
+ * derived from the connection `type` at parse time via `.default()`, so every
+ * parsed connection carries them. Because they are literal types they act as
+ * additional discriminants: `if (connection.isAuthenticated)` narrows to
+ * {@link InternalAuthenticatedConnection}, `if (connection.hasUserInfo)`
+ * narrows to that or {@link InternalRegisteringUserConnection}.
+ */
 export const InternalConnectionSchema = BaseConnectionSchema.extend({
-    type: z.literal('internal')
+    type: z.literal('internal'),
+    isAuthenticated: z.literal(false).default(false),
+    hasUserInfo: z.literal(false).default(false)
 });
 
 export type InternalConnection = z.infer<typeof InternalConnectionSchema>;
 
 export const InternalAuthenticatedConnectionSchema = BaseConnectionSchema.extend({
     type: z.literal('internal_authenticated'),
+    isAuthenticated: z.literal(true).default(true),
+    hasUserInfo: z.literal(true).default(true),
     /**
      * Information about the authenticated user. This is only present if the client is authenticated with the HAWKI backend.
      */
@@ -58,6 +70,8 @@ export type InternalAuthenticatedConnection = z.infer<typeof InternalAuthenticat
 
 export const InternalRegisteringUserConnectionSchema = BaseConnectionSchema.extend({
     type: z.literal('internal_registering_user'),
+    isAuthenticated: z.literal(false).default(false),
+    hasUserInfo: z.literal(true).default(true),
     /**
      * Information about the user that is currently registering. This is only present if the client is in the process of registering a new user account.
      */

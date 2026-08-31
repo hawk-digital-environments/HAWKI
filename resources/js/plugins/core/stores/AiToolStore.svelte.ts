@@ -41,9 +41,7 @@ export class AiToolStore implements DataStore {
     ));
 
     public async loadData(app: HawkiApp) {
-        try {
-            app.authenticatedConnection;
-        } catch {
+        if (!app.connection.isAuthenticated) {
             return;
         }
 

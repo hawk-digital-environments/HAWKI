@@ -17,18 +17,18 @@
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useConnectionWithUserInfo} from '$lib/app/hooks/useConnection.svelte.js';
+    import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
 
     const app = useApp();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
-    const connectionBox = useConnectionWithUserInfo();
-    const connection = $derived(connectionBox.current);
-    const userName = $derived(connection?.userinfo.name || __('ui.profile.fallbackName'));
-    const userEmail = $derived(connection?.userinfo.email ?? '');
+    const connection = useConnection();
+    const userinfo = $derived(connection.hasUserInfo ? connection.userinfo : null);
+    const userName = $derived(userinfo?.name || __('ui.profile.fallbackName'));
+    const userEmail = $derived(userinfo?.email ?? '');
     const avatarIdentifier = $derived(
-        connection && 'avatar' in connection.userinfo && typeof connection.userinfo.avatar === 'string'
-            ? connection.userinfo.avatar
+        userinfo && 'avatar' in userinfo && typeof userinfo.avatar === 'string'
+            ? userinfo.avatar
             : null
     );
     const avatarUrl = $derived(app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined);
