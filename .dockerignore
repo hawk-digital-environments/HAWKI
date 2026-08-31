@@ -16,3 +16,11 @@
 /hawki
 /_documentation
 /_docker_production
+# Tests must never ship to production
+/tests
+/phpunit.xml
+**/__tests__
+**/*.spec.ts
+**/*.test.ts
+**/*.spec.js
+**/*.test.js

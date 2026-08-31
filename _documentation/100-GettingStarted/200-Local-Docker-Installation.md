@@ -130,6 +130,9 @@ The script is built using Node.js and lives in the `bin` folder. It acts as a co
 | `bin/env test php feature --coverage` | Run feature tests with a coverage report |
 | `bin/env test php stan`               | Run PHPStan static analysis              |
 | `bin/env test php all`                | Run all PHP tests (stan + phpunit)       |
+| `bin/env test js`                     | Run the Vitest frontend test suite       |
+| `bin/env test js coverage`            | Run frontend tests with coverage report  |
+| `bin/env test js watch`               | Run frontend tests in watch mode         |
 | `bin/env test all`                    | Run all tests (PHP and JS)               |
 
 Extra arguments after a test command are forwarded to the underlying tool, e.g. `bin/env test php unit -- --filter MyTest`.
