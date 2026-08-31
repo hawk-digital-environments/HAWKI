@@ -152,8 +152,10 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const user = connection.userinfo;
         const timestamp = new Date().toISOString();
         const pendingId = `pending-${crypto.randomUUID()}`;
+        const threadId = opt.context.mode.isThread ? Number(opt.context.mode.getState('thread').threadId) : 0;
 
         return {
+            threadId: Number.isFinite(threadId) ? threadId : 0,
             author: {
                 username: user.username,
                 name: user.name,
@@ -223,6 +225,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             status: 'running'
         } : {
             author: {username: 'HAWKI', name: 'HAWKI', avatar_url: ''},
+            threadId: Number.isFinite(threadId) ? threadId : 0,
             completion: 0,
             content: {text: '', attachments: []},
             created_at: new Date().toISOString(),

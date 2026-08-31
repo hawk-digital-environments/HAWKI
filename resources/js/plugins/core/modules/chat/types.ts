@@ -43,6 +43,8 @@ export interface ChatMessage {
     isStreaming?: boolean;
     /** Stable render key for a message whose `message_id` changes once it is persisted (pending/streaming → saved). */
     clientKey?: string;
+    /** Client-only thread index for a message without a persisted `W.DDD` id yet (pending/streaming): `0` = trunk, otherwise the owning trunk message's whole number. */
+    threadId?: number;
     status?: string;
     /** Model reasoning (thinking) steps streamed alongside the answer. Stored inside the encrypted message content. */
     reasoning?: ReasoningPart[];
