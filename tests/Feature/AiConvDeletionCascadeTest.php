@@ -38,7 +38,7 @@ class AiConvDeletionCascadeTest extends TestCase
         }
     }
 
-    public function testItMirrorsTheMessageIdOntoAttachmentsCreatedThroughThePolymorphicRelation(): void
+    public function testTheDatabaseDerivesThePrivateMessageForeignKey(): void
     {
         $user = User::factory()->create();
         $message = $this->createMessage($this->createConversation($user), $user, 1);
