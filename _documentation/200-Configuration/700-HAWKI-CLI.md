@@ -39,7 +39,7 @@ php hawki help
 | `stop`  | Stop all running processes                | None                              |
 | `help`  | Show help message with available commands | None                              |
 
-> For token and user management commands (`token`, `remove-user`) see [Backend → Artisan Commands](../500-Backend/1000-Infrastructure/200-Artisan-Commands.md).
+> For token and user management commands (`token`, `remove-user`) see [Backend → Artisan Commands](../500-Backend/500-Reference/100-Artisan-Commands.md).
 
 ## Command Details
 

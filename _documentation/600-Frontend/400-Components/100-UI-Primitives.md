@@ -1,11 +1,12 @@
 # UI Primitives
 
-Low-level primitive components with no business logic and no dependency on app state or domain types. Each is a focused, composable building block modelled after the shadcn/ui pattern. Compose them into higher-level components in `components/`; snippets should not import directly from `ui/` unless the usage is trivially simple.
+Low-level primitive components with no business logic and no dependency on app state or domain types. Each is a focused, composable building block modelled after the shadcn/ui pattern. Compose them into higher-level components in feature modules; pages should not import directly from `ui/` unless the usage is trivially simple.
 
 ## Available Primitives
 
 | Component(s)                            | Directory / File      | Purpose                                                                                 |
 |-----------------------------------------|-----------------------|-----------------------------------------------------------------------------------------|
+| `Alert`                                 | `ui/alert/Alert.svelte` | Inline banner for a titled message with an optional leading icon (validation summary, destructive-action warning) |
 | `Button`, `ButtonWithTooltip`           | `ui/button/`          | Standard button and a button with an attached tooltip                                   |
 | `Txt`                                   | `ui/Txt.svelte`       | Typography primitive with a semantic variant prop                                       |
 | `Dialog`, `ConfirmDialog`, `InfoDialog` | `ui/dialog/`          | Modal dialogs — generic, confirm-action, and informational variants                     |
@@ -16,6 +17,7 @@ Low-level primitive components with no business logic and no dependency on app s
 | `Slider`                                | `ui/slider/`          | Range input slider                                                                      |
 | `Switch`                                | `ui/switch/`          | Toggle switch                                                                           |
 | `Tabs`                                  | `ui/tabs/`            | Tab navigation                                                                          |
+| `Textarea`                              | `ui/textarea/Textarea.svelte` | Resizable multi-line text input. Forwards all native `<textarea>` attributes, supports `bind:value`. |
 | `Tooltip`                               | `ui/tooltip/`         | Floating tooltip                                                                        |
 | `Toaster` + `ToastContext`              | `ui/toast/`           | Toast notification system — see below                                                   |
 | `Badge`                                 | `ui/badge/`           | Label/badge chip                                                                        |
@@ -25,12 +27,14 @@ Low-level primitive components with no business logic and no dependency on app s
 | `Separator`                             | `ui/separator/`       | Visual divider line                                                                     |
 | `RadioCard`, `RadioCardGroup`           | `ui/radio-card/`      | Card-style radio group — each card is selectable with a spring-animated indicator       |
 | `Citation`, `CitationList`, `CitationReference`, `CitationRoot` | `ui/citations/` | Web-search citation tiles and inline reference chips rendered below AI messages |
+| `Loader`                                | `ui/loader/Loader.svelte` | Swaps its `children` for a spinner while `active` is true — replace content in place rather than overlaying |
+| `RouterView`, `RouteError`, `RouteNotFound` + routing kit | `ui/routing/` | The SPA routing kit: `RouterView` renders the matched route nested in its layout stack; `RouteError`/`RouteNotFound` handle failures. The public surface (barrel `index.ts`, `configurePage`, `useRouter`, strategies) is documented in [Concepts → Routing](../200-Concepts/190-Routing.md); see [Modules & Routing](../200-Concepts/120-App-and-Kernel/120-Routing-and-Shell.md) for the architecture-level view. |
 
 ---
 
 ## Toasts
 
-The toast system consists of two parts: the `Toaster` component (rendered once by the `LegacySharedContent` snippet — a core-plugin snippet auto-injected on every page) and `ToastContext`, which any component uses to push notifications.
+The toast system consists of two parts: the `Toaster` component (rendered once by the `LegacySharedContent` snippet on legacy pages, and set up via `createToastContext()` in `Shell.svelte` on SPA pages) and `ToastContext`, which any component uses to push notifications.
 
 ```svelte
 <script lang="ts">
@@ -43,7 +47,7 @@ The toast system consists of two parts: the `Toaster` component (rendered once b
 <button onclick={() => toast.info('Processing…')}>Info</button>
 ```
 
-`ToastContext` is set up by the `LegacySharedContent` snippet (registered by the core plugin and auto-injected on every page). Do not instantiate `Toaster` yourself.
+`ToastContext` is set up by `Shell` (SPA pages) and by the `LegacySharedContent` snippet (legacy pages). Do not instantiate `Toaster` yourself.
 
 ---
 
@@ -65,23 +69,6 @@ The toast system consists of two parts: the `Toaster` component (rendered once b
     <RadioCard value="c" disabled>Option C (disabled)</RadioCard>
 </RadioCardGroup>
 ```
-
-**`RadioCardGroup` props:**
-
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `value` | `string` | `''` | The selected card's value. Bindable. |
-| `disabled` | `boolean` | `false` | Disables (and dims) every card in the group. |
-| `name` | `string` | — | Shared `name` for the underlying radio inputs. |
-| `onChange` | `(value: string) => void` | — | Called with the newly selected value. |
-
-**`RadioCard` props:**
-
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `value` | `string` | — | The value this card represents. |
-| `disabled` | `boolean` | `false` | Disables this card individually. |
-| `children` | `Snippet` | — | Card content. |
 
 Selection is animated with a spring-driven dot indicator. Cards are keyboard-reachable with Space/Enter and carry full ARIA `role="radio"` / `role="radiogroup"` semantics.
 
@@ -127,6 +114,6 @@ Typical assembly:
 When porting or writing a new primitive:
 
 1. Create a directory in `components/ui/` named after the component (kebab-case).
-2. Follow the patterns in [Writing Svelte Components](index.md) — `Props extends HTMLAttributes<…>`, `mergeProps` for rest-prop forwarding, `@component` block comment.
+2. Follow the patterns in [Svelte Components](../200-Concepts/100-Svelte-Components.md) — `Props extends HTMLAttributes<…>`, `mergeProps` for rest-prop forwarding, `@component` block comment.
 3. Build on `bits-ui` primitives where one fits (dialogs, popovers, selects, tooltips, etc.) — they handle accessibility and keyboard navigation.
-4. Style with the CSS token system described in [Styling](../200-Styling.md). No Tailwind, no hard-coded values.
+4. Style with the CSS token system described in [Styling](../200-Concepts/110-Styling.md). No Tailwind, no hard-coded values.

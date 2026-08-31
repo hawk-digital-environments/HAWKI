@@ -64,13 +64,13 @@ export class RoutingExtension implements HawkiAppExtension {
     private _router: Router | null = null;
 
     /**
-     * The compiled router, ready for `router.resolve(pathname)`. Throws if
-     * accessed before {@link init} has run (the instance only exists once all
-     * route registrations have been collected and compiled).
+     * The compiled router's `RouterHandle` (`goTo`, `getPath`, `isActive`, …).
+     * Throws if accessed before the `late` boot stage has built it (see
+     * {@link ready}).
      */
     public get router(): RouterHandle {
         if (!this._router) {
-            throw new Error('Router is not initialized yet. Call init() first.');
+            throw new Error('Router is not initialized yet. It is built on the "late" boot stage.');
         }
         return this._router.handle;
     }

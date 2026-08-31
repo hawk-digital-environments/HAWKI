@@ -383,7 +383,7 @@ If you do not uncomment the FILE_CONVERTER variables in .env file, HAWKI turns o
 If you prefer to use HAWKI FIle Converter, and you are not using the docker deployment you can host the converter separately from the project.
 For more information refer to the [File Converter Repo](https://github.com/hawk-digital-environments/hawki-toolkit-file-converter) of this documentation.
 
-> **Further reading:** For a detailed explanation of how the conversion pipeline works and how to add a custom converter, see [File Conversion](../500-Backend/700-Storage-and-Files/100-File-Converter.md).
+> **Further reading:** For a detailed explanation of how the conversion pipeline works and how to add a custom converter, see [File Conversion](../500-Backend/400-Domains/300-Storage/320-File-Converter.md).
 
 ### Optional dependencies
 
