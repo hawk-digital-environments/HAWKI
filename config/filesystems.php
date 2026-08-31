@@ -65,7 +65,7 @@ return [
     */
 
     'upload_limits' => [
-        // The maximum file size for an uploaded file(e.g. attachment) in bytes - default is 20 MB
+        // The maximum file size for an uploaded file(e.g. attachment) in bytes - default is 10 MB
         'max_file_size' => $parseAndLimitConfiguredSize(env('MAX_FILE_SIZE', 10 * 1024 * 1024)),
         // The maximum file size for an avatar in bytes - default is 2 MB
         'max_avatar_file_size' => $parseAndLimitConfiguredSize(env('MAX_AVATAR_FILE_SIZE', 2 * 1024 * 1024)),

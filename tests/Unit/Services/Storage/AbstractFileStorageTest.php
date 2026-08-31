@@ -17,12 +17,15 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\MockClock;
+use Tests\Concerns\CreatesFilesystemMocks;
 use Tests\TestCase;
 use Tests\Unit\Services\Storage\AbstractFileStorageTestFixtures\ConcreteFileStorageStub;
 
 #[CoversClass(AbstractFileStorage::class)]
 class AbstractFileStorageTest extends TestCase
 {
+    use CreatesFilesystemMocks;
+
     private const UUID = 'abcd1234-e29b-41d4-a716-446655440000';
 
     private ConcreteFileStorageStub $sut;
@@ -244,7 +247,7 @@ class AbstractFileStorageTest extends TestCase
         ];
 
         $copied = [];
-        $filesystem = $this->createMock(Filesystem::class);
+        $filesystem = $this->mockFilesystem();
         $filesystem->expects(static::once())->method('allFiles')->with($tempFolder)->willReturn($tempFiles);
         $filesystem->expects(static::never())->method('move');
         $filesystem->expects(static::exactly(3))->method('copy')->willReturnCallback(
@@ -276,7 +279,7 @@ class AbstractFileStorageTest extends TestCase
         $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, self::UUID);
         $tempFolder = 'temp/private/a/b/c/d/' . self::UUID;
 
-        $filesystem = $this->createMock(Filesystem::class);
+        $filesystem = $this->mockFilesystem();
         $filesystem->expects(static::once())->method('allFiles')->with($tempFolder)->willReturn([]);
         $filesystem->expects(static::never())->method('copy');
         $filesystem->expects(static::never())->method('deleteDirectory');
@@ -295,7 +298,7 @@ class AbstractFileStorageTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects(static::once())->method('error');
 
-        $filesystem = $this->createMock(Filesystem::class);
+        $filesystem = $this->mockFilesystem();
         $filesystem->method('allFiles')->willReturn([$tempFolder . '/' . self::UUID . '.pdf']);
         $filesystem->method('copy')->willReturn(false);
         $filesystem->expects(static::never())->method('deleteDirectory');
@@ -312,7 +315,7 @@ class AbstractFileStorageTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects(static::once())->method('error');
 
-        $filesystem = $this->createMock(Filesystem::class);
+        $filesystem = $this->mockFilesystem();
         $filesystem->method('allFiles')->willThrowException(new \RuntimeException('disk offline'));
 
         $sut = new ConcreteFileStorageStub($this->makeContext(logger: $logger, filesystem: $filesystem));
@@ -335,7 +338,7 @@ class AbstractFileStorageTest extends TestCase
             allowedMimeTypes: $allowedMimeTypes,
             maxFileSize: $maxFileSize,
             logger: $logger ?? $this->createStub(LoggerInterface::class),
-            filesystem: $filesystem ?? $this->createStub(Filesystem::class),
+            filesystem: $filesystem ?? $this->stubFilesystem(),
             urlGenerator: new UrlGenerator('web.storage.proxy'),
             contentExtractor: $this->createStub(ContentExtractor::class),
             attachmentRepository: $this->createStub(AttachmentRepository::class),

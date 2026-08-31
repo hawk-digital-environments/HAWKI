@@ -7,21 +7,23 @@ namespace Tests\Unit\Services\Storage\Values;
 use App\Services\Storage\Values\FileType;
 use App\Services\Storage\Values\PlainTextLanguageType;
 use App\Services\Storage\Values\StoredFileExtract;
-use Illuminate\Contracts\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\CreatesFilesystemMocks;
 use Tests\TestCase;
 
 #[CoversClass(StoredFileExtract::class)]
 class StoredFileExtractTest extends TestCase
 {
+    use CreatesFilesystemMocks;
+
     // =========================================================================
     // fromJson
     // =========================================================================
 
     public function testItFromJsonBuildsExtract(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
 
         $sut = StoredFileExtract::fromJson(
             [
@@ -45,7 +47,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItFromJsonWithLanguageType(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
 
         $sut = StoredFileExtract::fromJson(
             [
@@ -65,7 +67,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItFromJsonAcceptsStringInput(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
 
         $json = json_encode([
             'diskFilename' => 'output/001.md',
@@ -86,7 +88,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItFromPlainTextFileForMarkdownDoesNotAddOverhead(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
 
         $sut = StoredFileExtract::fromPlainTextFile(
             storageDiskFilePath: '/source/folder/uuid.blob',
@@ -104,7 +106,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItFromPlainTextFileForNonMarkdownAddsCodeBlockOverhead(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
         $sourceSize = 100;
 
         $sut = StoredFileExtract::fromPlainTextFile(
@@ -121,7 +123,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItFromPlainTextFileSetsCorrectDiskPath(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
 
         $sut = StoredFileExtract::fromPlainTextFile(
             storageDiskFilePath: '/source/folder/uuid.blob',
@@ -139,8 +141,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItGetContentWrapsNonMarkdownInCodeBlock(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
-        $filesystem->method('get')->willReturn('print("hello")');
+        $filesystem = $this->stubFilesystem(['/source/folder/output/001.py' => 'print("hello")']);
 
         $sut = StoredFileExtract::fromJson(
             [
@@ -160,8 +161,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItGetContentDoesNotWrapMarkdown(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
-        $filesystem->method('get')->willReturn('# Hello World');
+        $filesystem = $this->stubFilesystem(['/source/folder/output/001.md' => '# Hello World']);
 
         $sut = StoredFileExtract::fromJson(
             [
@@ -185,7 +185,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItJsonSerializesCorrectly(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
 
         $sut = StoredFileExtract::fromJson(
             [
@@ -216,7 +216,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItGetOriginalFilenameReturnsBasename(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
 
         $sut = StoredFileExtract::fromJson(
             [
@@ -235,7 +235,7 @@ class StoredFileExtractTest extends TestCase
 
     public function testItGetDiskFilePathJoinsFolderAndFilename(): void
     {
-        $filesystem = $this->createStub(Filesystem::class);
+        $filesystem = $this->stubFilesystem();
 
         $sut = StoredFileExtract::fromJson(
             [

@@ -1,332 +1,262 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
-use League\Flysystem\WebDAV\WebDAVAdapter;
-use League\Flysystem\PhpseclibV3\SftpAdapter;
-use League\Flysystem\PhpseclibV3\SftpConnectionProvider;
-use League\Flysystem\AwsS3V3\AwsS3V3Adapter;
-use Aws\S3\S3Client;
-use Throwable;
-
-
+use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
+use Illuminate\Contracts\Filesystem\Filesystem;
 
 class CheckStorageConnection extends Command
 {
+    /**
+     * Name of the temporary test file that is written to and removed from every checked disk.
+     */
+    private const TEST_FILE_NAME = '.storage_connection_test.txt';
+
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'check:storage {--filesystem=s3 : The filesystem to test (s3, local, public, localstorage, nextcloud, sftp)}';
+    protected $signature = 'check:storage {--filesystem= : Comma-separated list of disks to check explicitly (default: the disks the storage roles resolve to)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Check Storage Connection for specified filesystem';
+    protected $description = 'Check the storage connection for the disks the app actually uses (list / write / read / delete test)';
 
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(FilesystemFactory $storage): int
     {
-        $filesystem = $this->option('filesystem');
+        /** @var array<string, array<string, mixed>> $configuredDisks */
+        $configuredDisks = (array) config('filesystems.disks', []);
 
-        $this->info("Testing {$filesystem} storage connection...");
+        $checks = $this->resolveChecksToRun(array_keys($configuredDisks));
+        if ($checks === null) {
+            return self::FAILURE;
+        }
 
-        $result = match($filesystem) {
-            's3' => $this->checkS3WriteAccess(),
-            'local' => $this->checkLocalWriteAccess('local'),
-            'public' => $this->checkLocalWriteAccess('public'),
-            'localstorage' => $this->checkLocalWriteAccess('local_file_storage'),
-            'nextcloud' => $this->checkNextCloudConnection(),
-            'sftp' => $this->checkSFTPConnection(),
-            default => ['success' => false, 'message' => "Unsupported filesystem: {$filesystem}"]
+        $rows = [];
+        $failureCount = 0;
+
+        foreach ($checks as $check) {
+            $disk = $check['disk'];
+
+            if (!array_key_exists($disk, $configuredDisks)) {
+                // A storage role points to a disk that is not configured — report it as a failed
+                // check instead of aborting, so the operator sees which role is misconfigured.
+                $failureCount++;
+                $rows[] = [
+                    implode(', ', $check['labels']),
+                    $disk,
+                    'unknown',
+                    'FAIL',
+                    'Points to a disk that is not configured in filesystems.disks.',
+                ];
+                continue;
+            }
+
+            $driver = (string) ($configuredDisks[$disk]['driver'] ?? 'unknown');
+            $result = $this->checkDisk($storage, $disk, $driver);
+            $failureCount += $result['success'] ? 0 : 1;
+            $rows[] = [
+                implode(', ', $check['labels']),
+                $disk,
+                $driver,
+                $result['success'] ? 'PASS' : 'FAIL',
+                $result['message'],
+            ];
+        }
+
+        $this->table(['Role(s)', 'Disk', 'Driver', 'Result', 'Message'], $rows);
+
+        $diskCount = count($rows);
+        if ($failureCount === 0) {
+            $this->info("{$diskCount} of {$diskCount} storage disks passed the connection test.");
+
+            return self::SUCCESS;
+        }
+
+        $this->error("{$failureCount} of {$diskCount} storage disks failed the connection test.");
+
+        return self::FAILURE;
+    }
+
+    /**
+     * Resolve what to check. Without the --filesystem option this follows the storage roles from
+     * config/filesystems.php — only the disks the app actually uses are checked, and roles sharing
+     * a disk are grouped into a single check. With the option, the given (comma-separated) disks
+     * are checked explicitly instead — useful to verify a disk before switching a role to it.
+     * Returns null (after reporting the error) when an explicitly requested disk is unknown.
+     *
+     * @param list<string> $availableDisks
+     * @return list<array{labels: list<string>, disk: string}>|null
+     */
+    private function resolveChecksToRun(array $availableDisks): array|null
+    {
+        $requestedOption = trim((string) $this->option('filesystem'));
+        if ($requestedOption !== '') {
+            $requestedDisks = array_values(array_unique(array_map('trim', explode(',', $requestedOption))));
+            $unknownDisks = array_diff($requestedDisks, $availableDisks);
+            if ($unknownDisks !== []) {
+                $this->error(
+                    'Unknown disk(s): ' . implode(', ', $unknownDisks)
+                    . '. Available disks: ' . implode(', ', $availableDisks) . '.'
+                );
+
+                return null;
+            }
+
+            return array_map(
+                static fn (string $disk): array => ['labels' => [$disk], 'disk' => $disk],
+                $requestedDisks
+            );
+        }
+
+        $roles = [
+            'Framework default' => (string) config('filesystems.default', 'local'),
+            'File storage' => (string) config('filesystems.file_storage', 'local_file_storage'),
+            'Avatar storage' => (string) config('filesystems.avatar_storage', 'public'),
+        ];
+
+        $groupedByDisk = [];
+        foreach ($roles as $label => $disk) {
+            $groupedByDisk[$disk][] = $label;
+        }
+
+        return array_map(
+            static fn (string $disk, array $labels): array => ['labels' => $labels, 'disk' => $disk],
+            array_keys($groupedByDisk),
+            $groupedByDisk
+        );
+    }
+
+    /**
+     * Run the appropriate check for the disk, dispatched by its driver.
+     *
+     * @return array{success: bool, message: string}
+     */
+    private function checkDisk(FilesystemFactory $storage, string $disk, string $driver): array
+    {
+        return match ($driver) {
+            'local' => $this->runWriteTest($storage->disk($disk)),
+            's3' => $this->runWriteTestWhenConfigured($storage, $disk, $this->s3ConfigProblem($disk)),
+            'webdav' => $this->runWriteTestWhenConfigured($storage, $disk, $this->webdavConfigProblem($disk)),
+            'sftp' => $this->runWriteTestWhenConfigured($storage, $disk, $this->sftpConfigProblem($disk)),
+            default => [
+                'success' => false,
+                'message' => "Unsupported driver \"{$driver}\" — no connection check implemented for this disk.",
+            ],
         };
-
-        if($result['success']){
-            $this->info($result['message']);
-        } else {
-            $this->error($result['message']);
-        }
     }
 
-
-
-
-    public function checkS3WriteAccess(string $disk = 's3', string $testFileName = 's3_test.txt'): array
-    {
-        try {
-            // Step 1: Test S3 connection using Flysystem AWS S3 v3 adapter
-            $config = config("filesystems.disks.{$disk}");
-
-            if (empty($config['key']) || empty($config['secret']) || empty($config['region']) || empty($config['bucket'])) {
-                return [
-                    'success' => false,
-                    'message' => 'S3 configuration incomplete. Check AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, and AWS_BUCKET environment variables.'
-                ];
-            }
-
-            $client = new S3Client(array_merge([
-                'credentials' => [
-                    'key' => $config['key'],
-                    'secret' => $config['secret'],
-                ],
-                'region' => $config['region'],
-                'version' => $config['version'] ?? 'latest',
-            ], array_filter([
-                'endpoint' => $config['endpoint'] ?? null,
-                'use_path_style_endpoint' => $config['use_path_style_endpoint'] ?? false,
-            ])));
-
-            $adapter = new AwsS3V3Adapter($client, $config['bucket'], $config['prefix'] ?? '');
-
-            // Test basic connectivity by listing objects
-            iterator_to_array($adapter->listContents('', false));
-
-            $content = "S3 connection test: " . now();
-
-            // Step 2: Upload test file
-            $uploadSuccess = Storage::disk($disk)->put($testFileName, $content);
-            if (!$uploadSuccess) {
-                return [
-                    'success' => false,
-                    'message' => "Upload failed — check write permissions."
-                ];
-            }
-
-            // Step 3: Verify file exists
-            if (!Storage::disk($disk)->exists($testFileName)) {
-                return [
-                    'success' => false,
-                    'message' => "Upload succeeded but file not found — possible visibility/ACL issue."
-                ];
-            }
-
-            // Step 4: Test file retrieval
-            $retrievedContent = Storage::disk($disk)->get($testFileName);
-            if ($retrievedContent !== $content) {
-                return [
-                    'success' => false,
-                    'message' => 'Content mismatch — file corruption or encoding issue.'
-                ];
-            }
-
-            // Step 5: Cleanup
-            Storage::disk($disk)->delete($testFileName);
-
-            return [
-                'success' => true,
-                'message' => "S3 connection, upload, retrieval, and cleanup tests all succeeded."
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'message' => "S3 test failed: " . $e->getMessage()
-            ];
+    /**
+     * Gate the write test behind a config completeness check: a disk with missing credentials
+     * counts as a failure with an env-var hint instead of a confusing connection error.
+     *
+     * @return array{success: bool, message: string}
+     */
+    private function runWriteTestWhenConfigured(
+        FilesystemFactory $storage,
+        string $disk,
+        string|null $configProblem
+    ): array {
+        if ($configProblem !== null) {
+            return ['success' => false, 'message' => $configProblem];
         }
+
+        return $this->runWriteTest($storage->disk($disk));
     }
 
-    public function checkLocalWriteAccess(string $disk = 'local_file_storage', string $testFileName = 'local_test.txt'): array
+    /**
+     * @return string|null The config problem message, or null when the s3 disk is fully configured.
+     */
+    private function s3ConfigProblem(string $disk): string|null
     {
-        $content = "Local storage test: " . now();
+        /** @var array<string, mixed> $config */
+        $config = (array) config("filesystems.disks.{$disk}", []);
 
-        try {
-            // Step 1: Upload test file
-            $uploadSuccess = Storage::disk($disk)->put($testFileName, $content);
-            if (!$uploadSuccess) {
-                return [
-                    'success' => false,
-                    'message' => "Upload failed — check write permissions."
-                ];
-            }
-
-            // Step 2: Verify file exists
-            if (!Storage::disk($disk)->exists($testFileName)) {
-                return [
-                    'success' => false,
-                    'message' => "Upload succeeded but file not found — possible file system issue."
-                ];
-            }
-
-            // Step 3: Read back content
-            $retrievedContent = Storage::disk($disk)->get($testFileName);
-            if ($retrievedContent !== $content) {
-                return [
-                    'success' => false,
-                    'message' => "Content mismatch — file corruption or encoding issue."
-                ];
-            }
-
-            // Step 4: Cleanup
-            Storage::disk($disk)->delete($testFileName);
-
-            return [
-                'success' => true,
-                'message' => "Local storage connection and write test succeeded."
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'message' => "Local storage test failed: " . $e->getMessage()
-            ];
+        if (empty($config['key']) || empty($config['secret']) || empty($config['region']) || empty($config['bucket'])) {
+            return 'S3 configuration incomplete. Check S3_ACCESS_KEY, S3_SECRET_KEY, S3_REGION and S3_DEFAULT_BUCKET environment variables.';
         }
+
+        return null;
     }
 
-    public function checkNextCloudConnection(): array
+    /**
+     * @return string|null The config problem message, or null when the webdav disk is fully configured.
+     */
+    private function webdavConfigProblem(string $disk): string|null
     {
-        $baseUrl = config('filesystems.disks.nextcloud.base_uri');
-        $username = config('filesystems.disks.nextcloud.username');
-        $password = config('filesystems.disks.nextcloud.password');
-        $basePath = config('filesystems.disks.nextcloud.base_path', '/');
+        /** @var array<string, mixed> $config */
+        $config = (array) config("filesystems.disks.{$disk}", []);
 
-        // Step 1: Check configuration
-        if (empty($baseUrl) || empty($username) || empty($password)) {
-            return [
-                'success' => false,
-                'message' => 'NextCloud configuration incomplete. Check NEXTCLOUD_BASE_URL, NEXTCLOUD_USERNAME, and NEXTCLOUD_PASSWORD environment variables.'
-            ];
+        $baseUri = (string) ($config['base_uri'] ?? '');
+        if (!str_starts_with($baseUri, 'http') || empty($config['username']) || empty($config['password'])) {
+            return 'WebDAV configuration incomplete. Check NEXTCLOUD_BASE_URL, NEXTCLOUD_USERNAME and NEXTCLOUD_PASSWORD environment variables.';
         }
 
-        try {
-            // Step 2: Test WebDAV connection using Flysystem WebDAV adapter
-            $webdavUrl = rtrim($baseUrl, '/') . '/remote.php/dav/files/' . $username . '/';
-
-            $client = new \Sabre\DAV\Client([
-                'baseUri' => $webdavUrl,
-                'userName' => $username,
-                'password' => $password,
-            ]);
-
-            $adapter = new WebDAVAdapter($client, trim($basePath, '/'));
-
-            // Test basic connectivity by listing directory
-            iterator_to_array($adapter->listContents('', false));
-
-            // Step 3: Test file upload using Laravel Storage
-            $testContent = "NextCloud connection test: " . now();
-            $testFilename = 'connection-test/connection_test.txt';
-
-            $uploadResult = Storage::disk('nextcloud')->put($testFilename, $testContent);
-
-            if (!$uploadResult) {
-                return [
-                    'success' => false,
-                    'message' => 'NextCloud connection succeeded but file upload failed.'
-                ];
-            }
-
-            // Step 4: Test file retrieval
-            $retrievedContent = Storage::disk('nextcloud')->get($testFilename);
-
-            if (!$retrievedContent) {
-                return [
-                    'success' => false,
-                    'message' => 'File upload succeeded but retrieval failed.'
-                ];
-            }
-
-            if ($retrievedContent !== $testContent) {
-                return [
-                    'success' => false,
-                    'message' => 'Content mismatch — file corruption or encoding issue.'
-                ];
-            }
-
-            // Step 5: Cleanup
-            Storage::disk('nextcloud')->delete($testFilename);
-
-            return [
-                'success' => true,
-                'message' => 'NextCloud WebDAV connection, upload, retrieval, and cleanup tests all succeeded.'
-            ];
-
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'message' => "NextCloud test failed: " . $e->getMessage()
-            ];
-        }
+        return null;
     }
 
-    public function checkSFTPConnection(): array
+    /**
+     * @return string|null The config problem message, or null when the sftp disk is fully configured.
+     */
+    private function sftpConfigProblem(string $disk): string|null
     {
-        $host = config('filesystems.disks.sftp.host');
-        $port = config('filesystems.disks.sftp.port', 22);
-        $username = config('filesystems.disks.sftp.username');
-        $password = config('filesystems.disks.sftp.password');
-        $basePath = config('filesystems.disks.sftp.base_path', '/');
+        /** @var array<string, mixed> $config */
+        $config = (array) config("filesystems.disks.{$disk}", []);
 
-        // Step 1: Check configuration
-        if (empty($host) || empty($username) || empty($password)) {
-            return [
-                'success' => false,
-                'message' => 'SFTP configuration incomplete. Check SFTP_HOST, SFTP_USERNAME, and SFTP_PASSWORD environment variables.'
-            ];
+        if (empty($config['host']) || empty($config['username']) || empty($config['password'])) {
+            return 'SFTP configuration incomplete. Check SFTP_HOST, SFTP_USERNAME and SFTP_PASSWORD environment variables.';
         }
 
+        return null;
+    }
+
+    /**
+     * Perform a full round-trip against the disk: list the root (connectivity), write a test file,
+     * read it back, and remove it again. Every step produces a distinct failure message.
+     *
+     * @return array{success: bool, message: string}
+     */
+    private function runWriteTest(Filesystem $disk): array
+    {
+        $content = 'Storage connection test: ' . now()->toDateTimeString();
+
         try {
-            // Step 2: Test SFTP connection using Flysystem SFTP v3 adapter
-            $connectionProvider = SftpConnectionProvider::fromArray([
-                'host' => $host,
-                'port' => $port,
-                'username' => $username,
-                'password' => $password,
-                'timeout' => 10,
-            ]);
+            // Step 1: connectivity pre-check — performs a real round-trip without writing anything.
+            $disk->files();
 
-            $adapter = new SftpAdapter($connectionProvider, $basePath);
-
-            // Step 3: Test basic connectivity by listing directory
-            iterator_to_array($adapter->listContents('', false));
-
-            // Step 4: Test file upload using Laravel Storage
-            $testContent = "SFTP connection test: " . now();
-            $testFilename = 'connection-test/connection_test.txt';
-
-            $uploadResult = Storage::disk('sftp')->put($testFilename, $testContent);
-
-            if (!$uploadResult) {
-                return [
-                    'success' => false,
-                    'message' => 'SFTP connection succeeded but file upload failed.'
-                ];
+            // Step 2: upload the test file.
+            if (!$disk->put(self::TEST_FILE_NAME, $content)) {
+                return ['success' => false, 'message' => 'Upload failed — check write permissions.'];
             }
 
-            // Step 5: Test file retrieval
-            $retrievedContent = Storage::disk('sftp')->get($testFilename);
-
-            if ($retrievedContent === null) {
-                return [
-                    'success' => false,
-                    'message' => 'File upload succeeded but retrieval failed.'
-                ];
+            // Step 3: verify the file exists.
+            if (!$disk->exists(self::TEST_FILE_NAME)) {
+                return ['success' => false, 'message' => 'Upload succeeded but the file was not found afterwards — possible visibility/ACL issue.'];
             }
 
-            if ($retrievedContent !== $testContent) {
-                return [
-                    'success' => false,
-                    'message' => 'Content mismatch — file corruption or encoding issue.'
-                ];
+            // Step 4: retrieve and compare the content.
+            if ($disk->get(self::TEST_FILE_NAME) !== $content) {
+                return ['success' => false, 'message' => 'Content mismatch after retrieval — file corruption or encoding issue.'];
             }
 
-            // Step 6: Cleanup
-            Storage::disk('sftp')->delete($testFilename);
+            // Step 5: clean up the test file.
+            if (!$disk->delete(self::TEST_FILE_NAME)) {
+                return ['success' => false, 'message' => 'Test file could not be deleted — check delete permissions.'];
+            }
 
-            return [
-                'success' => true,
-                'message' => 'SFTP connection, upload, retrieval, and cleanup tests all succeeded.'
-            ];
-
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'message' => "SFTP test failed: " . $e->getMessage()
-            ];
+            return ['success' => true, 'message' => 'Connection, upload, retrieval and cleanup tests succeeded.'];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => 'Storage test failed: ' . $e->getMessage()];
         }
     }
 }

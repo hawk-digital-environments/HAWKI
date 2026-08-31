@@ -9,6 +9,7 @@ use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Config\AvatarStorageConfig;
 use App\Services\Storage\Config\FileStorageConfig;
 use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Filesystem\DefaultDiskWarningFilesystemManager;
 use App\Services\Storage\UrlGenerator;
 use App\Services\Storage\Utils\ContentExtractor;
 use App\Services\Storage\Values\StorageServiceContext;
@@ -27,6 +28,9 @@ class StorageServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Replace the framework FilesystemManager with our own which wanrs then implicit default-disk fallback is used
+        $this->app->singleton('filesystem', DefaultDiskWarningFilesystemManager::class);
+
         $this->app->singleton(
             UrlGenerator::class,
             function (Application $app) {

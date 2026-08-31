@@ -9,11 +9,14 @@ use App\Services\Storage\Values\FileCollection;
 use App\Services\Storage\Values\FileType;
 use App\Services\Storage\Values\PlainTextLanguageType;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\Concerns\CreatesFilesystemMocks;
 use Tests\TestCase;
 
 #[CoversClass(FileCollection::class)]
 class FileCollectionTest extends TestCase
 {
+    use CreatesFilesystemMocks;
+
     // =========================================================================
     // Construction
     // =========================================================================
@@ -202,9 +205,7 @@ class FileCollectionTest extends TestCase
 
     private function makeExtract(string $diskPath, FileType $fileType, string $extension, string $mimeType): \App\Services\Storage\Values\StoredFileExtract
     {
-        $filesystem = $this->createStub(\Illuminate\Contracts\Filesystem\Filesystem::class);
-        $filesystem->method('get')->willReturn('content');
-        $filesystem->method('size')->willReturn(100);
+        $filesystem = $this->stubFilesystem(['/source/folder/' . $diskPath => 'content']);
 
         return \App\Services\Storage\Values\StoredFileExtract::fromJson(
             [
