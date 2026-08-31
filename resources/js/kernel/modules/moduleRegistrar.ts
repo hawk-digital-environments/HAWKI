@@ -2,6 +2,7 @@ import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types
 import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
+import {merge} from 'smob';
 
 /**
  * Per-plugin registrar factory for the {@link ModuleExtension}.
@@ -33,26 +34,21 @@ export function createModuleRegistrar(
             throw new Error(`Module with name "${fullModuleName}" is already registered.`);
         }
 
-        // Keep the original class instance intact. The stored adapter delegates
-        // optional methods explicitly, preserving their `this` binding while
-        // adding plugin metadata and the route namespace in one visible place.
-        const registeredModule: HawkiModuleWithPlugin = {
-            name: module.name,
-            plugin,
-            ...(module.title ? {title: module.title.bind(module)} : {}),
-            ...(module.description ? {description: module.description.bind(module)} : {}),
-            ...(module.icon ? {icon: module.icon.bind(module)} : {}),
-            ...(module.sidebar ? {sidebar: module.sidebar.bind(module)} : {}),
-            ...(module.routes ? {
-                routes: (registrar: RouteRegistrar) => {
-                    registrar.group(
-                        getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin),
-                        module.routes!.bind(module),
-                        {name: getModuleRouteGroupName(plugin.name, module.name)}
-                    );
-                }
-            } : {})
-        };
+        const registeredModule: HawkiModuleWithPlugin = merge(
+            module,
+            {plugin}
+        );
+
+        const moduleRoutes = module.routes?.bind(module);
+        if (moduleRoutes) {
+            registeredModule.routes = (registrar: RouteRegistrar) => {
+                registrar.group(
+                    getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin),
+                    moduleRoutes,
+                    {name: getModuleRouteGroupName(plugin.name, module.name)}
+                );
+            };
+        }
 
         modules.set(fullModuleName, registeredModule);
     }

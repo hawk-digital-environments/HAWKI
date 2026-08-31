@@ -15,7 +15,6 @@ use App\Services\Chat\AiConv\Repositories\AiConvRepository;
 use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
 use App\Services\Chat\Message\Handlers\PrivateMessageHandler;
 use App\Services\Storage\FileStorageService;
-use App\Services\Storage\TemporaryUploadOwnership;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
@@ -40,7 +39,7 @@ class AiConvController extends Controller
         protected readonly PrivateMessageHandler $messageHandler,
         protected readonly AiConvRepository $conversationRepository,
         protected readonly AttachmentRepository $attachmentRepository,
-        protected readonly TemporaryUploadOwnership $temporaryUploadOwnership,
+        protected readonly FileStorageService $fileStorage,
     ) {
     }
 
@@ -71,9 +70,8 @@ class AiConvController extends Controller
 
         /** @var User $user */
         $user = $request->user();
-        $temporaryAttachments = $this->authorizeAttachments($validatedData, $user);
+        $this->authorizeAttachments($validatedData, $user);
         $message = $this->messageHandler->create($conv, $validatedData, $user);
-        $this->forgetTemporaryAttachments($temporaryAttachments);
 
         return DataResponse::make($message)->withIncludePaths(['author', 'attachments'])->didCreate();
     }
@@ -95,12 +93,10 @@ class AiConvController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $temporaryAttachments = $this->authorizeAttachments($validatedData, $user, $existingMessage);
+        $this->authorizeAttachments($validatedData, $user, $existingMessage);
 
         /** @var AiConvMsg $message */
         $message = $this->messageHandler->update($conv, $validatedData);
-
-        $this->forgetTemporaryAttachments($temporaryAttachments);
 
         return DataResponse::make($message)->withIncludePaths(['author', 'attachments']);
     }
@@ -116,23 +112,19 @@ class AiConvController extends Controller
     }
 
     #[Authorize('view', User::class)]
-    public function storeAttachment(StoreAiConvAttachmentRequest $request, FileStorageService $fileStorage): JsonResponse
+    public function storeAttachment(StoreAiConvAttachmentRequest $request): JsonResponse
     {
-        $storedFile = $fileStorage->storeTemporary(
+        /** @var User $user */
+        $user = $request->user();
+
+        $storedFile = $this->fileStorage->storeTemporary(
             file: FileReference::fromUploadedFile($request->validated('file')),
             category: StoredFileCategory::PRIVATE,
+            owner: $user,
         );
 
         if (null === $storedFile) {
             abort(500, 'Failed to store the file.');
-        }
-
-        /** @var User $user */
-        $user = $request->user();
-
-        if (!$this->temporaryUploadOwnership->register($storedFile->getIdentifier(), $user)) {
-            $fileStorage->delete($storedFile->getIdentifier(), true);
-            abort(500, 'Failed to register the temporary file.');
         }
 
         return response()->json([
@@ -161,17 +153,21 @@ class AiConvController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $validatedData
+     * Rejects every attachment uuid the current user is not allowed to reference.
      *
-     * @return list<StoredFileIdentifier>
+     * Attachments are addressed by uuid alone, so this is the only thing standing between a caller and a
+     * foreign upload: {@see PrivateMessageHandler} moves each listed uuid out of temp/ and attaches it to
+     * the caller's message, which would hand them read access to a stranger's file and destroy the
+     * uploader's pending upload. See the "Security: ownership of temporary uploads" section in
+     * {@see \App\Services\Storage\AbstractFileStorage} for the full reasoning.
+     *
+     * @param array<string, mixed> $validatedData
      */
     private function authorizeAttachments(
         array $validatedData,
         User $user,
         ?AiConvMsg $existingMessage = null,
-    ): array {
-        $temporaryAttachments = [];
-
+    ): void {
         foreach ($validatedData['content']['attachments'] ?? [] as $uuid) {
             $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, $uuid);
             $attachment = $this->attachmentRepository->findOneByStoredFileIdentifier($identifier);
@@ -187,29 +183,19 @@ class AiConvController extends Controller
                 continue;
             }
 
-            abort_unless(
-                $this->temporaryUploadOwnership->isRegistered($identifier),
+            // The temp-file cleanup deletes stale uploads together with their meta sidecar,
+            // so a missing temporary file means the upload is unknown or has expired.
+            $storedFile = $this->fileStorage->retrieve($identifier, temp: true);
+            abort_if(
+                null === $storedFile,
                 422,
                 'The temporary attachment is unknown or has expired. Please upload it again.',
             );
             abort_unless(
-                $this->temporaryUploadOwnership->isOwnedBy($identifier, $user),
+                $storedFile->isOwnedBy($user),
                 403,
                 'The temporary attachment does not belong to the current user.',
             );
-            $temporaryAttachments[] = $identifier;
-        }
-
-        return $temporaryAttachments;
-    }
-
-    /**
-     * @param list<StoredFileIdentifier> $identifiers
-     */
-    private function forgetTemporaryAttachments(array $identifiers): void
-    {
-        foreach ($identifiers as $identifier) {
-            $this->temporaryUploadOwnership->forget($identifier);
         }
     }
 }

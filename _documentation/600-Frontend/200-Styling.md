@@ -243,7 +243,9 @@ Do not use `:global()` in Svelte components for rules that apply across componen
 
 Note that portaled components may carry a `z-index` value internally — that is the library's concern, not yours. What you must avoid is adding `z-index` in your own component code to patch a stacking problem.
 
-The portaled primitives in `components/ui/` (`Dialog`, `Popover`, `DropdownMenu`, `SingleSelect`, `CommandPalette`, `Tooltip`, `Toaster`) and the app frame read their value from the coarse **stacking-layer tokens** in `resources/css/tokens/layers.css` (`--layer-overlay`, `--layer-app-chrome`, `--layer-toast`, `--layer-tooltip`). These are deliberately few and only order whole *layers* against each other — they are not a per-component ladder, and feature components must not reference them.
+The overlay primitives in `components/ui/` (`Dialog`, `Popover`, `DropdownMenu`, `SingleSelect`, `CommandPalette`, `Tooltip`, `Toaster`) read their value from the coarse **stacking-layer tokens** in `resources/css/tokens/layers.css`: `--layer-overlay` (50), `--layer-toast` (100), `--layer-tooltip` (100). There are only three, they only order those three layers against each other, and each value is justified by a concrete consumer pair in the token file — they are not a per-component ladder, and feature components must not reference them.
+
+Fixed elements that stay in the layout subtree are *not* a layer: the off-canvas nav drawer (`--app-sidebar-z`) and the skip-to-content link (`--skip-link-z`) use component-local tokens, with values below `--layer-overlay` so nothing in the page can paint over an open dialog.
 
 **DOM ordering is a secondary technique**, valid only when elements share the same stacking context and no ancestor breaks it. Many CSS properties create a new stacking context (`transform`, `opacity < 1`, `filter`, `isolation: isolate`, positioned `z-index`) — once a new stacking context exists, later siblings outside it cannot paint over elements inside it regardless of order. Do not rely on DOM ordering alone for overlay elements.
 
@@ -256,7 +258,7 @@ Only introduce `z-index` as a genuine last resort, and only with a component-loc
 }
 ```
 
-Never use bare numeric `z-index` values or a per-component global `--z-*` ladder; the `--layer-*` tokens above are reserved for the portaled primitives and the app frame.
+Never use bare numeric `z-index` values or a per-component global `--z-*` ladder; the `--layer-*` tokens above are reserved for the overlay primitives in `components/ui/`.
 
 ---
 

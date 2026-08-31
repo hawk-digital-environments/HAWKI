@@ -8,11 +8,14 @@ use App\Models\AiConv;
 use App\Models\AiConvMsg;
 use App\Models\Attachment;
 use App\Models\User;
-use App\Services\Storage\TemporaryUploadOwnership;
+use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
@@ -20,6 +23,17 @@ use Tests\TestCase;
 class ApiV1EndpointsTest extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The attachment tests write real files through the configured file-storage disk. Swap it for a
+        // fake disk that is emptied before every test: DatabaseTransactions rolls the rows back, but
+        // nothing rolls files back, so otherwise these tests would depend on - and litter - the
+        // developer's data repository.
+        Storage::fake(Config::string('filesystems.file_storage'));
+    }
 
     public function testItAssignsTheAuthenticatedOwnerAndAServerGeneratedSlugOnConversationCreation(): void
     {
@@ -77,15 +91,46 @@ class ApiV1EndpointsTest extends TestCase
         $uploader = User::factory()->create();
         $requestingUser = User::factory()->create();
         $conversation = $this->createConversation($requestingUser);
-        $identifier = StoredFileIdentifier::fromCategoryAndUuid(
-            StoredFileCategory::PRIVATE,
-            '00000000-0000-0000-0000-000000000002',
-        );
-        $this->app->make(TemporaryUploadOwnership::class)->register($identifier, $uploader);
+        $fileStorage = $this->app->make(FileStorageService::class);
+        $uuid = $this->uploadTemporaryAttachment($uploader);
+        $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, $uuid);
         $payload = $this->messagePayload();
-        $payload['content']['attachments'] = [$identifier->uuid];
+        $payload['content']['attachments'] = [$uuid];
 
         $this->actingAs($requestingUser)
+            ->postJson($this->messagesActionUrl($conversation), $payload, $this->jsonApiHeaders())
+            ->assertForbidden();
+
+        self::assertDatabaseMissing('ai_conv_msgs', ['conv_id' => $conversation->id]);
+        self::assertDatabaseMissing('attachments', ['uuid' => $uuid]);
+
+        // The rejected request must not have consumed the upload either: persisting moves the temp
+        // folder away, so the uploader would silently lose the file when sending their own message.
+        $temporaryUpload = $fileStorage->retrieve($identifier, true);
+        self::assertNotNull($temporaryUpload);
+        self::assertTrue($temporaryUpload->isOwnedBy($uploader));
+        self::assertFalse($temporaryUpload->isOwnedBy($requestingUser));
+    }
+
+    public function testItRejectsATemporaryAttachmentWithoutAnOwner(): void
+    {
+        $user = User::factory()->create();
+        $conversation = $this->createConversation($user);
+        $fileStorage = $this->app->make(FileStorageService::class);
+
+        // An upload stored without an owner (e.g. through the legacy UI) carries no ownership record in its
+        // meta sidecar. An unknown owner must never count as a match, not even for the requesting user.
+        $storedFile = $fileStorage->storeTemporary(
+            FileReference::fromContent('note.txt', 'hello'),
+            StoredFileCategory::PRIVATE,
+        );
+        self::assertNotNull($storedFile);
+        self::assertFalse($storedFile->isOwnedBy($user));
+
+        $payload = $this->messagePayload();
+        $payload['content']['attachments'] = [$storedFile->getUuid()];
+
+        $this->actingAs($user)
             ->postJson($this->messagesActionUrl($conversation), $payload, $this->jsonApiHeaders())
             ->assertForbidden();
 
@@ -110,18 +155,11 @@ class ApiV1EndpointsTest extends TestCase
     {
         $user = User::factory()->create();
         $conversation = $this->createConversation($user);
-        $ownership = $this->app->make(TemporaryUploadOwnership::class);
+        $fileStorage = $this->app->make(FileStorageService::class);
 
-        $uuid = $this->actingAs($user)
-            ->post(
-                '/api/hawki/v1/ai-convs/actions/attachments',
-                ['file' => UploadedFile::fake()->createWithContent('note.txt', 'hello')],
-                ['Accept' => 'application/json'],
-            )
-            ->assertCreated()
-            ->json('uuid');
+        $uuid = $this->uploadTemporaryAttachment($user);
         $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, $uuid);
-        self::assertTrue($ownership->isOwnedBy($identifier, $user));
+        self::assertSame((string) $user->id, $fileStorage->retrieve($identifier, true)?->getOwnerUserId());
 
         $payload = $this->messagePayload();
         $payload['content']['attachments'] = [$uuid];
@@ -132,13 +170,9 @@ class ApiV1EndpointsTest extends TestCase
             ->assertJsonCount(1, 'data.relationships.attachments.data');
 
         self::assertDatabaseHas('attachments', ['uuid' => $uuid, 'user_id' => $user->id]);
-        self::assertFalse($ownership->isRegistered($identifier));
-
-        // Remove the message again so the persisted file does not linger on disk after the DB rollback.
-        $messageId = AiConvMsg::query()->where('conv_id', $conversation->id)->sole()->message_id;
-        $this->actingAs($user)
-            ->deleteJson($this->messagesActionUrl($conversation) . '/' . $messageId, [], $this->jsonApiHeaders())
-            ->assertNoContent();
+        // Persisting the upload moved it out of temp/, taking the ownership record in the meta sidecar with it.
+        self::assertNull($fileStorage->retrieve($identifier, true));
+        self::assertNotNull($fileStorage->retrieve($identifier));
     }
 
     public function testItCanIncludeMessagesTheirAuthorsAndAttachmentsOnAConversation(): void
@@ -224,6 +258,21 @@ class ApiV1EndpointsTest extends TestCase
             'mime' => 'text/plain',
             'user_id' => $user->id,
         ]);
+    }
+
+    /**
+     * @return string The uuid of the temporary upload.
+     */
+    private function uploadTemporaryAttachment(User $user): string
+    {
+        return $this->actingAs($user)
+            ->post(
+                '/api/hawki/v1/ai-convs/actions/attachments',
+                ['file' => UploadedFile::fake()->createWithContent('note.txt', 'hello')],
+                ['Accept' => 'application/json'],
+            )
+            ->assertCreated()
+            ->json('uuid');
     }
 
     private function messagesActionUrl(AiConv $conversation): string

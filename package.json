@@ -47,5 +47,8 @@
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "^4.62.3"
+    },
+    "dependencies": {
+        "smob": "^1.6.2"
     }
 }

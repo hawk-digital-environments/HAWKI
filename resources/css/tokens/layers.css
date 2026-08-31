@@ -11,8 +11,7 @@
 
 @layer tokens {
     :root {
-        --layer-overlay: 50;    /* dropdown, popover, select, command palette, dialog */
-        --layer-app-chrome: 100; /* app frame that must sit above page content */
+        --layer-overlay: 50;
         --layer-toast: 100;
         --layer-tooltip: 100;
     }

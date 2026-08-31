@@ -19,6 +19,9 @@
         "sheet": {
             "menuTitle": "Menu"
         },
+        "commandPalette": {
+            "label": "Commands"
+        },
         "statusDot": {
             "ariaLabel": "Status indicator",
             "onlineTooltip": "Online",

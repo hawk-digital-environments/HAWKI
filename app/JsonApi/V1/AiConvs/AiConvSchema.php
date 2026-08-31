@@ -61,6 +61,8 @@ class AiConvSchema extends Schema
     /**
      * Private conversations belong to exactly one user, so the index only
      * ever returns the conversations of the requesting user.
+     *
+     * @todo Exchange this method for a contextual scope (equivalent of \App\Models\Scopes\RoomMemberAccessScope, see _documentation/500-Backend/200-Concepts/140-Contextual-Scopes.md) when merging chats and group chats.
      */
     public function indexQuery(?Request $request, Builder $query): Builder
     {

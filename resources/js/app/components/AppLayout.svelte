@@ -36,7 +36,11 @@
         position: fixed;
         top: var(--space-2);
         left: var(--space-2);
-        z-index: var(--layer-app-chrome);
+        /* Above the off-canvas nav drawer (--app-sidebar-z: 20), which it has
+           to stay reachable over, but below --layer-overlay so a focused skip
+           link can never paint on top of an open dialog. */
+        --skip-link-z: 30;
+        z-index: var(--skip-link-z);
         padding: var(--space-2) var(--space-3);
         border-radius: var(--corner-sm);
         background: var(--color-interactive);

@@ -22,7 +22,7 @@ exists; a generation started there keeps streaming through the store.
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {ChatTransport} from '$plugins/core/modules/chat/transport/ChatTransport.js';
-    import {exportConversation} from '$plugins/core/modules/chat/utils/exportConversation.js';
+    import {exportConversation, toConversationExportLabels} from '$plugins/core/modules/chat/utils/exportConversation.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
 
@@ -33,12 +33,8 @@ exists; a generation started there keeps streaming through the store.
     const systemPromptStore = useStore('system-prompts');
     const router = useRouter();
     const toast = useToastContext();
-    const {__} = useTranslator();
-    const exportLabels = $derived({
-        systemPrompt: __('chat.export.systemPrompt'),
-        conversation: __('chat.export.conversation'),
-        attachments: __('chat.export.attachments')
-    });
+    const {__, getTranslationsFlat} = useTranslator();
+    const exportLabels = $derived(toConversationExportLabels(getTranslationsFlat('chat.export')));
     const slug = $derived(typeof params.slug === 'string' ? params.slug : null);
     const defaultPrompt = systemPromptStore.getPromptByType('default').prompt;
     const transport = new ChatTransport(app, store);

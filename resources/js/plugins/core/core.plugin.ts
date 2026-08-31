@@ -47,7 +47,7 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public resourceSchemas(registrar: ResourceSchemaRegistrar): void {
         registrar.addFromModules(
-            import.meta.glob('$lib/plugins/core/schemas/resources/*.schema.{ts,js}', {eager: true})
+            import.meta.glob('$lib/plugins/core/schemas/resources/*.schema.ts', {eager: true})
         );
     }
 

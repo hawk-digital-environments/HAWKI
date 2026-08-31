@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Storage\Interfaces;
 
+use App\Models\User;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFile;
 use App\Services\Storage\Values\StoredFileCategory;
@@ -46,11 +47,15 @@ interface StorageServiceInterface
      *
      * @param FileReference $file
      * @param StoredFileCategory $category
+     * @param User|null $owner The uploading user. Persisted in the meta sidecar so the later request that
+     * attaches the file can check that its caller is the uploader ({@see StoredFile::isOwnedBy}).
+     * Pass null only where no user is involved; an upload without an owner can never be claimed.
      * @return StoredFile|null
      */
     public function storeTemporary(
         FileReference      $file,
-        StoredFileCategory $category
+        StoredFileCategory $category,
+        User|null          $owner = null
     ): StoredFile|null;
 
     /**
