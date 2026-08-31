@@ -1,6 +1,6 @@
 import {RouteDataLoaderContext} from '$lib/components/ui/routing/logistics/dataLoader.js';
 import {z} from 'zod';
-import type {RouterState} from '$lib/components/ui/routing/logistics/RouterState.svelte.js';
+import {disposeAll, type RouterState} from '$lib/components/ui/routing/logistics/RouterState.svelte.js';
 import type {HawkiRoute, RouteComponentOrLoader, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
 import {redirect, routeError, RouteHttpError, RouteRedirect, RouteResolutionError} from '$lib/components/ui/routing/logistics/signals.js';
@@ -35,8 +35,23 @@ export async function resolveRoute(
     state.currentError = null;
     state.currentState = 'loading';
 
+    // Collected per run, not on the state: a middleware effect that ran for a
+    // resolution which never reaches the screen must be undone without
+    // touching whatever is still rendered. Only a run that publishes hands
+    // this list over as the active one (see the `finally` below).
+    const cleanups: Array<() => void> = [];
+    const onCleanup = (dispose: () => void) => void cleanups.push(dispose);
+    let published = false;
+
     try {
-        const routeResult = await state.innerRouter.resolve(path);
+        // An object rather than the bare path so the two per-resolution fields
+        // ride along into every middleware's context — `options.context` is
+        // built once per *router* and so cannot carry them.
+        const routeResult = await state.innerRouter.resolve({
+            pathname: path,
+            ownerRouter: getHandle(),
+            onCleanup
+        });
         if (!routeResult) {
             // noinspection ExceptionCaughtLocallyJS
             throw new Error('No routeResult returned for path: ' + path);
@@ -105,10 +120,22 @@ export async function resolveRoute(
         state.currentNodeData = nodeResults.data;
         state.currentNodeParams = nodeResults.params;
         state.currentState = 'waiting';
+        published = true;
     } catch (error) {
         await handleError(state, path, error, redirectChain, signal, getHandle, getPath);
     } finally {
         state.finishRun(signal);
+
+        // Every way out of the `try` above passes through here, which is what
+        // makes the disposer guarantee hold: this run either took over the
+        // screen — so the *previous* route's cleanups are the ones to drop —
+        // or it never rendered (superseded, 404, error, redirect) and undoes
+        // only what it set up itself.
+        if (published) {
+            state.commitCleanups(cleanups);
+        } else {
+            disposeAll(cleanups);
+        }
         // Also skipped when this run followed a redirect: the recursive
         // `resolveRoute()` in `handleError()` started a run of its own, which
         // aborted this signal and published the *target* path itself.

@@ -53,3 +53,7 @@
 export interface RouteContextExtensions {
     // Populated by the consuming application via declaration merging (see above).
 }
+
+export interface GlobalMiddlewares {
+
+}

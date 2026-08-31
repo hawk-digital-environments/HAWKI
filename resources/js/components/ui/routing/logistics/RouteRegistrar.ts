@@ -1,11 +1,13 @@
 import {type Route, type RouteContext, type RouteParams, type RouteResult as URRouteResult} from 'universal-router';
-import {buildMiddlewareStack} from '$lib/components/ui/routing/logistics/buildMiddlewareStack.js';
+import {buildMiddlewareStack, buildRouteMiddlewareStack} from '$lib/components/ui/routing/logistics/buildMiddlewareStack.js';
 import {type ComponentLoader, type ComponentOrLoader, lazyComponent, resolveLayoutOption} from '$lib/components/ui/routing/logistics/lazyComponent.js';
 import type {Component} from 'svelte';
 import type {RouteNode, RouteNodeKind} from '$lib/components/ui/routing/logistics/nodes.js';
 import type {AnyRouteConfig} from '$lib/components/ui/routing/logistics/routeConfig.js';
 import type {RouteLayoutProps, RouteProps} from '$lib/components/ui/routing/logistics/routeProps.js';
-import type {RouteContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
+import type {GlobalMiddlewares, RouteContextExtensions} from '$lib/components/ui/routing/extendableTypes.js';
+import type {RouteMiddleware} from '$lib/components/ui/routing/logistics/middlewares.js';
+import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
 
 /** Signature of a callback that receives a {@link RouteRegistrar} to register routes on — used for plugin/module `routes()` hooks and for `registrar.group()` children. */
 export type RouteRegistrationCallback = (registrar: RouteRegistrar) => void;
@@ -90,42 +92,31 @@ export interface HawkiRoute<R = any> extends Route<R> {
  * over an index signature, so the extensions win the lookup rather than being
  * widened back to `any` by it.
  */
-export type HawkiRouteContext<R = any> = RouteContext<R> & RouteContextExtensions;
+export type HawkiRouteContext<R = any> = RouteContext<R> & RouteContextExtensions & RouteResolutionContext;
 
 /**
- * Guard that runs *before* the route (or route group) it is attached to.
- *
- * Modeled on a classic PHP-style middleware stack: the callable receives the
- * route context — a {@link HawkiRouteContext}, so app-level services such as
- * `context.app` / `context.restApi` are reachable from a guard, same as from a
- * loader — and a `next` callback that resumes the guarded route. Only
- * the three return shapes below are meaningful — HAWKI does not expose
- * `universal-router`'s raw `null` vs. `undefined` action distinction to
- * middleware authors; the wrapper in {@link buildMiddlewareStack} normalises
- * them so callers never have to learn that nuance.
- *
- * - **Return a {@link RouteResultBody}** to take over rendering and stop
- *   resolution. The body carries `component`, `context` and `params`, so a
- *   middleware can both replace the page *and* rewrite the params the page
- *   will receive — e.g. inject a derived value, normalise a slug — before the
- *   router picks them up. `component` may be an eager component or a
- *   `lazyComponent()` loader; the router resolves it like any other node.
- * - **`return await next()`** to pass through to the guarded route. Whatever
- *   the guarded route resolves to is handed back unchanged.
- * - **Return nothing (or throw)** to mark the guarded route as unreachable:
- *   `universal-router` skips the route's subtree, falls through to the next
- *   sibling, and 404s if nothing else matches — the permission-deny signal.
- * - **`import {redirect, routeError} from './signals.js'` and call one** to
- *   send the user elsewhere, or fail the resolution with an HTTP-style
- *   status, instead of returning/throwing directly — see `signals.ts` and
- *   `buildMiddlewareStack.ts`'s module doc comment for why this exists
- *   alongside "return a replacement body": swapping the component alone
- *   leaves the URL pointing at a page the user isn't actually on.
+ * The part of a route context that belongs to *one* resolution rather than to
+ * the router as a whole. `CreateRouterOptions.context` is evaluated once per
+ * router, so these cannot come from there — `routeResolver.ts` passes them
+ * alongside `pathname` on each `resolve()` call instead.
  */
-export type RouteMiddleware = (
-    context: HawkiRouteContext,
-    next: () => Promise<RouteResultBody | undefined>
-) => Promise<RouteResultBody | undefined>;
+export interface RouteResolutionContext {
+    /**
+     * This router's own {@link RouterHandle} (`goTo`, `getPath`, `isActive`, …).
+     *
+     * Not to be confused with `context.router`, which `universal-router` sets
+     * to its own `UniversalRouter` instance — that name is taken, hence the
+     * separate one here.
+     */
+    ownerRouter: RouterHandle;
+    /**
+     * Registers a disposer for whatever this resolution set up, run when the
+     * route it belongs to leaves the screen — see
+     * {@link import('./middlewares.js').MiddlewareEffect} for the exact
+     * guarantee and `RouterState.commitCleanups()` for how it is timed.
+     */
+    onCleanup: (dispose: () => void) => void;
+}
 
 /**
  * The concrete payload a resolved route produces — what `universal-router`
@@ -157,6 +148,15 @@ export interface RouteOptions<TMeta extends RouteMeta = RouteMeta> {
     name?: string;
     /** Middlewares wrapping this route; the first entry becomes the outermost guard. */
     middlewares?: RouteMiddleware[];
+    /**
+     * Per-route opt-out from the registrar's global middlewares (see
+     * {@link RouteRegistrar.addGlobalMiddleware}). `true` skips all of them;
+     * a key or array of keys skips only the named ones (e.g.
+     * `withoutGlobalMiddlewares: 'auth'` on a public route). Keys are
+     * type-checked against the `GlobalMiddlewares` interface augmented by
+     * each contributing extension.
+     */
+    withoutGlobalMiddlewares?: boolean | keyof GlobalMiddlewares | Array<keyof GlobalMiddlewares>;
     /**
      * Layout wrapping this route's page, rendered *inside* the layouts of the
      * groups the route sits in. Prefer {@link lazyLayout} so the layout stays
@@ -269,21 +269,6 @@ export interface RegisteredRouteGroupOptions extends RouteGroupOptions {
     children: (registrar: RouteRegistrar) => void;
 }
 
-/** Options for a {@link RouteRegistrar}; inherited by every nested registrar a {@link RouteRegistrar.group} creates. */
-export interface RouteRegistrarOptions {
-    /**
-     * Called once per registered *route* while {@link RouteRegistrar.build}
-     * compiles it, with that route's registration; the returned middlewares
-     * are placed in front of the route's own `middlewares`. This is how an
-     * application attaches a guard to every route without each plugin having
-     * to list it: the guard still lives in each route's own stack — there is
-     * no router-wide middleware — and, because the callback sees the route's
-     * `meta`, a route can opt out through it. Groups are not consulted; they
-     * carry no meta.
-     */
-    routeMiddlewares?: (route: RegisteredRouteOptions) => RouteMiddleware[];
-}
-
 /**
  * Mints ids for {@link RouteNode}s. Module-level, not a `RouteRegistrar`
  * instance field: {@link RouteRegistrar.group} builds each nested group with
@@ -342,8 +327,34 @@ function buildRouteNode(kind: RouteNodeKind, componentOrLoader: ComponentOrLoade
 export class RouteRegistrar {
     private readonly routes = new Map<string, RegisteredRouteOptions>();
     private readonly groups = new Map<string, RegisteredRouteGroupOptions>();
+    /**
+     * Middlewares attached to every route on this registrar (and on its
+     * nested registrars — the array is shared by reference, see
+     * {@link createNestedRegistrar}). Unlike per-route `middlewares`, these
+     * do not apply to groups: a group has no page of its own, so a global
+     * guard would only run once one of its child routes matched anyway.
+     */
+    private globalMiddlewares: { middleware: RouteMiddleware, key: keyof GlobalMiddlewares }[] = [];
 
-    public constructor(private readonly options: RouteRegistrarOptions = {}) {
+    /**
+     * Adds a middleware that runs in front of every route built from this
+     * registrar, keyed by a `GlobalMiddlewares` slot so routes can opt out
+     * individually through {@link RouteOptions.withoutGlobalMiddlewares}.
+     * Order of registration is the order of execution; a later call with an
+     * already-used `key` adds a duplicate rather than replacing it.
+     */
+    public addGlobalMiddleware(key: keyof GlobalMiddlewares, middleware: RouteMiddleware) {
+        this.globalMiddlewares.push({key, middleware});
+        return this;
+    }
+
+    /** Removes the first global middleware registered under `key`. No-op if none matches. */
+    public removeGlobalMiddleware(key: keyof GlobalMiddlewares) {
+        const index = this.globalMiddlewares.findIndex(mw => mw.key === key);
+        if (index !== -1) {
+            this.globalMiddlewares.splice(index, 1);
+        }
+        return this;
     }
 
     /**
@@ -448,6 +459,20 @@ export class RouteRegistrar {
     }
 
     /**
+     * Builds the nested registrar a {@link group} uses for its children.
+     *
+     * Shares the parent's `globalMiddlewares` array *by reference* so a
+     * plugin/module that registers a global guard from inside a group still
+     * affects the whole router — the alternative (each level getting its own
+     * list) would silently scope the guard to that group's subtree.
+     */
+    public createNestedRegistrar() {
+        const nestedRegistrar = new RouteRegistrar();
+        nestedRegistrar.globalMiddlewares = this.globalMiddlewares;
+        return nestedRegistrar;
+    }
+
+    /**
      * Compiles everything registered so far into the `Route[]` that
      * {@link RoutingExtension} feeds to `UniversalRouter`: first all plain
      * routes (in registration order), then all groups (in registration order),
@@ -511,13 +536,7 @@ export class RouteRegistrar {
             children: options.catchAll ? [] : undefined
         };
 
-        return buildMiddlewareStack(innerRoute, {
-            ...options,
-            middlewares: [
-                ...(this.options.routeMiddlewares?.(options) ?? []),
-                ...(options.middlewares ?? [])
-            ]
-        });
+        return buildRouteMiddlewareStack(innerRoute, this.globalMiddlewares, options);
     }
 
     /**
@@ -528,7 +547,7 @@ export class RouteRegistrar {
      * the children.
      */
     private buildRouteGroupFromOptions(options: RegisteredRouteGroupOptions) {
-        const innerRegistrar = new RouteRegistrar(this.options);
+        const innerRegistrar = this.createNestedRegistrar();
         options.children(innerRegistrar);
         const innerRoutes = innerRegistrar.build();
         const layout = resolveLayoutOption(options.layout, options.lazyLayout, `Group "${options.path}"`);

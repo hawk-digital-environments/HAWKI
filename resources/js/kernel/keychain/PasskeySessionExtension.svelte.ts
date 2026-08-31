@@ -1,4 +1,4 @@
-import type {HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
+import type {HawkiApp, HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
@@ -31,6 +31,17 @@ export class PasskeySessionExtension implements HawkiAppExtension {
 
     public provideProperties(): Record<string, unknown> {
         return {passkeySession: this};
+    }
+
+    /**
+     * Hooks the session teardown into the `logout` async event so the
+     * decrypted passkey is dropped from memory before the redirect carried
+     * out by {@link ClientExtension.logout} navigates away.
+     */
+    public ready(app: HawkiApp): void | Promise<void> {
+        app.events.async.on('logout', () => {
+            this.clear();
+        });
     }
 }
 
