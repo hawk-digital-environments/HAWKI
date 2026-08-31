@@ -2,7 +2,7 @@ import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types
 import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
-import {merge} from 'smob';
+import {assign} from 'smob';
 
 /**
  * Per-plugin registrar factory for the {@link ModuleExtension}.
@@ -34,10 +34,7 @@ export function createModuleRegistrar(
             throw new Error(`Module with name "${fullModuleName}" is already registered.`);
         }
 
-        const registeredModule: HawkiModuleWithPlugin = merge(
-            module,
-            {plugin}
-        );
+        const registeredModule: HawkiModuleWithPlugin = assign(module, { plugin });
 
         const moduleRoutes = module.routes?.bind(module);
         if (moduleRoutes) {
