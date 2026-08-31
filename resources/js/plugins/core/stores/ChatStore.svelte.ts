@@ -4,6 +4,7 @@ import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValue, loadSymmet
 import {decodeJsonApiResourceResponse} from '$lib/kernel/api/jsonApiEncoding.js';
 import AiConvMessageSchema, {type AiConvMessage} from '$plugins/core/schemas/resources/ai-conv-messages.schema.js';
 import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText, MessageStats, ReasoningPart} from '$plugins/core/modules/chat/types.js';
+import {threadIndexOf} from '$plugins/core/modules/chat/utils/messageThreads.js';
 import type {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
@@ -47,6 +48,8 @@ export class ChatStore implements DataStore {
     private activeLoad = 0;
     /** Keeps in-flight conversations alive when another chat becomes active. */
     private conversationCache = new Map<string, ChatConversation>();
+    /** Running branch requests by `slug:message_id`, so a double-click never creates a second branch. */
+    private branchRequests = new Map<string, Promise<ChatConversation>>();
 
     public async loadData(app: HawkiApp): Promise<void> {
         this._dependencies = {
@@ -82,7 +85,8 @@ export class ChatStore implements DataStore {
                 name: conversation.name,
                 slug: conversation.slug,
                 created_at: conversation.created_at,
-                updated_at: conversation.updated_at
+                updated_at: conversation.updated_at,
+                branched_from_slug: conversation.branched_from_slug ?? null
             }));
         } finally {
             this.listLoading = false;
@@ -124,7 +128,8 @@ export class ChatStore implements DataStore {
                 name: source.name,
                 slug: source.slug,
                 system_prompt: source.system_prompt ? await this.decryptText(source.system_prompt, key) : '',
-                messages: await Promise.all((source.messages ?? []).map(message => this.decryptMessage(message, key)))
+                messages: await Promise.all((source.messages ?? []).map(message => this.decryptMessage(message, key))),
+                branched_from_slug: source.branched_from_slug ?? null
             };
             if (requestId === this.activeLoad) {
                 // A generation may have started while this request was loading. Its
@@ -144,17 +149,19 @@ export class ChatStore implements DataStore {
         }
     }
 
-    public async create(name: string, systemPrompt: string, activate = true): Promise<ChatConversation> {
+    public async create(name: string, systemPrompt: string, activate = true, branchedFromSlug: string | null = null): Promise<ChatConversation> {
         const encryptedPrompt = await this.encryptText(systemPrompt);
         const resource = await this.dependencies.restApi.createResource('ai-convs', {
             name,
-            system_prompt: JSON.stringify(encryptedPrompt)
+            system_prompt: JSON.stringify(encryptedPrompt),
+            ...(branchedFromSlug ? {branched_from_slug: branchedFromSlug} : {})
         });
         const conversation: ChatConversation = {
             name,
             slug: resource.slug,
             system_prompt: systemPrompt,
-            messages: []
+            messages: [],
+            branched_from_slug: branchedFromSlug
         };
         if (activate) {
             this.active = conversation;
@@ -164,6 +171,91 @@ export class ChatStore implements DataStore {
         }
         this.upsertSummary(conversation);
         return conversation;
+    }
+
+    /**
+     * Creates an independent conversation from the main-thread history of
+     * `sourceSlug` up to and including the message with `messageId`, and
+     * returns it. The source conversation stays untouched; thread replies
+     * (`W.DDD` with a non-zero decimal) are not copied. Repeated calls while
+     * a branch is still being created return the running request instead of
+     * creating a second branch.
+     */
+    public async branch(sourceSlug: string, messageId: string): Promise<ChatConversation> {
+        const key = `${sourceSlug}:${messageId}`;
+        const running = this.branchRequests.get(key);
+        if (running) return running;
+        const request = this.createBranch(sourceSlug, messageId).finally(() => this.branchRequests.delete(key));
+        this.branchRequests.set(key, request);
+        return request;
+    }
+
+    private async createBranch(sourceSlug: string, messageId: string): Promise<ChatConversation> {
+        const source = this.getConversation(sourceSlug);
+        const anchorIndex = source?.messages.findIndex(message => message.message_id === messageId) ?? -1;
+        if (!source || anchorIndex < 0) throw new Error(this.dependencies.translator.__('chat.actions.branchError'));
+
+        const history = source.messages
+            .slice(0, anchorIndex + 1)
+            .filter(message => !message.isPending && !message.isStreaming && threadIndexOf(message) === 0);
+
+        const name = this.dependencies.translator.__('chat.actions.branchName', {name: source.name}).slice(0, 255);
+        const branch = await this.create(name, source.system_prompt, false, sourceSlug);
+        try {
+            // Sequentially: the server derives each message id from the current
+            // maximum, so parallel posts would race and collide.
+            for (const message of history) {
+                await this.copyMessageTo(branch.slug, message);
+            }
+        } catch (error) {
+            // Never leave a half-copied chat behind — the rollback failing must
+            // not mask the original error.
+            await this.remove(branch.slug).catch(() => undefined);
+            throw error;
+        }
+        return branch;
+    }
+
+    private async copyMessageTo(slug: string, message: ChatMessage): Promise<void> {
+        const isAssistant = message.message_role === 'assistant';
+        const attachments = await Promise.all(message.content.attachments.map(attachment => this.reuploadAttachment(attachment)));
+        // Assistant messages store a JSON envelope inside the ciphertext, user
+        // messages a plain string — mirrors ChatTransport / decryptMessage.
+        const plaintext = isAssistant
+            ? JSON.stringify({
+                text: message.content.text,
+                citations: message.citations ?? [],
+                ...(message.reasoning?.length ? {reasoning: message.reasoning} : {}),
+                ...(message.stats ? {stats: message.stats} : {})
+            })
+            : message.content.text;
+        const copied = await this.persistMessage(slug, {
+            isAi: isAssistant,
+            threadId: 0,
+            completion: Boolean(message.completion),
+            content: {text: await this.encryptText(plaintext), attachments},
+            ...(isAssistant ? {model: message.model, metadata: message.metadata} : {}),
+            __plainText: message.content.text,
+            __citations: message.citations ?? [],
+            __reasoning: message.reasoning,
+            __stats: message.stats
+        });
+        const conversation = this.getConversation(slug);
+        if (conversation) conversation.messages = [...conversation.messages, copied];
+    }
+
+    /**
+     * Attachment files belong to exactly one message (reusing a uuid is
+     * rejected by the server, and deleting either message would break the
+     * shared file), so the branch gets its own copy: download through the
+     * storage proxy, upload as a fresh temporary file.
+     */
+    private async reuploadAttachment(attachment: ChatMessage['content']['attachments'][number]): Promise<string> {
+        const {url, name, mime} = attachment.fileData;
+        const response = url ? await fetch(url) : null;
+        if (!response?.ok) throw new Error(this.dependencies.translator.__('chat.actions.branchAttachmentError', {name}));
+        const blob = await response.blob();
+        return this.upload(new File([blob], name, {type: mime || blob.type}));
     }
 
     /**
@@ -388,7 +480,8 @@ export class ChatStore implements DataStore {
             name: conversation.name,
             slug: conversation.slug,
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            branched_from_slug: conversation.branched_from_slug ?? null
         }, ...current];
     }
 

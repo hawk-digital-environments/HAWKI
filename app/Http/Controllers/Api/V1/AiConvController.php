@@ -49,6 +49,7 @@ class AiConvController extends Controller
         $conversation = $this->conversationRepository->create(
             $validated['name'] ?? null,
             $validated['system_prompt'] ?? null,
+            $validated['branched_from_slug'] ?? null,
         );
 
         return DataResponse::make($conversation)

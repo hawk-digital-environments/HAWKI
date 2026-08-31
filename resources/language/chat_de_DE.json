@@ -8,6 +8,7 @@
             "history": "Chatverlauf",
             "loading": "Chats werden geladen…",
             "generating": "Antwort wird generiert",
+            "branch": "Branch",
             "empty": "Deine Unterhaltungen erscheinen hier.",
             "unreadMessages": "ungelesene Nachrichten",
             "groups": {
@@ -63,6 +64,10 @@
             "edit": "Nachricht bearbeiten",
             "regenerate": "Antwort neu generieren",
             "thread": "Im Thread antworten",
+            "branch": "In neuem Chat verzweigen",
+            "branchName": ":name – Branch",
+            "branchError": "Die Unterhaltung konnte nicht verzweigt werden.",
+            "branchAttachmentError": "Der Anhang „:name“ konnte nicht in den neuen Chat übernommen werden.",
             "delete": "Nachricht löschen",
             "deleteAttachment": "Anhang löschen",
             "deleteConfirmTitle": "Nachricht löschen?",
