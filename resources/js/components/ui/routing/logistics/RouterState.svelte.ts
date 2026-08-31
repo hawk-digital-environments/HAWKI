@@ -24,6 +24,13 @@ export class RouterState {
      * this field.
      */
     private currentRun: AbortController | null = null;
+    /**
+     * Disposers registered (via `context.onCleanup`) by the run that is
+     * currently on screen. Held separately from the in-flight run's own list:
+     * a new run collects into its own array and only takes this slot once it
+     * publishes — see {@link commitCleanups}.
+     */
+    private activeCleanups: Array<() => void> = [];
 
     /**
      * Wires the routing strategy into the router for the lifetime of the
@@ -47,6 +54,16 @@ export class RouterState {
                 return;
             }
             runResolve(newPath);
+        });
+
+        // Teardown of the whole router, not of one resolution: whatever the
+        // rendered route registered has to go with the `RouterView` that was
+        // showing it. Aborting first makes an in-flight run take its own
+        // rollback path (see `routeResolver.ts`'s `finally`), so its cleanups
+        // are disposed too rather than outliving the component.
+        $effect(() => () => {
+            this.abortCurrentRun();
+            this.disposeActiveCleanups();
         });
     }
 
@@ -105,6 +122,44 @@ export class RouterState {
     public finishRun(signal: AbortSignal): void {
         if (this.currentRun?.signal === signal) {
             this.currentRun = null;
+        }
+    }
+
+    /**
+     * Hands the on-screen slot to the run that just published: disposes the
+     * previous route's cleanups and adopts `cleanups` as the active set.
+     *
+     * This — not the run's `AbortSignal` — is what "the user navigated away"
+     * means for a disposer. A run that publishes successfully is retired by
+     * {@link finishRun} *without* its controller ever being aborted, so a
+     * completed run's signal never fires and cannot be used to time teardown.
+     */
+    public commitCleanups(cleanups: Array<() => void>): void {
+        const previous = this.activeCleanups;
+        this.activeCleanups = cleanups;
+        disposeAll(previous);
+    }
+
+    /** Disposes the on-screen run's cleanups, leaving nothing active. */
+    public disposeActiveCleanups(): void {
+        const active = this.activeCleanups;
+        this.activeCleanups = [];
+        disposeAll(active);
+    }
+}
+
+/**
+ * Runs every disposer last-registered-first, so teardown mirrors set-up across
+ * a nested middleware stack. Each is isolated: one throwing disposer must not
+ * strand the ones after it, or a single bad listener would leak every other
+ * subscription the route registered.
+ */
+export function disposeAll(cleanups: Array<() => void>): void {
+    for (let i = cleanups.length - 1; i >= 0; i--) {
+        try {
+            cleanups[i]();
+        } catch (error) {
+            console.error('Error while disposing a route cleanup', error);
         }
     }
 }

@@ -294,6 +294,8 @@ export interface CreateRouterOptions {
  * for a standalone router; use {@link createRouterFromRegistrar} directly
  * when a registrar is already assembled (e.g. from plugin/module `routes()`
  * hooks, as `RoutingExtension` does).
+ *
+ * @todo should we inherit the global middlewares from `RoutingExtension` here?
  */
 export function createRouter(
     name: string,
