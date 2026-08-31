@@ -21,7 +21,7 @@ Usage (embedded in the legacy attachment template — see
     import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';
     import {oldUiBridge, type OldUiFileData} from '$lib/legacy/OldUiBridge.svelte.js';
     import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
-    import {useAuthenticatedConnection} from '$lib/app/hooks/useConnection.svelte.js';
+    import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
     import {__} from '$lib/kernel/localization/helpers.js';
 
     interface Props {
@@ -29,8 +29,7 @@ Usage (embedded in the legacy attachment template — see
         fileData: OldUiFileData;
     }
 
-    const connectionBox = useAuthenticatedConnection();
-    const connection = $derived(connectionBox.current);
+    const connection = useConnection();
 
     const {
         fileData
@@ -56,7 +55,7 @@ Usage (embedded in the legacy attachment template — see
             return false;
         }
 
-        return message.author.username === connection?.userinfo.username;
+        return connection.isAuthenticated && message.author.username === connection.userinfo.username;
     });
 </script>
 

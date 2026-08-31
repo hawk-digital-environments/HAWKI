@@ -83,10 +83,8 @@ export class AiModelStore implements DataStore {
     }
 
     public async loadData(app: HawkiApp): Promise<void> {
-        try {
-            app.authenticatedConnection;
-        } catch (e) {
-            // Unauthenticated connections don't have access to AI models, so we skip loading.
+        // Unauthenticated connections don't have access to AI models, so we skip loading.
+        if (!app.connection.isAuthenticated) {
             return;
         }
 
