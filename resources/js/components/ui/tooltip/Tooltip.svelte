@@ -146,8 +146,10 @@
                     ))
                 }}/>
             {/snippet}
-        </TooltipPrimitive.Trigger>
-        <TooltipPrimitive.Portal>
+        </TooltipPrimitive.Trigger><!-- Deliberately no whitespace between trigger and portal:
+            it would render as a stray text node right after the trigger — visible as a space
+            behind every tooltip-wrapped inline element (e.g. links in chat markdown).
+        --><TooltipPrimitive.Portal>
             <TooltipPrimitive.Content
                 {...mergeProps({class: 'tooltip-content', side, sideOffset}, restProps) as TooltipContentProps}
             >
@@ -155,10 +157,7 @@
             </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>
-</TooltipPrimitive.Provider>
-{#if !focusable && srOnlyLabel}
-    <span class="u-sr-only">{srOnlyLabel}</span>
-{/if}
+</TooltipPrimitive.Provider>{#if !focusable && srOnlyLabel}<span class="u-sr-only">{srOnlyLabel}</span>{/if}
 
 <style>
     :global(.tooltip-content) {

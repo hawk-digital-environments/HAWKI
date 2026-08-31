@@ -1,4 +1,4 @@
-import {createContext} from 'svelte';
+import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
 import {
     type BreakpointState,
     useBreakpoint
@@ -32,7 +32,7 @@ class SidebarState {
     }
 }
 
-const [getSidebarContext, setSidebarContext] = createContext<SidebarState>();
+const [getSidebarContext, setSidebarContext] = createHmrSafeContext<SidebarState>('hawki.sidebar');
 
 export function createSidebarContext(breakpoints: BreakpointState = useBreakpoint()): SidebarState {
     const sidebar = new SidebarState(breakpoints);
