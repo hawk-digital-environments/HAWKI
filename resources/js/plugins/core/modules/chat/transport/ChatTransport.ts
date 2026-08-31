@@ -145,7 +145,11 @@ export class ChatTransport implements MessageSenderTransportInterface {
     }
 
     private optimisticUserMessage(opt: MessageSenderTransportOptions): ChatMessage {
-        const user = this.app.authenticatedConnection.userinfo;
+        const connection = this.app.connection;
+        if (!connection.isAuthenticated) {
+            throw new Error('Current connection is not authenticated');
+        }
+        const user = connection.userinfo;
         const timestamp = new Date().toISOString();
 
         return {

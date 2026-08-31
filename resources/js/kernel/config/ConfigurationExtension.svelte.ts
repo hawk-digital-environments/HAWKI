@@ -7,6 +7,7 @@ import type {
 } from '$lib/kernel/HawkiApp.js';
 import type {HawkiConfigSchemas} from '$lib/kernel/extendableTypes.js';
 import {createConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistrar.js';
+import {updateObject} from '$lib/utils/objects.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
@@ -63,10 +64,7 @@ export class ConfigurationExtension implements HawkiAppExtension {
             const current = this.parsedCache[namespace];
             const next = schema.parse(this.currentConfig?.[namespace as string] ?? {});
             if (isRecord(current) && isRecord(next)) {
-                for (const key of Object.keys(current)) {
-                    if (!(key in next)) delete current[key];
-                }
-                Object.assign(current, next);
+                updateObject(current, next);
             } else {
                 this.parsedCache[namespace] = next;
             }

@@ -50,9 +50,7 @@ export class ChatStore implements DataStore {
             keychain: app.stores.get('keychain'),
             translator: app.translator
         };
-        try {
-            app.authenticatedConnection;
-        } catch {
+        if (!app.connection.isAuthenticated) {
             return;
         }
         await this.refresh();

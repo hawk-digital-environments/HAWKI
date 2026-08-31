@@ -17,10 +17,14 @@ export function getConnection(): Connection {
  * The connection must be loaded first by calling `loadConnection()`.
  *
  * @throws Error if the connection has not been loaded yet or if the client is not authenticated.
- * @deprecated Use {@link useAuthenticatedConnection()} instead, as it is more explicit and avoids the need for a global function.
+ * @deprecated Use {@link useConnection()} and narrow on `connection.isAuthenticated` instead.
  */
 export function getAuthenticatedConnection(): InternalAuthenticatedConnection {
-    return getHawkiApp().authenticatedConnection;
+    const connection = getHawkiApp().connection;
+    if (!connection.isAuthenticated) {
+        throw new Error('Current connection is not authenticated');
+    }
+    return connection;
 }
 
 /**
@@ -28,8 +32,12 @@ export function getAuthenticatedConnection(): InternalAuthenticatedConnection {
  * The connection must be loaded first by calling `loadConnection()`.
  *
  * @throws Error if the connection has not been loaded yet or if the client is not authenticated or registering a new user.
- * @deprecated Use {@link useConnectionWithUserInfo()} instead, as it is more explicit and avoids the need for a global function.
+ * @deprecated Use {@link useConnection()} and narrow on `connection.hasUserInfo` instead.
  */
 export function getConnectionWithUserInfo(): InternalAuthenticatedConnection | InternalRegisteringUserConnection {
-    return getHawkiApp().connectionWithUserInfo;
+    const connection = getHawkiApp().connection;
+    if (!connection.hasUserInfo) {
+        throw new Error('Current connection does not contain user info');
+    }
+    return connection;
 }

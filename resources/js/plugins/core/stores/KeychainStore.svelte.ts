@@ -77,12 +77,12 @@ export class KeychainStore implements DataStore {
      */
     public clearLocalSession(): void {
         try {
-            const connection = this._app?.authenticatedConnection;
-            if (connection) {
+            const connection = this._app?.connection;
+            if (connection?.isAuthenticated) {
                 this._app?.localStorage.removeItem(`${connection.userinfo.username}PK`);
             }
         } catch (error) {
-            // No authenticated connection — nothing to clean up.
+            // Connection not loaded yet — nothing to clean up.
         }
         this._app?.passkeySession.clear();
     }
@@ -126,7 +126,10 @@ export class KeychainStore implements DataStore {
 
         this._waitingToLoad = (async () => {
             try {
-                const connection = app.authenticatedConnection;
+                const connection = app.connection;
+                if (!connection.isAuthenticated) {
+                    throw new Error('Current connection is not authenticated');
+                }
 
                 if (!app.passkeySession.passkey) {
                     const storedPasskey = app.localStorage.getItem(`${connection.userinfo.username}PK`);
