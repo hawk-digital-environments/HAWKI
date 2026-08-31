@@ -3,6 +3,7 @@
 ### What's New
 
 [//]: # (- The main new features and changes in this version.)
+- Updated list from [available GWDG models](https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html) now includes DeepSeek V4 Flash 0731
 
 ### Quality of Life
 

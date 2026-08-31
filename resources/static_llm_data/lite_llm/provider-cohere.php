@@ -96,7 +96,7 @@ return [
   'cache_read_input_token_cost' => NULL,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-04-04',
   'supports_function_calling' => NULL,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => NULL,
@@ -146,7 +146,7 @@ return [
   'cache_read_input_token_cost' => NULL,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-04-04',
   'supports_function_calling' => NULL,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => NULL,
@@ -183,7 +183,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_image' => 0.0001,
-  'metadata' =>
+  'metadata' => 
   array (
     'notes' => '\'supports_image_input\' is a deprecated field. Use \'supports_embedding_image_input\' instead.',
   ),
@@ -203,7 +203,7 @@ return [
   'cache_read_input_token_cost' => NULL,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'deprecation_date' => '2026-04-04',
   'supports_function_calling' => NULL,
   'supports_parallel_function_calling' => NULL,
   'supports_vision' => NULL,

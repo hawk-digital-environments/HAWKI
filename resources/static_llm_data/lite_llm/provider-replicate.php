@@ -371,7 +371,7 @@ return [
   'supports_tool_choice' => true,
 ),
     array (
-  'id' => 'replicateopenai/gpt-oss-20b',
+  'id' => 'replicate/openai/gpt-oss-20b',
   'object' => 'model_catalog.entry',
   'provider' => 'replicate',
   'mode' => 'chat',

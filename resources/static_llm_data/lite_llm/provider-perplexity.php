@@ -333,7 +333,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.012,
     'search_context_size_low' => 0.005,
@@ -365,7 +365,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
   'citation_cost_per_token' => 2.0E-6,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.005,
     'search_context_size_low' => 0.005,
@@ -447,7 +447,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.014,
     'search_context_size_low' => 0.006,
@@ -478,7 +478,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.014,
     'search_context_size_low' => 0.005,
@@ -509,7 +509,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
-  'search_context_cost_per_query' =>
+  'search_context_cost_per_query' => 
   array (
     'search_context_size_high' => 0.014,
     'search_context_size_low' => 0.006,

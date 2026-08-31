@@ -706,20 +706,20 @@ return [
   'input_cost_per_token_batches' => 1.0E-6,
   'output_cost_per_token_above_200k_tokens' => 1.8E-5,
   'output_cost_per_token_batches' => 6.0E-6,
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -753,20 +753,20 @@ return [
   'supports_web_search' => true,
   'rpm' => 2000,
   'source' => 'https://ai.google.dev/pricing/gemini-3',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -801,20 +801,20 @@ return [
   'supports_web_search' => true,
   'rpm' => 2000,
   'source' => 'https://ai.google.dev/pricing/gemini-3',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -850,20 +850,20 @@ return [
   'supports_web_search' => true,
   'rpm' => 2000,
   'source' => 'https://ai.google.dev/gemini-api/docs/pricing#gemini-3.1-flash-lite',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -902,14 +902,14 @@ return [
   'input_cost_per_token_above_200k_tokens' => 4.0E-6,
   'output_cost_per_token_above_200k_tokens' => 1.8E-5,
   'source' => 'https://openrouter.ai/google/gemini-3.1-pro-preview',
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -1314,6 +1314,33 @@ return [
   'supports_video_input' => true,
 ),
     array (
+  'id' => 'openrouter/nvidia/nemotron-3.5-lightning',
+  'object' => 'model_catalog.entry',
+  'provider' => 'openrouter',
+  'mode' => 'chat',
+  'max_input_tokens' => 262144,
+  'max_output_tokens' => NULL,
+  'max_tokens' => NULL,
+  'input_cost_per_token' => 5.0E-8,
+  'output_cost_per_token' => 2.0E-7,
+  'cache_read_input_token_cost' => NULL,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => NULL,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'source' => 'https://openrouter.ai/nvidia/nemotron-3.5-lightning',
+  'supports_tool_choice' => true,
+),
+    array (
   'id' => 'openrouter/openai/gpt-3.5-turbo',
   'object' => 'model_catalog.entry',
   'provider' => 'openrouter',
@@ -1545,12 +1572,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -1580,12 +1607,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -1615,12 +1642,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -1650,12 +1677,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -1685,12 +1712,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -1720,12 +1747,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -1756,12 +1783,12 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://openrouter.ai/openai/gpt-5.1-codex-max',
-  'supported_modalities' =>
+  'supported_modalities' => 
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' =>
+  'supported_output_modalities' => 
   array (
     0 => 'text',
   ),
@@ -2627,6 +2654,34 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://openrouter.ai/z-ai/glm-5',
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'openrouter/z-ai/glm-5.1',
+  'object' => 'model_catalog.entry',
+  'provider' => 'openrouter',
+  'mode' => 'chat',
+  'max_input_tokens' => 202752,
+  'max_output_tokens' => 65535,
+  'max_tokens' => 65535,
+  'input_cost_per_token' => 1.05E-6,
+  'output_cost_per_token' => 3.5E-6,
+  'cache_read_input_token_cost' => 5.25E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 0.0,
+  'source' => 'https://openrouter.ai/z-ai/glm-5.1',
   'supports_tool_choice' => true,
 ),
     array (
