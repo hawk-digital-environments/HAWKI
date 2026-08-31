@@ -127,6 +127,12 @@ export class KeychainStore implements DataStore {
             this.roomKeys = handle.roomKeys();
             this.aiConvKey = handle.aiConvKey();
         });
+
+        app.events.async.on('logout', () => {
+            // Local session holds the encrypted keychain material; drop it on
+            // logout so a re-login does not pick up the previous user's keys.
+            this.clearLocalSession();
+        });
     }
 
     public async loadData(app: HawkiApp) {

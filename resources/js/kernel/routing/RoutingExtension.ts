@@ -1,8 +1,8 @@
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import {createRouterFromRegistrar, RouteRegistrar, type Router, type RouterHandle} from '$lib/components/ui/routing/index.js';
+import {createRouterFromRegistrar, type RouteMiddleware, type Router, RouteRegistrar, type RouterHandle} from '$lib/components/ui/routing/index.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {RestApi} from '$lib/kernel/api/RestApi.js';
-import {AuthChecker} from '$lib/kernel/routing/middlewares/AuthChecker.js';
+import {authMiddleware} from '$lib/kernel/routing/middlewares/AuthMiddleware.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
@@ -17,6 +17,10 @@ declare module '$lib/components/ui/routing/extendableTypes.js' {
     interface RouteContextExtensions {
         app: HawkiApp;
         restApi: RestApi;
+    }
+
+    interface GlobalMiddlewares {
+        auth: RouteMiddleware;
     }
 }
 
@@ -52,23 +56,7 @@ declare module '$lib/components/ui/routing/extendableTypes.js' {
  * and renders it.
  */
 export class RoutingExtension implements HawkiAppExtension {
-    /**
-     * The registrar that is handed to plugins and modules during {@link init}.
-     * All registration sources share this one instance.
-     *
-     * Note that the router is a one-time snapshot: {@link init} calls
-     * `registrar.build()` once at the end and never re-reads the registrar
-     * afterwards, so registering routes after boot has no effect on
-     * {@link router}.
-     */
-    private readonly authChecker = new AuthChecker();
-    /**
-     * Every route compiled from this registrar carries the {@link AuthChecker}
-     * middleware in its own stack (opt out per route with `meta: {auth: false}`).
-     */
-    public readonly registrar = new RouteRegistrar({
-        routeMiddlewares: (route) => this.authChecker.forRoute(route)
-    });
+    public readonly registrar = new RouteRegistrar();
     private _router: Router | null = null;
 
     /**
@@ -94,6 +82,8 @@ export class RoutingExtension implements HawkiAppExtension {
      * in the extension list of `resources/js/app.ts`.
      */
     public async init(app: UnfinishedHawkiApp) {
+        this.registrar.addGlobalMiddleware('auth', authMiddleware);
+
         await app.getOrFail('plugins').bootstrapper.runRoutes(this.registrar);
 
         for (const module of app.modules!.all) {
@@ -117,7 +107,6 @@ export class RoutingExtension implements HawkiAppExtension {
                 // router sees them on its context.
                 context: {app, restApi: app.restApi}
             });
-            this.authChecker.install(app, () => this._router);
         });
     }
 
