@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Storage\Values;
 
 
+use App\Models\User;
 use App\Services\Storage\AbstractFileStorage;
 use App\Services\Storage\Interfaces\FileInterface;
 use App\Services\Storage\UrlGenerator;
@@ -106,6 +107,13 @@ readonly class StoredFile implements FileInterface, \JsonSerializable
          */
         private PlainTextLanguageType|null $plainTextLanguageType,
         /**
+         * The id of the user who uploaded the file, or null when the uploader is unknown (e.g. legacy files).
+         * For temporary uploads this is the ownership record that {@see isOwnedBy()} checks before the file
+         * may be attached to a resource.
+         * @var string|null
+         */
+        private string|null                $ownerUserId,
+        /**
          * The filesystem instance used to retrieve the file content. This allows the StoredFile to access the file content when needed,
          * such as when converting it to a string or determining its MIME type.
          * @var Filesystem
@@ -139,6 +147,26 @@ readonly class StoredFile implements FileInterface, \JsonSerializable
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    /**
+     * Returns the id of the user who uploaded the file, or null when the uploader is unknown.
+     */
+    public function getOwnerUserId(): string|null
+    {
+        return $this->ownerUserId;
+    }
+
+    /**
+     * Whether the given user is the one who uploaded this file.
+     *
+     * A file with an unknown owner never matches. For temporary uploads this is an authorization check
+     * (see the "Security: ownership of temporary uploads" section in {@see AbstractFileStorage}), so
+     * "we don't know who uploaded this" has to mean "not yours".
+     */
+    public function isOwnedBy(User $user): bool
+    {
+        return $this->ownerUserId !== null && $this->ownerUserId === self::resolveOwnerUserId($user);
     }
 
     public function getExtracts(): ?FileCollection
@@ -274,6 +302,7 @@ readonly class StoredFile implements FileInterface, \JsonSerializable
             'type' => $this->fileType->value,
             'createdAt' => $this->createdAt->format(DATE_ATOM),
             'plainTextLanguageType' => $this->plainTextLanguageType?->value,
+            'ownerUserId' => $this->ownerUserId,
             'extracts' => $this->extracts,
             'etag' => $this->etag,
         ];
@@ -315,6 +344,7 @@ readonly class StoredFile implements FileInterface, \JsonSerializable
             mimeType: $data['mimeType'],
             fileType: FileType::from($data['type']),
             plainTextLanguageType: PlainTextLanguageType::tryFrom($data['plainTextLanguageType'] ?? 'nope'),
+            ownerUserId: $data['ownerUserId'] ?? null,
             filesystem: $filesystem,
             urlGenerator: $urlGenerator
         );
@@ -333,6 +363,7 @@ readonly class StoredFile implements FileInterface, \JsonSerializable
         Filesystem           $filesystem,
         UrlGenerator         $urlGenerator,
         \DateTimeImmutable   $createdAt,
+        User|null            $owner = null,
     ): self
     {
         return new self(
@@ -348,8 +379,18 @@ readonly class StoredFile implements FileInterface, \JsonSerializable
             mimeType: $filesystemFile->getMimeType(),
             fileType: $filesystemFile->getFileType(),
             plainTextLanguageType: $filesystemFile->getPlainTextLanguageType(),
+            ownerUserId: self::resolveOwnerUserId($owner),
             filesystem: $filesystem,
             urlGenerator: $urlGenerator
         );
+    }
+
+    /**
+     * Maps a user to the id that is persisted in the meta sidecar. Kept in one place so the value written
+     * on upload and the value compared in {@see isOwnedBy()} can never drift apart.
+     */
+    private static function resolveOwnerUserId(User|null $owner): string|null
+    {
+        return $owner === null ? null : (string)$owner->getAuthIdentifier();
     }
 }

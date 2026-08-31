@@ -2,11 +2,37 @@ import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
 
 export type ConversationExportFormat = 'print' | 'pdf' | 'word' | 'json' | 'csv';
 
+/**
+ * Localized section labels for the exported document.
+ *
+ * Declared as an explicit shape (not the open `Record<string, string>` a
+ * flattened translation subtree has) so every label read in this module is
+ * checked by the compiler. Values are guaranteed to be strings, but may be
+ * empty when a translation is missing — see {@link toConversationExportLabels}.
+ */
 export type ConversationExportLabels = {
     systemPrompt: string;
     conversation: string;
     attachments: string;
 };
+
+/**
+ * Picks the labels the export needs out of a flattened `chat.export` translation
+ * subtree, i.e. `useTranslator().getTranslationsFlat('chat.export')`.
+ *
+ * That subtree holds more entries than the export renders (menu title, format
+ * names, error text) and is typed as an open record, so the keys are narrowed
+ * here instead of at every read. Entries that are absent — the label set is
+ * still loading, or a key was renamed — become empty strings rather than
+ * `undefined` leaking into the document.
+ */
+export function toConversationExportLabels(labels: Record<string, string>): ConversationExportLabels {
+    return {
+        systemPrompt: labels.systemPrompt ?? '',
+        conversation: labels.conversation ?? '',
+        attachments: labels.attachments ?? ''
+    };
+}
 
 type ExportMessage = {
     id: string;
@@ -27,6 +53,8 @@ type ExportMessage = {
  *   - AI-generated summary of the conversation (PDF/Word header section)
  *   - markdown rendering in Word (headings, lists, code) instead of plain text
  *   - inline attachment previews/images
+ *   Tracked in Kanban card `maqorg6zuyim` — "Chat export: reach feature parity
+ *   with legacy export" on the "HAWKI Frontend Rewrite" board (KI workspace).
  */
 export async function exportConversation(
     conversation: ChatConversation,

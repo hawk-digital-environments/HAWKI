@@ -34,4 +34,10 @@ export class PasskeySessionExtension implements HawkiAppExtension {
     }
 }
 
+/**
+ * Shared instance registered in `app.ts`, exported so `legacy/OldUiBridge.svelte.ts`
+ * can populate the same session the routed features read from.
+ *
+ * @todo remove this global export when the OldUiBridge dies
+ */
 export const passkeySessionExtension = new PasskeySessionExtension();

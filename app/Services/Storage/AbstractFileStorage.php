@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Storage;
 
+use App\Models\User;
 use App\Services\Storage\Interfaces\StorageServiceInterface;
 use App\Services\Storage\Values\FileCollection;
 use App\Services\Storage\Values\FileReference;
@@ -37,7 +38,7 @@ use Symfony\Component\Filesystem\Path;
  * before the message is sent), use the two-step flow to avoid orphaned permanent files:
  * ```php
  * // Step 1 — upload lands in temp/
- * $stored = $storageService->storeTemporary($fileRef, StoredFileCategory::PRIVATE);
+ * $stored = $storageService->storeTemporary($fileRef, StoredFileCategory::PRIVATE, $user);
  *
  * // Step 2 — after the message is persisted, move to permanent storage
  * $storageService->persistTemporaryFile($stored->getIdentifier());
@@ -56,8 +57,8 @@ use Symfony\Component\Filesystem\Path;
 abstract class AbstractFileStorage implements StorageServiceInterface
 {
     /**
-     * How long a temporary upload may wait before being attached to a resource. Shared by the
-     * temp-file cleanup and {@see TemporaryUploadOwnership} so both expire together.
+     * How long a temporary upload may wait before being attached to a resource, enforced by
+     * the temp-file cleanup ({@see deleteTempExpiredFiles()}).
      */
     public const int TEMPORARY_FILE_TTL_SECONDS = 24 * 60 * 60;
 
@@ -104,9 +105,9 @@ abstract class AbstractFileStorage implements StorageServiceInterface
     /**
      * @inheritDoc
      */
-    public function storeTemporary(FileReference $file, StoredFileCategory $category): StoredFile|null
+    public function storeTemporary(FileReference $file, StoredFileCategory $category, User|null $owner = null): StoredFile|null
     {
-        return $this->storeInternal($file, $category, true);
+        return $this->storeInternal($file, $category, true, $owner);
     }
 
     /**
@@ -115,12 +116,14 @@ abstract class AbstractFileStorage implements StorageServiceInterface
      * @param FileReference $file The file to be stored.
      * @param StoredFileCategory $category The category under which the file should be stored.
      * @param bool $temp Indicates whether the file should be stored as temporary or permanent.
+     * @param User|null $owner The uploading user, persisted in the meta sidecar as the ownership record.
      * @return StoredFile|null The stored file object on success, or null on failure.
      */
     private function storeInternal(
         FileReference      $file,
         StoredFileCategory $category,
-        bool               $temp
+        bool               $temp,
+        User|null          $owner = null
     ): StoredFile|null
     {
         try {
@@ -151,7 +154,8 @@ abstract class AbstractFileStorage implements StorageServiceInterface
                 ),
                 filesystem: $this->context->filesystem,
                 urlGenerator: $this->context->urlGenerator,
-                createdAt: $this->context->clock->now()
+                createdAt: $this->context->clock->now(),
+                owner: $owner
             );
 
             if (!$this->context->filesystem->put(

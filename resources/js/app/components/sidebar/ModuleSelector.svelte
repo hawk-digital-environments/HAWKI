@@ -39,25 +39,25 @@
         return module ? `${module.plugin.name}:${module.name}` : moduleItems[0]?.value;
     });
 
-    function selectCommand(command: string) {
-        const module = modules.find(candidate => `${candidate.plugin.name}:${candidate.name}` === command);
+    function selectModule(moduleId: string) {
+        const module = modules.find(candidate => `${candidate.plugin.name}:${candidate.name}` === moduleId);
         if (!module) return;
         const prefix = getModuleRoutePrefix(module.plugin.name, module.name, module.plugin.isCorePlugin);
         void router.goTo(router.p(prefix));
     }
 
-    function findCommand(value: string | undefined) {
-        return moduleItems.find(c => c.value === value);
+    function findModuleItem(value: string | undefined) {
+        return moduleItems.find(item => item.value === value);
     }
 
-    const currentCommand = $derived(findCommand(current));
+    const currentModuleItem = $derived(findModuleItem(current));
 </script>
 
-<CommandPalette items={moduleItems} bind:open {current} onSelect={selectCommand}>
+<CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule}>
     {#snippet trigger({ props })}
         <CommandPaletteTrigger
-            label={currentCommand?.label ?? current ?? ''}
-            icon={currentCommand?.icon}
+            label={currentModuleItem?.label ?? current ?? ''}
+            icon={currentModuleItem?.icon}
             collapsed={!sidebar.navOpen}
             {...props}
         />

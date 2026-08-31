@@ -6,6 +6,8 @@ namespace Tests\Feature;
 
 use App\Models\AiConv;
 use App\Models\AiConvMsg;
+use App\Models\Attachment;
+use App\Models\Message;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +45,21 @@ class AiConvDeletionCascadeTest extends TestCase
 
         $attachment = $message->attachments()->create($this->attachmentAttributes($user, (string) Str::uuid(), 'plain.txt'));
 
-        static::assertSame($message->id, $attachment->fresh()->ai_conv_msg_id);
+        self::assertSame($message->id, $attachment->fresh()->ai_conv_msg_id);
+    }
+
+    public function testItLeavesTheForeignKeyEmptyForGroupChatAttachments(): void
+    {
+        $user = User::factory()->create();
+
+        // A room message needs no real row here: `attachable_id` carries no foreign
+        // key, and the point is only that nothing gets mirrored for `Message`.
+        $attachment = new Attachment(['category' => 'group'] + $this->attachmentAttributes($user, (string) Str::uuid(), 'room.txt'));
+        $attachment->attachable_type = Message::class;
+        $attachment->attachable_id = \PHP_INT_MAX;
+        $attachment->save();
+
+        self::assertNull($attachment->fresh()->ai_conv_msg_id);
     }
 
     // =========================================================================
@@ -79,9 +95,7 @@ class AiConvDeletionCascadeTest extends TestCase
     {
         $message = $this->createMessage($conversation, $user, $index);
         $uuid = (string) Str::uuid();
-        $message->attachments()->create(
-            ['ai_conv_msg_id' => $message->id] + $this->attachmentAttributes($user, $uuid, "cascade-{$index}.txt"),
-        );
+        $message->attachments()->create($this->attachmentAttributes($user, $uuid, "cascade-{$index}.txt"));
 
         return $uuid;
     }

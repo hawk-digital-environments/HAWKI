@@ -35,6 +35,7 @@
     import type {Snippet} from 'svelte';
     import TickIcon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import {isApple} from '$lib/utils/platform.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         /** Rows to show, in display order. */
@@ -45,7 +46,7 @@
         current?: string;
         /** Fired with the chosen row's `value`. The palette closes itself first. */
         onSelect?: (value: string) => void;
-        /** Screen-reader name for the palette. */
+        /** Screen-reader name for the palette. Defaults to the translated `ui.commandPalette.label`. */
         label?: string;
         /** Binds ⌘K / Ctrl+K to toggle the palette. */
         shortcut?: boolean;
@@ -65,11 +66,14 @@
         open = $bindable(false),
         current,
         onSelect,
-        label = 'Befehle',
+        label,
         shortcut = true,
         trigger,
         contentProps
     }: Props = $props();
+
+    const {__} = useTranslator();
+    const paletteLabel = $derived(label ?? __('ui.commandPalette.label'));
 
     /** Rows bucketed under their heading, in first-seen order. */
     const groups = $derived.by(() => {
@@ -186,7 +190,7 @@
     <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content {...fullContentProps as PopoverContentProps}>
             <CommandPrimitive.Root
-                {label}
+                label={paletteLabel}
                 loop
                 shouldFilter={false}
                 bind:ref={rootEl}
