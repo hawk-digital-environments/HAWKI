@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Http\Middleware\AdminAccess;
@@ -10,11 +12,18 @@ use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
-use App\Services\System\Http\Exceptions\SsrfBlockedException;
+use App\JsonApi\V1\Server;
+use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantFeedback;
+use App\Observers\AssistantFeedbackObserver;
+use App\Observers\AssistantObserver;
+use App\Services\Ai\Streaming\AgentStreamer;
+use App\Services\Ai\Streaming\AgentStreamerInterface;
 use App\Services\System\Http\SsrfSafeGetterMacro;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
 use App\Services\System\Time\CarbonClock;
 use App\Services\System\Time\CarbonClockInterface;
+use App\Services\System\Time\TimezoneGuard;
 use App\Services\System\UsageTypes\UsageContext;
 use App\Services\System\UserTypes\UserContext;
 use App\Services\Translation\LocaleService;
@@ -23,9 +32,8 @@ use App\Utils\Arrays\RecursiveMerger;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Console\Scheduling\Event;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
@@ -34,8 +42,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
+use LaravelJsonApi\Core\Support\AppResolver;
 use Psr\Clock\ClockInterface;
-
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -47,6 +55,8 @@ class AppServiceProvider extends ServiceProvider
         $this->registerMiddlewareAliases();
         $this->registerDisablingGlobalScopesForEloquentUserProvider();
         $this->registerClockForInterface();
+        $this->registerJsonApiServer();
+        $this->registerAssistantServices();
     }
 
     /**
@@ -54,14 +64,38 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        TimezoneGuard::ensureSafe((string) config('app.timezone'));
+
         $this->bootSchedulerMacros();
         $this->bootArrMacros();
         $this->bootUrlGeneratorMacros();
         $this->bootRequestMacros();
         $this->bootHttpMacros();
+        $this->bootObservers();
     }
 
-    /** @noinspection StaticClosureCanBeUsedInspection */
+    private function registerJsonApiServer(): void
+    {
+        $this->app->singleton(Server::class, static fn (Application $app) => new Server(
+            new AppResolver(static fn () => $app),
+            'v1',
+        ));
+    }
+
+    private function registerAssistantServices(): void
+    {
+        $this->app->singleton(AgentStreamerInterface::class, AgentStreamer::class);
+    }
+
+    private function bootObservers(): void
+    {
+        Assistant::observe(AssistantObserver::class);
+        AssistantFeedback::observe(AssistantFeedbackObserver::class);
+    }
+
+    /**
+     * @noinspection StaticClosureCanBeUsedInspection
+     */
     private function bootSchedulerMacros(): void
     {
         $app = $this->app;
@@ -71,29 +105,32 @@ class AppServiceProvider extends ServiceProvider
              * Acts in the same way as the standard "command" method, but allows for dynamic scheduling intervals and arguments, which can be defined in the database or configuration.
              * This macro uses the {@see ScheduleWithDynamicIntervalFactory} to create the scheduled job, which handles the parsing and validation of the interval and arguments, and logs any errors that occur during scheduling.
              *
-             * @param string $command The command to be scheduled.
-             * @param array|null $parameters Optional parameters for the command.
-             * @param mixed $interval The scheduling interval, which can be a string representing a scheduling method or the special "never" value.
-             * @param mixed|null $intervalArgs Optional arguments for the scheduling method, which can be a JSON string, a single numeric value, or a simple string.
-             * @return Event|null Returns the scheduled Event if successful, or null if there was an error in scheduling due to invalid interval or arguments.
+             * @param string     $command      the command to be scheduled
+             * @param null|array $parameters   optional parameters for the command
+             * @param mixed      $interval     the scheduling interval, which can be a string representing a scheduling method or the special "never" value
+             * @param null|mixed $intervalArgs optional arguments for the scheduling method, which can be a JSON string, a single numeric value, or a simple string
+             *
+             * @return null|Event returns the scheduled Event if successful, or null if there was an error in scheduling due to invalid interval or arguments
              */
             function (
-                string     $command,
-                array|null $parameters = null,
-                mixed      $interval = ScheduleWithDynamicIntervalFactory::NEVER_INTERVAL,
-                mixed      $intervalArgs = null
+                string $command,
+                ?array $parameters = null,
+                mixed $interval = ScheduleWithDynamicIntervalFactory::NEVER_INTERVAL,
+                mixed $intervalArgs = null,
             ) use ($app): Event|null {
                 return $app->make(ScheduleWithDynamicIntervalFactory::class)->makeJob(
                     command: $command,
                     parameters: $parameters,
                     interval: $interval,
-                    intervalArgs: $intervalArgs
+                    intervalArgs: $intervalArgs,
                 );
-            }
+            },
         );
     }
 
-    /** @noinspection StaticClosureCanBeUsedInspection */
+    /**
+     * @noinspection StaticClosureCanBeUsedInspection
+     */
     private function bootArrMacros(): void
     {
         Arr::macro(
@@ -113,15 +150,17 @@ class AppServiceProvider extends ServiceProvider
              */
             function (array $a, array $b, array|RecursiveMergeOption ...$args) {
                 return RecursiveMerger::merge($a, $b, ...$args);
-            });
+            },
+        );
     }
 
     private function bootUrlGeneratorMacros(): void
     {
-        UrlGenerator::macro('getForcedRoot',
+        UrlGenerator::macro(
+            'getForcedRoot',
             function () {
                 return $this->forcedRoot;
-            }
+            },
         );
     }
 
@@ -135,7 +174,8 @@ class AppServiceProvider extends ServiceProvider
              */
             function () use ($app): UsageContext {
                 return $app->get(UsageContext::class);
-            });
+            },
+        );
         Request::macro(
             'getUserContext',
             /**
@@ -143,7 +183,7 @@ class AppServiceProvider extends ServiceProvider
              */
             function () use ($app): UserContext {
                 return $app->get(UserContext::class);
-            }
+            },
         );
         Request::macro(
             'getLocaleContext',
@@ -152,7 +192,7 @@ class AppServiceProvider extends ServiceProvider
              */
             function () use ($app): LocaleService {
                 return $app->get(LocaleService::class);
-            }
+            },
         );
     }
 
@@ -164,18 +204,20 @@ class AppServiceProvider extends ServiceProvider
              * A wrapper around the standard "get" method that performs additional checks to prevent SSRF vulnerabilities.
              * This macro uses the {@see SsrfSafeGetterMacro} to execute the GET request, which validates the URL and query parameters against a whitelist and logs any blocked attempts.
              *
-             * @param string $url The URL to send the GET request to.
-             * @param array|null|string $query Optional query parameters for the GET request, which can be an array, a JSON string, or a simple string.
+             * @param string            $url   the URL to send the GET request to
+             * @param null|array|string $query optional query parameters for the GET request, which can be an array, a JSON string, or a simple string
+             *
+             * @throws ConnectionException  if there was an error connecting to the URL
+             * @throws SsrfBlockedException if the URL or query parameters were blocked by the SSRF protection mechanism
+             *
              * @return Response Returns the HTTP response from the GET request if successful
-             * @throws SsrfBlockedException if the URL or query parameters were blocked by the SSRF protection mechanism.
-             * @throws ConnectionException if there was an error connecting to the URL.
              */
             function (
-                string            $url,
-                array|null|string $query = null
+                string $url,
+                null|array|string $query = null,
             ): Response {
                 return SsrfSafeGetterMacro::execute($this, $url, $query);
-            }
+            },
         );
     }
 
@@ -197,9 +239,9 @@ class AppServiceProvider extends ServiceProvider
         // we create an infinite loop when Laravel tries to find the user.
         // To avoid this, we reconfigure the "eloquent" user provider to disable all global scopes on the User model, which includes the KnownUsersAccessScope.
         // see \Illuminate\Auth\CreatesUserProviders::createEloquentProvider where this normally happens
-        $this->app->resolving('auth', function (AuthManager $authManager) {
+        $this->app->resolving('auth', static function (AuthManager $authManager): void {
             $authManager->provider('eloquent', static function (Application $app, array $config) {
-                return (new EloquentUserProvider($app['hash'], $config['model']))->withQuery(function (Builder $query) {
+                return (new EloquentUserProvider($app['hash'], $config['model']))->withQuery(static function (Builder $query): void {
                     $query->withoutGlobalScopes();
                 });
             });
@@ -208,7 +250,7 @@ class AppServiceProvider extends ServiceProvider
 
     private function registerClockForInterface(): void
     {
-        $this->app->singleton(CarbonClockInterface::class, static fn() => new CarbonClock());
+        $this->app->singleton(CarbonClockInterface::class, static fn () => new CarbonClock());
         $this->app->alias(CarbonClockInterface::class, ClockInterface::class);
     }
 }

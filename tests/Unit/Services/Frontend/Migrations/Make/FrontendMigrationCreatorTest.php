@@ -120,12 +120,10 @@ class FrontendMigrationCreatorTest extends TestCase
         $files = $this->createMock(Filesystem::class);
         $files->method('get')->willReturn('');
 
-        $clock = new CarbonClock($now ?? new \DateTimeImmutable('2024-01-01 00:00:00'));
-
         return new FrontendMigrationCreator(
             phpMigrationCreator: new BackendMigrationCreator($files),
-            jsMigrationCreator: new JsMigrationCreator($files),
-            clock: $clock
+            jsMigrationCreator:  new JsMigrationCreator($files),
+            clock: new CarbonClock($now ?? new \DateTimeImmutable('2024-01-01 00:00:00')),
         );
     }
 }
