@@ -5,6 +5,8 @@ export interface ChatSummary {
     slug: string;
     created_at: string | null;
     updated_at: string | null;
+    /** Slug of the conversation this one was branched off, `null` for regular chats. */
+    branched_from_slug?: string | null;
 }
 
 export interface ChatMessage {
@@ -84,6 +86,8 @@ export interface ChatConversation {
     slug: string;
     system_prompt: string;
     messages: ChatMessage[];
+    /** Slug of the conversation this one was branched off, `null` for regular chats. */
+    branched_from_slug?: string | null;
 }
 
 export interface EncryptedText {

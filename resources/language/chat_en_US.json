@@ -8,6 +8,7 @@
             "history": "Chat history",
             "loading": "Loading chats…",
             "generating": "Generating response",
+            "branch": "Branch",
             "empty": "Your conversations will appear here.",
             "unreadMessages": "unread messages",
             "groups": {
@@ -63,6 +64,10 @@
             "edit": "Edit message",
             "regenerate": "Regenerate response",
             "thread": "Reply in thread",
+            "branch": "Branch in new chat",
+            "branchName": ":name – Branch",
+            "branchError": "The conversation could not be branched.",
+            "branchAttachmentError": "The attachment “:name” could not be carried over to the new chat.",
             "delete": "Delete message",
             "deleteAttachment": "Delete attachment",
             "deleteConfirmTitle": "Delete message?",

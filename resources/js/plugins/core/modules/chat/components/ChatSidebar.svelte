@@ -8,6 +8,7 @@
     import ChatHistoryItem from '$plugins/core/modules/chat/components/ChatHistoryItem.svelte';
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
     import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
+    import GitBranchIcon from '$lib/components/ui/icons/iconset/GitBranchIcon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -135,21 +136,26 @@
                                 <ul class="group-items" aria-labelledby={labelId}>
                                     {#each group.conversations as conversation (conversation.slug)}
                                         {@const generating = store.isGenerating(conversation.slug)}
+                                        {@const isBranch = Boolean(conversation.branched_from_slug)}
                                         <!-- History rows are label-only: with every row carrying
                                              the same message icon it added no information. The
-                                             leading slot is used solely to mark a conversation
-                                             that is still generating. -->
+                                             leading slot only marks the exceptions — a chat that
+                                             is still generating, or one branched off another
+                                             chat. The generating indicator takes precedence. -->
                                         {#snippet generatingIndicator()}
                                             <span class="generation-indicator" aria-hidden="true"></span>
                                         {/snippet}
+                                        {#snippet branchIndicator()}
+                                            <span class="branch-indicator" aria-hidden="true"><GitBranchIcon size={14} /></span>
+                                        {/snippet}
                                         <ChatHistoryItem
-                                            media={generating ? generatingIndicator : undefined}
+                                            media={generating ? generatingIndicator : (isBranch ? branchIndicator : undefined)}
                                             name={conversation.name}
                                             href={{name: 'chat.conversation', params: {slug: conversation.slug}}}
                                             active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
                                             rowLabel={generating
                                                 ? `${conversation.name}, ${__('chat.sidebar.generating')}`
-                                                : conversation.name}
+                                                : (isBranch ? `${conversation.name}, ${__('chat.sidebar.branch')}` : conversation.name)}
                                             onRename={name => renameConversation(conversation.slug, name)}
                                             onDelete={() => removeConversation(conversation.slug)}
                                         />
@@ -269,6 +275,11 @@
         border-right-color: var(--color-interactive);
         border-radius: 50%;
         animation: generation-spin 700ms linear infinite;
+    }
+
+    .branch-indicator {
+        display: inline-flex;
+        color: var(--color-text-muted);
     }
 
     @keyframes generation-spin { to { transform: rotate(360deg); } }

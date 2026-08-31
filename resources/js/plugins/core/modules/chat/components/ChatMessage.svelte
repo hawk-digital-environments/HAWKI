@@ -25,6 +25,7 @@
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import MessageEdit01Icon from '$lib/components/ui/icons/iconset/MessageEdit01Icon.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
+    import GitBranchIcon from '$lib/components/ui/icons/iconset/GitBranchIcon.svelte';
     import MessageCircleReplyIcon from '$lib/components/ui/icons/iconset/MessageCircleReplyIcon.svelte';
     import VolumeHighIcon from '$lib/components/ui/icons/iconset/VolumeHighIcon.svelte';
     import ChatMessageSelf from '$plugins/core/modules/chat/components/ChatMessage.svelte';
@@ -35,7 +36,7 @@
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import {messageTrunkId} from '$plugins/core/modules/chat/utils/messageThreads.js';
+    import {messageTrunkId, threadIndexOf} from '$plugins/core/modules/chat/utils/messageThreads.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -56,9 +57,13 @@
         onDeleteAttachment: (message: ChatMessageType, fileId: string) => void;
         /** Level of the message's visually hidden author heading; thread replies render one level deeper. Defaults to 3. */
         headingLevel?: number;
+        /** Called to branch the conversation into a new chat at this message. Omitting it hides the action. */
+        onBranch?: (message: ChatMessageType) => void;
+        /** True while a branch is being created anywhere in the conversation — disables the branch action. */
+        branching?: boolean;
     }
 
-    const {message, replies = [], isThreadReply = false, composer = null, onRegenerate, onDelete, onDeleteAttachment, headingLevel = 3, class: className, ...restProps}: Props = $props();
+    const {message, replies = [], isThreadReply = false, composer = null, onRegenerate, onDelete, onDeleteAttachment, onBranch, branching = false, headingLevel = 3, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const toast = useToastContext();
     const aiModelStore = useStore('ai-models');
@@ -83,6 +88,8 @@
     });
     /** Threads hang off persisted trunk messages only. */
     const canThread = $derived(Boolean(composer) && !isThreadReply && trunkId !== null && !message.isPending && !message.isStreaming);
+    /** Branching is available on persisted main-thread messages only (MVP: no branches from thread replies). */
+    const canBranch = $derived(Boolean(onBranch) && !isThreadReply && trunkId !== null && threadIndexOf(message) === 0 && !message.isPending && !message.isStreaming);
     const hasThreadSection = $derived(!isThreadReply && (replies.length > 0 || composingInThread));
     const threadToggleLabel = $derived(
         replies.length === 0
@@ -213,6 +220,9 @@
                 {/if}
                 {#if canThread}
                     <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} /></li>
+                {/if}
+                {#if canBranch}
+                    <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={GitBranchIcon} tooltip={__('chat.actions.branch')} disabled={branching} onclick={() => onBranch?.(message)} /></li>
                 {/if}
                 <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Delete02Icon} tooltip={__('chat.actions.delete')} onclick={() => onDelete(message)} /></li>
             </ul>

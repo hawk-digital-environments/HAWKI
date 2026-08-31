@@ -50,6 +50,7 @@ announces streaming errors.
 
     let composer = $state<ComposerContext | null>(null);
     let messageToDelete = $state<ChatMessageType | null>(null);
+    let branching = $state(false);
     let scrollRegion = $state<HTMLDivElement | null>(null);
     let messagesElement = $state<HTMLDivElement | null>(null);
     let composerDockHeight = $state(0);
@@ -276,6 +277,20 @@ announces streaming errors.
             toast.error(error instanceof Error ? error.message : String(error));
         }
     }
+
+    async function branchFromMessage(message: ChatMessageType) {
+        if (!store.active || branching) return;
+        branching = true;
+        try {
+            const branch = await store.branch(store.active.slug, message.message_id);
+            void router.goToRoute('chat.conversation', {slug: branch.slug});
+        } catch (error) {
+            console.error(error);
+            toast.error(__('chat.actions.branchError'));
+        } finally {
+            branching = false;
+        }
+    }
 </script>
 
 <Page>
@@ -347,7 +362,7 @@ announces streaming errors.
                     >
                         <h2 id={historyHeadingId} class="u-sr-only">{__('chat.page.messageHistory')}</h2>
                         {#each threadGroups as group (group.message.clientKey ?? group.message.message_id)}
-                            <ChatMessage message={group.message} replies={group.replies} {composer} onRegenerate={regenerateMessage} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
+                            <ChatMessage message={group.message} replies={group.replies} {composer} onRegenerate={regenerateMessage} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} onBranch={branchFromMessage} {branching} />
                         {/each}
                     </div>
                 {/if}
