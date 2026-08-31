@@ -23,6 +23,7 @@ exists; a generation started there keeps streaming through the store.
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {ChatTransport} from '$plugins/core/modules/chat/transport/ChatTransport.js';
     import {exportConversation, toConversationExportLabels} from '$plugins/core/modules/chat/utils/exportConversation.js';
+    import {groupMessagesIntoThreads, threadIndexOf} from '$plugins/core/modules/chat/utils/messageThreads.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
 
@@ -60,6 +61,11 @@ exists; a generation started there keeps streaming through the store.
     // instead of the composer docking to the bottom of the scroll region.
     const isEmpty = $derived(!store.loading && !store.error && (!store.active || store.active.messages.length === 0));
 
+    // Trunk messages with their thread replies nested under them (legacy
+    // `W.DDD` message ids): the log renders one turn per trunk message and
+    // each `ChatMessage` renders its own thread.
+    const threadGroups = $derived(store.active ? groupMessagesIntoThreads(store.active.messages) : []);
+
     $effect(() => {
         const requestedSlug = slug;
         if (!requestedSlug) return;
@@ -94,7 +100,10 @@ exists; a generation started there keeps streaming through the store.
                     region.scrollTop = region.scrollHeight;
                 }
             });
-        } else if (messageAdded && lastMessage?.message_role === 'user') {
+        } else if (messageAdded && lastMessage?.message_role === 'user' && threadIndexOf(lastMessage) === 0) {
+            // Thread replies are excluded: they render inside their trunk
+            // message's thread, which is already in view — scrolling the last
+            // trunk turn to the top would jump away from it.
             pinToBottom = false;
             // A freshly sent message starts a new turn: `new-turn` reserves a
             // screen of space below it, and this single scroll aligns it with
@@ -238,8 +247,8 @@ exists; a generation started there keeps streaming through the store.
                     aria-relevant="additions"
                     aria-label={__('chat.page.messageHistory')}
                 >
-                    {#each store.active.messages as message (message.clientKey ?? message.message_id)}
-                        <ChatMessage {message} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
+                    {#each threadGroups as group (group.message.clientKey ?? group.message.message_id)}
+                        <ChatMessage message={group.message} replies={group.replies} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
                     {/each}
                 </div>
             {/if}

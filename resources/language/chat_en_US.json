@@ -54,6 +54,13 @@
             "deleteConfirmTitle": "Delete message?",
             "deleteConfirmDescription": "This message will be permanently removed."
         },
+        "thread": {
+            "title": "Thread",
+            "replyCountOne": "1 reply",
+            "replyCount": ":count replies",
+            "reply": "Reply in thread",
+            "writing": "You are writing in this thread"
+        },
         "nameMenu": {
             "emptyNameError": "The chat name must not be empty",
             "leaveAction": "Leave chat",

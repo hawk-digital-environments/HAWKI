@@ -2,35 +2,50 @@
   @component One message in the chat log: avatar, author/timestamp line, the
   rendered body (Markdown, citations, attachments) and the per-message action
   bar (copy, edit, regenerate, delete). Marks itself busy while pending.
+
+  A trunk message additionally renders its thread: a toggle row with the reply
+  count and, when open, the replies (this component, nested with
+  `isThreadReply`) indented behind a rail. The thread opens itself while the
+  composer writes into it or a reply is still streaming in, and closes again
+  when thread mode is left without any replies.
 -->
 <script lang="ts">
     import Avatar from '$lib/components/ui/avatar/Avatar.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
+    import Button from '$lib/components/ui/button/Button.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
     import Copy01Icon from '$lib/components/ui/icons/iconset/Copy01Icon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import MessageEdit01Icon from '$lib/components/ui/icons/iconset/MessageEdit01Icon.svelte';
     import ArrowReloadHorizontalIcon from '$lib/components/ui/icons/iconset/ArrowReloadHorizontalIcon.svelte';
+    import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MessageCircleReplyIcon from '$lib/components/ui/icons/iconset/MessageCircleReplyIcon.svelte';
     import VolumeHighIcon from '$lib/components/ui/icons/iconset/VolumeHighIcon.svelte';
+    import ChatMessageSelf from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import MessageBody from '$plugins/core/modules/chat/components/message/MessageBody.svelte';
     import MessageReasoning from '$plugins/core/modules/chat/components/message/MessageReasoning.svelte';
     import MessageStats from '$plugins/core/modules/chat/components/message/MessageStats.svelte';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {messageTrunkId} from '$plugins/core/modules/chat/utils/messageThreads.js';
+    import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {formatDateTime} from '$lib/utils/date.js';
 
     interface Props extends HTMLAttributes<HTMLElement> {
         message: ChatMessageType;
+        /** Thread replies of this trunk message, in creation order. */
+        replies?: ChatMessageType[];
+        /** True when this message is itself a thread reply — it gets no thread of its own. */
+        isThreadReply?: boolean;
         composer?: ComposerContext | null;
         onDelete: (message: ChatMessageType) => void;
         onDeleteAttachment: (message: ChatMessageType, fileId: string) => void;
     }
 
-    const {message, composer = null, onDelete, onDeleteAttachment, class: className, ...restProps}: Props = $props();
+    const {message, replies = [], isThreadReply = false, composer = null, onDelete, onDeleteAttachment, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
     const experiments = useStore('experiments');
@@ -46,6 +61,48 @@
             : message.author.name
     );
 
+    const trunkId = $derived(messageTrunkId(message));
+    /** True while the composer's thread mode targets this message's thread. */
+    const composingInThread = $derived.by(() => {
+        if (isThreadReply || trunkId === null || !composer?.mode.isThread) return false;
+        return Number(composer.mode.getState('thread').threadId) === trunkId;
+    });
+    /** Threads hang off persisted trunk messages only. */
+    const canThread = $derived(Boolean(composer) && !isThreadReply && trunkId !== null && !message.isPending && !message.isStreaming);
+    const hasThreadSection = $derived(!isThreadReply && (replies.length > 0 || composingInThread));
+    const threadToggleLabel = $derived(
+        replies.length === 0
+            ? __('chat.thread.title')
+            : replies.length === 1
+                ? __('chat.thread.replyCountOne')
+                : __('chat.thread.replyCount', {count: String(replies.length)})
+    );
+
+    let threadOpen = $state(false);
+    let wasComposingInThread = false;
+
+    // The thread follows the composer: entering thread mode opens it, leaving
+    // the mode with nothing written closes it again (mirrors the legacy UI).
+    $effect(() => {
+        if (composingInThread) {
+            threadOpen = true;
+        } else if (wasComposingInThread && replies.length === 0) {
+            threadOpen = false;
+        }
+        wasComposingInThread = composingInThread;
+    });
+
+    // A reply arriving right now (sent or streaming) must be visible.
+    $effect(() => {
+        if (replies.some(reply => reply.isPending || reply.isStreaming)) threadOpen = true;
+    });
+
+    function openThreadComposer() {
+        if (trunkId === null) return;
+        threadOpen = true;
+        composer?.mode.enter('thread', String(trunkId));
+    }
+
     function copyMessage() {
         navigator.clipboard.writeText(message.content.text);
     }
@@ -54,6 +111,8 @@
         speechSynthesis.cancel();
         speechSynthesis.speak(new SpeechSynthesisUtterance(message.content.text));
     }
+
+    const threadPanelId = $props.id();
 </script>
 
 <article {...restProps} class={["message", className]} class:user={!isAssistant} class:assistant={isAssistant} class:pending={message.isPending} aria-busy={message.isPending}>
@@ -116,10 +175,48 @@
                 {#if composer && isAssistant}
                     <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={ArrowReloadHorizontalIcon} tooltip={__('chat.actions.regenerate')} onclick={() => composer?.mode.enter('regen', message)} />
                 {/if}
-                {#if composer}
-                    <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={() => composer?.mode.enter('thread', message.message_id.split('.')[0])} />
+                {#if canThread}
+                    <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} />
                 {/if}
                 <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Delete02Icon} tooltip={__('chat.actions.delete')} onclick={() => onDelete(message)} />
+            </div>
+        {/if}
+
+        {#if hasThreadSection}
+            <div class="thread" class:composing={composingInThread}>
+                <button
+                    type="button"
+                    class="thread-toggle"
+                    class:open={threadOpen}
+                    aria-expanded={threadOpen}
+                    aria-controls={threadPanelId}
+                    onclick={() => threadOpen = !threadOpen}
+                >
+                    <MessageCircleReplyIcon size={16} />
+                    <span class="thread-label">{threadToggleLabel}</span>
+                    <span class="thread-chevron" aria-hidden="true"><ArrowRight01Icon size={16} /></span>
+                </button>
+
+                {#if threadOpen}
+                    <div class="thread-panel" id={threadPanelId} transition:growTransition>
+                        {#each replies as reply (reply.clientKey ?? reply.message_id)}
+                            <ChatMessageSelf message={reply} {composer} isThreadReply {onDelete} {onDeleteAttachment} />
+                        {/each}
+
+                        {#if composingInThread}
+                            <div class="thread-active" role="status">
+                                <span class="thread-active-dot" aria-hidden="true"></span>
+                                {__('chat.thread.writing')}
+                            </div>
+                        {:else if canThread}
+                            <div class="thread-reply">
+                                <Button variant="ghost" size="xs" iconLeft={MessageCircleReplyIcon} onclick={openThreadComposer}>
+                                    {__('chat.thread.reply')}
+                                </Button>
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
             </div>
         {/if}
     </div>
@@ -219,4 +316,85 @@
     .actions:focus-within { opacity: 1; }
 
     @media (hover: none) { .actions { opacity: 1; } }
+
+    /* ── Thread ───────────────────────────────────────────────────────── */
+
+    .thread { margin-top: var(--space-1); }
+
+    /* Same quiet pill as the reasoning trigger: a line of accent text with a
+       chevron, pulled left by its own padding so the icon aligns with the
+       message content. */
+    .thread-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        max-width: 100%;
+        margin-inline-start: calc(-1 * var(--space-3));
+        padding: var(--space-1_5) var(--space-3);
+        border: none;
+        border-radius: var(--corner-full);
+        background: transparent;
+        color: var(--color-accent-text);
+        font: inherit;
+        font-size: var(--font-size-xs);
+        cursor: pointer;
+        user-select: none;
+        transition: background-color var(--duration-fast);
+    }
+
+    .thread-toggle:hover { background: var(--color-hover); }
+    .thread-toggle:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+
+    .thread-label { font-weight: var(--font-weight-medium); }
+
+    .thread-chevron {
+        display: inline-flex;
+        flex: none;
+        transition: transform var(--duration-fast) var(--easing-spring);
+    }
+
+    .thread-toggle.open .thread-chevron { transform: rotate(90deg); }
+
+    /* The replies hang behind a rail, indented like the legacy branch view.
+       While the composer writes into this thread the rail takes the accent
+       colour, echoing the pulsing indicator at its foot. */
+    .thread-panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+        margin-top: var(--space-2);
+        padding: var(--space-2) 0 var(--space-2) var(--space-4);
+        border-left: 2px solid var(--color-border);
+    }
+
+    .composing .thread-panel { border-left-color: var(--color-accent-text); }
+
+    .thread-reply { align-self: flex-start; }
+
+    .thread-active {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+    }
+
+    .thread-active-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: var(--corner-full);
+        background: var(--color-accent-text);
+        animation: thread-active-pulse 1.6s ease-out infinite;
+    }
+
+    @keyframes thread-active-pulse {
+        0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent-text) 60%, transparent); }
+        70% { box-shadow: 0 0 0 6px transparent; }
+        100% { box-shadow: 0 0 0 0 transparent; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .thread-active-dot { animation: none; }
+        .thread-chevron { transition: none; }
+    }
 </style>
