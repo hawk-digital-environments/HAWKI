@@ -75,7 +75,8 @@
  *                                  -> every slice restores its own snapshot
  * ```
  */
-import {createContext, onDestroy} from 'svelte';
+import {onDestroy} from 'svelte';
+import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
 import {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
@@ -383,17 +384,22 @@ export class ComposerContext {
 /**
  * Svelte context accessor pair for the composer.
  *
- * `createContext()` (Svelte >= 5.40) returns a typed `[get, set]` tuple bound to
- * an internal key, which removes the string/symbol key bookkeeping that plain
- * `getContext`/`setContext` require. `get` is re-exported below as
- * {@link useComposerContext} with an extra guard so a missing provider produces
- * an actionable message instead of Svelte's generic one.
+ * `createHmrSafeContext()` mirrors Svelte's `createContext()` `[get, set]`
+ * tuple but keeps its key stable across Vite HMR module re-evaluations (see
+ * its doc block). `get` is re-exported below as {@link useComposerContext}
+ * with an extra guard so a missing provider produces an actionable message
+ * instead of the generic one.
  */
-const [get, set] = createContext<ComposerContext>();
+const [get, set] = createHmrSafeContext<ComposerContext>('hawki.chat.composer-context');
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {
-    const context: ComposerContext | null | undefined = get();
+    let context: ComposerContext | null | undefined;
+    try {
+        context = get();
+    } catch {
+        // Replaced by the actionable error below.
+    }
     if (!context) {
         throw new Error('No ComposerContext found in Svelte context tree. Make sure to call createComposerContext() in a parent component.');
     }
