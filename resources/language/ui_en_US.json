@@ -39,7 +39,19 @@
             "lightMode": "Light mode",
             "darkMode": "Dark mode",
             "settings": "Settings",
+            "announcements": "Announcements",
             "logout": "Log out"
+        },
+        "announcements": {
+            "confirm": "Confirm",
+            "decline": "Decline",
+            "logoutWarningTitle": "Decline and log out?",
+            "logoutWarningDescription": "You need to accept this announcement to keep using HAWKI. If you decline, you will be logged out.",
+            "pageTitle": "News",
+            "empty": "There are no announcements for you yet.",
+            "publishedForAll": "Published for everyone",
+            "publishedForYou": "Published for you",
+            "readBy": "read by :count"
         },
         "settings": {
             "title": "Settings",

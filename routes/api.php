@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\AiModelDescriptionController;
 use App\Http\Controllers\Api\V1\AiModelFlagController;
 use App\Http\Controllers\Api\V1\AiProviderController;
 use App\Http\Controllers\Api\V1\AiToolController;
+use App\Http\Controllers\Api\V1\AnnouncementController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
@@ -83,6 +84,13 @@ JsonApiRoute::server('v1')
         $server->resource('migrations', MigrationController::class)
             ->actions(function (ActionRegistrar $actions) {
                 $actions->post('actions/apply', 'markMigrationAsApplied');
+            })
+            ->only('index', 'show');
+
+        $server->resource('announcements', AnnouncementController::class)
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/seen', 'markSeen');
+                $actions->post('actions/accept', 'markAccepted');
             })
             ->only('index', 'show');
 
