@@ -20,9 +20,10 @@ use Psr\Log\LoggerInterface;
  * bug or an uninformed third-party package, so it logs a warning once per request while
  * still returning the disk (warn-and-continue: the default remains a valid framework fallback).
  *
- * Instances are created exclusively via decorate() so the decorator inherits the full live
- * state of the wrapped manager — already-resolved disks and registered custom creators —
- * instead of discarding it.
+ * Instances are created exclusively via {@see DecoratorTrait::createDecoratedOf()} with the
+ * logger supplied as an additional property, so the decorator inherits the full live state
+ * of the wrapped manager — already-resolved disks and registered custom creators — instead
+ * of discarding it.
  */
 class DefaultDiskWarningFilesystemManager extends FilesystemManager
 {
@@ -31,18 +32,6 @@ class DefaultDiskWarningFilesystemManager extends FilesystemManager
     private LoggerInterface $logger;
 
     private bool $defaultDiskWarningEmitted = false;
-
-    /**
-     * Create the decorating manager, inheriting all state (app, disks, custom creators)
-     * of the given manager.
-     */
-    public static function decorate(FilesystemManager $manager, LoggerInterface $logger): self
-    {
-        $decoratedInstance = self::createDecoratedOf($manager);
-        $decoratedInstance->logger = $logger;
-
-        return $decoratedInstance;
-    }
 
     /**
      * @inheritDoc

@@ -34,7 +34,9 @@ class StorageServiceProvider extends ServiceProvider
         $this->app->extend(
             'filesystem',
             function (FilesystemManager $manager, Application $app): FilesystemManager {
-                return DefaultDiskWarningFilesystemManager::decorate($manager, $app->get(LoggerInterface::class));
+                return DefaultDiskWarningFilesystemManager::createDecoratedOf($manager, [
+                    'logger' => $app->get(LoggerInterface::class),
+                ]);
             }
         );
 

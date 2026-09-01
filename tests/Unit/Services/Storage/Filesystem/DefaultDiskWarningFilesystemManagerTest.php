@@ -78,7 +78,9 @@ class DefaultDiskWarningFilesystemManagerTest extends TestCase
             return new FilesystemAdapter(new FlysystemFilesystem($adapter), $adapter, []);
         });
 
-        $sut = DefaultDiskWarningFilesystemManager::decorate($baseManager, $this->mockLogger());
+        $sut = DefaultDiskWarningFilesystemManager::createDecoratedOf($baseManager, [
+            'logger' => $this->mockLogger(),
+        ]);
 
         static::assertInstanceOf(FilesystemAdapter::class, $sut->disk('custom_test_disk'));
     }
@@ -88,7 +90,9 @@ class DefaultDiskWarningFilesystemManagerTest extends TestCase
         $baseManager = new FilesystemManager($this->app);
         $baseDisk = $baseManager->disk('local');
 
-        $sut = DefaultDiskWarningFilesystemManager::decorate($baseManager, $this->mockLogger());
+        $sut = DefaultDiskWarningFilesystemManager::createDecoratedOf($baseManager, [
+            'logger' => $this->mockLogger(),
+        ]);
 
         static::assertSame($baseDisk, $sut->disk('local'));
     }
@@ -99,7 +103,10 @@ class DefaultDiskWarningFilesystemManagerTest extends TestCase
 
     private function makeSut(LoggerInterface $logger): DefaultDiskWarningFilesystemManager
     {
-        return DefaultDiskWarningFilesystemManager::decorate(new FilesystemManager($this->app), $logger);
+        return DefaultDiskWarningFilesystemManager::createDecoratedOf(
+            new FilesystemManager($this->app),
+            ['logger' => $logger]
+        );
     }
 
     private function mockLogger(): LoggerInterface&MockObject
