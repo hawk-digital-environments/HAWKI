@@ -104,7 +104,7 @@ export class KeychainStore implements DataStore {
      * until a passkey was entered and validates that passkey through this
      * store, so the handle must exist without waiting for {@link loadData}.
      */
-    public init(app: HawkiApp) {
+    public ready(app: HawkiApp) {
         this._app = app;
         const handle = this._handle = createKeychainHandle(app, () => {
             const currentPasskey = app.passkeySession.passkey;

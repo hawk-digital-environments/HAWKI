@@ -24,7 +24,7 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 export interface DataStore {
     readonly name: string;
 
-    init?(app: HawkiApp): void;
+    ready?(app: HawkiApp): void;
 
     loadData?(app: HawkiApp): Promise<void>;
 }

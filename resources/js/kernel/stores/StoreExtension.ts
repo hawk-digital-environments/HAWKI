@@ -77,7 +77,7 @@ export class StoreExtension implements HawkiAppExtension {
      */
     public ready(app: HawkiApp, bootstrapper: Bootstrapper) {
         for (const store of this.stores.values()) {
-            store.init?.(app);
+            store.ready?.(app);
         }
 
         bootstrapper.onStageReached('main', async () => {
