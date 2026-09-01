@@ -116,7 +116,16 @@ export class ChatStore implements DataStore {
         this.loading = true;
         this.error = null;
         try {
-            const conversation = await this.fetch(slug);
+            const key = await this.conversationKey();
+            const source = await this.dependencies.restApi.getResource('ai-convs', slug, {
+                query: {include: 'messages.author,messages.attachments'}
+            });
+            const conversation: ChatConversation = {
+                name: source.name,
+                slug: source.slug,
+                system_prompt: source.system_prompt ? await this.decryptText(source.system_prompt, key) : '',
+                messages: await Promise.all((source.messages ?? []).map(message => this.decryptMessage(message, key)))
+            };
             if (requestId === this.activeLoad) {
                 // A generation may have started while this request was loading. Its
                 // cached copy is newer than the server response until it is persisted.
@@ -133,24 +142,6 @@ export class ChatStore implements DataStore {
         } finally {
             if (requestId === this.activeLoad) this.loading = false;
         }
-    }
-
-    /**
-     * Fetches and decrypts a conversation without touching `active`, the
-     * cache, or the loading state — for background readers such as the chat
-     * index. `load` is the user-facing variant that also activates it.
-     */
-    public async fetch(slug: string): Promise<ChatConversation> {
-        const key = await this.conversationKey();
-        const source = await this.dependencies.restApi.getResource('ai-convs', slug, {
-            query: {include: 'messages.author,messages.attachments'}
-        });
-        return {
-            name: source.name,
-            slug: source.slug,
-            system_prompt: source.system_prompt ? await this.decryptText(source.system_prompt, key) : '',
-            messages: await Promise.all((source.messages ?? []).map(message => this.decryptMessage(message, key)))
-        };
     }
 
     public async create(name: string, systemPrompt: string, activate = true): Promise<ChatConversation> {

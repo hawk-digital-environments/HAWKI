@@ -99,27 +99,7 @@
                     "statsForNerds": {
                         "title": "Stats for nerds",
                         "description": "Shows token counts, tokens per second and timing details below every AI response."
-                    },
-                    "chatIndex": {
-                        "title": "Chat index (message search)",
-                        "description": "Keeps an encrypted index of your message texts in the browser so search also finds the content of your chats. The index grows as you open chats, or can be built from all chats at once."
                     }
-                },
-                "chatIndex": {
-                    "title": "Chat index",
-                    "empty": "No index yet.",
-                    "status": ":conversations conversations with :messages messages indexed.",
-                    "building": "Building index… :done of :total conversations loaded.",
-                    "builtAt": "Last full build: :date",
-                    "build": "Build index",
-                    "refresh": "Refresh index",
-                    "clear": "Delete index",
-                    "later": "Later",
-                    "promptText": "You have :count conversations but no search index yet. Load all chats to search messages too?",
-                    "notPersistent": "The browser did not grant persistent storage – the index may be evicted when space runs low.",
-                    "unavailable": "This browser offers no local storage for the index.",
-                    "error": "Error: :message",
-                    "export": "Export index (JSON)"
                 }
             }
         },
@@ -135,9 +115,7 @@
                 "profile": "Profile settings"
             },
             "noResults": "Nothing matches “:query”.",
-            "empty": "Nothing to search yet.",
-            "messages": "Messages",
-            "inConversation": "in “:name”"
+            "empty": "Nothing to search yet."
         }
     }
 }
