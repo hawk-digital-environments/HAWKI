@@ -1,5 +1,6 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import {AiModel} from '$lib/plugins/core/schemas/resources/ai-models.schema';
+import type {AiModelFlag} from '$plugins/core/schemas/resources/ai-model-flags.schema.js';
 import type {WellKnownSystemModelType} from '$plugins/core/schemas/resources/system-models.schema.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 
@@ -10,7 +11,8 @@ declare module '$lib/kernel/extendableTypes.js' {
 }
 
 /**
- * Reactive store for all available AI models and their system-role assignments.
+ * Reactive store for all available AI models (with provider and localized descriptions
+ * included), the flag badge catalog, and the system-role assignments.
  *
  * Populated by {@link AiModelStore.loadData} during bootstrap (authenticated connections only).
  * Access via `useStore('ai-models')` — no prop-drilling needed.
@@ -33,6 +35,14 @@ export class AiModelStore implements DataStore {
     private modelMap = $derived.by(() => {
         const map = new Map<string, AiModel>();
         this.models.forEach(model => map.set(model.model_id, model));
+        return map;
+    });
+
+    /** Catalog of descriptive model badges (the `ai-model-flags` resource). Prefer {@link getFlagById}. */
+    public flags = $state([] as AiModelFlag[]);
+    private flagMap = $derived.by(() => {
+        const map = new Map<string, AiModelFlag>();
+        this.flags.forEach(flag => map.set(flag.id, flag));
         return map;
     });
 
@@ -82,18 +92,26 @@ export class AiModelStore implements DataStore {
         return this.systemModels[type] ?? null;
     }
 
+    /** Looks up a flag definition (title/description labels, color) by its id from a model's
+     *  `flags` array. Returns `null` for purely technical flags without a catalog entry. */
+    public getFlagById(flagId: string): AiModelFlag | null {
+        return this.flagMap.get(flagId) ?? null;
+    }
+
     public async loadData(app: HawkiApp): Promise<void> {
         // Unauthenticated connections don't have access to AI models, so we skip loading.
         if (!app.connection.isAuthenticated) {
             return;
         }
 
-        const [aiModels, systemModels] = await Promise.all([
-            app.restApi.getResourceCollection('ai-models', {query: {include: 'provider'}}),
-            app.restApi.getResourceCollection('system-models')
+        const [aiModels, systemModels, flags] = await Promise.all([
+            app.restApi.getResourceCollection('ai-models', {query: {include: 'provider,description'}}),
+            app.restApi.getResourceCollection('system-models'),
+            app.restApi.getResourceCollection('ai-model-flags')
         ]);
 
         this.models = aiModels;
+        this.flags = flags;
 
         // We want to be able to easily access system models by their usage type, so we create a map here.
         this.systemModels = systemModels.reduce((map, model) => {

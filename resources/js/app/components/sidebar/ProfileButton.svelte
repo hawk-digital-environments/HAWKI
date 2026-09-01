@@ -16,6 +16,7 @@
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
     import Megaphone01Icon from '$lib/components/ui/icons/iconset/Megaphone01Icon.svelte';
+    import AiChipIcon from '$lib/components/ui/icons/iconset/AiChipIcon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -60,6 +61,11 @@
         void router.goToRoute('announcements.index');
     }
 
+    function openModels(): void {
+        menuOpen = false;
+        void router.goToRoute('models.index');
+    }
+
     function logout(): void {
         app.logout();
     }
@@ -98,6 +104,9 @@
     </DropdownMenuItem>
     <DropdownMenuItem icon={Megaphone01Icon} onclick={openAnnouncements}>
         {__('ui.profile.announcements')}
+    </DropdownMenuItem>
+    <DropdownMenuItem icon={AiChipIcon} onclick={openModels}>
+        {__('ui.profile.models')}
     </DropdownMenuItem>
     <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
         {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}

@@ -224,7 +224,8 @@
                 "favorites": "Favoriten",
                 "addFavorite": ":model zu Favoriten hinzufügen",
                 "removeFavorite": ":model aus Favoriten entfernen",
-                "listAriaLabel": "Verfügbare Modelle"
+                "listAriaLabel": "Verfügbare Modelle",
+                "allModelsLink": "Alle Modelle entdecken"
             },
             "fileChips": {
                 "conflictMessage": "Vom aktuellen Modell nicht unterstützt",
