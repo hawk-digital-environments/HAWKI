@@ -1,6 +1,6 @@
 import type {HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
-import type {SearchDocument, SearchScores} from '$lib/kernel/search/searchEngine.js';
+import MiniSearch from 'minisearch';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
@@ -18,8 +18,6 @@ export interface SearchItem {
     id: string;
     /** Text shown in the row and matched against the query. */
     title: string;
-    /** Secondary line under the title, e.g. where a hit was found. Never matched. */
-    description?: string;
     /** Leading icon; rendered with the palette's own size/stroke. */
     icon?: IconComponent;
     /** Extra terms the item is findable by. Never shown. */
@@ -111,29 +109,43 @@ export class SearchExtension implements HawkiAppExtension {
 }
 
 /**
- * Every group's live getters resolved, rows validated for identity, plus the
- * flat documents for the `SearchMatcher`. Produced by `resolveSearchGroups`
- * whenever the registered rows change and consumed by `rankSearchGroups`
- * once the matcher has scored a query; keeping the two apart means the
- * getters run when the *items* change, not on every keystroke, and the
- * (asynchronous) matching never touches reactive state.
+ * A MiniSearch index over the resolved rows of every registered group, plus
+ * the rows themselves in contributor order. Built by `buildSearchIndex` and
+ * consumed by `matchSearchGroups`; keep the two steps apart so the (cheap,
+ * but not free) indexing only reruns when the *items* change, not on every
+ * keystroke.
  */
-export interface ResolvedSearchGroups {
+export interface SearchIndex {
     groups: SearchGroupResult[];
-    documents: SearchDocument[];
+    engine: MiniSearch<IndexedSearchItem>;
+}
+
+interface IndexedSearchItem {
+    id: string;
+    title: string;
+    keywords: string;
 }
 
 /**
- * Resolves every group's getters. Because items only exist once their getter
+ * Resolves every group's live getters and indexes the rows with MiniSearch
+ * (fields: title and keywords). Because items only exist once their getter
  * runs, this is also where identity is validated: an id that already appeared
  * (in this or an earlier group) is reported and the later row skipped, so the
  * palette never renders two rows with one identity. Groups without rows are
  * dropped.
  */
-export function resolveSearchGroups(groups: readonly SearchGroup[]): ResolvedSearchGroups {
+export function buildSearchIndex(groups: readonly SearchGroup[]): SearchIndex {
     const seen = new Set<string>();
     const resolved: SearchGroupResult[] = [];
-    const documents: SearchDocument[] = [];
+    const engine = new MiniSearch<IndexedSearchItem>({
+        fields: ['title', 'keywords'],
+        searchOptions: {
+            prefix: true,
+            fuzzy: 0.2,
+            combineWith: 'AND',
+            boost: {title: 2}
+        }
+    });
 
     for (const group of groups) {
         const items: SearchItem[] = [];
@@ -144,33 +156,36 @@ export function resolveSearchGroups(groups: readonly SearchGroup[]): ResolvedSea
             }
             seen.add(item.id);
             items.push(item);
-            documents.push({id: item.id, title: item.title, keywords: item.keywords?.join(' ') ?? ''});
+            engine.add({id: item.id, title: item.title, keywords: item.keywords?.join(' ') ?? ''});
         }
         if (items.length > 0) resolved.push({id: group.id, label: group.label(), items});
     }
 
-    return {groups: resolved, documents};
+    return {groups: resolved, engine};
 }
 
 /**
- * Narrows the resolved rows to those the matcher scored, ranked by
- * relevance. Rows keep their group; groups are ordered by their best-scoring
- * row and rows within a group by score, so the most relevant hit sits at
- * the top no matter which group contributed it. `null` scores (no query)
- * return every group and row in contributor order.
+ * Narrows the indexed rows to `query`, ranked by MiniSearch's relevance
+ * score: every query term must match (as a prefix or within a small edit
+ * distance), title hits outrank keyword hits. Rows keep their group; groups
+ * are ordered by their best-scoring row and rows within a group by score, so
+ * the most relevant hit sits at the top no matter which group contributed
+ * it. An empty query returns every group and row in contributor order.
  */
-export function rankSearchGroups(resolved: ResolvedSearchGroups, scores: SearchScores | null): SearchGroupResult[] {
-    if (scores === null) return resolved.groups;
-    const byId = new Map(scores);
-    if (byId.size === 0) return [];
+export function matchSearchGroups(index: SearchIndex, query: string): SearchGroupResult[] {
+    if (query.trim() === '') return index.groups;
+
+    const scores = new Map<string, number>();
+    for (const hit of index.engine.search(query)) scores.set(hit.id as string, hit.score);
+    if (scores.size === 0) return [];
 
     const results: Array<SearchGroupResult & {best: number}> = [];
-    for (const group of resolved.groups) {
+    for (const group of index.groups) {
         const items = group.items
-            .filter(item => byId.has(item.id))
-            .sort((a, b) => byId.get(b.id)! - byId.get(a.id)!);
+            .filter(item => scores.has(item.id))
+            .sort((a, b) => scores.get(b.id)! - scores.get(a.id)!);
         if (items.length === 0) continue;
-        results.push({id: group.id, label: group.label, items, best: byId.get(items[0].id)!});
+        results.push({id: group.id, label: group.label, items, best: scores.get(items[0].id)!});
     }
 
     return results.sort((a, b) => b.best - a.best).map(({best: _best, ...group}) => group);

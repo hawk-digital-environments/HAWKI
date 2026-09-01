@@ -7,8 +7,6 @@
         value: string;
         /** Text shown in the row. */
         label: string;
-        /** Secondary, muted line under the label. */
-        description?: string;
         /** Leading icon; rendered with the list's own size/stroke. */
         icon?: IconComponent;
         /** Groups rows under a heading. Groups keep the order they first appear in. */
@@ -102,14 +100,7 @@
                                     <Icon size={17} strokeWidth={2} />
                                 {/if}
                             </span>
-                            {#if item.description}
-                                <span class="item-text">
-                                    <span class="item-label">{item.label}</span>
-                                    <span class="item-description">{item.description}</span>
-                                </span>
-                            {:else}
-                                <span class="item-label">{item.label}</span>
-                            {/if}
+                            <span class="item-label">{item.label}</span>
                             {#if current !== undefined}
                                 <!-- The check keeps its slot at all times so labels
                                      never shift as the selection moves between rows. -->
@@ -221,22 +212,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-    }
-
-    :global(.command-list .item-text) {
-        display: flex;
-        flex: 1;
-        min-width: 0;
-        flex-direction: column;
-        padding-block: var(--space-1_5);
-    }
-
-    :global(.command-list .item-description) {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-xxs);
     }
 
     :global(.command-list .item-check) {
