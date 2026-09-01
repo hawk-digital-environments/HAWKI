@@ -26,7 +26,6 @@
 <script lang="ts">
     import katexWorkerUrl from 'markstream-svelte/workers/katexRenderer.worker?worker&url';
     import mermaidWorkerUrl from 'markstream-svelte/workers/mermaidParser.worker?worker&url';
-    import {createCrossOriginWorker} from '$lib/utils/crossOriginWorker.js';
     import {MarkdownRender, setDefaultI18nMap, setKaTeXWorker, setMermaidWorker} from 'markstream-svelte';
     import ExtendedLinkNode from '$lib/components/util/markdown/extension/ExtendedLinkNode.svelte';
     import 'katex/dist/katex.min.css';
@@ -57,8 +56,20 @@
         isStreaming = false
     }: Props = $props();
 
-    setKaTeXWorker(createCrossOriginWorker(katexWorkerUrl, import.meta.url));
-    setMermaidWorker(createCrossOriginWorker(mermaidWorkerUrl, import.meta.url));
+    // @see https://github.com/vitejs/vite/issues/13680
+    function loadWorker(url: string) {
+        const blob = new Blob(
+            [`import ${JSON.stringify(new URL(url, import.meta.url))}`],
+            {type: 'application/javascript'}
+        );
+        const objURL = URL.createObjectURL(blob);
+        const worker = new Worker(objURL, {type: 'module'});
+        worker.addEventListener('error', () => URL.revokeObjectURL(objURL));
+        return worker;
+    }
+
+    setKaTeXWorker(loadWorker(katexWorkerUrl));
+    setMermaidWorker(loadWorker(mermaidWorkerUrl));
     setDefaultI18nMap(getTranslationsFlat('markdown.markstream'));
 </script>
 
