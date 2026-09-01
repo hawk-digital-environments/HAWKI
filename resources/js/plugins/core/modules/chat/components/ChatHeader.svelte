@@ -30,7 +30,7 @@
     let deleteOpen = $state(false);
 </script>
 
-<PageHeaderBar {...restProps} class={["u-print-hidden", className]}>
+<PageHeaderBar {...restProps} srHeading={conversation.name} class={["u-print-hidden", className]}>
     <div class="name">
         <ChatNameMenu
             bind:name
