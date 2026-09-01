@@ -31,6 +31,7 @@
     id="main-content"
     class={["content", className]}
     tabindex="-1"
+    inert={sidebar.mobile && sidebar.navOpen}
 >
     <button
         id="mobile-navigation-trigger"

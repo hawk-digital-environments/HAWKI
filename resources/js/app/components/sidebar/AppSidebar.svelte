@@ -35,7 +35,7 @@
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
         event.preventDefault();
         if (sidebar.mobile) sidebar.navOpen = false;
-        chatStore.startNew();
+        chatStore.requestNewChat();
         void router.goToRoute('chat.index');
     }
 </script>
