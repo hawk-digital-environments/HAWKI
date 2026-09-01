@@ -7,7 +7,9 @@
 
   Three shapes: custom content via children (the chat header's name and
   menus), a plain `heading` (the shell's default title row), or a `spacer`
-  that keeps the row reserved while a page loads.
+  that keeps the row reserved while a page loads. Bars whose visible content
+  carries no heading can declare one for the document outline via
+  `srHeading`, rendered as a visually hidden h1.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
@@ -16,13 +18,17 @@
     interface Props extends HTMLAttributes<HTMLElement> {
         /** Standard bar heading; renders the default single-line title row. */
         heading?: string;
+        /** Visually hidden h1 for the document outline — for bars whose
+         *  visible content is not a heading (e.g. the chat header's name
+         *  menu). Never combine with `heading`, that would duplicate h1s. */
+        srHeading?: string;
         /** Bar content: menus, actions — when no `heading` is given. */
         children?: Snippet;
         /** Empty spacer reserving the header row while a page loads. */
         spacer?: boolean;
     }
 
-    const {heading, children, spacer = false, class: className, ...rest}: Props = $props();
+    const {heading, srHeading, children, spacer = false, class: className, ...rest}: Props = $props();
 </script>
 
 <header
@@ -30,6 +36,9 @@
     class={['page-header-bar', spacer && 'spacer', className]}
     aria-hidden={spacer ? 'true' : undefined}
 >
+    {#if srHeading}
+        <h1 class="u-sr-only">{srHeading}</h1>
+    {/if}
     {#if spacer}
         <!-- Nothing rendered: the row stays reserved until the real bar loads. -->
     {:else if heading}
