@@ -94,7 +94,7 @@
 
     function newChat() {
         if (sidebar.mobile) sidebar.navOpen = false;
-        store.startNew();
+        store.requestNewChat();
         void router.goToRoute('chat.index');
     }
 </script>

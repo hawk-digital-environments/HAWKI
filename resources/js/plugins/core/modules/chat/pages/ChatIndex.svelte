@@ -59,8 +59,11 @@ from the store's in-flight cache.
     });
 
     // Land the cursor in the input so typing can start right away.
+    // Clicking the "new chat" button in the sidebar should give the user an active input 
     $effect(() => {
-        if (composer) composer.focusInput();
+        void store.newChatToggle;
+        if (!composer) return;
+        setTimeout(() => composer?.focusInput());
     });
 </script>
 

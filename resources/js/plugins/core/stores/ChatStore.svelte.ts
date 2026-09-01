@@ -37,6 +37,8 @@ export class ChatStore implements DataStore {
     public error = $state<string | null>(null);
     /** Conversation slugs with an AI request still running in this tab. */
     public generatingSlugs = $state<string[]>([]);
+    /** Reactive helper to refocus the composer on new chat requests. */
+    public newChatToggle = $state(0);
 
     private _dependencies: ChatStoreDependencies | null = null;
     private activeLoad = 0;
@@ -88,6 +90,12 @@ export class ChatStore implements DataStore {
         this.active = null;
         this.loading = false;
         this.error = null;
+    }
+
+    /** Starts a new chat and force reactive chat composer updates. */
+    public requestNewChat(): void {
+        this.startNew();
+        this.newChatToggle += 1;
     }
 
     public async load(slug: string): Promise<ChatConversation> {

@@ -9,6 +9,7 @@
     import ExportMenu from '$plugins/core/modules/chat/components/header/ExportMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+    import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
     import type {ConversationExportFormat} from '$plugins/core/modules/chat/utils/exportConversation.js';
     import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -29,7 +30,7 @@
     let deleteOpen = $state(false);
 </script>
 
-<header {...restProps} class={["u-print-hidden", className]}>
+<PageHeaderBar {...restProps} class={["u-print-hidden", className]}>
     <div class="name">
         <ChatNameMenu
             bind:name
@@ -42,13 +43,13 @@
             </DropdownMenuItem>
         </ChatNameMenu>
     </div>
+    <ExportMenu {onExport} />
     {#if onSkipToComposer}
         <button class="skip-to-composer" type="button" onclick={onSkipToComposer}>
             {__('chat.page.skipToComposer')}
         </button>
     {/if}
-    <ExportMenu {onExport} />
-</header>
+</PageHeaderBar>
 
 <ConfirmDialog
     bind:open={deleteOpen}
@@ -58,48 +59,6 @@
 />
 
 <style>
-    header {
-        position: relative;
-        /* Above the scroll region so the fade can overhang the messages. */
-        --chat-header-z: 1;
-        z-index: var(--chat-header-z);
-        display: flex;
-        min-height: 3.75rem;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-3);
-        padding: var(--space-2) var(--space-5);
-    }
-
-    /* Soft fade instead of a hard divider: the blurred panel backdrop is drawn
-       on a pseudo-element that extends past the header and fades out, so
-       content scrolling underneath dissolves rather than hitting a line. */
-    header::before {
-        content: '';
-        position: absolute;
-        inset: 0 0 -3rem;
-        /* Behind the header's own content, inside its stacking context. */
-        --chat-header-fade-z: -1;
-        z-index: var(--chat-header-fade-z);
-        pointer-events: none;
-        background: color-mix(in oklch, var(--panel-bg) 88%, transparent);
-        backdrop-filter: blur(12px);
-        /* Eased ramp (rather than one linear stop) so neither the start nor the
-           end of the fade shows a visible edge. */
-        --header-fade: linear-gradient(
-            to bottom,
-            black 0,
-            black 45%,
-            rgba(0, 0, 0, 0.86) 60%,
-            rgba(0, 0, 0, 0.55) 72%,
-            rgba(0, 0, 0, 0.25) 84%,
-            rgba(0, 0, 0, 0.08) 92%,
-            transparent 100%
-        );
-        mask-image: var(--header-fade);
-        -webkit-mask-image: var(--header-fade);
-    }
-
     .name {
         flex: 1;
         min-width: 0;
@@ -114,9 +73,8 @@
         position: absolute;
         top: calc(100% + var(--space-2));
         left: var(--space-5);
-        /* Focused skip pill sits over the message log below the header. */
-        --skip-to-composer-z: 10;
-        z-index: var(--skip-to-composer-z);
+        /* Sits over the message log below the header — the bar paints above
+           the log by document order, no z-index needed. */
         padding: var(--space-2) var(--space-3);
         border: none;
         border-radius: var(--corner-sm);
@@ -133,12 +91,5 @@
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
-    }
-
-    @media (--bp-md-and-smaller) {
-        header {
-            padding-right: var(--space-3);
-            padding-left: calc(var(--space-3) + 2.75rem);
-        }
     }
 </style>
