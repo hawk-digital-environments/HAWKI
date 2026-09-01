@@ -23,6 +23,7 @@ import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
 import {AiHandleStore} from '$plugins/core/stores/AiHandleStore.svelte.js';
+import {AnnouncementStore} from '$plugins/core/stores/AnnouncementStore.svelte.js';
 import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
 import {SystemPromptStore} from '$plugins/core/stores/SystemPromptStore.svelte.js';
@@ -63,10 +64,12 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar.lazyRoute('/', async () => import('$plugins/core/pages/Index.svelte'));
+        registrar.lazyRoute('/announcements', async () => import('$plugins/core/pages/Announcements.svelte'), {name: 'announcements.index'});
     }
 
     public stores({add}: StoreRegistrar): void | Promise<void> {
         add(new KeychainStore());
+        add(new AnnouncementStore());
         add(new AiHandleStore());
         add(new AiModelStore());
         add(new AiToolStore());

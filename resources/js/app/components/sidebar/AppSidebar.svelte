@@ -27,6 +27,7 @@
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
+    import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 
     const app = useApp();
     const router = useRouter();
@@ -37,7 +38,18 @@
     const activeModule = $derived.by(() => app.modules.all.find(module =>
         router.isRouteActive(getModuleRouteGroupName(module.plugin.name, module.name))
     ) ?? null);
-    const ModuleSidebar = $derived(activeModule?.sidebar?.(app.localization.locale) ?? null);
+
+    // On routes that belong to no module (e.g. the announcements page) the
+    // module sidebar sticks to the last active module instead of vanishing,
+    // falling back to the first module for direct page loads.
+    let lastActiveModule = $state<HawkiModuleWithPlugin | null>(null);
+    $effect(() => {
+        if (activeModule) {
+            lastActiveModule = activeModule;
+        }
+    });
+    const sidebarModule = $derived(activeModule ?? lastActiveModule ?? app.modules.all[0] ?? null);
+    const ModuleSidebar = $derived(sidebarModule?.sidebar?.(app.localization.locale) ?? null);
 
     const chatPath = router.getPath('chat.index');
     let searchOpen = $state(false);

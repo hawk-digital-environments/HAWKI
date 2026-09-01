@@ -15,10 +15,12 @@
     import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
+    import Megaphone01Icon from '$lib/components/ui/icons/iconset/Megaphone01Icon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
 
     interface Props {
         /** Called when the user picks "Settings" from the menu. */
@@ -28,6 +30,7 @@
     let {onOpenSettings}: Props = $props();
 
     const app = useApp();
+    const router = useRouter();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
     const connection = useConnection();
@@ -50,6 +53,11 @@
     function openSettings(): void {
         menuOpen = false;
         onOpenSettings();
+    }
+
+    function openAnnouncements(): void {
+        menuOpen = false;
+        void router.goToRoute('announcements.index');
     }
 
     function logout(): void {
@@ -87,6 +95,9 @@
     <DropdownMenuSeparator/>
     <DropdownMenuItem icon={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
+    </DropdownMenuItem>
+    <DropdownMenuItem icon={Megaphone01Icon} onclick={openAnnouncements}>
+        {__('ui.profile.announcements')}
     </DropdownMenuItem>
     <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
         {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}

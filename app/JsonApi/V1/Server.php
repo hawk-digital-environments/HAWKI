@@ -12,6 +12,7 @@ use App\JsonApi\V1\AiModels\AiModelSchema;
 use App\JsonApi\V1\AiProviders\AiProviderSchema;
 use App\JsonApi\V1\AiToolCapabilities\AiToolCapabilitySchema;
 use App\JsonApi\V1\AiTools\AiToolSchema;
+use App\JsonApi\V1\Announcements\AnnouncementSchema;
 use App\JsonApi\V1\Attachments\AttachmentSchema;
 use App\JsonApi\V1\Configs\ConfigSchema;
 use App\JsonApi\V1\Connections\ConnectionSchema;
@@ -56,6 +57,7 @@ class Server extends BaseServer
             AiProviderSchema::class,
             AiToolCapabilitySchema::class,
             AiToolSchema::class,
+            AnnouncementSchema::class,
             AttachmentSchema::class,
             ConfigSchema::class,
             ConnectionSchema::class,
