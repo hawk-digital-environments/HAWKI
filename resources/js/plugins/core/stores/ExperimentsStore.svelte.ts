@@ -2,7 +2,7 @@ import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 
 /** Union of all known experiment ids. Extend when adding a new experiment. */
-export type ExperimentId = 'modelPickerV2' | 'statsForNerds' | 'chatIndex';
+export type ExperimentId = 'modelPickerV2' | 'statsForNerds';
 
 export interface ExperimentDefinition {
     id: ExperimentId;
@@ -23,11 +23,6 @@ const EXPERIMENTS: ExperimentDefinition[] = [
         id: 'statsForNerds',
         titleKey: 'ui.settings.experiments.flags.statsForNerds.title',
         descriptionKey: 'ui.settings.experiments.flags.statsForNerds.description'
-    },
-    {
-        id: 'chatIndex',
-        titleKey: 'ui.settings.experiments.flags.chatIndex.title',
-        descriptionKey: 'ui.settings.experiments.flags.chatIndex.description'
     }
 ];
 

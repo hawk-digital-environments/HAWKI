@@ -1,12 +1,10 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
 import ChatAddIcon from '$lib/components/ui/icons/iconset/ChatAddIcon.svelte';
-import MessageSearch01Icon from '$lib/components/ui/icons/iconset/MessageSearch01Icon.svelte';
 import type {ChatSummary} from '$plugins/core/modules/chat/types.js';
 
 const ACTIONS_GROUP_ID = 'core:chat.actions';
 const GROUP_ID = 'core:chat.conversations';
-const MESSAGES_GROUP_ID = 'core:chat.messages';
 
 /**
  * Contributes the chat module's entries to the search palette on the
@@ -20,17 +18,9 @@ const MESSAGES_GROUP_ID = 'core:chat.messages';
  * on creation, activity, and rename — the same events that move a chat up on
  * the server). Ties keep the store's own order. The store's list is copied before sorting — rendering never
  * mutates it.
- *
- * A third "Messages" group lists the messages in the `chat-index` store (the
- * "Chat Index" experiment), one row per message: the start of the text as
- * the title, the full text as keywords so any part of it is findable, and
- * "in <conversation>" below so the user sees which chat a hit belongs to. Like the others it is a plain getter over
- * `$state`, so the palette indexes it and stays current as the index grows.
- * It is empty while the experiment is off.
  */
 export function registerChatSearch(app: HawkiApp): void {
     const chatStore = app.stores.get('chat');
-    const chatIndex = app.stores.get('chat-index');
 
     app.search.addGroup({
         id: ACTIONS_GROUP_ID,
@@ -56,19 +46,6 @@ export function registerChatSearch(app: HawkiApp): void {
             onSelect: () => void app.router.goToRoute('chat.conversation', {slug: conversation.slug})
         }))
     });
-
-    app.search.addGroup({
-        id: MESSAGES_GROUP_ID,
-        label: () => app.translator.translate('ui.search.messages'),
-        items: () => chatIndex.messages.map(entry => ({
-            id: `${MESSAGES_GROUP_ID}/${entry.slug}/${entry.message.id}`,
-            title: excerpt(entry.message.text),
-            description: app.translator.translate('ui.search.inConversation', {name: entry.name}),
-            keywords: [entry.message.text],
-            icon: MessageSearch01Icon,
-            onSelect: () => void app.router.goToRoute('chat.conversation', {slug: entry.slug})
-        }))
-    });
 }
 
 /** Sort comparator: later `updated_at` first; rows without one go last. */
@@ -83,10 +60,4 @@ function byNewestFirst(a: ChatSummary, b: ChatSummary): number {
 function timestamp(value: string | null): number {
     const time = value ? Date.parse(value) : Number.NaN;
     return Number.isNaN(time) ? Number.NEGATIVE_INFINITY : time;
-}
-
-/** First line-ish of a message, collapsed to one line and cut for the palette row. */
-function excerpt(text: string, max = 120): string {
-    const flat = text.replace(/\s+/g, ' ').trim();
-    return flat.length > max ? `${flat.slice(0, max)}…` : flat;
 }

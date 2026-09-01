@@ -3,8 +3,6 @@
   entry in the `experiments` store's registry — the whole row is the switch;
   the empty-state alert only shows when no experiments are registered. Flags
   are persisted in localStorage.
-  The "Chat Index" experiment adds its status/refresh panel below the list
-  while it is enabled.
 -->
 <script lang="ts">
     import Alert from '$lib/components/ui/alert/Alert.svelte';
@@ -13,7 +11,6 @@
     import SettingsPage from '$lib/app/components/settings/SettingsPage.svelte';
     import SettingsGroup from '$lib/app/components/settings/SettingsGroup.svelte';
     import SettingsRow from '$lib/app/components/settings/SettingsRow.svelte';
-    import ChatIndexPanel from '$plugins/core/modules/chat/components/ChatIndexPanel.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {RouteProps} from '$lib/components/ui/routing/index.js';
@@ -49,8 +46,5 @@
                 </SettingsRow>
             {/each}
         </SettingsGroup>
-        {#if experiments.isEnabled('chatIndex')}
-            <ChatIndexPanel />
-        {/if}
     {/if}
 </SettingsPage>
