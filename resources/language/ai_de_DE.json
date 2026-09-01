@@ -9,6 +9,8 @@
                     "ecoFriendlyTooltip": "Dieses Modell wurde mit einem Fokus auf Energieeffizienz und Nachhaltigkeit entwickelt, um den ökologischen Fußabdruck zu minimieren",
                     "selfHosted": "Selbst gehostet",
                     "selfHostedTooltip": "Dieses Modell wird auf eigenen Servern gehostet, volle Punktzahl bei Datenschutz und Kontrolle über die Daten",
+                    "multiModal": "Multimodal",
+                    "multiModalTooltip": "Dieses Modell kann mehrere Eingabearten verarbeiten, z.B. Text und Bilder",
                     "strengthCreativeWriting": "Kreatives Schreiben",
                     "strengthCreativeWritingTooltip": "Dieses Modell ist besonders gut im kreativen Schreiben, z.B. für Geschichten, Gedichte oder kreative Inhalte",
                     "strengthCodeGeneration": "Code",
@@ -16,8 +18,32 @@
                     "strengthMath": "Mathematik",
                     "strengthMathTooltip": "Dieses Modell ist besonders gut in mathematischen Aufgaben, z.B. für Berechnungen, Gleichungen oder mathematische Analysen",
                     "strengthReasoning": "Logisches Denken",
-                    "strengthReasoningTooltip": "Dieses Modell ist besonders gut im logischen Denken, z.B. für Problemlösungen, Schlussfolgerungen oder analytische Aufgaben"
+                    "strengthReasoningTooltip": "Dieses Modell ist besonders gut im logischen Denken, z.B. für Problemlösungen, Schlussfolgerungen oder analytische Aufgaben",
+                    "strengthRolePlaying": "Rollenspiel",
+                    "strengthRolePlayingTooltip": "Dieses Modell ist besonders gut in Rollenspielen und bleibt zuverlässig in seiner Rolle, z.B. für simulierte Gespräche oder Trainingsszenarien"
                 }
+            },
+            "card": {
+                "contextWindow": "Kontextfenster",
+                "contextShort": ":count Kontext",
+                "maxOutput": "Max. Ausgabe",
+                "tokens": ":count Token",
+                "price": "Preis",
+                "intelligence": "Intelligenz",
+                "outOfFive": ":value von 5",
+                "capability": {
+                    "vision": "Vision",
+                    "audio": "Audio",
+                    "video": "Video",
+                    "imageGeneration": "Bildgenerierung",
+                    "webSearch": "Websuche",
+                    "codeExecution": "Code-Ausführung",
+                    "fileUpload": "Datei-Upload"
+                }
+            },
+            "page": {
+                "title": "Modelle",
+                "empty": "Derzeit sind keine Modelle verfügbar."
             }
         },
         "error": {
