@@ -1,7 +1,8 @@
 import z from 'zod';
 import {wellKnownAiToolCapabilities} from '$plugins/core/schemas/resources/ai-tools-capabilities.schema.js';
 import AiProvidersSchema from '$plugins/core/schemas/resources/ai-providers.schema.js';
-import {wellKnownAiModelFlags} from '$plugins/core/schemas/resources/ai-model-flags.js';
+import {wellKnownAiModelFlags} from '$plugins/core/schemas/resources/ai-model-flags.schema.js';
+import AiModelDescriptionsSchema from '$plugins/core/schemas/resources/ai-model-descriptions.schema.js';
 
 /**
  * Validates the `ai-models` API resource — every AI model (chat, image generation, video
@@ -53,6 +54,8 @@ const BaseAiModelSchema = z.object({
     /** Free-form map of behavioral/feature toggles (e.g. `file_upload`, `tool_calling`) to their value; keyed by {@link wellKnownAiModelSettings}. */
     settings: z.record(z.union([z.enum(wellKnownAiModelSettings), z.string()]), z.unknown()).nullable(),
     provider: AiProvidersSchema.optional(),
+    /** Localized description texts (the `ai-model-descriptions` resource), present when fetched with `include=description`. Pick a locale via a helper like `ModelCard`'s — don't blindly take the first entry. */
+    description: z.array(AiModelDescriptionsSchema).optional(),
     /** Descriptive badges shown in the UI (e.g. `open-weights`, `strength-code-generation`), referencing {@link wellKnownAiModelFlags} ids. */
     flags: z.array(z.union([z.enum(wellKnownAiModelFlags), z.string()])).nullable(),
     /** IDs of the `ai-tools` this model is linked/restricted to. */
@@ -79,13 +82,14 @@ const ChatAiModelSchema = BaseAiModelSchema.extend({
         max_output_tokens: z.number().nullable()
     }).nullable(),
     /**
-     * Either a flat `{is_free}` shape for models with no usage-based cost, or tiered pricing with
-     * `ranges` (standard) and `priority_ranges` (e.g. low-latency/priority tier) broken down by
-     * token-count bracket via {@link ChatAiModelPaidPricingRangeSchema}.
+     * Either a flat `{free: true}` shape for models with no usage-based cost (matching the
+     * backend serializer in `AiModelSchema.php`), or tiered pricing with `ranges` (standard)
+     * and `priority_ranges` (e.g. low-latency/priority tier) broken down by token-count
+     * bracket via {@link ChatAiModelPaidPricingRangeSchema}. `null` when the cost is unknown.
      */
     pricing: z.union([
         z.object({
-            is_free: z.boolean()
+            free: z.boolean()
         }),
         z.object({
             ranges: z.array(ChatAiModelPaidPricingRangeSchema).nullable(),

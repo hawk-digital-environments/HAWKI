@@ -6,9 +6,11 @@
   (first tab: all models, favorites first), a search input that filters
   across all providers,
   a fixed-height result list and per-row extras (demand bars, status dot,
-  favorite star, Ctrl+1..9 quick-select). Desktop renders a two-column
-  popover, below the `md` breakpoint a bottom sheet with a horizontal
-  provider pill row instead of the rail.
+  favorite star, Ctrl+1..9 quick-select). Desktop renders a popover with a
+  `ModelCard` detail column next to the list (following the highlighted row);
+  below the `md` breakpoint a bottom sheet with the current model's card on
+  top and a horizontal provider pill row instead of the rail. Both layouts
+  link to the `/models` showcase page in the footer.
 
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
@@ -41,15 +43,18 @@
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
     import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
+    import ModelCard from '$plugins/core/components/ModelCard.svelte';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
+    const router = useRouter();
     const {__} = useTranslator();
 
     const ALL_TAB = '__all__';
@@ -97,6 +102,10 @@
 
     const selectableModels = $derived(visibleModels.entries().flatMap(([_, models]) => models).filter((model) => model.status !== 'offline').toArray());
 
+    // Model shown in the desktop detail card: follows the highlighted row,
+    // falls back to the current selection while nothing is highlighted.
+    const detailModel = $derived(selectableModels.find(model => model.model_id === highlightedId) ?? current);
+
     // Ctrl+N quick-select targets: the first 9 selectable visible rows.
     const kbdIndexById = $derived.by(() => {
         const map = new Map<string, number>();
@@ -139,6 +148,11 @@
         }
         composerContext.model.set(model.model_id);
         open = false;
+    }
+
+    function openModelsPage(): void {
+        open = false;
+        void router.goToRoute('models.index');
     }
 
     function toggleFavorite(e: Event, model: AiModel): void {
@@ -351,7 +365,14 @@
                 {@render searchBox()}
                 {@render modelList(layout)}
             </div>
+            <div class="mp2-detail">
+                <div class="mp2-detail-card">
+                    <ModelCard model={detailModel}/>
+                </div>
+                {@render allModelsLink()}
+            </div>
         {:else}
+            <ModelCard model={current} compact/>
             {@render searchBox()}
             <div class="mp2-pills">
                 <button
@@ -377,8 +398,15 @@
                 {/each}
             </div>
             {@render modelList(layout)}
+            {@render allModelsLink()}
         {/if}
     </div>
+{/snippet}
+
+{#snippet allModelsLink()}
+    <button type="button" class="mp2-all-models" onclick={openModelsPage}>
+        {__('chat.composer.modelPicker.allModelsLink')}
+    </button>
 {/snippet}
 
 {#if aiModelStore.models.length === 0}
@@ -395,7 +423,7 @@
             >
                 {@render triggerContent()}
             </button>
-            <BottomSheet bind:open title={__('chat.composer.modelPicker.switchModel')}>
+            <BottomSheet bind:open title={__('chat.composer.modelPicker.switchModel')} contentProps={{class: 'mp2-sheet'}}>
                 {@render panel('sheet')}
             </BottomSheet>
         {/snippet}
@@ -512,14 +540,30 @@
 
     .mp2-panel--popover {
         display: flex;
-        width: 24rem;
+        width: 41rem;
         max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
+    }
+
+    /* Make this sheet's body a flex column so the panel (and within it only
+       the model list) absorbs the leftover height under the sheet's own
+       max-height cap — everything else stays visible, only the list scrolls. */
+    :global(.sheet-content.mp2-sheet .sheet-body) {
+        display: flex;
+        flex-direction: column;
     }
 
     .mp2-panel--sheet {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* Only the model list may give up height — the card, search, pills and
+       footer link keep their natural size instead of being squeezed. */
+    .mp2-panel--sheet > :global(*:not(.mp2-list)) {
+        flex-shrink: 0;
     }
 
     .mp2-rail {
@@ -574,6 +618,44 @@
         min-width: 0;
     }
 
+    /* ── Detail card (desktop only) ───────────────────────────────────── */
+
+    .mp2-detail {
+        display: flex;
+        flex-direction: column;
+        width: 17rem;
+        flex-shrink: 0;
+        border-left: var(--border);
+    }
+
+    .mp2-detail-card {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: var(--space-3);
+    }
+
+    .mp2-all-models {
+        border: none;
+        border-top: var(--border);
+        background: transparent;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xxs);
+        text-align: center;
+        padding: var(--space-2);
+        cursor: pointer;
+        transition: color var(--duration-fast, 150ms) var(--easing-default);
+
+        &:hover {
+            color: var(--color-text);
+        }
+    }
+
+    .mp2-panel--sheet .mp2-all-models {
+        border: none;
+        padding-bottom: 0;
+    }
+
     /* ── Search ───────────────────────────────────────────────────────── */
 
     .mp2-search {
@@ -618,7 +700,8 @@
     }
 
     .mp2-panel--sheet .mp2-list {
-        max-height: 50vh;
+        flex: 1;
+        min-height: 6rem;
     }
 
     .mp2-empty {

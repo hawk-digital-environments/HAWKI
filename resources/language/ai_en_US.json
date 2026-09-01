@@ -9,6 +9,8 @@
                     "ecoFriendlyTooltip": "This model was developed with a focus on energy efficiency and sustainability to minimize its environmental footprint",
                     "selfHosted": "Self-Hosted",
                     "selfHostedTooltip": "This model is hosted on own servers, achieving full marks for privacy and control over data",
+                    "multiModal": "Multimodal",
+                    "multiModalTooltip": "This model can process multiple types of input, such as text and images",
                     "strengthCreativeWriting": "Creative Writing",
                     "strengthCreativeWritingTooltip": "This model excels at creative writing, e.g. for stories, poems, or creative content",
                     "strengthCodeGeneration": "Code",
@@ -16,8 +18,32 @@
                     "strengthMath": "Mathematics",
                     "strengthMathTooltip": "This model excels at mathematical tasks, e.g. for calculations, equations, or mathematical analyses",
                     "strengthReasoning": "Logical Reasoning",
-                    "strengthReasoningTooltip": "This model excels at logical reasoning, e.g. for problem solving, drawing conclusions, or analytical tasks"
+                    "strengthReasoningTooltip": "This model excels at logical reasoning, e.g. for problem solving, drawing conclusions, or analytical tasks",
+                    "strengthRolePlaying": "Role-Playing",
+                    "strengthRolePlayingTooltip": "This model excels at role-playing and staying in character, e.g. for simulated conversations or training scenarios"
                 }
+            },
+            "card": {
+                "contextWindow": "Context window",
+                "contextShort": ":count context",
+                "maxOutput": "Max. output",
+                "tokens": ":count tokens",
+                "price": "Price",
+                "intelligence": "Intelligence",
+                "outOfFive": ":value out of 5",
+                "capability": {
+                    "vision": "Vision",
+                    "audio": "Audio",
+                    "video": "Video",
+                    "imageGeneration": "Image generation",
+                    "webSearch": "Web search",
+                    "codeExecution": "Code execution",
+                    "fileUpload": "File upload"
+                }
+            },
+            "page": {
+                "title": "Models",
+                "empty": "No models are currently available."
             }
         },
         "error": {
