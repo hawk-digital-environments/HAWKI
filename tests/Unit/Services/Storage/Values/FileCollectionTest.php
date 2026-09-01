@@ -9,13 +9,13 @@ use App\Services\Storage\Values\FileCollection;
 use App\Services\Storage\Values\FileType;
 use App\Services\Storage\Values\PlainTextLanguageType;
 use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Concerns\CreatesFilesystemMocks;
+use Tests\Concerns\FilesystemMockingTrait;
 use Tests\TestCase;
 
 #[CoversClass(FileCollection::class)]
 class FileCollectionTest extends TestCase
 {
-    use CreatesFilesystemMocks;
+    use FilesystemMockingTrait;
 
     // =========================================================================
     // Construction

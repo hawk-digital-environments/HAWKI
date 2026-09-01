@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Services\Storage\Filesystem;
 
 use App\Services\Storage\Filesystem\DefaultDiskWarningFilesystemManager;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Filesystem\FilesystemManager;
+use League\Flysystem\Filesystem as FlysystemFilesystem;
+use League\Flysystem\Local\LocalFilesystemAdapter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
@@ -60,12 +64,42 @@ class DefaultDiskWarningFilesystemManagerTest extends TestCase
     }
 
     // =========================================================================
+    // Decoration state inheritance
+    // =========================================================================
+
+    public function testItKeepsCustomCreatorsRegisteredBeforeDecoration(): void
+    {
+        config(['filesystems.disks.custom_test_disk' => ['driver' => 'custom_test_disk']]);
+
+        $baseManager = new FilesystemManager($this->app);
+        $baseManager->extend('custom_test_disk', static function (): FilesystemAdapter {
+            $adapter = new LocalFilesystemAdapter(sys_get_temp_dir());
+
+            return new FilesystemAdapter(new FlysystemFilesystem($adapter), $adapter, []);
+        });
+
+        $sut = DefaultDiskWarningFilesystemManager::decorate($baseManager, $this->mockLogger());
+
+        static::assertInstanceOf(FilesystemAdapter::class, $sut->disk('custom_test_disk'));
+    }
+
+    public function testItReusesDisksResolvedBeforeDecoration(): void
+    {
+        $baseManager = new FilesystemManager($this->app);
+        $baseDisk = $baseManager->disk('local');
+
+        $sut = DefaultDiskWarningFilesystemManager::decorate($baseManager, $this->mockLogger());
+
+        static::assertSame($baseDisk, $sut->disk('local'));
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 
     private function makeSut(LoggerInterface $logger): DefaultDiskWarningFilesystemManager
     {
-        return new DefaultDiskWarningFilesystemManager($this->app, $logger);
+        return DefaultDiskWarningFilesystemManager::decorate(new FilesystemManager($this->app), $logger);
     }
 
     private function mockLogger(): LoggerInterface&MockObject

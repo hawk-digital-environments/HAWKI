@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Storage\Filesystem;
 
+use App\Utils\DecoratorTrait;
 use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemManager;
 use Psr\Log\LoggerInterface;
 
 /**
- * Drop-in replacement for the framework FilesystemManager that turns implicit default-disk
- * usage into a visible warning.
+ * Decorator for the framework FilesystemManager that turns implicit default-disk usage into
+ * a visible warning.
  *
  * HAWKI never uses the framework default disk (`filesystems.default`) as storage — the storage
  * services resolve their disks explicitly via the `filesystems.file_storage` /
@@ -19,14 +19,29 @@ use Psr\Log\LoggerInterface;
  * (e.g. a bare `Storage::put(...)` or `app('filesystem')->disk()`) is almost certainly a
  * bug or an uninformed third-party package, so it logs a warning once per request while
  * still returning the disk (warn-and-continue: the default remains a valid framework fallback).
+ *
+ * Instances are created exclusively via decorate() so the decorator inherits the full live
+ * state of the wrapped manager — already-resolved disks and registered custom creators —
+ * instead of discarding it.
  */
 class DefaultDiskWarningFilesystemManager extends FilesystemManager
 {
+    use DecoratorTrait;
+
+    private LoggerInterface $logger;
+
     private bool $defaultDiskWarningEmitted = false;
 
-    public function __construct(Application $app, private readonly LoggerInterface $logger)
+    /**
+     * Create the decorating manager, inheriting all state (app, disks, custom creators)
+     * of the given manager.
+     */
+    public static function decorate(FilesystemManager $manager, LoggerInterface $logger): self
     {
-        parent::__construct($app);
+        $decoratedInstance = self::createDecoratedOf($manager);
+        $decoratedInstance->logger = $logger;
+
+        return $decoratedInstance;
     }
 
     /**

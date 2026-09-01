@@ -17,14 +17,14 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\MockClock;
-use Tests\Concerns\CreatesFilesystemMocks;
+use Tests\Concerns\FilesystemMockingTrait;
 use Tests\TestCase;
 use Tests\Unit\Services\Storage\AbstractFileStorageTestFixtures\ConcreteFileStorageStub;
 
 #[CoversClass(AbstractFileStorage::class)]
 class AbstractFileStorageTest extends TestCase
 {
-    use CreatesFilesystemMocks;
+    use FilesystemMockingTrait;
 
     private const UUID = 'abcd1234-e29b-41d4-a716-446655440000';
 

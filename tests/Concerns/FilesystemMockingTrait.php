@@ -8,7 +8,7 @@ use Illuminate\Contracts\Filesystem\Filesystem;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 
-trait CreatesFilesystemMocks
+trait FilesystemMockingTrait
 {
     /**
      * State-based filesystem double. exists(), get() and size() answer from the given

@@ -10,13 +10,13 @@ use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
-use Tests\Concerns\CreatesFilesystemMocks;
+use Tests\Concerns\FilesystemMockingTrait;
 use Tests\TestCase;
 
 #[CoversClass(CheckStorageConnection::class)]
 class CheckStorageConnectionTest extends TestCase
 {
-    use CreatesFilesystemMocks;
+    use FilesystemMockingTrait;
 
     /**
      * Disk names the bound factory was asked for, in call order.

@@ -8,14 +8,13 @@ use App\Services\Storage\Values\FileType;
 use App\Services\Storage\Values\PlainTextLanguageType;
 use App\Services\Storage\Values\StoredFileExtract;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\Concerns\CreatesFilesystemMocks;
+use Tests\Concerns\FilesystemMockingTrait;
 use Tests\TestCase;
 
 #[CoversClass(StoredFileExtract::class)]
 class StoredFileExtractTest extends TestCase
 {
-    use CreatesFilesystemMocks;
+    use FilesystemMockingTrait;
 
     // =========================================================================
     // fromJson
