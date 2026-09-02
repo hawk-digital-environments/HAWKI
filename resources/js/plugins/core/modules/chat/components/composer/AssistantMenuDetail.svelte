@@ -1,39 +1,35 @@
 <!--
-  @component Detail panel for a single tool, shown in place of the tool list inside
-  `ToolMenu`'s `DropdownMenuDetailView` when the user clicks a row's info icon.
+  @component Detail panel for a single assistant, shown in place of the assistant list inside
+  `AssistantMenu`'s `DropdownMenuDetailView` when the user clicks a row's info icon — the
+  `@` menu's counterpart to `ToolMenuDetail`.
 
-  Shows the tool's icon on a swatch (the same one `AssistantMenuDetail` gives its emoji)
-  and its name, a toggle (mirrors the checkbox in `ToolMenuListItem`, wired to the same
-  `entry.onToggle`), a `StatusDotForTool` with its label spelled out, the tool's
-  description, and — for multi-option capabilities — the `ToolMenuConfig` variant picker.
-  A `MenuPinButton` sits beside the toggle.
+  Shows the assistant's emoji swatch, display name and `@handle`, a `MenuPinButton` and a
+  toggle (the latter mirrors the checkbox in `AssistantMenuListItem`, wired to the same
+  `entry.onToggle`), and the assistant's description in full.
 
-  Owns its own keyboard handling (`onDetailKeydown`): because this panel lives inside a
-  bits-ui dropdown menu whose roving-tabindex model doesn't fit a sub-panel, Escape/ArrowLeft
-  close the detail (via `onCloseDetail`), and ArrowUp/ArrowDown/Tab move focus between this
-  panel's own focusable children instead of bubbling to the menu.
+  Owns its own keyboard handling (`onDetailKeydown`) for the same reason `ToolMenuDetail`
+  does: the panel lives inside a bits-ui dropdown menu whose roving-tabindex model doesn't
+  fit a sub-panel, so Escape/ArrowLeft close the detail (via `onCloseDetail`) and
+  ArrowUp/ArrowDown/Tab move focus between this panel's own focusable children.
 
   ## Usage
-  Rendered by `ToolMenu` inside the `details` snippet of `DropdownMenuDetailView`, driven by
-  which tool's info icon was last clicked (`detailToolName`):
+  Rendered by `AssistantMenu` inside the `details` snippet of `DropdownMenuDetailView`,
+  driven by which assistant's info icon was last clicked (`detailAssistantId`):
   ```svelte
   <DropdownMenuDetailView open={!!detailEntry}>
       {#snippet details()}
           {#if detailEntry}
-              <ToolMenuDetail entry={detailEntry} onCloseDetail={closeToolDetail}/>
+              <AssistantMenuDetail entry={detailEntry} onCloseDetail={closeAssistantDetail}/>
           {/if}
       {/snippet}
-      <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+      <AssistantMenuList .../>
   </DropdownMenuDetailView>
   ```
 -->
 <script lang="ts">
     import {onMount} from 'svelte';
-    import type {ToolMenuEntry} from './ToolMenu.svelte';
-    import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
+    import type {AssistantMenuEntry} from '$plugins/core/modules/chat/components/composer/AssistantMenuListItem.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
-    import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
-    import ToolMenuConfig from '$plugins/core/modules/chat/components/composer/ToolMenuConfig.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -41,27 +37,23 @@
     const {__} = useTranslator();
 
     interface Props {
-        /** The tool to show details for. Passed as a fresh copy (`{...entry}`) by `ToolMenu`
-         *  so `active`/`available` re-render while the detail view is open. */
-        entry: ToolMenuEntry;
+        /** The assistant to show details for. Passed as a fresh copy (`{...entry}`) by
+         *  `AssistantMenu` so `active` re-renders while the detail view is open. */
+        entry: AssistantMenuEntry;
         /** Called when the user backs out of the detail view (Back button, Escape, or ArrowLeft).
-         *  `ToolMenu` clears `detailToolName` and returns focus to the row that opened it. */
+         *  `AssistantMenu` clears `detailAssistantId` and returns focus to the row that opened it. */
         onCloseDetail: () => void;
     }
 
-    let {
-        entry,
-        onCloseDetail
-    }: Props = $props();
+    let {entry, onCloseDetail}: Props = $props();
 
     let detailEl = $state<HTMLDivElement | null>(null);
     let backEl = $state<HTMLButtonElement | null>(null);
     let toggleEl = $state<HTMLButtonElement | null>(null);
 
-    // Move focus into the panel when it opens, landing on the primary control
-    // (the toggle, or Back when the tool can't be toggled).
+    // Move focus into the panel when it opens, landing on the primary control.
     onMount(() => {
-        const target = toggleEl && !entry.disabled ? toggleEl : backEl;
+        const target = toggleEl ?? backEl;
         const raf = requestAnimationFrame(() => target?.focus());
         return () => cancelAnimationFrame(raf);
     });
@@ -107,11 +99,6 @@
                 break;
         }
     }
-
-    function toggleActive() {
-        if (entry.disabled) return;
-        entry.onToggle(!entry.active);
-    }
 </script>
 <!--
   Container-level keydown only delegates focus/back navigation to the child
@@ -119,56 +106,56 @@
   widget itself.
 -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tool-detail" bind:this={detailEl} onkeydown={onDetailKeydown}>
+<div
+    class="assistant-detail"
+    style:--assistant-from={entry.colors.from}
+    style:--assistant-to={entry.colors.to}
+    bind:this={detailEl}
+    onkeydown={onDetailKeydown}>
     <button
         type="button"
-        class="tool-detail-back"
+        class="assistant-detail-back"
         bind:this={backEl}
         onpointerdowncapture={(e) => e.stopPropagation()}
         onclick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onCloseDetail?.();
-                }}>
+            e.preventDefault();
+            e.stopPropagation();
+            onCloseDetail?.();
+        }}>
         <ArrowLeft01Icon size={16}/>
-        <span>{__('chat.composer.toolMenu.backButton')}</span>
+        <span>{__('chat.composer.assistantMenu.backButton')}</span>
     </button>
 
-    <div class="tool-detail-header">
-        <span class="tool-detail-title">
-            <ToolIcon tool={entry.tool} swatch/>
-            <span class="tool-detail-name">{entry.tool.displayName}</span>
+    <div class="assistant-detail-header">
+        <span class="assistant-detail-title">
+            <!-- The name sits right next to it, so the emoji is decoration rather than content. -->
+            <span class="assistant-detail-emoji" aria-hidden="true">{entry.emoji}</span>
+            <span class="assistant-detail-names">
+                <span class="assistant-detail-name">{__(entry.assistant.labelKey)}</span>
+                <span class="assistant-detail-handle">{entry.assistant.handle}</span>
+            </span>
         </span>
-        <span class="tool-detail-actions">
-            <MenuPinButton kind="tool" id={entry.tool.name} variant="detail"/>
+        <span class="assistant-detail-actions">
+            <MenuPinButton kind="assistant" id={entry.assistant.id} variant="detail"/>
             <button
                 type="button"
-                class="tool-detail-toggle"
+                class="assistant-detail-toggle"
                 role="switch"
                 bind:this={toggleEl}
-                aria-label={entry.active ? __('chat.composer.toolMenu.deactivateTool') : __('chat.composer.toolMenu.activateTool')}
+                aria-label={entry.active ? __('chat.composer.assistantMenu.untagAssistantAction') : __('chat.composer.assistantMenu.tagAssistantAction')}
                 aria-checked={entry.active ? 'true' : 'false'}
-                disabled={entry.disabled}
                 onpointerdowncapture={(e) => e.stopPropagation()}
-                onclick={toggleActive}>
-                <Switch checked={entry.active} disabled={entry.disabled} presentational/>
+                onclick={() => entry.onToggle(!entry.active)}>
+                <Switch checked={entry.active} presentational/>
             </button>
         </span>
     </div>
 
-    <div class="tool-detail-status">
-        <StatusDotForTool tool={entry.tool} supported={entry.available} showLabel/>
-    </div>
-
-    {#if entry.tool.description}
-        <p class="tool-detail-description">{entry.tool.description}</p>
-    {/if}
-
-    <ToolMenuConfig entry={entry}/>
+    <p class="assistant-detail-description">{__(entry.assistant.descriptionKey)}</p>
 </div>
 
 <style>
-    .tool-detail {
+    .assistant-detail {
         display: flex;
         flex-direction: column;
         gap: var(--space-1_5);
@@ -176,7 +163,7 @@
         padding-bottom: var(--space-2, calc(0.25rem * 2));
     }
 
-    .tool-detail-back {
+    .assistant-detail-back {
         display: inline-flex;
         align-items: center;
         gap: var(--space-1, 0.25rem);
@@ -192,12 +179,12 @@
         transition: background-color var(--duration-fast, 150ms);
     }
 
-    .tool-detail-back:hover {
+    .assistant-detail-back:hover {
         background-color: var(--color-hover);
         color: var(--color-text);
     }
 
-    .tool-detail-header {
+    .assistant-detail-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -205,14 +192,40 @@
         padding-inline: var(--space-2, calc(0.25rem * 2));
     }
 
-    .tool-detail-title {
+    .assistant-detail-title {
         display: inline-flex;
         align-items: center;
         gap: var(--space-2, calc(0.25rem * 2));
         min-width: 0;
     }
 
-    .tool-detail-name {
+    /* Same swatch as `AssistantRow`: the tint has to come from behind the glyph, since
+       emoji hues are fixed and don't line up with the assistant's own color. */
+    .assistant-detail-emoji {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: calc(0.25rem * 8);
+        height: calc(0.25rem * 8);
+        border-radius: var(--corner-xs);
+        background-color: color-mix(
+            in oklab,
+            color-mix(in oklab, var(--assistant-from), var(--assistant-to)) 15%,
+            transparent
+        );
+        font-size: var(--font-size-sm);
+        line-height: 1;
+    }
+
+    .assistant-detail-names {
+        display: inline-flex;
+        align-items: baseline;
+        gap: var(--space-1, 0.25rem);
+        min-width: 0;
+    }
+
+    .assistant-detail-name {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -222,14 +235,25 @@
         color: var(--color-text);
     }
 
-    .tool-detail-actions {
+    /* Lightness-shifted exactly as in `AssistantRow`, so the handle reads the same in
+       the list and in the detail panel. */
+    .assistant-detail-handle {
+        font-size: var(--font-size-xs);
+        color: oklch(from var(--assistant-from) calc(l + var(--assistant-detail-handle-shift, -0.18)) c h);
+    }
+
+    :global(html.darkMode) .assistant-detail-handle {
+        --assistant-detail-handle-shift: 0.12;
+    }
+
+    .assistant-detail-actions {
         display: inline-flex;
         flex-shrink: 0;
         align-items: center;
         gap: var(--space-2, calc(0.25rem * 2));
     }
 
-    .tool-detail-toggle {
+    .assistant-detail-toggle {
         display: inline-flex;
         flex-shrink: 0;
         padding: 0;
@@ -238,16 +262,7 @@
         cursor: pointer;
     }
 
-    .tool-detail-toggle:disabled {
-        cursor: not-allowed;
-    }
-
-    .tool-detail-status {
-        padding-inline: var(--space-2, calc(0.25rem * 2));
-        font-size: var(--font-size-xxs);
-    }
-
-    .tool-detail-description {
+    .assistant-detail-description {
         margin: 0;
         padding-inline: var(--space-2, calc(0.25rem * 2));
         font-size: var(--font-size-xs);
