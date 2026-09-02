@@ -24,13 +24,14 @@
                 }
             },
             "card": {
-                "contextWindow": "Kontextfenster",
+                "contextWindow": "Kontext",
                 "contextShort": ":count Kontext",
                 "maxOutput": "Max. Ausgabe",
-                "tokens": ":count Token",
-                "price": "Preis",
+                "price": "Kosten",
                 "intelligence": "Intelligenz",
                 "outOfFive": ":value von 5",
+                "capabilities": "Fähigkeiten",
+                "documentation": "Dokumentation",
                 "capability": {
                     "vision": "Vision",
                     "audio": "Audio",
@@ -38,7 +39,8 @@
                     "imageGeneration": "Bildgenerierung",
                     "webSearch": "Websuche",
                     "codeExecution": "Code-Ausführung",
-                    "fileUpload": "Datei-Upload"
+                    "fileUpload": "Datei-Upload",
+                    "reasoning": "Erweitertes Denken"
                 }
             },
             "page": {

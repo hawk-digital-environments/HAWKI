@@ -10,7 +10,6 @@
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
-    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
     import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
@@ -22,6 +21,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
+    import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
 
     interface Props {
         /** Called when the user picks "Settings" from the menu. */
@@ -85,7 +85,7 @@
                 <Avatar src={avatarUrl} name={userName} label={userName} size={22}/>
             {/snippet}
             {#snippet trailing()}
-                <Settings03Icon size={16} strokeWidth={2}/>
+                <UnfoldMoreIcon size={16} strokeWidth={2}/>
             {/snippet}
         </SidebarItem>
     {/snippet}
@@ -102,14 +102,15 @@
     <DropdownMenuItem icon={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
+    <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
+    </DropdownMenuItem>
+    <DropdownMenuSeparator/>
     <DropdownMenuItem icon={Megaphone01Icon} onclick={openAnnouncements}>
         {__('ui.profile.announcements')}
     </DropdownMenuItem>
     <DropdownMenuItem icon={AiChipIcon} onclick={openModels}>
         {__('ui.profile.models')}
-    </DropdownMenuItem>
-    <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
-        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
     <DropdownMenuItem icon={Logout02Icon} onclick={logout}>

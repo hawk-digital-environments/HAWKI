@@ -39,6 +39,8 @@ const BaseAiModelSchema = z.object({
     model_id: z.string(),
     model_type: z.union([z.enum(wellKnownAiModelTypes), z.string()]).nullable(),
     label: z.string(),
+    /** Link to the vendor's documentation page for this model, if the backend knows one (shown on the model card). */
+    documentation_url: z.string().nullable().optional(),
     /** Input modalities the model accepts, e.g. `['text', 'image']`. */
     input: z.array(z.union([z.enum(wellKnownAiModelIoMethods), z.string()])),
     /** Output modalities the model can produce. */
