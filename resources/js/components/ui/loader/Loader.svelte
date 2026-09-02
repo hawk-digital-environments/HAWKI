@@ -56,6 +56,11 @@
         display: grid;
         min-height: 4rem;
         place-items: center;
+        /* Fill the flex column `Shell.svelte` gives `#hawki-app`, so the boot loader
+           centres against the viewport instead of collapsing to its own height. A
+           non-flex parent ignores both, which leaves inline loaders unaffected. */
+        flex: 1 1 auto;
+        align-self: stretch;
     }
 
     .loader--overlay {
