@@ -13,7 +13,7 @@
   The "Settings" heading's reset button restores the model's default
   parameters via `modelParameters.reset()`. Disabled as a whole when
   `composerContext.guard.disablesFeature('settings')` is true (e.g. during
-  edit/regen mode). Takes no props.
+  edit mode). Takes no props.
 
   Keyboard: bits-ui menus move focus with ↑/↓ between menu items only and
   treat Tab as "leave the menu". Since this panel also contains plain
