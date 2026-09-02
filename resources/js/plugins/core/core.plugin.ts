@@ -27,6 +27,7 @@ import {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
 import {SystemPromptStore} from '$plugins/core/stores/SystemPromptStore.svelte.js';
 import {ThemeStore} from '$plugins/core/stores/ThemeStore.svelte.js';
 import {ExperimentsStore} from '$plugins/core/stores/ExperimentsStore.svelte.js';
+import {ComposerPinStore} from '$plugins/core/stores/ComposerPinStore.svelte.js';
 import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {ModelFavoritesStore} from '$plugins/core/stores/ModelFavoritesStore.svelte.js';
@@ -74,5 +75,6 @@ export default class CorePlugin implements HawkiCorePlugin {
         add(new ModelFavoritesStore());
         add(new ModelSelectionStore());
         add(new ChatStore());
+        add(new ComposerPinStore());
     }
 }
