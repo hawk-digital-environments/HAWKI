@@ -26,45 +26,6 @@ export interface AiAssistantHandle {
 }
 
 /**
- * Mock study assistants offered by the `@` tagging menu in group chats.
- *
- * @todo Replace with real assistants from the backend once the assistant system
- *       is implemented; the menu already consumes them through the store only.
- */
-const MOCK_STUDY_ASSISTANTS: AiAssistantHandle[] = [
-    {
-        id: 'tutor',
-        handle: '@tutor',
-        labelKey: 'chat.composer.assistantMenu.assistants.tutor',
-        descriptionKey: 'chat.composer.assistantMenu.assistants.tutorDescription'
-    },
-    {
-        id: 'research',
-        handle: '@research',
-        labelKey: 'chat.composer.assistantMenu.assistants.research',
-        descriptionKey: 'chat.composer.assistantMenu.assistants.researchDescription'
-    },
-    {
-        id: 'writing',
-        handle: '@writing',
-        labelKey: 'chat.composer.assistantMenu.assistants.writing',
-        descriptionKey: 'chat.composer.assistantMenu.assistants.writingDescription'
-    },
-    {
-        id: 'exam',
-        handle: '@exam',
-        labelKey: 'chat.composer.assistantMenu.assistants.exam',
-        descriptionKey: 'chat.composer.assistantMenu.assistants.examDescription'
-    },
-    {
-        id: 'code',
-        handle: '@code',
-        labelKey: 'chat.composer.assistantMenu.assistants.code',
-        descriptionKey: 'chat.composer.assistantMenu.assistants.codeDescription'
-    }
-];
-
-/**
  * Store for recognized `@handle` mentions in chat messages.
  *
  * Recognizes the configured HAWKI handle (e.g. `@hawki`) plus the (currently mocked)
@@ -97,11 +58,6 @@ export class AiHandleStore implements DataStore {
         };
     }
 
-    /** The mocked study assistants shown below the HAWKI assistant in the tagging menu. */
-    public get studyAssistants(): AiAssistantHandle[] {
-        return MOCK_STUDY_ASSISTANTS;
-    }
-
     /** Every taggable assistant, HAWKI first. Empty until the store has loaded, so UI that
      *  renders before `loadData` (e.g. the composer's `@` menu) doesn't hit the
      *  `hawkiHandle` guard. */
@@ -109,7 +65,7 @@ export class AiHandleStore implements DataStore {
         if (this._hawkiHandle === null) {
             return [];
         }
-        return [this.hawkiAssistant, ...this.studyAssistants];
+        return [this.hawkiAssistant];
     }
 
     /**

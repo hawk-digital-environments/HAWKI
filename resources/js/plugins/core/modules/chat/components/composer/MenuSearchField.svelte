@@ -53,7 +53,6 @@
     <input
         bind:this={inputEl}
         bind:value
-        class="input-unstyled"
         type="text"
         autocomplete="off"
         spellcheck="false"
@@ -78,9 +77,8 @@
 
     /*
       The legacy global stylesheet (`public/css/style.css`) still gives every bare `input`
-      a border, a min-width/height and padding; those are undone here. Its `!important`
-      background needs an earlier cascade layer and is handled by `.input-unstyled`
-      (see `resources/css/layers/reset.css`).
+      a border, a min-width/height and padding; those are undone here. Its background is
+      a normal `@layer legacy` declaration, so this unlayered rule simply overrides it.
     */
     .menu-search input {
         flex: 1 1 auto;
@@ -90,6 +88,7 @@
         border: none;
         border-radius: 0;
         outline: none;
+        background: transparent;
         color: var(--color-text);
         font-size: var(--font-size-xs);
         font-family: inherit;
