@@ -9,12 +9,14 @@ use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Config\AvatarStorageConfig;
 use App\Services\Storage\Config\FileStorageConfig;
 use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Filesystem\DefaultDiskWarningFilesystemManager;
 use App\Services\Storage\UrlGenerator;
 use App\Services\Storage\Utils\ContentExtractor;
 use App\Services\Storage\Values\StorageServiceContext;
 use App\Services\System\UsageTypes\UsageContext;
 use Illuminate\Config\Repository;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +29,17 @@ class StorageServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Decorate the framework FilesystemManager, inheriting its live state (disks, custom
+        // creators), with our own which warns when implicit default-disk fallback is used
+        $this->app->extend(
+            'filesystem',
+            function (FilesystemManager $manager, Application $app): FilesystemManager {
+                return DefaultDiskWarningFilesystemManager::createDecoratedOf($manager, [
+                    'logger' => $app->get(LoggerInterface::class),
+                ]);
+            }
+        );
+
         $this->app->singleton(
             UrlGenerator::class,
             function (Application $app) {

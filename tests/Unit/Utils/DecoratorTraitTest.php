@@ -7,8 +7,10 @@ use App\Utils\DecoratorTrait;
 use PHPUnit\Framework\Attributes\CoversTrait;
 use Tests\TestCase;
 use Tests\Unit\Utils\DecoratorTraitTestFixtures\DecoratedModel;
+use Tests\Unit\Utils\DecoratorTraitTestFixtures\DecoratedReadonlyModel;
 use Tests\Unit\Utils\DecoratorTraitTestFixtures\ExtendedParentModel;
 use Tests\Unit\Utils\DecoratorTraitTestFixtures\ParentModel;
+use Tests\Unit\Utils\DecoratorTraitTestFixtures\ReadonlyParentModel;
 use Tests\Unit\Utils\DecoratorTraitTestFixtures\StandaloneModel;
 
 #[CoversTrait(DecoratorTrait::class)]
@@ -116,8 +118,92 @@ class DecoratorTraitTest extends TestCase
     }
 
     // =========================================================================
+    // Additional properties
+    // =========================================================================
+
+    public function testItAssignsAdditionalPropertiesOnTheDecoratedInstance(): void
+    {
+        $parent = new ParentModel('bob');
+
+        $sut = DecoratedModel::createDecoratedOf($parent, ['label' => 'extra value']);
+
+        static::assertSame('extra value', $sut->getLabel());
+    }
+
+    public function testItThrowsInvalidArgumentExceptionForUnknownAdditionalProperty(): void
+    {
+        $parent = new ParentModel('bob');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Cannot assign additional property %s::$nonexistent via %s: the property does not exist.',
+            DecoratedModel::class,
+            DecoratorTrait::class
+        ));
+
+        DecoratedModel::createDecoratedOf($parent, ['nonexistent' => 'value']);
+    }
+
+    public function testItThrowsInvalidArgumentExceptionWhenAdditionalPropertyOverwritesParentState(): void
+    {
+        $parent = new ParentModel('bob');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Cannot assign additional property %s::$name via %s: the property is already declared on %s and would overwrite inherited state.',
+            DecoratedModel::class,
+            DecoratorTrait::class,
+            ParentModel::class
+        ));
+
+        DecoratedModel::createDecoratedOf($parent, ['name' => 'overwritten']);
+    }
+
+    public function testItThrowsInvalidArgumentExceptionForStaticAdditionalProperty(): void
+    {
+        $parent = new ParentModel('bob');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Cannot assign additional property %s::$extraTag via %s: static properties are not supported.',
+            DecoratedModel::class,
+            DecoratorTrait::class
+        ));
+
+        DecoratedModel::createDecoratedOf($parent, ['extraTag' => 'value']);
+    }
+
+    public function testItThrowsLogicExceptionForReadOnlyAdditionalProperty(): void
+    {
+        $parent = new ParentModel('bob');
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Cannot assign read-only property %s::$note as an additional property via %s',
+            DecoratedModel::class,
+            DecoratorTrait::class
+        ));
+
+        DecoratedModel::createDecoratedOf($parent, ['note' => 'value']);
+    }
+
+    // =========================================================================
     // Exception cases
     // =========================================================================
+
+    public function testItThrowsLogicExceptionForUninitializedReadOnlySourceProperty(): void
+    {
+        $parent = new ReadonlyParentModel();
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Cannot inherit read-only property %s::$locked from parent class %s',
+            ReadonlyParentModel::class,
+            ReadonlyParentModel::class
+        ));
+
+        DecoratedReadonlyModel::createDecoratedOf($parent);
+    }
 
     public function testItThrowsLogicExceptionWhenClassHasNoParent(): void
     {
