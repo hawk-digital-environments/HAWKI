@@ -10,7 +10,6 @@
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
-    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
     import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
@@ -23,6 +22,7 @@
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
+    import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
 
     interface Props {
         /** Called when the user picks "Settings" from the menu. */
@@ -37,7 +37,7 @@
     const {__} = useTranslator();
     const connection = useConnection();
     // The sidebar bumps its rows up a notch on small screens; the avatar and the
-    // settings glyph follow the same step so the footer row stays proportional.
+    // trailing glyph follow the same step so the footer row stays proportional.
     const breakpoint = useBreakpoint();
     const compact = $derived(breakpoint.is('bpMdAndSmaller'));
     const triggerAvatarSize = $derived(compact ? 24 : 22);
@@ -97,7 +97,7 @@
                 <Avatar src={avatarUrl} name={userName} label={userName} size={triggerAvatarSize}/>
             {/snippet}
             {#snippet trailing()}
-                <Settings03Icon size={triggerIconSize} strokeWidth={2}/>
+                <UnfoldMoreIcon size={triggerIconSize} strokeWidth={2}/>
             {/snippet}
         </SidebarItem>
     {/snippet}
@@ -114,14 +114,15 @@
     <DropdownMenuItem iconLeft={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
+    <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
+    </DropdownMenuItem>
+    <DropdownMenuSeparator/>
     <DropdownMenuItem iconLeft={Megaphone01Icon} onclick={openAnnouncements}>
         {__('ui.profile.announcements')}
     </DropdownMenuItem>
     <DropdownMenuItem iconLeft={AiChipIcon} onclick={openModels}>
         {__('ui.profile.models')}
-    </DropdownMenuItem>
-    <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
-        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
     <DropdownMenuItem iconLeft={Logout02Icon} onclick={logout}>
