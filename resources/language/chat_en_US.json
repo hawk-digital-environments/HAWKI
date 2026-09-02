@@ -61,6 +61,11 @@
             "deleteConfirmTitle": "Delete message?",
             "deleteConfirmDescription": "This message will be permanently removed."
         },
+        "regenerate": {
+            "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
+            "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
+            "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
+        },
         "thread": {
             "title": "Thread",
             "replyCountOne": "1 reply",
@@ -137,11 +142,9 @@
             },
             "modePanel": {
                 "editTitle": "Edit message",
-                "regenTitle": "Regenerate AI response",
                 "threadTitle": "Write message in thread",
                 "defaultTitle": "Mode",
                 "cancelEdit": "Exit edit mode",
-                "cancelRegen": "Cancel regeneration",
                 "cancelThread": "Leave thread view",
                 "cancelDefault": "Exit mode",
                 "actionBusy": "You can not do this right now. Please wait until the current action is finished."
@@ -261,9 +264,7 @@
                 "emptyMessageTooltip": "Please enter a message",
                 "sendTooltip": "Send message",
                 "saveLabel": "Save",
-                "regenerateLabel": "Regenerate",
                 "sendLabel": "Send",
-                "cancelRegeneration": "Cancel regeneration",
                 "leaveThread": "Leave thread",
                 "cancelEdit": "Cancel editing",
                 "cancelResponse": "Cancel AI response",
@@ -280,12 +281,6 @@
                 "high": "High",
                 "highTooltip": "High load — responses delayed",
                 "ariaLabel": "Load: :label"
-            },
-            "regen": {
-                "onlyAssistantMessages": "Only assistant messages can be regenerated",
-                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
-                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
-                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
             },
             "sending": {
                 "responseError": "An error occurred while processing the response.",

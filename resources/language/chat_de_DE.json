@@ -61,6 +61,11 @@
             "deleteConfirmTitle": "Nachricht löschen?",
             "deleteConfirmDescription": "Diese Nachricht wird dauerhaft entfernt."
         },
+        "regenerate": {
+            "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
+            "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
+            "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
+        },
         "thread": {
             "title": "Thread",
             "replyCountOne": "1 Antwort",
@@ -137,11 +142,9 @@
             },
             "modePanel": {
                 "editTitle": "Nachricht bearbeiten",
-                "regenTitle": "KI Nachricht regenerieren",
                 "threadTitle": "Nachricht in Thread schreiben",
                 "defaultTitle": "Modus",
                 "cancelEdit": "Bearbeitungsmodus verlassen",
-                "cancelRegen": "Regenerieren abbrechen",
                 "cancelThread": "Thread-Ansicht verlassen",
                 "cancelDefault": "Modus verlassen",
                 "actionBusy": "You can not do this right now. Please wait until the current action is finished."
@@ -261,9 +264,7 @@
                 "emptyMessageTooltip": "Bitte gib eine Nachricht ein",
                 "sendTooltip": "Nachricht senden",
                 "saveLabel": "Speichern",
-                "regenerateLabel": "Regenerieren",
                 "sendLabel": "Senden",
-                "cancelRegeneration": "Regeneration abbrechen",
                 "leaveThread": "Thread verlassen",
                 "cancelEdit": "Bearbeitung abbrechen",
                 "cancelResponse": "KI-Antwort abbrechen",
@@ -280,12 +281,6 @@
                 "high": "Hoch",
                 "highTooltip": "Hohe Auslastung — Antworten verzögert",
                 "ariaLabel": "Auslastung: :label"
-            },
-            "regen": {
-                "onlyAssistantMessages": "Nur Nachrichten des Assistenten können regeneriert werden",
-                "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
-                "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
-                "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
             },
             "sending": {
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
