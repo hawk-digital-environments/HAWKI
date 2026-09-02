@@ -5,11 +5,11 @@
   and what they say depends entirely on `ComposerContext` state:
 
   - Improve button only shows when `guard.showsAiUiElements` is true.
-  - Cancel button shows either while a non-default mode (edit/regen/thread) is
+  - Cancel button shows either while a non-default mode (edit/thread) is
     active but not yet sending, or while an abortable send is in progress —
     its label/action/tooltip adapt to which case applies.
-  - Send button's icon/label switch to a checkmark + "Save"/"Regenerate" in
-    edit/regen mode, and it hides while an abortable send is active (the
+  - Send button's icon/label switch to a checkmark + "Save" in edit mode,
+    and it hides while an abortable send is active (the
     cancel button takes its place).
 
   Renders nothing itself beyond these buttons — layout (flex row, gaps) is the
@@ -72,9 +72,6 @@
         if (composerContext.mode.isEdit) {
             return __('chat.composer.actions.saveLabel');
         }
-        if (composerContext.mode.isRegen) {
-            return __('chat.composer.actions.regenerateLabel');
-        }
         return __('chat.composer.actions.sendLabel');
     });
 
@@ -85,9 +82,6 @@
 
     const cancelTooltip = $derived.by(() => {
         if (isNotSendingInNonDefaultMode) {
-            if (composerContext.mode.isRegen) {
-                return __('chat.composer.actions.cancelRegeneration');
-            }
             if (composerContext.mode.isThread) {
                 return __('chat.composer.actions.leaveThread');
             }
@@ -111,7 +105,7 @@
     });
 
     const SendIcon = $derived.by(() => {
-        if (composerContext.mode.isRegen || composerContext.mode.isEdit) {
+        if (composerContext.mode.isEdit) {
             return Tick02Icon;
         }
         return SentIcon;

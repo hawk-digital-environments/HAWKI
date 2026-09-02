@@ -55,16 +55,12 @@ export class GuardSlice {
     });
 
     /** Whether AI-related UI (model picker, tool menu, etc.) should be visible.
-     *  Always `true` in `aiConv` mode; in `room` mode, only when regen is active
-     *  or the message contains an `@ai-handle`. */
+     *  Always `true` in `aiConv` mode; in `room` mode, only when the message
+     *  contains an `@ai-handle`. */
     public readonly showsAiUiElements = $derived.by(() => {
         const context = this.contextResolver();
 
         if (context.type === 'aiConv') {
-            return true;
-        }
-
-        if (context.mode.is === 'regen') {
             return true;
         }
 
