@@ -12,11 +12,16 @@ type ChatStoreDependencies = {
     uriBuilder: HawkiApp['uriBuilder'];
     keychain: KeychainStore;
     translator: HawkiApp['translator'];
+    events: HawkiApp['events'];
 };
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiDataStores {
         chat: ChatStore;
+    }
+
+    interface HawkiSyncEvents {
+        onNewChatRequested: void;
     }
 }
 
@@ -37,8 +42,6 @@ export class ChatStore implements DataStore {
     public error = $state<string | null>(null);
     /** Conversation slugs with an AI request still running in this tab. */
     public generatingSlugs = $state<string[]>([]);
-    /** Reactive helper to refocus the composer on new chat requests. */
-    public newChatToggle = $state(0);
 
     private _dependencies: ChatStoreDependencies | null = null;
     private activeLoad = 0;
@@ -50,7 +53,8 @@ export class ChatStore implements DataStore {
             restApi: app.restApi,
             uriBuilder: app.uriBuilder,
             keychain: app.stores.get('keychain'),
-            translator: app.translator
+            translator: app.translator,
+            events: app.events
         };
         if (!app.connection.isAuthenticated) {
             return;
@@ -92,10 +96,10 @@ export class ChatStore implements DataStore {
         this.error = null;
     }
 
-    /** Starts a new chat and force reactive chat composer updates. */
+    /** Starts a new chat and triggers `onNewChatRequested` on the sync event bus. */
     public requestNewChat(): void {
         this.startNew();
-        this.newChatToggle += 1;
+        this.dependencies.events.sync.triggerVoid('onNewChatRequested');
     }
 
     public async load(slug: string): Promise<ChatConversation> {

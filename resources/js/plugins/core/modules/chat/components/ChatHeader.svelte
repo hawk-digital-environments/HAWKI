@@ -73,8 +73,8 @@
         position: absolute;
         top: calc(100% + var(--space-2));
         left: var(--space-5);
-        /* Sits over the message log below the header — the bar paints above
-           the log by document order, no z-index needed. */
+        /* Sits over the message log below the header — the bar's z-index
+            keeps it above the log (see PageHeaderBar). */
         padding: var(--space-2) var(--space-3);
         border: none;
         border-radius: var(--corner-sm);

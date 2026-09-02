@@ -52,9 +52,13 @@
     .page-header-bar {
         position: relative;
         /* Own stacking context, so the backdrop pseudo's negative z-index
-           stays behind this bar's content but above whatever the owning page
-           paints below — independent of the page's own stacking strategy. */
+            stays behind this bar's content but above whatever the owning page
+            paints below — independent of the page's own stacking strategy. */
         isolation: isolate;
+        /* Above everything the page body paints, positioned cards included —
+           lets pages keep this bar FIRST in the document for reading and tab
+           order instead of winning the paint by document order. */
+        z-index: 1;
         /* Claims the Page shell's header row; grids without that named area
            auto-place the bar instead. */
         grid-area: header;
