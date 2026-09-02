@@ -24,13 +24,14 @@
                 }
             },
             "card": {
-                "contextWindow": "Context window",
+                "contextWindow": "Context",
                 "contextShort": ":count context",
                 "maxOutput": "Max. output",
-                "tokens": ":count tokens",
-                "price": "Price",
+                "price": "Cost",
                 "intelligence": "Intelligence",
                 "outOfFive": ":value out of 5",
+                "capabilities": "Capabilities",
+                "documentation": "Documentation",
                 "capability": {
                     "vision": "Vision",
                     "audio": "Audio",
@@ -38,7 +39,8 @@
                     "imageGeneration": "Image generation",
                     "webSearch": "Web search",
                     "codeExecution": "Code execution",
-                    "fileUpload": "File upload"
+                    "fileUpload": "File upload",
+                    "reasoning": "Extended thinking"
                 }
             },
             "page": {
