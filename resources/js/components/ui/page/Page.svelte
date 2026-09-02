@@ -3,15 +3,14 @@
   main area, generalizing the chat-page structure: an optional fixed header bar
   (the chat header's counterpart) above a single scroll region.
 
-  Stacking works purely by document order, without any z-index: the body is
-  rendered first and the header LAST, while grid-template-areas pins the header
-  back to the top row — so the positioned header (with the default bar's
-  blurred backdrop) paints above everything the body contains,
-  positioned cards included, and the backdrop-filter can sample all of it as
-  its backdrop. The default bar's row and backdrop chrome live in PageHeaderBar
+  The header comes FIRST in the document — title and bar controls precede the
+  content for screen readers and tabbing. Paint priority comes from one local
+  z-index on the bar (PageHeaderBar): the whole bar unit, blurred backdrop
+  included, paints above everything the body contains, positioned cards
+  included, and the backdrop-filter can sample all of it as its backdrop.
+  The default bar's row and backdrop chrome live in PageHeaderBar
   (shared with the chat header), which isolates its own stacking so the
-  backdrop stays behind the bar content. The cost of the document order is
-  that the bar follows the content for screen readers and tabbing.
+  backdrop stays behind the bar content.
 
   The `header` snippet (when given) becomes the header row's grid child
   directly, element and all — for bars that bring their own chrome, like the
@@ -65,6 +64,13 @@
     class={['page', hasBar && 'with-header', className]}
     data-content-fade={hasBar ? 'none' : fade}
 >
+    {#if hasBar}
+        {#if header}
+            {@render header()}
+        {:else}
+            <PageHeaderBar heading={title} />
+        {/if}
+    {/if}
     <div class="page-body">
         {#if body}
             {@render body()}
@@ -76,13 +82,6 @@
             </div>
         {/if}
     </div>
-    {#if hasBar}
-        {#if header}
-            {@render header()}
-        {:else}
-            <PageHeaderBar heading={title} />
-        {/if}
-    {/if}
 </section>
 
 <style>
@@ -100,8 +99,6 @@
         grid-template-areas: 'header' 'body';
     }
 
-    /* Kept non-positioned so its content stays in the ordinary paint flow —
-       the header's document-order win covers it entirely. */
     .page-body {
         grid-area: body;
         min-height: 0;
