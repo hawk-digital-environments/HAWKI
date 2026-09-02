@@ -229,7 +229,7 @@ class AuthenticationController extends Controller
 
             return response()->json([
                 'success' => true,
-                'redirectUri' => "/new/chat",
+                'redirectUri' => '/chat',
                 'userData' => $user,
             ])->withHeaders(['X-HAWKI-CSRF-TOKEN' => $request->session()->token()]);
 
