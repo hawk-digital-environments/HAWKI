@@ -88,7 +88,7 @@
                     // The call in handshake_functions.js at verifyEnteredPassKey runs the same migration when the user is logging fresh
                     // Nothing in local storage. This is the case when the user runs into the "else-block" below with "switchSlide(1)"
                     await window.applyMigrations('after_passkey');
-                    window.location.href = '/chat';
+                    window.location.href = "/new/chat";
                 } else {
                     await window.applyMigrations('after_login');
                     switchSlide(1);
