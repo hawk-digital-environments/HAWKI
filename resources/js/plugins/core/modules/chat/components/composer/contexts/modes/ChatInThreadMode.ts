@@ -10,7 +10,7 @@ export interface ChatThreadModeState {
  * Mode for composing a reply inside a message thread.
  *
  * Allows nested modes (`allowsNestedModes = true`) so the user can enter
- * edit or regen mode for messages within the thread without losing the thread
+ * edit mode for messages within the thread without losing the thread
  * context — the thread checkpoint is preserved on the stack beneath the nested
  * mode checkpoint. Stays active after send so the user can keep the conversation
  * going without having to re-enter thread mode.
@@ -18,7 +18,7 @@ export interface ChatThreadModeState {
 export class ChatInThreadMode extends AbstractMode<string, ChatThreadModeState> {
     public allowsNestedModes(): boolean {
         // When in thread mode, we allow creating nested checkpoints
-        // meaning we can enter edit or regen mode for messages in the thread without losing the thread context.
+        // meaning we can enter edit mode for messages in the thread without losing the thread context.
         return true;
     }
 

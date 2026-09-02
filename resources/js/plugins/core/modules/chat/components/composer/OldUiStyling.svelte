@@ -3,9 +3,9 @@
   and the legacy chat log DOM (see `$lib/legacy/OldUiBridge`). The message
   log itself (the scrolling list of `.message` elements) still belongs to the
   old UI and hasn't been ported to Svelte yet; when the composer enters
-  `edit`/`regen`/`thread` mode, this component reaches into that legacy DOM
+  `edit`/`thread` mode, this component reaches into that legacy DOM
   via `document.querySelector`/`getElementById` to highlight the message
-  being edited/regenerated (or the thread being replied in), dim its
+  being edited (or the thread being replied in), dim its
   controls, hide unrelated siblings, and scroll it into view — then reverts
   all of that when the mode exits.
 
@@ -25,7 +25,6 @@
 <script lang="ts">
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatEditModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
-    import type {ChatRegenModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
     import type {ChatThreadModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
 
     const composerContext = useComposerContext();
@@ -145,10 +144,6 @@
         return highlightAndDisableMessageWithId(modeState.messageId);
     }
 
-    function styleElementForRegenMode(modeState: ChatRegenModeState): () => void {
-        return highlightAndDisableMessageWithId(modeState.messageId);
-    }
-
     function styleElementForThreadMode(modeState: ChatThreadModeState): () => void {
         const threadContainers = document.querySelectorAll('.thread.branch.visible');
         const container = Array.from(threadContainers)
@@ -183,9 +178,6 @@
     $effect(() => {
         if (composerContext.mode.isEdit) {
             return styleElementForEditMode(composerContext.mode.getState('edit'));
-        }
-        if (composerContext.mode.isRegen) {
-            return styleElementForRegenMode(composerContext.mode.getState('regen'));
         }
         if (composerContext.mode.isThread) {
             return styleElementForThreadMode(composerContext.mode.getState('thread'));

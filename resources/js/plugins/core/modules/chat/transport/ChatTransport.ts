@@ -3,14 +3,38 @@ import type {ChatMessage, MessageStats, ReasoningPart} from '$plugins/core/modul
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
-import type {AiMessage} from '$lib/kernel/ai/types.js';
-import type {SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
+import type {AiMessage, AiStreamRequest} from '$lib/kernel/ai/types.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import {createToolOrCapabilityWithStateFromTransferString} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 
 interface ChatTransportOptions {
     onConversationCreated?: (slug: string) => void;
     /** Shows the first message while the server is still creating its conversation. */
     onConversationPending?: (message: ChatMessage | null) => void;
+}
+
+/** Everything one assistant reply needs, independent of whether the composer or the
+ *  regenerate action on a message asked for it. */
+interface AssistantRequest {
+    modelId: string;
+    /** Tools in their transfer-string form (see `AiToolOrCapabilityWithState.toTransferString`). */
+    tools: string[];
+    params: AiStreamRequest['params'];
+    systemPrompt: string;
+    /** Thread the reply belongs to; `0` for the trunk conversation. */
+    threadId: number;
+    /** Id of the assistant message to replace in place; `null` for a fresh reply. */
+    regenerateMessageId: string | null;
+}
+
+/** Write surface the streaming loop reports into. `SendMessageResponse` satisfies it for
+ *  composer sends; {@link ChatTransport.regenerateMessage} passes a promise adapter. */
+interface AssistantStreamSink {
+    setAbortController(controller: AbortController): void;
+    triggerBodyChunk(chunk: string): void;
+    triggerReceived(): void;
+    triggerError(error: string): void;
 }
 
 export class ChatTransport implements MessageSenderTransportInterface {
@@ -71,14 +95,15 @@ export class ChatTransport implements MessageSenderTransportInterface {
             return;
         }
 
+        const request = this.requestFromContext(context);
         let generationStarted = false;
         let conversationCreated = false;
         let provisionalTitle: string | null = null;
-        const optimisticMessage = context.mode.isRegen ? null : this.optimisticUserMessage(opt);
+        const optimisticMessage = this.optimisticUserMessage(opt);
 
         // A new conversation has no slug/cache entry yet. Let ChatIndex render
         // the message locally while the create request is in flight.
-        if (!targetSlug && optimisticMessage) {
+        if (!targetSlug) {
             this.options.onConversationPending?.(optimisticMessage);
         }
 
@@ -94,35 +119,28 @@ export class ChatTransport implements MessageSenderTransportInterface {
 
             this.store.beginGeneration(targetSlug);
             generationStarted = true;
-            if (optimisticMessage) this.store.appendMessage(targetSlug, optimisticMessage);
+            this.store.appendMessage(targetSlug, optimisticMessage);
             if (conversationCreated) this.options.onConversationCreated?.(targetSlug);
 
             await this.uploadAttachments(opt);
             if (status.failed) {
-                if (optimisticMessage) this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
+                this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
                 this.store.finishGeneration(targetSlug);
                 if (conversationCreated) this.options.onConversationPending?.(null);
                 return;
             }
 
-            if (!context.mode.isRegen) {
-                const threadId = context.mode.isThread ? Number(context.mode.getState('thread').threadId) : 0;
-                const encrypted = await this.store.encryptText(sentMessage);
-                const userMessage = await this.store.persistMessage(targetSlug, {
-                    isAi: false,
-                    threadId: Number.isFinite(threadId) ? threadId : 0,
-                    completion: true,
-                    content: {text: encrypted, attachments: this.attachmentUuids(opt)},
-                    __plainText: sentMessage
-                });
-                if (optimisticMessage) {
-                    this.store.replaceMessage(targetSlug, optimisticMessage.message_id, {...userMessage, clientKey: optimisticMessage.clientKey});
-                } else {
-                    this.store.appendMessage(targetSlug, userMessage);
-                }
-            }
+            const encrypted = await this.store.encryptText(sentMessage);
+            const userMessage = await this.store.persistMessage(targetSlug, {
+                isAi: false,
+                threadId: request.threadId,
+                completion: true,
+                content: {text: encrypted, attachments: this.attachmentUuids(opt)},
+                __plainText: sentMessage
+            });
+            this.store.replaceMessage(targetSlug, optimisticMessage.message_id, {...userMessage, clientKey: optimisticMessage.clientKey});
         } catch (error) {
-            if (optimisticMessage && targetSlug) {
+            if (targetSlug) {
                 this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
             }
             if (generationStarted && targetSlug) this.store.finishGeneration(targetSlug);
@@ -134,7 +152,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const conversationSlug = targetSlug;
         waitForResponse(async response => {
             try {
-                await this.streamAssistant(conversationSlug, opt, response);
+                await this.streamAssistant(conversationSlug, request, response);
             } finally {
                 this.store.finishGeneration(conversationSlug);
                 if (conversationCreated && provisionalTitle !== null) {
@@ -142,6 +160,89 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 }
             }
         });
+    }
+
+    /**
+     * Re-runs the assistant reply `message` and replaces it in place. `modelId` picks the
+     * model; `null` reuses the one that produced the message. A model that is no longer
+     * available falls back to the default model. Tools and sampling parameters come from the
+     * message's metadata; tools that no longer exist or that the model cannot use are skipped.
+     * `onNotice` receives a human-readable line for each such fallback. The conversation is
+     * marked as generating for the duration. Rejects with the error message on failure.
+     */
+    public async regenerateMessage(
+        conversationSlug: string,
+        message: ChatMessage,
+        modelId: string | null,
+        onNotice?: (notice: string) => void
+    ): Promise<void> {
+        const translator = this.app.translator;
+        const requestedModelId = modelId ?? message.model;
+        const model = this.app.stores.get('ai-models').getModelByIdOrFallback(requestedModelId);
+        if (requestedModelId && model.model_id !== requestedModelId) {
+            onNotice?.(translator.__('chat.regenerate.modelNotAvailable', {model: requestedModelId, fallback: model.label}));
+        }
+
+        const toolStore = this.app.stores.get('ai-tools');
+        const tools: string[] = [];
+        const storedTools = message.metadata?.tools;
+        for (const transferString of Array.isArray(storedTools) ? storedTools : []) {
+            if (typeof transferString !== 'string') continue;
+            const tool = createToolOrCapabilityWithStateFromTransferString(transferString, toolStore);
+            if (!tool) {
+                onNotice?.(translator.__('chat.regenerate.toolNotAvailable', {tool: transferString}));
+                continue;
+            }
+            if (!tool.isAvailableFor(model)) {
+                onNotice?.(translator.__('chat.regenerate.toolNotAvailableForModel', {tool: tool.name}));
+                continue;
+            }
+            tools.push(tool.toTransferString());
+        }
+
+        // Only the sampling parameters travel along; everything else falls back to the
+        // model's defaults so a different model is not sent settings it does not know.
+        const storedParams = message.metadata?.params;
+        const params: Record<string, number> = {};
+        if (typeof storedParams?.temperature === 'number') params.temperature = storedParams.temperature;
+        if (typeof storedParams?.top_p === 'number') params.top_p = storedParams.top_p;
+
+        const request: AssistantRequest = {
+            modelId: model.model_id,
+            tools,
+            params: Object.keys(params).length ? params : null,
+            systemPrompt: (this.store.active?.slug === conversationSlug ? this.store.active.system_prompt : null)
+                ?? this.app.stores.get('system-prompts').getPromptByType('default').prompt,
+            threadId: this.threadIdForMessage(message.message_id),
+            regenerateMessageId: message.message_id
+        };
+
+        this.store.beginGeneration(conversationSlug);
+        try {
+            await new Promise<void>((resolve, reject) => {
+                this.streamAssistant(conversationSlug, request, {
+                    setAbortController: () => undefined,
+                    triggerBodyChunk: () => undefined,
+                    triggerReceived: () => resolve(),
+                    triggerError: error => reject(new Error(error))
+                }).then(resolve, reject);
+            });
+        } finally {
+            this.store.finishGeneration(conversationSlug);
+        }
+    }
+
+    /** Snapshot of the composer state that shapes the assistant reply for a regular send. */
+    private requestFromContext(context: ComposerContext): AssistantRequest {
+        const threadId = context.mode.isThread ? Number(context.mode.getState('thread').threadId) : 0;
+        return {
+            modelId: context.model.current.model_id,
+            tools: context.tools.active.map(tool => tool.toTransferString()),
+            params: context.modelParameters.requestParameters,
+            systemPrompt: context.systemPrompt,
+            threadId: Number.isFinite(threadId) ? threadId : 0,
+            regenerateMessageId: null
+        };
     }
 
     private optimisticUserMessage(opt: MessageSenderTransportOptions): ChatMessage {
@@ -206,17 +307,13 @@ export class ChatTransport implements MessageSenderTransportInterface {
             .filter((uuid): uuid is string => uuid !== null);
     }
 
-    private async streamAssistant(conversationSlug: string, opt: MessageSenderTransportOptions, responseWriter: SendMessageResponse): Promise<void> {
-        const {context} = opt;
+    private async streamAssistant(conversationSlug: string, request: AssistantRequest, responseWriter: AssistantStreamSink): Promise<void> {
         const controller = new AbortController();
         responseWriter.setAbortController(controller);
 
-        const regenState = context.mode.isRegen ? context.mode.getState('regen') : null;
-        const threadId = context.mode.isThread
-            ? Number(context.mode.getState('thread').threadId)
-            : (regenState ? this.threadIdForMessage(regenState.messageId) : 0);
-        const temporaryId = regenState?.messageId ?? `stream-${crypto.randomUUID()}`;
-        const existing = regenState ? this.store.findMessage(conversationSlug, regenState.messageId) : null;
+        const {threadId, regenerateMessageId} = request;
+        const temporaryId = regenerateMessageId ?? `stream-${crypto.randomUUID()}`;
+        const existing = regenerateMessageId ? this.store.findMessage(conversationSlug, regenerateMessageId) : null;
         const temporary: ChatMessage = existing ? {
             ...existing,
             content: {...existing.content, text: ''},
@@ -225,7 +322,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             status: 'running'
         } : {
             author: {username: 'HAWKI', name: 'HAWKI', avatar_url: ''},
-            threadId: Number.isFinite(threadId) ? threadId : 0,
+            threadId,
             completion: 0,
             content: {text: '', attachments: []},
             created_at: new Date().toISOString(),
@@ -233,7 +330,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             clientKey: temporaryId,
             message_role: 'assistant',
             metadata: {tools: null, params: null},
-            model: context.model.current?.model_id ?? null,
+            model: request.modelId,
             updated_at: new Date().toISOString(),
             citations: [],
             isStreaming: true,
@@ -267,13 +364,13 @@ export class ChatTransport implements MessageSenderTransportInterface {
         };
         try {
             for await (const packet of this.app.aiApi.stream({
-                model: context.model.current.model_id,
-                messages: this.messageHistory(conversationSlug, context.systemPrompt, threadId, regenState?.messageId),
-                tools: context.tools.active.map(tool => tool.toTransferString()),
-                params: context.modelParameters.requestParameters,
-                threadIndex: Number.isFinite(threadId) ? threadId : 0,
-                isUpdate: Boolean(regenState),
-                messageId: regenState?.messageId ?? null
+                model: request.modelId,
+                messages: this.messageHistory(conversationSlug, request.systemPrompt, threadId, regenerateMessageId ?? undefined),
+                tools: request.tools,
+                params: request.params,
+                threadIndex: threadId,
+                isUpdate: regenerateMessageId !== null,
+                messageId: regenerateMessageId
             }, {signal: controller.signal})) {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
                 if (packet.type === 'error') throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
@@ -320,19 +417,19 @@ export class ChatTransport implements MessageSenderTransportInterface {
             const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations, ...(reasoning.length ? {reasoning} : {}), stats}));
             const saved = await this.store.persistMessage(conversationSlug, {
                 isAi: true,
-                ...(regenState ? {message_id: regenState.messageId} : {threadId: Number.isFinite(threadId) ? threadId : 0}),
+                ...(regenerateMessageId ? {message_id: regenerateMessageId} : {threadId}),
                 content: {text: encrypted},
                 metadata: {
-                    tools: context.tools.active.map(tool => tool.toTransferString()),
-                    params: context.modelParameters.requestParameters
+                    tools: request.tools,
+                    params: request.params
                 },
-                model: context.model.current.model_id,
+                model: request.modelId,
                 completion,
                 __plainText: finalText,
                 __citations: citations,
                 __reasoning: reasoning.length ? reasoning : undefined,
                 __stats: stats
-            }, Boolean(regenState));
+            }, regenerateMessageId !== null);
             // Keep the render key of the streamed message so the keyed list
             // does not remount it when the persisted id replaces the temporary one.
             this.store.replaceMessage(conversationSlug, temporaryId, {...saved, clientKey: temporaryId});

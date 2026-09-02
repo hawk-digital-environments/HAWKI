@@ -48,7 +48,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
         onImproveMessage?: (message: string, systemPrompt: string) => Promise<string>;
         /** Forces the composer into its active state while an external request is running. */
         forcedActive?: boolean;
-        /** Gives the parent access to edit/regen mode controls. */
+        /** Gives the parent access to edit/thread mode controls. */
         onReady?: (context: ComposerContext) => void;
     }
 

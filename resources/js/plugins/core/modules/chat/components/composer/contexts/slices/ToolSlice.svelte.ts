@@ -14,7 +14,7 @@ export interface ToolSliceCheckpoint {
  * for the next message.
  *
  * Maintains two registries: `_active` (tools the user turned on, included in the
- * request) and `_disabled` (tools temporarily turned off by a mode — e.g. regen
+ * request) and `_disabled` (tools temporarily turned off by a mode — e.g. edit
  * mode disabling attachments — that should return to active when the mode exits).
  * `disable()`/`enable()` move tools between the two without losing their
  * selection/settings; `set()`/`remove()` add or drop a tool outright. Tools are
