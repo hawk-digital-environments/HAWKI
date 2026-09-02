@@ -221,9 +221,9 @@
                 "otherProvider": "Other",
                 "providerTab": "Show :provider models",
                 "noResults": "No models found.",
-                "favorites": "Favorites",
-                "addFavorite": "Add :model to favorites",
-                "removeFavorite": "Remove :model from favorites",
+                "favorites": "Pinned models",
+                "addFavorite": "Pin :model",
+                "removeFavorite": "Unpin :model",
                 "listAriaLabel": "Available models",
                 "allModelsLink": "Explore all models"
             },
