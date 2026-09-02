@@ -33,26 +33,35 @@
     });
 </script>
 
-<div class="models-page">
-    <h1>{__('ai.model.page.title')}</h1>
+<div class="models-scroll">
+    <div class="models-page">
+        <h1>{__('ai.model.page.title')}</h1>
 
-    {#if groups.length === 0}
-        <p class="models-empty">{__('ai.model.page.empty')}</p>
-    {:else}
-        {#each groups as [providerId, group] (providerId)}
-            <section class="models-group">
-                <h2>{group.label}</h2>
-                <div class="models-grid">
-                    {#each group.models as model (model.model_id)}
-                        <ModelCard {model} bordered/>
-                    {/each}
-                </div>
-            </section>
-        {/each}
-    {/if}
+        {#if groups.length === 0}
+            <p class="models-empty">{__('ai.model.page.empty')}</p>
+        {:else}
+            {#each groups as [providerId, group] (providerId)}
+                <section class="models-group">
+                    <h2>{group.label}</h2>
+                    <div class="models-grid">
+                        {#each group.models as model (model.model_id)}
+                            <ModelCard {model} bordered/>
+                        {/each}
+                    </div>
+                </section>
+            {/each}
+        {/if}
+    </div>
 </div>
 
 <style>
+    /* `main.content` is a fixed-height, `overflow: hidden` grid cell, so the
+       page has to bring its own scroll region (same as the chat pages). */
+    .models-scroll {
+        height: 100%;
+        overflow-y: auto;
+    }
+
     .models-page {
         width: min(70rem, 100%);
         margin-inline: auto;
@@ -82,8 +91,12 @@
 
     .models-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(30rem, 100%), 1fr));
         gap: var(--space-4);
         align-items: start;
+    }
+
+    @media print {
+        .models-scroll { height: auto; overflow: visible; }
     }
 </style>
