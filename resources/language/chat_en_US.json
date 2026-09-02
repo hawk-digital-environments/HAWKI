@@ -95,6 +95,10 @@
                 "file_too_large": "The file \":name\" is too large. The maximum allowed size is :maxSize.",
                 "unknown_file": "unknown"
             },
+            "assistantButtonTooltip": {
+                "addHandle": "Talk to HAWKI",
+                "removeHandle": "Stop talking to HAWKI"
+            },
             "systemPromptDialog": {
                 "title": "Edit system prompt",
                 "description": "The system prompt defines the model's behaviour for this session.",
@@ -166,38 +170,7 @@
                     "webSearchDescription": "This tool enables the AI to search the internet for current information. It can submit search queries and provide relevant results that feed into the AI's responses.",
                     "knowledgeBase": "HAWKI Knowledge",
                     "knowledgeBaseDescription": "This tool enables the AI to access an extensive knowledge base developed specifically for HAWKI. The data is provided by your university and contains information about courses, events, policies, and much more."
-                },
-                "searchPlaceholder": "Search tools",
-                "noResults": "No matching tools"
-            },
-            "assistantMenu": {
-                "title": "Tag an assistant",
-                "tagAssistant": "Tag an AI assistant (@)",
-                "backButton": "Assistants",
-                "tagAssistantAction": "Tag assistant",
-                "untagAssistantAction": "Remove tag",
-                "infoDefault": "Show more information about the assistant",
-                "hawkiLabel": "HAWKI",
-                "studyAssistantsLabel": "Assistants",
-                "assistants": {
-                    "hawki": "HAWKI",
-                    "hawkiDescription": "The general HAWKI assistant for this room",
-                    "tutor": "Tutor",
-                    "tutorDescription": "Explains course topics step by step",
-                    "research": "Research",
-                    "researchDescription": "Finds and summarises literature and sources",
-                    "writing": "Writing",
-                    "writingDescription": "Helps with structure, style, and citations",
-                    "exam": "Exam prep",
-                    "examDescription": "Generates practice questions and quizzes",
-                    "code": "Coding",
-                    "codeDescription": "Reviews and explains code from your assignments"
-                },
-                "searchPlaceholder": "Search assistants",
-                "noResults": "No matching assistants"
-            },
-            "mentionChips": {
-                "removeAriaLabel": "Remove :assistant from the message"
+                }
             },
             "modelPicker": {
                 "switchModel": "Switch current model",
@@ -210,12 +183,7 @@
                 "favorites": "Favorites",
                 "addFavorite": "Add :model to favorites",
                 "removeFavorite": "Remove :model from favorites",
-                "listAriaLabel": "Available models",
-                "backButton": "Models",
-                "infoDefault": "Show more information about the model",
-                "statusLabel": "Availability",
-                "demandLabel": "Load",
-                "identifierLabel": "Model ID"
+                "listAriaLabel": "Available models"
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
@@ -280,11 +248,6 @@
             "sending": {
                 "responseError": "An error occurred while processing the response.",
                 "sendError": "An error occurred while sending the message."
-            },
-            "pin": {
-                "pinnedLabel": "Pinned",
-                "pin": "Pin to the top of this menu",
-                "unpin": "Remove from pinned"
             }
         }
     }

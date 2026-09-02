@@ -74,7 +74,7 @@
     }
 </script>
 
-<DropdownMenuLabel>
+<DropdownMenuLabel class="tool-menu-group-label">
     {label}
     {#if description}
         <InfoPopover
@@ -90,3 +90,10 @@
     {/if}
 </DropdownMenuLabel>
 
+<style>
+    :global(.tool-menu-group-label) {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1, 0.25rem);
+    }
+</style>

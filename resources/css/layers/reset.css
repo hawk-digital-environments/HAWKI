@@ -34,19 +34,6 @@
         }
     }
 
-    /*
-      Escape hatch for new-UI inputs: legacy `input {...}` (public/css/style.css,
-      `@layer legacy`) paints every bare input with a panel background using
-      `!important`. Important declarations resolve in REVERSE layer order, so a
-      component style (`@layer components`) can never undo it — only an earlier layer
-      can, and `reset` is declared first. Everything else legacy puts on an input
-      (border, padding, min-width/height) is a normal declaration and can be
-      overridden by the component itself.
-    */
-    .input-unstyled {
-        background: transparent !important;
-    }
-
     img, video {
         max-width: 100%;
         display: block;

@@ -1,6 +1,5 @@
 <!--
-  @component Renders the tool picker's list panel: pinned tools first (ungrouped, in pin
-  order), then capabilities (ungrouped), then HAWKI
+  @component Renders the tool picker's list panel: capabilities (ungrouped), then HAWKI
   function tools under one shared header, then one group per MCP server — each group
   separated by a `DropdownMenuSeparator` when both neighbouring sections are non-empty.
   This is the `children` (default/list) panel of `ToolMenu`'s `DropdownMenuDetailView`;
@@ -39,21 +38,13 @@
 </script>
 
 {#each Object.keys(entries) as groupKey (groupKey)}
-    {#if groupKey === 'pinned' && entries.pinned.length > 0}
-        <DropdownMenuLabel>{__('chat.composer.pin.pinnedLabel')}</DropdownMenuLabel>
-        {#each entries.pinned as entry (entry.tool.name)}
-            <ToolMenuListItem entry={entry} onOpenDetail={onOpenDetail}/>
-        {/each}
-    {:else if groupKey === 'capabilities' && entries.capabilities.length > 0}
-        {#if entries.pinned.length > 0}
-            <DropdownMenuSeparator/>
-        {/if}
+    {#if groupKey === 'capabilities' && entries.capabilities.length > 0}
         <DropdownMenuLabel>{__('chat.composer.toolMenu.capabilitiesLabel')}</DropdownMenuLabel>
         {#each entries.capabilities as entry (entry.tool.name)}
             <ToolMenuListItem entry={entry} onOpenDetail={onOpenDetail}/>
         {/each}
     {:else if groupKey === 'functionTools' && entries.functionTools.length > 0}
-        {#if entries.pinned.length > 0 || entries.capabilities.length > 0}
+        {#if entries.capabilities.length > 0}
             <DropdownMenuSeparator/>
         {/if}
         <ToolMenuGroupHeader
@@ -64,7 +55,7 @@
             <ToolMenuListItem entry={entry} onOpenDetail={onOpenDetail}/>
         {/each}
     {:else if groupKey === 'mcpTools' && entries.mcpTools.length > 0}
-        {#if entries.functionTools.length > 0 || entries.capabilities.length > 0 || entries.pinned.length > 0}
+        {#if entries.functionTools.length > 0 || (entries.capabilities.length > 0 && entries.functionTools.length === 0)}
             <DropdownMenuSeparator/>
         {/if}
         {#each entries.mcpTools as serverGroup (serverGroup.id)}

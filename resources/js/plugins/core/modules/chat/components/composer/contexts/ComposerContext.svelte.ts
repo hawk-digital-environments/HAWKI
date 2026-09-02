@@ -263,10 +263,7 @@ export class ComposerContext {
     });
 
     /** All agent `@handle` tokens found in the current message (e.g. `['@hawki']`).
-     *  In room mode, the presence of a handle determines whether AI UI elements are shown.
-     *  Only one assistant can be addressed at a time (see {@link addHandleToMessage}), so
-     *  this normally holds at most one entry — it stays a list because a hand-typed message
-     *  can still contain several. */
+     *  In room mode, the presence of a handle determines whether AI UI elements are shown. */
     public readonly handlesInMessage = $derived.by(() => [...this.getHandlesInText(this.message)]);
 
     /** `true` when at least one `@hawki` is present in the message. */
@@ -338,27 +335,11 @@ export class ComposerContext {
         return status;
     }
 
-    /**
-     * Makes `handle` the message's assistant handle, then focuses the input.
-     *
-     * At most one assistant can be addressed at a time, so this *replaces* any handle
-     * already in the message rather than adding to it — tagging a second assistant swaps
-     * the first one out.
-     */
+    /** Prepends `handle` to the message if it isn't already present, then focuses the input. */
     public addHandleToMessage(handle: string): void {
-        const current = this.handlesInMessage;
-        if (current.length !== 1 || current[0] !== handle) {
-            this.message = `${handle} ${this.messageWithoutHandles}`;
+        if (!this.handlesInMessage.includes(handle)) {
+            this.message = `${handle} ${this.message.trim()}`;
         }
-        this.focusInput();
-    }
-
-    /** Removes a single `@handle` token from the message, leaving the rest of the text
-     *  untouched, then focuses the input. The counterpart of {@link addHandleToMessage};
-     *  use {@link messageWithoutHandles} to strip all of them at once. */
-    public removeHandleFromMessage(handle: string): void {
-        const handleToken = new RegExp(`(^|\\s)${handle}(?=\\s|$)`, 'g');
-        this.message = this.message.replace(handleToken, '$1').trim();
         this.focusInput();
     }
 

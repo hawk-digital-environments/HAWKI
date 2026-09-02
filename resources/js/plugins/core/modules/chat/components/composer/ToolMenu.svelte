@@ -9,8 +9,8 @@
   `composerContext.tools.enable/disable`, and its info icon opens `ToolMenuDetail` in place
   of the list (a two-panel `DropdownMenuDetailView`) for capability configuration.
 
-  Always visible (also in a room chat that doesn't address the assistant yet), so tools can be
-  picked before tagging an assistant; renders nothing only when there are no eligible tools at all.
+  Renders nothing when `composerContext.guard.showsAiUiElements` is false (e.g. room chat
+  without an `@handle` yet) or when there are no eligible tools at all.
 
   ## Usage
   Rendered once by `ChatComposer.svelte` in the bottom-left control row, next to `FilePicker`
@@ -68,8 +68,6 @@
 
     /** Entries partitioned into the three sections `ToolMenuList` renders, in display order. */
     export interface ToolMenuGroupedEntries {
-        /** Entries the user pinned, lifted out of their normal section and shown first. */
-        pinned: ToolMenuEntry[];
         /** Capability entries (e.g. web search, image generation) shown first, ungrouped. */
         capabilities: ToolMenuEntry[];
         /** Plain HAWKI function tools (not backed by an MCP server), shown under one shared header. */
@@ -84,12 +82,10 @@
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
     import ToolMenuList from '$plugins/core/modules/chat/components/composer/ToolMenuList.svelte';
     import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
-    import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
-    import DropdownMenuEmpty from '$lib/components/ui/dropdown-menu/DropdownMenuEmpty.svelte';
     import {setToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
-    import ZshIcon from '$lib/components/ui/icons/iconset/ZshIcon.svelte';
+    import PlusSignIcon from '$lib/components/ui/icons/iconset/PlusSignIcon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -97,7 +93,6 @@
     const focusContext = setToolMenuFocusContext();
     const aiToolStore = useStore('ai-tools');
     const aiModelStore = useStore('ai-models');
-    const pinStore = useStore('composer-pins');
     const {__} = useTranslator();
 
     interface Props {
@@ -111,10 +106,6 @@
 
     // When set, the picker shows the detail view for this tool instead of the list.
     let detailToolName = $state<string | null>(null);
-
-    // Free-text filter over the list panel; reset whenever the picker closes so it never
-    // reopens on a stale query.
-    let query = $state('');
 
     const allEntries = $derived.by(() => {
         const models = aiModelStore.models;
@@ -154,20 +145,6 @@
         });
     });
 
-    // What the list panel shows: the entries matching the search field, by tool name,
-    // description or the label of the MCP server providing it.
-    const searchedEntries = $derived.by(() => {
-        const needle = query.trim().toLowerCase();
-        if (!needle) {
-            return filteredEntries;
-        }
-        return filteredEntries.filter(entry => [
-            entry.tool.displayName,
-            entry.tool.description,
-            entry.tool.server?.server_label
-        ].some(text => text?.toLowerCase().includes(needle)));
-    });
-
     // The live entry shown in the detail view, kept in sync with filteredEntries
     // so its active/supported state updates while the detail view is open.
     const detailEntry = $derived.by(() => {
@@ -186,11 +163,7 @@
         const functionTools: ToolMenuEntry[] = [];
         const mcpTools: Record<string, ToolMenuEntry[]> = {};
 
-        // Pinned tools are shown once, in their own section — never also in the section
-        // they would otherwise belong to.
-        const {pinned, rest} = pinStore.partition('tool', searchedEntries, entry => entry.tool.name);
-
-        for (const entry of rest) {
+        for (const entry of filteredEntries) {
             if (entry.tool.is_capability) {
                 capabilities.push(entry);
             } else if (!entry.tool.server) {
@@ -226,21 +199,27 @@
         ;
 
         return {
-            pinned,
             capabilities: sortEntriesAlphabetically(capabilities),
             functionTools: sortEntriesAlphabetically(functionTools),
             mcpTools: mcpToolsSorted
         };
     });
 
-    // Entries flattened in render order, used to tell an empty search result apart
-    // from a picker with nothing in it.
+    // Entries flattened in render order, and the first usable one to land focus
+    // on when the menu opens (prefer a supported, online tool; fall back so we
+    // always have a sensible target).
     const orderedEntries = $derived([
-        ...groupedEntries.pinned,
         ...groupedEntries.capabilities,
         ...groupedEntries.functionTools,
         ...groupedEntries.mcpTools.flatMap(group => group.entries)
     ]);
+    const firstAvailableEntry = $derived(
+        orderedEntries.find(entry => entry.available && !entry.disabled)
+        ?? orderedEntries.find(entry => !entry.disabled)
+        ?? orderedEntries[0]
+        ?? null
+    );
+
     function closeToolDetail() {
         const name = detailToolName;
         detailToolName = null;
@@ -265,36 +244,40 @@
         }
     });
 
-    // Focus lands on the search field when the menu opens (`MenuSearchField` claims it),
-    // so keyboard users start by filtering and arrow down into the rows from there.
-
+    // On open, land focus on the first available tool so keyboard users start on
+    // a usable row rather than bits-ui's first candidate.
+    let wasOpen = false;
     $effect(() => {
-        if (!open) {
-            query = '';
+        const isOpen = open;
+        if (isOpen && !wasOpen) {
+            requestAnimationFrame(() => {
+                if (!open || detailToolName) {
+                    return;
+                }
+                const name = firstAvailableEntry?.tool.name;
+                if (name) {
+                    focusContext.focusByKey(name);
+                }
+            });
         }
+        wasOpen = isOpen;
     });
 </script>
 
-{#if filteredEntries.length > 0}
+{#if composerContext.guard.showsAiUiElements && filteredEntries.length > 0}
     <div transition:growTransition={{mode: 'horizontal'}}>
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open
-            layout="panel"
-            width="calc(0.25rem * 72)">
+            contentProps={{class: 'tool-menu-content'}}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"
-                    iconLeft={ZshIcon}
+                    iconLeft={PlusSignIcon}
                     tooltip={__('chat.composer.toolMenu.manageTools')}
                     highlight={props['data-state']}
                     {...props}/>
             {/snippet}
-            {#if !detailEntry}
-                <MenuSearchField
-                    bind:value={query}
-                    placeholder={__('chat.composer.toolMenu.searchPlaceholder')}/>
-            {/if}
             <DropdownMenuDetailView
                 open={!!detailEntry}
             >
@@ -303,13 +286,41 @@
                         <ToolMenuDetail entry={detailEntry} onCloseDetail={closeToolDetail}/>
                     {/if}
                 {/snippet}
-                {#if orderedEntries.length === 0}
-                    <DropdownMenuEmpty>{__('chat.composer.toolMenu.noResults')}</DropdownMenuEmpty>
-                {:else}
-                    <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
-                {/if}
+                <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
             </DropdownMenuDetailView>
         </DropdownMenu>
     </div>
 {/if}
 
+<style>
+    /*
+      Fix the popover to a single width and keep scrolling inside the animated
+      picker viewport, so the dropdown chrome/title stays anchored.
+    */
+    :global(.dropdown-content.dropdown-content--dropdown.tool-menu-content) {
+        width: calc(0.25rem * 72);
+        max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        /*
+         The padding collides with the inner view container (overflow: hidden),
+         so the divider would be cut off. Instead, we let the inner view handle its own padding.
+         */
+        padding: 0;
+
+        :global(.view) {
+            padding: var(--space-1)
+        }
+
+        :global(.dropdown-title.dropdown-title) {
+            padding-inline: var(--space-3);
+            padding-bottom: 0;
+        }
+    }
+
+    :global(.tool-menu-item svg) {
+        flex-shrink: 0;
+    }
+</style>

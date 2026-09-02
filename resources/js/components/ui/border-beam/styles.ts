@@ -1,4 +1,4 @@
-import type { SizeConfig, ThemeColors, BorderBeamSize, BeamColors } from './types';
+import type { SizeConfig, ThemeColors, BorderBeamSize } from './types';
 
 /**
  * CSS generator for the `BorderBeam` animated border effect.
@@ -22,12 +22,7 @@ import type { SizeConfig, ThemeColors, BorderBeamSize, BeamColors } from './type
  * geometry/opacity values that `BorderBeam.svelte` merges with prop overrides
  * before calling `generateBeamCSS`. Everything else in this file (blob
  * tables, gradient builders, `generateBorderlikeCSS`/`generateLineVariantCSS`)
- * is an internal implementation detail — not exported, except for
- * `getBeamAccentColors`, which shares the beam's stroke palette with adjacent UI.
- *
- * The blob tables are authored in a single brand blue, which every gradient
- * builder remaps onto a caller-supplied pair of stops when the `colors` option
- * is set — see `stopColor`.
+ * is an internal implementation detail — not exported.
  */
 
 // ── CSS template helpers ─────────────────────────────────────────────────────
@@ -174,62 +169,16 @@ function rgbToRgba(color: string, alpha: number | string): string {
   return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
 }
 
-/**
- * Fade any color to `alpha`, whatever notation it arrived in.
- *
- * The authored palette is all `rgb()`, so it keeps going through `rgbToRgba` and its exact
- * decimal output. A caller's stops can be any CSS color — and once mixed they are
- * `color-mix()` expressions rather than parseable channels — so those fade through
- * `color-mix()` toward transparent instead.
- */
-function fadeColor(color: string, alpha: number | string): string {
-  if (color.startsWith('rgb(')) {
-    return rgbToRgba(color, alpha);
-  }
-  return `color-mix(in oklab, ${color} ${(Number(alpha) * 100).toFixed(1)}%, transparent)`;
-}
-
-/**
- * Remap one authored blob color onto the caller's two stops, or leave it alone when no
- * stops were given.
- *
- * `t` is where the blob sits along the beam's travel — 0 lands on `from`, 1 on `to`. The
- * border variants derive it from the blob's angle around the perimeter and the `line`
- * variant from its offset along the line, so the pair reads as a gradient the traveling
- * highlight sweeps through rather than as two colors scattered at random.
- *
- * Mixed in `oklab` so a blend of two saturated stops stays saturated, instead of dipping
- * through grey at the midpoint the way sRGB interpolation does.
- */
-function stopColor(colors: BeamColors | undefined, authored: string, t: number): string {
-  if (!colors) {
-    return authored;
-  }
-  return `color-mix(in oklab, ${colors.to} ${(t * 100).toFixed(1)}%, ${colors.from})`;
-}
-
-/**
- * Where a blob positioned at a `"<x>% <y>%"` background position sits around the border,
- * as a 0–1 fraction clockwise from twelve o'clock — the same direction and origin the
- * `conic-gradient` beam sweeps in, so the stops line up with its travel.
- */
-function perimeterT(pos: string): number {
-  const [x, y] = pos.split(' ').map(parseFloat);
-  const angle = Math.atan2(x - 50, 50 - y);
-  return ((angle / (2 * Math.PI)) + 1) % 1;
-}
-
-function getSmallColorGradients(colors?: BeamColors): string {
+function getSmallColorGradients(): string {
   return SMALL_BLOBS_BORDER
-    .map(([color, pos, size]) =>
-      `radial-gradient(ellipse ${size} at ${pos}, ${stopColor(colors, color, perimeterT(pos))}, transparent)`)
+    .map(([color, pos, size]) => `radial-gradient(ellipse ${size} at ${pos}, ${color}, transparent)`)
     .join(',\n    ');
 }
 
-function getSmallInnerGradients(colors?: BeamColors): string {
+function getSmallInnerGradients(): string {
   return SMALL_BLOBS_BORDER
     .map(([color, pos, size], i) =>
-      `radial-gradient(ellipse ${size} at ${pos}, ${fadeColor(stopColor(colors, color, perimeterT(pos)), SMALL_INNER_ALPHA[i])}, transparent)`)
+      `radial-gradient(ellipse ${size} at ${pos}, ${rgbToRgba(color, SMALL_INNER_ALPHA[i])}, transparent)`)
     .join(',\n    ');
 }
 
@@ -251,51 +200,25 @@ function fitScaledSize(size: string, scale = 1): string {
   return `calc(${w}px * var(--beam-fit-w, 1) * var(--beam-fill, 1)) calc(${h}px * var(--beam-fit-h, 1) * var(--beam-fill, 1))`;
 }
 
-function getColorGradients(colors?: BeamColors): string {
+function getColorGradients(): string {
   return BORDER_BLOBS
-    .map(([color, pos, size]) =>
-      `radial-gradient(ellipse ${fitScaledSize(size)} at ${pos}, ${stopColor(colors, color, perimeterT(pos))}, transparent)`)
+    .map(([color, pos, size]) => `radial-gradient(ellipse ${fitScaledSize(size)} at ${pos}, ${color}, transparent)`)
     .join(',\n    ');
 }
 
-function getInnerGradients(colors?: BeamColors): string {
+function getInnerGradients(): string {
   const baseOpacity = 0.45;
   return BORDER_BLOBS
     .map(([color, pos, size]) => {
-      const rgba = fadeColor(stopColor(colors, color, perimeterT(pos)), baseOpacity);
+      const rgba = rgbToRgba(color, baseOpacity);
       const smallerSize = fitScaledSize(size, 0.9);
       return `radial-gradient(ellipse ${smallerSize} at ${pos}, ${rgba}, transparent)`;
     })
     .join(',\n    ');
 }
 
-/**
- * The beam's two brightest stroke colors. Caller-supplied stops *are* that pair — they are
- * the ends of the beam's travel — so they stand in for the authored spikes directly rather
- * than being mixed.
- */
-function getSpikeColors(isDark: boolean, colors?: BeamColors) {
-  if (colors) {
-    return { primary: colors.from, secondary: colors.to };
-  }
+function getSpikeColors(isDark: boolean) {
   return isDark ? SPIKE_DARK : SPIKE_LIGHT;
-}
-
-/**
- * The beam's two brightest stroke colors for a given theme — the same pair the traveling
- * highlight is built from. With no `colors` that is the authored `SPIKE_DARK`/`SPIKE_LIGHT`
- * brand blue; with a pair it is the pair itself, since the caller's stops are the ends of
- * the beam's travel.
- *
- * Exported so UI *next to* a beam can borrow its palette instead of re-deriving it:
- * `TextReveal` inside a beam-wrapped mention chip tints its characters with these, so the
- * text lights up in the same colors as the border around it.
- */
-export function getBeamAccentColors(
-  theme: 'dark' | 'light',
-  colors?: BeamColors
-): { primary: string; secondary: string } {
-  return getSpikeColors(theme === 'dark', colors);
 }
 
 // Line color blobs as positional tuples: [color, sizeW, sizeH, offsetX, offsetY].
@@ -325,22 +248,10 @@ const LINE_BLOBS_LIGHT: ReadonlyArray<LineBlob> = [
   ['rgb(35, 55, 200)', 30, 30, -110, -1],
 ];
 
-/**
- * Where a `line` blob sits along the beam, as a 0–1 fraction across the spread of offsets
- * in its palette — the left-to-right equivalent of `perimeterT`.
- */
-function lineT(offsetX: number, offsets: readonly number[]): number {
-  const min = Math.min(...offsets);
-  const max = Math.max(...offsets);
-  return max === min ? 0 : (offsetX - min) / (max - min);
-}
-
-function getLineColorGradients(isDark: boolean, id: string, colors?: BeamColors): string {
+function getLineColorGradients(isDark: boolean, id: string): string {
   const palette = isDark ? LINE_BLOBS_DARK : LINE_BLOBS_LIGHT;
-  const offsets = palette.map(blob => blob[3]);
   return palette
-    .map(([authored, sizeW, sizeH, offsetX, offsetY]) => {
-      const color = stopColor(colors, authored, lineT(offsetX, offsets));
+    .map(([color, sizeW, sizeH, offsetX, offsetY]) => {
       const offsetXStr = offsetX === 0 ? '' : (offsetX > 0 ? ` + ${offsetX}px` : ` - ${Math.abs(offsetX)}px`);
       const offsetYStr = offsetY === 0 ? '' : (offsetY > 0 ? ` + ${offsetY}px` : ` - ${Math.abs(offsetY)}px`);
       return `radial-gradient(ellipse calc(${sizeW}px * calc(var(--beam-w-${id}) * var(--beam-fit-w, 1))) calc(${sizeH}px * calc(var(--beam-h-${id}) * var(--beam-fit-h, 1))) at calc(var(--beam-x-${id}) * (100% - 42px) + 21px${offsetXStr}) calc(100%${offsetYStr}), ${color}, transparent)`;
@@ -364,13 +275,10 @@ const LINE_INNER_GEOM: ReadonlyArray<readonly [number, number, number, number]> 
   [18, 26, -66, -1],
 ];
 
-function getLineInnerGradients(id: string, colors?: BeamColors): string {
-  const offsets = LINE_BLOBS_DARK.map(blob => blob[3]);
+function getLineInnerGradients(id: string): string {
   return LINE_INNER_GEOM
     .map(([sizeW, sizeH, offsetX, offsetY], i) => {
-      // Keyed to the matching color blob's position, so tint and glow share a stop.
-      const stop = stopColor(colors, LINE_BLOBS_DARK[i][0], lineT(LINE_BLOBS_DARK[i][3], offsets));
-      const color = fadeColor(stop, LINE_INNER_ALPHA[i]);
+      const color = rgbToRgba(LINE_BLOBS_DARK[i][0], LINE_INNER_ALPHA[i]);
       const offsetXStr = offsetX === 0 ? '' : (offsetX > 0 ? ` + ${offsetX}px` : ` - ${Math.abs(offsetX)}px`);
       const offsetYStr = offsetY === 0 ? '' : ` - ${Math.abs(offsetY)}px`;
       return `radial-gradient(ellipse calc(${sizeW}px * calc(var(--beam-w-${id}) * var(--beam-fit-w, 1))) calc(${sizeH}px * calc(var(--beam-h-${id}) * var(--beam-fit-h, 1))) at calc(var(--beam-x-${id}) * (100% - 42px) + 21px${offsetXStr}) calc(100%${offsetYStr}), ${color}, transparent)`;
@@ -402,24 +310,12 @@ function withAlpha(color: string, alpha: number): string {
   if (rgbaMatch) return `rgba(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]}, ${alpha})`;
   const rgbMatch = color.match(/^rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/);
   if (rgbMatch) return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
-  // Not parseable as channels — a caller's stop, or a mix of two. Fade it as an expression.
-  return fadeColor(color, alpha);
+  return color;
 }
 
-// The horizontal position of each bloom spike, matching the `at <n>%` in the gradients
-// below — the two `sc*` spikes first, then the five `spikes[*]`. Used to place each one
-// between the caller's stops.
-const LINE_BLOOM_T = [0.08, 0.22, 0.36, 0.5, 0.64, 0.78, 0.92];
-
-function getLineBloomGradients(isDark: boolean, id: string, colors?: BeamColors): string {
-  const spikeColors = getSpikeColors(isDark, colors);
-  const bloomData = (isDark ? LINE_BLOOM_DARK : LINE_BLOOM_LIGHT).map(
-    ([first, second], i) =>
-      [
-        stopColor(colors, first, LINE_BLOOM_T[i + 2]),
-        stopColor(colors, second, LINE_BLOOM_T[i + 2])
-      ] as BloomSpike
-  );
+function getLineBloomGradients(isDark: boolean, id: string): string {
+  const spikeColors = getSpikeColors(isDark);
+  const bloomData = isDark ? LINE_BLOOM_DARK : LINE_BLOOM_LIGHT;
 
   const sc1     = spikeColors.primary;
   const sc1_mid = spikeColors.primary;
@@ -497,11 +393,6 @@ interface GenerateStylesOptions {
   brightness: number;
   saturation: number;
   hueRange: number;
-  /**
-   * The two stops to paint the beam from. Omit for the authored brand-blue palette;
-   * supply a pair to color-code an instance — e.g. one pair per chat assistant.
-   */
-  colors?: BeamColors;
   theme: 'dark' | 'light';
   /** Opacity of the 1px hairline outline. Falls back to 0. */
   hairlineOpacity?: number;
@@ -752,7 +643,7 @@ function borderlikeAfterMaskBlock(id: string): string {
 }
 
 function buildSmConfig(options: GenerateStylesOptions): BorderlikeConfig {
-  const { id, colors } = options;
+  const { id } = options;
   // Small variant uses wider mask to show more of the beam around the smaller element
   const smallMask = `conic-gradient(
     from var(--beam-angle-${id}),
@@ -767,8 +658,8 @@ function buildSmConfig(options: GenerateStylesOptions): BorderlikeConfig {
   mask-image: ${smallMask};
   mask-composite: add;`;
   return {
-    colorGradients: getSmallColorGradients(colors),
-    innerGradients: getSmallInnerGradients(colors),
+    colorGradients: getSmallColorGradients(),
+    innerGradients: getSmallInnerGradients(),
     afterMaskBlock: borderlikeAfterMaskBlock(id),
     beforeMaskBlock,
     innerBoxShadowBlur: 5,
@@ -777,7 +668,7 @@ function buildSmConfig(options: GenerateStylesOptions): BorderlikeConfig {
 }
 
 function buildMdConfig(options: GenerateStylesOptions): BorderlikeConfig {
-  const { id, colors } = options;
+  const { id } = options;
   const innerMask = `conic-gradient(
       from var(--beam-angle-${id}),
       transparent 0%, transparent 30%,
@@ -795,8 +686,8 @@ function buildMdConfig(options: GenerateStylesOptions): BorderlikeConfig {
     ${innerMask};
   mask-composite: intersect, add;`;
   return {
-    colorGradients: getColorGradients(colors),
-    innerGradients: getInnerGradients(colors),
+    colorGradients: getColorGradients(),
+    innerGradients: getInnerGradients(),
     afterMaskBlock: borderlikeAfterMaskBlock(id),
     beforeMaskBlock,
     innerBoxShadowBlur: 9,
@@ -818,7 +709,6 @@ function generateLineVariantCSS(options: GenerateStylesOptions): string {
     brightness,
     saturation,
     hueRange,
-    colors,
     theme,
     manualProgress = false,
   } = options;
@@ -875,10 +765,10 @@ function generateLineVariantCSS(options: GenerateStylesOptions): string {
         transparent 65%
       )`;
 
-  const colorGradients = getLineColorGradients(isDark, id, colors);
-  const innerGradients = getLineInnerGradients(id, colors);
+  const colorGradients = getLineColorGradients(isDark, id);
+  const innerGradients = getLineInnerGradients(id);
 
-  const bloomGradients = getLineBloomGradients(isDark, id, colors);
+  const bloomGradients = getLineBloomGradients(isDark, id);
   const monoBloomBlur = "";
 
   return `
