@@ -47,6 +47,7 @@ import {LegacyToastExtension} from '$lib/legacy/LegacyToastExtension.js';
 import {ShellExtension} from '$lib/kernel/shell/ShellExtension.svelte.js';
 import {StorageExtension} from '$lib/kernel/storage/StorageExtension.js';
 import {passkeySessionExtension} from '$lib/kernel/keychain/PasskeySessionExtension.svelte.js';
+import {EventExtension} from '$lib/kernel/events/EventExtension.js';
 
 declare global {
     interface Window {
@@ -64,13 +65,16 @@ provideLegacyGlobals();
 
 (async () => {
     const bootstrapper = new Bootstrapper();
+    const eventExtension = new EventExtension();
+    const events = eventExtension.events;
 
     setHawkiApp(await createApp(
         bootstrapper,
         [
+            eventExtension,
             new ResourceSchemaExtension(),
             passkeySessionExtension,
-            new ClientExtension(),
+            new ClientExtension(events),
             new PluginExtension(),
             new ConfigurationExtension(),
             new MigrationExtension(),

@@ -113,3 +113,24 @@ export interface HawkiAppExtensions {
 export interface HawkiDataStores {
 
 }
+
+/**
+ * Events dispatched on `app.events.sync` (run inline on the caller's stack).
+ * Augmented by feature modules the same way {@link HawkiAppExtensions} is:
+ * ```ts
+ * declare module '$lib/kernel/extendableTypes.js' {
+ *     interface HawkiSyncEvents { logout: void; }
+ * }
+ * ```
+ * Use the sync pipeline when handlers must block the caller (e.g. clearing
+ * local state before a redirect); use {@link HawkiAsyncEvents} when handlers
+ * do I/O and the caller should not wait.
+ */
+export interface HawkiSyncEvents {
+
+}
+
+/** Events dispatched on `app.events.async` (awaited sequentially). See {@link HawkiSyncEvents} for when to pick one over the other. */
+export interface HawkiAsyncEvents {
+
+}

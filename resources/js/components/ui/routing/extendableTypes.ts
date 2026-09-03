@@ -53,3 +53,23 @@
 export interface RouteContextExtensions {
     // Populated by the consuming application via declaration merging (see above).
 }
+
+/**
+ * Slots for middlewares attached to *every* route on a registrar (see
+ * `RouteRegistrar.addGlobalMiddleware`), keyed by name so individual routes
+ * can opt out via `RouteOptions.withoutGlobalMiddlewares`. The consuming
+ * application augments it the same way as {@link RouteContextExtensions}:
+ * ```ts
+ * declare module '$lib/components/ui/routing/extendableTypes.js' {
+ *     interface GlobalMiddlewares {
+ *         auth: RouteMiddleware;
+ *     }
+ * }
+ * ```
+ * The value type is only a marker — the slot exists so the opt-out key is
+ * type-checked; the actual middleware is passed to `addGlobalMiddleware`
+ * at runtime.
+ */
+export interface GlobalMiddlewares {
+
+}

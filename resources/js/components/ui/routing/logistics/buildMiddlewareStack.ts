@@ -27,7 +27,9 @@
  * the signal is caught and turned into a new resolution.
  */
 import {type Route} from 'universal-router';
-import type {HawkiRouteContext, RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {HawkiRouteContext, RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {isEffectfulMiddleware, type RouteMiddleware} from '$lib/components/ui/routing/logistics/middlewares.js';
+import type {GlobalMiddlewares} from '$lib/components/ui/routing/extendableTypes.js';
 
 /** A group registration reduced to the parts relevant for the middleware stack (its `children` callback has already been compiled by then). */
 type GroupMiddlewareStackOptions = Omit<RegisteredRouteGroupOptions, 'children'>;
@@ -64,6 +66,19 @@ function createMiddlewareRoute(
     return {
         path: '',
         action: async (context) => {
+            // Runs before the middleware body so a listener is already live
+            // while the guarded route's loaders resolve. Registering it even
+            // on a path the middleware is about to deny is deliberate: the
+            // resolution then never publishes, and `routeResolver.ts` disposes
+            // the whole run's cleanups — cheaper than teaching the effect to
+            // re-derive the guard's decision.
+            if (isEffectfulMiddleware(middleware)) {
+                const dispose = middleware.effect(context as HawkiRouteContext);
+                if (dispose) {
+                    (context as HawkiRouteContext).onCleanup(dispose);
+                }
+            }
+
             const next = () => context.next() as Promise<RouteResultBody | undefined>;
             // `universal-router` types an action's context as its own bare
             // `RouteContext`; the extensions are on it at runtime because
@@ -117,9 +132,65 @@ export function buildMiddlewareStack(
     options: GroupMiddlewareStackOptions | RouteMiddlewareStackOptions
 ): Route {
     const middlewares = options.middlewares ?? [];
+    assertMiddlewareArray(middlewares);
+    return createNestedMiddlewareRoutes(middlewares, route);
+}
+
+/**
+ * Like {@link buildMiddlewareStack}, but prepends the registrar's global
+ * middlewares (filtered through the route's `withoutGlobalMiddlewares` opt-out)
+ * in front of the route's own. Globals run outermost — they can deny or
+ * rewrite before a route-specific guard ever sees the context — matching the
+ * "global policy, local extension" order most middleware stacks expect.
+ */
+export function buildRouteMiddlewareStack(
+    route: Route,
+    globalMiddlewares: { middleware: RouteMiddleware, key: keyof GlobalMiddlewares }[],
+    options: RouteMiddlewareStackOptions
+) {
+    const middlewares = options.middlewares ?? [];
+    assertMiddlewareArray(middlewares);
+    const allMiddlewares = [
+        ...filterGlobalMiddlewares(globalMiddlewares, options.withoutGlobalMiddlewares),
+        ...middlewares
+    ];
+    return createNestedMiddlewareRoutes(allMiddlewares, route);
+}
+
+/** Runtime guard for registrations coming from untyped/JS callers: throws if `middlewares` is set but not an array. */
+function assertMiddlewareArray(middlewares: unknown): asserts middlewares is RouteMiddleware[] {
     if (!Array.isArray(middlewares)) {
         throw new Error('Middlewares must be an array');
     }
+}
 
-    return createNestedMiddlewareRoutes(middlewares, route);
+/**
+ * Resolves a route's `withoutGlobalMiddlewares` opt-out into the list of
+ * globals that actually apply. `true` drops all of them; a key or array of
+ * keys drops only the named ones; anything else keeps the full set. Order of
+ * the survivors matches registration order, not the order of the keys.
+ */
+function filterGlobalMiddlewares(
+    globalMiddlewares: { middleware: RouteMiddleware, key: keyof GlobalMiddlewares }[],
+    disabledKeys: RouteMiddlewareStackOptions['withoutGlobalMiddlewares']
+): RouteMiddleware[] {
+    if (disabledKeys === true) {
+        return [];
+    }
+
+    if (!disabledKeys || (Array.isArray(disabledKeys) && disabledKeys.length === 0)) {
+        return globalMiddlewares.map(gm => gm.middleware);
+    }
+
+    if (typeof disabledKeys === 'string') {
+        disabledKeys = [disabledKeys] as Array<keyof GlobalMiddlewares>;
+    }
+
+    if (!Array.isArray(disabledKeys)) {
+        throw new Error('withoutGlobalMiddlewares must be a string, an array of keys or true');
+    }
+
+    return globalMiddlewares
+        .filter(gm => !disabledKeys.includes(gm.key))
+        .map(gm => gm.middleware);
 }

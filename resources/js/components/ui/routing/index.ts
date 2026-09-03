@@ -47,6 +47,7 @@ export {
     RouteRegistrar,
     type HawkiRoute,
     type HawkiRouteContext,
+    type RegisteredRouteOptions,
     type RouteComponent,
     type RouteComponentLoader,
     type RouteComponentOrLoader,
@@ -55,9 +56,9 @@ export {
     type RouteLayoutLoader,
     type RouteLayoutOrLoader,
     type RouteMeta,
-    type RouteMiddleware,
     type RouteOptions,
     type RouteRegistrationCallback,
+    type RouteResolutionContext,
     type RouteResult,
     type RouteResultBody
 } from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
@@ -118,6 +119,17 @@ export {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/has
 export {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
 export {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
 export type {RoutingStrategy, SetRouteInStrategyOptions} from '$lib/components/ui/routing/strategy/types.js';
+
+
+// =========================================================================
+// Middlewares
+// =========================================================================
+export {
+    type RouteMiddleware,
+    type EffectfulMiddleware,
+    type MiddlewareEffect,
+    declareEffectfulMiddleware
+} from '$lib/components/ui/routing/logistics/middlewares.js';
 
 // =========================================================================
 // `universal-router` types that appear in the signatures above
