@@ -43,6 +43,8 @@
     }
 
     let {open = $bindable(false), onOpenChange, section = null}: Props = $props();
+    const uid = $props.id();
+    const titleId = `${uid}-title`;
     const {__} = useTranslator();
 
     const breakpoint = useBreakpoint();
@@ -124,7 +126,7 @@
     <section
         class="settings-panel"
         class:resizing
-        aria-labelledby={compact ? undefined : 'settings-dialog-title'}
+        aria-labelledby={compact ? undefined : titleId}
         style:--settings-content-height={contentHeight === null ? undefined : `${contentHeight}px`}
         ontransitionend={endResize}
         ontransitioncancel={endResize}
@@ -148,7 +150,7 @@
         onOpenChange={handleOpenChange}
         contentProps={{class: 'settings-dialog-content'}}
         headerProps={{class: 'settings-dialog-header'}}
-        titleProps={{id: 'settings-dialog-title'}}
+        titleProps={{id: titleId}}
     >
         {#snippet title()}
             <span class="settings-title">{__('ui.settings.title')}</span>

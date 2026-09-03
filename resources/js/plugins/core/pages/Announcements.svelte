@@ -51,7 +51,7 @@
                     {/if}
                     <h2>{announcementDisplayTitle(announcement)}</h2>
                     <div class="announcement-card__content">
-                        <Markdown message={cardBody(announcement)}/>
+                        <Markdown message={cardBody(announcement)} headingBaseLevel={3}/>
                     </div>
                     <footer>
                         <span>

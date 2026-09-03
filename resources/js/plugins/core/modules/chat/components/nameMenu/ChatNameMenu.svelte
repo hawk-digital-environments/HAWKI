@@ -132,16 +132,27 @@
         onNameChange(slug, newName);
     }
 
-    function onRenameKeyDown(event: KeyboardEvent) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            const newName = (event.target as HTMLInputElement).value;
-            if (!newName.trim()) {
+    function commitRename(newName: string, restoreFocus: boolean) {
+        const trimmedName = newName.trim();
+        if (!trimmedName) {
+            if (restoreFocus) {
                 renameHasIssue = true;
                 toastContext.error(__('chat.nameMenu.emptyNameError'));
                 return;
             }
-            dispatchRename(newName, true);
+
+            // An empty draft on blur cancels the rename. Do not trap focus or show a toast.
+            void finishRenaming(false);
+            return;
+        }
+
+        dispatchRename(trimmedName, restoreFocus);
+    }
+
+    function onRenameKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            commitRename((event.target as HTMLInputElement).value, true);
         }
         if (event.key === 'Escape') {
             void finishRenaming(true);
@@ -170,7 +181,7 @@
         <!-- svelte-ignore a11y_autofocus -->
         <input
             bind:this={renameInput}
-            onblur={(e) => dispatchRename((e.target as HTMLInputElement).value, false)}
+            onblur={(e) => commitRename((e.target as HTMLInputElement).value, false)}
             oninput={() => renameHasIssue = false}
             onkeydown={onRenameKeyDown}
             autofocus

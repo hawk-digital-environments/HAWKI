@@ -106,6 +106,18 @@
         children?: svelte.Snippet<[{ favicon: svelte.Snippet }]>;
 
         /**
+         * Render the anchor yourself (bits-ui style) instead of letting `Link`
+         * do it: receives the computed anchor `props` (href, rel, target,
+         * aria-*, class, click handler), the `favicon` snippet and a `hints`
+         * snippet with the screen-reader-only "opens in a new tab" / "download"
+         * text — spread the props onto your own `<a>` and render `hints` inside
+         * it. Use this when the anchor must live in *your* component, e.g. so
+         * your scoped styles apply to it. The `disabled` colour comes from
+         * `Link`'s own stylesheet and therefore does not apply in this mode.
+         */
+        child?: svelte.Snippet<[{ props: Record<string, any>; favicon: svelte.Snippet; hints: svelte.Snippet }]>;
+
+        /**
          * When true: blocks navigation, sets `href` to `javascript:void(0)`,
          * `aria-disabled="true"` and `tabindex="-1"`, and adds the `disabled`
          * CSS class (muted text colour, pointer-events none). The element stays
@@ -140,6 +152,7 @@
         rel: relRaw = '',
         onclick: onclickRaw,
         children,
+        child,
         disabled,
         activeMatch = 'exact',
         active: activeOverride,
@@ -326,6 +339,19 @@
         }
         return props;
     });
+
+    /** Everything that goes onto the anchor, whether `Link` or a `child` renders it. */
+    const anchorProps = $derived(mergeProps(
+        {
+            href,
+            class: {
+                disabled: disabled,
+                active: isActive
+            }
+        },
+        dynamicProps,
+        restProps
+    ));
 </script>
 
 {#snippet favicon()}
@@ -343,17 +369,13 @@
 
 <!-- The hints stay on the same line as the content: whitespace between them
      would render as a stray space inside inline links (see TextLink). -->
-<a {...mergeProps(
-    {
-        href,
-        class: {
-            disabled: disabled,
-            active: isActive
-        }
-    },
-    dynamicProps,
-    restProps
-)}>{@render children?.({favicon})}{#if target === '_blank'}<span class="u-sr-only">{` ${__('ui.link.opensInNewTab')}`}</span>{/if}{#if isDownload}<span class="u-sr-only">{` ${__('ui.link.download')}`}</span>{/if}</a>
+{#snippet hints()}{#if target === '_blank'}<span class="u-sr-only">{` ${__('ui.link.opensInNewTab')}`}</span>{/if}{#if isDownload}<span class="u-sr-only">{` ${__('ui.link.download')}`}</span>{/if}{/snippet}
+
+{#if child}
+    {@render child({props: anchorProps, favicon, hints})}
+{:else}
+<a {...anchorProps}>{@render children?.({favicon})}{@render hints()}</a>
+{/if}
 
 <style>
     .disabled {

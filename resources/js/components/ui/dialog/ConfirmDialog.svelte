@@ -42,6 +42,8 @@
         onConfirm?: () => unknown | Promise<unknown>;
         /** Called when the user clicks the cancel button. */
         onCancel?: () => void;
+        /** Receives focus after closing when it returns an element. */
+        restoreFocusTo?: () => HTMLElement | null;
         /** Prevents duplicate actions while an async confirmation is running. */
         busy?: boolean;
         /** Visual treatment for the confirmation action. */
@@ -57,6 +59,7 @@
         cancelLabel = __('ui.dialog.cancelLabel'),
         onConfirm,
         onCancel,
+        restoreFocusTo,
         busy = false,
         confirmVariant = 'fill'
     }: Props = $props();
@@ -85,6 +88,13 @@
         handleOpenChange(false);
         onCancel?.();
     }
+
+    function handleCloseAutoFocus(event: Event) {
+        const target = restoreFocusTo?.();
+        if (!target) return;
+        event.preventDefault();
+        target.focus({preventScroll: true});
+    }
 </script>
 
 <Dialog
@@ -98,7 +108,8 @@
         class: 'confirm-dialog-content',
         // bits-ui closes the dialog afterwards (via onOpenChange); Escape means cancel.
         onEscapeKeydown: () => onCancel?.(),
-        onInteractOutside: (e) => e.preventDefault()
+        onInteractOutside: (e) => e.preventDefault(),
+        onCloseAutoFocus: handleCloseAutoFocus
     }}
 >
     {#snippet footer()}
