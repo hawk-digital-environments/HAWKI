@@ -4,8 +4,12 @@
   `plugins/core/snippets/LegacySharedContent.svelte`); toasts pushed from
   anywhere via `useToastContext().error/success/info(...)` stack top-centre
   Sonner-style — newest in front, older ones peeking behind with a slight
-  scale/offset — and auto-dismiss. Hovering or focusing the pile expands it
-  and pauses auto-dismissal for every toast; leaving resumes the countdowns.
+  scale/offset — and auto-dismiss (errors stay until closed, see
+  `ToastContext`). Hovering or focusing the pile expands it and pauses
+  auto-dismissal for every toast; leaving resumes the countdowns. Every toast
+  carries a close button so it can be dismissed by keyboard, and announces
+  itself as `role="alert"` (errors) or `role="status"` (everything else) —
+  the toasts are the live regions, the pile itself is not one.
 
   Usage — mount once near the root of the page:
     <Toaster/>
@@ -20,8 +24,11 @@
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
     import CheckmarkCircle01Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle01Icon.svelte';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
+    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const toastContext = useToastContext();
+    const {__} = useTranslator();
 
     const icons = {
         error: AlertCircleIcon,
@@ -100,7 +107,6 @@
     class="toaster"
     class:toaster--expanded={expanded}
     style="--front-height: {frontHeight}px;"
-    aria-live="polite"
     onmouseenter={() => { expanded = true; toastContext.pause(); }}
     onmouseleave={() => { expanded = false; toastContext.resume(); }}
     onfocusin={() => { expanded = true; toastContext.pause(); }}
@@ -117,7 +123,7 @@
         <div
             class="toast toast--{toast.variant}"
             class:toast--hidden={!expanded && depth >= MAX_VISIBLE}
-            role="status"
+            role={toast.variant === 'error' ? 'alert' : 'status'}
             style="--depth: {depth}; --expanded-offset: {expandedOffset(i)}px;"
             in:springIn
             out:springOut
@@ -125,6 +131,14 @@
         >
             <Icon class="toast-icon" size={18}/>
             <span class="toast-message">{toast.message}</span>
+            <button
+                type="button"
+                class="toast-close"
+                aria-label={__('ui.toast.close')}
+                onclick={() => toastContext.dismiss(toast.id)}
+            >
+                <Cancel01Icon size={14} aria-hidden="true"/>
+            </button>
         </div>
     {/each}
 </div>
@@ -141,7 +155,8 @@
         pointer-events: none;
 
         &:not(.toaster--expanded) .toast:not(:last-of-type) {
-            .toast-message {
+            .toast-message,
+            .toast-close {
                 display: none;
             }
 
@@ -175,7 +190,7 @@
         padding: var(--space-3, 0.75rem) var(--space-3, 0.75rem);
         border-radius: var(--corner-md);
         border: none;
-        background-color: color-mix(var(--toast-color) 20%, var(--color-surface-raised));
+        background-color: color-mix(in oklch, var(--toast-color) 20%, var(--color-surface-raised));
         color: var(--color-text);
         font-size: 0.875rem;
         pointer-events: auto;
@@ -244,5 +259,31 @@
         flex: 1;
         min-width: 0;
         line-height: 1.4;
+    }
+
+    .toast-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 1.75rem;
+        height: 1.75rem;
+        margin-inline-end: calc(-1 * var(--space-1));
+        padding: 0;
+        border: none;
+        border-radius: var(--corner-sm);
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--color-hover);
+            color: var(--color-text);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 1px;
+        }
     }
 </style>
