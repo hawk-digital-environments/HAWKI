@@ -8,8 +8,8 @@ exists; a generation started there keeps streaming through the store.
 
 Screen readers: the log itself is not live (a streaming reply would be read
 token by token). Instead a visually hidden status region announces when a
-reply starts, is regenerated, aborted or finished (then with its text), and an
-alert region announces streaming errors.
+reply starts, is regenerated, aborted or finished, and an alert region
+announces streaming errors.
 -->
 <script lang="ts">
     import type {RouteParams} from 'universal-router';
@@ -57,6 +57,7 @@ alert region announces streaming errors.
     let newTurnActive = $state(false);
     let previousConversationSlug: string | null = null;
     let previousMessageCount = 0;
+    let messageFocusAfterDelete: string | null = null;
     // True from opening a conversation until the user scrolls up or sends a
     // message: the log keeps following its bottom edge while the messages
     // finish rendering (markdown, KaTeX, reasoning blocks) and grow in height.
@@ -171,7 +172,7 @@ alert region announces streaming errors.
                 break;
             case 'completed':
                 announcedByTransport = true;
-                liveAnnouncement = completionAnnouncement(event.message);
+                liveAnnouncement = __('chat.page.responseReady');
                 break;
             case 'aborted':
                 announcedByTransport = true;
@@ -183,19 +184,6 @@ alert region announces streaming errors.
                 errorAnnouncement = __('chat.page.responseFailed', {error: event.error});
                 break;
         }
-    }
-
-    /** "The response is complete." followed by the reply as plain text (markdown syntax stripped). */
-    function completionAnnouncement(message: ChatMessageType): string {
-        const text = message.content.text
-            .replace(/```[\s\S]*?```/g, ' ')
-            .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-            .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-            .replace(/^[ \t]*(#{1,6}|[-*+>]|\d+\.)[ \t]+/gm, '')
-            .replace(/[*_`~|]/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-        return `${__('chat.page.responseReady')} ${text}`.trim();
     }
 
     $effect(() => {
@@ -213,11 +201,7 @@ alert region announces streaming errors.
 
         if (wasGenerating && !generating) {
             if (!announcedByTransport) {
-                let reply: ChatMessageType | null = null;
-                for (const message of store.active?.messages ?? []) {
-                    if (message.message_role === 'assistant' && !message.isStreaming) reply = message;
-                }
-                liveAnnouncement = reply ? completionAnnouncement(reply) : __('chat.page.responseReady');
+                liveAnnouncement = __('chat.page.responseReady');
             }
             announcedByTransport = false;
         }
@@ -238,10 +222,10 @@ alert region announces streaming errors.
         if (!messageToDelete || !store.active) return;
         const messages = store.active.messages;
         const index = messages.findIndex(message => message.message_id === messageToDelete!.message_id);
-        const neighbour = messages[index + 1] ?? messages[index - 1] ?? null;
+        const neighbourMessageId = (messages[index + 1] ?? messages[index - 1])?.message_id ?? null;
         try {
             await store.removeMessage(messageToDelete.message_id);
-            focusAfterDialogClose(neighbour?.message_id ?? null);
+            messageFocusAfterDelete = neighbourMessageId;
         } catch (error) {
             toast.error(error instanceof Error ? error.message : String(error));
         } finally {
@@ -249,25 +233,11 @@ alert region announces streaming errors.
         }
     }
 
-    /**
-     * The confirm dialog hands focus back to the delete button of the message
-     * that is now gone, which drops it on the body. Once the dialog has left
-     * the DOM (its focus trap would pull focus back until then) focus the
-     * neighbouring message, or the log region when none is left.
-     */
-    function focusAfterDialogClose(messageId: string | null) {
-        const deadline = performance.now() + 1000;
-        const attempt = () => {
-            if (document.querySelector('[role="dialog"], [role="alertdialog"]') && performance.now() < deadline) {
-                requestAnimationFrame(attempt);
-                return;
-            }
-            const target = messageId
-                ? messagesElement?.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`)
-                : null;
-            (target ?? scrollRegion)?.focus({preventScroll: true});
-        };
-        requestAnimationFrame(attempt);
+    function restoreFocusAfterMessageDelete(): HTMLElement | null {
+        const messageId = messageFocusAfterDelete;
+        messageFocusAfterDelete = null;
+        if (!messageId) return null;
+        return messagesElement?.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`) ?? scrollRegion;
     }
 
     // Regenerate is a plain per-message action, not a composer mode: the transport streams
@@ -341,7 +311,7 @@ alert region announces streaming errors.
                 {#if store.loading}
                     <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
                 {:else if store.error}
-                    <div class="state error">
+                    <div class="state error" role="alert">
                         <p>{store.error}</p>
                         {#if slug}
                             <Button variant="stroke" size="sm" iconLeft={ArrowReloadHorizontalIcon} onclick={() => store.load(slug)}>
@@ -395,6 +365,7 @@ alert region announces streaming errors.
     title={__('chat.actions.deleteConfirmTitle')}
     description={__('chat.actions.deleteConfirmDescription')}
     onConfirm={removeMessage}
+    restoreFocusTo={restoreFocusAfterMessageDelete}
 />
 
 <style>

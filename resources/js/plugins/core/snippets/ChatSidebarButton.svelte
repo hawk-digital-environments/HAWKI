@@ -1,6 +1,6 @@
 <!--
 @component Renders one entry in the chat sidebar list (either an AI conversation or a group room),
-as a `<svelte-snippet>` entry point registered by `core.plugin.ts`. The row is a button that opens
+as a `<svelte-snippet>` entry point registered by `core.plugin.ts`. The row is a link that opens
 the conversation via `oldUiBridge.triggerOpenChat`; next to it — as a sibling, never nested — sits
 the actions menu (`RoomNameMenu`/`AiConvNameMenu` depending on `context`) whose "Rename" swaps the
 row for an inline text field. Rooms additionally show an unread-message indicator (with a
@@ -60,14 +60,24 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
 
     const {__} = useTranslator();
 
-    // While renaming, the name menu swaps in its text field and the row button
+    // While renaming, the name menu swaps in its text field and the row link
     // is removed, so the field is never nested inside another control.
     let isRenaming = $state(false);
     // Keeps the (otherwise hover-only) trigger visible while its menu is showing.
     let menuOpen = $state(false);
-    let rowButton = $state<HTMLButtonElement | null>(null);
+    let rowLink = $state<HTMLAnchorElement | null>(null);
 
     const showUnread = $derived(context === 'room' && hasUnreadMessages);
+    const href = $derived(oldUiBridge.resolveChatUrl(slug ?? '', context));
+
+    function openChat(event: MouseEvent) {
+        if (!slug || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+            return;
+        }
+        event.preventDefault();
+        // @todo Remove when the legacy sidebar/oldUiBridge is retired.
+        oldUiBridge.triggerOpenChat(slug);
+    }
 
     $effect(() => {
         return oldUiBridge.onRenameChat((renamedSlug, newName) => {
@@ -84,18 +94,18 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         showName: false,
         triggerIcon: EllipsisIcon,
         buttonProps: {class: 'chat-name-menu-button'},
-        // The row button is re-rendered once renaming ends; the menu focuses it after that.
-        focusAfterRename: () => rowButton
+        // The row link is re-rendered once renaming ends; the menu focuses it after that.
+        focusAfterRename: () => rowLink
     }));
 </script>
 
 <div class="chat-row" class:menu-open={menuOpen} class:renaming={isRenaming}>
     {#if !isRenaming}
-        <button
-            type="button"
+        <a
+            {href}
             class="sidebar-button"
-            bind:this={rowButton}
-            onclick={() => slug && oldUiBridge.triggerOpenChat(slug)}>
+            bind:this={rowLink}
+            onclick={openChat}>
             {#if showUnread}
                 <span class="dot-lg unread-dot" aria-hidden="true"></span>
             {/if}
@@ -103,7 +113,7 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
             {#if showUnread}
                 <span class="u-sr-only">, {__('chat.sidebar.unreadMessages')}</span>
             {/if}
-        </button>
+        </a>
     {/if}
     {#if context === 'room'}
         <RoomNameMenu

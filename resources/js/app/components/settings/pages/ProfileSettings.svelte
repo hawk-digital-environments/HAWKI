@@ -16,11 +16,16 @@
     import type {RouteProps} from '$lib/components/ui/routing/index.js';
 
     const {}: RouteProps = $props();
+    const uid = $props.id();
 
     const NAME_MAX_LENGTH = 20;
     const BIO_MAX_LENGTH = 255;
     /** Matches the export size of the legacy avatar cropper. */
     const AVATAR_SIZE = 512;
+    const nameId = `${uid}-name`;
+    const nameErrorId = `${uid}-name-error`;
+    const bioId = `${uid}-bio`;
+    const bioCounterId = `${uid}-bio-counter`;
 
     const app = useApp();
     const config = useConfig();
@@ -168,32 +173,32 @@
     <!-- novalidate: validation is reported inline (aria-invalid + message) instead of browser bubbles. -->
     <form onsubmit={save} novalidate>
         <div class="field">
-            <label for="profile-name">{__('ui.settings.profile.nameLabel')}</label>
+            <label for={nameId}>{__('ui.settings.profile.nameLabel')}</label>
             <input
-                id="profile-name"
+                id={nameId}
                 bind:this={nameInput}
                 bind:value={name}
                 maxlength={NAME_MAX_LENGTH}
                 autocomplete="name"
                 required
                 aria-invalid={nameError ? 'true' : undefined}
-                aria-describedby={nameError ? 'profile-name-error' : undefined}
+                aria-describedby={nameError ? nameErrorId : undefined}
                 oninput={() => (nameError = null)}
             />
             {#if nameError}
-                <p id="profile-name-error" class="field-error" role="alert">{nameError}</p>
+                <p id={nameErrorId} class="field-error" role="alert">{nameError}</p>
             {/if}
         </div>
         <div class="field">
-            <label for="profile-bio">{__('ui.settings.profile.bioLabel')}</label>
+            <label for={bioId}>{__('ui.settings.profile.bioLabel')}</label>
             <Textarea
-                id="profile-bio"
+                id={bioId}
                 bind:value={bio}
                 maxlength={BIO_MAX_LENGTH}
                 rows={4}
-                aria-describedby="profile-bio-counter"
+                aria-describedby={bioCounterId}
             />
-            <small id="profile-bio-counter">{bio.length}/{BIO_MAX_LENGTH}</small>
+            <small id={bioCounterId}>{bio.length}/{BIO_MAX_LENGTH}</small>
         </div>
 
         <div class="form-footer">

@@ -26,7 +26,7 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
-    import {motionDuration} from '$lib/utils/transitions/prefersReducedMotion.js';
+    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();

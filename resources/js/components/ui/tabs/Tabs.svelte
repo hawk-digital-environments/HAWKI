@@ -34,7 +34,7 @@
 
 <script lang="ts">
     import {Spring} from 'svelte/motion';
-    import {prefersReducedMotion} from '$lib/utils/transitions/prefersReducedMotion.js';
+    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     interface Props {
         /** The selectable tabs. */
@@ -57,6 +57,7 @@
     let {items, value = $bindable(null), onChange, 'aria-label': ariaLabel, disabled = false, mode = 'tabs'}: Props = $props();
 
     let tabEls = $state<HTMLButtonElement[]>([]);
+    const reducedMotion = useReducedMotion();
     const indicator = new Spring({x: 0, w: 0}, {stiffness: 0.55, damping: 0.9});
     let indicatorReady = $state(false);
 
@@ -68,7 +69,7 @@
             return;
         }
         const target = {x: el.offsetLeft, w: el.offsetWidth};
-        if (!indicatorReady || prefersReducedMotion()) {
+        if (!indicatorReady || reducedMotion.current) {
             indicator.set(target, {instant: true});
             indicatorReady = true;
         } else {
