@@ -9,12 +9,18 @@ on the page element.
     import AiChat01Icon from '$lib/components/ui/icons/iconset/AiChat01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
+    interface Props {
+        /** Heading level of the title: h1 on the new-chat page, h2 inside a conversation that already has an h1. */
+        headingLevel?: 1 | 2;
+    }
+
+    const {headingLevel = 1}: Props = $props();
     const {__} = useTranslator();
 </script>
 
 <div class="welcome">
     <span class="welcome-icon" aria-hidden="true"><AiChat01Icon size={28} /></span>
-    <h1>{__('chat.page.welcomeTitle')}</h1>
+    <svelte:element this={`h${headingLevel}`} class="title">{__('chat.page.welcomeTitle')}</svelte:element>
     <p>{__('chat.page.welcomeDescription')}</p>
 </div>
 
@@ -42,6 +48,6 @@ on the page element.
         color: var(--color-active-text);
     }
 
-    h1 { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
+    .title { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
     p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }
 </style>

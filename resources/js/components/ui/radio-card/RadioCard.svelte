@@ -1,9 +1,14 @@
 <!--
   @component Selectable card used inside a `RadioCardGroup`.
 
-  Renders its `children` alongside a radio indicator and reflects the group's
-  current selection. Clicking selects it; can be disabled per-card or via the
-  group. Reachable via keyboard with Space/Enter.
+  Renders its `children` (the option's label) alongside a radio indicator and
+  reflects the group's current selection. Clicking selects it; Space/Enter
+  select it from the keyboard, arrow keys are handled by the group (roving
+  tabindex). Can be disabled per-card or via the group.
+
+  Interactive extras (status dots, info buttons, …) must not live inside the
+  `role="radio"` element — pass them via the `meta` snippet; it is rendered as
+  a sibling of the radio, inside the same pill.
 
   Must be used inside a `RadioCardGroup` — it reads shared state (current
   value, group `disabled`, `name`) via `getRadioCardContext()` and throws if
@@ -11,27 +16,37 @@
 
   @example
   ```svelte
-  <RadioCardGroup value={selection} onChange={handleChange}>
-      <RadioCard value="auto">Auto</RadioCard>
+  <RadioCardGroup value={selection} onChange={handleChange} aria-labelledby="variant-label">
+      <RadioCard value="auto">
+          Auto
+          {#snippet meta()}
+              <InfoPopover label="Auto" info="Picks the best tool."/>
+          {/snippet}
+      </RadioCard>
       <RadioCard value="native" disabled={!hasNativeSupport}>Native</RadioCard>
   </RadioCardGroup>
   ```
 -->
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';
+    import {onMount, type Snippet} from 'svelte';
     import {mergeProps} from 'bits-ui';
     import {Spring} from 'svelte/motion';
     import {getRadioCardContext} from '$lib/components/ui/radio-card/RadioCardContext.svelte.js';
+    import {prefersReducedMotion} from '$lib/utils/transitions/prefersReducedMotion.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** The value this card represents within the group. */
         value: string;
         /** Disable this card. The group's disabled state also applies. */
         disabled?: boolean;
+        /** Trailing content rendered next to (not inside) the radio, e.g. status dots or info buttons. */
+        meta?: Snippet;
     }
 
     const {
         children,
+        meta,
         disabled: givenDisabled,
         value,
         class: className,
@@ -41,11 +56,20 @@
     const ctx = getRadioCardContext();
     const disabled = $derived(givenDisabled || ctx.isDisabled);
     const checked = $derived(ctx.value === value);
+    const tabbable = $derived(!disabled && ctx.isTabbable(value));
+
+    // Registered once for the roving tabindex; the getter keeps `disabled` live.
+    onMount(() => ctx.register(value, () => disabled));
 
     // Spring the dot in/out on selection for a snappy, springy feel.
     const dotScale = new Spring(0, {stiffness: 0.3, damping: 0.6});
     $effect(() => {
-        dotScale.target = checked ? 1 : 0;
+        const target = checked ? 1 : 0;
+        if (prefersReducedMotion()) {
+            dotScale.set(target, {instant: true});
+        } else {
+            dotScale.target = target;
+        }
     });
 
     function select() {
@@ -65,22 +89,30 @@
     {...mergeProps(
         {
             class: `radio-card${className ? ` ${className}` : ''}`,
-            role: 'radio',
-            'aria-checked': checked ? 'true' : 'false',
-            'aria-disabled': disabled ? 'true' : undefined,
             'data-state': checked ? 'checked' : 'unchecked',
             'data-disabled': disabled ? '' : undefined,
-            tabindex: disabled ? undefined : 0,
-            onclick: select,
-            onkeydown,
         },
         restProps,
     )}
 >
-    <span class="radio-card-indicator" aria-hidden="true">
-        <span class="radio-card-dot" style="transform: scale({dotScale.current})"></span>
-    </span>
-    <div class="radio-card-body">{@render children?.()}</div>
+    <div
+        class="radio-card-control"
+        role="radio"
+        aria-checked={checked}
+        aria-disabled={disabled ? 'true' : undefined}
+        data-value={value}
+        tabindex={disabled ? undefined : tabbable ? 0 : -1}
+        onclick={select}
+        onkeydown={onkeydown}
+    >
+        <span class="radio-card-indicator" aria-hidden="true">
+            <span class="radio-card-dot" style="transform: scale({dotScale.current})"></span>
+        </span>
+        <div class="radio-card-body">{@render children?.()}</div>
+    </div>
+    {#if meta}
+        <div class="radio-card-meta">{@render meta()}</div>
+    {/if}
     <input
         class="radio-card-input"
         type="radio"
@@ -100,8 +132,7 @@
         flex-direction: row;
         align-items: center;
         gap: var(--space-2, calc(0.25rem * 2));
-        padding-block: var(--space-1, 0.25rem);
-        padding-inline: var(--space-2, calc(0.25rem * 2));
+        padding-inline-end: var(--space-2, calc(0.25rem * 2));
         background: var(--color-bg-secondary);
         border: 1px solid transparent;
         border-radius: var(--corner-full);
@@ -124,9 +155,28 @@
         background: var(--color-highlight);
     }
 
-    .radio-card:focus-visible {
+    /* The radio itself is the focus target; the ring wraps the whole pill. */
+    .radio-card:has(> .radio-card-control:focus-visible) {
         outline: 2px solid var(--color-focus-ring, var(--color-interactive));
         outline-offset: 2px;
+    }
+
+    .radio-card-control {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        align-items: center;
+        gap: var(--space-2, calc(0.25rem * 2));
+        padding-block: var(--space-1, 0.25rem);
+        padding-inline-start: var(--space-2, calc(0.25rem * 2));
+        outline: none;
+    }
+
+    .radio-card-meta {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: var(--space-2, calc(0.25rem * 2));
     }
 
     .radio-card[data-disabled] {

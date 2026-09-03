@@ -50,8 +50,12 @@ export class ToolMenuFocusContext {
         return true;
     }
 
-    /** Returns the entry adjacent to `currentKey` in DOM order, skipping disabled. */
-    public getAdjacent(currentKey: string, direction: 1 | -1): ToolMenuFocusEntry | null {
+    /**
+     * Returns the entry adjacent to `currentKey` in DOM order, skipping disabled.
+     * With `wrap` (default, arrow-key behaviour) the ends connect; without it,
+     * `null` is returned past the first/last entry so Tab can leave the menu.
+     */
+    public getAdjacent(currentKey: string, direction: 1 | -1, wrap: boolean = true): ToolMenuFocusEntry | null {
         const ordered = this.orderedEntries().filter(e => !this.isDisabled(e.element));
         if (ordered.length === 0) {
             return null;
@@ -60,12 +64,16 @@ export class ToolMenuFocusContext {
         if (index === -1) {
             return null;
         }
-        return ordered[(index + direction + ordered.length) % ordered.length];
+        const next = index + direction;
+        if (!wrap && (next < 0 || next >= ordered.length)) {
+            return null;
+        }
+        return ordered[(next + ordered.length) % ordered.length];
     }
 
     /** Focuses the adjacent entry. Returns false if there is no neighbor to move to. */
-    public focusAdjacent(currentKey: string, direction: 1 | -1): boolean {
-        const next = this.getAdjacent(currentKey, direction);
+    public focusAdjacent(currentKey: string, direction: 1 | -1, wrap: boolean = true): boolean {
+        const next = this.getAdjacent(currentKey, direction, wrap);
         if (!next) {
             return false;
         }

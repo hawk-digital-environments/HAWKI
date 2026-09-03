@@ -35,7 +35,9 @@
     let localeSaving = $state(false);
 
     async function changeLocale(lang: string): Promise<void> {
-        if (!lang || lang === app.localization.locale.lang) return;
+        // Guarded here instead of disabling the select: disabling the focused
+        // trigger mid-request would drop keyboard focus to <body>.
+        if (localeSaving || !lang || lang === app.localization.locale.lang) return;
 
         localeSaving = true;
         try {
@@ -89,9 +91,8 @@
         <SingleSelect
             bind:value={localeValue}
             items={localeItems}
-            disabled={localeSaving}
             onValueChange={changeLocale}
-            triggerProps={{'aria-labelledby': 'settings-language-label'}}
+            triggerProps={{'aria-labelledby': 'settings-language-label', 'aria-busy': localeSaving}}
         />
     </div>
 

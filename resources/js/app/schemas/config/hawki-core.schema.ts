@@ -71,6 +71,14 @@ const HawkiCoreSchema = z.object({
         passkey: z.string(),
         backup: z.string()
     }).optional(),
+    /**
+     * Accessibility related links. `statementUrl` is the operator's accessibility
+     * statement (`ACCESSIBILITY_STATEMENT_URL`); null when none is configured,
+     * in which case the frontend renders no link.
+     */
+    accessibility: z.object({
+        statementUrl: z.string().nullable()
+    }).optional(),
     security: z.object({
         /** Whether users are allowed to paste text into passkey/PIN input fields (paste is sometimes blocked to force manual entry/reduce clipboard leakage). */
         passkeyAllowPaste: z.boolean(),
