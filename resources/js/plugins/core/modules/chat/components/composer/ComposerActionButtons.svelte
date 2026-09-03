@@ -63,15 +63,7 @@
 
     // Doubles as the button's accessible description, so the reason the button
     // can't be used right now is read out along with it.
-    const sendTooltip = $derived.by(() => {
-        if (!composerContext.messageWithoutHandles.trim()) {
-            return __('chat.composer.actions.noMessageTooltip');
-        }
-        if (!composerContext.modelUsage.isValid) {
-            return __('chat.composer.actions.invalidModelTooltip');
-        }
-        return __('chat.composer.actions.sendTooltip');
-    });
+    const sendTooltip = $derived(__(composerContext.guard.cannotSendReason ?? 'chat.composer.actions.sendTooltip'));
 
     function handleSendClick() {
         if (!composerContext.guard.canSend) {

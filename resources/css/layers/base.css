@@ -84,19 +84,10 @@
         margin: var(--space-2) 0;
     }
 
-    /* Keep state changes immediate for people who ask the operating system to
-       reduce motion. The tiny non-zero duration lets transitionend-based
-       component cleanup continue to run. */
+    /* Disable smooth scrolling when the operating system requests less motion. */
     @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-            scroll-behavior: auto !important;
-            animation-duration: 0.01ms !important;
-            animation-delay: 0ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-            transition-delay: 0ms !important;
+        html {
+            scroll-behavior: auto;
         }
     }
 

@@ -33,7 +33,7 @@
     import {mergeProps} from 'bits-ui';
     import {Spring} from 'svelte/motion';
     import {getRadioCardContext} from '$lib/components/ui/radio-card/RadioCardContext.svelte.js';
-    import {prefersReducedMotion} from '$lib/utils/transitions/prefersReducedMotion.js';
+    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** The value this card represents within the group. */
@@ -54,6 +54,7 @@
     }: Props = $props();
 
     const ctx = getRadioCardContext();
+    const reducedMotion = useReducedMotion();
     const disabled = $derived(givenDisabled || ctx.isDisabled);
     const checked = $derived(ctx.value === value);
     const tabbable = $derived(!disabled && ctx.isTabbable(value));
@@ -65,7 +66,7 @@
     const dotScale = new Spring(0, {stiffness: 0.3, damping: 0.6});
     $effect(() => {
         const target = checked ? 1 : 0;
-        if (prefersReducedMotion()) {
+        if (reducedMotion.current) {
             dotScale.set(target, {instant: true});
         } else {
             dotScale.target = target;

@@ -26,7 +26,7 @@
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {motionDuration} from '$lib/utils/transitions/prefersReducedMotion.js';
+    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const toastContext = useToastContext();
     const {__} = useTranslator();
