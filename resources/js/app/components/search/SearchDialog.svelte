@@ -48,6 +48,17 @@
         new Map(results.flatMap(group => group.items.map(item => [item.id, item] as const)))
     );
 
+    /** Number of matching rows across all groups, for the screen-reader status line. */
+    const resultCount = $derived(results.reduce((sum, group) => sum + group.items.length, 0));
+
+    /** Announced text: the rendered empty-state message, or the current hit count. */
+    const resultStatus = $derived.by(() => {
+        if (resultCount === 0) {
+            return query ? __('ui.search.noResults', {query}) : __('ui.search.empty');
+        }
+        return __(resultCount === 1 ? 'ui.search.resultCount.one' : 'ui.search.resultCount.other', {count: String(resultCount)});
+    });
+
     const groups = $derived<CommandGroupDefinition[]>(
         results.map(group => ({
             id: group.id,
@@ -97,6 +108,7 @@
                     <CommandPrimitive.Input
                         class="search-input"
                         placeholder={__('ui.search.placeholder')}
+                        aria-label={__('ui.search.title')}
                         bind:value={query}
                     />
                     <!-- The keycap is decorative (aria-hidden); the text next to
@@ -106,9 +118,13 @@
                         <Kbd key="Escape" label={__('ui.search.closeKey')} alwaysVisible />
                     </span>
                 </div>
-                <CommandResults {groups} onSelect={select}>
+                <!-- Hit count / empty state for screen readers: the visible
+                     empty-state text below is not a live region, and the
+                     listbox itself never reports how many options it holds. -->
+                <span class="u-sr-only" role="status" aria-live="polite">{resultStatus}</span>
+                <CommandResults {groups} onSelect={select} aria-label={__('ui.search.resultsLabel')}>
                     {#snippet empty()}
-                        <p class="search-empty">
+                        <p class="search-empty" aria-hidden="true">
                             {query ? __('ui.search.noResults', {query}) : __('ui.search.empty')}
                         </p>
                     {/snippet}

@@ -38,8 +38,11 @@
   Must sit inside a `Command.Root`. Rows call `onSelect` with their `value`.
   A `current` value renders a trailing check on that row. `children` renders
   inside the viewport, before the groups (used for the palette's sliding hover
-  highlight); `empty` renders instead of the groups when there are none.
-  Remaining props go to the List element.
+  highlight); `empty` renders instead of the groups when there are none — it
+  sits *after* the List rather than inside it, since the List is a `listbox`
+  whose only permitted children are options and groups. Remaining props go to
+  the List element; pass a translated `aria-label` for it, or bits-ui falls
+  back to an English default.
 -->
 <script lang="ts">
     import {Command as CommandPrimitive, mergeProps, type CommandListProps} from 'bits-ui';
@@ -75,9 +78,6 @@
 <CommandPrimitive.List {...mergeProps({class: 'command-list'}, restProps)}>
     <CommandPrimitive.Viewport class="command-viewport" bind:ref={viewport}>
         {@render children?.()}
-        {#if groups.length === 0}
-            {@render empty?.()}
-        {/if}
         {#each groups as group (group.id)}
             <CommandPrimitive.Group class="command-group" value={group.id}>
                 {#if group.label}
@@ -115,6 +115,9 @@
         {/each}
     </CommandPrimitive.Viewport>
 </CommandPrimitive.List>
+{#if groups.length === 0}
+    {@render empty?.()}
+{/if}
 
 <style>
     /* Command renders the elements itself, so they are addressed globally

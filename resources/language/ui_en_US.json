@@ -22,6 +22,31 @@
         "commandPalette": {
             "label": "Commands"
         },
+        "toast": {
+            "close": "Close notification"
+        },
+        "link": {
+            "opensInNewTab": "(opens in a new tab)",
+            "download": "(download file)"
+        },
+        "routing": {
+            "errorTitle": "Something went wrong",
+            "retry": "Try again",
+            "notFoundTitle": "Page not found",
+            "notFoundDescription": "The requested page does not exist (error 404)."
+        },
+        "pageTitles": {
+            "chat": {
+                "index": "Chat",
+                "conversation": "Chat"
+            },
+            "models": {
+                "index": "Models"
+            },
+            "announcements": {
+                "index": "Announcements"
+            }
+        },
         "statusDot": {
             "ariaLabel": "Status indicator",
             "onlineTooltip": "Online",
@@ -128,7 +153,12 @@
                 "profile": "Profile settings"
             },
             "noResults": "Nothing matches “:query”.",
-            "empty": "Nothing to search yet."
+            "empty": "Nothing to search yet.",
+            "resultsLabel": "Search results",
+            "resultCount": {
+                "one": "1 result",
+                "other": ":count results"
+            }
         }
     }
 }
