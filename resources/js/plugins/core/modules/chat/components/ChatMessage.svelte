@@ -3,6 +3,12 @@
   rendered body (Markdown, citations, attachments) and the per-message action
   bar (copy, edit, regenerate-with-model menu, delete). Marks itself busy while pending.
 
+  For screen readers each message is an article named by a visually hidden
+  "<author> wrote" heading (`headingLevel`, h3 in the log); the body's own
+  headings and the sources list start one level below it. The article is
+  focusable programmatically so the page can park focus on it after a message
+  was deleted or while a regenerated reply streams in.
+
   A trunk message additionally renders its thread: a toggle row with the reply
   count and, when open, the replies (this component, nested with
   `isThreadReply`) indented behind a rail. The thread opens itself while the
@@ -33,6 +39,8 @@
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import Link from '$lib/components/util/link/Link.svelte';
     import {formatDateTime} from '$lib/utils/date.js';
 
     interface Props extends HTMLAttributes<HTMLElement> {
@@ -46,10 +54,13 @@
         onRegenerate?: (message: ChatMessageType, model: AiModel | null) => void;
         onDelete: (message: ChatMessageType) => void;
         onDeleteAttachment: (message: ChatMessageType, fileId: string) => void;
+        /** Level of the message's visually hidden author heading; thread replies render one level deeper. Defaults to 3. */
+        headingLevel?: number;
     }
 
-    const {message, replies = [], isThreadReply = false, composer = null, onRegenerate, onDelete, onDeleteAttachment, class: className, ...restProps}: Props = $props();
+    const {message, replies = [], isThreadReply = false, composer = null, onRegenerate, onDelete, onDeleteAttachment, headingLevel = 3, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
+    const toast = useToastContext();
     const aiModelStore = useStore('ai-models');
     const experiments = useStore('experiments');
     const isAssistant = $derived(message.message_role === 'assistant');
@@ -107,7 +118,10 @@
     }
 
     function copyMessage() {
-        navigator.clipboard.writeText(message.content.text);
+        navigator.clipboard.writeText(message.content.text).then(
+            () => toast.success(__('chat.actions.copied')),
+            () => toast.error(__('chat.actions.copyFailed'))
+        );
     }
 
     function speakMessage() {
@@ -115,20 +129,38 @@
         speechSynthesis.speak(new SpeechSynthesisUtterance(message.content.text));
     }
 
-    const threadPanelId = $props.id();
+    // `$props.id()` is intentionally called once: Svelte uses one stable
+    // component id as the root for all ids made by this component.
+    const componentId = $props.id();
+    const threadPanelId = `${componentId}-thread`;
+    const headingId = `${componentId}-heading`;
+    let article = $state<HTMLElement | null>(null);
 </script>
 
-<article {...restProps} class={["message", className]} class:user={!isAssistant} class:assistant={isAssistant} class:pending={message.isPending} aria-busy={message.isPending}>
+<article
+    {...restProps}
+    bind:this={article}
+    class={["message", className]}
+    class:user={!isAssistant}
+    class:assistant={isAssistant}
+    class:pending={message.isPending}
+    aria-busy={message.isPending}
+    aria-labelledby={headingId}
+    data-message-id={message.message_id}
+    tabindex="-1"
+>
     <div class="avatar-wrap">
         {#if isAssistant}
             <span class="assistant-avatar" aria-hidden="true"><BotIcon size={18} /></span>
         {:else}
-            <Avatar src={message.author.avatar_url} name={message.author.name} label={message.author.name} size={32} />
+            <!-- Decorative: the heading right next to it already names the author. -->
+            <Avatar src={message.author.avatar_url} name={message.author.name} label="" aria-hidden="true" size={32} />
         {/if}
     </div>
     <div class="message-column">
         <div class="meta">
-            <span class="author">{authorName}</span>
+            <svelte:element this={`h${headingLevel}`} id={headingId} class="u-sr-only">{__('chat.message.authorHeading', {author: authorName})}</svelte:element>
+            <span class="author" aria-hidden="true">{authorName}</span>
             {#if message.created_at}
                 <time datetime={message.created_at}>{formatDateTime(message.created_at)}</time>
             {/if}
@@ -136,10 +168,10 @@
 
         <div class="content">
             {#if isAssistant && message.reasoning?.length}
-                <MessageReasoning parts={message.reasoning} active={Boolean(message.isStreaming && !message.content.text)} />
+                <MessageReasoning parts={message.reasoning} active={Boolean(message.isStreaming && !message.content.text)} headingLevel={headingLevel + 1} />
             {/if}
             {#if isAssistant}
-                <MessageBody message={message.content.text} citations={message.citations} isStreaming={message.isStreaming} />
+                <MessageBody message={message.content.text} citations={message.citations} isStreaming={message.isStreaming} headingLevel={headingLevel + 1} />
             {:else}
                 <p>{message.content.text}</p>
             {/if}
@@ -150,9 +182,9 @@
                         {#if message.isPending}
                             <span class="pending-attachment">{attachment.fileData.name}</span>
                         {:else}
-                            <a href={attachment.fileData.url} target="_blank" rel="noreferrer" download={attachment.fileData.name}>
+                            <Link href={attachment.fileData.url} target="_blank" download={attachment.fileData.name}>
                                 {attachment.fileData.name}
-                            </a>
+                            </Link>
                             <button class="remove-attachment" title={__('chat.actions.deleteAttachment')} aria-label={__('chat.actions.deleteAttachment')} onclick={() => onDeleteAttachment(message, attachment.fileData.uuid)}>×</button>
                         {/if}
                     {/each}
@@ -169,20 +201,21 @@
         </div>
 
         {#if !message.isStreaming && !message.isPending}
-            <div class="actions">
-                <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Copy01Icon} tooltip={__('chat.actions.copy')} onclick={copyMessage} />
-                <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={VolumeHighIcon} tooltip={__('chat.actions.speak')} onclick={speakMessage} />
+            <ul class="actions" aria-label={__('chat.actions.groupLabel', {author: authorName})}>
+                <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Copy01Icon} tooltip={__('chat.actions.copy')} onclick={copyMessage} /></li>
+                <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={VolumeHighIcon} tooltip={__('chat.actions.speak')} onclick={speakMessage} /></li>
                 {#if composer && !isAssistant}
-                    <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageEdit01Icon} tooltip={__('chat.actions.edit')} onclick={() => composer?.mode.enter('edit', message)} />
+                    <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageEdit01Icon} tooltip={__('chat.actions.edit')} onclick={() => composer?.mode.enter('edit', message)} /></li>
                 {/if}
                 {#if onRegenerate && isAssistant}
-                    <RegenerateMenu {message} {onRegenerate} />
+                    <!-- The action bar disappears while the reply streams; focus moves to the article instead of getting lost. -->
+                    <li><RegenerateMenu {message} {onRegenerate} returnFocusTo={article} /></li>
                 {/if}
                 {#if canThread}
-                    <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} />
+                    <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} /></li>
                 {/if}
-                <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Delete02Icon} tooltip={__('chat.actions.delete')} onclick={() => onDelete(message)} />
-            </div>
+                <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Delete02Icon} tooltip={__('chat.actions.delete')} onclick={() => onDelete(message)} /></li>
+            </ul>
         {/if}
 
         {#if hasThreadSection}
@@ -203,7 +236,7 @@
                 {#if threadOpen}
                     <div class="thread-panel" id={threadPanelId} transition:growTransition>
                         {#each replies as reply (reply.clientKey ?? reply.message_id)}
-                            <ChatMessageSelf message={reply} {composer} {onRegenerate} isThreadReply {onDelete} {onDeleteAttachment} />
+                            <ChatMessageSelf message={reply} {composer} {onRegenerate} isThreadReply {onDelete} {onDeleteAttachment} headingLevel={headingLevel + 1} />
                         {/each}
 
                         {#if composingInThread}
@@ -247,6 +280,9 @@
 
     .message-column { min-width: 0; }
 
+    /* Focus lands here programmatically only; the buttons inside keep their own rings. */
+    .message:focus { outline: none; }
+
     .pending { opacity: 0.72; }
 
     .meta {
@@ -282,7 +318,7 @@
         margin-top: var(--space-2);
     }
 
-    .attachments a,
+    .attachments :global(a),
     .pending-attachment {
         padding: var(--space-1) var(--space-2);
         border: var(--border);
@@ -310,10 +346,14 @@
         display: flex;
         gap: var(--space-0_5);
         min-height: 2rem;
-        margin-top: var(--space-1);
+        margin: var(--space-1) 0 0;
+        padding: 0;
+        list-style: none;
         opacity: 0;
         transition: opacity var(--duration-fast);
     }
+
+    .actions li { display: contents; }
 
     .message:hover .actions,
     .actions:focus-within { opacity: 1; }

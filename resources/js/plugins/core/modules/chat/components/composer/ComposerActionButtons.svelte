@@ -40,10 +40,11 @@
     const {__} = useTranslator();
 
     interface Props {
-        /** Called when the send button is clicked. Does not itself check `guard.canSend` —
-         *  the button is `disabled` when sending isn't allowed, so this only fires when a
-         *  send is actually possible. Typically wired to `ComposerContext.send()` plus
-         *  response handling in the parent (see `ChatComposer.svelte`'s `handleSend`). */
+        /** Called when the send button is clicked and `guard.canSend` allows it. The button
+         *  stays focusable while sending isn't allowed (`aria-disabled`, reason exposed via
+         *  `aria-describedby`), so the click handler guards the call itself. Typically wired
+         *  to `ComposerContext.send()` plus response handling in the parent (see
+         *  `ChatComposer.svelte`'s `handleSend`). */
         onSend?: () => void;
         /** Bindable reference to the send `<button>` element, e.g. so `ComposerFocusWrap`
          *  can focus it as a fallback when the textarea is disabled. */
@@ -55,18 +56,29 @@
         buttonRef = $bindable(null)
     }: Props = $props();
 
+    const uid = $props.id();
+    const sendHintId = `${uid}-send-hint`;
+
+    const canSend = $derived(composerContext.guard.canSend);
+
+    // Doubles as the button's accessible description, so the reason the button
+    // can't be used right now is read out along with it.
     const sendTooltip = $derived.by(() => {
-        if (!composerContext.message.trim()) {
+        if (!composerContext.messageWithoutHandles.trim()) {
             return __('chat.composer.actions.noMessageTooltip');
         }
-        if (composerContext.modelUsage.isValid) {
+        if (!composerContext.modelUsage.isValid) {
             return __('chat.composer.actions.invalidModelTooltip');
-        }
-        if (!composerContext.message.trim()) {
-            return __('chat.composer.actions.emptyMessageTooltip');
         }
         return __('chat.composer.actions.sendTooltip');
     });
+
+    function handleSendClick() {
+        if (!composerContext.guard.canSend) {
+            return;
+        }
+        onSend?.();
+    }
 
     const sendLabel = $derived.by(() => {
         if (composerContext.mode.isEdit) {
@@ -173,17 +185,21 @@
 
 {#if !(composerContext.sendStatus?.active && composerContext.sendStatus?.canBeAborted)}
     <div transition:growTransition={{mode: 'horizontal'}}>
+        <!-- aria-disabled instead of disabled keeps the button reachable, so the
+             reason it can't be used (aria-describedby) is discoverable by AT. -->
         <ButtonWithTooltip
             bind:ref={buttonRef}
             tooltip={sendTooltip}
             aria-label={sendLabel}
-            disabled={!composerContext.guard.canSend}
+            aria-describedby={sendHintId}
+            aria-disabled={!canSend}
+            aria-keyshortcuts="Enter"
             variant="accent"
             iconRight={SendIcon}
             size="xs"
             class="chat-send-btn"
             onkeydown={handleSendButtonKeyDown}
-            onclick={onSend}
+            onclick={handleSendClick}
         >
             <Breakpoint>
                 {#snippet bpMdAndBigger()}
@@ -191,14 +207,18 @@
                 {/snippet}
             </Breakpoint>
         </ButtonWithTooltip>
+        <span id={sendHintId} class="u-sr-only">{sendTooltip}</span>
     </div>
 {/if}
 
 <style>
-    /* Inactive (disabled) send button: the fill variant defaults to the
-       slightly blue-tinted --color-bg-secondary. Combine with .btn--fill so
-       this out-specifies Button's own disabled rule. */
-    :global(.btn--fill.chat-send-btn:disabled) {
+    /* Inactive send button (aria-disabled, still focusable): mirror Button's
+       disabled fill look. Combined selectors out-specify the accent variant's
+       own background and hover rules. */
+    :global(.btn.chat-send-btn[aria-disabled="true"]),
+    :global(.btn.chat-send-btn[aria-disabled="true"]:hover) {
         --btn-bg: var(--color-surface-light);
+        --btn-color: var(--color-text-disabled);
+        cursor: not-allowed;
     }
 </style>

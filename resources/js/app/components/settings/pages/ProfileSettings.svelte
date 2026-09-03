@@ -40,18 +40,25 @@
     let saving = $state(false);
     let uploading = $state(false);
     let fileInput = $state<HTMLInputElement | null>(null);
+    let nameInput = $state<HTMLInputElement | null>(null);
+    /** Inline validation message for the name field; null when valid. */
+    let nameError = $state<string | null>(null);
 
     const avatarUrl = $derived(app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined);
 
     async function save(event: SubmitEvent): Promise<void> {
         event.preventDefault();
-        if (!info) return;
+        // The submit button stays enabled while saving (disabling the focused
+        // button would drop focus to <body>), so re-entrancy is guarded here.
+        if (!info || saving) return;
 
         const trimmedName = name.trim();
         if (!trimmedName) {
-            toast.error(__('ui.settings.profile.errorNameRequired'));
+            nameError = __('ui.settings.profile.errorNameRequired');
+            nameInput?.focus();
             return;
         }
+        nameError = null;
 
         saving = true;
         try {
@@ -158,19 +165,39 @@
         </Button>
     </div>
 
-    <form onsubmit={save}>
-        <label>
-            <span>{__('ui.settings.profile.nameLabel')}</span>
-            <input bind:value={name} maxlength={NAME_MAX_LENGTH} autocomplete="name" required/>
-        </label>
-        <label>
-            <span>{__('ui.settings.profile.bioLabel')}</span>
-            <Textarea bind:value={bio} maxlength={BIO_MAX_LENGTH} rows={4}/>
-            <small>{bio.length}/{BIO_MAX_LENGTH}</small>
-        </label>
+    <!-- novalidate: validation is reported inline (aria-invalid + message) instead of browser bubbles. -->
+    <form onsubmit={save} novalidate>
+        <div class="field">
+            <label for="profile-name">{__('ui.settings.profile.nameLabel')}</label>
+            <input
+                id="profile-name"
+                bind:this={nameInput}
+                bind:value={name}
+                maxlength={NAME_MAX_LENGTH}
+                autocomplete="name"
+                required
+                aria-invalid={nameError ? 'true' : undefined}
+                aria-describedby={nameError ? 'profile-name-error' : undefined}
+                oninput={() => (nameError = null)}
+            />
+            {#if nameError}
+                <p id="profile-name-error" class="field-error" role="alert">{nameError}</p>
+            {/if}
+        </div>
+        <div class="field">
+            <label for="profile-bio">{__('ui.settings.profile.bioLabel')}</label>
+            <Textarea
+                id="profile-bio"
+                bind:value={bio}
+                maxlength={BIO_MAX_LENGTH}
+                rows={4}
+                aria-describedby="profile-bio-counter"
+            />
+            <small id="profile-bio-counter">{bio.length}/{BIO_MAX_LENGTH}</small>
+        </div>
 
         <div class="form-footer">
-            <Button type="submit" size="sm" disabled={saving}>
+            <Button type="submit" size="sm" aria-busy={saving}>
                 {saving ? __('ui.settings.common.saving') : __('ui.settings.common.save')}
             </Button>
         </div>
@@ -186,7 +213,7 @@
     }
 
     header,
-    label,
+    .field,
     .avatar-row > div {
         display: flex;
         flex-direction: column;
@@ -245,11 +272,19 @@
         gap: var(--space-4);
     }
 
-    label {
+    .field {
         gap: var(--space-1_5);
+    }
+
+    label {
         color: var(--color-text);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
+    }
+
+    .field-error {
+        color: var(--color-error);
+        font-size: var(--font-size-xs);
     }
 
     input:not([type='file']) {
@@ -263,9 +298,14 @@
         font-weight: var(--font-weight-normal);
     }
 
-    input:not([type='file']):focus {
+    input:not([type='file']):focus-visible {
         border-color: var(--color-focus-ring);
-        outline: none;
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 1px;
+    }
+
+    input[aria-invalid='true'] {
+        border-color: var(--color-error);
     }
 
     .form-footer {

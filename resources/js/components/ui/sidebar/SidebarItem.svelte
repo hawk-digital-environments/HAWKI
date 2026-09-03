@@ -6,14 +6,21 @@
   sub-items) it owns its own chevron and toggles the sub-tree inline — the
   layout never injects a trailing icon. In the collapsed rail it shrinks to an
   icon with a tooltip.
+
+  Rows that lead somewhere are links: pass `href` (a path or a named route, see
+  `Link`) and the row renders as `<a>` with `aria-current="page"` while active.
+  Rows that trigger something (a menu, a dialog) stay `<button>`s.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import type {Attachment} from 'svelte/attachments';
-    import type {HTMLButtonAttributes} from 'svelte/elements';
+    import type {HTMLAnchorAttributes, HTMLButtonAttributes} from 'svelte/elements';
+    import type {ComponentProps} from 'svelte';
     import {mergeProps} from 'bits-ui';
+    import Link from '$lib/components/util/link/Link.svelte';
     import {slide} from 'svelte/transition';
     import {cubicOut} from 'svelte/easing';
+    import {motionDuration} from '$lib/utils/transitions/prefersReducedMotion.js';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
@@ -22,6 +29,16 @@
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
 
     interface Props extends HTMLButtonAttributes {
+        /** Navigation target. When set, the row renders as a `Link` (`<a>`)
+            instead of a `<button>`; accepts everything `Link`'s `href` does,
+            including a named route `{name, params}`. */
+        href?: ComponentProps<typeof Link>['href'];
+        /** Anchor target, only used together with `href` (e.g. `_blank` for an
+            external link — `Link` adds the matching `rel`). */
+        target?: HTMLAnchorAttributes['target'];
+        /** The rendered row element (`<a>` or `<button>`), e.g. to move focus
+            back onto the row. */
+        ref?: HTMLElement | null;
         /** Hugeicons icon shown before the label. Ignored when `media` is provided.
             Optional: with neither `icon` nor `media` the row is label-only and
             the leading slot is omitted entirely. */
@@ -49,6 +66,9 @@
     }
 
     let {
+        href,
+        target,
+        ref = $bindable(null),
         icon: Icon,
         media,
         label,
@@ -85,7 +105,16 @@
     // Children never render in the rail; the chevron and sub-tree are hidden there.
     const showChildren = $derived(hasChildren && expanded && !collapsed);
 
-    function handleClick(event: MouseEvent & {currentTarget: EventTarget & HTMLButtonElement}) {
+    // Hands the rendered element out through `ref`, next to the list's own
+    // registration attachment.
+    const attachRef: Attachment<HTMLElement> = (element) => {
+        ref = element;
+        return () => {
+            ref = null;
+        };
+    };
+
+    function handleClick(event: MouseEvent & {currentTarget: EventTarget & HTMLElement}) {
         // Expandable rows toggle their sub-tree inline (only when not collapsed)
         // and never navigate, so the off-canvas nav stays open for them.
         if (hasChildren && !collapsed) {
@@ -95,50 +124,68 @@
             // doesn't cover the destination.
             sidebar.navOpen = false;
         }
-        onclick?.(event);
+        // `SidebarItem` can render either a link or a button, while its public
+        // callback type comes from HTMLButtonAttributes. Both receive the same
+        // MouseEvent at runtime; narrow only for that callback boundary.
+        onclick?.(event as MouseEvent & {currentTarget: EventTarget & HTMLButtonElement});
     }
 </script>
 
+{#snippet rowContent()}
+    {#if media || Icon}
+        <span class="icon-wrap" bind:this={iconEl}>
+            {#if media}
+                {@render media()}
+            {:else if Icon}
+                <Icon size={18} strokeWidth={2} aria-hidden="true" />
+            {/if}
+        </span>
+    {/if}
+    <span class="label">{label}</span>
+    {#if hasChildren}
+        <span class="caret" class:open={expanded} aria-hidden="true">
+            <ChevronRightIcon size={16} strokeWidth={2} />
+        </span>
+    {:else if drill}
+        <span class="caret" aria-hidden="true">
+            <ChevronRightIcon size={16} strokeWidth={2} />
+        </span>
+    {:else if trailing}
+        <span class="caret trailing" aria-hidden="true">
+            {@render trailing()}
+        </span>
+    {/if}
+{/snippet}
+
 {#snippet row(attach: Attachment<HTMLElement>, triggerProps: Record<string, unknown> = {})}
-    <button
-        type="button"
-        {@attach attach}
-        aria-current={active && !isPopupTrigger ? 'page' : undefined}
-        aria-expanded={hasChildren ? expanded : undefined}
-        {...mergeProps(triggerProps, rest, {
-            class: ['sidebar-item', className],
-            onclick: handleClick
-        })}
-        class:active
-        class:indent
-        class:collapsed
-        class:drill
-        class:standalone
-    >
-        {#if media || Icon}
-            <span class="icon-wrap" bind:this={iconEl}>
-                {#if media}
-                    {@render media()}
-                {:else if Icon}
-                    <Icon size={18} strokeWidth={2} aria-hidden="true" />
-                {/if}
-            </span>
-        {/if}
-        <span class="label">{label}</span>
-        {#if hasChildren}
-            <span class="caret" class:open={expanded} aria-hidden="true">
-                <ChevronRightIcon size={16} strokeWidth={2} />
-            </span>
-        {:else if drill}
-            <span class="caret" aria-hidden="true">
-                <ChevronRightIcon size={16} strokeWidth={2} />
-            </span>
-        {:else if trailing}
-            <span class="caret trailing" aria-hidden="true">
-                {@render trailing()}
-            </span>
-        {/if}
-    </button>
+    {@const rowProps = mergeProps(triggerProps, rest, {
+        class: ['sidebar-item', className, {active, indent, collapsed, drill, standalone}],
+        onclick: handleClick,
+        'aria-expanded': hasChildren ? expanded : undefined
+    })}
+    {#if href}
+        <!-- A link row: `Link` owns the router navigation and aria-current. -->
+        <Link
+            {href}
+            target={target ?? undefined}
+            active={active && !isPopupTrigger}
+            {@attach attach}
+            {@attach attachRef}
+            {...(rowProps as Record<string, unknown>)}
+        >
+            {@render rowContent()}
+        </Link>
+    {:else}
+        <button
+            type="button"
+            {@attach attach}
+            {@attach attachRef}
+            aria-current={active && !isPopupTrigger ? 'page' : undefined}
+            {...rowProps}
+        >
+            {@render rowContent()}
+        </button>
+    {/if}
 {/snippet}
 
 <MenuListItem {active} inset={indent}>
@@ -162,7 +209,7 @@
 </MenuListItem>
 
 {#if showChildren}
-    <div class="subtree" transition:slide={{duration: 120, easing: cubicOut}}>
+    <div class="subtree" transition:slide={{duration: motionDuration(120), easing: cubicOut}}>
         {@render children?.()}
     </div>
 {/if}
@@ -190,6 +237,7 @@
         cursor: pointer;
         border-radius: var(--corner-sm);
         text-align: left;
+        text-decoration: none;
         transition: color var(--duration-fast);
     }
 

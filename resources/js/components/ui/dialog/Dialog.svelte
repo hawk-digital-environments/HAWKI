@@ -24,6 +24,17 @@
         {#snippet title()}Settings{/snippet}
         {#snippet children()}...{/snippet}
     </Dialog>
+
+  Initial focus: the close button is the first element in DOM order, so when
+  the dialog opens, keyboard/screen-reader users land on it first and can
+  leave immediately (bits-ui focuses the first tabbable element). Dialogs
+  that deliberately want to focus an input instead should NOT rely on the
+  `autofocus` attribute (bits-ui's auto focus runs afterwards and would win);
+  pass `contentProps.onOpenAutoFocus`, call `event.preventDefault()` and focus
+  the input yourself.
+
+  Use `role="alertdialog"` for blocking confirmations (see ConfirmDialog); the
+  default is a regular `dialog`.
 -->
 <script lang="ts">
 
@@ -65,6 +76,12 @@
         contentProps?: Omit<DialogContentProps, 'children'>;
         /** Additional props to apply to the DialogOverlay component. */
         overlayProps?: Omit<DialogOverlayProps, 'children'>;
+        /**
+         * ARIA role of the dialog surface. Use `alertdialog` for modal
+         * confirmations that interrupt the user and require a response.
+         * @default 'dialog'
+         */
+        role?: 'dialog' | 'alertdialog';
     }
 
     const {
@@ -81,8 +98,8 @@
         footerProps,
         children,
         contentProps,
-        overlayProps
-
+        overlayProps,
+        role = 'dialog'
     }: Props = $props();
 </script>
 
@@ -101,34 +118,41 @@
     <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay {...mergeProps({class: 'dialog-overlay'}, overlayProps)}/>
         <DialogPrimitive.Content {...mergeProps({class: 'dialog-content'}, contentProps)}>
-            {#if title || description}
-                <div {...mergeProps({class: 'dialog-header'}, headerProps)}>
-                    {#if title}
-                        <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
-                            <SnippetOrString value={title}/>
-                        </DialogPrimitive.Title>
+            <!-- bits-ui always emits role="dialog" on its content props, so the
+                 element is rendered here to let `role` override it. -->
+            {#snippet child({props})}
+                <div {...props} {role}>
+                    {#if closable}
+                        <DialogPrimitive.Close class="dialog-close" aria-label={__('ui.dialog.closeLabel')}>
+                            <Cancel01Icon size={16}/>
+                        </DialogPrimitive.Close>
                     {/if}
 
-                    {#if description}
-                        <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
-                            <SnippetOrString value={description}/>
-                        </DialogPrimitive.Description>
+                    {#if title || description}
+                        <div {...mergeProps({class: 'dialog-header'}, headerProps)}>
+                            {#if title}
+                                <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
+                                    <SnippetOrString value={title}/>
+                                </DialogPrimitive.Title>
+                            {/if}
+
+                            {#if description}
+                                <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
+                                    <SnippetOrString value={description}/>
+                                </DialogPrimitive.Description>
+                            {/if}
+                        </div>
+                    {/if}
+
+                    {@render children?.()}
+
+                    {#if footer}
+                        <div {...mergeProps({class: 'dialog-footer'}, footerProps)}>
+                            <SnippetOrString value={footer}/>
+                        </div>
                     {/if}
                 </div>
-            {/if}
-
-            {@render children?.()}
-
-            {#if footer}
-                <div {...mergeProps({class: 'dialog-footer'}, footerProps)}>
-                    <SnippetOrString value={footer}/>
-                </div>
-            {/if}
-            {#if closable}
-                <DialogPrimitive.Close class="dialog-close" aria-label={__('ui.dialog.closeLabel')}>
-                    <Cancel01Icon size={16}/>
-                </DialogPrimitive.Close>
-            {/if}
+            {/snippet}
         </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
 </DialogPrimitive.Root>

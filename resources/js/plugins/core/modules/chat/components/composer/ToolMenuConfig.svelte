@@ -40,6 +40,8 @@
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
     const {__} = useTranslator();
+    const uid = $props.id();
+    const variantLabelId = `${uid}-variant-label`;
 
     interface Props {
         /** The tool-menu entry to configure. Must be the live entry from `ToolMenu`'s
@@ -127,48 +129,41 @@
 {#if show}
     <DropdownMenuSeparator/>
     {#if isCapabilityWithMultipleTools}
-        <DropdownMenuLabel>{__('chat.composer.toolMenuConfig.variantLabel')}</DropdownMenuLabel>
-        <RadioCardGroup value={currentToolSelectionString} onChange={handleToolSelectionChange}>
-            <RadioCard value="auto" class="tool-menu-config-select-item">
+        <DropdownMenuLabel id={variantLabelId}>{__('chat.composer.toolMenuConfig.variantLabel')}</DropdownMenuLabel>
+        <RadioCardGroup
+            value={currentToolSelectionString}
+            onChange={handleToolSelectionChange}
+            aria-labelledby={variantLabelId}
+        >
+            <RadioCard value="auto">
                 {__('chat.composer.toolMenuConfig.autoLabel')}
-                <span class="select-item-meta">
+                {#snippet meta()}
                     <StatusDotForTool tool={entry.tool} supported={isAnyToolAvailableForCurrentModel}/>
-                    <InfoPopover info={__('chat.composer.toolMenuConfig.autoInfo')}/>
-                </span>
+                    <InfoPopover
+                        label={__('chat.composer.toolMenuConfig.autoLabel')}
+                        info={__('chat.composer.toolMenuConfig.autoInfo')}/>
+                {/snippet}
             </RadioCard>
             {#if anyModelHasNativeCapability}
-                <RadioCard
-                    value="native" class="tool-menu-config-select-item">
+                <RadioCard value="native">
                     {__('chat.composer.toolMenuConfig.nativeLabel')}
-                    <span class="select-item-meta">
+                    {#snippet meta()}
                         <StatusDotForTool tool={entry.tool} supported={hasNativeCapability}/>
-                        <InfoPopover info={__('chat.composer.toolMenuConfig.nativeInfo')}/>
-                    </span>
+                        <InfoPopover
+                            label={__('chat.composer.toolMenuConfig.nativeLabel')}
+                            info={__('chat.composer.toolMenuConfig.nativeInfo')}/>
+                    {/snippet}
                 </RadioCard>
             {/if}
             {#each toolSelectOptions as option}
-                <RadioCard value={option.name} class="tool-menu-config-select-item">
+                <RadioCard value={option.name}>
                     {option.displayName}
-                    <span class="select-item-meta">
+                    {#snippet meta()}
                         <StatusDotForTool tool={option} supported={option.isAvailableFor(composerContext.model.current)}/>
-                        <InfoPopover info={option.description}/>
-                    </span>
+                        <InfoPopover label={option.displayName} info={option.description}/>
+                    {/snippet}
                 </RadioCard>
             {/each}
         </RadioCardGroup>
     {/if}
 {/if}
-
-<style>
-    :global(.tool-menu-config-select-item .radio-card-body) {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-    }
-
-    .select-item-meta {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-    }
-</style>

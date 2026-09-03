@@ -7,6 +7,9 @@
 
   Not bindable — pass `value` down and react to changes via `onValueChange`.
 
+  Always pass `aria-label` (or `aria-labelledby`): it is applied to the thumb,
+  which carries `role="slider"`, together with an `aria-valuetext`.
+
   @example
   ```svelte
   <Slider
@@ -37,7 +40,17 @@
         disabled?: boolean;
     }>;
 
-    const {value = 0, min = 0, max = 1, step = 0.01, onValueChange, disabled = false, ...restProps}: Props = $props();
+    const {
+        value = 0,
+        min = 0,
+        max = 1,
+        step = 0.01,
+        onValueChange,
+        disabled = false,
+        'aria-label': ariaLabel,
+        'aria-labelledby': ariaLabelledby,
+        ...restProps
+    }: Props = $props();
 
     let rootEl = $state<HTMLElement | null>(null);
     let hovering = $state(false);
@@ -82,7 +95,13 @@
             <SliderPrimitive.Range class="slider-range"/>
         </span>
         {#each thumbs as thumb (thumb)}
-            <SliderPrimitive.Thumb index={thumb} class="slider-thumb"/>
+            <SliderPrimitive.Thumb
+                index={thumb}
+                class="slider-thumb"
+                aria-label={ariaLabel}
+                aria-labelledby={ariaLabelledby}
+                aria-valuetext={String(format(value))}
+            />
         {/each}
         {#if hovering && !disabled}
             <span class="slider-tooltip" style="left: {pointerX}px">{format(hoverValue)}</span>
