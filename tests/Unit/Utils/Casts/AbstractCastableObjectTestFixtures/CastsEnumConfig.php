@@ -10,4 +10,5 @@ class CastsEnumConfig extends AbstractCastableObject
 {
     public CastsTestStatus $status = CastsTestStatus::Active;
     public CastsTestDirection $direction = CastsTestDirection::North;
+    public CastsTestPriority $priority = CastsTestPriority::Low;
 }

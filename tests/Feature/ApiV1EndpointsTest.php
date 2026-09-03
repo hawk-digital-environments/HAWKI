@@ -211,14 +211,20 @@ class ApiV1EndpointsTest extends TestCase
 
     public function testItPersistsTheLocalePreferenceOnTheCurrentUser(): void
     {
-        $user = User::factory()->create(['locale' => null]);
+        $user = User::factory()->create();
 
         $this->actingAs($user)
             ->postJson('/api/hawki/v1/users/actions/locale', ['locale' => 'de_DE'], $this->jsonApiHeaders())
             ->assertOk()
             ->assertJsonPath('locale', 'de_DE');
 
-        self::assertSame('de_DE', $user->refresh()->locale);
+        // The locale preference is persisted as a sparse user-settings row.
+        self::assertDatabaseHas('user_setting_values', [
+            'user_id' => $user->id,
+            'namespace' => 'hawki-core',
+            'key' => 'locale',
+            'value' => 'de_DE',
+        ]);
     }
 
     // =========================================================================
@@ -261,7 +267,7 @@ class ApiV1EndpointsTest extends TestCase
     }
 
     /**
-     * @return string The uuid of the temporary upload.
+     * @return string the uuid of the temporary upload
      */
     private function uploadTemporaryAttachment(User $user): string
     {

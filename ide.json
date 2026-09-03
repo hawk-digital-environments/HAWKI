@@ -2,6 +2,16 @@
     "$schema": "https://laravel-ide.com/schema/laravel-ide-v2.json",
     "completions": [
         {
+            "complete": "validationRule",
+            "condition": [
+                {
+                    "parameters": [1],
+                    "parameterNames": ["rule"],
+                    "newClassFqn": ["\\App\\Services\\System\\Http\\Attributes\\ValidateInput"]
+                }
+            ]
+        },
+        {
             "complete": "directoryFiles",
             "options": {
                 "directory": "/app"
