@@ -98,17 +98,21 @@ export class KeychainStore implements DataStore {
         return await this.handle.importRoomKey(slug, key);
     }
 
-    public async loadData(app: HawkiApp) {
+    /**
+     * Creates the keychain handle as soon as the app is assembled — before any
+     * bootstrap stage. The legacy handshake page blocks the `migration` stage
+     * until a passkey was entered and validates that passkey through this
+     * store, so the handle must exist without waiting for {@link loadData}.
+     */
+    public ready(app: HawkiApp) {
         this._app = app;
-        this._handle = createKeychainHandle(app, () => {
+        const handle = this._handle = createKeychainHandle(app, () => {
             const currentPasskey = app.passkeySession.passkey;
             if (!currentPasskey) {
                 throw new Error('No passkey available to create keychain handle!');
             }
             return currentPasskey;
         });
-
-        const handle = this.handle;
 
         handle.onChange(() => {
             // Before our migration upgrades the old keychain values,
@@ -123,6 +127,16 @@ export class KeychainStore implements DataStore {
             this.roomKeys = handle.roomKeys();
             this.aiConvKey = handle.aiConvKey();
         });
+
+        app.events.async.on('logout', () => {
+            // Local session holds the encrypted keychain material; drop it on
+            // logout so a re-login does not pick up the previous user's keys.
+            this.clearLocalSession();
+        });
+    }
+
+    public async loadData(app: HawkiApp) {
+        const handle = this.handle;
 
         this._waitingToLoad = (async () => {
             try {

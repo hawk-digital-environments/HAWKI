@@ -176,13 +176,37 @@ abstract class AbstractFileStorage implements StorageServiceInterface
 
     /**
      * @inheritDoc
-     */
+     *
+     * Directories cannot be moved or copied in a single call on every filesystem driver. The s3 driver
+     * for example silently ignores the move of a "directory" (a key prefix), which would leave the
+     * file in the temp area while reporting success. Therefore every file is copied separately, which
+     * is supported by every driver: local disks use a native file copy, s3-compatible disks perform
+     * a server-side copy that does not route the file content through the application. Note that
+     * s3-compatible servers without ACL support (e.g. garage) additionally require the
+     * "retain_visibility" disk option to be disabled, otherwise the copy fails on the ACL pre-check.
+     */ 
     public function persistTemporaryFile(StoredFileIdentifier $identifier): bool
     {
         try {
             $tempFolder = $this->buildFolder($identifier, true);
             $persistentFolder = $this->buildFolder($identifier, false);
-            $this->context->filesystem->move($tempFolder, $persistentFolder);
+
+            $tempFiles = $this->context->filesystem->allFiles($tempFolder);
+            if ($tempFiles === []) {
+                // No files to persist.
+                return true;
+            }
+
+            foreach ($tempFiles as $tempFile) {
+                $persistentFile = Path::join($persistentFolder, ltrim(substr($tempFile, strlen($tempFolder)), '/'));
+                if (!$this->context->filesystem->copy($tempFile, $persistentFile)) {
+                    $this->context->logger->error(
+                        "Failed to move file to storage: {$tempFile} -> {$persistentFile}", ['identifier' => (string)$identifier]);
+                    return false;
+                }
+            }
+
+            $this->context->filesystem->deleteDirectory($tempFolder);
             return true;
         } catch (\Throwable $e) {
             $this->context->logger->error("Failed to move file to storage: " . $e->getMessage(), [

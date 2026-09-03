@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 
@@ -53,10 +54,14 @@ trait DecoratorTrait
      * Creates a new instance of the class using all properties of the given parent object.
      * This includes all private and protected properties, as well as static properties.
      *
+     * Properties the decorating class itself declares (which the parent therefore cannot
+     * provide) can be supplied via $additionalProperties, keyed by property name.
+     *
      * @param object $parent
+     * @param array<string, mixed> $additionalProperties
      * @return static
      */
-    public static function createDecoratedOf(object $parent): static
+    public static function createDecoratedOf(object $parent, array $additionalProperties = []): static
     {
         $myClass = static::class;
         // Check if the parent object is of the same class as the parent class of $this
@@ -102,9 +107,7 @@ trait DecoratorTrait
                     continue;
                 }
 
-                $sourceProperty->setAccessible(true);
                 $targetProperty = $localTargetReflection->getProperty($sourceProperty->getName());
-                $targetProperty->setAccessible(true);
 
                 if ($sourceProperty->isStatic()) {
                     if (!$sourceProperty->isInitialized(null)) {
@@ -112,23 +115,81 @@ trait DecoratorTrait
                     }
                     $value = $sourceProperty->getValue();
                     $targetProperty->setValue(null, $value);
-                } else {
-                    if (!$sourceProperty->isInitialized($parent)) {
-                        continue;
-                    }
-                    if ($sourceProperty->isReadOnly()) {
-                        throw new \LogicException(sprintf(
-                            'Cannot inherit read-only property %s::$%s from parent class %s',
-                            $sourceReflection->getName(),
-                            $sourceProperty->getName(),
-                            $sourceReflection->getName()
-                        ));
-                    }
-                    $value = $sourceProperty->getValue($parent);
-                    $targetProperty->setValue($instance, $value);
+                    continue;
                 }
+
+                if ($sourceProperty->isReadOnly()) {
+                    throw new \LogicException(sprintf(
+                        'Cannot inherit read-only property %s::$%s from parent class %s',
+                        $sourceReflection->getName(),
+                        $sourceProperty->getName(),
+                        $sourceReflection->getName()
+                    ));
+                }
+
+                if (!$sourceProperty->isInitialized($parent)) {
+                    continue;
+                }
+                $value = $sourceProperty->getValue($parent);
+                $targetProperty->setValue($instance, $value);
             }
         } while ($sourceReflection = $sourceReflection->getParentClass());
+
+        foreach ($additionalProperties as $propertyName => $value) {
+            // Additional properties are meant for properties the decorating class adds on
+            // top of the parent, so they must exist in the target class hierarchy.
+            $localTargetReflection = $targetReflection;
+            $targetProperty = null;
+            do {
+                if ($localTargetReflection->hasProperty($propertyName)) {
+                    $targetProperty = $localTargetReflection->getProperty($propertyName);
+                    break;
+                }
+            } while ($localTargetReflection = $localTargetReflection->getParentClass());
+
+            if ($targetProperty === null) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Cannot assign additional property %s::$%s via %s: the property does not exist.',
+                    $myClass,
+                    $propertyName,
+                    __TRAIT__
+                ));
+            }
+
+            // Assigning a property the parent already declares would overwrite inherited state.
+            $localSourceReflection = new \ReflectionObject($parent);
+            do {
+                if ($localSourceReflection->hasProperty($propertyName)) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'Cannot assign additional property %s::$%s via %s: the property is already declared on %s and would overwrite inherited state.',
+                        $myClass,
+                        $propertyName,
+                        __TRAIT__,
+                        $localSourceReflection->getName()
+                    ));
+                }
+            } while ($localSourceReflection = $localSourceReflection->getParentClass());
+
+            if ($targetProperty->isStatic()) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Cannot assign additional property %s::$%s via %s: static properties are not supported.',
+                    $myClass,
+                    $propertyName,
+                    __TRAIT__
+                ));
+            }
+
+            if ($targetProperty->isReadOnly()) {
+                throw new \LogicException(sprintf(
+                    'Cannot assign read-only property %s::$%s as an additional property via %s',
+                    $myClass,
+                    $propertyName,
+                    __TRAIT__
+                ));
+            }
+
+            $targetProperty->setValue($instance, $value);
+        }
 
         return $instance;
     }
