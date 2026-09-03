@@ -55,4 +55,13 @@
     .skip-link:focus {
         transform: translateY(0);
     }
+
+    /* While the mobile drawer is open the main landmark is `inert`, so a skip
+       link pointing at it would be a focusable dead end: hide it along with
+       the content. `SidebarRoot` flags the open drawer on the grid root. */
+    @media (--bp-md-and-smaller) {
+        :global(.sidebar-layout.nav-open) .skip-link {
+            display: none;
+        }
+    }
 </style>
