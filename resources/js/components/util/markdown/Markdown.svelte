@@ -114,6 +114,26 @@
         :global(.paragraph-node) {
             margin-top: 0;
         }
+
+        /* markstream-svelte sizes headings by tag. With `headingBaseLevel`
+           a `#` may render as h4 (and `##` as h5 with the browser default
+           size), so size by the markdown level instead. Values mirror the
+           package's h1–h4 rules; deeper levels keep their tag's default. */
+        :global(.heading-node.heading-1) {
+            font-size: clamp(2rem, 4vw, 2.65rem);
+        }
+
+        :global(.heading-node.heading-2) {
+            font-size: clamp(1.55rem, 3vw, 2rem);
+        }
+
+        :global(.heading-node.heading-3) {
+            font-size: 1.35rem;
+        }
+
+        :global(.heading-node.heading-4) {
+            font-size: 1.15rem;
+        }
     }
 
     :global(.darkMode) {

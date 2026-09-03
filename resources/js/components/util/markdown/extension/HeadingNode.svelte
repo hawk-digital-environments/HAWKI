@@ -24,17 +24,22 @@
     const {node, context, indexKey}: Props = $props();
     const baseLevel = useMarkdownHeadingBaseLevel();
 
-    const level = $derived.by(() => {
+    /** Level as written in the markdown (`#` = 1); drives the visual size. */
+    const sourceLevel = $derived.by(() => {
         const own = Number((node as any)?.level);
-        const source = Number.isFinite(own) ? Math.min(Math.max(Math.trunc(own), 1), 6) : 1;
-        return Math.min(baseLevel() - 1 + source, 6);
+        return Number.isFinite(own) ? Math.min(Math.max(Math.trunc(own), 1), 6) : 1;
     });
+    /** Level of the rendered element, shifted below the page outline. */
+    const level = $derived(Math.min(baseLevel() - 1 + sourceLevel, 6));
     const children = $derived.by(() => {
         const value = (node as any)?.children;
         return Array.isArray(value) ? value : [];
     });
 </script>
 
-<svelte:element this={`h${level}`} class="heading-node heading-{level}">
+<!-- The tag carries the outline level; the `heading-{n}` class keeps the
+     markdown level, like the package's own HeadingNode, so `Markdown.svelte`
+     can size a shifted `#` like an h1 instead of like an h4. -->
+<svelte:element this={`h${level}`} class="heading-node heading-{sourceLevel}" data-level={sourceLevel}>
     <RenderChildren nodes={children} {context} prefix={String(indexKey ?? 'heading') + '-heading'} />
 </svelte:element>
