@@ -32,6 +32,7 @@
  */
 import {ConfigurationExtension} from '$lib/kernel/config/ConfigurationExtension.svelte.js';
 import {UserSettingsExtension} from '$lib/kernel/userSettings/UserSettingsExtension.svelte.js';
+import {FavoritesExtension} from '$lib/kernel/favorites/FavoritesExtension.svelte.js';
 import {ThemeExtension} from '$lib/kernel/theme/ThemeExtension.svelte.js';
 import {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import {ModuleExtension} from '$lib/kernel/modules/ModuleExtension.js';
@@ -80,6 +81,7 @@ provideLegacyGlobals();
             new PluginExtension(),
             new ConfigurationExtension(),
             new UserSettingsExtension(),
+            new FavoritesExtension(),
             new ThemeExtension(),
             new MigrationExtension(),
             new LocalizationExtension(),
