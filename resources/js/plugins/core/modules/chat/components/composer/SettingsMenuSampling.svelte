@@ -19,6 +19,7 @@
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {slide} from 'svelte/transition';
+    import {motionDuration} from '$lib/utils/transitions/prefersReducedMotion.js';
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();
@@ -54,6 +55,7 @@
         value={activePreset}
         onChange={handlePresetChange}
         aria-label={__('chat.composer.settings.settingsHeading')}
+        mode="radio"
     />
 {/if}
 
@@ -69,7 +71,7 @@
 </button>
 
 {#if advancedOpen}
-    <div class="sliders-section" id="model-settings-advanced" transition:slide={{duration: 150}}>
+    <div class="sliders-section" id="model-settings-advanced" transition:slide={{duration: motionDuration(150)}}>
         {#if samplingDisabled}
             <Alert description={__('chat.composer.settings.samplingDisabled')} icon={Alert01Icon} size="small"/>
         {/if}
@@ -78,7 +80,10 @@
             <div class="slider-header">
                 <Txt size="xs">
                     {__('chat.composer.settings.temperature')}
-                    <InfoPopover info={__('chat.composer.settings.temperatureInfo')} disabled={samplingDisabled}/>
+                    <InfoPopover
+                        label={__('chat.composer.settings.temperature')}
+                        info={__('chat.composer.settings.temperatureInfo')}
+                        disabled={samplingDisabled}/>
                 </Txt>
                 <Txt size="xs">{composerContext.modelParameters.get('temperature').toFixed(1)}</Txt>
             </div>
@@ -97,7 +102,10 @@
             <div class="slider-header">
                 <Txt size="xs">
                     {__('chat.composer.settings.topP')}
-                    <InfoPopover info={__('chat.composer.settings.topPInfo')} disabled={samplingDisabled}/>
+                    <InfoPopover
+                        label={__('chat.composer.settings.topP')}
+                        info={__('chat.composer.settings.topPInfo')}
+                        disabled={samplingDisabled}/>
                 </Txt>
                 <Txt size="xs">{composerContext.modelParameters.get('top_p').toFixed(2)}</Txt>
             </div>

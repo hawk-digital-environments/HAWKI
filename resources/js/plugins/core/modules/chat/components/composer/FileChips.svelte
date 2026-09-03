@@ -26,9 +26,13 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
+    import {motionDuration} from '$lib/utils/transitions/prefersReducedMotion.js';
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();
+
+    // Prefix for the per-chip status descriptions (aria-describedby targets).
+    const uid = $props.id();
 
     let chipsEl = $state(null as HTMLDivElement | null);
 
@@ -133,7 +137,7 @@
     function maskSlideDown(_node: HTMLElement) {
         if (composerContext.attachments.hasAny) return {duration: 0};
         return {
-            duration: 500,
+            duration: motionDuration(500),
             easing: cubicIn,
             css: (t: number) => `opacity: ${t}; transform: translateY(${(1 - t) * 100}%);`
         };
@@ -150,14 +154,20 @@
     >
         {#each composerContext.attachments.list as file, i (`${file.name}-${i}`)}
             {@const conflict = currentModelHasFileIssue}
+            {@const sendIssue = composerContext.sendStatus?.getFileIssue(file)}
+            {@const progress = composerContext.sendStatus?.getFileProgress(file)}
+            {@const conflictMessage = conflict ? __('chat.composer.fileChips.conflictMessage') : null}
+            {@const issueMessage = sendIssue ? __('chat.composer.fileChips.uploadError', {issue: sendIssue}) : conflictMessage}
+            {@const hasIssue = conflict || !!sendIssue}
+            {@const progressMessage = progress != null ? __('chat.composer.fileChips.uploadProgress', {percent: String(Math.round(progress))}) : null}
+            {@const statusMessage = issueMessage ?? progressMessage}
+            {@const statusId = `${uid}-chip-status-${i}`}
             <span class="file-chip-mask" out:maskSlideDown|global style:--file-chip-delay={`${Math.min(i, 4) * 35}ms`}>
                 <Tooltip tooltip={file.name}>
                     {#snippet children(a)}
-                        {@const sendIssue = composerContext.sendStatus?.getFileIssue(file)}
-                        {@const progress = composerContext.sendStatus?.getFileProgress(file) }
-                        {@const conflictMessage = conflict ? __('chat.composer.fileChips.conflictMessage') : null}
-                        {@const issueMessage = sendIssue ? __('chat.composer.fileChips.uploadError', {issue: sendIssue}) : conflictMessage}
-                        {@const hasIssue = conflict || !!sendIssue}
+                        <!-- The error/conflict/progress state is otherwise only colour + title
+                             (which the aria-label overrides), so it is exposed as the
+                             chip's accessible description instead. -->
                         <button
                             {...mergeProps(
                                 a.props,
@@ -172,7 +182,8 @@
                                     onfocus: () => activeIndex = i,
                                     tabindex: i === activeIndex ? 0 : -1,
                                     'data-file-chip': '',
-                                    'aria-label': __('chat.composer.fileChips.removeFileAriaLabel', {file: file.name})
+                                    'aria-label': __('chat.composer.fileChips.removeFileAriaLabel', {file: file.name}),
+                                    'aria-describedby': statusMessage ? statusId : undefined
                                 }
                             )}
                         >
@@ -181,13 +192,18 @@
                                 <Alert02Icon size={12} class="file-chip-warning"/>
                             {/if}
                             {#if progress !== null}
-                                <RadialProgress value={progress}/>
+                                <!-- Progress is read from the description text; a progressbar
+                                     nested in the button would not be exposed anyway. -->
+                                <RadialProgress value={progress} aria-hidden="true"/>
                             {/if}
                             <span class="file-chip-name">{file.name}</span>
                             <Cancel01Icon size={12} class="file-chip-remove"/>
                         </button>
                     {/snippet}
                 </Tooltip>
+                {#if statusMessage}
+                    <span id={statusId} class="u-sr-only" role="status" aria-live="polite">{statusMessage}</span>
+                {/if}
             </span>
         {/each}
     </div>

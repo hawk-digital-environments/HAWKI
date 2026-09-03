@@ -138,7 +138,10 @@
                 aria-checked={isChecked}
                 {disabled}
                 onclick={toggleFromIndicator}>
-                <Switch checked={isChecked} {disabled}/>
+                <!-- The enclosing button owns the switch semantics and keyboard
+                     activation; render the visual indicator inert to avoid a
+                     nested native button. -->
+                <Switch checked={isChecked} {disabled} presentational/>
             </button>
             {#if IconLeft}
                 <IconLeft size="14" class="dropdown-item-icon-start"/>

@@ -95,7 +95,9 @@
         --color-border: oklch(92% 0 0);
         --color-border-strong: oklch(50% 0 0);
         --color-text: oklch(20% 0 0);
-        --color-text-muted: oklch(56% 0 0);
+        /* Meets WCAG AA for normal text on both --color-surface and
+           --color-bg-secondary, not only on pure white. */
+        --color-text-muted: oklch(48% 0 0);
         --color-text-invert: oklch(97% 0 0);
         --color-text-disabled: oklch(75% 0 0);
         --color-disabled-bg: oklch(93% 0 0);

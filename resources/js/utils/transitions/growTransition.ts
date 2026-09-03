@@ -1,3 +1,5 @@
+import {prefersReducedMotion} from '$lib/utils/transitions/prefersReducedMotion.js';
+
 /**
  * Svelte CSS transition that expands or collapses an element by animating its
  * height (default) or width from 0 to its natural size, while fading opacity
@@ -35,6 +37,10 @@ function px(value: string): number {
 }
 
 export function growTransition(node: Element, params?: {mode?: 'horizontal' | 'vertical'}) {
+    if (prefersReducedMotion()) {
+        return {duration: 0};
+    }
+
     const height = node.scrollHeight;
     const style = getComputedStyle(node);
     const {mode = 'vertical'} = params ?? {};

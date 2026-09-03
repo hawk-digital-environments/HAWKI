@@ -30,6 +30,7 @@ class AnnouncementsApiTest extends TestCase
 
         self::assertNotNull($item);
         self::assertSame('policy', $item['attributes']['type']);
+        self::assertTrue($item['attributes']['is_global']);
         self::assertTrue($item['attributes']['is_forced']);
         self::assertTrue($item['attributes']['is_active']);
         self::assertNotSame('', $item['attributes']['content']);

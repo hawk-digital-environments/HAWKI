@@ -16,7 +16,7 @@
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {announcementDisplayTitle, parseAnnouncementContent} from '$lib/app/components/announcements/announcementContent.js';
+    import {announcementDisplayTitle, parseAnnouncementContent, stripLeadingHeading} from '$lib/app/components/announcements/announcementContent.js';
 
     const app = useApp();
     const store = useStore('announcements');
@@ -70,9 +70,9 @@
         open={true}
         onOpenChange={handleOpenChange}
         closable={!current.is_forced}
+        title={announcementDisplayTitle(current)}
         contentProps={{
             'class': 'announcement-dialog-content',
-            'aria-label': announcementDisplayTitle(current),
             ...(current.is_forced ? {
                 onEscapeKeydown: (e: Event) => e.preventDefault(),
                 onInteractOutside: (e: Event) => e.preventDefault()
@@ -81,7 +81,10 @@
     >
         {#snippet children()}
             <div class="announcement-dialog-body">
-                <Markdown message={parsed.body}/>
+                <!-- The leading heading is shown as the dialog title above.
+                     Subsequent Markdown headings start below that title, so
+                     no h1 is introduced into the dialog body. -->
+                <Markdown message={stripLeadingHeading(parsed.body)} headingBaseLevel={3}/>
             </div>
         {/snippet}
         {#snippet footer()}
