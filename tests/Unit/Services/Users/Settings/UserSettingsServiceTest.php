@@ -97,7 +97,7 @@ class UserSettingsServiceTest extends TestCase
 
         $settings = $this->sut->get(CoreUserSettings::class);
 
-        self::assertSame(Theme::Light, $settings->theme);
+        self::assertSame(Theme::Auto, $settings->theme);
     }
 
     // =========================================================================
@@ -110,7 +110,7 @@ class UserSettingsServiceTest extends TestCase
 
         $settings = $this->sut->get(CoreUserSettings::class);
 
-        self::assertSame(Theme::Light, $settings->theme);
+        self::assertSame(Theme::Auto, $settings->theme);
         self::assertNull($settings->locale);
         self::assertSame('UTC', $settings->timezone);
     }
@@ -187,7 +187,7 @@ class UserSettingsServiceTest extends TestCase
         $this->givenGuestInCliWithRawRows(['theme' => 'dark']);
 
         $settings = $this->sut->get(CoreUserSettings::class);
-        $settings->theme = Theme::Light;
+        $settings->theme = Theme::Auto;
 
         $this->runtimeStorage->expects($this->once())
             ->method('persistChanged')
@@ -221,7 +221,7 @@ class UserSettingsServiceTest extends TestCase
         $this->givenGuestInCliWithRawRows(['timezone' => 'Europe/Berlin', 'theme' => 'dark']);
 
         $settings = $this->sut->get(CoreUserSettings::class);
-        $settings->theme = Theme::Light;
+        $settings->theme = Theme::Auto;
 
         $this->runtimeStorage->expects($this->once())
             ->method('persistChanged')

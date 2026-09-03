@@ -209,24 +209,6 @@ class ApiV1EndpointsTest extends TestCase
         self::assertDatabaseMissing('ai_convs', ['id' => $conversation->id]);
     }
 
-    public function testItPersistsTheLocalePreferenceOnTheCurrentUser(): void
-    {
-        $user = User::factory()->create();
-
-        $this->actingAs($user)
-            ->postJson('/api/hawki/v1/users/actions/locale', ['locale' => 'de_DE'], $this->jsonApiHeaders())
-            ->assertOk()
-            ->assertJsonPath('locale', 'de_DE');
-
-        // The locale preference is persisted as a sparse user-settings row.
-        self::assertDatabaseHas('user_setting_values', [
-            'user_id' => $user->id,
-            'namespace' => 'hawki-core',
-            'key' => 'locale',
-            'value' => 'de_DE',
-        ]);
-    }
-
     // =========================================================================
 
     private function createConversation(User $owner): AiConv

@@ -3,6 +3,7 @@ import type {HawkiApp, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
 import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 import type {ConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistrar.js';
+import type {UserSettingsSchemaRegistrar} from '$lib/kernel/userSettings/userSettingsSchemaRegistrar.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
@@ -21,6 +22,7 @@ import {getPluginRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
  * - `runInit`, `runExtensions`, `runResourceSchemas` — called directly by
  *   `PluginExtension.init()`, before the rest of the app is assembled.
  * - `runConfigSchemas` — called by `ConfigurationExtension.init()`.
+ * - `runSettingSchemas` — called by `UserSettingsExtension.init()`.
  * - `runMigrations` — called by `MigrationExtension` (core plugins only —
  *   `HawkiCorePlugin.migrations` is not part of the third-party `HawkiPlugin`
  *   contract).
@@ -75,6 +77,11 @@ export class PluginBootstrapper {
     /** Calls `plugin.configSchemas()` so each plugin can register its Zod config schema on the given `ConfigSchemaRegistrar`. */
     public runConfigSchemas(registrar: ConfigSchemaRegistrar) {
         return this.runForEach(plugin => plugin.configSchemas?.(registrar, this.context));
+    }
+
+    /** Calls `plugin.settingSchemas()` so each plugin can register its Zod user-settings schema on the given `UserSettingsSchemaRegistrar`. */
+    public runSettingSchemas(registrar: UserSettingsSchemaRegistrar) {
+        return this.runForEach(plugin => plugin.settingSchemas?.(registrar, this.context));
     }
 
     /** Calls `plugin.resourceSchemas()` so each plugin can register its Zod resource schemas on the given `ResourceSchemaRegistrar`. */

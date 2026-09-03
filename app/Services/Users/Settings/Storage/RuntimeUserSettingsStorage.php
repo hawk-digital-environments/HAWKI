@@ -60,4 +60,22 @@ class RuntimeUserSettingsStorage implements UserSettingsStorageInterface
     {
         return 'runtime';
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getNamespaces(): array
+    {
+        return array_keys($this->data);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function inheritFrom(UserSettingsStorageInterface $source): void
+    {
+        foreach ($source->getNamespaces() as $namespace) {
+            $this->persistChanged($namespace, $source->loadRaw($namespace));
+        }
+    }
 }

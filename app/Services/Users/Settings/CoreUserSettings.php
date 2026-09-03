@@ -30,10 +30,11 @@ class CoreUserSettings extends AbstractUserSettings
     public ?string $locale = null;
 
     /**
-     * The user's UI theme.
+     * The user's UI theme preference. `auto` (the default) makes the frontend follow
+     * the browser's `prefers-color-scheme`; `light` / `dark` pin the colour scheme.
      */
-    #[ValidateInput('sometimes|in:light,dark')]
-    public Theme $theme = Theme::Light;
+    #[ValidateInput('sometimes|in:auto,light,dark')]
+    public Theme $theme = Theme::Auto;
 
     /**
      * The user's timezone as a timezone identifier, e.g. `"Europe/Berlin"`.

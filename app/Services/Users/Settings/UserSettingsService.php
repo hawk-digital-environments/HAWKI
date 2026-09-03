@@ -141,6 +141,39 @@ class UserSettingsService
     }
 
     /**
+     * Converts a registering guest's session-backed settings into the authenticated
+     * user's database rows.
+     *
+     * Called once by the registration flow ({@see \App\Http\Controllers\AuthenticationController::completeRegistration})
+     * after the user has been created and logged in: the database storage inherits
+     * every namespace of the session storage (guest settings live there), and the
+     * session entries are removed afterwards so the same session can never resurface
+     * them as guest defaults. The session's rows are already sparse — only
+     * customized keys — so the copy preserves sparsity.
+     *
+     * Identity-map entries of the session storage are dropped along with its data;
+     * database-backed instances for the new user hydrate fresh on next access.
+     */
+    public function persistSessionSettings(): void
+    {
+        $this->databaseStorage->inheritFrom($this->sessionStorage);
+
+        foreach ($this->sessionStorage->getNamespaces() as $namespace) {
+            $this->sessionStorage->removeKeys(
+                $namespace,
+                array_keys($this->sessionStorage->loadRaw($namespace)),
+            );
+        }
+
+        $sessionMapKey = $this->sessionStorage->getStorageId() . '|';
+        $this->map = array_filter(
+            $this->map,
+            static fn (string $key): bool => !str_starts_with($key, $sessionMapKey),
+            \ARRAY_FILTER_USE_KEY,
+        );
+    }
+
+    /**
      * Validates the class extends the settings base and returns it narrowed.
      *
      * @template T of AbstractUserSettings

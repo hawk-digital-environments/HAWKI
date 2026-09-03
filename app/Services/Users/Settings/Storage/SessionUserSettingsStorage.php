@@ -11,10 +11,11 @@ use Illuminate\Contracts\Session\Session;
 /**
  * Session-backed storage for guests outside CLI context.
  *
- * Raw serialized strings live under a `user_settings.{namespace}` session key. Guest
- * settings are **not promoted to the database** when the user later registers —
- * registration already resets per-user state, so carrying them over would be
- * inconsistent.
+ * Raw serialized strings live under a single `user_settings` session key,
+ * mapping namespace → (property → serialized value). Guest settings are **not
+ * promoted to the database** automatically — when the user registers,
+ * {@see \App\Services\Users\Settings\UserSettingsService::persistSessionSettings()}
+ * converts them via {@see inheritFrom()}.
  *
  * The storage is only selected by {@see \App\Services\Users\Settings\UserSettingsService}
  * when the user context resolves no user and the process is not running in the console
@@ -23,7 +24,7 @@ use Illuminate\Contracts\Session\Session;
 #[Singleton()]
 class SessionUserSettingsStorage implements UserSettingsStorageInterface
 {
-    private const string SESSION_KEY_PREFIX = 'user_settings.';
+    private const string SESSION_ROOT_KEY = 'user_settings';
 
     public function __construct(private readonly Session $session)
     {
@@ -34,9 +35,7 @@ class SessionUserSettingsStorage implements UserSettingsStorageInterface
      */
     public function loadRaw(string $namespace): array
     {
-        $stored = $this->session->get(self::SESSION_KEY_PREFIX . $namespace);
-
-        return \is_array($stored) ? $stored : [];
+        return $this->sessionData()[$namespace] ?? [];
     }
 
     /**
@@ -44,10 +43,9 @@ class SessionUserSettingsStorage implements UserSettingsStorageInterface
      */
     public function persistChanged(string $namespace, array $changed): void
     {
-        $this->session->put(
-            self::SESSION_KEY_PREFIX . $namespace,
-            array_merge($this->loadRaw($namespace), $changed),
-        );
+        $this->put(array_merge($this->sessionData(), [
+            $namespace => array_merge($this->sessionData()[$namespace] ?? [], $changed),
+        ]),);
     }
 
     /**
@@ -55,13 +53,13 @@ class SessionUserSettingsStorage implements UserSettingsStorageInterface
      */
     public function removeKeys(string $namespace, array $keys): void
     {
-        $remaining = $this->loadRaw($namespace);
+        $data = $this->sessionData();
 
         foreach ($keys as $key) {
-            unset($remaining[$key]);
+            unset($data[$namespace][$key]);
         }
 
-        $this->session->put(self::SESSION_KEY_PREFIX . $namespace, $remaining);
+        $this->put($data);
     }
 
     /**
@@ -70,5 +68,46 @@ class SessionUserSettingsStorage implements UserSettingsStorageInterface
     public function getStorageId(): string
     {
         return 'session';
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getNamespaces(): array
+    {
+        return array_keys($this->sessionData());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function inheritFrom(UserSettingsStorageInterface $source): void
+    {
+        foreach ($source->getNamespaces() as $namespace) {
+            $this->persistChanged($namespace, $source->loadRaw($namespace));
+        }
+    }
+
+    /**
+     * Returns the full session data map (namespace → property → raw value),
+     * defaulting to an empty array.
+     *
+     * @return array<string, array<string, null|string>>
+     */
+    private function sessionData(): array
+    {
+        $stored = $this->session->get(self::SESSION_ROOT_KEY);
+
+        return \is_array($stored) ? $stored : [];
+    }
+
+    /**
+     * Writes the full session data map back.
+     *
+     * @param array<string, array<string, null|string>> $data
+     */
+    private function put(array $data): void
+    {
+        $this->session->put(self::SESSION_ROOT_KEY, $data);
     }
 }

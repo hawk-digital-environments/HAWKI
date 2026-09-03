@@ -159,7 +159,6 @@ JsonApiRoute::server('v1')
                     ->withoutMiddleware(AppTokenForbiddenMiddleware::class);
                 $actions->post('actions/avatar', 'uploadAvatar');
                 $actions->post('actions/reset-profile', 'resetProfile');
-                $actions->post('actions/locale', 'storeLocale');
             });
 
         $server->resource('user-keychain-values', UserKeychainValueController::class)

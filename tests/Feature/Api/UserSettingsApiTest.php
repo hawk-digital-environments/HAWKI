@@ -32,7 +32,7 @@ class UserSettingsApiTest extends TestCase
 
         $response->assertOk();
         self::assertSame('hawki-core', $response->json('data.id'));
-        self::assertSame('light', $response->json('data.attributes.core.theme'));
+        self::assertSame('auto', $response->json('data.attributes.core.theme'));
         self::assertNull($response->json('data.attributes.core.locale'));
         self::assertSame('UTC', $response->json('data.attributes.core.timezone'));
     }

@@ -65,6 +65,26 @@ class DatabaseUserSettingsStorage implements UserSettingsStorageInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function getNamespaces(): array
+    {
+        return $this->repository->getNamespacesForUser($this->currentUser());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function inheritFrom(UserSettingsStorageInterface $source): void
+    {
+        $user = $this->currentUser();
+
+        foreach ($source->getNamespaces() as $namespace) {
+            $this->repository->upsertValuesForUser($user, $namespace, $source->loadRaw($namespace));
+        }
+    }
+
+    /**
      * Returns the authenticated user from the user context — the same source the service
      * used to select this storage, so selection and execution cannot disagree.
      */

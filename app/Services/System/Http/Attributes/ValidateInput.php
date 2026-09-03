@@ -28,8 +28,8 @@ namespace App\Services\System\Http\Attributes;
  *     #[ValidateInput('sometimes|nullable|string|max:5')]
  *     public string|null $locale = null;
  *
- *     #[ValidateInput('sometimes|in:light,dark')]
- *     public Theme $theme = Theme::Light;
+ *     #[ValidateInput('sometimes|in:auto,light,dark')]
+ *     public Theme $theme = Theme::Auto;
  * }
  * ```
  *

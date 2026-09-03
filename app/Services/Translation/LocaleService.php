@@ -10,22 +10,15 @@ use App\Services\Translation\Value\Locale;
 use App\Services\Users\Settings\CoreUserSettings;
 use App\Services\Users\Settings\UserSettingsService;
 use Illuminate\Container\Attributes\Singleton;
-use Illuminate\Contracts\Session\Session;
-use Illuminate\Cookie\CookieJar;
 use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
 
 #[Singleton()]
 class LocaleService
 {
-    private const string SESSION_LANGUAGE_KEY = 'language';
-    private const string LAST_LANGUAGE_COOKIE_KEY = 'lastLanguage_cookie';
     private ?Locale $currentLocale = null;
 
     public function __construct(
         private readonly Application $application,
-        private readonly Session $session,
-        private readonly CookieJar $cookieJar,
         private readonly LocaleConfig $localeConfig,
         private readonly UserSettingsService $userSettingsService,
     ) {
@@ -64,7 +57,7 @@ class LocaleService
     /**
      * Sets the current locale to the given instance.
      *
-     * @param null|bool $persist If true, the locale will be persisted in the session, the last-language cookie and the user's core settings (per-user, or per session for guests). False or null will not persist it (default).
+     * @param null|bool $persist If true, the locale is written to the user's core settings (per-user, or per session for guests). False or null will not persist it (default).
      *
      * @throws SettingUnavailableLocaleException if the given locale is not in the list of active locales
      */
@@ -80,11 +73,6 @@ class LocaleService
         }
 
         if ($persist) {
-            if (!$this->application->runningInConsole()) {
-                $this->setSessionLocale($validatedLocale);
-                $this->setLastLanguageCookieLocale($validatedLocale);
-            }
-
             $settings = $this->userSettingsService->get(CoreUserSettings::class);
             $settings->locale = $validatedLocale->lang;
             $this->userSettingsService->save($settings);
@@ -132,56 +120,13 @@ class LocaleService
     }
 
     /**
-     * Sets the given locale in the session.
-     * This is the locale that will be used as the current locale on the next request.
-     *
-     * @throws SettingUnavailableLocaleException if the given locale is not in the list of active locales
-     */
-    private function setSessionLocale(Locale $locale): void
-    {
-        if ($this->application->runningInConsole()) {
-            return;
-        }
-
-        $this->session->put(self::SESSION_LANGUAGE_KEY, $locale->toLegacyArray());
-    }
-
-    /**
-     * Returns the locale stored in the session, or null if none is set or if the stored locale is not active.
-     */
-    private function getSessionLocale(): ?Locale
-    {
-        if ($this->application->runningInConsole()) {
-            return null;
-        }
-
-        $locale = $this->session->get(self::SESSION_LANGUAGE_KEY);
-
-        // This should in theory always be an array or null, but we check for string just in case
-        if (\is_string($locale)) {
-            $localeObj = $this->resolveLocaleObject($locale);
-
-            if (null !== $localeObj) {
-                return $localeObj;
-            }
-        }
-
-        $locale = \is_array($locale) ? $locale['id'] ?? null : $locale;
-
-        return $this->resolveLocaleObject($locale);
-    }
-
-    /**
-     * Resolves the current locale from the request/session, authenticated user,
-     * last-language cookie, or application default (in that order).
-     * The resolved locale is stored in $this->resolvedCurrentLocale.
+     * Resolves the current locale from the user's core settings (per-user for
+     * authenticated users, per-session for guests) or the application default —
+     * in that order. The resolved locale is stored in $this->currentLocale.
      */
     private function resolveCurrentLocale(): void
     {
-        $this->currentLocale = $this->getSessionLocale()
-            ?? $this->getUserPreferredLocale()
-            ?? $this->getLastLanguageCookieLocale()
-            ?? $this->getDefaultLocale();
+        $this->currentLocale = $this->getUserPreferredLocale() ?? $this->getDefaultLocale();
     }
 
     private function getUserPreferredLocale(): ?Locale
@@ -193,37 +138,6 @@ class LocaleService
         return null === $preferredLocale
             ? null
             : $this->resolveLocaleObject($preferredLocale);
-    }
-
-    /**
-     * Returns the locale stored in the lastLanguage_cookie, or null if none is set or if the stored locale is not active.
-     */
-    private function getLastLanguageCookieLocale(): ?Locale
-    {
-        if ($this->application->runningInConsole()) {
-            return null;
-        }
-
-        $cookieValue = $this->application->get(Request::class)->cookie(self::LAST_LANGUAGE_COOKIE_KEY);
-
-        if (empty($cookieValue) || !\is_string($cookieValue)) {
-            return null;
-        }
-
-        return $this->resolveLocaleObject($cookieValue);
-    }
-
-    /**
-     * Sets the lastLanguage_cookie to the given locale.
-     * The cookie will be stored for 120 days.
-     */
-    private function setLastLanguageCookieLocale(Locale $locale): void
-    {
-        if ($this->application->runningInConsole()) {
-            return;
-        }
-
-        $this->cookieJar->queue(self::LAST_LANGUAGE_COOKIE_KEY, (string) $locale, 60 * 24 * 120); // Store cookie for 120 days
     }
 
     /**

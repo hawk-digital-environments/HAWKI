@@ -56,4 +56,25 @@ interface UserSettingsStorageInterface
      * Example values: `'database:42'` (the user id), `'session'`, `'runtime'`.
      */
     public function getStorageId(): string;
+
+    /**
+     * Returns all namespaces that currently have at least one stored row in this
+     * backend. Namespaces without rows are absent — hydrating them would only
+     * produce class defaults.
+     *
+     * @return list<string>
+     */
+    public function getNamespaces(): array;
+
+    /**
+     * Copies every stored row of the source backend into this one, namespace by
+     * namespace. The source's rows are already sparse (the diff-based save only
+     * writes customized keys), so the copy preserves sparsity — values equal to a
+     * class default simply have no row to copy.
+     *
+     * Used by {@see \App\Services\Users\Settings\UserSettingsService::persistSessionSettings()}
+     * to convert a registering guest's session-backed settings into the
+     * authenticated user's database rows.
+     */
+    public function inheritFrom(self $source): void;
 }

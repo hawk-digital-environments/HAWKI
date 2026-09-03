@@ -49,6 +49,21 @@ class UserSettingValueRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
+     * Returns the distinct namespaces the given user has at least one row in.
+     *
+     * @return list<string>
+     */
+    public function getNamespacesForUser(User $user): array
+    {
+        return $this->getQuery()
+            ->where('user_id', $user->id)
+            ->distinct()
+            ->orderBy('namespace')
+            ->pluck('namespace')
+            ->all();
+    }
+
+    /**
      * Upserts the given raw serialized strings for the user and namespace — existing
      * rows are overwritten, missing rows are created. Timestamps are maintained by
      * Eloquent's upsert.
