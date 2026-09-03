@@ -9,8 +9,21 @@
   Compose it with the other family members as `children`:
   `DropdownMenuItem`, `DropdownMenuGroup`, `DropdownMenuLabel`,
   `DropdownMenuSeparator`, `DropdownMenuCheckboxItem`, `DropdownMenuSwitchItem`,
-  `DropdownMenuRadioGroup` + `DropdownMenuRadioItem`, and
+  `DropdownMenuRadioGroup` + `DropdownMenuRadioItem`, `DropdownMenuEmpty`,
+  `DropdownMenuSection` for a group of items that folds away, and
   `DropdownMenuDetailView` for a nested two-panel picker.
+
+  `layout="panel"` turns the content into the shape the composer's pickers use: a fixed
+  `width`, a header that stays put (a search field, a title) and a `DropdownMenuDetailView`
+  scrolling underneath it, instead of one scrolling block.
+
+  ```svelte
+  <DropdownMenu bind:open layout="panel" width="19rem">
+      {#snippet trigger({props})}…{/snippet}
+      <MenuSearchField bind:value={query} placeholder="Search"/>
+      <DropdownMenuDetailView open={!!detail}>…rows…</DropdownMenuDetailView>
+  </DropdownMenu>
+  ```
 
   ```svelte
   <DropdownMenu bind:open title={__('chat.export.title')} align="end">
@@ -58,6 +71,17 @@
         sideOffset?: number;
         /** Additional props forwarded to the DropdownMenu.Content element. */
         contentProps?: Omit<DropdownMenuContentProps, 'children'>;
+        /** `list` (default) is one scrolling block of items. `panel` fixes the content's
+         *  height to its box and stops it scrolling as a whole, so a header stays anchored
+         *  while a `DropdownMenuDetailView` scrolls beneath it. */
+        layout?: 'list' | 'panel';
+        /** Fixed width of the dropdown, e.g. `'19rem'`. Without it the content sizes to its
+         *  widest item — which makes it resize as items are filtered or folded away. Capped
+         *  at the viewport either way. Ignored by the mobile sheet, which is full-width. */
+        width?: string;
+        /** Cap on the content's height, e.g. `'24rem'`. The available height below the
+         *  trigger always wins when it is smaller. */
+        maxHeight?: string;
     }
 
     let {
@@ -69,7 +93,10 @@
         side = 'bottom',
         align = undefined,
         sideOffset = 4,
-        contentProps
+        contentProps,
+        layout = 'list',
+        width,
+        maxHeight
     }: Props = $props();
 
     let triggerEl = $state<HTMLElement | null>(null);
@@ -87,13 +114,21 @@
         return 'center';
     }
 
+    // Sizing travels as custom properties so the stylesheet keeps the caps and fallbacks;
+    // the props only say how wide and how tall this particular menu may get.
+    const sizeStyle = $derived([
+        width ? `--dropdown-width: ${width};` : '',
+        maxHeight ? `--dropdown-max-height: ${maxHeight};` : ''
+    ].join(''));
+
     const fullContentProps = $derived.by(() => {
         return mergeProps(
             {
                 side,
                 align: resolvedAlign(),
                 sideOffset,
-                class: 'dropdown-content'
+                class: ['dropdown-content', layout === 'panel' && 'dropdown-content--panel'],
+                style: sizeStyle || undefined
             },
             contentProps ?? {}
         ) as DropdownMenuContentProps;
@@ -145,13 +180,38 @@
            this z-index onto the floating wrapper it positions the panel with. */
         z-index: var(--layer-overlay);
         min-width: 8rem;
+        /* `width` fixes the box; without it the content still sizes to its items. Either way
+           it stays inside the viewport. */
+        width: var(--dropdown-width, auto);
+        max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
         border-radius: var(--corner-md);
         border: var(--border);
         background-color: var(--dropdown-bg);
         padding: var(--space-1, 0.25rem);
         box-shadow: var(--elevation-1);
-        max-height: calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4));
+        max-height: min(
+            var(--dropdown-max-height, 100vh),
+            calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4))
+        );
         overflow: auto;
+    }
+
+    /*
+      A panel doesn't scroll itself: it lays its children out in a column and leaves the
+      scrolling to the one that owns it, so anything above (a search field, the title) stays
+      anchored. The padding goes with it — the scrolling child pads its own rows, or the
+      divider it draws would be clipped by this box's `overflow: hidden`.
+    */
+    :global(.dropdown-content.dropdown-content--dropdown.dropdown-content--panel) {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    :global(.dropdown-content--panel) .dropdown-title {
+        padding-inline: var(--space-3);
+        padding-bottom: 0;
     }
 
     :global(.dropdown-content[data-state="open"]) {

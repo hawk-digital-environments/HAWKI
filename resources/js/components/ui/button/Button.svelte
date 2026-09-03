@@ -1,13 +1,19 @@
 <!--
   @component General-purpose button primitive.
 
-  Supports six `variant` styles — `fill`, `accent`, `stroke`, `ghost`, `iconGhost`,
-  `delete` — and three `size` options — `xs`, `sm`, `md`. Renders a native
+  Supports seven `variant` styles — `fill`, `accent`, `surface`, `stroke`, `ghost`,
+  `iconGhost`, `delete` — and three `size` options — `xs`, `sm`, `md`. Renders a native
   `<button>` element and forwards all `HTMLButtonAttributes` via rest-props.
 
   If `iconLeft` and/or `iconRight` are given without `children`, the button
   automatically switches to a compact icon-only square (internal `iconOnly`
   size) — no separate prop needed for that case.
+
+  Three modifiers cover the "button that opens a menu" case, so menu triggers don't have to
+  restyle the button from outside: `disclosure` turns the icon into a disclosure chevron that
+  flips while the attached menu reports `data-state="open"`, `truncate` lets a long label
+  ellipsize instead of pushing its neighbours around, and `iconSize` overrides the size the
+  button's own size class gives its icons.
 
   @example
   ```svelte
@@ -20,6 +26,21 @@
       size="xs"
   />
   ```
+
+  @example A labelled menu trigger:
+  ```svelte
+  <Button
+      variant="surface"
+      size="xs"
+      iconLeft={ChevronDownIcon}
+      iconSize={18}
+      disclosure
+      truncate
+      {...triggerProps}
+  >
+      {model.label}
+  </Button>
+  ```
 -->
 <script module lang="ts">
     import {cva, type VariantProps} from 'class-variance-authority';
@@ -29,6 +50,7 @@
             variant: {
                 fill: 'btn--fill',
                 accent: 'btn--accent',
+                surface: 'btn--surface',
                 stroke: 'btn--stroke',
                 ghost: 'btn--ghost',
                 iconGhost: 'btn--iconGhost',
@@ -71,6 +93,15 @@
         block?: boolean;
         /** If true or a string value of "active", "true", "1", or "open", the button will be styled as active. */
         highlight?: boolean | string;
+        /** Marks the button as opening something: its icon sits closer to the label and flips
+         *  while the button carries `data-state="open"` (as menu/select triggers do). */
+        disclosure?: boolean;
+        /** Lets the label ellipsize and the button shrink below its content width, for a
+         *  trigger whose text is data (a model name, a file name) rather than a fixed word. */
+        truncate?: boolean;
+        /** Overrides the icon size the button's `size` would otherwise set, in px or any
+         *  CSS length. */
+        iconSize?: number | string;
     }
 
     let {
@@ -81,8 +112,17 @@
         iconLeft: IconLeft,
         iconRight: IconRight,
         highlight,
+        disclosure = false,
+        truncate = false,
+        iconSize,
         ...restProps
     }: Props = $props();
+
+    const iconSizeStyle = $derived(
+        iconSize === undefined
+            ? undefined
+            : `--btn-icon-size: ${typeof iconSize === 'number' ? `${iconSize}px` : iconSize};`
+    );
 
     const forceActive = $derived.by(() => {
         if (typeof highlight === 'boolean') {
@@ -105,15 +145,22 @@
     {
         class: {
             'btn--block': restProps.block,
-            'btn--active': forceActive
-        }
+            'btn--active': forceActive,
+            'btn--disclosure': disclosure,
+            'btn--truncate': truncate
+        },
+        style: iconSizeStyle
     },
     restProps
 )}>
     {#if IconLeft}
         <IconLeft class="btnIcon" aria-hidden="true"/>
     {/if}
-    {@render children?.()}
+    {#if truncate}
+        <span class="btn-label">{@render children?.()}</span>
+    {:else}
+        {@render children?.()}
+    {/if}
     {#if IconRight}
         <IconRight class="btnIcon" aria-hidden="true"/>
     {/if}
@@ -185,6 +232,24 @@
             opacity: 1;
             --btn-bg: var(--color-disabled-bg);
             --btn-color: var(--color-text-disabled);
+        }
+    }
+
+    /* A neutral filled pill that sits a step lighter than the surface it is on, so the
+       darker hover below reads as a change. The resting state of a menu trigger that should
+       look like a control rather than a bare label. */
+    .btn--surface {
+        --btn-bg: var(--color-surface-light);
+        --btn-color: var(--color-text);
+
+        background: var(--btn-bg);
+        color: var(--btn-color);
+        border-color: transparent;
+
+        &:not(:disabled):hover,
+        &:not(:disabled):active,
+        &[data-state='open'] {
+            --btn-bg: var(--color-hover);
         }
     }
 
@@ -261,6 +326,16 @@
 
     /* ── Sizes ─────────────────────────────────────────────────────────── */
 
+    /*
+      The inline padding is asymmetric on purpose. An icon's glyph box carries transparent
+      bearing of its own — roughly 4px for an 18px chevron — so an end that finishes with an
+      icon already reads wider than it measures, while an end that finishes with the label
+      stops at the text's ink. Each size therefore leaves the base step on whichever end
+      holds an icon and spends the wider step on the end that holds the label, so both ends
+      read as the same gap. A button with no icon at all is ink on both ends, and gets the
+      wider step twice.
+    */
+
     .btn--xs {
         --btn-icon-size: 14px;
         width: fit-content;
@@ -275,11 +350,11 @@
         }
 
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-3);
+            padding-inline-end: var(--space-3);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-3);
+            padding-inline-start: var(--space-3);
         }
     }
 
@@ -296,11 +371,11 @@
         }
 
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-3);
+            padding-inline-end: var(--space-3);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-3);
+            padding-inline-start: var(--space-3);
         }
     }
 
@@ -323,11 +398,11 @@
         }
 
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: calc(var(--space-4) + var(--space-1));
+            padding-inline-end: calc(var(--space-4) + var(--space-1));
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: calc(var(--space-4) + var(--space-1));
+            padding-inline-start: calc(var(--space-4) + var(--space-1));
         }
     }
 
@@ -355,5 +430,33 @@
 
     .btn--block {
         width: 100%;
+    }
+
+    /* The chevron of a disclosure sits closer to its label than an action icon does — it
+       belongs to the label rather than standing beside it. */
+    .btn--disclosure {
+        column-gap: var(--space-0_5);
+    }
+
+    .btn--disclosure > :global(.btnIcon) {
+        color: var(--color-text-muted);
+        transition: transform var(--duration-fast, 150ms) var(--easing-default, ease);
+    }
+
+    .btn--disclosure[data-state='open'] > :global(.btnIcon) {
+        transform: rotate(-180deg);
+    }
+
+    /* Shrinkable, so a long label truncates instead of pushing whatever shares its row. */
+    .btn--truncate {
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .btn--truncate > .btn-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 </style>

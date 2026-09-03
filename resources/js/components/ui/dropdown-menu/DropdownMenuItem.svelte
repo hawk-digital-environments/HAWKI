@@ -109,4 +109,9 @@
         pointer-events: none;
         opacity: 0.5;
     }
+
+    /* Touch-sized rows in the mobile sheet, where the same menu is finger-driven. */
+    :global(.dropdown-content--sheet) .dropdown-item {
+        min-height: 2.5rem;
+    }
 </style>
