@@ -35,6 +35,7 @@
     import {fly} from 'svelte/transition';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
+    import {motionDuration, prefersReducedMotion} from '$lib/utils/transitions/prefersReducedMotion.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the detail panel is visible. False shows `children`; true shows `details`. */
@@ -67,7 +68,7 @@
     let initialized = $state(false);
     $effect(() => {
         if (targetHeight <= 0) return;
-        if (!initialized) {
+        if (!initialized || prefersReducedMotion()) {
             viewportHeight.set(targetHeight, {instant: true});
             initialized = true;
         } else {
@@ -90,15 +91,15 @@
     {#if open}
         <div class="view"
              bind:clientHeight={detailHeight}
-             in:fly={{x: 16, duration: 150}}
-             out:fly={{x: 16, duration: 150}}>
+             in:fly={{x: 16, duration: motionDuration(150)}}
+             out:fly={{x: 16, duration: motionDuration(150)}}>
             {@render details?.()}
         </div>
     {:else}
         <div class="view"
              bind:clientHeight={defaultHeight}
-             in:fly={{x: -16, duration: 150}}
-             out:fly={{x: -16, duration: 150}}>
+             in:fly={{x: -16, duration: motionDuration(150)}}
+             out:fly={{x: -16, duration: motionDuration(150)}}>
             {@render children?.()}
         </div>
     {/if}

@@ -46,7 +46,9 @@
     const localeLabel = $derived(localeItems.find((item) => item.value === localeValue)?.label ?? localeValue);
 
     async function changeLocale(lang: string): Promise<void> {
-        if (!lang || lang === app.localization.locale.lang) return;
+        // Guarded here instead of disabling the select: disabling the focused
+        // trigger mid-request would drop keyboard focus to <body>.
+        if (localeSaving || !lang || lang === app.localization.locale.lang) return;
 
         localeSaving = true;
         try {
@@ -96,15 +98,15 @@
             description={__('ui.settings.general.languageHint')}
         >
             {#snippet control({labelId})}
-                <DropdownMenu align="end" disabled={localeSaving}>
+                <DropdownMenu align="end">
                     {#snippet trigger({props})}
                         <Button
                             {...props}
                             variant="stroke"
                             size="xs"
                             iconRight={UnfoldMoreIcon}
-                            disabled={localeSaving}
                             aria-labelledby="{labelId} {localeValueId}"
+                            aria-busy={localeSaving}
                         >
                             <span id={localeValueId}>{localeLabel}</span>
                         </Button>

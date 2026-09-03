@@ -65,6 +65,7 @@
     {/snippet}
     <Textarea
         bind:value={draft}
+        ariaLabel={__('chat.composer.settings.systemPromptHeading')}
         placeholder={__('chat.composer.systemPromptDialog.placeholder')}
         class="system-prompt-textarea"
     />

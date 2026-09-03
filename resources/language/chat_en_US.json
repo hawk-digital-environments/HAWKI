@@ -9,6 +9,7 @@
             "loading": "Loading chats…",
             "generating": "Generating response",
             "empty": "Your conversations will appear here.",
+            "unreadMessages": "unread messages",
             "groups": {
                 "today": "Today",
                 "yesterday": "Yesterday",
@@ -29,6 +30,9 @@
             "webSearchMore": "+:count more",
             "generating": "Generating response…",
             "responseReady": "The response is complete.",
+            "regenerating": "Regenerating response…",
+            "responseAborted": "The response was cancelled.",
+            "responseFailed": "The response failed: :error",
             "messageHistory": "Message history",
             "skipToComposer": "Skip to message input",
             "loadError": "The conversation could not be loaded.",
@@ -52,6 +56,9 @@
         },
         "actions": {
             "copy": "Copy message",
+            "copied": "Message copied",
+            "copyFailed": "The message could not be copied.",
+            "groupLabel": "Actions for message from :author",
             "speak": "Read message aloud",
             "edit": "Edit message",
             "regenerate": "Regenerate response",
@@ -83,12 +90,15 @@
             "deleteConfirmTitle": "Delete chat :name",
             "newNameAriaLabel": "New chat name",
             "actionsTooltip": "Chat actions",
+            "actionsForChat": "Actions for chat :name",
+            "renameAriaLabel": "Rename chat: :name",
             "rename": "Rename",
             "manageRoom": "Manage room",
             "markAsRead": "Mark as read"
         },
         "attachmentDropdown": {
             "deleteTitle": "Delete file",
+            "actionsFor": "Actions for file :name",
             "deleteDescription": "Are you sure you want to delete the file \":name\"?",
             "preview": "Show",
             "download": "Download",
@@ -100,7 +110,10 @@
         },
         "message": {
             "sources": "Sources",
+            "authorHeading": ":author wrote",
             "citationReference": {
+                "label": "Source :number: :domain",
+                "labelNoDomain": "Source :number",
                 "contextError": "Something was coded wrong. This reference is not inside a CitationContext. Please report this bug to the developers."
             }
         },
@@ -122,6 +135,8 @@
             "textareaLabelRoom": "Group message",
             "textareaPlaceholder": "Enter your message here…",
             "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
+            "textareaHint": "Enter sends the message, Shift+Enter inserts a line break.",
+            "textareaHintEscape": "Escape leaves the current mode.",
             "attachFileTooltip": "Attach file",
             "pastedTextFileName": "Pasted text",
             "error": {
@@ -147,6 +162,7 @@
                 "cancelEdit": "Exit edit mode",
                 "cancelThread": "Leave thread view",
                 "cancelDefault": "Exit mode",
+                "modeExited": "Back in normal writing mode.",
                 "actionBusy": "You can not do this right now. Please wait until the current action is finished."
             },
             "settings": {
@@ -228,13 +244,15 @@
                 "addFavorite": "Pin :model",
                 "removeFavorite": "Unpin :model",
                 "listAriaLabel": "Available models",
+                "switchModelCurrent": "Switch model, current: :model",
                 "allModelsLink": "Explore all models"
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
                 "listAriaLabel": "Attached files, use the arrow keys to browse",
                 "removeFileAriaLabel": "Remove file :file",
-                "uploadError": "Upload error: :issue"
+                "uploadError": "Upload error: :issue",
+                "uploadProgress": "Uploading: :percent %"
             },
             "fileDrop": {
                 "dropLabel": "Drop files here"

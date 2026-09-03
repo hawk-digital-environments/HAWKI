@@ -118,9 +118,13 @@
 </script>
 
 {#snippet panel()}
-    <div
+    <!-- Not a <main>: the page already has one; a labelled region is enough
+         inside the dialog. The sheet has no addressable title, so the region
+         is only labelled in the dialog layout. -->
+    <section
         class="settings-panel"
         class:resizing
+        aria-labelledby={compact ? undefined : 'settings-dialog-title'}
         style:--settings-content-height={contentHeight === null ? undefined : `${contentHeight}px`}
         ontransitionend={endResize}
         ontransitioncancel={endResize}
@@ -128,7 +132,7 @@
         <div {@attach measureContent}>
             <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
         </div>
-    </div>
+    </section>
 {/snippet}
 
 {#if compact}
@@ -144,6 +148,7 @@
         onOpenChange={handleOpenChange}
         contentProps={{class: 'settings-dialog-content'}}
         headerProps={{class: 'settings-dialog-header'}}
+        titleProps={{id: 'settings-dialog-title'}}
     >
         {#snippet title()}
             <span class="settings-title">{__('ui.settings.title')}</span>
@@ -151,24 +156,28 @@
 
         <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
             <MenuList>
-                {#each navItems as item (item.path)}
-                    {@const Icon = item.icon}
-                    {@const active = activePath === item.path}
-                    <MenuListItem {active}>
-                        {#snippet children({attach})}
-                            <button
-                                type="button"
-                                {@attach attach}
-                                class:active
-                                aria-current={active ? 'page' : undefined}
-                                onclick={() => goTo(item.path)}
-                            >
-                                <Icon size={18} strokeWidth={2} aria-hidden="true"/>
-                                <span>{item.label}</span>
-                            </button>
-                        {/snippet}
-                    </MenuListItem>
-                {/each}
+                <ul class="settings-nav-list">
+                    {#each navItems as item (item.path)}
+                        {@const Icon = item.icon}
+                        {@const active = activePath === item.path}
+                        <li>
+                            <MenuListItem {active}>
+                                {#snippet children({attach})}
+                                    <button
+                                        type="button"
+                                        {@attach attach}
+                                        class:active
+                                        aria-current={active ? 'page' : undefined}
+                                        onclick={() => goTo(item.path)}
+                                    >
+                                        <Icon size={18} strokeWidth={2} aria-hidden="true"/>
+                                        <span>{item.label}</span>
+                                    </button>
+                                {/snippet}
+                            </MenuListItem>
+                        </li>
+                    {/each}
+                </ul>
             </MenuList>
         </nav>
 
@@ -222,8 +231,18 @@
         padding: var(--space-4) 0 var(--space-4) var(--space-4);
     }
 
+    .settings-nav-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
     .settings-nav button {
         position: relative;
+        width: 100%;
         /* Above the sliding highlight behind the nav rows. */
         --settings-nav-button-z: 1;
         z-index: var(--settings-nav-button-z);

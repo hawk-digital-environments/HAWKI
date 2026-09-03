@@ -5,6 +5,11 @@ existing conversation: the header with rename/export/delete, the scrollable
 message log, and the docked composer. New chats start on the
 sibling `ChatIndex.svelte` page and navigate here once the conversation
 exists; a generation started there keeps streaming through the store.
+
+Screen readers: the log itself is not live (a streaming reply would be read
+token by token). Instead a visually hidden status region announces when a
+reply starts, is regenerated, aborted or finished (then with its text), and an
+alert region announces streaming errors.
 -->
 <script lang="ts">
     import type {RouteParams} from 'universal-router';
@@ -23,7 +28,7 @@ exists; a generation started there keeps streaming through the store.
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {ChatTransport} from '$plugins/core/modules/chat/transport/ChatTransport.js';
+    import {ChatTransport, type GenerationEvent} from '$plugins/core/modules/chat/transport/ChatTransport.js';
     import {exportConversation, toConversationExportLabels} from '$plugins/core/modules/chat/utils/exportConversation.js';
     import {groupMessagesIntoThreads, threadIndexOf} from '$plugins/core/modules/chat/utils/messageThreads.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
@@ -41,7 +46,7 @@ exists; a generation started there keeps streaming through the store.
     const exportLabels = $derived(toConversationExportLabels(getTranslationsFlat('chat.export')));
     const slug = $derived(typeof params.slug === 'string' ? params.slug : null);
     const defaultPrompt = systemPromptStore.getPromptByType('default').prompt;
-    const transport = new ChatTransport(app, store);
+    const transport = new ChatTransport(app, store, {onGeneration: announceGeneration});
 
     let composer = $state<ComposerContext | null>(null);
     let messageToDelete = $state<ChatMessageType | null>(null);
@@ -57,12 +62,18 @@ exists; a generation started there keeps streaming through the store.
     // finish rendering (markdown, KaTeX, reasoning blocks) and grow in height.
     let pinToBottom = false;
     let liveAnnouncement = $state('');
+    let errorAnnouncement = $state('');
     let announcementConversationSlug: string | null = null;
     let wasGenerating = false;
+    // Set by the transport events so the isGenerating effect below only fills
+    // in for replies streamed by another page's transport (started on ChatIndex).
+    let announcedByTransport = false;
 
     // No messages yet: welcome text and composer are centred as one block
     // instead of the composer docking to the bottom of the scroll region.
     const isEmpty = $derived(!store.loading && !store.error && (!store.active || store.active.messages.length === 0));
+    const hasMessages = $derived(!store.loading && !store.error && Boolean(store.active && store.active.messages.length > 0));
+    const historyHeadingId = $props.id();
 
     // Trunk messages with their thread replies nested under them (legacy
     // `W.DDD` message ids): the log renders one turn per trunk message and
@@ -151,6 +162,42 @@ exists; a generation started there keeps streaming through the store.
         if (remaining > 2) pinToBottom = false;
     }
 
+    function announceGeneration(event: GenerationEvent) {
+        if (event.slug !== store.active?.slug) return;
+        switch (event.type) {
+            case 'started':
+                errorAnnouncement = '';
+                liveAnnouncement = __(event.regenerate ? 'chat.page.regenerating' : 'chat.page.generating');
+                break;
+            case 'completed':
+                announcedByTransport = true;
+                liveAnnouncement = completionAnnouncement(event.message);
+                break;
+            case 'aborted':
+                announcedByTransport = true;
+                liveAnnouncement = __('chat.page.responseAborted');
+                break;
+            case 'failed':
+                announcedByTransport = true;
+                liveAnnouncement = '';
+                errorAnnouncement = __('chat.page.responseFailed', {error: event.error});
+                break;
+        }
+    }
+
+    /** "The response is complete." followed by the reply as plain text (markdown syntax stripped). */
+    function completionAnnouncement(message: ChatMessageType): string {
+        const text = message.content.text
+            .replace(/```[\s\S]*?```/g, ' ')
+            .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+            .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+            .replace(/^[ \t]*(#{1,6}|[-*+>]|\d+\.)[ \t]+/gm, '')
+            .replace(/[*_`~|]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        return `${__('chat.page.responseReady')} ${text}`.trim();
+    }
+
     $effect(() => {
         const conversationSlug = store.active?.slug ?? null;
         const generating = conversationSlug ? store.isGenerating(conversationSlug) : false;
@@ -158,14 +205,21 @@ exists; a generation started there keeps streaming through the store.
         if (conversationSlug !== announcementConversationSlug) {
             announcementConversationSlug = conversationSlug;
             wasGenerating = generating;
+            announcedByTransport = false;
             liveAnnouncement = '';
+            errorAnnouncement = '';
             return;
         }
 
         if (wasGenerating && !generating) {
-            liveAnnouncement = __('chat.page.responseReady');
-        } else if (generating) {
-            liveAnnouncement = '';
+            if (!announcedByTransport) {
+                let reply: ChatMessageType | null = null;
+                for (const message of store.active?.messages ?? []) {
+                    if (message.message_role === 'assistant' && !message.isStreaming) reply = message;
+                }
+                liveAnnouncement = reply ? completionAnnouncement(reply) : __('chat.page.responseReady');
+            }
+            announcedByTransport = false;
         }
         wasGenerating = generating;
     });
@@ -181,14 +235,39 @@ exists; a generation started there keeps streaming through the store.
     }
 
     async function removeMessage() {
-        if (!messageToDelete) return;
+        if (!messageToDelete || !store.active) return;
+        const messages = store.active.messages;
+        const index = messages.findIndex(message => message.message_id === messageToDelete!.message_id);
+        const neighbour = messages[index + 1] ?? messages[index - 1] ?? null;
         try {
             await store.removeMessage(messageToDelete.message_id);
+            focusAfterDialogClose(neighbour?.message_id ?? null);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : String(error));
         } finally {
             messageToDelete = null;
         }
+    }
+
+    /**
+     * The confirm dialog hands focus back to the delete button of the message
+     * that is now gone, which drops it on the body. Once the dialog has left
+     * the DOM (its focus trap would pull focus back until then) focus the
+     * neighbouring message, or the log region when none is left.
+     */
+    function focusAfterDialogClose(messageId: string | null) {
+        const deadline = performance.now() + 1000;
+        const attempt = () => {
+            if (document.querySelector('[role="dialog"], [role="alertdialog"]') && performance.now() < deadline) {
+                requestAnimationFrame(attempt);
+                return;
+            }
+            const target = messageId
+                ? messagesElement?.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`)
+                : null;
+            (target ?? scrollRegion)?.focus({preventScroll: true});
+        };
+        requestAnimationFrame(attempt);
     }
 
     // Regenerate is a plain per-message action, not a composer mode: the transport streams
@@ -245,7 +324,20 @@ exists; a generation started there keeps streaming through the store.
             <div class="u-sr-only" role="status" aria-live="polite" aria-atomic="true">
                 {liveAnnouncement}
             </div>
-            <div class="scroll-region" bind:this={scrollRegion} bind:clientHeight={scrollRegionHeight} onscroll={releasePinOnUserScroll}>
+            <div class="u-sr-only" role="alert" aria-atomic="true">
+                {errorAnnouncement}
+            </div>
+            <!-- Scrollable content must be reachable by keyboard; only while there is a log to scroll through. -->
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <div
+                class="scroll-region"
+                bind:this={scrollRegion}
+                bind:clientHeight={scrollRegionHeight}
+                onscroll={releasePinOnUserScroll}
+                role={hasMessages ? 'region' : undefined}
+                tabindex={hasMessages ? 0 : undefined}
+                aria-label={hasMessages ? __('chat.page.messageHistory') : undefined}
+            >
                 {#if store.loading}
                     <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
                 {:else if store.error}
@@ -257,18 +349,20 @@ exists; a generation started there keeps streaming through the store.
                             </Button>
                         {/if}
                     </div>
-                {:else if !store.active || store.active.messages.length === 0}
-                    <ChatWelcome />
+                {:else if !hasMessages}
+                    <!-- h2: the header already carries the conversation name as h1. -->
+                    <ChatWelcome headingLevel={2} />
                 {:else}
+                    <!-- Not live: the status region above announces replies once they are complete. -->
                     <div
                         class="messages"
                         class:new-turn={newTurnActive}
                         bind:this={messagesElement}
                         role="log"
-                        aria-live="polite"
-                        aria-relevant="additions"
-                        aria-label={__('chat.page.messageHistory')}
+                        aria-live="off"
+                        aria-labelledby={historyHeadingId}
                     >
+                        <h2 id={historyHeadingId} class="u-sr-only">{__('chat.page.messageHistory')}</h2>
                         {#each threadGroups as group (group.message.clientKey ?? group.message.message_id)}
                             <ChatMessage message={group.message} replies={group.replies} {composer} onRegenerate={regenerateMessage} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
                         {/each}
@@ -337,6 +431,8 @@ exists; a generation started there keeps streaming through the store.
     .empty :global(.composer-dock::before) { display: none; }
 
     .scroll-region { height: 100%; overflow-y: auto; }
+
+    .scroll-region:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: -2px; }
 
     .messages {
         /* Pixel value, read by the send-scroll: the header fade overhangs the

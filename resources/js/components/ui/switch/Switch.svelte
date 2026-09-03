@@ -1,12 +1,13 @@
 <!--
   @component Visual switch indicator. Use bindable parent state to control checked.
 
-  By default it is a standalone toggle: clicking/tapping it (or focusing +
-  Space) flips `checked` itself, since it renders `role="checkbox"` with its
-  own click handler. Set `presentational` when the switch is nested inside a
-  larger interactive element (e.g. a menu item) that already owns focus/click
-  handling — this strips the role, tabindex, and click handler so behavior
-  isn't duplicated on two elements.
+  By default it is a standalone toggle: it renders a native `<button
+  role="switch">`, so clicking/tapping it or pressing Space/Enter flips
+  `checked` itself. Pass `aria-label`/`aria-labelledby` for its accessible
+  name. Set `presentational` when the switch is nested inside a larger
+  interactive element (e.g. a menu item) that already owns focus/click
+  handling — this renders an inert `<span aria-hidden>` so behavior isn't
+  duplicated on two elements.
 
   @example Standalone toggle:
   ```svelte
@@ -23,7 +24,7 @@
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';
 
-    interface Props extends HTMLAttributes<HTMLSpanElement> {
+    interface Props extends HTMLAttributes<HTMLElement> {
         /** Whether the switch is visually checked. */
         checked?: boolean;
         /** When true, the switch uses the disabled appearance. */
@@ -44,20 +45,33 @@
     };
 </script>
 
-<span
-    {...restProps}
-    class={`switch${className ? ` ${className}` : ''}`}
-    data-state={checked ? 'checked' : 'unchecked'}
-    data-inactive={!checked && !disabled ? '' : undefined}
-    data-disabled={disabled ? '' : undefined}
-    role="checkbox"
-    tabindex={presentational || disabled ? undefined : 0}
-    aria-checked={checked ? 'true' : 'false'}
-    aria-hidden={presentational ? 'true' : undefined}
-    onclick={presentational ? undefined : toggle}
->
-    <span class="switch-thumb"></span>
-</span>
+{#if presentational}
+    <span
+        {...restProps}
+        class={`switch${className ? ` ${className}` : ''}`}
+        data-state={checked ? 'checked' : 'unchecked'}
+        data-inactive={!checked && !disabled ? '' : undefined}
+        data-disabled={disabled ? '' : undefined}
+        aria-hidden="true"
+    >
+        <span class="switch-thumb"></span>
+    </span>
+{:else}
+    <button
+        {...restProps}
+        type="button"
+        role="switch"
+        class={`switch${className ? ` ${className}` : ''}`}
+        data-state={checked ? 'checked' : 'unchecked'}
+        data-inactive={!checked && !disabled ? '' : undefined}
+        data-disabled={disabled ? '' : undefined}
+        aria-checked={checked}
+        {disabled}
+        onclick={toggle}
+    >
+        <span class="switch-thumb"></span>
+    </button>
+{/if}
 
 <style>
     .switch {
@@ -70,7 +84,13 @@
         border-radius: var(--corner-full, 999px);
         background-color: color-mix(in oklch, var(--color-text-muted) 35%, var(--color-bg));
         padding: 1px;
+        border: none;
         transition: background-color var(--duration-fast, 150ms);
+    }
+
+    .switch:focus-visible {
+        outline: 2px solid var(--color-focus-ring, var(--color-interactive));
+        outline-offset: 2px;
     }
 
     .switch[data-state='checked'] {

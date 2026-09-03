@@ -77,9 +77,18 @@ from the store's in-flight cache.
 <Page>
     {#snippet body()}
         <div class="chat-body" class:empty={isEmpty} style:--composer-dock-height="{composerDockHeight}px">
-            <div class="scroll-region" bind:this={scrollRegion}>
+            <!-- Scrollable content must be reachable by keyboard; only while there is something to scroll through. -->
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <div
+                class="scroll-region"
+                bind:this={scrollRegion}
+                role={pendingMessage ? 'region' : undefined}
+                tabindex={pendingMessage ? 0 : undefined}
+                aria-label={pendingMessage ? __('chat.page.messageHistory') : undefined}
+            >
                 {#if pendingMessage}
-                    <div class="messages" role="log" aria-live="polite" aria-label={__('chat.page.messageHistory')}>
+                    <!-- Not live: the status line below announces the progress on its own. -->
+                    <div class="messages" role="log" aria-live="off" aria-label={__('chat.page.messageHistory')}>
                         <ChatMessageView
                             message={pendingMessage}
                             onDelete={() => undefined}
@@ -141,6 +150,8 @@ from the store's in-flight cache.
     .empty :global(.composer-dock::before) { display: none; }
 
     .scroll-region { height: 100%; overflow-y: auto; }
+
+    .scroll-region:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: -2px; }
 
     .messages {
         display: flex;

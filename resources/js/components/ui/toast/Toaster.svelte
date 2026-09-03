@@ -26,6 +26,7 @@
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {motionDuration} from '$lib/utils/transitions/prefersReducedMotion.js';
 
     const toastContext = useToastContext();
     const {__} = useTranslator();
@@ -85,7 +86,7 @@
     /** Springy entrance: scale + lift with an overshoot, fading in. */
     function springIn(_node: Element, {duration = 450} = {}) {
         return {
-            duration,
+            duration: motionDuration(duration),
             easing: backOut,
             css: (t: number) =>
                 `opacity: ${Math.min(1, t * 1.5)}; transform: translateX(-50%) translateY(${(1 - t) * -24}px) scale(${0.85 + t * 0.15});`
@@ -95,7 +96,7 @@
     /** Quick, non-springy exit so dismissals feel snappy. */
     function springOut(_node: Element, {duration = 180} = {}) {
         return {
-            duration,
+            duration: motionDuration(duration),
             easing: cubicIn,
             css: (t: number) => `opacity: ${t}; transform: translateX(-50%) scale(${0.9 + t * 0.1});`
         };

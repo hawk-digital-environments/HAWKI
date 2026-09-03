@@ -139,6 +139,7 @@ readonly class UserAnnouncementRepository
             $announcement->id,
             $announcement->title,
             $announcement->type,
+            (bool)$announcement->is_global,
             (bool)$announcement->is_forced,
             $announcement->anchor,
             $announcement->starts_at,
