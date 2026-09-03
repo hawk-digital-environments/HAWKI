@@ -1,11 +1,18 @@
 <!--
   @component Inline banner for a titled message with an optional leading icon, e.g. a validation
-  summary or a destructive-action warning. Purely presentational — renders nothing when both
-  `title` and `description` are omitted except the icon.
+  summary or a destructive-action warning. Renders nothing when both `title` and `description`
+  are omitted except the icon.
+
+  Exposed as a live region (`role="status"`, or `role="alert"` for the `destructive` variant)
+  so dynamically inserted alerts are announced, with a visually hidden "Note:"/"Warning:" prefix
+  so the severity isn't conveyed by color alone.
 -->
 <script lang="ts">
     import type { IconComponent } from '$lib/components/ui/icons';
     import Txt from '$lib/components/ui/Txt.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     type Size = "small" | "default" | "large";
 
@@ -39,13 +46,18 @@
     } as const;
 </script>
 
-<div class="alert-card variant-{variant}" style="--bg-color: var(--color-{surface})">
+<div
+    class="alert-card variant-{variant}"
+    style="--bg-color: var(--color-{surface})"
+    role={variant === 'destructive' ? 'alert' : 'status'}
+>
     {#if Icon}
-        <div>
+        <div aria-hidden="true">
             <Icon size={iconSizeMapping[size]} />
         </div>
     {/if}
     <div class="alert-content">
+        <span class="u-sr-only">{variant === 'destructive' ? __('ui.alert.warningPrefix') : __('ui.alert.notePrefix')}</span>
         {#if title}
             <Txt size={sizeMapping[size][0]} weight="medium">{title}</Txt>
         {/if}

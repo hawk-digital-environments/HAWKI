@@ -42,12 +42,15 @@
         return getFileIconSvg(file.name.split('.').pop() || '?');
     });
 </script>
+<!-- Decorative: the surrounding chip already names the file, so the image
+     gets an empty alt (overridable via restProps). -->
 <img {...mergeProps({
     class: [
         'preview',
         isImage ? 'preview--image' : 'preview--icon'
     ],
-    src
+    src,
+    alt: ''
 }, restProps)}
 />
 

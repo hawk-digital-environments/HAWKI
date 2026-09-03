@@ -1,11 +1,16 @@
 <!--
   @component Segmented tab-style nav with a sliding active indicator.
 
-  Renders a `tablist` of equal-width tabs. The active tab is highlighted by a
-  single pill that slides between tabs with a snappy spring. Supports keyboard
+  Renders a row of equal-width tabs. The active tab is highlighted by a single
+  pill that slides between tabs with a snappy spring. Supports keyboard
   navigation via the roving-tabindex pattern (←/→/↑/↓, Home, End).
 
   Bind `value` to the active tab's `key`; `onChange` fires on selection.
+
+  Semantics are chosen via `mode`: `'tabs'` (default) exposes a
+  `tablist`/`tab` — only correct when every tab controls a visible panel.
+  Use `mode="radio"` (`radiogroup`/`radio`) when selecting an item merely
+  applies a value or preset and no panel exists.
 
   @example
   ```svelte
@@ -14,6 +19,7 @@
       value={activePreset}
       onChange={(key) => handlePresetChange(key)}
       aria-label="Response style"
+      mode="radio"
   />
   ```
 -->
@@ -28,6 +34,7 @@
 
 <script lang="ts">
     import {Spring} from 'svelte/motion';
+    import {prefersReducedMotion} from '$lib/utils/transitions/prefersReducedMotion.js';
 
     interface Props {
         /** The selectable tabs. */
@@ -40,9 +47,14 @@
         'aria-label'?: string;
         /** Disable the Control */
         disabled?: boolean;
+        /**
+         * ARIA pattern: `tabs` (tablist/tab, needs panels) or `radio`
+         * (radiogroup/radio, for value/preset selection). @default 'tabs'
+         */
+        mode?: 'tabs' | 'radio';
     }
 
-    let {items, value = $bindable(null), onChange, 'aria-label': ariaLabel, disabled = false}: Props = $props();
+    let {items, value = $bindable(null), onChange, 'aria-label': ariaLabel, disabled = false, mode = 'tabs'}: Props = $props();
 
     let tabEls = $state<HTMLButtonElement[]>([]);
     const indicator = new Spring({x: 0, w: 0}, {stiffness: 0.55, damping: 0.9});
@@ -56,7 +68,7 @@
             return;
         }
         const target = {x: el.offsetLeft, w: el.offsetWidth};
-        if (!indicatorReady) {
+        if (!indicatorReady || prefersReducedMotion()) {
             indicator.set(target, {instant: true});
             indicatorReady = true;
         } else {
@@ -95,7 +107,7 @@
     }
 </script>
 
-<div class="tabs" role="tablist" aria-label={ariaLabel}>
+<div class="tabs" role={mode === 'radio' ? 'radiogroup' : 'tablist'} aria-label={ariaLabel}>
     {#if indicatorReady}
         <span
             class="tabs-indicator"
@@ -106,10 +118,11 @@
     {#each items as item, i (item.key)}
         <button
             type="button"
-            role="tab"
+            role={mode === 'radio' ? 'radio' : 'tab'}
             bind:this={tabEls[i]}
             class="tab"
-            aria-selected={value === item.key}
+            aria-selected={mode === 'tabs' ? value === item.key : undefined}
+            aria-checked={mode === 'radio' ? value === item.key : undefined}
             data-active={value === item.key}
             disabled={disabled}
             tabindex={value === item.key || (value === null && i === 0) ? 0 : -1}

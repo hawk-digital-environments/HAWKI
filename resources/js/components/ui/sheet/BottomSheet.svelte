@@ -135,9 +135,10 @@
         <DialogPrimitive.Content
             {...mergeProps({class: 'sheet-content', style: panelStyle}, contentProps) as DialogContentProps}
         >
+            <!-- svelte-ignore a11y_no_static_element_interactions -- the pointer
+                 handlers only implement drag-to-dismiss; Escape, the overlay and
+                 the sheet's own controls remain the accessible ways to close it -->
             <div
-                role="dialog"
-                tabindex={-1}
                 class="sheet-drag-region u-no-select"
                 onpointerdown={onPointerDown}
                 onpointermove={onPointerMove}

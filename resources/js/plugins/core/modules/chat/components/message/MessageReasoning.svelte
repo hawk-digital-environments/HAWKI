@@ -63,9 +63,11 @@
         parts: ReasoningPart[];
         /** True while the model is still thinking and has not produced an answer yet. */
         active?: boolean;
+        /** Heading level markdown headings inside the thinking text start at. Defaults to 4. */
+        headingLevel?: number;
     }
 
-    const {parts, active = false}: Props = $props();
+    const {parts, active = false, headingLevel = 4}: Props = $props();
     const {__} = useTranslator();
     const app = useApp();
 
@@ -304,7 +306,7 @@
 
                         <div class="content">
                             {#if label}
-                                <span class="step-label" class:shimmer={isActive}>{isActive ? withEllipsis(label) : label}</span>
+                                <span class="step-label" class:shimmer={isActive} lang={step.label ? 'en' : undefined}>{isActive ? withEllipsis(label) : label}</span>
                             {/if}
 
                             {#if step.kind === 'search'}
@@ -346,7 +348,7 @@
                                     </div>
                                 {/if}
                             {:else if step.body}
-                                <div class="prose"><Markdown message={step.body} /></div>
+                                <div class="prose" lang="en"><Markdown message={step.body} headingBaseLevel={headingLevel} /></div>
                             {/if}
                         </div>
                     </li>

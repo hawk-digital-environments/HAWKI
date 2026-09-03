@@ -19,7 +19,9 @@
   treat Tab as "leave the menu". Since this panel also contains plain
   controls (system prompt preview, expander, sliders, tabs), Tab/Shift+Tab is
   intercepted on the panel body (before it bubbles to the menu content) and
-  cycles through every focusable control inside the panel instead.
+  steps through every focusable control inside the panel instead. Past the
+  last (or before the first) control the event is left alone so the menu
+  closes and focus moves on — no wrap-around, Escape closes at any point.
 -->
 <script lang="ts">
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
@@ -50,11 +52,14 @@
         if (event.key !== 'Tab' || !(event.currentTarget instanceof HTMLElement)) return;
         const focusables = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE));
         if (focusables.length === 0) return;
+        const current = focusables.indexOf(document.activeElement as HTMLElement);
+        const next = current + (event.shiftKey ? -1 : 1);
+        // At either end let the event through: bits-ui closes the menu and
+        // moves focus to the next tabbable control after the trigger.
+        if (next < 0 || next >= focusables.length) return;
         event.preventDefault();
         event.stopPropagation();
-        const current = focusables.indexOf(document.activeElement as HTMLElement);
-        const step = event.shiftKey ? -1 : 1;
-        focusables[(current + step + focusables.length) % focusables.length].focus();
+        focusables[next].focus();
     }
 </script>
 

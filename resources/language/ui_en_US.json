@@ -9,7 +9,9 @@
             "expand": "Expand sidebar",
             "search": "Search",
             "newChat": "New chat",
-            "label": "Navigation"
+            "label": "Sidebar",
+            "mainLabel": "Main navigation",
+            "accessibilityStatement": "Accessibility statement"
         },
         "dialog": {
             "closeLabel": "Close",
@@ -18,6 +20,13 @@
         },
         "sheet": {
             "menuTitle": "Menu"
+        },
+        "alert": {
+            "notePrefix": "Note:",
+            "warningPrefix": "Warning:"
+        },
+        "infoPopover": {
+            "triggerLabel": "More information about :label"
         },
         "commandPalette": {
             "label": "Commands"

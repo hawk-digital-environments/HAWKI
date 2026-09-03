@@ -8,10 +8,23 @@ import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 import {createToolOrCapabilityWithStateFromTransferString} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 
+/**
+ * Lifecycle of one assistant reply as seen by the page that owns the
+ * conversation. Pages use it to announce progress to screen readers
+ * (the message log itself is not a live region while it streams).
+ */
+export type GenerationEvent =
+    | {type: 'started'; slug: string; messageId: string; regenerate: boolean}
+    | {type: 'completed'; slug: string; message: ChatMessage}
+    | {type: 'aborted'; slug: string}
+    | {type: 'failed'; slug: string; error: string};
+
 interface ChatTransportOptions {
     onConversationCreated?: (slug: string) => void;
     /** Shows the first message while the server is still creating its conversation. */
     onConversationPending?: (message: ChatMessage | null) => void;
+    /** Reports start, completion, abort and failure of every assistant reply this transport streams. */
+    onGeneration?: (event: GenerationEvent) => void;
 }
 
 /** Everything one assistant reply needs, independent of whether the composer or the
@@ -338,6 +351,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         };
         if (existing) this.store.replaceMessage(conversationSlug, existing.message_id, temporary);
         else this.store.appendMessage(conversationSlug, temporary);
+        this.options.onGeneration?.({type: 'started', slug: conversationSlug, messageId: temporaryId, regenerate: existing !== null});
 
         let text = '';
         let reasoning: ReasoningPart[] = [];
@@ -433,16 +447,18 @@ export class ChatTransport implements MessageSenderTransportInterface {
             // Keep the render key of the streamed message so the keyed list
             // does not remount it when the persisted id replaces the temporary one.
             this.store.replaceMessage(conversationSlug, temporaryId, {...saved, clientKey: temporaryId});
+            this.options.onGeneration?.({type: 'completed', slug: conversationSlug, message: saved});
             responseWriter.triggerReceived();
         } catch (error) {
-            if (controller.signal.aborted) {
-                if (!existing) this.store.removeCachedMessage(conversationSlug, temporaryId);
-                else this.store.replaceMessage(conversationSlug, existing.message_id, existing);
-                return;
-            }
             if (!existing) this.store.removeCachedMessage(conversationSlug, temporaryId);
             else this.store.replaceMessage(conversationSlug, existing.message_id, existing);
-            responseWriter.triggerError(this.errorMessage(error));
+            if (controller.signal.aborted) {
+                this.options.onGeneration?.({type: 'aborted', slug: conversationSlug});
+                return;
+            }
+            const message = this.errorMessage(error);
+            this.options.onGeneration?.({type: 'failed', slug: conversationSlug, error: message});
+            responseWriter.triggerError(message);
         }
     }
 

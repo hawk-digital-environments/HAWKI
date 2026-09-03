@@ -244,24 +244,26 @@
         }
     });
 
-    // On open, land focus on the first available tool so keyboard users start on
-    // a usable row rather than bits-ui's first candidate.
-    let wasOpen = false;
-    $effect(() => {
-        const isOpen = open;
-        if (isOpen && !wasOpen) {
-            requestAnimationFrame(() => {
-                if (!open || detailToolName) {
-                    return;
-                }
-                const name = firstAvailableEntry?.tool.name;
-                if (name) {
-                    focusContext.focusByKey(name);
-                }
-            });
+    // On open, land focus on the first available tool so keyboard/screen-reader
+    // users start on a usable row rather than bits-ui's first candidate (or the
+    // content container). Hooked into bits-ui's own open-autofocus so it can't
+    // race with it; double rAF lets its focus management settle first.
+    function handleOpenAutoFocus(event: Event) {
+        if (detailToolName) {
+            // Re-opened while the detail view is still showing: keep the default.
+            return;
         }
-        wasOpen = isOpen;
-    });
+        event.preventDefault();
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (!open) {
+                return;
+            }
+            const name = firstAvailableEntry?.tool.name;
+            if (!(name && focusContext.focusByKey(name))) {
+                focusContext.focusFirst();
+            }
+        }));
+    }
 </script>
 
 {#if composerContext.guard.showsAiUiElements && filteredEntries.length > 0}
@@ -269,7 +271,7 @@
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open
-            contentProps={{class: 'tool-menu-content'}}>
+            contentProps={{class: 'tool-menu-content', onOpenAutoFocus: handleOpenAutoFocus}}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"

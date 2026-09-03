@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html class="lightMode">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="lightMode">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
 

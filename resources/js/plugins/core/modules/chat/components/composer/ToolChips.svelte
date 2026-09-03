@@ -23,6 +23,7 @@
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {tick} from 'svelte';
 
     const {__} = useTranslator();
 
@@ -103,9 +104,55 @@
     });
 
     const visibleTools = $derived(tools.slice(0, visibleCount));
+
+    function chipButtons(): HTMLElement[] {
+        return rowEl ? Array.from(rowEl.querySelectorAll<HTMLElement>('[data-tool-chip]')) : [];
+    }
+
+    /**
+     * Removes a tool and lands focus somewhere sensible (mirrors `FileChips`): the
+     * chip that slid into the removed slot, otherwise the preceding one, otherwise
+     * the textarea once no chips are left. Without this, focus falls back to
+     * `<body>` and keyboard users have to tab in from the top of the page again.
+     */
+    async function removeAndMoveFocus(tool: typeof tools[number], index: number) {
+        composerContext.tools.disable(tool);
+        // tick() flushes the re-render; the extra frame lets layout settle before
+        // we pick the chip to focus by index.
+        await tick();
+        await new Promise(requestAnimationFrame);
+
+        // The row itself may still be mid out-transition, so check the state, not the DOM.
+        if (composerContext.tools.active.length === 0) {
+            composerContext.focusInput();
+            return;
+        }
+
+        const chips = chipButtons();
+        if (chips.length === 0) {
+            composerContext.focusInput();
+            return;
+        }
+        chips[Math.min(index, chips.length - 1)].focus();
+    }
+
+    // Enter/Space is handled here rather than through the click handler so keyboard
+    // removal can move focus onward while a mouse click returns to the textarea.
+    // preventDefault stops the browser from firing a synthetic click afterwards.
+    function onChipKeydown(event: KeyboardEvent, tool: typeof tools[number], index: number) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            void removeAndMoveFocus(tool, index);
+        }
+    }
+
+    function onChipClick(tool: typeof tools[number]) {
+        composerContext.tools.disable(tool);
+        composerContext.focusInput();
+    }
 </script>
 
-{#snippet chip(tool: typeof tools[number], measuring = false)}
+{#snippet chip(tool: typeof tools[number], index: number, measuring = false)}
     {@const incompatible = !tool.isAvailableFor(composerContext.model.current)}
     <button
         class="tool-chip"
@@ -113,7 +160,9 @@
         title={tool.displayName}
         tabindex={measuring ? -1 : 0}
         aria-hidden={measuring}
-        onclick={() => composerContext.tools.disable(tool)}
+        data-tool-chip={measuring ? undefined : ''}
+        onclick={() => onChipClick(tool)}
+        onkeydown={(event) => onChipKeydown(event, tool, index)}
         aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName})}
     >
         <ToolIcon tool={tool} size={12}/>
@@ -125,8 +174,8 @@
 {#if tools.length > 0 && composerContext.guard.showsAiUiElements}
     <!-- Visible row -->
     <div class="tool-chips" bind:this={rowEl} transition:growTransition={{mode: 'horizontal'}}>
-        {#each visibleTools as tool (tool)}
-            {@render chip(tool)}
+        {#each visibleTools as tool, i (tool)}
+            {@render chip(tool, i)}
         {/each}
         {#if hiddenCount > 0}
             <button
@@ -143,8 +192,8 @@
     <!-- Offscreen measurement row: renders every chip plus the badge so we
          can compute how many fit before deciding what to show above. -->
     <div class="tool-chips tool-chips-measure" bind:this={measureEl} aria-hidden="true">
-        {#each tools as tool (tool)}
-            <span data-chip>{@render chip(tool, true)}</span>
+        {#each tools as tool, i (tool)}
+            <span data-chip>{@render chip(tool, i, true)}</span>
         {/each}
         <span data-badge class="tool-chip tool-chip-badge">+{tools.length}</span>
     </div>

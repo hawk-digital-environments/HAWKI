@@ -69,12 +69,19 @@
         return Array.from(detailEl.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex="0"]'));
     }
 
-    function moveFocus(direction: 1 | -1) {
+    /**
+     * Moves focus to the neighbouring control. Arrow keys wrap around; Tab does
+     * not — returns false past either end so the keydown can bubble on to the
+     * bits-ui menu, which then closes and tabs on to the next composer control.
+     */
+    function moveFocus(direction: 1 | -1, wrap: boolean = true): boolean {
         const items = focusables();
-        if (items.length === 0) return;
+        if (items.length === 0) return false;
         const current = items.indexOf(document.activeElement as HTMLElement);
-        const next = (current + direction + items.length) % items.length;
-        items[next].focus();
+        const next = current + direction;
+        if (!wrap && (next < 0 || next >= items.length)) return false;
+        items[(next + items.length) % items.length].focus();
+        return true;
     }
 
     // The panel lives inside a bits-ui menu whose keyboard model (arrow roving,
@@ -99,9 +106,10 @@
                 moveFocus(-1);
                 break;
             case 'Tab':
-                event.preventDefault();
-                event.stopPropagation();
-                moveFocus(event.shiftKey ? -1 : 1);
+                if (moveFocus(event.shiftKey ? -1 : 1, false)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
                 break;
         }
     }

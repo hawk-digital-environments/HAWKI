@@ -83,4 +83,45 @@
         border-top: var(--divider);
         margin: var(--space-2) 0;
     }
+
+    /* Keep state changes immediate for people who ask the operating system to
+       reduce motion. The tiny non-zero duration lets transitionend-based
+       component cleanup continue to run. */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            scroll-behavior: auto !important;
+            animation-duration: 0.01ms !important;
+            animation-delay: 0ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            transition-delay: 0ms !important;
+        }
+    }
+
+    /* Windows High Contrast mode discards most authored backgrounds. Restore
+       a visible boundary for controls whose selected state normally uses only
+       a fill colour. */
+    @media (forced-colors: active) {
+        :focus-visible {
+            outline-color: Highlight;
+        }
+
+        :is(
+            [aria-current]:not([aria-current="false"]),
+            [aria-selected="true"],
+            [aria-checked="true"],
+            [data-state="checked"],
+            [data-state="active"]
+        ) {
+            outline: 2px solid Highlight !important;
+            outline-offset: -2px;
+        }
+
+        :disabled,
+        [aria-disabled="true"] {
+            color: GrayText;
+        }
+    }
 }

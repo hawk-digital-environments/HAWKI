@@ -2,6 +2,11 @@
   @component Left navigation panel. Occupies the grid's `nav` area on desktop
   and collapses to an icon rail when closed; on mobile it becomes an off-canvas
   overlay driven by the shared sidebar context.
+
+  Rendered as a complementary landmark (`<aside>`), not a `<nav>`: the panel
+  hosts several navigations (main navigation, a module's history list) that
+  each carry their own `<nav aria-label>`, plus non-navigation rows such as
+  the profile menu.
 -->
 <script lang="ts">
     import {tick, type Snippet} from 'svelte';
@@ -12,7 +17,7 @@
     interface Props extends HTMLAttributes<HTMLElement> {
         /** Sidebar content, e.g. header / navigation items / footer. */
         children: Snippet;
-        /** Translated accessible name for the navigation landmark. */
+        /** Translated accessible name for the sidebar landmark. */
         label: string;
     }
 
@@ -31,7 +36,7 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<nav
+<aside
     {...mergeProps(rest, {
         id: 'app-navigation',
         class: ['app-sidebar', 'u-print-hidden', sidebar.navOpen && 'open', className],
@@ -41,7 +46,7 @@
     <div class="inner">
         {@render children()}
     </div>
-</nav>
+</aside>
 
 <style>
     .app-sidebar {

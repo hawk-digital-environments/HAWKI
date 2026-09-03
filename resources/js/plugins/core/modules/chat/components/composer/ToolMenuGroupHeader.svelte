@@ -65,8 +65,9 @@
             }
             return;
         }
+        // No wrap on Tab: at either end the menu handles it (close + move on).
         if (event.key === 'Tab') {
-            if (focusContext.focusAdjacent(`group-info:${id}`, event.shiftKey ? -1 : 1)) {
+            if (focusContext.focusAdjacent(`group-info:${id}`, event.shiftKey ? -1 : 1, false)) {
                 event.preventDefault();
                 event.stopPropagation();
             }
