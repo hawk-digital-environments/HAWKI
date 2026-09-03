@@ -31,6 +31,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {ReasoningPart} from '$plugins/core/modules/chat/types.js';
+    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const STORAGE_KEY = 'hawkiReasoningOpen';
     /** Sources shown before the rest fold into a nested "+N more" section. */
@@ -70,6 +71,7 @@
     const {parts, active = false, headingLevel = 4}: Props = $props();
     const {__} = useTranslator();
     const app = useApp();
+    const reducedMotion = useReducedMotion();
 
     let userToggled = $state<boolean | null>(null);
     const rememberedOpen = app.localStorage.getItem(STORAGE_KEY) === '1';
@@ -103,10 +105,6 @@
         app.localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
     }
 
-    function prefersReducedMotion(): boolean {
-        return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    }
-
     /**
      * Opens or closes a panel on its height alone — no fade, no padding
      * scaling. Pure height is what keeps a collapse from looking mushy. The
@@ -114,7 +112,7 @@
      * than as the entrance played backwards.
      */
     function collapse(node: Element, {duration = MOTION_MODERATE, enabled = true} = {}) {
-        if (!enabled || prefersReducedMotion()) return {duration: 0};
+        if (!enabled || reducedMotion.current) return {duration: 0};
         const height = node.scrollHeight;
         return {
             duration,
@@ -137,7 +135,7 @@
      * top to bottom instead of appearing as one block.
      */
     function stepIn(node: Element, {enabled, streaming, index}: {enabled: boolean; streaming: boolean; index: number}) {
-        if (!enabled || prefersReducedMotion()) return {duration: 0};
+        if (!enabled || reducedMotion.current) return {duration: 0};
 
         if (!streaming) {
             return {
@@ -306,7 +304,7 @@
 
                         <div class="content">
                             {#if label}
-                                <span class="step-label" class:shimmer={isActive} lang={step.label ? 'en' : undefined}>{isActive ? withEllipsis(label) : label}</span>
+                                <span class="step-label" class:shimmer={isActive}>{isActive ? withEllipsis(label) : label}</span>
                             {/if}
 
                             {#if step.kind === 'search'}
@@ -348,7 +346,7 @@
                                     </div>
                                 {/if}
                             {:else if step.body}
-                                <div class="prose" lang="en"><Markdown message={step.body} headingBaseLevel={headingLevel} /></div>
+                                <div class="prose"><Markdown message={step.body} headingBaseLevel={headingLevel} /></div>
                             {/if}
                         </div>
                     </li>

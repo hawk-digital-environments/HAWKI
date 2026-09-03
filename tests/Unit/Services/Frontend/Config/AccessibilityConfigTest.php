@@ -26,6 +26,15 @@ class AccessibilityConfigTest extends TestCase
         static::assertNull($sut->statementUrl);
     }
 
+    public function testItRejectsInvalidStatementUrls(): void
+    {
+        foreach (['javascript:alert(1)', '/accessibility', 'accessibility'] as $url) {
+            $sut = AccessibilityConfig::make($this->repo($url));
+
+            static::assertNull($sut->statementUrl);
+        }
+    }
+
     public function testItReturnsThePublicKey(): void
     {
         static::assertSame('accessibility', AccessibilityConfig::publicKey());

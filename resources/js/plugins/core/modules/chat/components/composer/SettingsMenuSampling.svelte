@@ -19,7 +19,7 @@
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {slide} from 'svelte/transition';
-    import {motionDuration} from '$lib/utils/transitions/prefersReducedMotion.js';
+    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();

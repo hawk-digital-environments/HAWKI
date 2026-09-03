@@ -35,7 +35,7 @@
     import {fly} from 'svelte/transition';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
-    import {motionDuration, prefersReducedMotion} from '$lib/utils/transitions/prefersReducedMotion.js';
+    import {motionDuration, useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the detail panel is visible. False shows `children`; true shows `details`. */
@@ -55,6 +55,7 @@
 
     let defaultHeight = $state(0);
     let detailHeight = $state(0);
+    const reducedMotion = useReducedMotion();
 
     // Spring-animate the popover height so switching between the list and detail
     // views (which differ in height) eases instead of snapping.
@@ -68,7 +69,7 @@
     let initialized = $state(false);
     $effect(() => {
         if (targetHeight <= 0) return;
-        if (!initialized || prefersReducedMotion()) {
+        if (!initialized || reducedMotion.current) {
             viewportHeight.set(targetHeight, {instant: true});
             initialized = true;
         } else {

@@ -1,4 +1,4 @@
-import {prefersReducedMotion} from '$lib/utils/transitions/prefersReducedMotion.js';
+import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
 /**
  * Svelte CSS transition that expands or collapses an element by animating its
@@ -37,10 +37,6 @@ function px(value: string): number {
 }
 
 export function growTransition(node: Element, params?: {mode?: 'horizontal' | 'vertical'}) {
-    if (prefersReducedMotion()) {
-        return {duration: 0};
-    }
-
     const height = node.scrollHeight;
     const style = getComputedStyle(node);
     const {mode = 'vertical'} = params ?? {};
@@ -52,7 +48,7 @@ export function growTransition(node: Element, params?: {mode?: 'horizontal' | 'v
         const marginLeft = px(style.marginLeft);
         const marginRight = px(style.marginRight);
         return {
-            duration: 300,
+            duration: motionDuration(300),
             easing: gentleBackOut,
             css: (t: number) => `
                 overflow: hidden;
@@ -72,7 +68,7 @@ export function growTransition(node: Element, params?: {mode?: 'horizontal' | 'v
     const marginTop = px(style.marginTop);
     const marginBottom = px(style.marginBottom);
     return {
-        duration: 300,
+        duration: motionDuration(300),
         easing: gentleBackOut,
         css: (t: number) => `
             overflow: hidden;

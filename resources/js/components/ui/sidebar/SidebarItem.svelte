@@ -20,7 +20,7 @@
     import Link from '$lib/components/util/link/Link.svelte';
     import {slide} from 'svelte/transition';
     import {cubicOut} from 'svelte/easing';
-    import {motionDuration} from '$lib/utils/transitions/prefersReducedMotion.js';
+    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
@@ -164,16 +164,20 @@
         'aria-expanded': hasChildren ? expanded : undefined
     })}
     {#if href}
-        <!-- A link row: `Link` owns the router navigation and aria-current. -->
-        <Link
-            {href}
-            target={target ?? undefined}
-            active={active && !isPopupTrigger}
-            {@attach attach}
-            {@attach attachRef}
-            {...(rowProps as Record<string, unknown>)}
-        >
-            {@render rowContent()}
+        <!-- A link row: `Link` computes navigation, rel, aria-current and the
+             screen-reader hints, but the anchor itself is rendered here — an
+             element inside another component would miss this component's
+             scoped `.sidebar-item` styles. -->
+        <Link {href} target={target ?? undefined} active={active && !isPopupTrigger}>
+            {#snippet child({props: linkProps, hints})}
+                <a
+                    {@attach attach}
+                    {@attach attachRef}
+                    {...(mergeProps(linkProps, rowProps) as Record<string, unknown>)}
+                >
+                    {@render rowContent()}{@render hints()}
+                </a>
+            {/snippet}
         </Link>
     {:else}
         <button
