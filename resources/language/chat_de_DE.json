@@ -178,20 +178,10 @@
                 "untagAssistantAction": "Tag entfernen",
                 "infoDefault": "Weitere Informationen zur Assistenz anzeigen",
                 "hawkiLabel": "HAWKI",
-                "studyAssistantsLabel": "Assistenten",
+                "assistantsLabel": "Assistenten",
                 "assistants": {
                     "hawki": "HAWKI",
-                    "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum",
-                    "tutor": "Tutor",
-                    "tutorDescription": "Erklärt Kursthemen Schritt für Schritt",
-                    "research": "Recherche",
-                    "researchDescription": "Findet und fasst Literatur und Quellen zusammen",
-                    "writing": "Schreiben",
-                    "writingDescription": "Hilft bei Struktur, Stil und Zitation",
-                    "exam": "Prüfungsvorbereitung",
-                    "examDescription": "Erstellt Übungsfragen und Quizze",
-                    "code": "Programmieren",
-                    "codeDescription": "Erklärt und überprüft Code aus deinen Aufgaben"
+                    "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum"
                 },
                 "searchPlaceholder": "Assistenten suchen",
                 "noResults": "Keine passenden Assistenten"

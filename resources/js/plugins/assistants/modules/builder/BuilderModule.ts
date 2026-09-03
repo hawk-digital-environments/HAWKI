@@ -1,8 +1,5 @@
 import {HawkiCoreModule, HawkiModule} from "$lib/kernel/modules/types";
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
-import type {Component} from 'svelte';
-import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
 
 export class BuilderModule implements HawkiCoreModule {
     public readonly name = 'builder';
@@ -53,14 +50,5 @@ export class BuilderModule implements HawkiCoreModule {
             // BuilderContext.svelte.ts and builderLayout.svelte).
             lazyLayout: async () => (await import('$plugins/assistants/modules/builder/pages/advanced/layout.svelte')).default
         });
-    }
-
-    /**
-     * The builder has no module-selector entry of its own (that is the
-     * "Assistants" dashboard module); it only reuses the assistants sidebar
-     * so the submenu stays visible while builder routes are active.
-     */
-    public sidebar(_locale: Locale): Component {
-        return AssistantsSidebar;
     }
 }

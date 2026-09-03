@@ -1,13 +1,12 @@
 <!--
-  @component Chat module's sidebar section: "new chat" action plus the
-  scrollable conversation history with rename/delete per row. The list edges
-  fade only where more content exists in that direction.
+  @component Chat module's sidebar section: the scrollable conversation
+  history with rename/delete per row. The list edges fade only where more
+  content exists in that direction. The module's "New Chat" action lives in
+  the app sidebar's action area now (see `NewChatButton.svelte`).
 -->
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import ChatHistoryItem from '$plugins/core/modules/chat/components/ChatHistoryItem.svelte';
-    import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
-    import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -71,12 +70,6 @@
             toast.error(error instanceof Error ? error.message : String(error));
         }
     }
-
-    function newChat() {
-        if (sidebar.mobile) sidebar.navOpen = false;
-        store.startNew();
-        void router.goToRoute('chat.index');
-    }
 </script>
 
 <div {...restProps} class={["chat-sidebar", className]}>
@@ -120,16 +113,6 @@
             {/if}
         </div>
     {/if}
-
-    <!-- Pinned to the bottom of the column, directly above the profile
-         footer; the history scroller above it takes the free space. -->
-    <div class="new-chat">
-        <SidebarButton
-            icon={Add01Icon}
-            label={__('chat.sidebar.newChat')}
-            onclick={newChat}
-        />
-    </div>
 </div>
 
 <style>
@@ -174,12 +157,6 @@
 
     .history::-webkit-scrollbar {
         display: none;
-    }
-
-    /* Keeps the button on the bottom edge even in the collapsed rail, where
-       the history above it is not rendered at all. */
-    .new-chat {
-        margin-top: auto;
     }
 
     .hint {

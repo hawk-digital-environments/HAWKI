@@ -41,7 +41,7 @@
     import AssistantMentionPopup, {assistantMentionOptionId} from '$plugins/core/modules/chat/components/composer/AssistantMentionPopup.svelte';
     import ToolMentionPopup, {toolMentionOptionId, type ToolMentionEntry} from '$plugins/core/modules/chat/components/composer/ToolMentionPopup.svelte';
     import {getTextareaCaretRect, type CaretRect} from '$plugins/core/modules/chat/components/composer/utils/textareaCaret.js';
-    import type {AiAssistantHandle} from '$plugins/core/stores/AiHandleStore.svelte.js';
+    import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';
 
@@ -155,7 +155,7 @@
                 return true;
             }
             return assistant.handle.slice(1).toLowerCase().startsWith(query)
-                || __(assistant.labelKey).toLowerCase().includes(query);
+                || assistant.label.toLowerCase().includes(query);
         });
     });
 
@@ -265,7 +265,7 @@
     /** Turns the typed `@query` into a chip: the query is dropped from the text and the
      *  assistant's handle is added to the message — or removed again if it was already
      *  tagged, so picking the checked row untags it, the same way `/` toggles a tool. */
-    function insertMention(assistant: AiAssistantHandle) {
+    function insertMention(assistant: AiAssistant) {
         const wasTagged = composerContext.handlesInMessage.includes(assistant.handle);
         if (consumeMention() === null) {
             return;

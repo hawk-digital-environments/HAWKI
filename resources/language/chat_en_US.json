@@ -178,20 +178,10 @@
                 "untagAssistantAction": "Remove tag",
                 "infoDefault": "Show more information about the assistant",
                 "hawkiLabel": "HAWKI",
-                "studyAssistantsLabel": "Assistants",
+                "assistantsLabel": "Assistants",
                 "assistants": {
                     "hawki": "HAWKI",
-                    "hawkiDescription": "The general HAWKI assistant for this room",
-                    "tutor": "Tutor",
-                    "tutorDescription": "Explains course topics step by step",
-                    "research": "Research",
-                    "researchDescription": "Finds and summarises literature and sources",
-                    "writing": "Writing",
-                    "writingDescription": "Helps with structure, style, and citations",
-                    "exam": "Exam prep",
-                    "examDescription": "Generates practice questions and quizzes",
-                    "code": "Coding",
-                    "codeDescription": "Reviews and explains code from your assignments"
+                    "hawkiDescription": "The general HAWKI assistant for this room"
                 },
                 "searchPlaceholder": "Search assistants",
                 "noResults": "No matching assistants"

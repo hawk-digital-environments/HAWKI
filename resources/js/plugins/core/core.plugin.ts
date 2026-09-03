@@ -21,6 +21,11 @@
 import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
+import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
+import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
+import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
+import NewChatButton from '$plugins/core/modules/chat/components/NewChatButton.svelte';
+import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
 import {AiHandleStore} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
@@ -45,6 +50,41 @@ declare module '$lib/kernel/extendableTypes.js' {
 
 export default class CorePlugin implements HawkiCorePlugin {
     readonly name = 'core';
+
+    /**
+     * Contributes the chat feature's sidebar UI via the sidebar hooks: one
+     * module selector entry and one sidebar panel, both active while a chat
+     * route is shown. Handlers are pure filters over the collected entries
+     * (see `app/ui/sidebarHooks.ts`).
+     */
+    public hooks(registrar: HookRegistrar): void {
+        const chatGroup = getModuleRouteGroupName('core', 'chat');
+
+        registrar.add('moduleSelectorEntries', (entries, ctx) => [...entries, {
+            id: 'core:chat',
+            label: ctx.translate('chat.module.title'),
+            icon: Chat01Icon,
+            onSelect: (selectCtx) => {
+                void selectCtx.router.goToRoute('chat.index');
+            },
+            active: ctx.router.isRouteActive(chatGroup)
+        }]);
+
+        registrar.add('sidebarSlots', (slots, ctx) => [...slots,
+            {
+                id: 'core:chat-sidebar',
+                position: 'panel',
+                component: ChatSidebar,
+                active: ctx.router.isRouteActive(chatGroup)
+            },
+            {
+                id: 'core:new-chat',
+                position: 'action',
+                component: NewChatButton,
+                active: ctx.router.isRouteActive(chatGroup)
+            }
+        ]);
+    }
 
     public resourceSchemas(registrar: ResourceSchemaRegistrar): void {
         registrar.addFromModules(

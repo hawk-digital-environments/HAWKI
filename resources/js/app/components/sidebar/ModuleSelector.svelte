@@ -1,81 +1,44 @@
 <!--
-  @component Sidebar control that lists the registered app modules in a
-  `CommandPalette` and routes to the selected module's index route.
+  @component Sidebar control that lists the collected module selector entries
+  in a `CommandPalette` and runs the selected entry's `onSelect`. The entries
+  are collected from other plugins via the `moduleSelectorEntries` hook
+  (see `useSidebarHooks.svelte.ts`).
 -->
 <script lang="ts">
     import CommandPalette, {type CommandItemDefinition} from '$lib/components/ui/command/CommandPalette.svelte';
     import CommandPaletteTrigger from '$lib/components/ui/command/CommandPaletteTrigger.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte';
-    import {useApp} from '$lib/app/hooks/useApp.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
-    import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
-    import type {HawkiCoreModule} from '$lib/kernel/modules/types.js';
+    import {useModuleSelectorEntries} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     const sidebar = useSidebar();
     const app = useApp();
     const router = useRouter();
+    const {translate} = useTranslator();
 
-    const modules = $derived(app.modules.all);
+    const selectorEntries = useModuleSelectorEntries();
+    const entries = $derived(selectorEntries.entries);
 
-    const { translate } = useTranslator();
-    const locale = $derived(app.localization.locale);
-
-    // Only modules that declare a title appear in the selector — modules
-    // without one (e.g. the assistants builder, which belongs to the
-    // "Assistants" entry's sidebar) stay reachable through their routes.
-    const moduleItems: CommandItemDefinition[] = $derived(
-        modules
-            .filter((v) => typeof v.title === 'function')
-            .map((v) => {
-                const icon = v.icon?.(locale);
-                return {
-                    label: v.title!(translate, locale),
-                    value: `${v.plugin.name}:${v.name}`,
-                    // The palette renders icons as components; a string (URL) icon has no slot here.
-                    icon: typeof icon === 'string' ? undefined : icon as IconComponent | undefined
-                };
-            })
-    );
+    const moduleItems: CommandItemDefinition[] = $derived(entries.map((entry) => ({
+        label: entry.label,
+        value: entry.id,
+        // The palette renders icons as components; a string (URL) icon has no slot here.
+        icon: typeof entry.icon === 'string' ? undefined : entry.icon as IconComponent | undefined
+    })));
 
     let open = $state(false);
 
-    const current = $derived.by(() => {
-        const module = modules.find(candidate =>
-            router.isRouteActive(getModuleRouteGroupName(candidate.plugin.name, candidate.name)));
-        if (module && typeof module.title === 'function') {
-            return `${module.plugin.name}:${module.name}`;
-        }
-        // The active module is a titled-module-less companion (e.g. the
-        // assistants builder): show its plugin's titled module instead.
-        if (module) {
-            const titled = modules.find(candidate =>
-                candidate.plugin.name === module.plugin.name && typeof candidate.title === 'function');
-            if (titled) {
-                return `${titled.plugin.name}:${titled.name}`;
-            }
-        }
-        return moduleItems[0]?.value;
-    });
+    const current = $derived(entries.find(entry => entry.active)?.id ?? moduleItems[0]?.value);
 
-    function selectModule(moduleId: string) {
-        const module = modules.find(candidate => `${candidate.plugin.name}:${candidate.name}` === moduleId);
-        if (!module) return;
-        const prefix = getModuleRoutePrefix(
-            module.plugin.name,
-            module.name,
-            module.plugin.isCorePlugin,
-            (module as HawkiCoreModule).pluginNameInRoutes
-        );
-        void router.goTo(router.p(prefix));
+    function selectModule(value: string) {
+        const entry = entries.find(candidate => candidate.id === value);
+        entry?.onSelect({locale: app.localization.locale, translate, router});
     }
 
-    function findModuleItem(value: string | undefined) {
-        return moduleItems.find(item => item.value === value);
-    }
-
-    const currentModuleItem = $derived(findModuleItem(current));
+    const currentModuleItem = $derived(moduleItems.find(item => item.value === current));
 </script>
 
 <CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule}>

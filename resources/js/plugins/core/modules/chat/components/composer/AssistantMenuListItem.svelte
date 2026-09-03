@@ -16,13 +16,13 @@
   ```
 -->
 <script module lang="ts">
-    import type {AiAssistantHandle} from '$plugins/core/stores/AiHandleStore.svelte.js';
+    import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import type {BeamColors} from '$lib/components/ui/border-beam/types.js';
 
     /** One assistant row, pre-wired with its appearance and toggle callback by `AssistantMenu`. */
     export interface AssistantMenuEntry {
-        /** The assistant (handle + translation keys) this row represents. */
-        assistant: AiAssistantHandle;
+        /** The assistant (handle, label, grouping, pin state) this row represents. */
+        assistant: AiAssistant;
         /** Emoji shown at the start of the row. */
         emoji: string;
         /** The assistant's two color stops, tinting its emoji swatch and handle. */
@@ -38,8 +38,10 @@
     import AssistantRow from '$plugins/core/modules/chat/components/composer/AssistantRow.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
+    const pinStore = useStore('composer-pins');
     const {__} = useTranslator();
 
     interface Props {
@@ -51,6 +53,21 @@
     }
 
     const {entry, onOpenDetail}: Props = $props();
+
+    // A row is lifted into the "Pinned" section by a local composer pin or by its
+    // server-side flag (a favourite); the pin button targets whichever mechanism
+    // owns the row's pin.
+    const pinned = $derived(
+        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned
+    );
+
+    function togglePin() {
+        if (entry.assistant.onTogglePin) {
+            entry.assistant.onTogglePin(!pinned);
+        } else {
+            pinStore.toggle('assistant', entry.assistant.id);
+        }
+    }
 
     function openDetail(event: MouseEvent) {
         event.preventDefault();
@@ -87,7 +104,11 @@
             colors={entry.colors}
             checked={checked}/>
 
-        <MenuPinButton kind="assistant" id={entry.assistant.id}/>
+        <MenuPinButton
+            kind="assistant"
+            id={entry.assistant.id}
+            {pinned}
+            onToggle={togglePin}/>
 
         <button
             type="button"

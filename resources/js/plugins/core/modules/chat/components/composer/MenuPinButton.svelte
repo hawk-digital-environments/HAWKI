@@ -2,9 +2,11 @@
   @component The pin toggle shown on a row in `AssistantMenu` / `ToolMenu`.
 
   A small icon button that pins or unpins the row's assistant/tool via the
-  `composer-pins` store, lifting it into the menu's "Pinned" section. Like the
-  neighbouring info chevron it stops pointer/keyboard propagation so pinning never also
-  toggles the row it sits in.
+  `composer-pins` store, lifting it into the menu's "Pinned" section. Rows whose
+  pin lives on the server (a hook-provided assistant flagged `pinned`) instead
+  pass the controlled `pinned`/`onToggle` props, routing the toggle to their own
+  backend action. Like the neighbouring info chevron it stops pointer/keyboard
+  propagation so pinning never also toggles the row it sits in.
 
   In the `row` variant (default) an unpinned row only reveals the button on hover/focus
   (see the `.menu-pin-button` styles the host row scopes); a pinned row keeps it visible so
@@ -40,11 +42,17 @@
         /** `row` (default) is the compact icon shown on menu rows; `detail` is the
          *  labelled, always-visible variant for a detail panel's header. */
         variant?: 'row' | 'detail';
+        /** Overrides the pin state read from the `composer-pins` store — for rows whose
+         *  pin lives on the server (a hook-provided assistant flagged `pinned`). */
+        pinned?: boolean;
+        /** Overrides the store toggle — routes the pin to the row's own backend action
+         *  (e.g. toggling the assistant favourite) instead of the local pins. */
+        onToggle?: () => void;
     }
 
-    const {kind, id, variant = 'row'}: Props = $props();
+    const {kind, id, variant = 'row', pinned: pinnedOverride, onToggle}: Props = $props();
 
-    const pinned = $derived(pinStore.isPinned(kind, id));
+    const pinned = $derived(pinnedOverride ?? pinStore.isPinned(kind, id));
 
     // A touch larger in the detail header, where it sits next to the toggle rather than
     // inside a dense list row.
@@ -53,7 +61,11 @@
     function togglePin(event: MouseEvent) {
         event.preventDefault();
         event.stopPropagation();
-        pinStore.toggle(kind, id);
+        if (onToggle) {
+            onToggle();
+        } else {
+            pinStore.toggle(kind, id);
+        }
     }
 </script>
 

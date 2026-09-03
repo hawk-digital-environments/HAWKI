@@ -1,11 +1,5 @@
 import {HawkiCoreModule, HawkiModule} from "$lib/kernel/modules/types";
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
-import type {Translator} from '$lib/kernel/localization/translator.js';
-import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
-import type {IconComponent} from '$lib/components/ui/icons/index.js';
-import type {Component} from 'svelte';
-import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
-import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
 
 export class DashboardModule implements HawkiCoreModule {
     public readonly name = 'dashboard';
@@ -46,17 +40,5 @@ export class DashboardModule implements HawkiCoreModule {
             () => import('$plugins/assistants/modules/dashboard/pages/detail/page.svelte'),
             {name: "assistants.dashboard.details"});
 
-    }
-
-    public title(translate: Translator['translate'], _locale: Locale): string {
-        return translate('assistants.assistants');
-    }
-
-    public icon(_locale: Locale): string | IconComponent | Component {
-        return BotIcon;
-    }
-
-    public sidebar(_locale: Locale): Component {
-        return AssistantsSidebar;
     }
 }

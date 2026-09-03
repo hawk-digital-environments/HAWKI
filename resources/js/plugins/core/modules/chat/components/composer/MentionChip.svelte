@@ -27,10 +27,10 @@
         handle: string;
         /** The assistant's display name, used for the remove button's label. */
         label: string;
-        /** The assistant's emoji, from `getAssistantAppearance`. */
+        /** The assistant's emoji, from its appearance. */
         emoji: string;
-        /** The two stops the fill and the reveal are painted from, out of
-         *  `getAssistantAppearance` — this is what color-codes the chip. */
+        /** The two stops the fill and the reveal are painted from, out of the
+         *  assistant's appearance — this is what color-codes the chip. */
         colors: BeamColors;
         /** Disables the remove button (e.g. while a send is in flight). */
         disabled?: boolean;
@@ -42,14 +42,14 @@
 
     // Snappier than the component defaults: a handle is a handful of characters, so the
     // reveal should read as one quick sweep rather than a per-letter crawl.
-    const revealStagger = 22;
-    const revealDuration = 320;
+    const revealStagger = 7;
+    const revealDuration = 105;
 
     // How long the handle takes to finish revealing.
     const revealMs = $derived(textRevealDurationMs(handle, {stagger: revealStagger, duration: revealDuration}));
     // The pill starts just before the last characters settle. Overlapping the two beats
     // keeps the sequence tight — waiting for a clean hand-off reads as a stall.
-    const pillDelayMs = $derived(Math.max(revealMs - 140, 0));
+    const pillDelayMs = $derived(Math.max(revealMs - 45, 0));
 
     let pillArrived = $state(false);
 

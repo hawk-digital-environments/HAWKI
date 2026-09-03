@@ -5,100 +5,46 @@
   "Zurück" row — a drill-down, not an inline submenu, mirroring the mobile
   nav-stack pattern of DropdownMenuDetailView. The level is derived from the
   active route (the builder module's route group), so navigating in or out is
-  what swaps it. The "Erstellen" action sits pinned at the bottom like the
-  chats' "Neuer Chat" button and drills into a fresh builder session.
+  what swaps it. The rows themselves are collected via the
+  `assistantMenuEntries` hook (see `hooks/assistantMenuHooks.svelte.ts`) —
+  the assistants plugin pushes the standard sections, other plugins may add
+  their own. The module's "Erstellen" action lives in the app sidebar's
+  action area now (see `CreateAssistantButton.svelte`).
 -->
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
-    import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
-    import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
-    import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
-    import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
-    import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
-    import Share02Icon from '$lib/components/ui/icons/iconset/Share02Icon.svelte';
-    import AddCircleIcon from '$lib/components/ui/icons/iconset/AddCircleIcon.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
-    import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
-    import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
-    import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
-    import ComputerIcon from '$lib/components/ui/icons/iconset/ComputerIcon.svelte';
-    import TestTube01Icon from '$lib/components/ui/icons/iconset/TestTube01Icon.svelte';
-    import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
+    import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte.js';
+    import {useSidebarContext} from '$lib/app/ui/useSidebarHooks.svelte.js';
+    import {assistantHandlesStore} from '$plugins/assistants/stores/AssistantHandlesStore.svelte.js';
     import {drillTransition} from '$lib/utils/transitions/drillTransition';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
-    import {requestBuilderIntent} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
 
     const router = useRouter();
-    const sidebar = useSidebar();
     const {__} = useTranslator();
 
     const builderGroup = getModuleRouteGroupName('assistants', 'builder');
 
+    /** The collected menu rows, grouped per drill level below. */
+    const menu = useAssistantMenuEntries();
+    const menuEntries = $derived(menu.entries);
+    const sidebarContext = useSidebarContext();
+
+    // Leaving the assistants module (dashboard *or* builder — within it this
+    // component stays mounted) ends the visit: whatever the user changed there
+    // (favourites, created/edited assistants) should be reflected in the chat
+    // `@` menu, so its lazily-loaded list is marked stale. The next read — the
+    // composer mounting on chat routes — refetches.
+    $effect(() => () => assistantHandlesStore.invalidate());
+
     /** The sidebar's main level: the dashboard sections. */
-    const dashboardItems = $derived([
-        {
-            label: __('assistants.sidebar.store'),
-            icon: Store01Icon,
-            route: 'assistants.dashboard.store',
-            active: router.isRouteActive('assistants.dashboard.store')
-                || router.isRouteActive('assistants.dashboard.index')
-        },
-        {
-            label: __('assistants.sidebar.drafts'),
-            icon: FileEditIcon,
-            route: 'assistants.dashboard.drafts',
-            active: router.isRouteActive('assistants.dashboard.drafts')
-        },
-        {
-            label: __('assistants.sidebar.favourites'),
-            icon: StarIcon,
-            route: 'assistants.dashboard.favourites',
-            active: router.isRouteActive('assistants.dashboard.favourites')
-        },
-        {
-            label: __('assistants.sidebar.shared'),
-            icon: Share02Icon,
-            route: 'assistants.dashboard.shared',
-            active: router.isRouteActive('assistants.dashboard.shared')
-        }
-    ]);
+    const dashboardItems = $derived(menuEntries.filter(entry => entry.level === 'dashboard'));
 
     /** The drill-down level: the builder's sections, in builder tab order. */
-    const builderSections = $derived([
-        {
-            label: __('assistants.builder.sidebar.general'),
-            icon: Settings01Icon,
-            route: 'assistants.builder.general'
-        },
-        {
-            label: __('assistants.builder.sidebar.behaviour'),
-            icon: BubbleChatIcon,
-            route: 'assistants.builder.behaviour'
-        },
-        {
-            label: __('assistants.builder.sidebar.knowledge'),
-            icon: Database01Icon,
-            route: 'assistants.builder.knowledge'
-        },
-        {
-            label: __('assistants.builder.sidebar.model'),
-            icon: ComputerIcon,
-            route: 'assistants.builder.model'
-        },
-        {
-            label: __('assistants.builder.sidebar.test'),
-            icon: TestTube01Icon,
-            route: 'assistants.builder.test'
-        },
-        {
-            label: __('assistants.builder.sidebar.publish'),
-            icon: SentIcon,
-            route: 'assistants.builder.publish'
-        }
-    ]);
+    const builderSections = $derived(menuEntries.filter(entry => entry.level === 'builder'));
 
     /**
      * Which level the sidebar shows. While a builder route is active the main
@@ -119,21 +65,18 @@
         navTransitionTimer = setTimeout(() => (navTransitioning = false), 220);
     }
 
+    /** Runs a collected row: its named route, or its custom `onSelect`. */
+    function openEntry(entry: {route?: string; onSelect?: (ctx: typeof sidebarContext) => void}) {
+        if (entry.route) {
+            void router.goToRoute(entry.route);
+        } else {
+            entry.onSelect?.(sidebarContext);
+        }
+    }
+
     /** Drill back out of the builder to the assistant dashboard. */
     function exitBuilder() {
         router.goToRoute('assistants.dashboard.store');
-    }
-
-    /**
-     * Drill into a fresh builder session: stash a create intent (the builder
-     * layout picks it up and mints a new assistant — an explicit create, so
-     * any restored session draft is discarded) and navigate to the builder's
-     * first section, which flips the sidebar to the builder level.
-     */
-    function startCreate() {
-        if (sidebar.mobile) sidebar.navOpen = false;
-        requestBuilderIntent({type: 'create'});
-        router.goToRoute('assistants.builder.general');
     }
 </script>
 
@@ -158,13 +101,18 @@
                         label={__('assistants.sidebar.back')}
                         onclick={exitBuilder}
                     />
-                    {#each builderSections as section (section.route)}
-                        <SidebarItem
-                            icon={section.icon}
-                            label={section.label}
-                            active={router.isRouteActive(section.route)}
-                            onclick={() => router.goToRoute(section.route)}
-                        />
+                    {#each builderSections as section (section.id)}
+                        {#if section.component}
+                            {@const Row = section.component}
+                            <Row />
+                        {:else}
+                            <SidebarItem
+                                icon={section.icon}
+                                label={section.label}
+                                active={section.active ?? (section.route ? router.isRouteActive(section.route) : false)}
+                                onclick={() => openEntry(section)}
+                            />
+                        {/if}
                     {/each}
                 </div>
             {:else}
@@ -176,29 +124,23 @@
                     onintrostart={beginNavTransition}
                     onoutrostart={beginNavTransition}
                 >
-                    {#each dashboardItems as item (item.route)}
-                        <SidebarItem
-                            icon={item.icon}
-                            label={item.label}
-                            active={item.active}
-                            onclick={() => router.goToRoute(item.route)}
-                        />
+                    {#each dashboardItems as item (item.id)}
+                        {#if item.component}
+                            {@const Row = item.component}
+                            <Row />
+                        {:else}
+                            <SidebarItem
+                                icon={item.icon}
+                                label={item.label}
+                                active={item.active ?? (item.route ? router.isRouteActive(item.route) : false)}
+                                onclick={() => openEntry(item)}
+                            />
+                        {/if}
                     {/each}
                 </div>
             {/if}
         </div>
     </SidebarItems>
-
-    <!-- Pinned to the bottom of the column, directly above the profile footer -->
-    {#if !inBuilder}
-        <div class="create-assistant">
-            <SidebarButton
-                icon={AddCircleIcon}
-                label={__('assistants.sidebar.create')}
-                onclick={startCreate}
-            />
-        </div>
-    {/if}
 </div>
 
 <style>
@@ -221,9 +163,5 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
-    }
-
-    .create-assistant {
-        margin-top: auto;
     }
 </style>

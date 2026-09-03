@@ -38,6 +38,7 @@ import {MigrationExtension} from '$lib/kernel/migrations/MigrationExtension.js';
 import {ClientExtension} from '$lib/kernel/client/ClientExtension.svelte.js';
 import {ResourceSchemaExtension} from '$lib/kernel/resources/ResourceSchemaExtension.js';
 import {PluginExtension} from '$lib/kernel/plugins/PluginExtension.js';
+import {HookExtension} from '$lib/kernel/hooks/HookExtension.js';
 import {LocalizationExtension} from '$lib/kernel/localization/LocalizationExtension.svelte.js';
 import {RoutingExtension} from '$lib/kernel/routing/RoutingExtension.js';
 import {provideLegacyGlobals, runLegacyWaitUntilBootstrapQueue, runLegacyWaitUntilReadyQueue, setHawkiApp} from '$lib/legacy/legacy.js';
@@ -77,6 +78,7 @@ provideLegacyGlobals();
             new ClientExtension(events),
             new PluginExtension(),
             new ConfigurationExtension(),
+            new HookExtension(),
             new MigrationExtension(),
             new LocalizationExtension(),
             new ModuleExtension(),

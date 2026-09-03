@@ -8,6 +8,7 @@ import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchema
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
+import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 
 // @todo if configuration extension changes, it could become part of HawkiPluginContext (as it is basically a part of the client).
@@ -69,6 +70,16 @@ export interface HawkiPlugin {
 
     /** Register this plugin's `DataStore`s on the registrar. */
     stores?(registrar: StoreRegistrar, context: HawkiPluginContextWithConfig): void | Promise<void>;
+
+    /**
+     * Register this plugin's hook handlers on the registrar. A hook point is
+     * declared by the surface that owns it (via the `HawkiHooks` declaration
+     * merging interface, see `kernel/extendableTypes.js`); handlers are pure
+     * filters over that surface's data and are applied with
+     * `app.hooks.apply(name, value, ctx)` whenever the surface needs the
+     * filtered value.
+     */
+    hooks?(registrar: HookRegistrar, context: HawkiPluginContextWithConfig): void | Promise<void>;
 
     /**
      * Runs once the `preparation` bootstrap stage has passed (config and
