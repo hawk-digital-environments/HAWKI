@@ -22,37 +22,43 @@ export class GuardSlice {
     ) {
     }
 
-    /** Whether the send button should be enabled. Requires: not forced-active, has write
-     *  access, no active send in progress, non-empty message (handles excluded), no model
-     *  compatibility issues, and the current mode's own `canSend` check passes. */
-    public readonly canSend = $derived.by(() => {
+    /** Translation key explaining why sending is currently blocked, or `null` when it is allowed. */
+    public readonly cannotSendReason = $derived.by((): string | null => {
         const context = this.contextResolver();
         if (context.forcedActive) {
-            return false;
+            return 'chat.composer.actions.actionInProgressTooltip';
         }
 
         if (!context.hasWriteAccess) {
-            return false;
+            return 'chat.composer.actions.noWriteAccessTooltip';
         }
 
         if (context.sendStatus?.active) {
-            return false;
+            return 'chat.composer.actions.sendingInProgressTooltip';
         }
 
         if (context.messageWithoutHandles.trim().length <= 0) {
-            return false;
+            return 'chat.composer.actions.noMessageTooltip';
         }
 
         // Ignore model usage issues when the user does not see any AI-related UI elements.
         if (context.modelUsage.issues.length > 0) {
-            return false;
+            return 'chat.composer.actions.invalidModelTooltip';
         }
 
-        return context.mode.instance.canSend(
+        if (context.mode.instance.canSend(
             context,
             context.mode.state
-        );
+        )) {
+            return null;
+        }
+
+        // @todo Let modes provide a more specific reason when their contract supports it.
+        return 'chat.composer.actions.modeCannotSendTooltip';
     });
+
+    /** Whether the send button should be enabled. */
+    public readonly canSend = $derived(this.cannotSendReason === null);
 
     /** Whether AI-related UI (model picker, tool menu, etc.) should be visible.
      *  Always `true` in `aiConv` mode; in `room` mode, only when the message

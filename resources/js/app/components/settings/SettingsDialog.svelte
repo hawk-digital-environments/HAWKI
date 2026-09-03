@@ -37,6 +37,8 @@
     }
 
     let {open = $bindable(false), onOpenChange, section = null}: Props = $props();
+    const uid = $props.id();
+    const titleId = `${uid}-title`;
     const {__} = useTranslator();
 
     const settingsRouter = createRouter('settings', (registrar) => {
@@ -75,7 +77,7 @@
     onOpenChange={handleOpenChange}
     contentProps={{class: 'settings-dialog-content'}}
     headerProps={{class: 'settings-dialog-header'}}
-    titleProps={{id: 'settings-dialog-title'}}
+    titleProps={{id: titleId}}
 >
     {#snippet title()}
         <Settings05Icon size={17}/>
@@ -114,7 +116,7 @@
         </nav>
 
         <!-- Not a <main>: the page already has one; a labelled region is enough inside the dialog. -->
-        <section class="settings-panel" aria-labelledby="settings-dialog-title">
+        <section class="settings-panel" aria-labelledby={titleId}>
             <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
         </section>
     </div>

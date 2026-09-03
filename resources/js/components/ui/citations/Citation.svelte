@@ -32,8 +32,10 @@
     import {useCitationContext} from '$lib/components/ui/citations/CitationContext.js';
     import {citationElementId} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
     import {onMount} from 'svelte';
+    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const citationContext = useCitationContext();
+    const reducedMotion = useReducedMotion();
 
     interface Props {
         /** The citation to display. */
@@ -58,7 +60,9 @@
     onMount(() => {
         return citationContext.onFocusCitation(citation.identifier, () => {
             container?.focus({preventScroll: true});
-            container?.scrollIntoView({behavior: 'smooth', block: 'center'});
+            container?.scrollIntoView({behavior: reducedMotion.current ? 'auto' : 'smooth', block: 'center'});
+            if (reducedMotion.current) return;
+
             // Restart the flash animation if it is already running
             container?.classList.remove('citation-flash');
             void container?.offsetWidth;
@@ -112,7 +116,10 @@
     }
 
     /* Inline citation chips move focus to this named source tile. */
-    .citation-tile:focus { outline: none; }
+    .citation-tile:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+    }
 
     .citation-tile:global(.citation-flash) {
         animation: citation-flash 3s var(--easing-default, ease);

@@ -5,6 +5,7 @@
  * formulas are rendered with `output: 'htmlAndMathml'` so every formula
  * carries a MathML tree that screen readers can announce. The package worker
  * renders `output: 'html'` only, which leaves nothing but aria-hidden visuals.
+ * @todo Remove this copy once markstream-svelte accepts render options for its KaTeX worker; until then, keep its message protocol in sync on upgrades.
  */
 import katex from 'katex';
 // Registers the \ce and \pu macros on this worker's KaTeX instance.
