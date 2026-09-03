@@ -54,6 +54,13 @@
         min-width: 0;
         overflow: hidden;
         background: var(--panel-bg);
+
+        /* Focused programmatically after a route change (see `RouterView`) and
+           by the skip link; a ring around the whole content column would only
+           be noise, the landmark itself is not interactive. */
+        &:focus {
+            outline: none;
+        }
     }
 
     .mobile-navigation-trigger {
