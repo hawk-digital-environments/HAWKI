@@ -100,10 +100,6 @@ abstract class AbstractMakeSchemaMigrationCommand extends Command implements Pro
     /**
      * Builds the migration content for the class and type. The imports carry the
      * fully-qualified names, the body uses the short ones.
-     */
-    /**
-     * Builds the migration content for the class and type. The imports carry the
-     * fully-qualified names, the body uses the short ones.
      *
      * @param self::TYPE_CREATE|self::TYPE_DELETE|self::TYPE_UPDATE $type
      */

@@ -13,11 +13,12 @@ import type { HawkiUserSettingsSchemas } from '$lib/kernel/extendableTypes.js';
  * schema shape mirrors the JSON:API attributes (public keys → typed values,
  * e.g. `{core: {locale, theme, timezone}}`).
  *
- * Plugins currently receive user-settings schemas through the same eager
- * glob — there is no plugin-level `userSettingsSchemas()` lifecycle hook
- * yet, unlike the config layer which has `runConfigSchemas(registrar)`.
- * When that hook is added in the future, this registrar will be passed into
- * it identically.
+ * App-owned namespaces register via the eager glob (the extension calls
+ * `addFromModules` on `$lib/app/schemas/user-settings/*.schema.{ts,js}`);
+ * plugins register through the `settingSchemas()` lifecycle hook, which
+ * `UserSettingsExtension.init()` runs via
+ * `PluginBootstrapper.runSettingSchemas(registrar)` — mirroring the config
+ * layer's `configSchemas()` / `runConfigSchemas(registrar)`.
  *
  * `add` is the manual, type-safe entry — pass a `keyof HawkiUserSettingsSchemas`
  * and the value is checked against the augmented interface. `addFromModules`

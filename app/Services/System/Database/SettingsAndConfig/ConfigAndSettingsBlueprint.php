@@ -67,11 +67,14 @@ class ConfigAndSettingsBlueprint
 
     /**
      * Returns true when a value was queued for the property via {@see __set()} —
-     * the property will be upserted on flush.
+     * the property will be upserted on flush. Uses `array_key_exists` rather
+     * than `isset`, so a value explicitly queued as null ("reset to the class
+     * default on flush") is distinguishable from a property that was never
+     * queued.
      */
     public function __isset(string $name): bool
     {
-        return isset($this->pending[$name]);
+        return \array_key_exists($name, $this->pending);
     }
 
     /**
