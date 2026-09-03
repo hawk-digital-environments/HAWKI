@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Laravel\Ai\Gateway\OpenAi\OpenAiGateway;
 use Laravel\Ai\Providers\Provider;
 use Laravel\Ai\Streaming\Events\Citation;
+use Laravel\Ai\Streaming\Events\ReasoningDelta;
 use Laravel\Ai\Streaming\Events\StreamEnd;
 use Laravel\Ai\Streaming\Events\TextDelta;
 use Laravel\Ai\Streaming\Events\TextEnd;
@@ -43,6 +44,13 @@ class ExtendedOpenAiGateway extends OpenAiGateway
     private array $lastData = [];
 
     /**
+     * Set when a reasoning summary part has finished so the next {@see ReasoningDelta}
+     * can be separated from the previous part. OpenAI streams each summary part
+     * (typically "**Title**\n\nBody") without any delimiter between parts.
+     */
+    private bool $reasoningPartEnded = false;
+
+    /**
      * @inheritDoc
      *
      * Intercepts each parsed SSE data frame to keep {@see $lastData} current.
@@ -51,6 +59,9 @@ class ExtendedOpenAiGateway extends OpenAiGateway
     {
         foreach (parent::parseServerSentEvents($streamBody) as $data) {
             $this->lastData = $data;
+            if (($data['type'] ?? '') === 'response.reasoning_summary_part.done') {
+                $this->reasoningPartEnded = true;
+            }
             yield $data;
         }
     }
@@ -69,6 +80,21 @@ class ExtendedOpenAiGateway extends OpenAiGateway
         foreach ($response as $event) {
             if ($event instanceof TextDelta || $event instanceof TextEnd) {
                 $messageId = $event->messageId;
+            }
+
+            if ($event instanceof ReasoningDelta && $this->reasoningPartEnded) {
+                $this->reasoningPartEnded = false;
+                $separated = new ReasoningDelta(
+                    $event->id,
+                    $event->reasoningId,
+                    "\n\n" . $event->delta,
+                    $event->timestamp,
+                    $event->summary,
+                );
+                if ($event->invocationId !== null) {
+                    $separated->withInvocationId($event->invocationId);
+                }
+                $event = $separated;
             }
 
             if ($event instanceof StreamEnd) {

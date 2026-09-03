@@ -3,7 +3,7 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValue, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
 import {decodeJsonApiResourceResponse} from '$lib/kernel/api/jsonApiEncoding.js';
 import AiConvMessageSchema, {type AiConvMessage} from '$plugins/core/schemas/resources/ai-conv-messages.schema.js';
-import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText} from '$plugins/core/modules/chat/types.js';
+import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText, MessageStats, ReasoningPart} from '$plugins/core/modules/chat/types.js';
 import type {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
@@ -12,11 +12,16 @@ type ChatStoreDependencies = {
     uriBuilder: HawkiApp['uriBuilder'];
     keychain: KeychainStore;
     translator: HawkiApp['translator'];
+    events: HawkiApp['events'];
 };
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiDataStores {
         chat: ChatStore;
+    }
+
+    interface HawkiSyncEvents {
+        onNewChatRequested: void;
     }
 }
 
@@ -48,7 +53,8 @@ export class ChatStore implements DataStore {
             restApi: app.restApi,
             uriBuilder: app.uriBuilder,
             keychain: app.stores.get('keychain'),
-            translator: app.translator
+            translator: app.translator,
+            events: app.events
         };
         if (!app.connection.isAuthenticated) {
             return;
@@ -88,6 +94,12 @@ export class ChatStore implements DataStore {
         this.active = null;
         this.loading = false;
         this.error = null;
+    }
+
+    /** Starts a new chat and triggers `onNewChatRequested` on the sync event bus. */
+    public requestNewChat(): void {
+        this.startNew();
+        this.dependencies.events.sync.triggerVoid('onNewChatRequested');
     }
 
     public async load(slug: string): Promise<ChatConversation> {
@@ -246,7 +258,7 @@ export class ChatStore implements DataStore {
 
     public async persistMessage(slug: string, payload: Record<string, unknown>, update = false): Promise<ChatMessage> {
         if (!this.getConversation(slug)) throw new Error('The target conversation is unavailable.');
-        const {__plainText, __citations, message_id, ...requestPayload} = payload;
+        const {__plainText, __citations, __reasoning, __stats, message_id, ...requestPayload} = payload;
         const response = update
             ? await this.dependencies.restApi.patchToResourceAction(
                 'ai-convs',
@@ -259,7 +271,7 @@ export class ChatStore implements DataStore {
                 requestPayload
             );
         const resource = AiConvMessageSchema.parse(decodeJsonApiResourceResponse(response));
-        return this.normalisePlainMessage(resource, __plainText as string | undefined, __citations as UrlCitation[] | undefined);
+        return this.normalisePlainMessage(resource, __plainText as string | undefined, __citations as UrlCitation[] | undefined, __reasoning as ReasoningPart[] | undefined, __stats as MessageStats | undefined);
     }
 
     public isGenerating(slug: string | null | undefined): boolean {
@@ -305,23 +317,29 @@ export class ChatStore implements DataStore {
         const raw = await decryptSymmetric(loadSymmetricCryptoValue(source.content), key);
         let text = raw;
         let citations: UrlCitation[] = [];
+        let reasoning: ReasoningPart[] | undefined;
+        let stats: MessageStats | undefined;
         try {
             const parsed = JSON.parse(raw);
             if (parsed && typeof parsed === 'object' && typeof parsed.text === 'string') {
                 text = parsed.text;
                 citations = Array.isArray(parsed.citations) ? parsed.citations : [];
+                reasoning = Array.isArray(parsed.reasoning) && parsed.reasoning.length
+                    ? parsed.reasoning
+                    : (typeof parsed.reasoning === 'string' && parsed.reasoning ? [{type: 'text', text: parsed.reasoning}] : undefined);
+                stats = parsed.stats && typeof parsed.stats === 'object' ? parsed.stats : undefined;
             }
         } catch {
             // User messages in the legacy format are plain encrypted strings.
         }
-        return this.toChatMessage(source, decodeLegacyHtml(text), citations);
+        return this.toChatMessage(source, decodeLegacyHtml(text), citations, reasoning, stats);
     }
 
-    private normalisePlainMessage(source: AiConvMessage, text?: string, citations: UrlCitation[] = []): ChatMessage {
-        return this.toChatMessage(source, text ?? '', citations);
+    private normalisePlainMessage(source: AiConvMessage, text?: string, citations: UrlCitation[] = [], reasoning?: ReasoningPart[], stats?: MessageStats): ChatMessage {
+        return this.toChatMessage(source, text ?? '', citations, reasoning, stats);
     }
 
-    private toChatMessage(source: AiConvMessage, text: string, citations: UrlCitation[]): ChatMessage {
+    private toChatMessage(source: AiConvMessage, text: string, citations: UrlCitation[], reasoning?: ReasoningPart[], stats?: MessageStats): ChatMessage {
         return {
             author: {
                 username: source.author.username,
@@ -351,7 +369,9 @@ export class ChatStore implements DataStore {
             },
             model: source.model,
             updated_at: source.updated_at ?? '',
-            citations
+            citations,
+            ...(reasoning?.length ? {reasoning} : {}),
+            ...(stats ? {stats} : {})
         };
     }
 

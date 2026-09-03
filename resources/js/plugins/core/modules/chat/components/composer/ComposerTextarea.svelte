@@ -68,6 +68,9 @@
             e.preventDefault();
             composerContext.mode.exit();
         }
+        // The paste event carries no modifier state, so remember Ctrl/Cmd+Shift+V
+        // here; any other keystroke clears it again.
+        forceInlinePaste = e.shiftKey && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v';
     }
 
     let oldMessage = composerContext.message;
@@ -80,12 +83,36 @@
 
     const toastContext = useToastContext();
 
+    /** Pasted plain text longer than this (in characters) is attached as a `.txt` file instead of inserted inline. */
+    const PASTE_AS_FILE_THRESHOLD = 1000;
+
+    /** True while the pending paste was triggered via Ctrl/Cmd+Shift+V, which forces inline text insertion. */
+    let forceInlinePaste = false;
+
     function handlePaste(e: ClipboardEvent) {
+        const pasteInline = forceInlinePaste;
+        forceInlinePaste = false;
+
         const clipboard = e.clipboardData;
-        if (!clipboard || !Array.from(clipboard.types).includes('Files')) return;
+        if (!clipboard) return;
+
+        if (Array.from(clipboard.types).includes('Files')) {
+            e.preventDefault();
+            reportAttachmentIssues(translator, toastContext, composerContext.attachments.add(clipboard.files));
+            return;
+        }
+
+        if (pasteInline) return;
+
+        const text = clipboard.getData('text/plain');
+        if (text.length <= PASTE_AS_FILE_THRESHOLD || composerContext.guard.disablesFeature('attachments')) return;
+
+        const file = new File([text], __('chat.composer.pastedTextFileName') + '.txt', {type: 'text/plain'});
+        const result = composerContext.attachments.add(file);
+        // If the file can't be attached (e.g. text/plain not allowed), fall back to inserting the text inline.
+        if (result !== true) return;
 
         e.preventDefault();
-        reportAttachmentIssues(translator, toastContext, composerContext.attachments.add(clipboard.files));
     }
 
 </script>
