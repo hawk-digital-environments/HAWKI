@@ -65,7 +65,7 @@ export class FavoritesExtension implements HawkiAppExtension {
 
     private app: UnfinishedHawkiApp | null = null;
     private favorites = $state<StoredFavorite[]>([]);
-    /** Per-favorite-key pending write state (`namespace|type|identifier` → intent). */
+    /** Per-favorite-key pending write state (composite key → intent). */
     private pendingWrites = new Map<string, PendingWrite>();
 
     public async init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper): Promise<void> {
@@ -74,13 +74,16 @@ export class FavoritesExtension implements HawkiAppExtension {
         bootstrapper.onPreparationStage(() => this.refresh());
 
         // After an authentication transition favorites may have changed on the
-        // server: refresh on login, drop the list on logout.
-        this.app.getOrFail('events').async.on('connectionChanged', (connection: Connection) => {
+        // server: refresh on login, drop the list (and any pending writes) on
+        // logout. The handler awaits the refresh so the event pipeline can
+        // sequence/observe its completion.
+        this.app.getOrFail('events').async.on('connectionChanged', async (connection: Connection) => {
             if (connection.isAuthenticated) {
-                this.refresh();
-            } else {
-                this.favorites = [];
+                await this.refresh();
+                return;
             }
+            this.favorites = [];
+            this.cancelPendingWrites();
         });
     }
 
@@ -166,7 +169,7 @@ export class FavoritesExtension implements HawkiAppExtension {
      * once the coalesced write completes.
      */
     private scheduleWrite(intent: 'favorite' | 'unfavorite', namespace: string, type: string, identifier: string): Promise<void> {
-        const key = `${namespace}|${type}|${identifier}`;
+        const key = compositeKey(namespace, type, identifier);
         const existing = this.pendingWrites.get(key);
 
         if (existing) {
@@ -193,6 +196,19 @@ export class FavoritesExtension implements HawkiAppExtension {
     }
 
     /**
+     * Cancels every pending debounced write: clears the timers and rejects the
+     * callers' promises, so nothing fires against the (no longer valid) session
+     * and no caller hangs on an unresolved promise. Used on logout.
+     */
+    private cancelPendingWrites(): void {
+        for (const pending of this.pendingWrites.values()) {
+            clearTimeout(pending.timer);
+            pending.promiseReject(new Error('The favorite was not saved because you were logged out.'));
+        }
+        this.pendingWrites.clear();
+    }
+
+    /**
      * Executes the final pending intent for the key and updates the local list
      * from the server response.
      */
@@ -203,7 +219,7 @@ export class FavoritesExtension implements HawkiAppExtension {
         }
         this.pendingWrites.delete(key);
 
-        const [namespace, type, identifier] = key.split('|');
+        const [namespace, type, identifier] = parseCompositeKey(key);
         const restApi = this.app!.getOrFail('restApi');
 
         if (pending.intent === 'favorite') {
@@ -261,4 +277,18 @@ export class FavoritesExtension implements HawkiAppExtension {
 
 function hasTransportStatus(error: unknown, status: number): boolean {
     return error instanceof Error && 'status' in error && (error as ApiTransportError).status === status;
+}
+
+/**
+ * Ambiguity-free composite key for the (`namespace`, `type`, `identifier`) triple —
+ * the parts are free-form strings, so a delimiter-joined key could be parsed
+ * differently than it was built (e.g. an identifier containing `|`).
+ */
+function compositeKey(namespace: string, type: string, identifier: string): string {
+    return JSON.stringify([namespace, type, identifier]);
+}
+
+function parseCompositeKey(key: string): [string, string, string] {
+    const [namespace, type, identifier] = JSON.parse(key) as [string, string, string];
+    return [namespace, type, identifier];
 }

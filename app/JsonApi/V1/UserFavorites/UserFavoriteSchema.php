@@ -85,8 +85,11 @@ class UserFavoriteSchema extends Schema
 
     public function authorizable(): bool
     {
-        // HAWKI handles auth at the middleware layer (UserContext/UsageContext);
-        // row-level scoping is the model's 'access' contextual scope.
+        // HAWKI handles auth at the middleware layer (UserContext/UsageContext).
+        // Row-level user scoping is NOT the model's 'access' contextual scope here —
+        // the JSON:API layer builds its queries outside the scope activation — but
+        // the explicit user_id filter in indexQuery() plus the controller's
+        // deleting-ownership hook (see this class's docblock).
         return false;
     }
 }

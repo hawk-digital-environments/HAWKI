@@ -172,8 +172,11 @@ class UserFavoritesServiceTest extends TestCase
     public function testItFavoritesDoNotLeakAcrossUserSwitches(): void
     {
         $first = $this->givenUser(42);
+        // A distinct owning user for the second favorite — the repository stub
+        // must never hand a favorite of user 42 to user 7.
+        $second = $this->makeUser(7);
         $firstFavorite = $this->makeFavorite($first, 'hawki-core', 'ai-model', 'first-users-model');
-        $secondFavorite = $this->makeFavorite($first, 'hawki-core', 'ai-model', 'second-users-model');
+        $secondFavorite = $this->makeFavorite($second, 'hawki-core', 'ai-model', 'second-users-model');
 
         // Serve each user its own favorite set — a stub would not distinguish callers.
         $this->repository->method('getForUser')->willReturnCallback(fn (User $user): \Illuminate\Database\Eloquent\Collection => $this->favoritesCollection(42 === $user->id ? $firstFavorite : $secondFavorite));
@@ -223,11 +226,18 @@ class UserFavoritesServiceTest extends TestCase
 
     private function givenUser(int $id): User
     {
+        $user = $this->makeUser($id);
+        $this->currentUser = $user;
+
+        return $user;
+    }
+
+    private function makeUser(int $id): User
+    {
         // Direct property assignment: `id` is not mass-assignable, but the identity
         // map in the service keys on it, so the tests need distinct ids.
         $user = User::factory()->make();
         $user->id = $id;
-        $this->currentUser = $user;
 
         return $user;
     }

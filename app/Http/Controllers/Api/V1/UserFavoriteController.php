@@ -60,11 +60,13 @@ class UserFavoriteController extends Controller
 
     /**
      * Ownership check before the default delete proceeds (returning nothing).
+     * Purely row-based: the user id column comparison avoids hydrating the
+     * related user model.
      */
     public function deleting(UserFavoriteValue $favorite, ResourceRequest $request): void
     {
         abort_unless(
-            $request->user()?->is($favorite->user),
+            $request->user()?->id === $favorite->user_id,
             404,
             'This favorite does not exist.',
         );

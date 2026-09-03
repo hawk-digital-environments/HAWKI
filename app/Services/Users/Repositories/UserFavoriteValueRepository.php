@@ -111,15 +111,11 @@ class UserFavoriteValueRepository extends AbstractRepositoryWithContextualScopes
      */
     private function findOneForUserOrFail(User $user, string $type, string $identifier, string $namespace): UserFavoriteValue
     {
-        $favorite = $this->getQuery()
+        return $this->getQuery()
             ->where('user_id', $user->id)
             ->where('namespace', $namespace)
             ->where('type', $type)
             ->where('identifier', $identifier)
-            ->first();
-
-        \assert($favorite instanceof UserFavoriteValue);
-
-        return $favorite;
+            ->firstOrFail();
     }
 }
