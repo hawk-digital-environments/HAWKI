@@ -13,7 +13,8 @@
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
   `composerContext.model.set(modelId)` (same contract as `ModelPicker`).
-  Favorites are persisted per browser by the registered `model-favorites` store.
+  Favorites are persisted per user account through the `favorites` extension
+  (type `ai-model`); failed writes surface as toasts.
 
   Takes no props — it is a self-contained composer feature component.
 
@@ -43,18 +44,23 @@
     import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useFavorites} from '$lib/app/hooks/useFavorites.svelte.js';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
-    const modelFavorites = useStore('model-favorites');
+    const favorites = useFavorites();
+    const toast = useToastContext();
     const {__} = useTranslator();
 
     const ALL_TAB = '__all__';
     const OTHER_TAB = '__other__';
     const HIDE_PROVIDER = '__hidden__';
+    /** Favorites "type" under which model ids are stored in the favorites backend. */
+    const FAVORITE_TYPE = 'ai-model';
 
     const uid = $props.id();
     const listId = `mp2-list-${uid}`;
@@ -88,10 +94,10 @@
             const q = query.trim().toLowerCase();
             return Map.groupBy(aiModelStore.models.filter(model => `${model.label} ${model.provider?.name ?? ''} ${model.model_id}`.toLowerCase().includes(q)), () => HIDE_PROVIDER);
         }
-        const favoritesFirst = (a: AiModel, b: AiModel) => Number(modelFavorites.has(b.model_id)) - Number(modelFavorites.has(a.model_id));
-        if (activeTab === ALL_TAB) {
-            return Map.groupBy(aiModelStore.models.toSorted(favoritesFirst), (model) => modelFavorites.has(model.model_id) ? __('chat.composer.modelPicker.favorites') : model.provider!.name);
-        }
+    const favoritesFirst = (a: AiModel, b: AiModel) => Number(favorites.isFavorite(FAVORITE_TYPE, b.model_id)) - Number(favorites.isFavorite(FAVORITE_TYPE, a.model_id));
+    if (activeTab === ALL_TAB) {
+        return Map.groupBy(aiModelStore.models.toSorted(favoritesFirst), (model) => favorites.isFavorite(FAVORITE_TYPE, model.model_id) ? __('chat.composer.modelPicker.favorites') : model.provider!.name);
+    }
         return Map.groupBy(aiModelStore.models.filter(model => (model.provider?.provider_id ?? OTHER_TAB) === activeTab).toSorted(favoritesFirst), () => HIDE_PROVIDER);
     });
 
@@ -116,7 +122,7 @@
         const isOpen = open;
         if (isOpen && !wasOpen) {
             query = '';
-            activeTab = modelFavorites.ids.length > 0
+            activeTab = favorites.getFavorites(FAVORITE_TYPE).length > 0
                 ? ALL_TAB
                 : (current?.provider?.provider_id ?? providers[0]?.id ?? ALL_TAB);
         }
@@ -145,7 +151,12 @@
         // Keep the popover open and the row unselected.
         e.preventDefault();
         e.stopPropagation();
-        modelFavorites.toggle(model.model_id);
+        const promise = favorites.isFavorite(FAVORITE_TYPE, model.model_id)
+            ? favorites.removeAsFavorite(FAVORITE_TYPE, model.model_id)
+            : favorites.markAsFavorite(FAVORITE_TYPE, model.model_id);
+        promise.catch((error: unknown) => {
+            toast.error(error instanceof Error ? error.message : __('chat.composer.modelPicker.favoriteError'));
+        });
     }
 
     function moveHighlight(delta: number): void {
@@ -247,7 +258,7 @@
                 {#each models as model (model.model_id)}
                     {@const offline = model.status === 'offline'}
                     {@const selected = model.model_id === current.model_id}
-                    {@const favorite = modelFavorites.has(model.model_id)}
+                    {@const favorite = favorites.isFavorite(FAVORITE_TYPE, model.model_id)}
                     {@const kbdIndex = layout === 'popover' ? kbdIndexById.get(model.model_id) : undefined}
                     <!-- Keyboard interaction lives on the panel (aria-activedescendant pattern),
                          so the option row itself only needs a click handler. -->
