@@ -142,6 +142,61 @@ class AiConvAssistantHandleTest extends TestCase
     }
 
     /**
+     * The assistant display identity travels inside the AI message
+     * metadata; it must survive the store round-trip so the message log
+     * keeps showing who answered after the stream is persisted (and on
+     * reload — see the conversation include below).
+     */
+    public function testStoredAiMessageRoundTripsTheAssistantIdentity(): void
+    {
+        $user = User::factory()->create();
+        $conversation = AiConv::query()->create([
+            'conv_name' => 'Tutoring session',
+            'slug' => 'tutoring-session',
+            'user_id' => $user->id,
+            'system_prompt' => null,
+            'assistant_handle' => 'math-tutor',
+        ]);
+
+        $identity = ['name' => 'Math Tutor', 'icon' => '📚', 'tint' => 'hsl(200 60% 40%)'];
+
+        $this->actingAs($user)
+            ->postJson(
+                "/api/hawki/v1/ai-convs/{$conversation->slug}/actions/messages",
+                [
+                    'isAi' => true,
+                    'threadId' => 0,
+                    'content' => [
+                        'text' => [
+                            'ciphertext' => 'encrypted',
+                            'iv' => 'iv',
+                            'tag' => 'tag',
+                        ],
+                        'attachments' => [],
+                    ],
+                    'metadata' => [
+                        'tools' => [],
+                        'params' => ['temp' => 0.3],
+                        'assistant' => $identity,
+                    ],
+                    'model' => 'assistant-model',
+                    'completion' => true,
+                ],
+                $this->jsonApiHeaders(),
+            )
+            ->assertCreated()
+            ->assertJsonPath('data.attributes.metadata.assistant', $identity);
+
+        $this->actingAs($user)
+            ->getJson(
+                "/api/hawki/v1/ai-convs/{$conversation->slug}?include=messages",
+                $this->jsonApiHeaders(),
+            )
+            ->assertOk()
+            ->assertJsonPath('included.0.attributes.metadata.assistant', $identity);
+    }
+
+    /**
      * @return array<string, string>
      */
     private function jsonApiHeaders(): array

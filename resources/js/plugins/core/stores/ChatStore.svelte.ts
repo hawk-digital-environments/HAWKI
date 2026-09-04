@@ -3,7 +3,7 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValue, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
 import {decodeJsonApiResourceResponse} from '$lib/kernel/api/jsonApiEncoding.js';
 import AiConvMessageSchema, {type AiConvMessage} from '$plugins/core/schemas/resources/ai-conv-messages.schema.js';
-import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText} from '$plugins/core/modules/chat/types.js';
+import type {ChatAssistantIdentity, ChatConversation, ChatMessage, ChatSummary, EncryptedText} from '$plugins/core/modules/chat/types.js';
 import type {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
@@ -354,7 +354,31 @@ export class ChatStore implements DataStore {
             },
             model: source.model,
             updated_at: source.updated_at ?? '',
-            citations
+            citations,
+            assistant: this.readAssistantIdentity(source.metadata?.assistant)
+        };
+    }
+
+    /**
+     * Validates the persisted `metadata.assistant` display identity. The
+     * metadata column is free-form, so malformed entries (older messages,
+     * foreign writers) degrade to the default model-label rendering instead
+     * of breaking the message log.
+     */
+    private readAssistantIdentity(raw: unknown): ChatAssistantIdentity | undefined {
+        if (!raw || typeof raw !== 'object') {
+            return undefined;
+        }
+
+        const candidate = raw as Record<string, unknown>;
+        if (typeof candidate.name !== 'string' || typeof candidate.icon !== 'string') {
+            return undefined;
+        }
+
+        return {
+            name: candidate.name,
+            icon: candidate.icon,
+            ...(typeof candidate.tint === 'string' ? {tint: candidate.tint} : {})
         };
     }
 

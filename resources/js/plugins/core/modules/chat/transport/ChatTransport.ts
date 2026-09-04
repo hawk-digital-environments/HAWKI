@@ -216,6 +216,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
     private resolveSendDescriptor(context: ComposerContext): ChatSendDescriptor {
         return this.app.hooks.apply('chatSend', {
             assistantHandle: null,
+            assistant: null,
             author: null,
             model: context.model.current.model_id,
             tools: context.tools.active.map(tool => tool.toTransferString()),
@@ -254,6 +255,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             model: send.model,
             updated_at: new Date().toISOString(),
             citations: [],
+            assistant: send.assistant ?? undefined,
             isStreaming: true,
             status: 'running'
         };
@@ -298,7 +300,10 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 content: {text: encrypted},
                 metadata: {
                     tools: send.tools,
-                    params: send.params
+                    params: send.params,
+                    // The assistant's display identity, so the message log
+                    // keeps showing who answered after reload.
+                    ...(send.assistant ? {assistant: send.assistant} : {})
                 },
                 model: send.model,
                 completion,

@@ -1,5 +1,5 @@
 import type {AiModelParameters} from '$lib/kernel/ai/types.js';
-import type {ChatConversation, ChatMessage} from '$plugins/core/modules/chat/types.js';
+import type {ChatAssistantIdentity, ChatConversation, ChatMessage} from '$plugins/core/modules/chat/types.js';
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
 /**
@@ -24,6 +24,8 @@ export interface ChatSendDescriptor {
      * conversation binding.
      */
     assistantHandle: string | null;
+    /** Display identity for the AI message's author; null keeps the model-label rendering. */
+    assistant: ChatAssistantIdentity | null;
     /** Display author for the streamed assistant message; null keeps the default HAWKI author. */
     author: ChatMessage['author'] | null;
     /** Model id the run is addressed to (also persisted on the AI message). */

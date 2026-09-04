@@ -3,6 +3,7 @@ import type {ChatWelcomeContext, ChatWelcomeSection} from '$plugins/core/modules
 import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 import type {Assistant} from '$plugins/assistants/types/assistant';
+import {assistantRowAppearance} from '$plugins/assistants/utils/assistantRowAppearance';
 import {assistantHandlesStore} from '$plugins/assistants/stores/AssistantHandlesStore.svelte.js';
 
 /**
@@ -69,9 +70,17 @@ export function assistantChatSend(send: ChatSendDescriptor, ctx: ChatSendContext
     }
 
     const toolNames = (assistant.aiTools ?? []).map((tool) => tool.name);
+    // The same glyph and color that identify the assistant in the `@` menu
+    // identify it as the author of its answers.
+    const appearance = assistantRowAppearance(assistant);
 
     return {
         assistantHandle: assistant.handle,
+        assistant: {
+            name: assistant.name,
+            icon: appearance.icon,
+            tint: appearance.colors.from
+        },
         author: {
             username: assistant.handle,
             name: assistant.name,

@@ -34,7 +34,7 @@
     const isAssistant = $derived(message.message_role === 'assistant');
     const authorName = $derived(
         isAssistant
-            ? aiModelStore.getOneById(message.model ?? '')?.label ?? message.model ?? 'HAWKI'
+            ? message.assistant?.name ?? aiModelStore.getOneById(message.model ?? '')?.label ?? message.model ?? 'HAWKI'
             : message.author.name
     );
 
@@ -51,7 +51,18 @@
 <article {...restProps} class={["message", className]} class:user={!isAssistant} class:assistant={isAssistant} class:pending={message.isPending} aria-busy={message.isPending}>
     <div class="avatar-wrap">
         {#if isAssistant}
-            <span class="assistant-avatar" aria-hidden="true"><BotIcon size={18} /></span>
+            <span
+                class="assistant-avatar"
+                class:personalized={Boolean(message.assistant)}
+                style:--assistant-tint={message.assistant?.tint}
+                aria-hidden="true"
+            >
+                {#if message.assistant?.icon}
+                    <span class="assistant-glyph">{message.assistant.icon}</span>
+                {:else}
+                    <BotIcon size={18} />
+                {/if}
+            </span>
         {:else}
             <Avatar src={message.author.avatar_url} name={message.author.name} label={message.author.name} size={32} />
         {/if}
@@ -128,6 +139,17 @@
         border-radius: var(--corner-full);
         background: var(--color-active-surface);
         color: var(--color-active-text);
+    }
+
+    /* An assistant-authored message paints the circle in its own tint and
+       shows its glyph instead of the generic bot icon. */
+    .assistant-avatar.personalized {
+        background: color-mix(in oklab, var(--assistant-tint, var(--color-active-surface)) 18%, transparent);
+    }
+
+    .assistant-glyph {
+        font-size: 1.1rem;
+        line-height: 1;
     }
 
     .message-column { min-width: 0; }
