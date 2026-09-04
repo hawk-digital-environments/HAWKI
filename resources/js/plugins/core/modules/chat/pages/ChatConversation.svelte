@@ -64,6 +64,19 @@ exists; a generation started there keeps streaming through the store.
         }
     });
 
+    // A conversation bound to an assistant keeps addressing it: seed the
+    // composer with the bound `@handle` once so the next message continues
+    // the assistant run (the backend resolves the assistant from the handle
+    // inside the message text). The composer is remounted per slug, so one
+    // seeding per conversation suffices.
+    $effect(() => {
+        const boundHandle = store.active?.assistant_handle;
+        if (!composer || !boundHandle || !store.active) return;
+        if (composer.handlesInMessage.length === 0 && composer.message.trim() === '') {
+            composer.addHandleToMessage(`@${boundHandle}`);
+        }
+    });
+
     $effect(() => {
         const conversationSlug = store.active?.slug ?? null;
         const count = store.active?.messages.length ?? 0;
@@ -199,7 +212,7 @@ exists; a generation started there keeps streaming through the store.
                     {/if}
                 </div>
             {:else if !store.active || store.active.messages.length === 0}
-                <ChatWelcome />
+                <ChatWelcome {composer} conversation={store.active} />
             {:else}
                 <div
                     class="messages"

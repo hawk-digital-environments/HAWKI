@@ -81,8 +81,11 @@ export class GuardSlice {
     /**
      * Whether a specific UI feature should be disabled right now.
      *
-     * Two independent checks are combined: an optional activity lock (enabled while
-     * a message is sending) and the current mode's own `disablesUiFeature()` decision.
+     * Three independent checks are combined: an optional activity lock (enabled while
+     * a message is sending), a restriction by the addressed assistant (a participant
+     * that fixes its model locks the model picker and sampling settings; one that
+     * fixes its toolset locks the tool menu), and the current mode's own
+     * `disablesUiFeature()` decision.
      *
      * @param disableWhileActive Pass `false` to skip the activity lock and check only the
      *   mode's decision. Useful for features that should stay interactive during a send.
@@ -90,6 +93,14 @@ export class GuardSlice {
     public disablesFeature(feature: DisabledChatFeature, disableWhileActive: boolean = true): boolean {
         const context = this.contextResolver();
         if (disableWhileActive && (context.sendStatus?.sending || context.forcedActive)) {
+            return true;
+        }
+
+        if ((feature === 'models' || feature === 'settings') && context.restrictsModelSelection) {
+            return true;
+        }
+
+        if (feature === 'tools' && context.restrictsToolSelection) {
             return true;
         }
 

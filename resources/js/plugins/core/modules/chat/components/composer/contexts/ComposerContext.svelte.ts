@@ -76,6 +76,7 @@
  * ```
  */
 import {createContext, onDestroy} from 'svelte';
+import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
 import {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
@@ -198,7 +199,12 @@ export class ComposerContext {
          * so the context stays independent from the store layer.
          * @example getHandlesInText('@hawki hi there') yields '@hawki'
          */
-        private readonly getHandlesInText: (text: string) => Generator<string>
+        private readonly getHandlesInText: (text: string) => Generator<string>,
+        /**
+         * Reads the taggable assistant entries (also backed by the `ai-handle`
+         * store) so derived state can react to which participant is addressed.
+         */
+        private readonly getAssistants: () => AiAssistant[]
     ) {
         this._systemPrompt = $state(initialSystemPrompt);
 
@@ -271,6 +277,37 @@ export class ComposerContext {
 
     /** `true` when at least one `@hawki` is present in the message. */
     public readonly containsAiHandle = $derived.by(() => this.handlesInMessage.length > 0);
+
+    /** The taggable-assistant entries addressed by the current message. */
+    public readonly addressedAssistants = $derived.by(() => {
+        const handles = new Set(this.handlesInMessage);
+        return this.getAssistants().filter(assistant => handles.has(assistant.handle));
+    });
+
+    /** `true` while an addressed participant fixes the model: the model
+     *  picker and sampling settings lock for the run (see `GuardSlice`). */
+    public readonly restrictsModelSelection = $derived.by(() =>
+        this.addressedAssistants.some(assistant => assistant.capabilities?.modelSelect === false)
+    );
+
+    /** `true` while an addressed participant fixes the toolset: the tool
+     *  menu locks for the run (see `GuardSlice`). */
+    public readonly restrictsToolSelection = $derived.by(() =>
+        this.addressedAssistants.some(assistant => assistant.capabilities?.toolSelect === false)
+    );
+
+    /** Assistant handle (without `@`) the addressed participant binds the
+     *  exchange to, or null when no assistant-backed participant is
+     *  addressed. Travels as `payload.assistant_handle`. */
+    public readonly addressedAssistantHandle = $derived.by(() => {
+        for (const assistant of this.addressedAssistants) {
+            if (assistant.chatBinding) {
+                return assistant.chatBinding;
+            }
+        }
+
+        return null;
+    });
 
     /** The active send operation, or `null` when the composer is idle. */
     public readonly sendStatus = $derived.by(() => this._sendStatus);
@@ -565,7 +602,8 @@ export function createComposerContext(
         initialSystemPrompt,
         onSetSystemPrompt,
         options.onImproveMessage ?? ((message, systemPrompt) => oldUiBridge.triggerImproveMessage(message, systemPrompt)),
-        (message) => aiHandleStore.getHandlesIn(message)
+        (message) => aiHandleStore.getHandlesIn(message),
+        () => aiHandleStore.assistants
     );
 
     const unbinders = options.useLegacyBridge === false ? [] : [

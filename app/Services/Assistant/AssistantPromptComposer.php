@@ -10,6 +10,7 @@ use App\Models\Assistants\AssistantSettingValue;
 use App\Models\User;
 use App\Services\Ai\Agents\Utils\ExtractTextCollector;
 use App\Services\Assistant\Values\AssistantPromptTemplate;
+use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\WellKnownAssistantSettingKeys;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
@@ -78,10 +79,16 @@ class AssistantPromptComposer
      * block and substituted into the {{content}} placeholder of the
      * AssistantPromptTemplate::KNOWLEDGE_FILES module.
      *
-     * Knowledge files are only injected when the acting user passes the
-     * viewAttachments gate (creator or org admin). End users of a public
-     * assistant experience the files' effect through the composed prompt but
-     * never see the raw file list (mirroring AssistantPolicy::viewAttachments).
+     * Knowledge files are injected for every actor who may run the
+     * assistant (the `view` gate): an assistant's knowledge is part of its
+     * behaviour, so anyone who can address it experiences the files'
+     * effect. The raw file list and downloads stay protected — the
+     * `?include=attachments` JSON:API path remains behind the stricter
+     * viewAttachments gate (creator or org admin).
+     *
+     * Without an actor (rare, e.g. an unresolvable user during the group
+     * chat shutdown flow) the fragment is only injected for publicly
+     * visible assistants, matching the visibility anyone would have.
      *
      * Files whose extracts are null (converter not enabled at storage time)
      * or empty (e.g. images with no extractable text) are silently skipped.
@@ -93,7 +100,7 @@ class AssistantPromptComposer
      */
     private function resolveAttachmentFragment(Assistant $assistant, ?User $actor): string
     {
-        if (null === $actor || !$this->gate->forUser($actor)->check('viewAttachments', $assistant)) {
+        if (!$this->actorMayUseKnowledge($assistant, $actor)) {
             return '';
         }
 
@@ -131,6 +138,20 @@ class AssistantPromptComposer
             implode("\n\n", $blocks),
             AssistantPromptTemplate::KNOWLEDGE_FILES,
         );
+    }
+
+    /**
+     * Whether the actor may run the assistant and therefore have its
+     * knowledge files injected: viewers pass the `view` gate; a missing
+     * actor only passes for publicly visible assistants.
+     */
+    private function actorMayUseKnowledge(Assistant $assistant, ?User $actor): bool
+    {
+        if (null === $actor) {
+            return \in_array($assistant->release_stage, AssistantReleaseStage::publiclyVisibleCases(), true);
+        }
+
+        return $this->gate->forUser($actor)->check('view', $assistant);
     }
 
     /**

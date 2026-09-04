@@ -122,12 +122,93 @@ class AssistantPromptComposerTest extends TestCase
     }
 
     /**
+     * Knowledge injection follows the `view` gate, not the stricter
+     * viewAttachments gate: a stranger who may run a federated assistant
+     * (but may not inspect its raw file list) still gets the knowledge
+     * files inside the composed prompt.
+     */
+    public function testNonPrivilegedViewerGetsKnowledgeBaseFragment(): void
+    {
+        Storage::fake(config('filesystems.file_storage', 'local_file_storage'));
+
+        $creator = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'system_prompt' => 'BASE PROMPT',
+            'creator_id' => $creator->id,
+            'release_stage' => 'federated',
+            'max_tokens' => 0,
+        ]);
+        $expectedContent = $this->attachKnowledgeFiles($assistant, $creator);
+
+        $viewer = User::factory()->create();
+        $prompt = app(AssistantPromptComposer::class)->compose($assistant, $viewer);
+
+        $expected = 'BASE PROMPT'
+            . "\n\n"
+            . str_replace('{{content}}', $expectedContent, AssistantPromptTemplate::KNOWLEDGE_FILES);
+
+        self::assertSame($expected, $prompt);
+    }
+
+    /**
+     * An actor who may not view the assistant at all gets no knowledge
+     * injection — the composer keeps its own guard even though the chat
+     * factory already filters invisible assistants before composing.
+     */
+    public function testActorWhoCannotViewTheAssistantGetsNoKnowledgeFragment(): void
+    {
+        Storage::fake(config('filesystems.file_storage', 'local_file_storage'));
+
+        $creator = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'system_prompt' => 'BASE PROMPT',
+            'creator_id' => $creator->id,
+            'release_stage' => 'private',
+            'max_tokens' => 0,
+        ]);
+        $this->attachKnowledgeFiles($assistant, $creator);
+
+        $stranger = User::factory()->create();
+        $prompt = app(AssistantPromptComposer::class)->compose($assistant, $stranger);
+
+        self::assertSame('BASE PROMPT', $prompt);
+    }
+
+    /**
+     * Stores the two knowledge files (.md + .txt) used by the knowledge
+     * tests, attaches them to the assistant and returns the expected
+     * per-file "Source: ..." blocks.
+     */
+    private function attachKnowledgeFiles(Assistant $assistant, User $uploader): string
+    {
+        $storage = app(FileStorageService::class);
+        $repository = app(AttachmentRepository::class);
+
+        $markdownFile = $storage->store(
+            FileReference::fromContent('report.md', 'Revenue grew 12% in Q4.'),
+            StoredFileCategory::ASSISTANT,
+        );
+        $textFile = $storage->store(
+            FileReference::fromContent('notes.txt', 'Meeting notes from 2025-03-14.'),
+            StoredFileCategory::ASSISTANT,
+        );
+
+        $repository->assignToAssistant($assistant, $markdownFile, $uploader);
+        $repository->assignToAssistant($assistant, $textFile, $uploader);
+
+        return "Source: report.md\nRevenue grew 12% in Q4."
+            . "\n\n"
+            . "Source: notes.txt\n```text\nMeeting notes from 2025-03-14.\n```";
+    }
+
+    /**
      * A selected answer style plus a token budget must compose the
      * [OUTPUT STYLE CONTROL MODULE] followed by the combined
      * [OUTPUT LENGTH CONTROL MODULE] (token budget with style cooperation).
      *
-     * The expected prompt is asserted byte-for-byte so that any change to the
-     * AssistantPromptTemplate modules forces a conscious test update.
+     * The expected prompt is asserted byte-for-byte so that any change to
+     * the AssistantPromptTemplate modules forces a conscious update to this
+     * test.
      */
     public function testAnswerStyleAndMaxTokensComposeBothModules(): void
     {

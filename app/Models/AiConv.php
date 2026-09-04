@@ -12,7 +12,8 @@ class AiConv extends Model
         'conv_name',
         'slug',
         'user_id',
-        'system_prompt'
+        'system_prompt',
+        'assistant_handle'
     ];
 
     /**

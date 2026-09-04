@@ -21,6 +21,8 @@ export interface AiStreamRequest {
     messages: AiMessage[];
     tools?: string[] | null;
     params?: AiModelParameters | null;
+    /** Assistant handle (without `@`) the exchange is bound to; omitted for plain runs. */
+    assistantHandle?: string | null;
     threadIndex?: number;
     slug?: string;
     isUpdate?: boolean;

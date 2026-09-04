@@ -25,7 +25,7 @@ class AiConvRepository extends AbstractRepository
     /**
      * @throws AuthenticationException
      */
-    public function create(?string $name, ?string $systemPrompt): AiConv
+    public function create(?string $name, ?string $systemPrompt, ?string $assistantHandle = null): AiConv
     {
         $user = $this->userContext->getAuthenticatedUser();
 
@@ -38,6 +38,7 @@ class AiConvRepository extends AbstractRepository
             'user_id' => $user->id,
             'slug' => Str::slug(Str::random(16)),
             'system_prompt' => $systemPrompt,
+            'assistant_handle' => $assistantHandle,
         ]);
     }
 

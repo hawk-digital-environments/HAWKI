@@ -27,6 +27,7 @@
             "requestFailed": "The AI request failed.",
             "welcomeTitle": "How can I help?",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
+            "starterPrompts": "Suggested opening messages",
             "disclaimer": "AI can make mistakes. Check important information."
         },
         "actions": {

@@ -36,6 +36,21 @@ export interface AiAssistant {
     /** Server-side pinned hint; lifts the row into the menu's "Pinned" section
      *  the same way a local composer pin does. */
     pinned?: boolean;
+    /** What the participant allows the user to configure when addressed.
+     *  Absent capabilities are unrestricted (the HAWKI default). */
+    capabilities?: {
+        /** `false` when the participant fixes the model — the model picker
+         *  and sampling settings lock while it is addressed. */
+        modelSelect: boolean;
+        /** `false` when the participant fixes the toolset — the tool menu
+         *  locks while it is addressed. */
+        toolSelect: boolean;
+    };
+    /** Assistant handle (without leading `@`) the exchange binds to when
+     *  this participant is addressed — sent as `payload.assistant_handle`
+     *  so the backend assembles the assistant run. Absent for participants
+     *  that are not assistant-backed (HAWKI). */
+    chatBinding?: string;
     /** Presentation override; falls back to the shared default appearance. */
     appearance?: AssistantAppearance;
     /** Server-side pin toggle for this row (e.g. toggling the favourite).

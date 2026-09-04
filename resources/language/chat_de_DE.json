@@ -27,6 +27,7 @@
             "requestFailed": "Die KI-Anfrage ist fehlgeschlagen.",
             "welcomeTitle": "Wie kann ich helfen?",
             "welcomeDescription": "Starte eine private, verschlüsselte Unterhaltung mit HAWKI.",
+            "starterPrompts": "Vorgeschlagene Einstiegsnachrichten",
             "disclaimer": "KI kann Fehler machen. Prüfe wichtige Informationen."
         },
         "actions": {

@@ -18,6 +18,7 @@ export class OldUiBridgeTransport implements MessageSenderTransportInterface {
             contextType: context.type,
             message: context.message,
             containsAiHandle: context.containsAiHandle,
+            assistantHandle: context.addressedAssistantHandle,
             attachments: context.attachments.list,
             tools: context.tools.active,
             parameters: {

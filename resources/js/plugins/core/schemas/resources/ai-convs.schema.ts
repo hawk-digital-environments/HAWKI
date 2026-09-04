@@ -18,6 +18,7 @@ const AiConvSchema = z.object({
     name: z.string(),
     slug: z.string(),
     system_prompt: z.string().nullable().optional(),
+    assistant_handle: z.string().nullable().optional(),
     created_at: z.string().nullable(),
     updated_at: z.string().nullable(),
     messages: z.array(AiConvMessageSchema).optional()

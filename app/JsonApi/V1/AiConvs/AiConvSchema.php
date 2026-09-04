@@ -44,6 +44,7 @@ class AiConvSchema extends Schema
             Str::make('name', 'conv_name'),
             Str::make('slug')->readOnly(),
             Str::make('system_prompt'),
+            Str::make('assistant_handle'),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
             HasMany::make('messages')->type('ai-conv-messages')->readOnly(),

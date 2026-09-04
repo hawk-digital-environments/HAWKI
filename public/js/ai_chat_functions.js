@@ -155,6 +155,7 @@ async function sendMessageConv(payload) {
             'slug': '',
             'stream': true,
             'model': payload.model.model_id,
+            'assistantHandle': payload.assistantHandle ?? null,
             'metadata': {
                 'tools': payload.tools.map(tool => tool.toTransferString()),
                 'params': payload.parameters

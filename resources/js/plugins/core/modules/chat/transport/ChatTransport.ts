@@ -1,11 +1,13 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
+import type {ChatSendDescriptor} from '$plugins/core/modules/chat/hooks/chatSendHooks.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
 import type {AiMessage} from '$lib/kernel/ai/types.js';
 import type {SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
 interface ChatTransportOptions {
     onConversationCreated?: (slug: string) => void;
@@ -75,6 +77,10 @@ export class ChatTransport implements MessageSenderTransportInterface {
         let conversationCreated = false;
         let provisionalTitle: string | null = null;
         const optimisticMessage = context.mode.isRegen ? null : this.optimisticUserMessage(opt);
+        // The resolved run description: the composer's own selection, possibly
+        // rewritten by a `chatSend` hook handler (e.g. pinning model/tools/
+        // params to the addressed assistant and binding the conversation).
+        const send = this.resolveSendDescriptor(context);
 
         // A new conversation has no slug/cache entry yet. Let ChatIndex render
         // the message locally while the create request is in flight.
@@ -88,7 +94,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 // seconds. Create the chat immediately with a useful fallback
                 // so it never blocks the user's actual message.
                 provisionalTitle = this.fallbackTitle(sentMessage);
-                targetSlug = (await this.store.create(provisionalTitle, context.systemPrompt, false)).slug;
+                targetSlug = (await this.store.create(provisionalTitle, context.systemPrompt, false, send.assistantHandle)).slug;
                 conversationCreated = true;
             }
 
@@ -134,7 +140,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const conversationSlug = targetSlug;
         waitForResponse(async response => {
             try {
-                await this.streamAssistant(conversationSlug, opt, response);
+                await this.streamAssistant(conversationSlug, opt, response, send);
             } finally {
                 this.store.finishGeneration(conversationSlug);
                 if (conversationCreated && provisionalTitle !== null) {
@@ -202,7 +208,25 @@ export class ChatTransport implements MessageSenderTransportInterface {
             .filter((uuid): uuid is string => uuid !== null);
     }
 
-    private async streamAssistant(conversationSlug: string, opt: MessageSenderTransportOptions, responseWriter: SendMessageResponse): Promise<void> {
+    /**
+     * Resolves the run description for one send: the composer's own
+     * selection threaded through the `chatSend` hook so plugins can bind
+     * the exchange to an addressed assistant and adapt the run to it.
+     */
+    private resolveSendDescriptor(context: ComposerContext): ChatSendDescriptor {
+        return this.app.hooks.apply('chatSend', {
+            assistantHandle: null,
+            author: null,
+            model: context.model.current.model_id,
+            tools: context.tools.active.map(tool => tool.toTransferString()),
+            params: context.modelParameters.list
+        }, {
+            composer: context,
+            conversation: this.store.active
+        });
+    }
+
+    private async streamAssistant(conversationSlug: string, opt: MessageSenderTransportOptions, responseWriter: SendMessageResponse, send: ChatSendDescriptor): Promise<void> {
         const {context} = opt;
         const controller = new AbortController();
         responseWriter.setAbortController(controller);
@@ -220,14 +244,14 @@ export class ChatTransport implements MessageSenderTransportInterface {
             isStreaming: true,
             status: 'running'
         } : {
-            author: {username: 'HAWKI', name: 'HAWKI', avatar_url: ''},
+            author: send.author ?? {username: 'HAWKI', name: 'HAWKI', avatar_url: ''},
             completion: 0,
             content: {text: '', attachments: []},
             created_at: new Date().toISOString(),
             message_id: temporaryId,
             message_role: 'assistant',
             metadata: {tools: null, params: null},
-            model: context.model.current?.model_id ?? null,
+            model: send.model,
             updated_at: new Date().toISOString(),
             citations: [],
             isStreaming: true,
@@ -241,10 +265,11 @@ export class ChatTransport implements MessageSenderTransportInterface {
         let completion = false;
         try {
             for await (const packet of this.app.aiApi.stream({
-                model: context.model.current.model_id,
+                model: send.model,
                 messages: this.messageHistory(conversationSlug, context.systemPrompt, threadId, regenState?.messageId),
-                tools: context.tools.active.map(tool => tool.toTransferString()),
-                params: context.modelParameters.list,
+                tools: send.tools,
+                params: send.params,
+                assistantHandle: send.assistantHandle,
                 threadIndex: Number.isFinite(threadId) ? threadId : 0,
                 isUpdate: Boolean(regenState),
                 messageId: regenState?.messageId ?? null
@@ -272,10 +297,10 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 ...(regenState ? {message_id: regenState.messageId} : {threadId: Number.isFinite(threadId) ? threadId : 0}),
                 content: {text: encrypted},
                 metadata: {
-                    tools: context.tools.active.map(tool => tool.toTransferString()),
-                    params: context.modelParameters.list
+                    tools: send.tools,
+                    params: send.params
                 },
-                model: context.model.current.model_id,
+                model: send.model,
                 completion,
                 __plainText: finalText,
                 __citations: citations
@@ -307,8 +332,23 @@ export class ChatTransport implements MessageSenderTransportInterface {
         return [
             {role: 'system', content: {text: systemPrompt}},
             ...selected
-                .filter(message => !message.isStreaming && message.content.text.trim())
-                .map(message => ({role: message.message_role, content: {text: message.content.text}}))
+                .filter(message => !message.isStreaming && !message.isPending && message.content.text.trim())
+                .map(message => {
+                    // Attachment uuids ride the message content so the model
+                    // receives uploaded files alongside the text (the backend
+                    // resolves them from private storage and inlines them).
+                    const attachments = message.content.attachments
+                        .map(attachment => attachment.fileData.uuid)
+                        .filter(uuid => !uuid.startsWith('pending-'));
+
+                    return {
+                        role: message.message_role,
+                        content: {
+                            text: message.content.text,
+                            ...(attachments.length > 0 ? {attachments} : {})
+                        }
+                    };
+                })
         ];
     }
 

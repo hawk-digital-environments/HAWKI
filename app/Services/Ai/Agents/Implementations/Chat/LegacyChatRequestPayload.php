@@ -114,6 +114,19 @@ readonly class LegacyChatRequestPayload
     }
 
     /**
+     * The explicitly requested assistant handle (`payload.assistant_handle`),
+     * or null when absent. Accepted by the stream validation rules, so both
+     * the chat clients and the server-side streamer
+     * ({@see \App\Services\Ai\Streaming\AgentStreamer}) may set it.
+     */
+    public function assistantHandle(): string|null
+    {
+        $handle = $this->payload['assistant_handle'] ?? null;
+
+        return \is_string($handle) && $handle !== '' ? $handle : null;
+    }
+
+    /**
      * Whether attachments must be resolved from group storage instead of private storage.
      */
     public function isBroadcast(): bool

@@ -25,6 +25,7 @@ import CreateAssistantButton from '$plugins/assistants/components/CreateAssistan
 import {DashboardModule} from "$plugins/assistants/modules/dashboard/DashboardModule";
 import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte";
 import {assistantHandlesStore} from "$plugins/assistants/stores/AssistantHandlesStore.svelte";
+import {assistantChatSend, assistantChatWelcome} from "$plugins/assistants/hooks/assistantChatHooks";
 import AssistantsSchema from "$plugins/assistants/api/schemas/resources/assistants.schema";
 import AssistantAvatarsSchema from "$plugins/assistants/api/schemas/resources/assistant-avatars.schema";
 import AssistantFeedbackSchema from "$plugins/assistants/api/schemas/resources/assistant-feedback.schema";
@@ -83,6 +84,13 @@ export default class AssistantsPlugin implements HawkiPlugin {
         ]);
 
         registrar.add('aiAssistants', (assistants, ctx) => [...assistants, ...assistantHandlesStore.menuAssistants(ctx.translate)], {order: 10});
+
+        // Pins an assistant-addressed chat send to the assistant (binding,
+        // model/tools/params, display author) and shows the assistant's
+        // greeting/starter prompts in the chat welcome — see
+        // hooks/assistantChatHooks.ts.
+        registrar.add('chatSend', assistantChatSend, {order: 10});
+        registrar.add('chatWelcome', assistantChatWelcome, {order: 10});
 
         registrar.add('assistantMenuEntries', (menu, ctx) => [...menu,
             {

@@ -79,7 +79,7 @@ from the store's in-flight cache.
                     </div>
                 </div>
             {:else}
-                <ChatWelcome />
+                <ChatWelcome composer={composer} />
             {/if}
         </div>
 

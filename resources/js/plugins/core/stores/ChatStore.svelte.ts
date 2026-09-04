@@ -112,6 +112,7 @@ export class ChatStore implements DataStore {
                 name: source.name,
                 slug: source.slug,
                 system_prompt: source.system_prompt ? await this.decryptText(source.system_prompt, key) : '',
+                assistant_handle: source.assistant_handle ?? null,
                 messages: await Promise.all((source.messages ?? []).map(message => this.decryptMessage(message, key)))
             };
             if (requestId === this.activeLoad) {
@@ -132,16 +133,18 @@ export class ChatStore implements DataStore {
         }
     }
 
-    public async create(name: string, systemPrompt: string, activate = true): Promise<ChatConversation> {
+    public async create(name: string, systemPrompt: string, activate = true, assistantHandle: string | null = null): Promise<ChatConversation> {
         const encryptedPrompt = await this.encryptText(systemPrompt);
         const resource = await this.dependencies.restApi.createResource('ai-convs', {
             name,
-            system_prompt: JSON.stringify(encryptedPrompt)
+            system_prompt: JSON.stringify(encryptedPrompt),
+            ...(assistantHandle === null ? {} : {assistant_handle: assistantHandle})
         });
         const conversation: ChatConversation = {
             name,
             slug: resource.slug,
             system_prompt: systemPrompt,
+            assistant_handle: assistantHandle,
             messages: []
         };
         if (activate) {

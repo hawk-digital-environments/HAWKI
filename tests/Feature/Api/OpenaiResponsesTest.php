@@ -437,9 +437,13 @@ class OpenaiResponsesTest extends TestCase
         $runner = $this->createMock(AgentStreamerInterface::class);
         $runner->expects($this->once())->method('stream')->with(
             $this->callback(static function (array $messages): bool {
+                // The composed instructions lead with the assistant's base
+                // prompt, followed by the answer-length module derived from
+                // its max_tokens budget.
                 return isset($messages[0]['role'], $messages[0]['content']['text'])
                     && $messages[0]['role'] === 'system'
-                    && $messages[0]['content']['text'] === 'You are a helpful test assistant.';
+                    && str_starts_with($messages[0]['content']['text'], 'You are a helpful test assistant.')
+                    && str_contains($messages[0]['content']['text'], 'max_tokens: 2048');
             }),
             'gpt-4',
             $this->callback(static fn ($v) => is_array($v)),

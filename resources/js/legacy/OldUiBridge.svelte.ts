@@ -50,6 +50,8 @@ export interface OldUiConversation {
     name: string;
     slug: string;
     system_prompt: string;
+    /** Legacy conversations are never bound to an assistant. */
+    assistant_handle: null;
     role?: 'admin' | 'editor' | 'viewer';
 }
 
@@ -80,6 +82,8 @@ export interface OldUiSendMessagePayload {
     contextType: ComposerContextType;
     message: string;
     containsAiHandle: boolean;
+    /** Assistant handle (without `@`) the exchange binds to; null for plain runs. */
+    assistantHandle: string | null;
     tools: AiToolOrCapabilityWithState[];
     attachments: File[];
     parameters: OldUiModelParams | null;

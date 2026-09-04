@@ -6,7 +6,7 @@ use App\Models\Ai\McpServer;
 use App\Services\Ai\Agents\AgentRegistry;
 use App\Services\Ai\Agents\Contracts\AgentFactoryInterface;
 use App\Services\Ai\Agents\Implementations\AbstractAgentFactory;
-use App\Services\Ai\Agents\Implementations\Chat\ChatAgentForAssistantFactory;
+use App\Services\Ai\Agents\Implementations\Chat\AssistantChatAgentFactory;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
 use App\Services\Ai\Config\AiConfig;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
@@ -226,6 +226,10 @@ class AiServiceProvider extends ServiceProvider
         $this->app->extend(
             AgentRegistry::class,
             fn(AgentRegistry $registry) => $registry
+                ->declare(
+                    AssistantChatAgentFactory::class,
+                    before: ChatAgentFromLegacyRequestFactory::class
+                )
                 ->declare(ChatAgentFromLegacyRequestFactory::class)
         );
 

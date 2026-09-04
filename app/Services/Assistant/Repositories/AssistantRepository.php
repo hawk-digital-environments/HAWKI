@@ -174,6 +174,11 @@ class AssistantRepository extends AbstractRepository
         return $assistant->load($relations);
     }
 
+    public function findOneByHandle(string $handle): ?Assistant
+    {
+        return $this->getQuery()->where('handle', $handle)->first();
+    }
+
     public function filterByIsFavorite(Builder $query, User $user, bool $isFavorite): Builder
     {
         $method = $isFavorite ? 'whereHas' : 'whereDoesntHave';

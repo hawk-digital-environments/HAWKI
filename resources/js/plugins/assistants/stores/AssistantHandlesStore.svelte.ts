@@ -133,6 +133,12 @@ class AssistantHandlesStore implements DataStore {
                 ? {id: `assistant-category:${assistant.category.id}`, label: translate(assistant.category.text)}
                 : undefined,
             pinned: assistant.isFavorite,
+            // An assistant defines its own run: model (unless it allows
+            // selection) and tools are fixed while it is addressed.
+            capabilities: {modelSelect: assistant.allowModelSelect, toolSelect: false},
+            // Addressing the assistant binds the exchange to it — the raw
+            // handle travels as `payload.assistant_handle`.
+            chatBinding: assistant.handle,
             appearance: assistantRowAppearance(assistant),
             onTogglePin: (pinned: boolean) => {
                 void this.toggleFavorite(assistant.id, pinned);

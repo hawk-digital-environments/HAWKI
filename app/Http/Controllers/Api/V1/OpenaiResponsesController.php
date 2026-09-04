@@ -6,13 +6,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\OpenaiResponseRequest;
-use App\Models\Ai\AiTool;
-use App\Models\Assistants\Assistant;
 use App\Services\Ai\AiService;
 use App\Services\Ai\Streaming\AgentStreamerInterface;
 use App\Services\Ai\Streaming\Sse\OpenAIResponsesAdapter;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
-use App\Services\Assistant\AssistantPromptComposer;
+use App\Services\Assistant\AssistantRunComposer;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
@@ -23,17 +21,19 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * at POST /api/openai/v1/responses.
  *
  * Two resolution modes, selected by the request body:
- *  - assistant handle provided: the exchange is built from the assistant
- *    (composed system prompt, attached tools, temp/top_p/max_tokens params,
- *    model from the assistant unless the client overrides it and the assistant
- *    allows model selection).
+ *  - assistant handle provided: the exchange is built from the assistant via
+ *    AssistantRunComposer (composed system prompt, attached tools as
+ *    tool-transfer strings, temp/top_p/max_tokens params, model from the
+ *    assistant unless the client overrides it and the assistant allows model
+ *    selection). The handle is forwarded to the streamer so the agent factory
+ *    resolves it explicitly.
  *  - no handle: a bare model run using the requested model, or the system
  *    default chat model when none is requested. No tools, no params.
  */
 class OpenaiResponsesController extends Controller
 {
     public function __construct(
-        private readonly AssistantPromptComposer $promptComposer,
+        private readonly AssistantRunComposer $runComposer,
         private readonly AiService $aiService,
         private readonly LoggerInterface $logger,
     ) {
@@ -48,16 +48,12 @@ class OpenaiResponsesController extends Controller
         if (null !== $assistant) {
             Gate::authorize('view', $assistant);
 
-            $assistant->load(['ai_tools', 'settingValues.setting', 'attachments']);
+            $run = $this->runComposer->compose($assistant, $request->user());
 
-            $systemPrompt = $this->promptComposer->compose($assistant, $request->user());
-            $modelId = $request->input('model') ?? $assistant->model;
-            $tools = $this->buildTools($assistant);
-            $params = array_filter([
-                'temp' => $assistant->temp,
-                'top_p' => $assistant->top_p,
-                'max_tokens' => $assistant->max_tokens,
-            ]);
+            $systemPrompt = $run->systemPrompt;
+            $modelId = $request->input('model') ?? $run->modelId;
+            $tools = $run->toolTransferStrings;
+            $params = $run->params;
         } else {
             $modelId = $request->filled('model') ? $request->input('model') : $this->resolveDefaultModelId();
             $systemPrompt = '';
@@ -72,9 +68,10 @@ class OpenaiResponsesController extends Controller
 
         $adapter = new OpenAIResponsesAdapter('resp_' . Str::uuid()->toString(), $modelId);
         $logger = $this->logger;
+        $assistantHandle = $assistant?->handle;
 
         return response()->stream(
-            static function () use ($adapter, $streamer, $messages, $modelId, $tools, $params, $logger): void {
+            static function () use ($adapter, $streamer, $messages, $modelId, $tools, $params, $logger, $assistantHandle): void {
                 // Streaming a long LLM response must not be killed by PHP's
                 // default max_execution_time, and a client that disconnects
                 // mid-stream must terminate the upstream consumption too so
@@ -101,6 +98,7 @@ class OpenaiResponsesController extends Controller
                         tools: $tools,
                         params: $params,
                         sink: $sink,
+                        assistantHandle: $assistantHandle,
                     );
 
                     foreach ($generator as $_chunk) {
@@ -155,21 +153,6 @@ class OpenaiResponsesController extends Controller
         abort_unless(null !== $aiModel, 422, 'No model available.');
 
         return $aiModel->model_id;
-    }
-
-    /**
-     * Build the OpenAI function-call tool descriptors for an assistant's tools.
-     */
-    private function buildTools(Assistant $assistant): array
-    {
-        return $assistant->ai_tools->map(static fn (AiTool $tool) => [
-            'type' => 'function',
-            'function' => [
-                'name' => $tool->name,
-                'description' => $tool->description ?? '',
-                'parameters' => ['type' => 'object', 'properties' => new \stdClass()],
-            ],
-        ])->values()->all();
     }
 
     /**

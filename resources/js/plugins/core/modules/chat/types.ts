@@ -1,4 +1,4 @@
-import type {UrlCitation} from '$lib/components/ui/citations/types.js';
+import type { UrlCitation } from '$lib/components/ui/citations/types.js';
 
 export interface ChatSummary {
     name: string;
@@ -48,6 +48,8 @@ export interface ChatConversation {
     name: string;
     slug: string;
     system_prompt: string;
+    /** Assistant handle (without `@`) the conversation is bound to; null for plain chats. */
+    assistant_handle: string | null;
     messages: ChatMessage[];
 }
 

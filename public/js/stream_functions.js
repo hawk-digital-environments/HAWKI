@@ -21,7 +21,8 @@ async function buildRequestObject(msgAttributes, onData, onError) {
             stream: msgAttributes['stream'] || false,
             messages: msgs,
             tools: msgAttributes['metadata']?.tools ?? null,
-            params: msgAttributes['metadata']?.params ?? null
+            params: msgAttributes['metadata']?.params ?? null,
+            assistant_handle: msgAttributes['assistantHandle'] ?? null
         }
     };
 

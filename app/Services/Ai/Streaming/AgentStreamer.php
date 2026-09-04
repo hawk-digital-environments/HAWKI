@@ -35,6 +35,7 @@ class AgentStreamer implements AgentStreamerInterface
         array $tools = [],
         array $params = [],
         ?callable $sink = null,
+        ?string $assistantHandle = null,
     ): \Generator {
         $payload = [
             'payload' => [
@@ -42,6 +43,7 @@ class AgentStreamer implements AgentStreamerInterface
                 'messages' => $messages,
                 'params' => $params,
                 'tools' => array_values($tools),
+                ...(null === $assistantHandle ? [] : ['assistant_handle' => $assistantHandle]),
             ],
         ];
 
