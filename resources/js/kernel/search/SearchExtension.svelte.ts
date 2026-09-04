@@ -1,6 +1,6 @@
 import type {HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
-import MiniSearch from 'minisearch';
+import {count, create, insert, search, type Orama} from '@orama/orama';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
@@ -109,7 +109,7 @@ export class SearchExtension implements HawkiAppExtension {
 }
 
 /**
- * A MiniSearch index over the resolved rows of every registered group, plus
+ * An Orama index over the resolved rows of every registered group, plus
  * the rows themselves in contributor order. Built by `buildSearchIndex` and
  * consumed by `matchSearchGroups`; keep the two steps apart so the (cheap,
  * but not free) indexing only reruns when the *items* change, not on every
@@ -117,17 +117,32 @@ export class SearchExtension implements HawkiAppExtension {
  */
 export interface SearchIndex {
     groups: SearchGroupResult[];
-    engine: MiniSearch<IndexedSearchItem>;
+    engine: SearchEngine;
 }
 
-interface IndexedSearchItem {
-    id: string;
-    title: string;
-    keywords: string;
+const searchSchema = {
+    title: 'string',
+    keywords: 'string'
+} as const;
+
+type SearchEngine = Orama<typeof searchSchema>;
+
+/**
+ * Orama's `insert` and `search` are typed as "value or promise" because they
+ * turn asynchronous once async hooks or plugins are registered. This index
+ * registers none, so both resolve synchronously — which the palette relies on,
+ * as it indexes and queries inside `$derived`. Fails loudly should that ever
+ * change instead of silently handing a promise to the UI.
+ */
+function sync<T>(value: T | Promise<T>): T {
+    if (value instanceof Promise) {
+        throw new Error('The search index must stay synchronous; do not register async Orama hooks or plugins.');
+    }
+    return value;
 }
 
 /**
- * Resolves every group's live getters and indexes the rows with MiniSearch
+ * Resolves every group's live getters and indexes the rows with Orama
  * (fields: title and keywords). Because items only exist once their getter
  * runs, this is also where identity is validated: an id that already appeared
  * (in this or an earlier group) is reported and the later row skipped, so the
@@ -137,15 +152,7 @@ interface IndexedSearchItem {
 export function buildSearchIndex(groups: readonly SearchGroup[]): SearchIndex {
     const seen = new Set<string>();
     const resolved: SearchGroupResult[] = [];
-    const engine = new MiniSearch<IndexedSearchItem>({
-        fields: ['title', 'keywords'],
-        searchOptions: {
-            prefix: true,
-            fuzzy: 0.2,
-            combineWith: 'AND',
-            boost: {title: 2}
-        }
-    });
+    const engine: SearchEngine = create({schema: searchSchema});
 
     for (const group of groups) {
         const items: SearchItem[] = [];
@@ -156,7 +163,7 @@ export function buildSearchIndex(groups: readonly SearchGroup[]): SearchIndex {
             }
             seen.add(item.id);
             items.push(item);
-            engine.add({id: item.id, title: item.title, keywords: item.keywords?.join(' ') ?? ''});
+            sync(insert(engine, {id: item.id, title: item.title, keywords: item.keywords?.join(' ') ?? ''}));
         }
         if (items.length > 0) resolved.push({id: group.id, label: group.label(), items});
     }
@@ -165,9 +172,9 @@ export function buildSearchIndex(groups: readonly SearchGroup[]): SearchIndex {
 }
 
 /**
- * Narrows the indexed rows to `query`, ranked by MiniSearch's relevance
- * score: every query term must match (as a prefix or within a small edit
- * distance), title hits outrank keyword hits. Rows keep their group; groups
+ * Narrows the indexed rows to `query`, ranked by Orama's relevance score:
+ * every query term must match (as a prefix or within one edit of a term),
+ * title hits outrank keyword hits. Rows keep their group; groups
  * are ordered by their best-scoring row and rows within a group by score, so
  * the most relevant hit sits at the top no matter which group contributed
  * it. An empty query returns every group and row in contributor order.
@@ -175,8 +182,18 @@ export function buildSearchIndex(groups: readonly SearchGroup[]): SearchIndex {
 export function matchSearchGroups(index: SearchIndex, query: string): SearchGroupResult[] {
     if (query.trim() === '') return index.groups;
 
+    const hits = sync(
+        search(index.engine, {
+            term: query,
+            properties: ['title', 'keywords'],
+            tolerance: 1,
+            threshold: 0,
+            boost: {title: 2},
+            limit: count(index.engine)
+        })
+    ).hits;
     const scores = new Map<string, number>();
-    for (const hit of index.engine.search(query)) scores.set(hit.id as string, hit.score);
+    for (const hit of hits) scores.set(hit.id, hit.score);
     if (scores.size === 0) return [];
 
     const results: Array<SearchGroupResult & {best: number}> = [];
