@@ -32,8 +32,10 @@
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
+    const pinStore = useStore('composer-pins');
     const {__} = useTranslator();
 
     interface Props {
@@ -46,6 +48,20 @@
     }
 
     let {entry, onCloseDetail}: Props = $props();
+
+    // Same pin semantics as the list row: a local composer pin or the row's
+    // server-side flag (a favourite), with the toggle routed accordingly.
+    const pinned = $derived(
+        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned
+    );
+
+    function togglePin() {
+        if (entry.assistant.onTogglePin) {
+            entry.assistant.onTogglePin(!pinned);
+        } else {
+            pinStore.toggle('assistant', entry.assistant.id);
+        }
+    }
 
     let detailEl = $state<HTMLDivElement | null>(null);
     let backEl = $state<HTMLButtonElement | null>(null);
@@ -130,13 +146,18 @@
         <span class="assistant-detail-title">
             <!-- The name sits right next to it, so the emoji is decoration rather than content. -->
             <span class="assistant-detail-emoji" aria-hidden="true">{entry.emoji}</span>
-            <span class="assistant-detail-names">
-                <span class="assistant-detail-name">{__(entry.assistant.labelKey)}</span>
-                <span class="assistant-detail-handle">{entry.assistant.handle}</span>
+                <span class="assistant-detail-names">
+                    <span class="assistant-detail-name">{entry.assistant.label}</span>
+                    <span class="assistant-detail-handle">{entry.assistant.handle}</span>
+                </span>
             </span>
-        </span>
         <span class="assistant-detail-actions">
-            <MenuPinButton kind="assistant" id={entry.assistant.id} variant="detail"/>
+            <MenuPinButton
+                kind="assistant"
+                id={entry.assistant.id}
+                variant="detail"
+                {pinned}
+                onToggle={togglePin}/>
             <button
                 type="button"
                 class="assistant-detail-toggle"
@@ -151,7 +172,7 @@
         </span>
     </div>
 
-    <p class="assistant-detail-description">{__(entry.assistant.descriptionKey)}</p>
+    <p class="assistant-detail-description">{entry.assistant.description}</p>
 </div>
 
 <style>

@@ -178,7 +178,11 @@
                 "untagAssistantAction": "Remove tag",
                 "infoDefault": "Show more information about the assistant",
                 "hawkiLabel": "HAWKI",
-                "studyAssistantsLabel": "Assistants",
+                "assistantsLabel": "Assistants",
+                "demoCategory": {
+                    "learning": "Learning",
+                    "working": "Working"
+                },
                 "assistants": {
                     "hawki": "HAWKI",
                     "hawkiDescription": "The general HAWKI assistant for this room",

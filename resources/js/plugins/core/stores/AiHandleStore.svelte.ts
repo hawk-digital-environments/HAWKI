@@ -1,43 +1,68 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
+import type {Translator} from '$lib/kernel/localization/translator.js';
+import {HAWKI_ASSISTANT_APPEARANCE, type AssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiDataStores {
         'ai-handle': AiHandleStore;
+    }
+    interface HawkiHooks {
+        aiAssistants: {value: AiAssistant[]; ctx: AiAssistantsContext};
     }
 }
 
 /**
  * A taggable AI participant of a room chat, addressed by its `@handle`.
  *
- * The HAWKI assistant itself is one of these (see {@link AiHandleStore.hawkiAssistant});
- * the study assistants next to it are currently **mock data** (see
- * {@link AiHandleStore.studyAssistants}) until the assistant system exists server-side.
+ * The HAWKI assistant itself is the store-provided base entry (see
+ * {@link AiHandleStore.hawkiAssistant}); everything else is contributed by
+ * other plugins through the `aiAssistants` hook — e.g. the assistants
+ * plugin appends the user's real assistants there, grouped by their
+ * category, with favourites flagged as pinned.
  */
-export interface AiAssistantHandle {
-    /** Stable id, used as the list key in the `@` tagging menu. */
+export interface AiAssistant {
+    /** Stable id, namespaced by its provider (e.g. `'hawki'`, `'assistant:<uuid>'`). */
     id: string;
     /** The `@handle` inserted into the message, including the leading `@`. */
     handle: string;
-    /** Translation key for the assistant's display name. */
-    labelKey: string;
-    /** Translation key for the one-line description shown under the name. */
-    descriptionKey: string;
+    /** Resolved display name — a plain string, not a translation key. */
+    label: string;
+    /** Resolved one-line description shown under the name. */
+    description: string;
+    /** Which section of the `@` menu the row belongs to (e.g. the assistant's
+     *  category). Rows without a group share the menu's default section. */
+    group?: {id: string; label: string};
+    /** Server-side pinned hint; lifts the row into the menu's "Pinned" section
+     *  the same way a local composer pin does. */
+    pinned?: boolean;
+    /** Presentation override; falls back to the shared default appearance. */
+    appearance?: AssistantAppearance;
+    /** Server-side pin toggle for this row (e.g. toggling the favourite).
+     *  Absent = the row pins through the local `composer-pins` store. */
+    onTogglePin?: (pinned: boolean) => void;
+}
+
+/** Context for the `aiAssistants` hook: handlers may resolve labels in the user's language. */
+export interface AiAssistantsContext {
+    translate: Translator['translate'];
 }
 
 /**
  * Store for recognized `@handle` mentions in chat messages.
  *
- * Recognizes the configured HAWKI handle (e.g. `@hawki`) plus the (currently mocked)
- * study assistants — `getHandlesIn` is the single place where handles are looked up,
- * so replacing the mock list with server-provided assistants is enough to make the
- * whole `@` tagging flow real.
+ * Owns the configured HAWKI handle (e.g. `@hawki`) and exposes every taggable
+ * assistant through {@link assistants}: the HAWKI assistant first, then the
+ * result of applying the `aiAssistants` hook. `getHandlesIn` is the single
+ * place where handles are looked up, so the whole `@` tagging flow — menu,
+ * caret popup, chips, composer context — sees the same list.
  *
  * Access via `useStore('ai-handle')`.
  */
 export class AiHandleStore implements DataStore {
     public readonly name = 'ai-handle';
 
+    private _app: HawkiApp | null = null;
     private _hawkiHandle = $state<string | null>(null);
 
     public get hawkiHandle(): string {
@@ -47,25 +72,34 @@ export class AiHandleStore implements DataStore {
         return this._hawkiHandle;
     }
 
-    /** The HAWKI assistant itself, in the same shape as the study assistants,
-     *  so the `@` tagging menu can render it as just another row. */
-    public get hawkiAssistant(): AiAssistantHandle {
+    /** The HAWKI assistant itself, as the base entry every consumer can rely on
+     *  being first. Its labels are resolved at read time, so they follow locale
+     *  switches like every other UI string. */
+    private get hawkiAssistant(): AiAssistant {
+        const translate = this._app!.localization.translator.translate;
+        const label = translate('chat.composer.assistantMenu.assistants.hawki');
         return {
             id: 'hawki',
             handle: this.hawkiHandle,
-            labelKey: 'chat.composer.assistantMenu.assistants.hawki',
-            descriptionKey: 'chat.composer.assistantMenu.assistants.hawkiDescription'
+            label,
+            description: translate('chat.composer.assistantMenu.assistants.hawkiDescription'),
+            group: {id: 'hawki', label: translate('chat.composer.assistantMenu.hawkiLabel')},
+            // The curated robot on the brand colors — HAWKI's name is a brand,
+            // not a creator-picked label.
+            appearance: HAWKI_ASSISTANT_APPEARANCE
         };
     }
 
-    /** Every taggable assistant, HAWKI first. Empty until the store has loaded, so UI that
-     *  renders before `loadData` (e.g. the composer's `@` menu) doesn't hit the
-     *  `hawkiHandle` guard. */
-    public get assistants(): AiAssistantHandle[] {
-        if (this._hawkiHandle === null) {
+    /** Every taggable assistant, HAWKI first, then whatever other plugins add
+     *  via the `aiAssistants` hook. Empty until the store has loaded, so UI
+     *  that renders before `loadData` doesn't hit the `hawkiHandle` guard. */
+    public get assistants(): AiAssistant[] {
+        if (this._hawkiHandle === null || this._app === null) {
             return [];
         }
-        return [this.hawkiAssistant];
+        return this._app.hooks.apply('aiAssistants', [this.hawkiAssistant], {
+            translate: this._app.localization.translator.translate
+        });
     }
 
     /**
@@ -74,7 +108,7 @@ export class AiHandleStore implements DataStore {
      *
      * Handles must start with `@`, consist of letters/digits/underscores/hyphens,
      * and be delimited by whitespace or appear at the start/end of the string.
-     * Matches the HAWKI handle and every known study assistant.
+     * Matches every handle {@link assistants} offers.
      *
      * Used by the composer to render each typed handle as a pill; use
      * {@link getHandlesIn} when only the handle names matter.
@@ -113,6 +147,7 @@ export class AiHandleStore implements DataStore {
     }
 
     public async loadData(app: HawkiApp): Promise<void> {
+        this._app = app;
         this._hawkiHandle = app.config.get().ai?.handle ?? '@hawki';
     }
 }

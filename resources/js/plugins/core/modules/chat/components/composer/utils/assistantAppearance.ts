@@ -1,12 +1,14 @@
-import type { BeamColors } from '$lib/components/ui/border-beam/types.js';
+import type {BeamColors} from '$lib/components/ui/border-beam/types.js';
 
 /**
- * How one taggable assistant is presented: the emoji that stands in for it, and the pair of
- * colors that identifies it everywhere it appears.
+ * How one taggable assistant is presented: the icon that stands in for it, and the pair
+ * of colors that identifies it everywhere it appears.
  */
 export interface AssistantAppearance {
-    /** Emoji glyph shown wherever the assistant is listed or tagged. */
-    emoji: string;
+    /** The glyph shown wherever the assistant is listed or tagged — an emoji from
+     *  the assistant's name, that name's first letter, or a curated glyph
+     *  (see {@link HAWKI_ASSISTANT_APPEARANCE}). */
+    icon: string;
     /**
      * The two stops the assistant's `BorderBeam` is painted from, and the pair its text and
      * backgrounds are tinted with. `from` is the deeper end, `to` the brighter one — the
@@ -17,44 +19,33 @@ export interface AssistantAppearance {
 }
 
 /**
- * Presentation for the taggable assistants, keyed by `AiAssistantHandle.id`.
- *
- * Shared by the `@` button menu (`AssistantMenu`), the caret-anchored mention popup
- * (`AssistantMentionPopup`) and the composer chips (`MentionChip`), so an assistant reads
- * as the same emoji and the same colors wherever it shows up.
- *
- * Written in OKLCH, and built rather than picked. The six hues sit exactly 60° apart
- * starting from 273 — HAWKI's brand hue — so no two assistants can land near enough to be
- * confused, and none of the wheel goes unused. Within a pair both stops share a hue and run
- * 0.13 apart in lightness, which is what gives the deep → bright ramp its lift.
- *
- * The whole set sits high and bright on purpose. Each pair is placed most of the way toward
- * its own hue's most saturated lightness and then clamped into a 0.62–0.84 band, which is
- * where contemporary UI palettes live — a blue holds up around 0.62 while an amber or a
- * cyan wants 0.80, and flattening them all to one lightness is exactly what turns a gold
- * into mustard and a teal into slate. Chroma is likewise per-hue, as much as each can
- * carry, capped at 0.20 so nothing tips into neon.
+ * The brand color pair — HAWKI's own stops, and the fallback for any row that
+ * carries no colors of its own.
  */
-const ASSISTANT_APPEARANCE: Record<string, AssistantAppearance> = {
+export const DEFAULT_ASSISTANT_COLORS: BeamColors = {
     // 273° — the brand hue, at the blue-500 lightness rather than the darker brand indigo.
-    hawki: { emoji: '🤖', colors: { from: 'oklch(0.490 0.200 273)', to: 'oklch(0.620 0.195 273)' } },
-    // 93° — amber.
-    tutor: { emoji: '🎓', colors: { from: 'oklch(0.703 0.137 93)', to: 'oklch(0.833 0.162 93)' } },
-    // 213° — cyan.
-    research: { emoji: '🔬', colors: { from: 'oklch(0.672 0.112 213)', to: 'oklch(0.802 0.133 213)' } },
-    // 333° — fuchsia.
-    writing: { emoji: '✍️', colors: { from: 'oklch(0.568 0.200 333)', to: 'oklch(0.698 0.200 333)' } },
-    // 33° — vermilion.
-    exam: { emoji: '📚', colors: { from: 'oklch(0.537 0.188 33)', to: 'oklch(0.667 0.200 33)' } },
-    // 153° — emerald.
-    code: { emoji: '💻', colors: { from: 'oklch(0.703 0.172 153)', to: 'oklch(0.833 0.200 153)' } }
+    from: 'oklch(0.490 0.200 273)',
+    to: 'oklch(0.620 0.195 273)'
 };
 
-/** Falls back to the generic bot on the brand colors, so a server-provided assistant we
- *  have no entry for still renders as something. */
-const FALLBACK_APPEARANCE: AssistantAppearance = ASSISTANT_APPEARANCE.hawki;
-
-/** Returns the assistant's emoji and color stops. */
-export function getAssistantAppearance(id: string): AssistantAppearance {
-    return ASSISTANT_APPEARANCE[id] ?? FALLBACK_APPEARANCE;
+/**
+ * Fallback appearance for any taggable assistant that carries no appearance of its own:
+ * the row name's first glyph on the brand colors. Every hook-provided assistant is
+ * expected to bring its own appearance (the assistants plugin derives one from the
+ * assistant's name and avatar gradient — see `assistantRowAppearance` in the
+ * assistants plugin).
+ */
+export function defaultAssistantAppearance(label: string): AssistantAppearance {
+    // Code-point aware so a name starting with an emoji is not cut in half.
+    return {icon: Array.from(label)[0] ?? '?', colors: DEFAULT_ASSISTANT_COLORS};
 }
+
+/**
+ * HAWKI's own curated presentation: the one assistant whose "name" is a brand
+ * rather than a creator-picked label, so it keeps the robot glyph on the brand
+ * colors instead of falling back to the name's first letter.
+ */
+export const HAWKI_ASSISTANT_APPEARANCE: AssistantAppearance = {
+    icon: '🤖',
+    colors: DEFAULT_ASSISTANT_COLORS
+};

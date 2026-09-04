@@ -32,34 +32,33 @@
     import {flip} from 'svelte/animate';
     import {cubicOut} from 'svelte/easing';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import {getAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
+    import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const composerContext = useComposerContext();
     const aiHandleStore = useStore('ai-handle');
-    const {__} = useTranslator();
 
     // One chip per handle in the message, resolved back to the assistant it belongs to so
-    // the chip can show that assistant's emoji, name and color.
+    // the chip can show that assistant's icon, name and color.
     const chips = $derived.by(() => {
         return composerContext.handlesInMessage.map(handle => {
             const assistant = aiHandleStore.assistants.find(candidate => candidate.handle === handle);
-            const appearance = getAssistantAppearance(assistant?.id ?? '');
+            const appearance = assistant?.appearance
+                ?? defaultAssistantAppearance(assistant ? assistant.label : handle.slice(1));
             return {
                 handle,
-                emoji: appearance.emoji,
+                emoji: appearance.icon,
                 colors: appearance.colors,
-                label: assistant ? __(assistant.labelKey) : handle
+                label: assistant ? assistant.label : handle
             };
         });
     });
 
     // The box is open before the handle has finished spelling itself out, so the reveal is
-    // never clipped and the pill's own arrival (which starts around 290ms in) lands after
+    // never clipped and the pill's own arrival (which starts around 95ms in) lands after
     // the unroll rather than on top of it. No overshoot and barely any scale: the chip
     // makes its entrance on the inside, and a bouncing row would only fight it.
-    const enter = {duration: 280, scaleFrom: 0.94, overshoot: false} as const;
+    const enter = {duration: 95, scaleFrom: 0.94, overshoot: false} as const;
     const leave = {direction: 'out', scaleFrom: 0.94} as const;
 </script>
 
@@ -70,7 +69,7 @@
         class="mention-chip-slot"
         in:chipPop={enter}
         out:chipPop={leave}
-        animate:flip={{duration: 260, easing: cubicOut}}>
+        animate:flip={{duration: 85, easing: cubicOut}}>
         <MentionChip
             handle={chip.handle}
             label={chip.label}

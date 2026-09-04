@@ -13,19 +13,16 @@
   ```
 -->
 <script lang="ts">
-    import type {AiAssistantHandle} from '$plugins/core/stores/AiHandleStore.svelte.js';
+    import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import type {BeamColors} from '$lib/components/ui/border-beam/types.js';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-
-    const {__} = useTranslator();
 
     interface Props {
         /** The assistant to render. */
-        assistant: AiAssistantHandle;
-        /** Emoji shown at the start of the row, from `getAssistantAppearance`. */
+        assistant: AiAssistant;
+        /** Emoji shown at the start of the row, from the assistant's appearance. */
         emoji: string;
-        /** The assistant's two color stops, from `getAssistantAppearance`. The pair tints
+        /** The assistant's two color stops, from its appearance. The pair tints
          *  the swatch; `from` alone tints the handle. */
         colors: BeamColors;
         /** When true, the swatch darkens and a check is laid over the emoji. */
@@ -45,10 +42,10 @@
     </span>
     <span class="assistant-row-text">
         <span class="assistant-row-label">
-            {__(assistant.labelKey)}
+            {assistant.label}
             <span class="assistant-row-handle">{assistant.handle}</span>
         </span>
-        <span class="assistant-row-description">{__(assistant.descriptionKey)}</span>
+        <span class="assistant-row-description">{assistant.description}</span>
     </span>
 </span>
 

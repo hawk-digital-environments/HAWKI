@@ -28,11 +28,11 @@
     }
 </script>
 <script lang="ts">
-    import type {AiAssistantHandle} from '$plugins/core/stores/AiHandleStore.svelte.js';
+    import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import type {CaretRect} from '$plugins/core/modules/chat/components/composer/utils/textareaCaret.js';
     import AssistantRow from '$plugins/core/modules/chat/components/composer/AssistantRow.svelte';
     import CaretMentionPopup from '$plugins/core/modules/chat/components/composer/CaretMentionPopup.svelte';
-    import {getAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
+    import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
@@ -40,7 +40,7 @@
     interface Props {
         /** The assistants matching the typed query, in display order. Never empty —
          *  `ComposerTextarea` closes the popup instead of rendering an empty list. */
-        assistants: AiAssistantHandle[];
+        assistants: AiAssistant[];
         /** Viewport-relative caret position the popup anchors to. */
         caret: CaretRect;
         /** Index of the highlighted assistant, driven by the textarea's arrow keys and by
@@ -50,7 +50,7 @@
          *  otherwise Enter and a click could target two different assistants. */
         onActivate: (index: number) => void;
         /** Called with the assistant to insert (click or Enter/Tab in the textarea). */
-        onSelect: (assistant: AiAssistantHandle) => void;
+        onSelect: (assistant: AiAssistant) => void;
         /** Handle of the assistant currently tagged in the message, if any — that row is
          *  rendered checked. A message addresses at most one assistant. */
         activeHandle?: string | null;
@@ -68,11 +68,13 @@
     activeIndex={activeIndex}
     onActivate={onActivate}
     onSelect={onSelect}>
+
     {#snippet row(assistant)}
+        {@const appearance = assistant.appearance ?? defaultAssistantAppearance(assistant.label)}
         <AssistantRow
             assistant={assistant}
-            emoji={getAssistantAppearance(assistant.id).emoji}
-            colors={getAssistantAppearance(assistant.id).colors}
+            emoji={appearance.icon}
+            colors={appearance.colors}
             checked={assistant.handle === activeHandle}/>
     {/snippet}
 </CaretMentionPopup>
