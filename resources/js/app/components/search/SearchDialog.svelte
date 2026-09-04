@@ -11,7 +11,7 @@
   input *is* the header.
 
   Filtering and ranking are done by the kernel: `buildSearchIndex` puts every
-  registered row into a MiniSearch index (rebuilt only when the rows change),
+  registered row into an Orama index (rebuilt only when the rows change),
   `matchSearchGroups` queries it per keystroke with prefix and fuzzy matching
   and orders rows and groups by relevance. Command's own filter is switched
   off so it does not re-rank on top. Groups with no matching row are dropped
