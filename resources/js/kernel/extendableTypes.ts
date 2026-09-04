@@ -113,3 +113,28 @@ export interface HawkiAppExtensions {
 export interface HawkiDataStores {
 
 }
+
+/**
+ * Hook points plugins can implement via their `hooks()` lifecycle method
+ * (see `HawkiPlugin.hooks`), applied with `app.hooks.apply(name, value, ctx)`.
+ *
+ * Each entry defines the hook's contract: the `value` that is threaded
+ * through every registered handler — each one receives the previous
+ * handler's result and returns the new value, the filter pattern — and the
+ * `ctx` object passed through unchanged to every handler. Handlers run
+ * synchronously in `order` (see `hookRegistrar.ts`); ties keep plugin
+ * registration order.
+ *
+ * The surface owner declares a hook next to its entry types via declaration
+ * merging, the same way the other registries here are augmented:
+ * ```ts
+ * declare module '$lib/kernel/extendableTypes.js' {
+ *     interface HawkiHooks {
+ *         aiAssistants: {value: AiAssistant[]; ctx: AiAssistantsContext};
+ *     }
+ * }
+ * ```
+ */
+export interface HawkiHooks {
+    // Populated by other modules via declaration merging (see above).
+}

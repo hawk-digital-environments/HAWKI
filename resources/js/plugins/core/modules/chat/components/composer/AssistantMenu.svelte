@@ -3,9 +3,10 @@
   counterpart of `ToolMenu`, built from the same dropdown/checkbox-row pattern.
 
   Lists every taggable AI participant from the `ai-handle` store: in a room the existing
-  HAWKI assistant (`@hawki`) first, then the **mock** study assistants (`@tutor`,
-  `@research`, …). In an AI conversation only the study assistants are listed — every
-  message there already goes to HAWKI, so tagging it would say nothing.
+  HAWKI assistant (`@hawki`) first, then the assistants other plugins contribute via the
+  `aiAssistants` hook (see the `demoAssistant` plugin for a reference extension). In an AI
+  conversation only those are listed — every message there already goes to HAWKI, so
+  tagging it would say nothing.
   Each row toggles that assistant's `@handle` in `composerContext.message`, which is what
   makes a room message addressed to the AI (see `ComposerContext.containsAiHandle`).
 
@@ -13,25 +14,19 @@
   out (`ComposerContext.addHandleToMessage` replaces rather than appends), so the rows behave
   as one choice even though they are rendered as checkable items.
 
-  Pinned assistants (see the `composer-pins` store, toggled per row by `MenuPinButton`)
-  are lifted into a "Pinned" section above the HAWKI/study sections.
+  Pinned assistants are lifted into a "Pinned" section above the content sections: rows the
+  user pinned locally (the `composer-pins` store, toggled per row by `MenuPinButton`) plus
+  rows a hook flagged `pinned`. The remaining rows are grouped by their entry's `group` —
+  e.g. the demo plugin's categories — with one fallback section for ungrouped rows.
 
   Each row's info icon (or ArrowRight) drills into `AssistantMenuDetail` in place of the
   list — a two-panel `DropdownMenuDetailView`, same as the tool picker.
 
   This is the browse-all entry point; typing `@` in the message instead opens
   `AssistantMentionPopup` at the caret, which filters the same assistants as you type.
-
-  ## Usage
-  Rendered by `ChatComposer.svelte` in the bottom-left control row:
-  ```svelte
-  <AssistantMenu/>
-  ```
-
-  @todo The study assistants are mock data (`AiHandleStore.studyAssistants`) until the
-        assistant system exists server-side; this component consumes the store only.
 -->
 <script lang="ts">
+    import {untrack} from 'svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
@@ -43,8 +38,8 @@
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import AtIcon from '$lib/components/ui/icons/iconset/AtIcon.svelte';
-    import {getAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
-    import type {AiAssistantHandle} from '$plugins/core/stores/AiHandleStore.svelte.js';
+    import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
+    import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -67,11 +62,21 @@
     // Free-text filter over the list panel; cleared whenever the menu closes.
     let query = $state('');
 
-    function toEntry(assistant: AiAssistantHandle): AssistantMenuEntry {
+    // Whether this menu session offers the search field. Decided once, when the
+    // menu opens, from the total number of assistants — a single-assistant menu
+    // has nothing to filter. Never derived from the filtered result count and
+    // never re-evaluated while open, so the field cannot appear or vanish
+    // mid-interaction.
+    let searchEnabled = $state(true);
+
+    function toEntry(assistant: AiAssistant): AssistantMenuEntry {
+        // Hook-provided assistants carry their own presentation; anything else
+        // falls back to the name's first glyph on the brand colors.
+        const appearance = assistant.appearance ?? defaultAssistantAppearance(assistant.label);
         return {
             assistant,
-            emoji: getAssistantAppearance(assistant.id).emoji,
-            colors: getAssistantAppearance(assistant.id).colors,
+            emoji: appearance.icon,
+            colors: appearance.colors,
             active: composerContext.handlesInMessage.includes(assistant.handle),
             onToggle(active) {
                 if (active) {
@@ -90,17 +95,19 @@
         };
     }
 
-    // `assistants` is HAWKI first, then the study assistants; it is empty until the
-    // `ai-handle` store has loaded.
+    // `assistants` is HAWKI first, then the hook-contributed assistants; it is empty until
+    // the `ai-handle` store has loaded.
     const entries = $derived(aiHandleStore.assistants.map(toEntry));
     // HAWKI is only taggable where it is one participant among many; in an AI conversation
     // it is the implicit recipient of every message.
-    const hawkiEntry = $derived(composerContext.type === 'room' ? entries[0] ?? null : null);
-    const studyEntries = $derived(entries.slice(1));
+    const hawkiEntry = $derived(composerContext.type === 'room'
+        ? entries.find(entry => entry.assistant.id === 'hawki') ?? null
+        : null);
+    const otherEntries = $derived(entries.filter(entry => entry.assistant.id !== 'hawki'));
 
     // Rows are matched on what the user can see: the assistant's name and its @handle.
     function matchesQuery(entry: AssistantMenuEntry, needle: string): boolean {
-        return [__(entry.assistant.labelKey), entry.assistant.handle]
+        return [entry.assistant.label, entry.assistant.handle]
             .some(text => text.toLowerCase().includes(needle));
     }
 
@@ -108,27 +115,66 @@
     const shownHawkiEntry = $derived(
         hawkiEntry && (!needle || matchesQuery(hawkiEntry, needle)) ? hawkiEntry : null
     );
-    const shownStudyEntries = $derived(
-        needle ? studyEntries.filter(entry => matchesQuery(entry, needle)) : studyEntries
+    const shownOtherEntries = $derived(
+        needle ? otherEntries.filter(entry => matchesQuery(entry, needle)) : otherEntries
     );
+    const shownEntries = $derived([
+        ...(shownHawkiEntry ? [shownHawkiEntry] : []),
+        ...shownOtherEntries
+    ]);
 
-    // Pinned assistants are lifted into their own section at the top and dropped from the
-    // HAWKI/study sections below, so each assistant appears exactly once.
-    const pinnedEntries = $derived(
-        pinStore.partition(
-            'assistant',
-            [...(shownHawkiEntry ? [shownHawkiEntry] : []), ...shownStudyEntries],
-            entry => entry.assistant.id
-        ).pinned
-    );
+    // A row is lifted into the "Pinned" section by a local composer pin or by the entry's
+    // server-side `pinned` flag.
+    function isLifted(entry: AssistantMenuEntry): boolean {
+        return pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned;
+    }
+
+    // Pinned rows: local pins in the order they were pinned, then hook-pinned rows in
+    // list order — and dropped from the sections below, so each assistant appears exactly once.
+    const pinnedEntries = $derived([
+        ...pinStore.partition('assistant', shownEntries, entry => entry.assistant.id).pinned,
+        ...shownEntries.filter(entry => entry.assistant.pinned && !pinStore.isPinned('assistant', entry.assistant.id))
+    ]);
     const unpinnedHawkiEntry = $derived(
-        shownHawkiEntry && !pinStore.isPinned('assistant', shownHawkiEntry.assistant.id)
-            ? shownHawkiEntry
-            : null
+        shownHawkiEntry && !isLifted(shownHawkiEntry) ? shownHawkiEntry : null
     );
-    const unpinnedStudyEntries = $derived(
-        shownStudyEntries.filter(entry => !pinStore.isPinned('assistant', entry.assistant.id))
-    );
+    const unpinnedOtherEntries = $derived(shownOtherEntries.filter(entry => !isLifted(entry)));
+
+    // The content sections: rows grouped by their entry's `group`, in first-appearance
+    // order. Ungrouped rows share the fallback section.
+    interface EntryGroup {
+        id: string;
+        label: string;
+        entries: AssistantMenuEntry[];
+    }
+
+    const groups = $derived.by(() => {
+        const ordered: EntryGroup[] = [];
+        const byId = new Map<string, EntryGroup>();
+
+        function groupOf(entry: AssistantMenuEntry): EntryGroup {
+            const id = entry.assistant.group?.id ?? '_default';
+            let group = byId.get(id);
+            if (!group) {
+                group = {
+                    id,
+                    label: entry.assistant.group?.label ?? __('chat.composer.assistantMenu.assistantsLabel'),
+                    entries: []
+                };
+                byId.set(id, group);
+                ordered.push(group);
+            }
+            return group;
+        }
+
+        if (unpinnedHawkiEntry) {
+            groupOf(unpinnedHawkiEntry).entries.push(unpinnedHawkiEntry);
+        }
+        for (const entry of unpinnedOtherEntries) {
+            groupOf(entry).entries.push(entry);
+        }
+        return ordered;
+    });
 
     // The live entry shown in the detail view, rebuilt from `entries` so its `active`
     // state updates while the detail view is open.
@@ -166,6 +212,15 @@
         }
     });
 
+    // Snapshot the search decision per menu session: reading `entries`
+    // untracked keeps this effect keyed on `open` only, so a list change
+    // while the menu is open cannot flip the field on or off.
+    $effect(() => {
+        if (open) {
+            searchEnabled = untrack(() => entries.length) > 1;
+        }
+    });
+
     $effect(() => {
         if (!open && detailAssistantId) {
             const t = setTimeout(() => {
@@ -176,7 +231,7 @@
     });
 </script>
 
-{#if hawkiEntry || studyEntries.length > 0}
+{#if hawkiEntry || otherEntries.length > 0}
     <div transition:growTransition={{mode: 'horizontal'}}>
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('input', false)}
@@ -193,7 +248,7 @@
                     {...props}/>
             {/snippet}
 
-            {#if !detailEntry}
+            {#if !detailEntry && searchEnabled}
                 <MenuSearchField
                     bind:value={query}
                     placeholder={__('chat.composer.assistantMenu.searchPlaceholder')}/>
@@ -213,23 +268,19 @@
                     {/each}
                 {/if}
 
-                {#if unpinnedHawkiEntry}
-                    <DropdownMenuLabel>{__('chat.composer.assistantMenu.hawkiLabel')}</DropdownMenuLabel>
-                    <AssistantMenuListItem entry={unpinnedHawkiEntry} onOpenDetail={openAssistantDetail}/>
-                {/if}
+                {#each groups as group (group.id)}
+                    {#if group.entries.length > 0}
+                        <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                        {#each group.entries as entry (entry.assistant.id)}
+                            <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
+                        {/each}
+                    {/if}
+                {/each}
 
-                {#if unpinnedStudyEntries.length > 0}
-                    <DropdownMenuLabel>{__('chat.composer.assistantMenu.studyAssistantsLabel')}</DropdownMenuLabel>
-                    {#each unpinnedStudyEntries as entry (entry.assistant.id)}
-                        <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
-                    {/each}
-                {/if}
-
-                {#if !shownHawkiEntry && shownStudyEntries.length === 0}
+                {#if !shownHawkiEntry && shownOtherEntries.length === 0}
                     <DropdownMenuEmpty>{__('chat.composer.assistantMenu.noResults')}</DropdownMenuEmpty>
                 {/if}
             </DropdownMenuDetailView>
         </DropdownMenu>
     </div>
 {/if}
-

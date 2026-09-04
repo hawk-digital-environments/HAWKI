@@ -42,11 +42,17 @@
         /** `row` (default) is the compact icon shown on menu rows; `detail` is the
          *  labelled, always-visible variant for a detail panel's header. */
         variant?: 'row' | 'detail';
+        /** Overrides the pin state read from the `composer-pins` store — for rows whose
+         *  pin lives on the server (a hook-provided assistant flagged `pinned`). */
+        pinned?: boolean;
+        /** Overrides the store toggle — routes the pin to the row's own backend action
+         *  instead of the local pins. */
+        onToggle?: () => void;
     }
 
-    const {kind, id, variant = 'row'}: Props = $props();
+    const {kind, id, variant = 'row', pinned: pinnedOverride, onToggle}: Props = $props();
 
-    const pinned = $derived(pinStore.isPinned(kind, id));
+    const pinned = $derived(pinnedOverride ?? pinStore.isPinned(kind, id));
 
     // A touch larger in the detail header, where it sits next to the toggle rather than
     // inside a dense list row.
@@ -55,7 +61,11 @@
     function togglePin(event: MouseEvent) {
         event.preventDefault();
         event.stopPropagation();
-        pinStore.toggle(kind, id);
+        if (onToggle) {
+            onToggle();
+        } else {
+            pinStore.toggle(kind, id);
+        }
     }
 </script>
 

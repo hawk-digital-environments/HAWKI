@@ -28,7 +28,7 @@
 
     import BorderBeam from '$lib/components/ui/border-beam/BorderBeam.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import {getAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
+    import {DEFAULT_ASSISTANT_COLORS} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {type Snippet} from 'svelte';
 
@@ -62,7 +62,10 @@
     const colors = $derived.by(() => {
         const handle = composerContext.handlesInMessage[0];
         const assistant = aiHandleStore.assistants.find(candidate => candidate.handle === handle);
-        return assistant ? getAssistantAppearance(assistant.id).colors : undefined;
+        if (!assistant) {
+            return undefined;
+        }
+        return assistant?.appearance?.colors ?? DEFAULT_ASSISTANT_COLORS;
     });
 </script>
 <BorderBeam

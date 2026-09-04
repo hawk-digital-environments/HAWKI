@@ -178,7 +178,11 @@
                 "untagAssistantAction": "Tag entfernen",
                 "infoDefault": "Weitere Informationen zur Assistenz anzeigen",
                 "hawkiLabel": "HAWKI",
-                "studyAssistantsLabel": "Assistenten",
+                "assistantsLabel": "Assistenten",
+                "demoCategory": {
+                    "learning": "Lernen",
+                    "working": "Arbeiten"
+                },
                 "assistants": {
                     "hawki": "HAWKI",
                     "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum",
