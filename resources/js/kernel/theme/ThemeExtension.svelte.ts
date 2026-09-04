@@ -1,15 +1,28 @@
 import type {HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
-import {debounce} from '$lib/utils/debounce.js';
 import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+import type {UserSettingsExtension} from '$lib/kernel/userSettings/UserSettingsExtension.svelte.js';
+
+const DARK_MODE_CLASS = 'darkMode';
+const LIGHT_MODE_CLASS = 'lightMode';
+const DARK_THEME_NAME = 'dark';
+const LIGHT_THEME_NAME = 'light';
 
 /** A concrete, applied colour scheme. */
-export type AppTheme = 'dark' | 'light';
+export type AppTheme = typeof DARK_THEME_NAME | typeof LIGHT_THEME_NAME;
 /** The user's preference — `auto` follows the browser's `prefers-color-scheme`. */
 export type ThemePreference = AppTheme | 'auto';
 
 const SYSTEM_DARK_QUERY = '(prefers-color-scheme: dark)';
+
+function getModeClass(theme: AppTheme): string {
+    return theme === DARK_THEME_NAME ? DARK_MODE_CLASS : LIGHT_MODE_CLASS;
+}
+
+function getOppositeModeClass(theme: AppTheme): string {
+    return theme === DARK_THEME_NAME ? LIGHT_MODE_CLASS : DARK_MODE_CLASS;
+}
 
 /**
  * Declaration merging that exposes this extension on the app object as
@@ -55,9 +68,8 @@ declare module '$lib/kernel/extendableTypes.js' {
 export class ThemeExtension implements HawkiAppExtension {
     private _theme = $state<AppTheme>(detectAppTheme());
     private _preference = $state<ThemePreference>('auto');
-    private _initialized = false;
     private _persistPreference: ((partial: Record<string, unknown>) => void) | null = null;
-    private app: UnfinishedHawkiApp | null = null;
+    private userSettings: WithoutAppExtensionInternals<UserSettingsExtension> | null = null;
 
     /**
      * The currently active, applied colour scheme — what the `darkMode` /
@@ -75,10 +87,9 @@ export class ThemeExtension implements HawkiAppExtension {
      */
     private applyPreference(): void {
         this._theme = this.preference === 'auto' ? detectBrowserTheme() : this.preference;
-
-        const className = this._theme === 'dark' ? 'darkMode' : 'lightMode';
-        document.documentElement.classList.add(className);
-        document.documentElement.classList.remove(this._theme === 'dark' ? 'lightMode' : 'darkMode');
+        const classList = document.documentElement.classList;
+        classList.add(getModeClass(this._theme));
+        classList.remove(getOppositeModeClass(this._theme));
     }
 
     /**
@@ -103,11 +114,7 @@ export class ThemeExtension implements HawkiAppExtension {
      * stage — the settings are fetched on `preparation`).
      */
     public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper): void {
-        if (this._initialized) {
-            return;
-        }
-        this._initialized = true;
-
+        this.userSettings = app.getOrFail('userSettings');
         const observer = new MutationObserver(() => this.adoptExternalClassChange());
         observer.observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
 
@@ -164,12 +171,7 @@ export class ThemeExtension implements HawkiAppExtension {
      * toggle.
      */
     private persist(preference: ThemePreference): void {
-        if (!this.app) {
-            throw new Error('ThemeExtension has not been initialised.');
-        }
-
-        this._persistPreference ??= this.app
-            .getOrFail('userSettings')
+        this._persistPreference ??= this.userSettings!
             .getDebouncedSave('hawki-core', 'core', 500, (error: unknown) => {
                 console.error('Failed to persist theme preference:', error);
                 const {__} = useTranslator();
@@ -200,12 +202,12 @@ function detectDomTheme(): AppTheme | null {
 
     const classList = document.documentElement.classList;
 
-    if (classList.contains('darkMode')) {
-        return 'dark';
+    if (classList.contains(DARK_MODE_CLASS)) {
+        return DARK_THEME_NAME;
     }
 
-    if (classList.contains('lightMode')) {
-        return 'light';
+    if (classList.contains(LIGHT_MODE_CLASS)) {
+        return LIGHT_THEME_NAME;
     }
 
     return null;
@@ -217,10 +219,10 @@ function detectDomTheme(): AppTheme | null {
  */
 function detectBrowserTheme(): AppTheme {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-        return 'dark';
+        return LIGHT_THEME_NAME;
     }
 
-    return window.matchMedia(SYSTEM_DARK_QUERY).matches ? 'dark' : 'light';
+    return window.matchMedia(SYSTEM_DARK_QUERY).matches ? DARK_THEME_NAME : LIGHT_THEME_NAME;
 }
 
 /**
