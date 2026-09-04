@@ -7,7 +7,7 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
  * `name` is the registry key other code uses to look the store up — e.g.
  * `app.stores.get('theme')` or `useStore('theme')` — and must be unique
  * across all plugins; augment {@link HawkiDataStores} with it so lookups are
- * typed. See `resources/js/plugins/core/stores/ThemeStore.svelte.ts` for a
+ * typed. See `resources/js/plugins/core/stores/AiModelStore.svelte.ts` for a
  * concrete `DataStore` implementation.
  *
  * `init` is optional: `StoreExtension` calls it synchronously as soon as the

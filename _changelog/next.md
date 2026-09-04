@@ -4,10 +4,12 @@
 
 [//]: # (- The main new features and changes in this version.)
 - Updated list from [available GWDG models](https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html) now includes DeepSeek V4 Flash 0731
+- The theme setting now has an **"Automatic (System)"** option that follows the operating system / browser light-dark preference live. It is the new default; choosing "Light" or "Dark" still pins the colour scheme.
 
 ### Quality of Life
 
 - API responses now carry richer error information (status code, server-provided error title/details) so failures surface more useful feedback instead of a generic error.
+- Your theme and interface language are now stored per account instead of only in the browser (theme previously lived in local storage), so the same preferences follow you across devices and browsers. Choices made while not logged in are kept for the session and automatically carried over to your account when you register.
 
 ### Bugfix
 
@@ -35,7 +37,21 @@
 - **Storage: driver-agnostic file persistence** (`app/Services/Storage/AbstractFileStorage.php`): `persistTemporaryFile` previously moved the whole temp *directory*, which only works on local disks (via `rename()`); s3-style drivers treat directories as key prefixes and silently ignore such moves. It now copies each file individually (`allFiles()` + `copy()` + one `deleteDirectory()`), which Laravel's contract guarantees for every driver — a server-side `CopyObject` on s3, a native copy on local disks.
 - **Storage: hardened s3 disk config** (`config/filesystems.php`): `throw => true` turns failed Flysystem operations into logged exceptions instead of unchecked `false` returns (the reason the original bug stayed invisible); `retain_visibility => false` skips the `GetObjectAcl` pre-check before each `copy()`, which ACL-less s3 servers (garage, Cloudflare R2) reject.
 - **Storage: `check:storage` now honors custom s3 endpoints** (`app/Console/Commands/CheckStorageConnection.php`) by forwarding the disk's `endpoint`/`use_path_style_endpoint` to its `S3Client` instead of always probing `amazonaws.com`.
+- **New user settings subsystem** (`app/Services/Users/Settings/`): a `UserSettingsService` with pluggable storage backends — `DatabaseUserSettingsStorage` (per account), `SessionUserSettingsStorage` (guests), `RuntimeUserSettingsStorage` (in-memory, for tests). Settings are declared as typed classes and registered through `UserSettingsRegistry`; `CoreUserSettings` resolves to the `hawki-core` namespace (public key `core`) and holds `locale`, `theme` (`auto`/`light`/`dark`) and `timezone`. Values are stored sparsely in the new `user_setting_values` table.
+- **New JSON:API `user-settings` resource** (`app/JsonApi/V1/UserSettings/`, `UserSettingController`, routes `index`/`show`/`store`/`update` under `/api/hawki/v1/user-settings`): the collection returns every namespace at once, and a single namespace can be shown / patched by its id (e.g. `user-settings/hawki-core`). Attributes are keyed by each settings class's public key, e.g. `core.theme`.
+- **New declarative HTTP input layer** (`app/Services/System/Http/`): a `#[ValidateInput]` attribute plus `RequestToObjectMapper` validate and map request payloads onto typed objects; the `user-settings` request builds its Laravel rules dynamically from the `#[ValidateInput]` attributes of the addressed namespace's settings classes.
+- **Backend plugin groundwork** (`app/Services/System/Plugins/`): `AbstractHawkiPlugin`, `PluginRegistry`, `InstalledPlugins`, a `#[PluginName]` attribute, `PluginAwareTrait` and `HawkiCorePlugin`, wired through `UsersServiceProvider` and `bootstrap/providers.php`. Used so plugins can contribute their own user-settings / config namespaces.
+- **Config-value groundwork mirroring user settings**: a `config_values` table, `ConfigValueRepository` and `ConfigSchema`, plus a schema / blueprint / diff toolkit under `app/Services/System/Database/SettingsAndConfig/` (`ConfigAndSettingsBlueprint`, `SettingsValueComparator`, `SettingsDiff`) that computes which keys actually changed so writes stay sparse.
+- **New artisan generators** `make:user-settings-migration` and `make:config-schema-migration` (`app/Console/Commands/Make/`) that scaffold schema-aware migrations on top of `UserSettingsSchema` / `ConfigSchema`.
+- **`LocaleService` reworked** (`app/Services/Translation/LocaleService.php`): locale now persists through `UserSettingsService` instead of the `users.locale` column, reads validate the stored value against the active locales with a graceful fallback, and saving now requires an explicit persist flag. Guest locale (session) is promoted to the account on registration via `AuthenticationController`.
+- **Casts extended for settings value objects** (`app/Utils/Casts/`): `AbstractCastableObject` and `EnumCaster` now cover the backed `Theme` enum used by the settings classes.
+- **Frontend: theme moved from `ThemeStore` to an app-owned `ThemeExtension`** (`resources/js/kernel/theme/`): it tracks a preference (`auto`/`light`/`dark`, persisted as a user setting with a debounced save and toast-based error recovery) and a resolved active theme (live `prefers-color-scheme` while `auto`), and bridges the legacy vanilla-JS switcher via a `MutationObserver`.
+- **Frontend: new `UserSettingsExtension`** (`resources/js/kernel/userSettings/`) fetches and caches every settings namespace during bootstrap and exposes reactive `app.userSettings.get(namespace)` with debounced PATCH saves and a refresh on auth transitions; new `useTheme()` and `useUserSettings()` hooks (`resources/js/app/hooks/`), a `hawki-core` settings schema (`resources/js/app/schemas/user-settings/hawki-core.schema.ts`), and `app.ts` now registers the two new extensions.
+- **New database tables**: `user_setting_values` and `config_values` (both sparse key/value with a namespace-scoped unique key). Migration `2026_09_01_130000_drop_locale_from_users_table.php` moves every non-null `users.locale` value into `user_setting_values` (`hawki-core` / `locale`) before dropping the column, and reverses it on rollback. The new `user_favorite_values` table gained a `type` column that is now part of its unique key.
+- **Test coverage**: `tests/Feature/Api/UserSettingsApiTest.php` plus unit suites for the settings service, registry, schema tooling, value comparator, the HTTP validation attribute / request-to-object mapper, and the plugin system.
 
 ### Deprecation
 
 [//]: # (- List of features or functionalities that have been deprecated in this version.)
+- **Removed `POST /api/hawki/v1/users/actions/locale`** (and its `StoreLocaleRequest` / `UsersController::storeLocale`). Set the locale via `PATCH /api/hawki/v1/user-settings/hawki-core` instead (see Internals). The old route now 404s.
+- **Removed the frontend `ThemeStore`** (`resources/js/plugins/core/stores/ThemeStore.svelte.ts`). Read the theme via `useTheme()` and write it via `app.theme.setTheme()`.

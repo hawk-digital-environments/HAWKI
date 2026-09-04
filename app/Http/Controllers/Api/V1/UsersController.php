@@ -3,13 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\StoreLocaleRequest;
 use App\Http\Requests\Api\V1\UploadAvatarRequest;
 use App\Models\User;
 use App\Services\Profile\ProfileService;
 use App\Services\Storage\Values\StoredFileIdentifier;
-use App\Services\Translation\Exception\SettingUnavailableLocaleException;
-use App\Services\Translation\LocaleService;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
@@ -67,21 +64,4 @@ class UsersController extends Controller
         ]);
     }
 
-    /**
-     * Persists the current user's preferred locale while retaining the session
-     * and cookie fallbacks used by unauthenticated and legacy flows.
-     */
-    #[Authorize('view', User::class)]
-    public function storeLocale(StoreLocaleRequest $request, LocaleService $localeService): JsonResponse
-    {
-        try {
-            $localeService->setCurrentLocale($request->validated('locale'), true);
-        } catch (SettingUnavailableLocaleException) {
-            abort(422, 'The requested locale is not available.');
-        }
-
-        return response()->json([
-            'locale' => $localeService->getCurrentLocale()->lang,
-        ]);
-    }
 }

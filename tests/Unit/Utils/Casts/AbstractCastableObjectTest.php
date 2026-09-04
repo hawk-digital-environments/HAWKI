@@ -16,6 +16,7 @@ use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsContextAwareC
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsCustomCasterConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsCustomCasterWithArgsConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsEncryptedStringConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsEnumConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsInvalidClassConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsInvalidUnionConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsMixedConfig;
@@ -24,6 +25,9 @@ use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsNestedOuterCo
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsNullableConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsSimpleTypesConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsStaticPropertyConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsTestDirection;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsTestPriority;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsTestStatus;
 
 #[CoversClass(AbstractCastableObject::class)]
 #[CoversClass(CastType::class)]
@@ -62,7 +66,57 @@ class AbstractCastableObjectTest extends TestCase
             'tags' => '["a","b"]',
         ]);
 
-        static::assertInstanceOf(CastsSimpleTypesConfig::class, $sut);
+        self::assertInstanceOf(CastsSimpleTypesConfig::class, $sut);
+    }
+
+    // ==========================================================================
+    // fromStringArray with typed (non-string) values — the cast juggling
+    // ==========================================================================
+
+    public function testItHydratesNonStringValuesThroughThePropertyCast(): void
+    {
+        // Typed values (e.g. validated request data) are juggled through the property's
+        // cast — serialize via set(), hydrate via get() — producing the same result
+        // as the equivalent stored strings.
+        $fromTyped = CastsSimpleTypesConfig::fromStringArray([
+            'count' => 42,
+            'price' => 9.99,
+            'active' => true,
+            'tags' => ['a', 'b'],
+        ]);
+        $fromStored = CastsSimpleTypesConfig::fromStringArray([
+            'count' => '42',
+            'price' => '9.99',
+            'active' => '1',
+            'tags' => '["a","b"]',
+        ]);
+
+        self::assertSame($fromStored->count, $fromTyped->count);
+        self::assertSame($fromStored->price, $fromTyped->price);
+        self::assertSame($fromStored->active, $fromTyped->active);
+        self::assertSame($fromStored->tags, $fromTyped->tags);
+    }
+
+    public function testItHydratesEnumInstancesAsNonStringValues(): void
+    {
+        $sut = CastsEnumConfig::fromStringArray([
+            'status' => CastsTestStatus::Inactive,
+            'direction' => CastsTestDirection::South,
+            'priority' => CastsTestPriority::High,
+        ]);
+
+        self::assertSame(CastsTestStatus::Inactive, $sut->status);
+        self::assertSame(CastsTestDirection::South, $sut->direction);
+        self::assertSame(CastsTestPriority::High, $sut->priority);
+    }
+
+    public function testItHydratesIntBackedEnumsFromStoredStrings(): void
+    {
+        // The stored value is always a string — the EnumCaster must coerce it back
+        // to the enum's backing type.
+        $sut = CastsEnumConfig::fromStringArray(['priority' => '2']);
+
+        self::assertSame(CastsTestPriority::High, $sut->priority);
     }
 
     public function testItCreatesFromArray(): void
@@ -72,27 +126,27 @@ class AbstractCastableObjectTest extends TestCase
             'active' => true,
         ]);
 
-        static::assertInstanceOf(CastsSimpleTypesConfig::class, $sut);
-        static::assertSame(42, $sut->count);
-        static::assertTrue($sut->active);
+        self::assertInstanceOf(CastsSimpleTypesConfig::class, $sut);
+        self::assertSame(42, $sut->count);
+        self::assertTrue($sut->active);
     }
 
     public function testItRetainsDefaultsForMissingKeys(): void
     {
         $sut = CastsSimpleTypesConfig::fromStringArray([]);
 
-        static::assertSame(0, $sut->count);
-        static::assertSame(0.0, $sut->price);
-        static::assertFalse($sut->active);
-        static::assertSame('', $sut->name);
-        static::assertSame([], $sut->tags);
+        self::assertSame(0, $sut->count);
+        self::assertSame(0.0, $sut->price);
+        self::assertFalse($sut->active);
+        self::assertSame('', $sut->name);
+        self::assertSame([], $sut->tags);
     }
 
     public function testItIgnoresNullValues(): void
     {
         $sut = CastsSimpleTypesConfig::fromStringArray(['count' => null]);
 
-        static::assertSame(0, $sut->count);
+        self::assertSame(0, $sut->count);
     }
 
     // ==========================================================================
@@ -102,13 +156,13 @@ class AbstractCastableObjectTest extends TestCase
     public function testItPassesThroughRawStringForUntypedProperty(): void
     {
         $sut = CastsMixedConfig::fromStringArray(['raw' => 'raw-value']);
-        static::assertSame('raw-value', $sut->raw);
+        self::assertSame('raw-value', $sut->raw);
     }
 
     public function testItSerializesUntypedPropertyAsStringInToArrayList(): void
     {
         $sut = CastsMixedConfig::fromArray(['raw' => 'hello']);
-        static::assertSame('hello', $sut->toStringArray()['raw']);
+        self::assertSame('hello', $sut->toStringArray()['raw']);
     }
 
     // ==========================================================================
@@ -118,7 +172,7 @@ class AbstractCastableObjectTest extends TestCase
     public function testItSerializesNullPropertyAsNull(): void
     {
         $sut = CastsNullableConfig::fromStringArray(['value' => null]);
-        static::assertNull($sut->toStringArray()['value']);
+        self::assertNull($sut->toStringArray()['value']);
     }
 
     // ==========================================================================
@@ -128,31 +182,31 @@ class AbstractCastableObjectTest extends TestCase
     public function testItUsesCustomCasterOnHydrate(): void
     {
         $sut = CastsCustomCasterConfig::fromStringArray(['value' => 'raw']);
-        static::assertSame('custom:raw', $sut->value);
+        self::assertSame('custom:raw', $sut->value);
     }
 
     public function testItUsesCustomCasterOnSerialize(): void
     {
         $sut = CastsCustomCasterConfig::fromArray(['value' => 'custom:raw']);
-        static::assertSame('raw', $sut->toStringArray()['value']);
+        self::assertSame('raw', $sut->toStringArray()['value']);
     }
 
     public function testItPassesParentObjectToCustomCaster(): void
     {
         $sut = CastsContextAwareCasterConfig::fromStringArray(['locale' => 'de', 'label' => 'Hallo']);
-        static::assertSame('de:Hallo', $sut->label);
+        self::assertSame('de:Hallo', $sut->label);
     }
 
     public function testItUsesCustomCasterWithConstructorArgsOnHydrate(): void
     {
         $sut = CastsCustomCasterWithArgsConfig::fromStringArray(['value' => 'raw']);
-        static::assertSame('prefixed:raw', $sut->value);
+        self::assertSame('prefixed:raw', $sut->value);
     }
 
     public function testItUsesCustomCasterWithConstructorArgsOnSerialize(): void
     {
         $sut = CastsCustomCasterWithArgsConfig::fromArray(['value' => 'prefixed:raw']);
-        static::assertSame('raw', $sut->toStringArray()['value']);
+        self::assertSame('raw', $sut->toStringArray()['value']);
     }
 
     // ==========================================================================
@@ -164,7 +218,7 @@ class AbstractCastableObjectTest extends TestCase
         $sut1 = CastsSimpleTypesConfig::fromStringArray([]);
         $sut2 = CastsSimpleTypesConfig::fromStringArray([]);
 
-        static::assertSame($sut1->getCasts(), $sut2->getCasts());
+        self::assertSame($sut1->getCasts(), $sut2->getCasts());
     }
 
     public function testItIgnoresStaticPropertiesInToArrayList(): void
@@ -172,8 +226,8 @@ class AbstractCastableObjectTest extends TestCase
         $sut = CastsStaticPropertyConfig::fromStringArray(['name' => 'test']);
         $result = $sut->toStringArray();
 
-        static::assertArrayHasKey('name', $result);
-        static::assertArrayNotHasKey('ignored', $result);
+        self::assertArrayHasKey('name', $result);
+        self::assertArrayNotHasKey('ignored', $result);
     }
 
     // ==========================================================================
@@ -183,7 +237,7 @@ class AbstractCastableObjectTest extends TestCase
     public function testItThrowsForUnionType(): void
     {
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(sprintf(
+        $this->expectExceptionMessage(\sprintf(
             '%s::$%s has a union/intersection type and requires an explicit #[CastedValue] annotation.',
             CastsInvalidUnionConfig::class,
             'value',
@@ -195,7 +249,7 @@ class AbstractCastableObjectTest extends TestCase
     public function testItThrowsForNonBuiltinClassType(): void
     {
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(sprintf(
+        $this->expectExceptionMessage(\sprintf(
             '%s::$%s has type "%s" which cannot be cast automatically. Add a #[CastedValue] annotation.',
             CastsInvalidClassConfig::class,
             'value',
@@ -216,11 +270,11 @@ class AbstractCastableObjectTest extends TestCase
             'inner' => '{"value":"hello","num":"5"}',
         ]);
 
-        static::assertInstanceOf(CastsNestedOuterConfig::class, $sut);
-        static::assertSame('outer', $sut->tag);
-        static::assertInstanceOf(CastsNestedInnerConfig::class, $sut->inner);
-        static::assertSame('hello', $sut->inner->value);
-        static::assertSame(5, $sut->inner->num);
+        self::assertInstanceOf(CastsNestedOuterConfig::class, $sut);
+        self::assertSame('outer', $sut->tag);
+        self::assertInstanceOf(CastsNestedInnerConfig::class, $sut->inner);
+        self::assertSame('hello', $sut->inner->value);
+        self::assertSame(5, $sut->inner->num);
     }
 
     public function testItSerializesNestedCastableObjectToSingleJsonObject(): void
@@ -230,19 +284,19 @@ class AbstractCastableObjectTest extends TestCase
 
         $result = $sut->toStringArray();
 
-        static::assertSame('outer', $result['tag']);
-        static::assertSame('{"value":"hello","num":"5"}', $result['inner']);
+        self::assertSame('outer', $result['tag']);
+        self::assertSame('{"value":"hello","num":"5"}', $result['inner']);
         // Must be valid JSON — not an escaped string within a string
-        $decoded = json_decode((string)$result['inner'], true);
-        static::assertIsArray($decoded);
-        static::assertSame('hello', $decoded['value']);
+        $decoded = json_decode((string) $result['inner'], true);
+        self::assertIsArray($decoded);
+        self::assertSame('hello', $decoded['value']);
     }
 
     public function testItInfersNestedCastableObjectCastWithoutAnnotation(): void
     {
         $casts = CastsNestedOuterConfig::fromStringArray([])->getCasts();
 
-        static::assertArrayHasKey('inner', $casts);
+        self::assertArrayHasKey('inner', $casts);
     }
 
     // ==========================================================================
@@ -252,26 +306,26 @@ class AbstractCastableObjectTest extends TestCase
     public function testItDecryptsOnHydrateViaFullPipeline(): void
     {
         $encrypter = $this->createMock(StringEncrypter::class);
-        $encrypter->expects(static::once())
+        $encrypter->expects($this->once())
             ->method('decryptString')
             ->with('ciphertext')
             ->willReturn('my-secret');
         Crypt::swap($encrypter);
 
         $sut = CastsEncryptedStringConfig::fromStringArray(['secret' => 'ciphertext']);
-        static::assertSame('my-secret', $sut->secret);
+        self::assertSame('my-secret', $sut->secret);
     }
 
     public function testItEncryptsOnSerializeViaFullPipeline(): void
     {
         $encrypter = $this->createMock(StringEncrypter::class);
-        $encrypter->expects(static::once())
+        $encrypter->expects($this->once())
             ->method('encryptString')
             ->with('my-secret')
             ->willReturn('ciphertext');
         Crypt::swap($encrypter);
 
         $sut = CastsEncryptedStringConfig::fromArray(['secret' => 'my-secret']);
-        static::assertSame('ciphertext', $sut->toStringArray()['secret']);
+        self::assertSame('ciphertext', $sut->toStringArray()['secret']);
     }
 }

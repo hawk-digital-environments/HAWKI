@@ -101,6 +101,15 @@ export class ClientExtension implements HawkiAppExtension {
         this.events.async.on('connectionChanged', async () => {
             await app.config?.refresh();
         });
+
+        // The connection carries the active locale, which the restApi uses for
+        // the X-App-Locale header (translation labels etc.). When the user's
+        // locale preference changes, the connection must refresh first — this
+        // listener is registered before LocalizationExtension's, so downstream
+        // listeners read the refreshed connection.
+        this.events.async.on('localeChanged', async () => {
+            await this.refreshConnection();
+        });
     }
 
     public provideProperties(): Record<string, unknown> {

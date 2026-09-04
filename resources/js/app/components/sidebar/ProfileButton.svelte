@@ -15,12 +15,12 @@
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useTheme} from '$lib/app/hooks/useTheme.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
 
     const app = useApp();
-    const themeStore = useStore('theme');
+    const {theme, setTheme} = useTheme();
     const {__} = useTranslator();
     const connection = useConnection();
     const userinfo = $derived(connection.hasUserInfo ? connection.userinfo : null);
@@ -37,7 +37,7 @@
     let settingsOpen = $state(false);
 
     function toggleTheme(): void {
-        themeStore.theme = themeStore.isDark ? 'light' : 'dark';
+        setTheme(theme === 'dark' ? 'light' : 'dark');
     }
 
     function openSettings(): void {
@@ -83,8 +83,8 @@
     <DropdownMenuItem icon={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
-    <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
-        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
+    <DropdownMenuItem icon={theme === 'dark' ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+        {theme === 'dark' ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
     <DropdownMenuItem icon={Logout02Icon} onclick={logout}>

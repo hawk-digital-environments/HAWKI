@@ -31,10 +31,10 @@
     import 'katex/dist/katex.min.css';
     import 'monaco-editor/min/vs/editor/editor.main.css';
     import 'markstream-svelte/index.css';
-    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useTheme} from '$lib/app/hooks/useTheme.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
-    const themeStore = useStore('theme');
+    const {theme} = useTheme();
     const {getTranslationsFlat} = useTranslator();
 
     interface Props {
@@ -75,7 +75,7 @@
 
 <MarkdownRender
     content={message}
-    isDark={themeStore.theme === 'dark'}
+    isDark={theme === 'dark'}
     final={!!isStreaming}
     showTooltips={false}
     customComponents={{link: ExtendedLinkNode}}

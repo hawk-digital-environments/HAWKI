@@ -1,4 +1,4 @@
-import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
+import type {AppTheme} from '$lib/app/hooks/useTheme.svelte.js';
 
 /**
  * Shared types for the `BorderBeam` component and its CSS generator
