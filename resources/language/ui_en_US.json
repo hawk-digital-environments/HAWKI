@@ -102,6 +102,20 @@
                     }
                 }
             }
+        },
+        "search": {
+            "title": "Search",
+            "placeholder": "Search…",
+            "closeHint": "Press Escape to close",
+            "closeKey": "Esc",
+            "conversations": "Conversations",
+            "settings": {
+                "label": "Settings",
+                "general": "General settings",
+                "profile": "Profile settings"
+            },
+            "noResults": "Nothing matches “:query”.",
+            "empty": "Nothing to search yet."
         }
     }
 }
