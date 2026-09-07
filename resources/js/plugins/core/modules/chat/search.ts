@@ -1,52 +1,42 @@
-import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
 import ChatAddIcon from '$lib/components/ui/icons/iconset/ChatAddIcon.svelte';
+import type {StaticSource} from '$lib/kernel/search/types.js';
 import type {ChatSummary} from '$plugins/core/modules/chat/types.js';
 
-const ACTIONS_GROUP_ID = 'core:chat.actions';
-const GROUP_ID = 'core:chat.conversations';
+/** Existing Chat actions and loaded titles, observed and indexed by the kernel. */
+
+/** The new-chat action. Always available. */
+export const chatActionSource: StaticSource = {
+    items: ({app}) => [{
+        id: 'new',
+        entityKey: 'action/core:chat/new',
+        title: app.translator.translate('chat.sidebar.newChat'),
+        icon: ChatAddIcon,
+        onSelect: () => {
+            app.stores.get('chat').startNew();
+            void app.router.goToRoute('chat.index');
+        }
+    }]
+};
 
 /**
- * Contributes the chat module's entries to the search palette on the
- * kernel's `app.search`: a "Chat" group with the new-chat action, and the
- * "Conversations" group listing the user's chats. Called from
- * `CorePlugin.ready()`, once the `chat` store exists. The latter group reads
- * `chatStore.conversations` lazily (it is `$state`, and the palette evaluates
- * the getter in a `$derived`), so it stays current as chats are created,
- * renamed, or deleted, and
- * lists them newest first by the store's `updated_at` (which `ChatStore` bumps
- * on creation, activity, and rename — the same events that move a chat up on
- * the server). Ties keep the store's own order. The store's list is copied before sorting — rendering never
- * mutates it.
+ * The user's conversations, newest first by the store's `updated_at` (which
+ * `ChatStore` bumps on creation, activity, and rename — the same events that
+ * move a chat up on the server). Ties keep the store's own order. The store's
+ * list is copied before sorting — searching never mutates it.
+ *
+ * `ChatStore` fetches *every* page of summaries on load, so all titles are
+ * held locally and no server-side counterpart is needed.
  */
-export function registerChatSearch(app: HawkiApp): void {
-    const chatStore = app.stores.get('chat');
-
-    app.search.addGroup({
-        id: ACTIONS_GROUP_ID,
-        label: () => app.translator.translate('chat.module.title'),
-        items: () => [{
-            id: `${ACTIONS_GROUP_ID}/new`,
-            title: app.translator.translate('chat.sidebar.newChat'),
-            icon: ChatAddIcon,
-            onSelect: () => {
-                chatStore.startNew();
-                void app.router.goToRoute('chat.index');
-            }
-        }]
-    });
-
-    app.search.addGroup({
-        id: GROUP_ID,
-        label: () => app.translator.translate('ui.search.conversations'),
-        items: () => [...chatStore.conversations].sort(byNewestFirst).map(conversation => ({
-            id: `${GROUP_ID}/${conversation.slug}`,
-            title: conversation.name,
-            icon: BubbleChatIcon,
-            onSelect: () => void app.router.goToRoute('chat.conversation', {slug: conversation.slug})
-        }))
-    });
-}
+export const chatConversationSource: StaticSource = {
+    items: ({app}) => [...app.stores.get('chat').conversations].sort(byNewestFirst).map(conversation => ({
+        id: conversation.slug,
+        entityKey: `ai-convs/${conversation.slug}`,
+        title: conversation.name,
+        icon: BubbleChatIcon,
+        onSelect: () => void app.router.goToRoute('chat.conversation', {slug: conversation.slug})
+    }))
+};
 
 /** Sort comparator: later `updated_at` first; rows without one go last. */
 function byNewestFirst(a: ChatSummary, b: ChatSummary): number {

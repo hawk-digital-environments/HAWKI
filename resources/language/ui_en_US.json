@@ -108,12 +108,30 @@
             "placeholder": "Search…",
             "closeHint": "Press Escape to close",
             "closeKey": "Esc",
+            "resultsLabel": "Search results",
+            "keyboardHint": "Use the arrow keys to choose a result and Enter to open it.",
             "conversations": "Conversations",
             "settings": {
                 "label": "Settings",
                 "general": "General settings",
                 "profile": "Profile settings"
             },
+            "filters": {
+                "title": "Search filters",
+                "allPlugins": "All plugins",
+                "allModules": "All modules",
+                "pluginValue": "Plugin: :value",
+                "moduleValue": "Module: :value"
+            },
+            "searching": "Searching…",
+            "searchingLocal": "Searching local data…",
+            "searchingRemote": "Searching the server…",
+            "resultCount": ":count results",
+            "resultCountOne": "1 result",
+            "unavailable": "No longer available",
+            "errorInGroup": "“:group” could not be searched.",
+            "retry": "Retry",
+            "retryLabel": "Search “:group” again",
             "noResults": "Nothing matches “:query”.",
             "empty": "Nothing to search yet."
         }
