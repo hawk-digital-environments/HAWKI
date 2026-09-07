@@ -16,7 +16,7 @@
     const app = useApp();
     const router = useRouter();
 
-    const modules = $derived(app.modules.all);
+    const modules = $derived(app.modules.all.filter(module => module.routes));
 
     const { translate } = useTranslator();
     const locale = $derived(app.localization.locale);

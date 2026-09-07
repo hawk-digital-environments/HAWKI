@@ -7,11 +7,12 @@
 -->
 <script module lang="ts">
     /** A settings section the dialog can be opened on. */
-    export type SettingsSection = 'general' | 'profile' | 'experiments';
+    export type {SettingsSection} from './types.js';
 </script>
 
 <script lang="ts">
     import type {Attachment} from 'svelte/attachments';
+    import type {SettingsSection} from './types.js';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';

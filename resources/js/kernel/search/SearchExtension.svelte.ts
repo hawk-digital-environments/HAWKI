@@ -1,6 +1,12 @@
-import type {HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
-import type {IconComponent} from '$lib/components/ui/icons/index.js';
-import {count, create, insert, search, type Orama} from '@orama/orama';
+import {flushSync, untrack} from 'svelte';
+import type {Readable} from 'svelte/store';
+import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
+import type {HawkiApp, HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
+import type {SearchProviderDefinition, SearchRegistry} from './searchRegistry.js';
+import type {SearchEntry, SearchProviderError, SearchScopeOptions, SearchSession, SearchSessionOptions, StaticSource} from './types.js';
+import {SharedSearchIndex} from './sharedIndex.js';
+import {SearchWorkerClient} from './SearchWorkerClient.js';
+import {SearchSessionManager} from './SearchSessionManager.svelte.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
@@ -8,202 +14,286 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
 }
 
-/** One selectable row in the search palette. */
-export interface SearchItem {
-    /**
-     * Stable identity, unique across *all* groups — namespace it with the
-     * group's id, e.g. `core:chat.conversations/<slug>`. Titles may repeat;
-     * ids may not. Duplicates are reported and dropped by `matchSearchGroups`.
-     */
-    id: string;
-    /** Text shown in the row and matched against the query. */
-    title: string;
-    /** Leading icon; rendered with the palette's own size/stroke. */
-    icon?: IconComponent;
-    /** Extra terms the item is findable by. Never shown. */
-    keywords?: string[];
-    /** Runs after the palette has closed itself. */
-    onSelect: () => void;
+interface Activation {
+    definition: SearchProviderDefinition;
+    controller: AbortController;
+    stopItems?: () => void;
 }
 
-/**
- * A named collection of items contributed by a plugin or module. Both
- * `label` and `items` are getters, not values: the palette evaluates them
- * inside a `$derived`, so whatever reactive (`$state`) data they read — a
- * store's list, the current locale — keeps the palette current without the
- * contributor having to re-register or "update" anything. A group backed by
- * plain, non-reactive data is a snapshot; wrap that data in `$state` (or
- * remove and re-add the group) if it must change.
- */
-export interface SearchGroup {
-    /** Unique across all groups, e.g. `core:chat.conversations`. */
-    id: string;
-    /** Translated heading shown above the group's rows. */
-    label: () => string;
-    /** The group's rows, in the order they should appear. */
-    items: () => SearchItem[];
-}
-
-/** A group with its getters resolved and its rows narrowed to the query. */
-export interface SearchGroupResult {
-    id: string;
-    label: string;
-    items: SearchItem[];
-}
-
-/**
- * App extension that owns the registry behind the search palette
- * (`SearchDialog`), reachable as `app.search`. It lives in the kernel rather
- * than in a plugin so the palette works no matter which plugins are enabled:
- * plugins and modules only *contribute* groups (usually from the plugin's
- * `ready()` hook, once the stores they read from exist), and the dialog
- * renders whatever is registered, in registration order.
- *
- * @example
- * app.search.addGroup({
- *     id: 'core:chat.conversations',
- *     label: () => app.translator.translate('ui.search.conversations'),
- *     items: () => chatStore.conversations.map(c => ({
- *         id: `core:chat.conversations/${c.slug}`,
- *         title: c.name,
- *         icon: BubbleChatIcon,
- *         onSelect: () => app.router.goToRoute('chat.conversation', {slug: c.slug})
- *     }))
- * });
- */
+/** Shared source observation and indexes. Each consumer owns a separate session. */
 export class SearchExtension implements HawkiAppExtension {
-    private _groups = $state<SearchGroup[]>([]);
+    private app: HawkiApp | null = null;
+    private registry: SearchRegistry | null = null;
+    private readonly index = new SharedSearchIndex();
+    private worker = new SearchWorkerClient(this.index);
+    private manager: SearchSessionManager | null = null;
+    private readonly monitors = new Map<string, () => void>();
+    private readonly active = new Map<string, Activation>();
+    private readonly errors = new Map<string, SearchProviderError>();
+    private readonly labels = new Map<string, string>();
+    private identity: string | null = null;
+    private stopped = false;
+    private initialized = false;
+    private revision = $state(0);
+    private _scopeOptions = $state.raw<SearchScopeOptions>({plugins: [], modules: []});
+    private cleanup: (() => void)[] = [];
 
-    /** All registered groups, in registration order. Reactive. */
-    public get groups(): readonly SearchGroup[] {
-        return this._groups;
+    public get scopeOptions(): SearchScopeOptions {
+        return this._scopeOptions;
     }
 
-    /** Whether a group with the given id is registered. */
-    public hasGroup(id: string): boolean {
-        return this._groups.some(group => group.id === id);
+    public ready(app: HawkiApp, bootstrapper: Bootstrapper): void {
+        bootstrapper.onStagePassed('main', () => this.activate(app));
     }
 
-    /** Registers a group; throws if its id is already taken. */
-    public addGroup(group: SearchGroup): void {
-        if (this.hasGroup(group.id)) {
-            throw new Error(`Search group "${group.id}" is already registered.`);
-        }
-        this._groups = [...this._groups, group];
+    public createSession(options?: SearchSessionOptions): SearchSession {
+        if (!this.manager) throw new Error('Search providers have not been activated yet.');
+        return this.manager.createSession(options);
     }
 
-    /** Removes the group with the given id; a no-op if none is registered. */
-    public removeGroup(id: string): void {
-        this._groups = this._groups.filter(group => group.id !== id);
+    public dispose(): void {
+        this.stopped = true;
+        for (const stop of this.cleanup.splice(0)) stop();
+        this.stopProviders();
+        this.manager?.dispose();
+        this.worker.dispose();
+        this._scopeOptions = {plugins: [], modules: []};
     }
 
-    /** Exposes this extension as `app.search`. */
-    public provideProperties(): Record<string, any> {
+    public provideProperties(): Record<string, unknown> {
+        return {search: this};
+    }
+
+    private activate(app: HawkiApp): void {
+        if (this.initialized) return;
+        this.initialized = true;
+        this.app = app;
+        this.registry = app.modules.searchRegistry;
         const extension = this;
-        return {
-            get search() {
-                return extension;
-            }
-        };
+        this.manager = new SearchSessionManager({
+            app,
+            registry: this.registry,
+            index: this.index,
+            get identity() { return extension.identity; },
+            get providers() {
+                return [...extension.active.values()].map(({definition, controller}) => ({definition, signal: controller.signal}));
+            },
+            get errors() {
+                extension.revision;
+                return [...extension.errors.values()];
+            },
+            groupLabel: id => this.labels.get(id) ?? id,
+            retryStatic: id => this.retryStatic(id),
+            queryWorker: (query, signal) => this.worker.search(query, signal),
+            retryWorker: () => this.worker.retry()
+        });
+        this.cleanup.push(this.index.subscribe(() => this.manager?.invalidate()));
+        this.cleanup.push(this.registry.subscribe(() => this.syncProviders()));
+        this.cleanup.push(app.events.async.on('logout', () => this.dispose()));
+
+        flushSync(() => {
+            this.cleanup.push($effect.root(() => {
+                $effect(() => {
+                    const connection = app.connectionOrNull;
+                    const identity = connection?.isAuthenticated
+                        ? JSON.stringify([connection.id, connection.userinfo.id, connection.userinfo.hash])
+                        : null;
+                    untrack(() => {
+                        if (this.stopped) return;
+                        if (identity !== this.identity) {
+                            this.stopProviders();
+                            this.identity = identity;
+                            this.manager?.reset();
+                        }
+                        this.syncProviders();
+                    });
+                });
+                $effect(() => {
+                    this.revision;
+                    const groups = this.registry!.allGroups.map(group => [group.id, group.label(app.translator.translate)] as const);
+                    const options = this.buildScopeOptions(app);
+                    untrack(() => {
+                        this.labels.clear();
+                        for (const [id, label] of groups) this.labels.set(id, label);
+                        this._scopeOptions = options;
+                        this.manager?.invalidate();
+                    });
+                });
+            }));
+        });
     }
-}
 
-/**
- * An Orama index over the resolved rows of every registered group, plus
- * the rows themselves in contributor order. Built by `buildSearchIndex` and
- * consumed by `matchSearchGroups`; keep the two steps apart so the (cheap,
- * but not free) indexing only reruns when the *items* change, not on every
- * keystroke.
- */
-export interface SearchIndex {
-    groups: SearchGroupResult[];
-    engine: SearchEngine;
-}
-
-const searchSchema = {
-    title: 'string',
-    keywords: 'string'
-} as const;
-
-type SearchEngine = Orama<typeof searchSchema>;
-
-/**
- * Orama's `insert` and `search` are typed as "value or promise" because they
- * turn asynchronous once async hooks or plugins are registered. This index
- * registers none, so both resolve synchronously — which the palette relies on,
- * as it indexes and queries inside `$derived`. Fails loudly should that ever
- * change instead of silently handing a promise to the UI.
- */
-function sync<T>(value: T | Promise<T>): T {
-    if (value instanceof Promise) {
-        throw new Error('The search index must stay synchronous; do not register async Orama hooks or plugins.');
-    }
-    return value;
-}
-
-/**
- * Resolves every group's live getters and indexes the rows with Orama
- * (fields: title and keywords). Because items only exist once their getter
- * runs, this is also where identity is validated: an id that already appeared
- * (in this or an earlier group) is reported and the later row skipped, so the
- * palette never renders two rows with one identity. Groups without rows are
- * dropped.
- */
-export function buildSearchIndex(groups: readonly SearchGroup[]): SearchIndex {
-    const seen = new Set<string>();
-    const resolved: SearchGroupResult[] = [];
-    const engine: SearchEngine = create({schema: searchSchema});
-
-    for (const group of groups) {
-        const items: SearchItem[] = [];
-        for (const item of group.items()) {
-            if (seen.has(item.id)) {
-                console.error(`Search item id "${item.id}" in group "${group.id}" is not unique; row skipped.`);
-                continue;
-            }
-            seen.add(item.id);
-            items.push(item);
-            sync(insert(engine, {id: item.id, title: item.title, keywords: item.keywords?.join(' ') ?? ''}));
+    private syncProviders(): void {
+        if (this.stopped || !this.registry || !this.app) return;
+        const providers = this.registry.allProviders;
+        const ids = new Set(providers.map(provider => provider.id));
+        for (const [id, stop] of this.monitors) {
+            if (ids.has(id)) continue;
+            stop();
+            this.monitors.delete(id);
+            this.deactivateProvider(id);
         }
-        if (items.length > 0) resolved.push({id: group.id, label: group.label(), items});
+        // Authentication loss must not expose private snapshots left in module stores.
+        if (this.identity === null) {
+            this.changed();
+            return;
+        }
+        for (const provider of providers) {
+            if (this.monitors.has(provider.id)) continue;
+            const monitorController = new AbortController();
+            const stop = $effect.root(() => {
+                $effect(() => {
+                    let enabled = false;
+                    try {
+                        enabled = provider.source.enabled?.({app: this.app!, signal: monitorController.signal}) ?? true;
+                    } catch (error) {
+                        untrack(() => this.fail(provider, error));
+                    }
+                    untrack(() => {
+                        if (enabled && !this.active.has(provider.id)) this.activateProvider(provider);
+                        else if (!enabled) this.deactivateProvider(provider.id);
+                    });
+                });
+                return () => monitorController.abort();
+            });
+            this.monitors.set(provider.id, stop);
+        }
+        this.changed();
     }
 
-    return {groups: resolved, engine};
+    private activateProvider(definition: SearchProviderDefinition): void {
+        if (this.stopped) return;
+        const activation: Activation = {definition, controller: new AbortController()};
+        this.active.set(definition.id, activation);
+        this.errors.delete(definition.id);
+        if (definition.kind === 'static') {
+            const source = definition.source as StaticSource;
+            const runtime = {app: this.app!, signal: activation.controller.signal};
+            let unsubscribe: (() => void) | undefined;
+            let currentStore: Readable<readonly SearchEntry[]> | undefined;
+            let loadStarted = false;
+            const accept = (items: readonly SearchEntry[]) => {
+                if (runtime.signal.aborted) return;
+                try {
+                    // Snapshot fields while tracked, including nested edits and keyword arrays.
+                    const entries = snapshotEntries(items);
+                    untrack(() => this.index.setProviderEntries(definition, entries));
+                } catch (error) {
+                    untrack(() => {
+                        this.index.removeProvider(definition.id);
+                        this.fail(definition, error);
+                    });
+                }
+            };
+            const stop = $effect.root(() => {
+                $effect(() => {
+                    try {
+                        const items = source.items(runtime);
+                        if (isReadable(items)) {
+                            if (currentStore !== items) {
+                                unsubscribe?.();
+                                currentStore = items;
+                                unsubscribe = items.subscribe(accept);
+                            }
+                        } else {
+                            unsubscribe?.();
+                            unsubscribe = undefined;
+                            currentStore = undefined;
+                            accept(items);
+                        }
+                        if (!loadStarted) {
+                            loadStarted = true;
+                            untrack(() => {
+                                Promise.resolve().then(() => {
+                                    if (!runtime.signal.aborted) return source.load?.(runtime);
+                                }).catch(error => {
+                                    if (!runtime.signal.aborted) this.fail(definition, error);
+                                });
+                            });
+                        }
+                    } catch (error) {
+                        untrack(() => {
+                            this.index.removeProvider(definition.id);
+                            this.fail(definition, error);
+                        });
+                    }
+                });
+            });
+            activation.stopItems = () => { stop(); unsubscribe?.(); };
+        }
+        this.changed();
+    }
+
+    private deactivateProvider(id: string): void {
+        const activation = this.active.get(id);
+        if (!activation) return;
+        activation.controller.abort();
+        activation.stopItems?.();
+        this.active.delete(id);
+        this.index.removeProvider(id);
+        this.errors.delete(id);
+        this.changed();
+    }
+
+    private retryStatic(id: string): void {
+        const activation = this.active.get(id);
+        if (!activation || activation.definition.kind !== 'static' || !this.errors.has(id)) return;
+        const definition = activation.definition;
+        this.deactivateProvider(id);
+        this.activateProvider(definition);
+    }
+
+    private stopProviders(): void {
+        for (const stop of this.monitors.values()) stop();
+        this.monitors.clear();
+        for (const id of [...this.active.keys()]) this.deactivateProvider(id);
+        this.errors.clear();
+        this.labels.clear();
+    }
+
+    private fail(provider: SearchProviderDefinition, error: unknown): void {
+        this.errors.set(provider.id, {
+            providerId: provider.id,
+            groupId: provider.groupId,
+            message: error instanceof Error ? error.message : String(error)
+        });
+        this.changed();
+    }
+
+    private changed(): void {
+        this.revision += 1;
+        this.manager?.invalidate();
+    }
+
+    private buildScopeOptions(app: HawkiApp): SearchScopeOptions {
+        const plugins = new Map<string, {id: string; label: string}>();
+        const modules = new Map<string, {id: string; pluginId: string; label: string}>();
+        for (const {definition} of this.active.values()) {
+            const module = app.modules.get(definition.moduleId);
+            plugins.set(definition.pluginId, {id: definition.pluginId, label: definition.pluginId});
+            modules.set(definition.moduleId, {
+                id: definition.moduleId,
+                pluginId: definition.pluginId,
+                label: module.title?.(app.translator.translate, app.localization.locale) ?? module.name
+            });
+        }
+        return {plugins: [...plugins.values()], modules: [...modules.values()]};
+    }
 }
 
-/**
- * Narrows the indexed rows to `query`, ranked by Orama's relevance score:
- * every query term must match (as a prefix or within one edit of a term),
- * title hits outrank keyword hits. Rows keep their group; groups
- * are ordered by their best-scoring row and rows within a group by score, so
- * the most relevant hit sits at the top no matter which group contributed
- * it. An empty query returns every group and row in contributor order.
- */
-export function matchSearchGroups(index: SearchIndex, query: string): SearchGroupResult[] {
-    if (query.trim() === '') return index.groups;
+function isReadable(value: readonly SearchEntry[] | Readable<readonly SearchEntry[]>): value is Readable<readonly SearchEntry[]> {
+    return !Array.isArray(value) && typeof (value as Readable<readonly SearchEntry[]>)?.subscribe === 'function';
+}
 
-    const hits = sync(
-        search(index.engine, {
-            term: query,
-            properties: ['title', 'keywords'],
-            tolerance: 1,
-            threshold: 0,
-            boost: {title: 2},
-            limit: count(index.engine)
-        })
-    ).hits;
-    const scores = new Map<string, number>();
-    for (const hit of hits) scores.set(hit.id, hit.score);
-    if (scores.size === 0) return [];
-
-    const results: Array<SearchGroupResult & {best: number}> = [];
-    for (const group of index.groups) {
-        const items = group.items
-            .filter(item => scores.has(item.id))
-            .sort((a, b) => scores.get(b.id)! - scores.get(a.id)!);
-        if (items.length === 0) continue;
-        results.push({id: group.id, label: group.label, items, best: scores.get(items[0].id)!});
-    }
-
-    return results.sort((a, b) => b.best - a.best).map(({best: _best, ...group}) => group);
+function snapshotEntries(items: readonly SearchEntry[]): SearchEntry[] {
+    return items.map(item => ({
+        id: item.id,
+        entityKey: item.entityKey,
+        title: item.title,
+        description: item.description,
+        content: item.content,
+        keywords: item.keywords ? [...item.keywords] : undefined,
+        icon: item.icon,
+        onSelect: item.onSelect
+    }));
 }
