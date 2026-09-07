@@ -5,10 +5,11 @@
 -->
 <script module lang="ts">
     /** A settings section the dialog can be opened on. */
-    export type SettingsSection = 'general' | 'profile' | 'experiments';
+    export type {SettingsSection} from './types.js';
 </script>
 
 <script lang="ts">
+    import type {SettingsSection} from './types.js';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
