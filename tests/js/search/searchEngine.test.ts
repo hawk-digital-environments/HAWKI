@@ -44,6 +44,45 @@ describe('SearchEngine', () => {
         assert.deepEqual(engine.search('deployment zebra'), []);
     });
 
+    it('matches inside words across fields regardless of case and accents', () => {
+        const engine = new SearchEngine();
+        engine.replace([
+            document('title', {title: 'Suchfrage'}),
+            document('keywords', {keywords: 'Suchfrage'}),
+            document('body', {content: 'Suchfrage'}),
+            document('accent', {title: 'Rückfrage'})
+        ]);
+
+        assert.deepEqual(keys(engine.search('FRAG')).sort(), ['accent', 'body', 'keywords', 'title']);
+        assert.deepEqual(keys(engine.search('ruck')), ['accent']);
+        assert.deepEqual(engine.search('!!!'), []);
+    });
+
+    it('requires all terms across fields in any order and tolerates punctuation', () => {
+        const engine = new SearchEngine();
+        engine.replace([
+            document('both', {title: 'Suchfrage', keywords: 'Projektplanung'}),
+            document('partial', {title: 'Suchfrage'})
+        ]);
+
+        assert.deepEqual(keys(engine.search('planung, frage')), ['both']);
+        assert.deepEqual(keys(engine.search('frage planung')), ['both']);
+        assert.deepEqual(engine.search('frage zebra'), []);
+    });
+
+    it('returns positive descending scores and each matching document once', () => {
+        const engine = new SearchEngine();
+        engine.replace([
+            document('body', {content: 'notes about a deployment'}),
+            document('title', {title: 'Deployment', keywords: 'deployment'})
+        ]);
+
+        const scores = engine.search('deployment');
+        assert.deepEqual(keys(scores), ['title', 'body']);
+        assert.ok(scores[0][1] > scores[1][1]);
+        assert.ok(scores.every(([, score]) => Number.isFinite(score) && score > 0 && score <= 1));
+    });
+
     it('forgives a single typo', () => {
         const engine = new SearchEngine();
         engine.upsert(document('a', {title: 'Settings'}));
@@ -84,5 +123,17 @@ describe('SearchEngine', () => {
 
         engine.clear();
         assert.equal(engine.size, 0);
+        assert.deepEqual(engine.search('beta'), []);
+        engine.upsert(document('d', {title: 'Delta'}));
+        assert.deepEqual(keys(engine.search('delta')), ['d']);
+    });
+
+    it('keeps only the latest copy of duplicate document IDs on replace', () => {
+        const engine = new SearchEngine();
+        engine.replace([document('a', {title: 'Alpha'}), document('a', {title: 'Beta'})]);
+
+        assert.equal(engine.size, 1);
+        assert.deepEqual(engine.search('alpha'), []);
+        assert.deepEqual(keys(engine.search('beta')), ['a']);
     });
 });

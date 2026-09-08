@@ -160,7 +160,7 @@ Dispose the session on close or unmount. Its cancellation does not stop another 
 
 ## Ranking, freezing, and recents
 
-Orama scores local and server results using their titles, keywords, and content, with field boosts favoring titles. The kernel uses those scores directly; it does not assign custom match classes. Server results without a local text match remain eligible after scored results. Ties retain provider and item order. A current static copy wins when multiple providers return the same entity. Groups follow their best match, with at most five rows per group and 20 rows overall.
+Fuse.js scores local and server results using title, keyword, and content weights of 2, 1.5, and 1. All search paths use the same incremental engine, including the worker. [Token search](https://www.fusejs.io/token-search.html) requires every query term to match somewhere across those fields, with typo tolerance, substring matching, and case and accent insensitivity. The fuzzy threshold is 0.3. The kernel inverts Fuse's lower-is-better scores for descending ranking, reserving zero for unmatched server results. Server results without a local text match remain eligible after scored results. Ties retain provider and item order. A current static copy wins when multiple providers return the same entity. Groups follow their best match, with at most five rows per group and 20 rows overall.
 
 Once selection intent freezes the view, existing rows keep their positions. New groups append within the limits; new matches for visible groups wait for the next query or scope change. A removed entry leaves a disabled placeholder, and its action becomes unavailable immediately. Retry preserves the freeze.
 

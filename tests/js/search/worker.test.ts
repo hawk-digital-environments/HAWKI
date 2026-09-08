@@ -57,6 +57,19 @@ test('worker cancellation settles a query and ignores its late response', async 
     } finally {client.dispose();}
 });
 
+test('worker uses Fuse substring matching and reflects renamed entries', async () => {
+    const {index, client} = fixture();
+    try {
+        const {scores} = await client.search('sign', new AbortController().signal);
+        assert.equal(scores.length, 1);
+        assert.ok(scores[0][1] > 0);
+
+        index.setProviderEntries(provider, [{id: 'one', entityKey: 'one', title: 'Release', onSelect(){}}]);
+        assert.deepEqual((await client.search('sign', new AbortController().signal)).scores, []);
+        assert.equal((await client.search('lease', new AbortController().signal)).scores.length, 1);
+    } finally {client.dispose();}
+});
+
 test('worker transport failure settles pending requests and is retryable', async () => {
     const {client,workers}=fixture();
     try {

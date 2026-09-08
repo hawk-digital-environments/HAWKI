@@ -10,16 +10,16 @@
  *
  * A session publishes in three waves, deliberately unsynchronised:
  *
- * 1. **Immediate**, on every accepted input: Orama scores the immediate index
+ * 1. **Immediate**, on every accepted input: Fuse scores the immediate index
  *    on the main thread, without a debounce.
  * 2. **Worker**, when a source opted into worker matching: the same scores, one
  *    round-trip later, merged into the same ranking.
  * 3. **Dynamic**, after a 250 ms debounce: each group is published whole once
  *    all of its providers have settled, failures included.
  *
- * Relevance is Orama's score throughout. Remote rows are scored against a
- * per-session engine built from what the providers returned; a remote row the
- * engine does not match stays eligible at score `0`, in its provider's order.
+ * Relevance uses the inverted Fuse score throughout. Remote rows are scored
+ * against a per-session engine built from what the providers returned; a remote
+ * row the engine does not match stays eligible at score `0`, in its provider's order.
  */
 import type {DynamicSource, SearchGroupView, SearchProviderError, SearchRow, SearchScope, SearchSession, SearchSessionOptions, SearchSessionState} from '$lib/kernel/search/types.js';
 import {SEARCH_DYNAMIC_CANDIDATE_LIMIT, SEARCH_DYNAMIC_CONCURRENCY, SEARCH_DYNAMIC_MIN_QUERY_LENGTH} from '$lib/kernel/search/types.js';
@@ -440,7 +440,7 @@ class SearchSessionImpl implements SearchSession {
     }
 
     /**
-     * Scores what the dynamic providers returned with a per-session Orama
+     * Scores what the dynamic providers returned with a per-session Fuse
      * engine, so a remote row is ranked by the same measure as a local one. A
      * row the engine misses keeps score `0` and therefore the server's order.
      */
