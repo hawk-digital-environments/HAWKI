@@ -2,8 +2,8 @@
  * Ranking and publication: how scored candidates become the list a SearchBar
  * renders, and what may change once the user has frozen it.
  *
- * Relevance is Orama's score — the immediate engine scores static rows, a
- * per-session engine scores what dynamic providers returned, and a remote row
+ * Relevance uses the inverted Fuse score. The immediate engine scores static
+ * rows, a per-session engine scores what dynamic providers returned, and a remote row
  * the engine did not match stays eligible at score `0` in its provider's own
  * order. Ties fall back to registration order (provider first, then the
  * provider's own item order) so equally relevant rows never shuffle between two
@@ -34,7 +34,7 @@ export interface RankingGroup {
 /** One row waiting to be ranked, with everything the comparators need. */
 export interface RankingCandidate {
     readonly row: SearchRow;
-    /** Orama score. `0` for a remote non-match and for a blank query. */
+    /** Inverted Fuse score, higher is better. `0` for a remote non-match and for a blank query. */
     readonly score: number;
     /** Higher is more recent. Only the blank-query recents path uses it. */
     readonly recency: number;
