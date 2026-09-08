@@ -37,7 +37,7 @@ test('selection resolves the latest callback while the frozen label stays unchan
     } finally {api.dispose();}
 });
 
-test('server groups publish together, use Orama scores, and retain server-only matches', async () => {
+test('server groups publish together, use Fuse scores, and retain server-only matches', async () => {
     const host = new TestSearchHost();
     const slow = deferred<ReturnType<typeof entry>[]>();
     host.register('core:test', 'core', ({group}) => {
