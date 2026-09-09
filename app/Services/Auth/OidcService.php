@@ -58,6 +58,7 @@ readonly class OidcService implements AuthServiceInterface, AuthServiceWithLogou
         }
 
         $oidc = new OpenIDConnectClient($this->idp, $this->clientId, $this->clientSecret);
+        $oidc->setRedirectURL(url('/req/login'));
         $oidc->addScope($this->scopes);
 
         // Set PKCE method if configured

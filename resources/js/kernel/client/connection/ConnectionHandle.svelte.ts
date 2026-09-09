@@ -1,6 +1,8 @@
 import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
 import type {RestApi} from '$lib/kernel/api/RestApi.js';
 import type {HawkiEvents} from '$lib/kernel/events/EventExtension.js';
+import {InternalConnectionSchema} from '$lib/app/schemas/resources/connections.schema.js';
+import {ApiTransportError} from '$lib/kernel/api/errors.js';
 import {updateObject} from '$lib/utils/objects.js';
 
 
@@ -173,7 +175,10 @@ export class ConnectionHandle {
             const connection = await this.restApi.getResource('connections', 'hawki');
             this.retryCount = 0;
 
-            if (previousType !== connection.type) {
+            const previous = this.currentConnection;
+            const identityChanged = previous?.isAuthenticated && connection.isAuthenticated &&
+                (previous.userinfo.id !== connection.userinfo.id || previous.userinfo.hash !== connection.userinfo.hash);
+            if (previousType !== connection.type || identityChanged) {
                 return {
                     type: previousType === undefined ? 'connected' : 'connectionChanged',
                     connection: connection
@@ -185,6 +190,15 @@ export class ConnectionHandle {
                 connection: connection
             };
         } catch (error) {
+            if (error instanceof ApiTransportError && (error.status === 401 || error.status === 403)) {
+                this.retryCount = 0;
+                const connection = InternalConnectionSchema.parse({
+                    id: 'hawki', type: 'internal',
+                    version: this.currentConnection?.version ?? '',
+                    locale: this.currentConnection?.locale ?? document.documentElement.lang ?? 'en'
+                });
+                return {type: previousType === undefined ? 'connected' : previousType === 'internal' ? 'connectionUnchanged' : 'connectionChanged', connection};
+            }
             // Only retry when there is a connection the app is already
             // running on: a failure during the initial load is a hard error
             // (nothing to fall back to), while a failure mid-session keeps the

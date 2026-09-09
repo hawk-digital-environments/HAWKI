@@ -1,6 +1,80 @@
 {
     "ui": {
         "loading": "Wird geladen…",
+        "auth": {
+            "logoLabel": "HAWKI",
+            "errors": {
+                "generic": "Die Anfrage konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
+                "persistPasskey": "Der Schlüsselbund wurde erstellt, aber das Passwort konnte nicht in diesem Browser gespeichert werden. Versuche es erneut, bevor du fortfährst.",
+                "invalid_credentials": "Kontoname oder Passwort sind nicht korrekt.",
+                "provider_failed": "Der Anmeldedienst konnte die Anfrage nicht abschließen.",
+                "session_expired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."
+            },
+            "login": {
+                "title": "Anmelden",
+                "description": "Melde dich mit deinem HAWKI-Konto an.",
+                "account": "Konto",
+                "password": "Passwort",
+                "submit": "Anmelden",
+                "signingIn": "Anmeldung läuft…",
+                "redirectTitle": "Zur Anmeldung weiter",
+                "redirectDescription": "Deine Organisation verwendet einen separaten Anmeldedienst.",
+                "redirect": "Weiter"
+            },
+            "register": {
+                "title": "Schlüsselbund einrichten",
+                "description": "Wähle ein Passwort, das deine verschlüsselten Daten auf diesem Gerät schützt.",
+                "readPolicy": "Nutzungsbedingungen lesen",
+                "policyDescription": "Bitte lies und akzeptiere die Nutzungsbedingungen, bevor du deinen Schlüsselbund einrichtest.",
+                "confirmPolicy": "Akzeptieren und weiter",
+                "policyTitle": "Nutzungsbedingungen",
+                "acceptPolicy": "Ich habe diese Bedingungen gelesen und akzeptiere sie.",
+                "policyRequired": "Akzeptiere die Bedingungen, bevor du fortfährst.",
+                "passkey": "Passwort",
+                "repeatPasskey": "Passwort wiederholen",
+                "passkeyHint": "Verwende mindestens 8 Zeichen. Bewahre dieses Passwort sicher auf; es schützt deine verschlüsselten Daten.",
+                "passkeyInvalid": "Wähle ein Passwort mit mindestens 8 erlaubten Zeichen.",
+                "passkeyMismatch": "Die Passwörter stimmen nicht überein.",
+                "continue": "Weiter",
+                "preparing": "Schlüsselbund wird vorbereitet…",
+                "backupDescription": "Bewahre diesen Sicherungscode sicher auf. Du kannst damit dein Passwort auf einem anderen Gerät wiederherstellen.",
+                "backupCode": "Sicherungscode",
+                "downloadBackup": "Sicherungscode herunterladen",
+                "finish": "Einrichtung abschließen",
+                "saving": "Schlüsselbund wird gespeichert…",
+                "backupTitle": "Sicherungscode aufbewahren"
+            },
+            "handshake": {
+                "title": "Schlüsselbund entsperren",
+                "description": "Gib dein Passwort ein, um deine Daten auf diesem Gerät zu entschlüsseln.",
+                "passkey": "Passwort",
+                "unlock": "Entsperren",
+                "unlocking": "Wird entsperrt…",
+                "wrongPasskey": "Mit diesem Passwort kann der Schlüsselbund nicht entsperrt werden.",
+                "recoveryTitle": "Sicherungscode verwenden",
+                "backupCode": "Sicherungscode",
+                "recover": "Passwort wiederherstellen",
+                "backupMissing": "Für dieses Konto ist kein Sicherungscode vorhanden.",
+                "usePasskey": "Stattdessen Passwort verwenden",
+                "lostBackup": "Sicherungscode verloren?",
+                "recoveryDescription": "Gib den Sicherungscode ein, den du beim Einrichten deines Schlüsselbunds gespeichert hast."
+            },
+            "inconsistent": {
+                "title": "Dein Schlüsselbund braucht Aufmerksamkeit",
+                "description": "Der verschlüsselte Schlüsselbund passt nicht zu diesem Konto. Setze das Profil zurück, um ein neues einzurichten.",
+                "reset": "Profil zurücksetzen",
+                "confirmTitle": "Dieses Profil zurücksetzen?",
+                "confirmDescription": "Dadurch werden deine Chats, dein verschlüsselter Schlüsselbund, deine Passwortsicherung und zugehörige Profildaten dauerhaft gelöscht. Anschließend richtest du ein neues Passwort und einen neuen Sicherungscode ein. Dies kann nicht rückgängig gemacht werden.",
+                "confirm": "Profil zurücksetzen"
+            },
+            "claim": "Deine Gespräche sind verschlüsselt. Der Schlüssel bleibt bei dir.",
+            "signedInAs": "Angemeldet als :name",
+            "videoCredit": "Video von :name",
+            "preferences": {
+                "switchToDark": "Dunkles Design verwenden",
+                "switchToLight": "Helles Design verwenden"
+            }
+        },
         "navigation": {
             "skipToContent": "Zum Hauptinhalt springen",
             "open": "Navigation öffnen",

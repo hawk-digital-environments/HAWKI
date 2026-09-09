@@ -1,6 +1,80 @@
 {
     "ui": {
         "loading": "Loading…",
+        "auth": {
+            "logoLabel": "HAWKI",
+            "errors": {
+                "generic": "The request could not be completed. Please try again.",
+                "persistPasskey": "Your keychain was created, but the passkey could not be saved in this browser. Try again to save it before continuing.",
+                "invalid_credentials": "The account name or password is incorrect.",
+                "provider_failed": "The sign-in provider could not complete the request.",
+                "session_expired": "Your session has expired. Please sign in again."
+            },
+            "login": {
+                "title": "Sign in",
+                "description": "Use your HAWKI account to continue.",
+                "account": "Account",
+                "password": "Password",
+                "submit": "Sign in",
+                "signingIn": "Signing in…",
+                "redirectTitle": "Continue to sign in",
+                "redirectDescription": "Your organization uses a separate sign-in service.",
+                "redirect": "Continue"
+            },
+            "register": {
+                "title": "Set up your keychain",
+                "description": "Choose a passkey that protects your encrypted data on this device.",
+                "readPolicy": "Read usage policy",
+                "policyDescription": "Please read and accept the usage policy before setting up your keychain.",
+                "confirmPolicy": "Accept and continue",
+                "policyTitle": "Usage policy",
+                "acceptPolicy": "I have read and accept this policy.",
+                "policyRequired": "Accept the policy before continuing.",
+                "passkey": "Passkey",
+                "repeatPasskey": "Repeat passkey",
+                "passkeyHint": "Use at least 8 characters. Keep this passkey safe; it protects your encrypted data.",
+                "passkeyInvalid": "Choose a passkey with at least 8 allowed characters.",
+                "passkeyMismatch": "The passkeys do not match.",
+                "continue": "Continue",
+                "preparing": "Preparing your keychain…",
+                "backupDescription": "Save this backup code somewhere secure. You can use it to recover your passkey on another device.",
+                "backupCode": "Backup code",
+                "downloadBackup": "Download backup code",
+                "finish": "Finish setup",
+                "saving": "Saving your keychain…",
+                "backupTitle": "Save your backup code"
+            },
+            "handshake": {
+                "title": "Unlock your keychain",
+                "description": "Enter your passkey to decrypt your data on this device.",
+                "passkey": "Passkey",
+                "unlock": "Unlock",
+                "unlocking": "Unlocking…",
+                "wrongPasskey": "That passkey cannot unlock this keychain.",
+                "recoveryTitle": "Use a backup code",
+                "backupCode": "Backup code",
+                "recover": "Recover passkey",
+                "backupMissing": "No backup code is available for this account.",
+                "usePasskey": "Use your passkey instead",
+                "lostBackup": "Lost your backup code?",
+                "recoveryDescription": "Enter the backup code you saved when you set up your keychain."
+            },
+            "inconsistent": {
+                "title": "Your keychain needs attention",
+                "description": "The encrypted keychain does not match this account. Reset the profile to create a new one.",
+                "reset": "Reset profile",
+                "confirmTitle": "Reset this profile?",
+                "confirmDescription": "This permanently deletes your chats, encrypted keychain, passkey backup, and related profile data. You will then set up a new passkey and backup code. This cannot be undone.",
+                "confirm": "Reset profile"
+            },
+            "claim": "Your conversations are encrypted. The key stays with you.",
+            "signedInAs": "Signed in as :name",
+            "videoCredit": "Video by :name",
+            "preferences": {
+                "switchToDark": "Switch to dark theme",
+                "switchToLight": "Switch to light theme"
+            }
+        },
         "navigation": {
             "skipToContent": "Skip to main content",
             "open": "Open navigation",

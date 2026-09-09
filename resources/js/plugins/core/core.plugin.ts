@@ -64,6 +64,10 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar.lazyRoute('/', async () => import('$plugins/core/pages/Index.svelte'));
+        registrar.lazyRoute('/auth/login', async () => import('$plugins/core/pages/auth/Login.svelte'), {name: 'auth.login', meta: {access: 'public', chrome: 'none'}});
+        registrar.lazyRoute('/auth/register', async () => import('$plugins/core/pages/auth/Register.svelte'), {name: 'auth.register', meta: {access: 'public', chrome: 'none'}});
+        registrar.lazyRoute('/auth/handshake', async () => import('$plugins/core/pages/auth/Handshake.svelte'), {name: 'auth.handshake', meta: {access: 'server-session', chrome: 'none'}});
+        registrar.lazyRoute('/auth/inconsistent', async () => import('$plugins/core/pages/auth/Inconsistent.svelte'), {name: 'auth.inconsistent', meta: {access: 'server-session', chrome: 'none'}});
         registrar.lazyRoute('/announcements', async () => import('$plugins/core/pages/Announcements.svelte'), {name: 'announcements.index'});
         registrar.lazyRoute('/models', async () => import('$plugins/core/pages/Models.svelte'), {name: 'models.index'});
     }

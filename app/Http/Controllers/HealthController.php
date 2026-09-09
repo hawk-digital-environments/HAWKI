@@ -19,9 +19,9 @@ class HealthController extends Controller
         $result = $checker->check();
 
         return response()->json([
-            'status' => $result->isOk() ? 'healthy' : 'unhealthy',
+            'status' => $result->getStatus(),
             'timestamp' => now()->toIso8601String(),
             'checks' => $result->results,
-        ], $result->isOk() ? 200 : 503);
+        ], $result->isUnhealthy() ? 503 : 200);
     }
 }

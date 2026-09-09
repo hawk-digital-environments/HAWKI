@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Session;
 readonly class AnnouncementService
 {
     public function __construct(
-        private LocaleService $localeService
+        private LocaleService              $localeService,
+        private RegistrationPolicyPublishService $policyPublisher
     )
     {
     }
@@ -24,6 +25,9 @@ readonly class AnnouncementService
      *
      * Example:
      * $service->createAnnouncement('announcements.terms_update', 'info', true);
+     *
+     * @throws \App\Services\Announcements\Exceptions\OverlappingPolicyException when publishing a
+     *         policy whose validity window overlaps an already published one.
      */
     public function createAnnouncement(
         string  $title,
@@ -37,6 +41,20 @@ readonly class AnnouncementService
         ?string $expiresAt = null
     ): Announcement
     {
+        // A policy is the one document users consent to, so two of them may never be in effect at
+        // the same time. Catching that here means the operator sees it while publishing, instead
+        // of users consenting to whichever policy the tie-break happened to pick.
+        if ($type === 'policy' && $isGlobal) {
+            return $this->policyPublisher->publish(
+                $title,
+                $view,
+                $isForced,
+                $anchor,
+                $startsAt,
+                $expiresAt,
+            );
+        }
+
         return Announcement::create([
             'title' => $title,
             'view' => $view,

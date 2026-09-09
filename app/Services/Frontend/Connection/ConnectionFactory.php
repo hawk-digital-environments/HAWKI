@@ -16,9 +16,12 @@ use App\Services\Frontend\Connection\Values\ExtAppConnectRequestPayload;
 use App\Services\Frontend\Connection\Values\ExtAppSecrets;
 use App\Services\Frontend\Connection\Values\Userinfo;
 use App\Services\Frontend\Migrations\Repositories\FrontendMigrationRepository;
+use App\Services\Frontend\Migrations\Values\MigrationToApply;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Services\System\UserTypes\Values\RegisteringUser;
 use App\Services\Translation\LocaleService;
+use App\Services\Users\Keychain\KeychainStateResolver;
+use App\Services\Users\Keychain\Value\KeychainState;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Http\Request;
@@ -58,7 +61,8 @@ readonly class ConnectionFactory
         private Request                     $request,
         private FrontendMigrationRepository $migrationRepository,
         private LoggerInterface             $logger,
-        private LocaleService               $localeService
+        private LocaleService               $localeService,
+        private KeychainStateResolver       $keychainStateResolver
     )
     {
     }
@@ -102,13 +106,16 @@ readonly class ConnectionFactory
             default => null
         };
 
+        $pendingMigrations = $this->findPendingMigrations();
+
         return new Connection(
             id: 'hawki',
             type: $type,
             version: $this->version,
             locale: $this->localeService->getCurrentLocale(),
             userinfo: $userinfo,
-            migrationsToApply: $this->countMigrationsToApply()
+            migrationsToApply: count($pendingMigrations),
+            keychainState: $this->resolveKeychainState($pendingMigrations)
         );
     }
 
@@ -235,11 +242,46 @@ readonly class ConnectionFactory
         );
     }
 
-    private function countMigrationsToApply(): int
+    /**
+     * Names of the frontend migrations the current user still has to run.
+     *
+     * Resolved once per connection because two attributes are derived from it — the pending
+     * count and, through it, whether the legacy keychain blob migration is what makes an empty
+     * keychain legitimate.
+     *
+     * @return list<string> Empty when nobody is authenticated.
+     */
+    private function findPendingMigrations(): array
     {
-        if (!$this->request->user()) {
-            return 0;
+        $user = $this->request->user();
+        if (!$user) {
+            return [];
         }
-        return $this->migrationRepository->findAllMigrationsToApplyForUser($this->request->user())->count();
+
+        return $this->migrationRepository
+            ->findAllMigrationsToApplyForUser($user)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param list<MigrationToApply> $pendingMigrations
+     */
+    private function resolveKeychainState(array $pendingMigrations): KeychainState|null
+    {
+        $user = $this->request->user();
+        if (!$user) {
+            return null;
+        }
+
+        $legacyMigration = collect($pendingMigrations)->first(
+            static fn(MigrationToApply $migration): bool => $migration->name === KeychainStateResolver::LEGACY_KEYCHAIN_MIGRATION
+        );
+        $hasLegacyMigrationBlob = $legacyMigration instanceof MigrationToApply
+            && is_array($legacyMigration->data)
+            && isset($legacyMigration->data['blob'])
+            && $legacyMigration->data['blob'] !== '';
+
+        return $this->keychainStateResolver->resolveForUser($user, $hasLegacyMigrationBlob);
     }
 }
