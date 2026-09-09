@@ -28,7 +28,7 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import AuthFrame from './AuthFrame.svelte';
     import { authErrorCodeKey, authErrorKey, loginReason, nextDestination } from './authHelpers.js';
-    import { LoginResponseSchema } from '$plugins/core/schemas/resources/auth.schema.js';
+    import { LoginResponseSchema } from '$plugins/auth/schemas/resources/auth.schema.js';
     import { untrack } from 'svelte';
     const { data }: RouteProps<typeof config> = $props();
     const app = useApp();
