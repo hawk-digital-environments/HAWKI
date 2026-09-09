@@ -6,6 +6,35 @@ import {RouteRegistrar} from '../../../resources/js/components/ui/routing/logist
 
 const Page = () => {};
 
+test('built-in plugins sharing a route prefix register each callback once', async () => {
+    const calls: string[] = [];
+    const registrar = new RouteRegistrar();
+    for (const [plugin, path, name] of [
+        ['auth', '/auth/login', 'auth.login'],
+        ['core', '/', 'home'],
+        ['extra', '/extra', 'extra.index']
+    ]) {
+        registrar.group('', child => {
+            calls.push(plugin);
+            child.route(path, Page, {name});
+        }, {name: `plugin.${plugin}`});
+    }
+
+    const router = new UniversalRouter(registrar.build(), {baseUrl: '/new'});
+    assert.deepEqual(calls, ['auth', 'core', 'extra']);
+    for (const [path, name] of [
+        ['/new/auth/login', 'auth.login'],
+        ['/new/', 'home'],
+        ['/new/extra', 'extra.index']
+    ]) {
+        const result = await router.resolve(path);
+        assert.equal(result.context.route.name, name);
+    }
+    const urls = generateUrls(router);
+    assert.equal(urls('auth.login'), '/new/auth/login');
+    assert.equal(urls('home'), '/new');
+});
+
 test('metadata guards execute only for the matched leaf, including nested routes and 404', async () => {
     const calls: string[] = [];
     const registrar = new RouteRegistrar({metaGuards: meta => async (_ctx, next) => {
