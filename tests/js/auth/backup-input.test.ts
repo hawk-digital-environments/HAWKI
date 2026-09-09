@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {compile} from 'svelte/compiler';
 
 test('the compiled recovery input accepts the format written to backup files', () => {
-    const source = readFileSync(new URL('../../../resources/js/plugins/core/pages/auth/Handshake.svelte', import.meta.url), 'utf8');
+    const source = readFileSync(new URL('../../../resources/js/plugins/auth/pages/Handshake.svelte', import.meta.url), 'utf8');
     const compiled = compile(source, {filename: 'Handshake.svelte', generate: 'client'}).js.code;
     // Test the emitted attribute: unescaped {4} in Svelte markup becomes a literal 4.
     const attribute = compiled.match(/\bpattern:\s*(['"])(.*?)\1/);

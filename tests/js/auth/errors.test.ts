@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
-import {authErrorCodeKey, loginReason, registrationErrorPage} from '../../../resources/js/plugins/core/pages/auth/authHelpers.js';
+import {authErrorCodeKey, loginReason, registrationErrorPage} from '../../../resources/js/plugins/auth/pages/authHelpers.js';
 import {LogoutResponseSchema} from '../../../resources/js/kernel/auth/schemas.js';
 
 test('expected auth failures select translated messages without displaying server prose', () => {

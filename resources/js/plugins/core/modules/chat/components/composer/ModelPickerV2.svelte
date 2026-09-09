@@ -68,11 +68,17 @@
     let highlightedId = $state<string | null>(null);
     let searchInputEl = $state<HTMLInputElement | null>(null);
     let triggerEl = $state<HTMLButtonElement | null>(null);
+    let interactedOutside = false;
 
     // The desktop popover spans the whole composer card instead of hugging the
     // small trigger button: anchor it to the nearest composer card (see
     // `ChatComposer.svelte`), falling back to the trigger when rendered elsewhere.
-    const popoverAnchor = $derived(triggerEl?.closest<HTMLElement>('.chat-composer-card') ?? null);
+    const popoverAnchor = $derived.by(() => {
+        const card = triggerEl?.closest<HTMLElement>('.chat-composer-card');
+        // Use the card's bounds without making its inputs part of the popover's
+        // outside-click exclusion, as an HTMLElement anchor would do.
+        return card ? {contextElement: card, getBoundingClientRect: () => card.getBoundingClientRect()} : null;
+    });
 
     const disabled = $derived(composerContext.guard.disablesFeature('models'));
     const current = $derived(composerContext.model.current);
@@ -219,10 +225,19 @@
     }
 
     function handleOpenAutoFocus(e: Event): void {
+        interactedOutside = false;
         // bits-ui would focus the first rail tab; land on the search input instead.
         // Double rAF so the focus lands after bits-ui's own focus management settled.
         e.preventDefault();
         requestAnimationFrame(() => requestAnimationFrame(() => searchInputEl?.focus()));
+    }
+
+    function handleCloseAutoFocus(e: Event): void {
+        // Outside clicks keep focus on their target. Keyboard dismissal and
+        // model selection still return focus to the trigger.
+        if (interactedOutside) {
+            e.preventDefault();
+        }
     }
 
     function providerInitials(name: string): string {
@@ -457,7 +472,15 @@
                 bind:open
                 side="top"
                 align="start"
-                contentProps={{class: 'mp2-content', customAnchor: popoverAnchor, onOpenAutoFocus: handleOpenAutoFocus, onkeydown: onPanelKeydown}}
+                contentProps={{
+                    class: 'mp2-content',
+                    customAnchor: popoverAnchor,
+                    trapFocus: false,
+                    onInteractOutside: () => { interactedOutside = true; },
+                    onOpenAutoFocus: handleOpenAutoFocus,
+                    onCloseAutoFocus: handleCloseAutoFocus,
+                    onkeydown: onPanelKeydown
+                }}
             >
                 {#snippet children({props})}
                     <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>

@@ -3,7 +3,7 @@
     import { assignAuthPage, sanitizeNext } from '$lib/kernel/auth/navigation.js';
     import { ApiTransportError } from '$lib/kernel/api/errors.js';
     import { registrationErrorPage } from './authHelpers.js';
-    import { RegistrationPolicySchema } from '$plugins/core/schemas/resources/auth.schema.js';
+    import { RegistrationPolicySchema } from '$plugins/auth/schemas/resources/auth.schema.js';
     export const config = configurePage({
         cacheKey: false,
         loadData: async ({ app, restApi, redirect }) => {

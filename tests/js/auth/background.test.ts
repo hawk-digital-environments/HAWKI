@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
-import {pickLoginBackground} from '../../../resources/js/plugins/core/pages/auth/loginBackground.js';
+import {pickLoginBackground} from '../../../resources/js/plugins/auth/pages/loginBackground.js';
 
 function storage() {
     const values = new Map<string, string>();
