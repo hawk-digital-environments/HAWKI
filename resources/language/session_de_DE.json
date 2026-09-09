@@ -1,7 +1,0 @@
-{
-    "session": {
-        "logoutFailed": "Dein Schlüsselbund ist gesperrt. Die Abmeldung vom Server ist fehlgeschlagen. Bitte versuche es erneut.",
-        "retryLogout": "Abmeldung erneut versuchen",
-        "loggingOut": "Abmeldung läuft…"
-    }
-}

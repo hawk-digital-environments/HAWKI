@@ -1,3 +1,4 @@
+import {authRouter} from './routerFixture.js';
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import {ClientExtension} from '../../../resources/js/kernel/client/ClientExtension.svelte.js';
@@ -40,7 +41,7 @@ function installBrowser(pathname: string, search = '') {
 function clientFixture(connection: any) {
     let clears = 0;
     const handlers = new Map<string, (payload: any) => Promise<void>>();
-    const events: any = {async: {
+    const events: any = {sync: {trigger: () => { clears++; }}, async: {
         on: (name: string, callback: (payload: any) => Promise<void>) => {
             handlers.set(name, callback);
             return () => {};
@@ -51,6 +52,8 @@ function clientFixture(connection: any) {
     (client as any).connectionHandle.currentConnection = connection;
     const app: any = {
         events,
+        isMounted: window.location.pathname.startsWith('/new/'),
+        router: authRouter(),
         connectionOrNull: connection,
         get logoutState() { return client.provideProperties().logoutState; },
         stores: {get: () => ({cryptoReady: true, lock: () => { clears++; }})},
@@ -70,7 +73,7 @@ test('401 during handshake clears secrets and redirects with the original next',
     try {
         await assert.rejects(client.client.restApi.fetch('/expired'));
         assert.equal(clears(), 1);
-        assert.deepEqual(destinations, ['/new/auth/login?next=%2Fnew%2Fchat%3Fthread%3D1']);
+        assert.deepEqual(destinations, ['/new/auth/login?next=%2Fnew%2Fchat%3Fthread%3D1&reason=session_expired']);
         assert.equal(client.provideProperties().cryptoReady, false);
     } finally {
         globalThis.fetch = previousFetch;
@@ -85,7 +88,7 @@ test('419 during registration also expires a session with user info', async () =
     try {
         await assert.rejects(client.client.restApi.fetch('/registration', {method: 'POST'}));
         assert.equal(clears(), 1);
-        assert.deepEqual(destinations, ['/new/auth/login?next=%2Fnew%2Fchat']);
+        assert.deepEqual(destinations, ['/new/auth/login?next=%2Fnew%2Fchat&reason=session_expired']);
     } finally {
         globalThis.fetch = previousFetch;
     }
@@ -125,6 +128,15 @@ test('background expiry and identity changes leave auth pages and clear old secr
     assert.deepEqual(destinations, ['/new/auth/handshake?next=%2Fnew%2Fchat']);
 });
 
+test('legacy registration completion keeps its passkey and does not trigger SPA navigation', async () => {
+    const destinations = installBrowser('/register');
+    const {client, app, handlers, clears} = clientFixture(registering);
+    client.init(app, {onPreparationStage: () => {}} as any);
+    await handlers.get('connectionChanged')!(authenticated);
+    assert.equal(clears(), 0);
+    assert.deepEqual(destinations, []);
+});
+
 test('a guest entering handshake retains the original destination through its route guard', async () => {
     installBrowser('/new/auth/handshake', '?next=%2Fnew%2Fchat%3Fthread%3D1');
     const {app} = clientFixture(guest);
@@ -142,7 +154,7 @@ test('background session changes cannot bypass a pending or failed provider logo
     const {client, app, handlers} = clientFixture(authenticated);
     client.init(app, {onPreparationStage: () => {}} as any);
     const clientChanged = handlers.get('connectionChanged')!;
-    authMetaGuards({access: 'crypto-ready'}).effect({app} as any);
+    assert.equal('effect' in authMetaGuards({access: 'crypto-ready'}), false);
     const guardChanged = handlers.get('connectionChanged')!;
     const previousFetch = globalThis.fetch;
     let rejectRequest!: (reason: Error) => void;
@@ -162,10 +174,28 @@ test('background session changes cannot bypass a pending or failed provider logo
         assert.equal(app.logoutState, 'failed');
         assert.deepEqual(destinations, []);
 
-        globalThis.fetch = async () => new Response(JSON.stringify({redirect_url: 'https://idp.test/logout'}));
+        globalThis.fetch = async () => new Response(JSON.stringify({meta: {redirect_url: 'https://idp.test/logout'}}));
         await client.logout();
         assert.deepEqual(destinations, ['https://idp.test/logout']);
     } finally {
         globalThis.fetch = previousFetch;
     }
+});
+
+test('guest connection changes do not lock or navigate', async () => {
+    const destinations = installBrowser('/new/auth/login');
+    const fixture = clientFixture(guest);
+    fixture.client.init(fixture.app, {onPreparationStage: () => {}} as any);
+    await fixture.handlers.get('connectionChanged')!(registering);
+    assert.equal(fixture.clears(), 0);
+    assert.deepEqual(destinations, []);
+});
+
+test('exhausted refresh retries lock an established session and retain next', async () => {
+    const destinations = installBrowser('/new/chat', '?thread=1');
+    const fixture = clientFixture(authenticated);
+    fixture.client.init(fixture.app, {onPreparationStage: () => {}} as any);
+    await fixture.handlers.get('connectionRefreshFailed')!(new Error('offline'));
+    assert.equal(fixture.clears(), 1);
+    assert.deepEqual(destinations, ['/new/auth/login?next=%2Fnew%2Fchat%3Fthread%3D1&reason=session_expired']);
 });

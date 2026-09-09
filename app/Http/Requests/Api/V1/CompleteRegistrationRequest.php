@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1;
 
 use App\Services\Auth\RegistrationPayloadFingerprint;
+use App\Http\Errors\CodedError;
+use App\Models\User;
+use App\Services\System\UserTypes\Values\RegisteringUser;
 use App\Services\Profile\Values\PasskeyBackupSecret;
 use App\Services\Users\Keychain\Value\KeychainBatch;
 use App\Services\Users\Keychain\Value\UserKeychainValueToSet;
@@ -28,21 +31,40 @@ class CompleteRegistrationRequest extends FormRequest
             'policy.id' => ['required_with:policy', 'integer', 'min:1'],
             'policy.hash' => ['required_with:policy', 'string', 'size:64', 'regex:/^[a-f0-9]{64}$/i'],
             'keychain' => ['required', 'array'],
-            'keychain.publicKey' => ['required', 'string', 'min:1'],
+            'keychain.publicKey' => ['required', 'string', 'min:1', 'max:65535'],
             'keychain.set' => ['required', 'array', 'min:3'],
-            'keychain.set.*.key' => ['required', 'string', 'min:1'],
+            'keychain.set.*.key' => ['required', 'string', 'min:1', 'max:255'],
             'keychain.set.*.type' => ['required', 'string', 'in:' . implode(',', array_column(UserKeychainValueType::cases(), 'value'))],
-            'keychain.set.*.value' => ['required', 'string', 'min:1'],
+            'keychain.set.*.value' => ['required', 'string', 'min:1', 'max:65535'],
             'backup' => ['required', 'array'],
-            'backup.ciphertext' => ['required', 'string', $this->base64Rule()],
-            'backup.iv' => ['required', 'string', $this->base64Rule(12)],
-            'backup.tag' => ['required', 'string', $this->base64Rule(16)],
+            'backup.ciphertext' => ['required', 'string', 'max:65535', $this->base64Rule()],
+            'backup.iv' => ['required', 'string', 'max:255', $this->base64Rule(12)],
+            'backup.tag' => ['required', 'string', 'max:255', $this->base64Rule(16)],
         ];
     }
 
+    private User|RegisteringUser $registrationActor;
+
     public function authorize(): bool
     {
+        $actor = $this->user();
+        if (!$actor instanceof User) {
+            $actor = $this->getUserContext()->getRegisteringUser();
+        }
+        if ($actor === null) {
+            CodedError::abort('registration_not_in_progress', 403, 'No registration in progress');
+        }
+        if (!$this->hasSession()) {
+            CodedError::abort('auth_session_required', 403, 'A browser session is required');
+        }
+        $this->registrationActor = $actor;
+
         return true;
+    }
+
+    public function actor(): User|RegisteringUser
+    {
+        return $this->registrationActor;
     }
 
     public function withValidator(Validator $validator): void

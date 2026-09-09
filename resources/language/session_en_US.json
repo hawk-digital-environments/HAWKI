@@ -1,7 +1,0 @@
-{
-    "session": {
-        "logoutFailed": "Your keychain is locked. Signing out of the server failed. Please try again.",
-        "retryLogout": "Try signing out again",
-        "loggingOut": "Signing out…"
-    }
-}

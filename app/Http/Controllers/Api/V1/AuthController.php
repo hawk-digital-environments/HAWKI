@@ -15,7 +15,8 @@ use App\Services\Frontend\Connection\ConnectionFactory;
 use App\Services\System\UserTypes\Contracts\WellKnownUserTypes;
 use App\Services\System\UserTypes\UserContext;
 use App\Services\System\UserTypes\Values\RegisteringUser;
-use Illuminate\Http\JsonResponse;
+use App\Http\Requests\Api\V1\LoginRequest;
+use LaravelJsonApi\Core\Responses\MetaResponse;
 use Illuminate\Http\Request;
 use LaravelJsonApi\Core\Responses\DataResponse;
 use LaravelJsonApi\Laravel\Http\Controllers\Actions;
@@ -25,7 +26,7 @@ class AuthController extends Controller
     use Actions\FetchOne;
 
     public function login(
-        Request $request,
+        LoginRequest $request,
         LoginHandler $loginHandler,
         ConnectionFactory $connections,
         UserContext $userContext,
@@ -34,10 +35,8 @@ class AuthController extends Controller
         if (!$loginHandler->requiresCredentials()) {
             CodedError::abort('auth_redirect_required', 409, 'Redirect login required', 'Start sign-in through /auth/redirect.');
         }
-        $credentials = $request->validate([
-            'account' => ['required', 'string'],
-            'password' => ['required', 'string'],
-        ]);
+        $credentials = $request->validated();
+        $handoff->discard($request);
 
         try {
             $result = $loginHandler->handle(
@@ -45,7 +44,7 @@ class AuthController extends Controller
                 new AuthCredentials($credentials['account'], $credentials['password'])
             );
         } catch (AuthFailedException $exception) {
-            CodedError::abort('invalid_credentials', 401, 'Invalid credentials', $exception->getMessage());
+            CodedError::abort('invalid_credentials', 401, 'Invalid credentials', 'The supplied credentials are invalid.');
         }
 
         if ($result->isResponse()) {
@@ -72,10 +71,12 @@ class AuthController extends Controller
             ->withMeta(['next' => $result->nextStep->value]);
     }
 
-    public function logout(Request $request, LogoutHandler $logoutHandler): JsonResponse
+    public function logout(Request $request, LogoutHandler $logoutHandler): MetaResponse
     {
-        return response()
-            ->json(['redirect_url' => $logoutHandler->handle($request)])
-            ->header('Content-Type', 'application/vnd.api+json');
+        if (!$request->hasSession()) {
+            CodedError::abort('auth_session_required', 403, 'A browser session is required');
+        }
+
+        return MetaResponse::make(['redirect_url' => $logoutHandler->handle($request)]);
     }
 }

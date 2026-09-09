@@ -1,3 +1,4 @@
+import {authRouter} from './routerFixture.js';
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import {ClientExtension} from '../../../resources/js/kernel/client/ClientExtension.svelte.js';
@@ -12,7 +13,7 @@ test('logout clears local secrets before a failed request and allows retry', asy
     });
     const events: any = {async: {trigger: async () => assert.equal(secret, null)}};
     const client = new ClientExtension(events);
-    const app: any = {stores: {get: () => ({lock: () => {secret = null;}})}, passkeySession: {clear: () => {secret = null;}}};
+    const app: any = {router: authRouter(), stores: {get: () => ({lock: () => {secret = null;}})}, passkeySession: {clear: () => {secret = null;}}};
     client.ready(app);
     const oldFetch = globalThis.fetch;
     globalThis.fetch = async () => {
@@ -23,7 +24,7 @@ test('logout clears local secrets before a failed request and allows retry', asy
         await assert.rejects(client.logout(), /offline/);
         assert.equal(client.provideProperties().logoutState, 'failed');
         assert.deepEqual(destinations, []);
-        globalThis.fetch = async () => new Response(JSON.stringify({redirect_url: 'https://idp.test/logout'}));
+        globalThis.fetch = async () => new Response(JSON.stringify({meta: {redirect_url: 'https://idp.test/logout'}}));
         await client.logout();
         assert.equal(secret, null);
         assert.deepEqual(destinations, ['https://idp.test/logout']);
@@ -39,9 +40,9 @@ test('419 during logout remains failed and retryable without redirecting', async
         window: {location: {origin: 'https://hawki.test', pathname: '/new/chat', search: '', hash: '', assign: (url: string) => destinations.push(url)}},
         document: {cookie: 'XSRF-TOKEN=test', querySelector: () => null}
     });
-    const events: any = {async: {trigger: async () => {}}};
+    const events: any = {async: {trigger: async () => {clears++;}}};
     const client = new ClientExtension(events);
-    const app: any = {
+    const app: any = {router: authRouter(),
         stores: {get: () => ({lock: () => {clears++;}})},
         passkeySession: {clear: () => {}}
     };
@@ -52,7 +53,7 @@ test('419 during logout remains failed and retryable without redirecting', async
         await assert.rejects(client.logout(), error => error instanceof ApiTransportError && error.status === 419);
         assert.equal(client.provideProperties().logoutState, 'failed');
         assert.deepEqual(destinations, []);
-        globalThis.fetch = async () => new Response(JSON.stringify({redirect_url: null}));
+        globalThis.fetch = async () => new Response(JSON.stringify({meta: {redirect_url: null}}));
         await client.logout();
         assert.deepEqual(destinations, ['/new/auth/login']);
         assert.equal(clears, 2);

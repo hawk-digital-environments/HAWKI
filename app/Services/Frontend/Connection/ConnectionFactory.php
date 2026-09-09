@@ -243,13 +243,13 @@ readonly class ConnectionFactory
     }
 
     /**
-     * Names of the frontend migrations the current user still has to run.
+     * Pending frontend migrations the current user still has to run.
      *
      * Resolved once per connection because two attributes are derived from it — the pending
      * count and, through it, whether the legacy keychain blob migration is what makes an empty
      * keychain legitimate.
      *
-     * @return list<string> Empty when nobody is authenticated.
+     * @return list<MigrationToApply> Empty when nobody is authenticated.
      */
     private function findPendingMigrations(): array
     {

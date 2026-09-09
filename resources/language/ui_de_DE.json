@@ -1,9 +1,16 @@
 {
     "ui": {
+        "session": {
+            "logoutFailed": "Dein Schlüsselbund ist gesperrt. Die Abmeldung vom Server ist fehlgeschlagen. Bitte versuche es erneut.",
+            "retryLogout": "Abmeldung erneut versuchen",
+            "loggingOut": "Abmeldung läuft…"
+        },
         "loading": "Wird geladen…",
         "auth": {
             "logoLabel": "HAWKI",
             "errors": {
+                "auth_redirect_required": "Starte die Anmeldung über deinen Identitätsanbieter.",
+                "registration_policy_unavailable": "Die Registrierung ist vorübergehend nicht verfügbar, weil die Nutzungsbedingungen nicht geladen werden konnten. Bitte versuche es später erneut.",
                 "generic": "Die Anfrage konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
                 "persistPasskey": "Der Schlüsselbund wurde erstellt, aber das Passwort konnte nicht in diesem Browser gespeichert werden. Versuche es erneut, bevor du fortfährst.",
                 "invalid_credentials": "Kontoname oder Passwort sind nicht korrekt.",

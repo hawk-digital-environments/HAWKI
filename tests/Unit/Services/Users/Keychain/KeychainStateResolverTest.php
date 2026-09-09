@@ -35,6 +35,16 @@ class KeychainStateResolverTest extends TestCase
         self::assertSame(KeychainState::SETUP_REQUIRED, $this->resolve([], '', false));
     }
 
+    public function testMalformedCoreTypesCannotTriggerLegacyMigration(): void
+    {
+        self::assertSame(KeychainState::INCONSISTENT, $this->resolve([
+            ['key' => 'room-1', 'type' => 'private_key'],
+        ], '', true));
+        self::assertSame(KeychainState::INCONSISTENT, $this->resolve([
+            ['key' => 'privateKey', 'type' => 'public_key'],
+        ], '', true));
+    }
+
     public function testItClassifiesPartialAndNonemptyKeychainsAsInconsistent(): void
     {
         self::assertSame(KeychainState::INCONSISTENT, $this->resolve([

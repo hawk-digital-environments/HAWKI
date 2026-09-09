@@ -63,14 +63,14 @@ readonly class KeychainStateResolver
         $entries = $this->repository->findAllKeysAndTypesOfUser($user);
         $coreEntryCount = $this->countCoreEntries($entries);
         $hasAllCoreEntries = $coreEntryCount === count(self::CORE_ENTRIES);
-        $hasMalformedCoreEntry = $this->hasMalformedCoreEntry($entries);
-        $hasPublicKey = $user->publicKey !== null && $user->publicKey !== '';
+        $hasCoreEntry = $this->hasCoreEntry($entries);
+        $hasPublicKey = $user->publicKey !== '';
 
         if ($hasAllCoreEntries && $hasPublicKey) {
             return KeychainState::INITIALIZED;
         }
 
-        if ($coreEntryCount === 0 && !$hasMalformedCoreEntry && $hasLegacyMigrationBlob) {
+        if ($coreEntryCount === 0 && !$hasCoreEntry && $hasLegacyMigrationBlob) {
             return KeychainState::LEGACY_MIGRATION_REQUIRED;
         }
 
@@ -99,9 +99,11 @@ readonly class KeychainStateResolver
     }
 
     /**
+     * Matches either a reserved key or a core type, including malformed pairs.
+     *
      * @param list<array{key: string, type: string}> $entries
      */
-    private function hasMalformedCoreEntry(array $entries): bool
+    private function hasCoreEntry(array $entries): bool
     {
         $coreKeys = array_column(self::CORE_ENTRIES, 'key');
         $coreTypes = array_map(static fn(array $entry): string => $entry['type']->value, self::CORE_ENTRIES);

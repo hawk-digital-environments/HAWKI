@@ -2,6 +2,7 @@ import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
 import {createContext, runInContext} from 'node:vm';
+import {generatePasskey} from '../../../resources/js/kernel/encryption/utils.js';
 
 const source = readFileSync(new URL('../../../public/js/handshake_functions.js', import.meta.url), 'utf8');
 
@@ -20,6 +21,7 @@ function fixture(failOnce = false) {
         console: {error: () => {}},
         __: (key: string) => key,
         window: {
+            generatePasskey,
             getConfig: () => ({security: {passkeyAutoGenerate: true}, salts: {backup: 'test-salt'}}),
             getConnectionWithUserInfo: () => ({userinfo: {username: 'test-user'}})
         },
@@ -64,7 +66,7 @@ test('legacy automatic registration retains its passkey and offers a focused ret
     assert.deepEqual(slides, []);
     assert.equal(elements.get('#automatic-passkey-retry')!.hidden, false);
     assert.equal(focused(), '#automatic-passkey-retry');
-    assert.equal(elements.get('#automatic-passkey-error')!.textContent, 'ui.auth.errors.generic');
+    assert.equal(elements.get('#automatic-passkey-error')!.textContent, 'legacy.registration.failed');
 
     await runInContext('generateRegistrationPasskey()', context);
     assert.equal(secrets[0], secrets[1]);

@@ -127,7 +127,7 @@ class UserKeychainRepository extends AbstractRepositoryWithContextualScopes
             ->get(['key', 'type'])
             ->map(static fn(UserKeychainValue $value): array => [
                 'key' => $value->key,
-                'type' => $value->type instanceof UserKeychainValueType ? $value->type->value : (string)$value->type,
+                'type' => $value->type->value,
             ])
             ->all();
     }

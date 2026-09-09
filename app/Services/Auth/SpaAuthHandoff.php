@@ -6,6 +6,7 @@ namespace App\Services\Auth;
 
 
 use App\Services\Auth\Value\LoginNextStep;
+use App\Services\Auth\Value\SpaAuthPage;
 use App\Services\Auth\Value\SpaNextTarget;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ use Illuminate\Http\Request;
 readonly class SpaAuthHandoff
 {
     /**
-     * Session key holding the last user-facing login error. Read (and cleared) through the
+     * Session key holding the last stable login error code. Read (and cleared) through the
      * `auth` JSON:API resource's `last_error` attribute.
      * @see \App\Services\Auth\AuthInfoFactory
      */
@@ -44,9 +45,25 @@ readonly class SpaAuthHandoff
     private const string SESSION_NEXT_KEY = 'auth.next';
     private const string UI_MARKER = 'new';
 
-    private const string LOGIN_URL = '/new/auth/login';
-    private const string HANDSHAKE_URL = '/new/auth/handshake';
-    private const string REGISTER_URL = '/new/auth/register';
+    public function isEnabled(): bool
+    {
+        return config('hawki.spa_auth', false);
+    }
+
+    public function urlFor(SpaAuthPage|LoginNextStep $step): string
+    {
+        return '/new/auth/' . $step->value;
+    }
+
+    public function entryUrlFor(SpaAuthPage|LoginNextStep $step): string
+    {
+        return $this->isEnabled() ? $this->urlFor($step) : '/' . $step->value;
+    }
+
+    public function requiresSpaRegistration(Request $request): bool
+    {
+        return $this->isEnabled() || $this->isSpaRegistration($request);
+    }
 
     /**
      * Marks the login that is about to start as belonging to the SPA and remembers where the
@@ -76,6 +93,14 @@ readonly class SpaAuthHandoff
             && $request->session()->get(self::SESSION_UI_KEY) === self::UI_MARKER;
     }
 
+    /** A new credentials login or a return to the legacy login page abandons the provider round trip. */
+    public function discard(Request $request): void
+    {
+        if ($request->hasSession()) {
+            $request->session()->forget([self::SESSION_UI_KEY, self::SESSION_NEXT_KEY, self::SESSION_ERROR_KEY]);
+        }
+    }
+
     public function markSpaRegistration(Request $request): void
     {
         $request->session()->put(self::SESSION_REGISTRATION_UI_KEY, self::UI_MARKER);
@@ -99,19 +124,18 @@ readonly class SpaAuthHandoff
 
         $next = $this->consume($request);
 
-        $url = match ($step) {
-            LoginNextStep::HANDSHAKE => self::HANDSHAKE_URL,
-            LoginNextStep::REGISTER => self::REGISTER_URL,
-        };
+        $url = $this->urlFor($step);
 
         return $next === null ? $url : $url . '?' . http_build_query(['next' => $next->path]);
     }
 
     /**
-     * Consumes the handoff, flashes `$message` for the SPA's login screen to pick up through the
+     * Consumes the handoff, stores a stable error code for the SPA's login screen to pick up through the
      * `auth` resource, and returns the SPA login URL.
+     *
+     * @param 'invalid_credentials'|'provider_failed' $code
      */
-    public function completeFailure(Request $request, string $message): string
+    public function completeFailure(Request $request, string $code): string
     {
         $next = $this->consume($request);
 
@@ -119,9 +143,9 @@ readonly class SpaAuthHandoff
         // request, and the next request here is the SPA's HTML page load — the message would be
         // gone by the time the booting frontend asks the `auth` resource for it. The one-shot
         // behaviour comes from {@see pullLastError()} instead.
-        $request->session()->put(self::SESSION_ERROR_KEY, $message);
+        $request->session()->put(self::SESSION_ERROR_KEY, $code);
 
-        return $next === null ? self::LOGIN_URL : self::LOGIN_URL . '?' . http_build_query(['next' => $next->path]);
+        return $next === null ? $this->urlFor(SpaAuthPage::LOGIN) : $this->urlFor(SpaAuthPage::LOGIN) . '?' . http_build_query(['next' => $next->path]);
     }
 
     /**

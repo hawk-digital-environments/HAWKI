@@ -26,9 +26,10 @@ readonly class AuthInfo
         public string|null      $startUrl,
         public AuthCapabilities $capabilities,
         /**
-         * A user-facing message from the *previous*, failed login attempt, or `null`.
+         * A stable error code from the *previous*, failed login attempt, or `null`.
+         * One of `invalid_credentials` or `provider_failed`; the frontend translates it.
          *
-         * One-shot: it is pulled out of the session when this object is built, so the message
+         * One-shot: it is pulled out of the session when this object is built, so the code
          * is shown once and does not reappear on the next poll of the resource.
          */
         public string|null      $lastError = null

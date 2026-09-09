@@ -4,8 +4,8 @@
     export const config = configurePage({
         cacheKey: false,
         loadData: async ({ app, redirect }) => {
-            const next = sanitizeNext(new URLSearchParams(window.location.search).get('next'));
-            if (app.cryptoReady) redirect(next ?? '/new/chat');
+            const next = sanitizeNext(app.router, new URLSearchParams(window.location.search).get('next'));
+            if (app.cryptoReady) redirect(next ?? app.router.getPath('chat.index'));
             const connection = app.connection;
             if (connection.isAuthenticated && connection.keychain_state === 'setup_required')
                 redirect('auth.register', next ? { next } : undefined);
@@ -38,18 +38,19 @@
     let passkeyInput = $state<HTMLInputElement | null>(null);
     let backupInput = $state<HTMLInputElement | null>(null);
     function switchMode(next: typeof mode) {
+        if (pending) return;
         mode = next;
         error = '';
         // The form is swapped out under the user; land focus on the new field so the change is announced.
         setTimeout(() => (next === 'passkey' ? passkeyInput : backupInput)?.focus(), 0);
     }
     let pending = $state(false);
+    let errorElement = $state<HTMLParagraphElement | null>(null);
+    $effect(() => { if (error) errorElement?.focus(); });
     let error = $state('');
-    function updateBackupCode(event: Event & {currentTarget: HTMLInputElement}) {
-        backupCode = event.currentTarget.value.replace(/\s+/g, '').toLowerCase();
-        event.currentTarget.value = backupCode;
-    }
+    const normalizedBackupCode = $derived(backupCode.replace(/\s+/g, '').toLowerCase());
     async function unlock(value: string) {
+        if (pending) return;
         pending = true;
         error = '';
         try {
@@ -66,6 +67,7 @@
         }
     }
     async function recover() {
+        if (pending) return;
         pending = true;
         error = '';
         try {
@@ -73,14 +75,14 @@
             const salts = app.config.get().salts;
             const connection = app.connection;
             if (!salts || !connection.hasUserInfo) throw new Error('Recovery configuration is unavailable.');
-            const key = await deriveKey(backupCode.trim().toLowerCase(), `${connection.userinfo.username}_backup`, salts.backup);
+            const key = await deriveKey(normalizedBackupCode, `${connection.userinfo.username}_backup`, salts.backup);
             const recovered = await decryptSymmetric(loadSymmetricCryptoValueFromObject(backup), key);
             if (!(await keychain.unlock(recovered))) {
                 error = __('ui.auth.handshake.wrongPasskey');
                 return;
             }
             await keychain.persistPasskey(recovered);
-            goAfterUnlock(app, nextDestination());
+            goAfterUnlock(app, nextDestination(app));
         } catch (e) {
             error =
                 e instanceof ApiTransportError && e.status === 404 ?
@@ -96,31 +98,31 @@
         <h1 id="auth-title">{__('ui.auth.handshake.title')}</h1>
         <p class="auth-copy">{mode === 'passkey' ? (autoGenerate ? __('ui.auth.handshake.ownPasskeyDescription') : __('ui.auth.handshake.description')) : autoGenerate ? __('ui.auth.handshake.backupUnlockDescription') : __('ui.auth.handshake.recoveryDescription')}</p>
     </div>
-    {#if error}<p class="auth-error" role="alert">{error}</p>{/if}
+    {#if error}<p class="auth-error" role="alert" tabindex="-1" bind:this={errorElement}>{error}</p>{/if}
     {#if mode === 'passkey'}
         <form class="auth-form" onsubmit={(e) => { e.preventDefault(); void unlock(passkey); }}>
             <div class="auth-field">
                 <label for="passkey">{__('ui.auth.handshake.passkey')}</label>
-                <Input id="passkey" type="password" bind:value={passkey} bind:ref={passkeyInput} autocomplete="current-password" required disabled={pending}/>
+                <Input id="passkey" type="password" bind:value={passkey} bind:ref={passkeyInput} autocomplete="current-password" required readonly={pending} aria-disabled={pending} aria-busy={pending}/>
             </div>
-            <Button type="submit" variant="accent" disabled={pending} block>{pending ? __('ui.auth.handshake.unlocking') : __('ui.auth.handshake.unlock')}</Button>
+            <Button type="submit" variant="accent" aria-disabled={pending} aria-busy={pending} block>{pending ? __('ui.auth.handshake.unlocking') : __('ui.auth.handshake.unlock')}</Button>
         </form>
         <div class="switch">
-            <Button type="button" variant="ghost" size="sm" disabled={pending} onclick={() => switchMode('backup')}>{__('ui.auth.handshake.recoveryTitle')}</Button>
+            <Button type="button" variant="ghost" size="sm" aria-disabled={pending} aria-busy={pending} onclick={() => switchMode('backup')}>{__('ui.auth.handshake.recoveryTitle')}</Button>
         </div>
     {:else}
         <form class="auth-form" onsubmit={(e) => { e.preventDefault(); void recover(); }}>
             <div class="auth-field">
                 <label for="backup-code">{__('ui.auth.handshake.backupCode')}</label>
-                <Input id="backup-code" class="code" bind:value={backupCode} bind:ref={backupInput} oninput={updateBackupCode} pattern={'[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}'} placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="off" spellcheck={false} required disabled={pending}/>
+                <Input id="backup-code" class="code" bind:value={backupCode} bind:ref={backupInput} pattern={'[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}'} placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="off" spellcheck={false} required readonly={pending} aria-disabled={pending} aria-busy={pending}/>
             </div>
-            <Button type="submit" variant="accent" disabled={pending} block>{pending ? __('ui.auth.handshake.unlocking') : autoGenerate ? __('ui.auth.handshake.unlock') : __('ui.auth.handshake.recover')}</Button>
+            <Button type="submit" variant="accent" aria-disabled={pending} aria-busy={pending} block>{pending ? __('ui.auth.handshake.unlocking') : autoGenerate ? __('ui.auth.handshake.unlock') : __('ui.auth.handshake.recover')}</Button>
         </form>
         <div class="reset-recovery">
             <ResetProfileButton label={__('ui.auth.handshake.lostBackup')} disabled={pending} variant="ghost"/>
         </div>
         <div class="switch">
-            <Button type="button" variant="ghost" size="sm" disabled={pending} onclick={() => switchMode('passkey')}>{autoGenerate ? __('ui.auth.handshake.useOwnPasskey') : __('ui.auth.handshake.usePasskey')}</Button>
+            <Button type="button" variant="ghost" size="sm" aria-disabled={pending} aria-busy={pending} onclick={() => switchMode('passkey')}>{autoGenerate ? __('ui.auth.handshake.useOwnPasskey') : __('ui.auth.handshake.usePasskey')}</Button>
         </div>
     {/if}
 </AuthFrame>

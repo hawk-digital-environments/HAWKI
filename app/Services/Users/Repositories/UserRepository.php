@@ -6,10 +6,9 @@ namespace App\Services\Users\Repositories;
 
 
 use App\Models\User;
-use App\Services\Auth\Exception\RegistrationAlreadyCompletedException;
+use App\Services\Auth\RegistrationGuard;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 class UserRepository extends AbstractRepositoryWithContextualScopes
@@ -59,15 +58,9 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
         string $email,
         string $employeeType
     ): User {
-        try {
-            return $this->completeLegacyRegistrationTransaction($username, $name, $email, $employeeType);
-        } catch (QueryException $exception) {
-            if (!$this->isUsernameCollision($exception)) {
-                throw $exception;
-            }
-
-            return $this->completeLegacyRegistrationTransaction($username, $name, $email, $employeeType);
-        }
+        return RegistrationGuard::retryUsernameCollision(
+            fn(): User => $this->completeLegacyRegistrationTransaction($username, $name, $email, $employeeType)
+        );
     }
 
     public function findOneByUsername(string $username, ?ScopeOverrides $scopeOverrides = null): User|null
@@ -125,6 +118,10 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
         return $this->getQueryWithoutContextualScopes()->findOrFail(1);
     }
 
+    /**
+     * The legacy controller contract keeps transaction orchestration here. The Auth guard
+     * owns the completion rule and its domain exception for both registration paths.
+     */
     private function completeLegacyRegistrationTransaction(
         string $username,
         string $name,
@@ -134,9 +131,7 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
         return DB::transaction(function () use ($username, $name, $email, $employeeType): User {
             $user = $this->lockOneByUsername($username);
 
-            if ($user !== null && !$user->isRemoved) {
-                throw new RegistrationAlreadyCompletedException();
-            }
+            RegistrationGuard::assertAccountNotInitialized($user);
 
             if ($user === null) {
                 return $this->createForRegistration($username, $name, $email, $employeeType);
@@ -144,13 +139,5 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
 
             return $this->prepareForRegistration($user, $name, $email, $employeeType);
         }, 3);
-    }
-
-    private function isUsernameCollision(QueryException $exception): bool
-    {
-        $sqlState = (string)($exception->errorInfo[0] ?? $exception->getCode());
-
-        return in_array($sqlState, ['23000', '23505'], true)
-            && str_contains(strtolower($exception->getMessage()), 'username');
     }
 }

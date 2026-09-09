@@ -96,10 +96,11 @@
 
             <div class="slide" data-index="5">
                 @if(config('hawki.security.passkey.auto_generate', false))
-                    <h1>{{ __('ui.auth.register.title') }}</h1>
+                    {{-- TODO: Remove this legacy adapter after the SPA registration rollout. --}}
+                    <h1>{{ __('legacy.registration.title') }}</h1>
                     <p id="automatic-passkey-status" role="status"></p>
                     <p id="automatic-passkey-error" class="red-text" role="alert"></p>
-                    <button id="automatic-passkey-retry" type="button" class="btn-lg-fill" onclick="generateRegistrationPasskey()" hidden>{{ __('ui.auth.register.continue') }}</button>
+                    <button id="automatic-passkey-retry" type="button" class="btn-lg-fill" onclick="generateRegistrationPasskey()" hidden>{{ __('Continue') }}</button>
                 @else
                 <h1>{{ __("Reg_SL5_H") }}</h1>
                 <form id="passkey-form" autocomplete="off">

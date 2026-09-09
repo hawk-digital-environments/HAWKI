@@ -248,9 +248,10 @@ export function createKeychainHandle(
         return collectDeferredBatchUpdates(app, await getKeychainPassword(), runner);
     };
 
+    // TODO: Remove with the legacy registration page. SPA registration submits its keys atomically.
     const initializeNewKeychain = async () => {
         const keyPair = await generateAsymmetricKeyPair();
-        return await doUpdate(async (update) => {
+        return doUpdate(async (update) => {
             update.clear();
             update.set('privateKey', keyPair.privateKey, 'private_key');
             update.set('publicKey', keyPair.publicKey, 'public_key');

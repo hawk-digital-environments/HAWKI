@@ -10,8 +10,8 @@ import type {Connection} from '$lib/app/schemas/resources/connections.schema.js'
 import {AiApi} from '$lib/kernel/ai/AiApi.js';
 import {ConnectionHandle} from '$lib/kernel/client/connection/ConnectionHandle.svelte.js';
 import type {HawkiEvents} from '$lib/kernel/events/EventExtension.js';
-import {assignAuthPage} from '$lib/kernel/auth/navigation.js';
-import z from 'zod';
+import {assignAuthPage, authPageUrl} from '$lib/kernel/auth/navigation.js';
+import {LogoutResponseSchema} from '$lib/kernel/auth/schemas.js';
 import {registerConnectionRefresher} from '$lib/kernel/client/connection/connectionRefresher.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -34,6 +34,10 @@ declare module '$lib/kernel/extendableTypes.js' {
         logout(): Promise<void>;
     }
 
+    interface HawkiSyncEvents {
+        sessionLost: void;
+    }
+
     /** Fired by {@link ClientExtension.logout} before the redirect; listeners drop in-memory secrets here. */
     interface HawkiAsyncEvents {
         logout: void;
@@ -46,6 +50,7 @@ export class ClientExtension implements HawkiAppExtension {
     private readonly connectionHandle: ConnectionHandle;
     private app: HawkiApp | null = null;
     private sessionLost = false;
+    private hadUserInfo = false;
     private logoutStatus = $state<'idle' | 'pending' | 'failed'>('idle');
     private resourceSchemas: HawkiAppExtensions['resourceSchemas'] | null = null;
 
@@ -57,8 +62,8 @@ export class ClientExtension implements HawkiAppExtension {
             const connection = this.connectionHandle?.tryGetConnection();
             if (this.sessionLost || this.logoutStatus !== 'idle' || !connection?.hasUserInfo) return;
             this.sessionLost = true;
-            this.app?.stores.get('keychain').lock();
-            assignAuthPage('login');
+            this.events.sync.trigger('sessionLost');
+            if (this.app) assignAuthPage(this.app.router, 'login', undefined, 'session_expired');
         });
         const getConnection = () => this.connectionHandle.connection;
         const restApi = new RestApi(
@@ -93,8 +98,6 @@ export class ClientExtension implements HawkiAppExtension {
     public async logout(): Promise<void> {
         if (this.logoutStatus === 'pending') return;
         this.logoutStatus = 'pending';
-        // Direct cleanup runs before listeners, and before the network can fail.
-        this.app?.stores.get('keychain').lock();
         this.app?.passkeySession.clear();
         try {
             try {
@@ -103,9 +106,9 @@ export class ClientExtension implements HawkiAppExtension {
                 console.error('A logout listener failed.', error);
             }
             const response = await this.client.restApi.postToResourceAction('auth', 'actions/logout', {}, {
-                schema: z.object({redirect_url: z.string().nullable().optional()})
+                schema: LogoutResponseSchema
             });
-            window.location.assign(response.redirect_url ?? '/new/auth/login');
+            window.location.assign(response.meta.redirect_url ?? authPageUrl(this.app!.router, 'login'));
         } catch (error) {
             this.logoutStatus = 'failed';
             throw error;
@@ -114,23 +117,36 @@ export class ClientExtension implements HawkiAppExtension {
 
     public ready(app: HawkiApp): void {
         this.app = app;
+        this.hadUserInfo = this.connectionHandle.tryGetConnection()?.hasUserInfo ?? false;
     }
 
     public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper): void {
         this.resourceSchemas = app.getOrFail('resourceSchemas');
         bootstrapper.onPreparationStage(async () => this.connectionHandle.refreshConnection().then());
         registerConnectionRefresher(this.connectionHandle);
+        this.events.async.on('connected', connection => { this.hadUserInfo = connection.hasUserInfo; });
+        this.events.async.on('connectionRefreshFailed', () => {
+            if (this.sessionLost || !this.hadUserInfo || this.logoutStatus !== 'idle' || !this.app) return;
+            this.sessionLost = true;
+            this.events.sync.trigger('sessionLost');
+            assignAuthPage(this.app.router, 'login', undefined, 'session_expired');
+        });
 
         // Public config is connection-dependent. Preserve the initial bootstrap
         // ordering, but refresh it when an established session changes type
         // (for example internal_registering_user -> internal_authenticated).
         this.events.async.on('connectionChanged', async connection => {
             // Logout owns navigation until its provider response or a successful retry arrives.
-            if (this.logoutStatus !== 'idle') return;
-            if (window.location.pathname.startsWith('/new/')) {
-                this.app?.stores.get('keychain').lock();
-                const page = connection.isAuthenticated ? 'handshake' : connection.hasUserInfo ? 'register' : 'login';
-                if (assignAuthPage(page)) return;
+            if (this.sessionLost || this.logoutStatus !== 'idle') return;
+            const established = this.hadUserInfo;
+            this.hadUserInfo = connection.hasUserInfo;
+            if (established && this.app?.isMounted) {
+                this.events.sync.trigger('sessionLost');
+                const page = connection.isAuthenticated
+                    ? connection.keychain_state === 'setup_required' ? 'register'
+                    : connection.keychain_state === 'inconsistent' ? 'inconsistent' : 'handshake'
+                    : connection.hasUserInfo ? 'register' : 'login';
+                if (assignAuthPage(this.app.router, page)) return;
             }
             await app.config?.refresh();
         });
@@ -176,7 +192,7 @@ export class ClientExtension implements HawkiAppExtension {
             },
             get cryptoReady(): boolean {
                 return extension.logoutStatus === 'idle' && !extension.sessionLost &&
-                    (extension.app?.stores.get('keychain').cryptoReady ?? false);
+                    (extension.app?.passkeySession.cryptoReady ?? false);
             },
             get logoutState() {
                 return extension.logoutStatus;

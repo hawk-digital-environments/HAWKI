@@ -20,6 +20,8 @@ class AuthResource extends JsonApiResource
     }
 
     /**
+     * `last_error` is a nullable stable code: invalid_credentials or provider_failed.
+     *
      * Get the resource's attributes.
      *
      * Every attribute is always present, `null` where it does not apply. Unlike the connection

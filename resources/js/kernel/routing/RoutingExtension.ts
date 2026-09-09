@@ -1,5 +1,5 @@
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import {createRouterFromRegistrar, type RouteMiddleware, type Router, RouteRegistrar, type RouterHandle} from '$lib/components/ui/routing/index.js';
+import {createRouterFromRegistrar, type Router, RouteRegistrar, type RouterHandle} from '$lib/components/ui/routing/index.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {RestApi} from '$lib/kernel/api/RestApi.js';
 import {authMetaGuards} from '$lib/kernel/routing/middlewares/AuthMiddleware.js';
@@ -19,8 +19,9 @@ declare module '$lib/components/ui/routing/extendableTypes.js' {
         restApi: RestApi;
     }
 
-    interface GlobalMiddlewares {
-        auth: RouteMiddleware;
+    interface RouteMetaExtensions {
+        access?: 'public' | 'server-session' | 'crypto-ready';
+        chrome?: 'none' | 'app';
     }
 }
 
