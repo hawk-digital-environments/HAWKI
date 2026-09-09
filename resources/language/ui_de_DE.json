@@ -24,6 +24,7 @@
             "register": {
                 "title": "Schlüsselbund einrichten",
                 "description": "Wähle ein Passwort, das deine verschlüsselten Daten auf diesem Gerät schützt.",
+                "automaticDescription": "Dein Passwort wird automatisch erstellt. Anschließend erhältst du einen Sicherungscode zum Herunterladen.",
                 "readPolicy": "Nutzungsbedingungen lesen",
                 "policyDescription": "Bitte lies und akzeptiere die Nutzungsbedingungen, bevor du deinen Schlüsselbund einrichtest.",
                 "confirmPolicy": "Akzeptieren und weiter",
@@ -54,8 +55,11 @@
                 "recoveryTitle": "Sicherungscode verwenden",
                 "backupCode": "Sicherungscode",
                 "recover": "Passwort wiederherstellen",
+                "backupUnlockDescription": "Gib deinen Sicherungscode ein, um deinen Schlüsselbund auf diesem Gerät zu entsperren.",
                 "backupMissing": "Für dieses Konto ist kein Sicherungscode vorhanden.",
                 "usePasskey": "Stattdessen Passwort verwenden",
+                "useOwnPasskey": "Eigenes Passwort verwenden",
+                "ownPasskeyDescription": "Gib das Passwort ein, das du beim Einrichten deines Schlüsselbunds selbst gewählt hast.",
                 "lostBackup": "Sicherungscode verloren?",
                 "recoveryDescription": "Gib den Sicherungscode ein, den du beim Einrichten deines Schlüsselbunds gespeichert hast."
             },
@@ -64,6 +68,7 @@
                 "description": "Der verschlüsselte Schlüsselbund passt nicht zu diesem Konto. Setze das Profil zurück, um ein neues einzurichten.",
                 "reset": "Profil zurücksetzen",
                 "confirmTitle": "Dieses Profil zurücksetzen?",
+                "automaticConfirmDescription": "Dadurch werden deine Chats, dein bisheriger Schlüsselbund und die zugehörigen Profildaten dauerhaft gelöscht. Anschließend wird dein Schlüsselbund automatisch neu erstellt und du erhältst einen neuen Sicherungscode. Dies kann nicht rückgängig gemacht werden.",
                 "confirmDescription": "Dadurch werden deine Chats, dein verschlüsselter Schlüsselbund, deine Passwortsicherung und zugehörige Profildaten dauerhaft gelöscht. Anschließend richtest du ein neues Passwort und einen neuen Sicherungscode ein. Dies kann nicht rückgängig gemacht werden.",
                 "confirm": "Profil zurücksetzen"
             },

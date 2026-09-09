@@ -20,6 +20,8 @@ The `next` query parameter accepts only validated paths under `/new/`. It travel
 
 ## Registration and recovery
 
+Set `APP_SECURITY_PASSKEY_AUTO_GENERATE=true` to generate a random 256-bit passkey in the browser during registration. Both the SPA and legacy registration skip manual passkey entry and show the backup code for download after any required policy consent. The default is `false`. Refresh Laravel's configuration cache after changing the setting. Existing passkeys remain valid. Users need the backup code to restore access when the locally stored passkey is unavailable, including on a new device. With this option enabled, both unlock screens open directly on backup-code entry. Users can still switch to passkey entry for existing manually configured accounts.
+
 Registration submits policy consent, encrypted keys, and the encrypted backup in one transaction. A repeated identical payload returns success without rewriting keys; a different payload after completion returns `registration_already_completed`. If the policy changes, the browser requests fresh consent while retaining the generated key material. It stores the encrypted local passkey before reloading into the handshake.
 
 The server remembers when a registering session enters the SPA, including direct `/new` access while the rollout flag is disabled. Those sessions cannot use the legacy completion or backup-write endpoints. Legacy completion also refuses an account that another session has already registered.
