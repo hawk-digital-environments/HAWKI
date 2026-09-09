@@ -11,18 +11,17 @@ use App\Services\Announcements\RegistrationPolicyService;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
+use Tests\Feature\Support\RegistrationSchema;
 
 #[CoversNothing]
 class RegistrationPolicyPublishTest extends TestCase
 {
+    use RegistrationSchema;
+
     protected function setUp(): void
     {
         parent::setUp();
-        config()->set('database.default', 'sqlite');
-        config()->set('database.connections.sqlite.database', ':memory:');
-        config()->set('session.driver', 'array');
-        DB::purge('sqlite');
-        (require database_path('migrations/2025_08_21_175642_create_announcements.php'))->up();
+        $this->createRegistrationSchema();
     }
 
     public function testAnnouncementPublishingRejectsOverlappingGlobalPolicies(): void

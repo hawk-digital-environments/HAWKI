@@ -34,7 +34,9 @@ export class KeychainStore implements DataStore {
     private generation = 0;
     private sessionUsername: string | null = null;
     private unlocking: Promise<boolean> | null = null;
-    public cryptoReady = $state(false);
+    public get cryptoReady(): boolean {
+        return this._app?.passkeySession.cryptoReady ?? false;
+    }
 
     /** Resolves when the initial keychain load has completed (or was skipped
      *  because the connection is unauthenticated). Await this before reading keys. */
@@ -67,11 +69,8 @@ export class KeychainStore implements DataStore {
         return await this.handle.validateKeychainPassword(passkey);
     }
 
-    /**
-     * Initializes a new keychain for the user with the provided passkey. This is only necessary if the user is starting with a fresh account and doesn't have an existing keychain to migrate.
-     * After the keychain is initialized, it also loads the (empty) keychain values into the store.
-     */
-    public async initializeNewKeychain() {
+    /** @deprecated TODO: Remove when public/js/handshake_functions.js no longer completes legacy registration. */
+    public async initializeNewKeychain(): Promise<void> {
         await this.handle.initializeNewKeychain();
     }
 
@@ -79,7 +78,7 @@ export class KeychainStore implements DataStore {
     public lock(): void {
         this.generation++;
         this.unlocking = null;
-        this.cryptoReady = false;
+        if (this._app) this._app.passkeySession.cryptoReady = false;
         this._handle?.clear();
         this.publicKey = null;
         this.privateKey = null;
@@ -132,7 +131,7 @@ export class KeychainStore implements DataStore {
         }
         const generation = this.generation;
         this.sessionUsername = connection.userinfo.username;
-        this.cryptoReady = false;
+        if (this._app) this._app.passkeySession.cryptoReady = false;
         try {
             const valid = await this.validateKeychainPassword(passkey);
             if (generation !== this.generation) throw new Error('Keychain session was cleared.');
@@ -146,7 +145,7 @@ export class KeychainStore implements DataStore {
             await this.handle.load();
             if (generation !== this.generation) throw new Error('Keychain session was cleared.');
             if (!this.publicKey || !this.privateKey || !this.aiConvKey) throw new Error('The keychain is incomplete.');
-            this.cryptoReady = true;
+            app.passkeySession.cryptoReady = true;
             return true;
         } catch (error) {
             if (generation === this.generation) this.lock();
@@ -195,6 +194,7 @@ export class KeychainStore implements DataStore {
             this.aiConvKey = handle.aiConvKey();
         });
 
+        app.events.sync.on('sessionLost', () => this.lock());
         app.events.async.on('logout', () => {
             this.lock();
         });

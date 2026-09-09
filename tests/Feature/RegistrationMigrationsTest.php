@@ -8,20 +8,17 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
+use Tests\Feature\Support\RegistrationSchema;
 
 #[CoversNothing]
 class RegistrationMigrationsTest extends TestCase
 {
+    use RegistrationSchema;
+
     protected function setUp(): void
     {
         parent::setUp();
-        config()->set('database.default', 'sqlite');
-        config()->set('database.connections.sqlite.database', ':memory:');
-        DB::purge('sqlite');
-        (require database_path('migrations/0001_01_01_000000_create_users_table.php'))->up();
-        (require database_path('migrations/2025_01_16_121103_create_passkey_backups.php'))->up();
-        (require database_path('migrations/2025_08_21_175642_create_announcements.php'))->up();
-        (require database_path('migrations/2025_08_21_175841_create_announcement_user.php'))->up();
+        $this->createRegistrationSchema();
     }
 
     public function testBackupMigrationArchivesOlderDuplicatesAndEnforcesOneBackupPerUsername(): void

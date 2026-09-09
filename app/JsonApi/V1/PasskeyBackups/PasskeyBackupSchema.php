@@ -57,6 +57,7 @@ class PasskeyBackupSchema extends Schema
      */
     public function repository(): ?Repository
     {
+        // Resolve anew: the repository injects #[CurrentUser], which must not be cached.
         return PasskeyBackupRepository::make()
             ->withServer($this->server)
             ->withSchema($this);

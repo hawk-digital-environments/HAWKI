@@ -33,6 +33,8 @@ class AuthSchema extends Schema
     }
 
     /**
+     * `last_error` is a nullable stable code: invalid_credentials or provider_failed.
+     *
      * Get the resource fields.
      *
      * @return array

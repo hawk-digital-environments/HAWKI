@@ -102,6 +102,11 @@ readonly class RegistrationPolicyService
         );
     }
 
+    public function acceptAnnouncement(User $user, Announcement $announcement): void
+    {
+        $this->recordConsent($user, $this->toPolicy($announcement, null));
+    }
+
     /**
      * Guards publishing a policy: at no point in time may two policies be in effect.
      *

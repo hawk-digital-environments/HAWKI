@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Errors\CodedError;
 use App\Http\Requests\Api\V1\CompleteRegistrationRequest;
-use App\Models\User;
 use App\Services\Announcements\Exceptions\RegistrationPolicyUnavailableException;
 use App\Services\Auth\Exception\RegistrationAlreadyCompletedException;
 use App\Services\Auth\Exception\RegistrationKeychainInconsistentException;
@@ -30,17 +29,9 @@ class RegistrationController extends Controller
         UserContext $userContext,
         AuthManager $auth,
     ): DataResponse {
-        $actor = $request->user();
-        if (!$actor instanceof User) {
-            $actor = $userContext->getRegisteringUser();
-        }
-        if ($actor === null) {
-            abort(403, 'No registration in progress.');
-        }
-
         try {
             $user = $registration->complete(
-                $actor,
+                $request->actor(),
                 $request->keychainBatch(),
                 $request->backup(),
                 $request->policyReference(),
@@ -48,6 +39,7 @@ class RegistrationController extends Controller
                 $request->getLocaleContext()->getCurrentLocale()->lang,
             );
         } catch (RegistrationPolicyUnavailableException $exception) {
+            report($exception);
             CodedError::abort(
                 'registration_policy_unavailable',
                 503,
@@ -56,7 +48,7 @@ class RegistrationController extends Controller
             );
         } catch (RegistrationPolicyChangedException) {
             CodedError::abort(
-                'policy_changed',
+                'registration_policy_changed',
                 409,
                 'Registration policy changed',
                 'Reload the current policy before completing registration.'

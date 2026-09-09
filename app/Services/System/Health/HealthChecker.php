@@ -89,10 +89,24 @@ readonly class HealthChecker
     public function quickCheck(): HealthCheckResultCollection
     {
         $event = new QuickHealthCheckEvent(new HealthCheckResultCollection($this->checkQuickDatabase()));
-        $this->eventDispatcher->dispatch($event);
+        $this->dispatchChecks($event);
         $results = $event->getResults();
         if ($results->isUnhealthy()) $this->timer->markAsFailed();
         return $results;
+    }
+
+    private function dispatchChecks(HealthCheckEvent|QuickHealthCheckEvent $event): void
+    {
+        try {
+            $this->eventDispatcher->dispatch($event);
+        } catch (\Throwable $exception) {
+            $this->logger->error('Health check listener failed', ['exception' => $exception]);
+            $event->addResult(new HealthCheckResult(
+                checkName: 'health_check_listener',
+                status: HealthCheckResult::STATUS_ERROR,
+                message: 'Health check listener failed'
+            ));
+        }
     }
 
     private function checkQuickDatabase(): HealthCheckResult
@@ -136,7 +150,7 @@ readonly class HealthChecker
             )
         );
 
-        $this->eventDispatcher->dispatch($e);
+        $this->dispatchChecks($e);
 
         $results = $e->getResults();
 

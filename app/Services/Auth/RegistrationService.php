@@ -20,7 +20,6 @@ use App\Services\Users\Keychain\Value\KeychainBatch;
 use App\Services\Users\Keychain\Value\KeychainState;
 use App\Services\Users\Repositories\UserRepository;
 use Illuminate\Container\Attributes\Singleton;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 #[Singleton]
@@ -49,29 +48,14 @@ readonly class RegistrationService
         string $fingerprint,
         ?string $requestedLocale = null,
     ): User {
-        try {
-            return $this->completeInTransaction(
-                $actor,
-                $keychain,
-                $backup,
-                $policyReference,
-                $fingerprint,
-                $requestedLocale
-            );
-        } catch (QueryException $exception) {
-            if (!$this->isUsernameCollision($exception)) {
-                throw $exception;
-            }
-
-            return $this->completeInTransaction(
-                $actor,
-                $keychain,
-                $backup,
-                $policyReference,
-                $fingerprint,
-                $requestedLocale
-            );
-        }
+        return RegistrationGuard::retryUsernameCollision(fn(): User => $this->completeInTransaction(
+            $actor,
+            $keychain,
+            $backup,
+            $policyReference,
+            $fingerprint,
+            $requestedLocale
+        ));
     }
 
     public function canComplete(User $user): bool
@@ -100,7 +84,7 @@ readonly class RegistrationService
         ): User {
             $user = $this->users->lockOneByUsername($actor->username);
 
-            if ($user !== null && !$user->isRemoved && $user->publicKey !== '') {
+            if (RegistrationGuard::isAccountInitialized($user)) {
                 if (is_string($user->registration_fingerprint)
                     && hash_equals($user->registration_fingerprint, $fingerprint)) {
                     return $user;
@@ -129,12 +113,12 @@ readonly class RegistrationService
                 );
             } else {
                 $this->users->prepareForRegistration($user, $name, $email, $employeeType);
+                $this->appliedMigrations->applyAllForNewUser($this->frontendMigrations->findAll(), $user);
             }
 
             $this->keychains->write($user, $keychain);
             $this->passkeys->backupPassKey($user->username, $backup);
             $this->policies->recordConsent($user, $currentPolicy);
-            $this->appliedMigrations->applyAllForNewUser($this->frontendMigrations->findAll(), $user);
             $this->users->updateRegistrationFingerprint($user, $fingerprint);
 
             return $user->refresh();
@@ -175,13 +159,5 @@ readonly class RegistrationService
             && $legacyData->data['blob'] !== '';
 
         return $this->keychainStates->resolveForUser($user, $hasLegacyBlob);
-    }
-
-    private function isUsernameCollision(QueryException $exception): bool
-    {
-        $sqlState = (string)($exception->errorInfo[0] ?? $exception->getCode());
-
-        return in_array($sqlState, ['23000', '23505'], true)
-            && str_contains(strtolower($exception->getMessage()), 'username');
     }
 }

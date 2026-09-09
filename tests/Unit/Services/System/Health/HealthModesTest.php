@@ -50,6 +50,19 @@ class HealthModesTest extends TestCase
         self::assertSame(0, $deepCalls);
     }
 
+    public function testQuickListenerFailuresProduceAnErrorAndMarkTheTimerFailed(): void
+    {
+        DB::shouldReceive('connection->getPdo')->once()->andReturn(null);
+        $timer = Mockery::mock(HealthTimer::class);
+        $timer->shouldReceive('markAsFailed')->once();
+        $events = new Dispatcher();
+        $events->listen(QuickHealthCheckEvent::class, static function (): never {
+            throw new \RuntimeException('Database unavailable');
+        });
+        $result = (new HealthChecker(new NullLogger(), $events, $timer))->quickCheck();
+        self::assertSame('unhealthy', $result->getStatus());
+    }
+
     public function testADegradedDeepCheckMarksTheTimerHealthy(): void
     {
         DB::shouldReceive('connection->getPdo')->andReturn(null);

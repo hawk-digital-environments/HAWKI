@@ -57,7 +57,7 @@ export type RouteLayoutOrLoader = ComponentOrLoader<RouteLayout>;
  * {@link RouteOptions.layout}) deliberately live outside of it, so they can
  * never collide with — or leak into — a plugin's own meta.
  */
-export type RouteMeta = Record<string, unknown>;
+export type RouteMeta = Record<string, unknown> & import('../extendableTypes.js').RouteMetaExtensions;
 
 /**
  * The `universal-router` {@link Route} plus the extra fields this router

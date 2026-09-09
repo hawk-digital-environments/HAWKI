@@ -66,14 +66,15 @@ async function generateRegistrationPasskey() {
     const status = document.querySelector('#automatic-passkey-status');
     const error = document.querySelector('#automatic-passkey-error');
     const retry = document.querySelector('#automatic-passkey-retry');
-    status.textContent = __('ui.auth.register.preparing');
+    // TODO: Remove this adapter with the legacy registration page after SPA rollout.
+    status.textContent = __('legacy.registration.preparing');
     error.textContent = '';
     retry.hidden = true;
     try {
-        generatedPasskey ??= Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+        generatedPasskey ??= window.generatePasskey();
         await prepareRegistrationBackup(generatedPasskey);
     } catch {
-        error.textContent = __('ui.auth.errors.generic');
+        error.textContent = __('legacy.registration.failed');
         retry.hidden = false;
         retry.focus();
     } finally {
