@@ -18,7 +18,7 @@
     interface Props {
         /** Page content, rendered in the layout's main column. */
         children: Snippet;
-        meta?: {chrome?: string};
+        meta?: import('$lib/components/ui/routing/logistics/RouteRegistrar.js').RouteMeta;
     }
 
     const {children, meta}: Props = $props();
@@ -30,10 +30,10 @@
     <main id="main-content" tabindex="-1" class="logout-status">
         <h1>{__('ui.profile.logout')}</h1>
         {#if app.logoutState === 'failed'}
-            <p role="alert">{__('session.logoutFailed')}</p>
-            <Button onclick={() => { void app.logout().catch(() => {}); }}>{__('session.retryLogout')}</Button>
+            <p role="alert">{__('ui.session.logoutFailed')}</p>
+            <Button onclick={() => { void app.logout().catch(() => {}); }}>{__('ui.session.retryLogout')}</Button>
         {:else}
-            <p role="status">{__('session.loggingOut')}</p>
+            <p role="status">{__('ui.session.loggingOut')}</p>
         {/if}
     </main>
 {:else if meta?.chrome === 'none' || !app.cryptoReady}

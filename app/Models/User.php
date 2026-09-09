@@ -7,6 +7,7 @@ use App\Models\Announcements\AnnouncementUser;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\KnownUsersAccessScope;
 use App\Policies\UserPolicy;
+use App\Services\Announcements\RegistrationPolicyService;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use App\Services\Users\Events\UserCreatedEvent;
@@ -140,6 +141,12 @@ class User extends Authenticatable
 
     public function markAnnouncementAsAccepted($announcementId): void
     {
+        $announcement = Announcement::query()->findOrFail($announcementId);
+        if ($announcement->type === 'policy') {
+            app(RegistrationPolicyService::class)->acceptAnnouncement($this, $announcement);
+            return;
+        }
+
         $this->announcements()->syncWithoutDetaching([
             $announcementId => ['accepted_at' => now()],
         ]);

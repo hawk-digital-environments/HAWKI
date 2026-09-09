@@ -50,14 +50,9 @@ return new class extends Migration {
         $archivedAt = now();
         $expiresAt = $archivedAt->copy()->addDays(self::RETENTION_DAYS);
 
-        $survivorIds = DB::table('passkey_backups')
-            ->selectRaw('MAX(id) as id')
-            ->groupBy('username')
-            ->pluck('id')
-            ->all();
-
         DB::table('passkey_backups')
-            ->when($survivorIds !== [], static fn($query) => $query->whereNotIn('id', $survivorIds))
+            ->whereNotIn('id', static fn($query) => $query
+                ->selectRaw('MAX(id)')->from('passkey_backups')->groupBy('username'))
             ->orderBy('id')
             ->chunkById(500, static function (Collection $rows) use ($archivedAt, $expiresAt) {
                 DB::table('passkey_backup_archives')->insert(
@@ -80,7 +75,8 @@ return new class extends Migration {
 
     /**
      * Moves the archived rows back into `passkey_backups` before dropping the archive, so
-     * rolling back restores the exact pre-migration state (including the duplicates).
+     * rolling back restores duplicates still retained in the archive. Rows deleted by
+     * passkey-backups:cleanup-archive after the 90-day retention period cannot be restored.
      */
     public function down(): void
     {

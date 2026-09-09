@@ -3,6 +3,7 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import Button, { type ButtonVariant } from '$lib/components/ui/button/Button.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+    import { assignAuthPage } from '$lib/kernel/auth/navigation.js';
     import { authErrorKey } from './authHelpers.js';
 
     let { label, disabled = false, variant = 'delete' }: {
@@ -24,7 +25,7 @@
         try {
             await app.restApi.postToResourceAction('users', 'actions/reset-profile', {});
             app.stores.get('keychain').clearLocalSession();
-            window.location.assign('/new/auth/register');
+            assignAuthPage(app.router, 'register');
         } catch (e) {
             error = __(authErrorKey(e));
         } finally {

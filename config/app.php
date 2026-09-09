@@ -15,7 +15,6 @@ return [
 
     'name' => env('APP_NAME', 'HAWKI'),
     'version' => json_decode(file_get_contents(__DIR__ . '/hawki_version.json'), true)['version'],
-    'spa_auth' => env('HAWKI_SPA_AUTH', false),
 
     // Allows you to add a custom value as a cache buster.
     // This is normally only required if you extend HAWKI with your own frontend assets.

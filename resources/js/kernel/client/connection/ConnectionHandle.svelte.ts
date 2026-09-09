@@ -177,7 +177,7 @@ export class ConnectionHandle {
 
             const previous = this.currentConnection;
             const identityChanged = previous?.isAuthenticated && connection.isAuthenticated &&
-                (previous.userinfo.id !== connection.userinfo.id || previous.userinfo.hash !== connection.userinfo.hash);
+                previous.userinfo.id !== connection.userinfo.id;
             if (previousType !== connection.type || identityChanged) {
                 return {
                     type: previousType === undefined ? 'connected' : 'connectionChanged',

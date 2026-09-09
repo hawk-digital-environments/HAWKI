@@ -1,8 +1,10 @@
+import {authRouter} from './routerFixture.js';
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import {webcrypto} from 'node:crypto';
 import {KeychainStore} from '../../../resources/js/plugins/core/stores/KeychainStore.svelte.js';
 import {ClientExtension} from '../../../resources/js/kernel/client/ClientExtension.svelte.js';
+import {MigrationExtension} from '../../../resources/js/kernel/migrations/MigrationExtension.js';
 import {deriveKey, exportCryptoKeyToString} from '../../../resources/js/kernel/encryption/utils.js';
 import {encryptSymmetric} from '../../../resources/js/kernel/encryption/symmetric.js';
 
@@ -23,7 +25,7 @@ async function fixture() {
     const connection = {isAuthenticated: true, hasUserInfo: true, keychain_state: 'legacy_migration_required', userinfo: {username: 'alice', email: 'alice@example.test'}};
     let migrated = false;
     const listeners = new Map<string, Array<() => void>>();
-    const app: any = {
+    const app: any = {router: authRouter(),
         connection, connectionOrNull: connection,
         config: {get: () => ({salts: {userdata: 'test-salt', passkey: 'local-salt', ai: 'ai-salt'}})},
         passkeySession: {passkey: null, clear() { this.passkey = null; }},
@@ -33,7 +35,10 @@ async function fixture() {
             getResourceCollection: async () => { calls.push('keychain'); assert.equal(migrated, true); return values; }
         },
         migration: {apply: async (run: string) => { calls.push(run); migrated = true; }},
-        events: {async: {
+        events: {sync: {
+            on: (name: string, callback: () => void) => listeners.set(name, [...(listeners.get(name) ?? []), callback]),
+            trigger: (name: string) => { for (const callback of listeners.get(name) ?? []) callback(); }
+        }, async: {
             on: (name: string, callback: () => void) => listeners.set(name, [...(listeners.get(name) ?? []), callback]),
             trigger: async (name: string) => { for (const callback of listeners.get(name) ?? []) await callback(); }
         }}
@@ -80,6 +85,42 @@ test('failed migrations clear decrypted keys but retain the encrypted passkey fo
     assert.equal(store.cryptoReady, false);
     assert.equal(app.passkeySession.passkey, null);
     assert.equal(storage.get('alicePK'), saved);
+});
+
+test('a missing migration implementation prevents keychain unlock', async () => {
+    const {store, app, passkey, calls} = await fixture();
+    app.connection.migrations_to_apply = 1;
+    app.migration = new MigrationExtension();
+    app.migration.ready(app, {onMigrationStage() {}});
+    app.restApi.getResourceCollection = async (resource: string) => {
+        assert.equal(resource, 'migrations');
+        return [{id: 'required_but_unavailable'}];
+    };
+    await assert.rejects(store.unlock(passkey), /Required migration required_but_unavailable is unavailable/);
+    assert.deepEqual(calls, ['validator']);
+    assert.equal(store.cryptoReady, false);
+    assert.equal(store.privateKey, null);
+});
+
+test('legacy completion can still create its initial encrypted keychain', async () => {
+    const {store, app, passkey} = await fixture();
+    app.passkeySession.passkey = passkey;
+    let writes = 0;
+    app.restApi.postToResourceAction = async (resource: string, action: string, payload: any) => {
+        assert.equal(resource, 'user-keychain-values');
+        assert.equal(action, 'actions/batch-update');
+        assert.equal(payload.set.length, 3);
+        assert.equal(payload.clean, true);
+        assert.ok(payload.publicKey);
+        assert.ok(payload.set.every((entry: any) => !entry.value.includes(passkey)));
+        writes++;
+        return {data: payload.set.map((entry: any, id: number) => ({type: resource, id: String(id), attributes: entry}))};
+    };
+    await store.initializeNewKeychain();
+    assert.equal(writes, 1);
+    assert.ok(store.publicKey);
+    assert.ok(store.privateKey);
+    assert.ok(store.aiConvKey);
 });
 
 test('logout while restoring browser storage cannot resurrect a passkey', async () => {
@@ -140,7 +181,7 @@ test('logout and retry preserve the encrypted passkey and the next login restore
     };
     try {
         await assert.rejects(client.logout(), /offline/);
-        globalThis.fetch = async () => new Response(JSON.stringify({redirect_url: null}));
+        globalThis.fetch = async () => new Response(JSON.stringify({meta: {redirect_url: null}}));
         await client.logout();
         assert.deepEqual(destinations, ['/new/auth/login']);
         assert.equal(storage.get('alicePK'), saved);

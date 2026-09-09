@@ -1,11 +1,13 @@
 <script module lang="ts">
     import { configurePage } from '$lib/components/ui/routing/index.js';
-    import { sanitizeNext } from '$lib/kernel/auth/navigation.js';
+    import { assignAuthPage, sanitizeNext } from '$lib/kernel/auth/navigation.js';
+    import { ApiTransportError } from '$lib/kernel/api/errors.js';
+    import { registrationErrorPage } from './authHelpers.js';
     import { RegistrationPolicySchema } from '$plugins/core/schemas/resources/auth.schema.js';
     export const config = configurePage({
         cacheKey: false,
         loadData: async ({ app, restApi, redirect }) => {
-            const next = sanitizeNext(new URLSearchParams(window.location.search).get('next'));
+            const next = sanitizeNext(app.router, new URLSearchParams(window.location.search).get('next'));
             const connection = app.connection;
             if (!(
                 connection.type === 'internal_registering_user' ||
@@ -13,11 +15,18 @@
             )) {
                 redirect('auth.login', next ? { next } : undefined);
             }
-            return {
-                policy: await restApi.getFromResourceAction('announcements', 'actions/registration-policy', {
+            try {
+                return {policy: await restApi.getFromResourceAction('announcements', 'actions/registration-policy', {
                     schema: RegistrationPolicySchema
-                })
-            };
+                })};
+            } catch (error) {
+                if (error instanceof ApiTransportError) {
+                    const page = registrationErrorPage(error.code);
+                    if (page) redirect(`auth.${page}`, next ? {next} : undefined);
+                    if (error.code === 'registration_policy_unavailable') return {policy: null};
+                }
+                throw error;
+            }
         }
     });
 </script>
@@ -37,7 +46,6 @@
         generateAsymmetricKeyPair
     } from '$lib/kernel/encryption/asymmetric.js';
     import { generateSymmetricKey } from '$lib/kernel/encryption/symmetric.js';
-    import { ApiTransportError } from '$lib/kernel/api/errors.js';
     import { onMount, tick, untrack } from 'svelte';
     import AuthFrame from './AuthFrame.svelte';
     import { authErrorKey, nextDestination } from './authHelpers.js';
@@ -57,9 +65,9 @@
         void app.restApi
             .getFromResourceAction('announcements', 'actions/registration-policy', { schema: RegistrationPolicySchema })
             .then((refreshed) => { currentPolicy = refreshed; })
-            .catch((e) => console.error('Failed to reload the registration policy', e));
+            .catch(showRegistrationError);
     });
-    const policy = $derived('policy' in currentPolicy ? null : currentPolicy);
+    const policy = $derived(!currentPolicy || 'policy' in currentPolicy ? null : currentPolicy);
     let accepted = $state(untrack(() => policy === null));
     let policyOpen = $state(false);
     let policyConsent = $state(false);
@@ -69,12 +77,15 @@
     let stage = $state<'form' | 'policy' | 'backup'>('form');
     let error = $state('');
     let pending = $state(false);
+    let errorElement = $state<HTMLParagraphElement | null>(null);
+    $effect(() => { if (error || !currentPolicy) errorElement?.focus(); });
     let payload = $state<Record<string, unknown> | null>(null);
     let backupCode = $state('');
     let committed = $state(false);
     let invalidField = $state<'policy' | 'passkey' | 'repeat' | null>(null);
     let title: HTMLHeadingElement;
     onMount(() => {
+        if (!currentPolicy) return;
         if (policy) policyOpen = true;
         else if (autoGenerate) void prepare();
     });
@@ -88,7 +99,7 @@
         return hex.match(/.{1,4}/g)!.join('-');
     }
     async function prepare() {
-        if (pending) return;
+        if (pending || !currentPolicy) return;
         error = '';
         invalidField = null;
         if (!accepted) {
@@ -97,11 +108,13 @@
         }
         if (!autoGenerate && !validPasskey()) {
             invalidField = 'passkey';
+            document.getElementById('new-passkey')?.focus();
             error = __('ui.auth.register.passkeyInvalid');
             return;
         }
         if (!autoGenerate && passkey !== repeated) {
             invalidField = 'repeat';
+            document.getElementById('repeat-passkey')?.focus();
             error = __('ui.auth.register.passkeyMismatch');
             return;
         }
@@ -162,7 +175,7 @@
         URL.revokeObjectURL(url);
     }
     async function complete() {
-        if (!payload) return;
+        if (pending || !payload) return;
         pending = true;
         error = '';
         try {
@@ -176,11 +189,9 @@
                 error = __('ui.auth.errors.persistPasskey');
                 return;
             }
-            window.location.assign(
-                `/new/auth/handshake${nextDestination() ? `?${new URLSearchParams({ next: nextDestination()! })}` : ''}`
-            );
+            assignAuthPage(app.router, 'handshake', nextDestination(app));
         } catch (e) {
-            if (e instanceof ApiTransportError && e.code === 'policy_changed') {
+            if (e instanceof ApiTransportError && e.code === 'registration_policy_changed') {
                 try {
                     currentPolicy = await app.restApi.getFromResourceAction(
                         'announcements',
@@ -197,18 +208,32 @@
                     stage = accepted ? 'backup' : 'policy';
                     policyOpen = !accepted;
                 } catch (refreshError) {
-                    error = __(authErrorKey(refreshError));
+                    showRegistrationError(refreshError);
                 }
                 return;
             }
-            if (e instanceof ApiTransportError && e.code === 'registration_already_completed') {
-                window.location.assign('/new/auth/login');
+            if (e instanceof ApiTransportError && registrationErrorPage(e.code)) {
+                assignAuthPage(app.router, registrationErrorPage(e.code)!);
                 return;
             }
             error = __(authErrorKey(e));
         } finally {
             pending = false;
         }
+    }
+    function showRegistrationError(failure: unknown) {
+        if (failure instanceof ApiTransportError) {
+            const page = registrationErrorPage(failure.code);
+            if (page) {
+                assignAuthPage(app.router, page);
+                return;
+            }
+            if (failure.code === 'registration_policy_unavailable') {
+                currentPolicy = null;
+                return;
+            }
+        }
+        error = __(authErrorKey(failure));
     }
     function acceptPolicy() {
         if (!policyConsent) {
@@ -230,13 +255,15 @@
         <h1 id="auth-title" tabindex="-1" bind:this={title}>{stage === 'backup' ? __('ui.auth.register.backupTitle') : __('ui.auth.register.title')}</h1>
         <p class="auth-copy">{stage === 'backup' ? __('ui.auth.register.backupDescription') : autoGenerate ? __('ui.auth.register.automaticDescription') : __('ui.auth.register.description')}</p>
     </div>
-    {#if error && invalidField === null}<p class="auth-error" role="alert">{error}</p>{/if}
-    {#if stage === 'form'}
+    {#if error && invalidField === null}<p class="auth-error" role="alert" tabindex="-1" bind:this={errorElement}>{error}</p>{/if}
+    {#if !currentPolicy}
+        <p class="auth-error" role="alert" tabindex="-1" bind:this={errorElement}>{__('ui.auth.errors.registration_policy_unavailable')}</p>
+    {:else if stage === 'form'}
         <form class="auth-form" onsubmit={(e) => { e.preventDefault(); void prepare(); }}>
             {#if !autoGenerate}
                 <div class="auth-field">
                     <label for="new-passkey">{__('ui.auth.register.passkey')}</label>
-                    <Input id="new-passkey" type="password" bind:value={passkey} pattern={passkeyPattern} autocomplete="new-password" required disabled={pending} aria-invalid={invalidField === 'passkey'} aria-describedby={invalidField === 'passkey' ? 'passkey-error' : 'passkey-help'}/>
+                    <Input id="new-passkey" type="password" bind:value={passkey} pattern={passkeyPattern} autocomplete="new-password" required readonly={pending} aria-disabled={pending} aria-busy={pending} aria-invalid={invalidField === 'passkey'} aria-describedby={invalidField === 'passkey' ? 'passkey-error' : 'passkey-help'}/>
                     {#if invalidField === 'passkey'}
                         <small id="passkey-error" class="auth-error" role="alert">{error}</small>
                     {:else}
@@ -245,23 +272,23 @@
                 </div>
                 <div class="auth-field">
                     <label for="repeat-passkey">{__('ui.auth.register.repeatPasskey')}</label>
-                    <Input id="repeat-passkey" type="password" bind:value={repeated} pattern={passkeyPattern} autocomplete="new-password" required disabled={pending} aria-invalid={invalidField === 'repeat'} aria-describedby={invalidField === 'repeat' ? 'repeat-passkey-error' : undefined}/>
+                    <Input id="repeat-passkey" type="password" bind:value={repeated} pattern={passkeyPattern} autocomplete="new-password" required readonly={pending} aria-disabled={pending} aria-busy={pending} aria-invalid={invalidField === 'repeat'} aria-describedby={invalidField === 'repeat' ? 'repeat-passkey-error' : undefined}/>
                     {#if invalidField === 'repeat'}<small id="repeat-passkey-error" class="auth-error" role="alert">{error}</small>{/if}
                 </div>
             {/if}
             {#if pending}<p role="status" class="auth-hint">{__('ui.auth.register.preparing')}</p>{/if}
             {#if policy && !autoGenerate}
-                <Button type="button" variant="ghost" disabled={pending} onclick={() => policyOpen = true}>{__('ui.auth.register.readPolicy')}</Button>
+                <Button type="button" variant="ghost" aria-disabled={pending} aria-busy={pending} onclick={() => { if (!pending) policyOpen = true; }}>{__('ui.auth.register.readPolicy')}</Button>
             {/if}
-            <Button type="submit" variant="accent" disabled={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
+            <Button type="submit" variant="accent" aria-disabled={pending} aria-busy={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
         </form>
     {:else if stage === 'policy'}
-        <Button onclick={() => policyOpen = true} variant="accent" block>{__('ui.auth.register.readPolicy')}</Button>
+        <Button onclick={() => { if (!pending) policyOpen = true; }} variant="accent" block>{__('ui.auth.register.readPolicy')}</Button>
     {:else}
         <output class="backup-code" aria-label={__('ui.auth.register.backupCode')}>{backupCode}</output>
         <div class="auth-actions">
             <Button onclick={downloadBackup} variant="stroke">{__('ui.auth.register.downloadBackup')}</Button>
-            <Button onclick={() => void complete()} variant="accent" disabled={pending}>{pending ? __('ui.auth.register.saving') : __('ui.auth.register.finish')}</Button>
+            <Button onclick={() => void complete()} variant="accent" aria-disabled={pending} aria-busy={pending}>{pending ? __('ui.auth.register.saving') : __('ui.auth.register.finish')}</Button>
         </div>
     {/if}
 </AuthFrame>
@@ -388,7 +415,7 @@
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;
     }
-    @media (max-width: 36rem) {
+    @media (--bp-xs) {
         :global(.registration-policy-dialog.registration-policy-dialog) {
             max-height: calc(100dvh - 1rem);
             width: calc(100% - 1rem);

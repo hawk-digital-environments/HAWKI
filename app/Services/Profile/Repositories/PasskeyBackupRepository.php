@@ -23,6 +23,11 @@ class PasskeyBackupRepository extends AbstractRepository
         return $this->getQuery()->where('username', $username)->first();
     }
 
+    public function deleteForUsername(string $username): void
+    {
+        $this->getQuery()->where('username', $username)->delete();
+    }
+
     /**
      * Creates the backup of `$username` or replaces the stored one.
      *

@@ -1,9 +1,16 @@
 {
     "ui": {
+        "session": {
+            "logoutFailed": "Your keychain is locked. Signing out of the server failed. Please try again.",
+            "retryLogout": "Try signing out again",
+            "loggingOut": "Signing out…"
+        },
         "loading": "Loading…",
         "auth": {
             "logoLabel": "HAWKI",
             "errors": {
+                "auth_redirect_required": "Start sign-in through your identity provider.",
+                "registration_policy_unavailable": "Registration is temporarily unavailable because the policy could not be loaded. Please try again later.",
                 "generic": "The request could not be completed. Please try again.",
                 "persistPasskey": "Your keychain was created, but the passkey could not be saved in this browser. Try again to save it before continuing.",
                 "invalid_credentials": "The account name or password is incorrect.",

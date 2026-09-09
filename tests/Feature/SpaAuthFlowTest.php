@@ -26,6 +26,7 @@ class SpaAuthFlowTest extends TestCase
         config()->set('database.default', 'sqlite');
         config()->set('database.connections.sqlite.database', ':memory:');
         config()->set('session.driver', 'array');
+        config()->set('sanctum.middleware.validate_csrf_token', EnforceSpaCsrf::class);
         config()->set('cache.default', 'array');
         config()->set('app.maintenance.driver', 'file');
         DB::purge('sqlite');
@@ -61,7 +62,22 @@ class SpaAuthFlowTest extends TestCase
 
     private function headers(): array
     {
-        return ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json', 'Origin' => 'http://localhost'];
+        $response = $this->get('/sanctum/csrf-cookie');
+        $response->assertNoContent();
+        $cookie = $response->getCookie('XSRF-TOKEN', false);
+        self::assertNotNull($cookie);
+
+        return [
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
+            'Origin' => 'http://localhost',
+            'X-XSRF-TOKEN' => $cookie->getValue(),
+        ];
+    }
+
+    private function legacyHeaders(): array
+    {
+        return ['X-XSRF-TOKEN' => $this->headers()['X-XSRF-TOKEN']];
     }
 
     public function testGuestCanDiscoverCredentialsAndConsumeAnErrorOnce(): void
@@ -77,7 +93,7 @@ class SpaAuthFlowTest extends TestCase
 
     public function testLegacyGatewayRoutesCanBeSwitchedToTheSpa(): void
     {
-        config()->set('app.spa_auth', true);
+        config()->set('hawki.spa_auth', true);
         $this->get('/login')->assertRedirect('/new/auth/login');
         $this->startRegistration();
         $this->get('/register')->assertRedirect('/new/auth/register');
@@ -88,6 +104,25 @@ class SpaAuthFlowTest extends TestCase
     {
         $this->postJson('/api/hawki/v1/auth/actions/login', ['account' => 'alice', 'password' => 'wrong'], $this->headers())
             ->assertStatus(401)->assertJsonPath('errors.0.code', 'invalid_credentials');
+    }
+
+    public function testLegacyLoginDiscardsAnAbandonedSpaHandoff(): void
+    {
+        config()->set('hawki.spa_auth', false);
+        $this->withSession(['auth.ui' => 'new', 'auth.next' => '/new/chat/abandoned'])
+            ->post('/req/login', ['account' => 'alice', 'password' => 'test-password'], $this->legacyHeaders())
+            ->assertOk()->assertJsonPath('redirectUri', '/register');
+        self::assertFalse(session()->has('auth.ui'));
+        self::assertFalse(session()->has('auth.next'));
+    }
+
+    public function testOpeningLegacyLoginDiscardsAnAbandonedProviderHandoff(): void
+    {
+        config()->set('hawki.spa_auth', false);
+        $this->withSession(['auth.ui' => 'new', 'auth.next' => '/new/chat/abandoned'])
+            ->get('/login')->assertOk();
+        self::assertFalse(session()->has('auth.ui'));
+        self::assertFalse(session()->has('auth.next'));
     }
 
     public function testNewIdentityEntersRegistrationAndReturnsARegisteringConnection(): void
@@ -102,15 +137,16 @@ class SpaAuthFlowTest extends TestCase
 
     public function testSpaRegistrationCannotWriteThroughLegacyRegistrationEndpoints(): void
     {
-        config()->set('app.spa_auth', false);
+        config()->set('hawki.spa_auth', false);
         $this->startRegistration();
 
-        $this->post('/req/complete_registration')->assertForbidden();
+        $this->get('/register')->assertRedirect('/new/auth/register');
+        $this->post('/req/complete_registration', [], $this->legacyHeaders())->assertForbidden();
         $this->post('/req/profile/backupPassKey', [
             'cipherText' => 'encrypted',
             'iv' => 'iv',
             'tag' => 'tag',
-        ])->assertForbidden();
+        ], $this->legacyHeaders())->assertForbidden();
 
         self::assertSame(0, DB::table('users')->count());
         self::assertSame(0, DB::table('passkey_backups')->count());
@@ -129,13 +165,13 @@ class SpaAuthFlowTest extends TestCase
         ])->get('/new/chat')->assertOk();
 
         self::assertSame('new', session()->get('auth.registration_ui'));
-        $this->post('/req/complete_registration')->assertForbidden();
+        $this->post('/req/complete_registration', [], $this->legacyHeaders())->assertForbidden();
         self::assertSame(0, DB::table('users')->count());
     }
 
     public function testSpaAuthFlagRejectsAnUnmarkedStaleRegistrationSession(): void
     {
-        config()->set('app.spa_auth', true);
+        config()->set('hawki.spa_auth', true);
         $session = [
             'registration_access' => true,
             'authenticatedUserInfo' => json_encode([
@@ -146,12 +182,12 @@ class SpaAuthFlowTest extends TestCase
             ]),
         ];
 
-        $this->withSession($session)->post('/req/complete_registration')->assertForbidden();
+        $this->withSession($session)->post('/req/complete_registration', [], $this->legacyHeaders())->assertForbidden();
         $this->withSession($session)->post('/req/profile/backupPassKey', [
             'cipherText' => 'encrypted',
             'iv' => 'iv',
             'tag' => 'tag',
-        ])->assertForbidden();
+        ], $this->legacyHeaders())->assertForbidden();
 
         self::assertSame(0, DB::table('users')->count());
         self::assertSame(0, DB::table('passkey_backups')->count());
@@ -159,14 +195,14 @@ class SpaAuthFlowTest extends TestCase
 
     public function testLegacyRegistrationStillCompletesWhenSpaAuthIsDisabled(): void
     {
-        config()->set('app.spa_auth', false);
+        config()->set('hawki.spa_auth', false);
         $this->post('/req/login', [
             'account' => 'alice',
             'password' => 'test-password',
-        ])->assertOk()->assertJsonPath('redirectUri', '/register');
+        ], $this->legacyHeaders())->assertOk()->assertJsonPath('redirectUri', '/register');
 
         self::assertFalse(session()->has('auth.registration_ui'));
-        $this->post('/req/complete_registration')
+        $this->post('/req/complete_registration', [], $this->legacyHeaders())
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('redirectUri', '/chat');
@@ -188,7 +224,9 @@ class SpaAuthFlowTest extends TestCase
                 'email' => 'changed@example.test',
                 'employeetype' => 'changed',
             ]),
-        ])->post('/req/complete_registration')->assertStatus(409);
+        ])->post('/req/complete_registration', [], $this->legacyHeaders())->assertStatus(409)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Registration has already been completed.');
 
         $stored = DB::table('users')->where('id', $user->id)->first();
         self::assertSame('existing-public-key', $stored->publicKey);
@@ -205,6 +243,7 @@ class SpaAuthFlowTest extends TestCase
 
     public function testMissingPolicyFailsClosed(): void
     {
+        $this->startRegistration();
         $this->getJson('/api/hawki/v1/announcements/actions/registration-policy', $this->headers())
             ->assertStatus(503)->assertJsonPath('errors.0.code', 'registration_policy_unavailable');
     }
@@ -230,7 +269,7 @@ class SpaAuthFlowTest extends TestCase
     {
         $this->actingAs($this->user())
             ->postJson('/api/hawki/v1/auth/actions/logout', [], $this->headers())
-            ->assertOk();
+            ->assertOk()->assertJsonPath('meta.redirect_url', null);
         $this->assertGuest();
     }
 
@@ -239,8 +278,10 @@ class SpaAuthFlowTest extends TestCase
         $payload = $this->registrationPayload();
         DB::table('frontend_migrations')->insert(['migration_name' => 'test_migration', 'has_userdata' => false]);
         $this->startRegistration();
+        $sessionId = session()->getId();
         $this->postJson('/api/hawki/v1/auth/actions/complete-registration', $payload, $this->headers())
             ->assertOk()->assertJsonPath('data.attributes.keychain_state', 'initialized');
+        self::assertNotSame($sessionId, session()->getId());
         self::assertSame(1, DB::table('users')->count());
         self::assertSame(3, DB::table('user_keychain_values')->count());
         self::assertSame(1, DB::table('passkey_backups')->count());
@@ -267,7 +308,7 @@ class SpaAuthFlowTest extends TestCase
         $payload['policy']['hash'] = str_repeat('0', 64);
         $this->startRegistration();
         $this->postJson('/api/hawki/v1/auth/actions/complete-registration', $payload, $this->headers())
-            ->assertStatus(409)->assertJsonPath('errors.0.code', 'policy_changed');
+            ->assertStatus(409)->assertJsonPath('errors.0.code', 'registration_policy_changed');
         foreach (['users', 'user_keychain_values', 'passkey_backups', 'announcement_user'] as $table) {
             self::assertSame(0, DB::table($table)->count(), $table);
         }
@@ -341,6 +382,47 @@ class SpaAuthFlowTest extends TestCase
         self::assertFalse((bool)DB::table('users')->sole()->isRemoved);
     }
 
+    public function testGuestCannotInspectPolicyAvailability(): void
+    {
+        $this->getJson('/api/hawki/v1/announcements/actions/registration-policy', $this->headers())
+            ->assertForbidden()->assertJsonPath('errors.0.code', 'registration_not_in_progress');
+    }
+
+    public function testGuestIsRejectedBeforeRegistrationValidation(): void
+    {
+        $this->postJson('/api/hawki/v1/auth/actions/complete-registration', [], $this->headers())
+            ->assertForbidden()->assertJsonPath('errors.0.code', 'registration_not_in_progress');
+    }
+
+    public function testSpaLoginRequiresCsrfToken(): void
+    {
+        $headers = $this->headers();
+        unset($headers['X-XSRF-TOKEN']);
+        $this->postJson('/api/hawki/v1/auth/actions/login', [
+            'account' => 'alice', 'password' => 'test-password',
+        ], $headers)->assertStatus(419);
+    }
+
+    public function testSessionlessAuthActionsReturnCodedErrors(): void
+    {
+        foreach (['login', 'logout'] as $action) {
+            $this->postJson('/api/hawki/v1/auth/actions/' . $action, [], [
+                'Accept' => 'application/vnd.api+json',
+            ])->assertForbidden()->assertJsonPath('errors.0.code', 'auth_session_required');
+        }
+    }
+
+    public function testOversizedRegistrationValuesAreRejectedBeforeWrites(): void
+    {
+        $payload = $this->registrationPayload();
+        $payload['keychain']['publicKey'] = str_repeat('a', 65536);
+        $payload['backup']['ciphertext'] = base64_encode(str_repeat('a', 50000));
+        $this->startRegistration();
+        $this->postJson('/api/hawki/v1/auth/actions/complete-registration', $payload, $this->headers())
+            ->assertStatus(422);
+        self::assertSame(0, DB::table('users')->count());
+    }
+
     private function startRegistration(): void
     {
         $this->postJson('/api/hawki/v1/auth/actions/login', ['account' => 'alice', 'password' => 'test-password'], $this->headers())->assertOk();
@@ -370,5 +452,14 @@ class SpaAuthFlowTest extends TestCase
             'username' => 'alice', 'name' => 'Alice', 'email' => 'alice@example.test',
             'employeetype' => 'employee', 'publicKey' => '', 'isRemoved' => false,
         ]));
+    }
+}
+
+/** Exercise Sanctum's token verification even when PHPUnit runs in testing mode. */
+class EnforceSpaCsrf extends \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken
+{
+    protected function runningUnitTests(): bool
+    {
+        return false;
     }
 }
