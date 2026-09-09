@@ -419,8 +419,9 @@ export class RouteRegistrar {
     public group(path: string, callback: RouteRegistrationCallback, options?: RouteGroupOptions) {
         if (this.groups.has(path)) {
             const existingGroup = this.groups.get(path)!;
+            const existingChildren = existingGroup.children;
             existingGroup.children = (registrar) => {
-                existingGroup.children(registrar);
+                existingChildren(registrar);
                 callback(registrar);
             };
             return this;
