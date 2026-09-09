@@ -56,7 +56,7 @@ export class SettingsModule implements HawkiModule {
                     {
                         id: 'logout', entityKey: 'action/core:settings/logout',
                         title: __('ui.profile.logout'), icon: Logout02Icon,
-                        onSelect: () => {void app.logout();}
+                        onSelect: () => {void app.logout().catch(() => {});}
                     }
                 ];
             }

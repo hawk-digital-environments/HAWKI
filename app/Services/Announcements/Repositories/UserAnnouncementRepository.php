@@ -7,8 +7,8 @@ namespace App\Services\Announcements\Repositories;
 use App\Models\Announcements\Announcement;
 use App\Models\Announcements\AnnouncementUser;
 use App\Models\User;
+use App\Services\Announcements\AnnouncementContentResolver;
 use App\Services\Announcements\Values\AnnouncementForUser;
-use App\Services\Translation\LocaleService;
 use Illuminate\Support\Collection;
 
 /**
@@ -23,7 +23,7 @@ use Illuminate\Support\Collection;
 readonly class UserAnnouncementRepository
 {
     public function __construct(
-        private LocaleService $localeService
+        private AnnouncementContentResolver $contentResolver
     )
     {
     }
@@ -158,18 +158,6 @@ readonly class UserAnnouncementRepository
      */
     private function resolveContent(Announcement $announcement): string
     {
-        $candidates = [
-            $this->localeService->getCurrentLocale()->lang,
-            $this->localeService->getDefaultLocale()->lang,
-        ];
-
-        foreach ($candidates as $lang) {
-            $file = resource_path("announcements/{$announcement->view}/$lang.md");
-            if (is_file($file)) {
-                return (string)file_get_contents($file);
-            }
-        }
-
-        return '';
+        return $this->contentResolver->resolve($announcement)?->text ?? '';
     }
 }

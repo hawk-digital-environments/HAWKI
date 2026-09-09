@@ -6,6 +6,7 @@ namespace App\Services\System\Health;
 
 
 use App\Services\System\Health\Events\HealthCheckEvent;
+use App\Services\System\Health\Events\QuickHealthCheckEvent;
 use App\Services\System\Health\Exception\HealthcheckFailedException;
 use App\Services\System\Health\Value\HealthCheckResult;
 use App\Services\System\Health\Value\HealthCheckResultCollection;
@@ -75,7 +76,7 @@ readonly class HealthChecker
     public function check(): HealthCheckResultCollection
     {
         if ($this->timer->getTestType() === HealthTimer::TEST_TYPE_QUICK) {
-            return new HealthCheckResultCollection($this->quickCheck());
+            return $this->quickCheck();
         }
 
         return $this->deepCheck();
@@ -85,7 +86,16 @@ readonly class HealthChecker
      * Perform a quick health check that only verifies basic connectivity.
      * This is designed to be fast and is suitable for frequent checks (e.g., every 30 seconds).
      */
-    public function quickCheck(): HealthCheckResult
+    public function quickCheck(): HealthCheckResultCollection
+    {
+        $event = new QuickHealthCheckEvent(new HealthCheckResultCollection($this->checkQuickDatabase()));
+        $this->eventDispatcher->dispatch($event);
+        $results = $event->getResults();
+        if ($results->isUnhealthy()) $this->timer->markAsFailed();
+        return $results;
+    }
+
+    private function checkQuickDatabase(): HealthCheckResult
     {
         try {
             $responseTime = $this->trackTime(function () {
@@ -130,7 +140,7 @@ readonly class HealthChecker
 
         $results = $e->getResults();
 
-        if ($results->isOk()) {
+        if (!$results->isUnhealthy()) {
             $this->timer->markAsHealthy();
         } else {
             $this->timer->markAsFailed();

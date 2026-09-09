@@ -1,58 +1,34 @@
-import {declareEffectfulMiddleware} from '$lib/components/ui/routing/index.js';
-import type {Connection, InternalAuthenticatedConnection} from '$lib/app/schemas/resources/connections.schema.js';
+import {declareEffectfulMiddleware, redirect} from '$lib/components/ui/routing/index.js';
+import type {RouteMeta} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {assignAuthPage, currentNext} from '$lib/kernel/auth/navigation.js';
 
-// @todo Redirect through the router (`redirect('auth.login')` in the
-// middleware, `app.router.goToRoute('auth.login')` from the background
-// refresh) once the new frontend has an `auth.login` route. Until then this
-// is a hard, router-independent redirect to the site root.
-const LOGIN_URL = '/';
-
-/** Hard-redirects to the login page and aborts the current work. Always throws — `window.location.assign` is async, so callers can't rely on the navigation having happened when it returns. */
-function redirectToLogin(): never {
-    window.location.assign(LOGIN_URL);
-    // Navigation is asynchronous; stop the current resolution/refresh from
-    // continuing in the meantime.
-    throw new Error('Not authenticated, redirecting to login');
-}
-
-function isAuthenticated(connection: Connection | null): connection is InternalAuthenticatedConnection {
-    return connection?.type === 'internal_authenticated';
-}
-
-/**
- * Global auth middleware: every route (see {@link RoutingExtension}) is
- * guarded unless it opts out via `withoutGlobalMiddlewares: ['auth']` (or
- * `true`).
- *
- * The guard body runs on each navigation; the effect subscribes for the
- * lifetime of the rendered route, so a background connection refresh that
- * drops the session (type changed away from `internal_authenticated`, or all
- * retries exhausted) throws the user out of the authenticated page without
- * waiting for the next navigation. Both paths use {@link redirectToLogin}
- * rather than a router `redirect()`, because the background refresh fires
- * outside a resolution and `redirect()` only works mid-resolution.
- */
-export const authMiddleware = declareEffectfulMiddleware(
-    async (ctx, next) => {
-        if (isAuthenticated(ctx.app.connectionOrNull)) {
-            return next();
+export function authMetaGuards(meta: RouteMeta) {
+    const access = meta.access ?? 'crypto-ready';
+    if (!['public', 'server-session', 'crypto-ready'].includes(String(access))) {
+        throw new Error(`Unknown route access: ${String(access)}`);
+    }
+    return declareEffectfulMiddleware(async (ctx, next) => {
+        if (access === 'public') return next();
+        const connection = ctx.app.connectionOrNull;
+        const destination = currentNext(ctx.pathname);
+        if (!connection?.isAuthenticated) {
+            redirect(connection?.type === 'internal_registering_user' ? 'auth.register' : 'auth.login', destination ? {next: destination} : undefined);
         }
-
-        redirectToLogin();
-    },
-    (ctx) => {
-        const connectionChangedCleanup = ctx.app.events.async.on('connectionChanged', (connection) => {
-            if (!isAuthenticated(connection)) {
-                redirectToLogin();
+        if (access === 'server-session') return next();
+        if (connection.keychain_state === 'setup_required') redirect('auth.register', destination ? {next: destination} : undefined);
+        if (connection.keychain_state === 'inconsistent') redirect('auth.inconsistent', destination ? {next: destination} : undefined);
+        if (!ctx.app.cryptoReady) redirect('auth.handshake', destination ? {next: destination} : undefined);
+        return next();
+    }, ctx => {
+        if (access === 'public') return;
+        return ctx.app.events.async.on('connectionChanged', connection => {
+            if (ctx.app.logoutState !== 'idle') return;
+            if (!connection.isAuthenticated) {
+                assignAuthPage(connection.hasUserInfo ? 'register' : 'login');
             }
         });
-        const refreshCleanup = ctx.app.events.async.on('connectionRefreshFailed', () => {
-            redirectToLogin();
-        });
+    });
+}
 
-        return () => {
-            connectionChangedCleanup();
-            refreshCleanup();
-        };
-    }
-);
+/** Default policy retained for consumers that explicitly import the middleware. */
+export const authMiddleware = authMetaGuards({});
