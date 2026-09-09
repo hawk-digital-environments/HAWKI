@@ -2,6 +2,8 @@
 
 The auth pages live under `/new/auth`: `login`, `register`, `handshake`, and `inconsistent`. Credentials and redirect providers share the same registration and keychain flows. Passkeys and backup codes are used only in the browser; the API receives encrypted keychain values and an encrypted passkey backup.
 
+The built-in `auth` plugin (`resources/js/plugins/auth/auth.plugin.ts`) registers these routes and the auth resource schema. Its pages and UI helpers live in `plugins/auth/pages/`. Shared session handling and navigation guards remain in the kernel.
+
 ## Deployment
 
 1. Run the database migrations before deploying the new frontend. The September 2026 migrations archive duplicate backups, add uniqueness constraints and consent fields, and persist registration fingerprints. The highest backup ID survives; archived copies expire after 90 days.
