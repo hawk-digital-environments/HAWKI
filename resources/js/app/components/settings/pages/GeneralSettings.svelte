@@ -3,6 +3,7 @@
   theme, and the danger area (delete all data).
 -->
 <script lang="ts">
+    import {useLocaleSwitch} from '$lib/app/hooks/useLocaleSwitch.svelte.js';
     import z from 'zod';
     import Button from '$lib/components/ui/button/Button.svelte';
     import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
@@ -31,28 +32,7 @@
         label: locale.nameInLanguage
     }));
 
-    let localeValue = $state(app.localization.locale.lang);
-    let localeSaving = $state(false);
-
-    async function changeLocale(lang: string): Promise<void> {
-        // Guarded here instead of disabling the select: disabling the focused
-        // trigger mid-request would drop keyboard focus to <body>.
-        if (localeSaving || !lang || lang === app.localization.locale.lang) return;
-
-        localeSaving = true;
-        try {
-            await restApi.postToResourceAction('users', 'actions/locale', {locale: lang});
-            await app.localization.setLocale(lang);
-            // Keep subsequent API requests sending the new locale header.
-            app.connection.locale = lang;
-        } catch (error) {
-            console.error('Failed to change the locale', error);
-            localeValue = app.localization.locale.lang;
-            toast.error(__('ui.settings.general.languageError'));
-        } finally {
-            localeSaving = false;
-        }
-    }
+    const locale = useLocaleSwitch(() => toast.error(__('ui.settings.general.languageError')));
 
     // $derived so the labels follow runtime locale switches.
     const themeItems = $derived([
@@ -89,10 +69,10 @@
     <div class="field">
         <span class="field-label" id="settings-language-label">{__('ui.settings.general.languageLabel')}</span>
         <SingleSelect
-            bind:value={localeValue}
+            bind:value={locale.value}
             items={localeItems}
-            onValueChange={changeLocale}
-            triggerProps={{'aria-labelledby': 'settings-language-label', 'aria-busy': localeSaving}}
+            onValueChange={locale.change}
+            triggerProps={{'aria-labelledby': 'settings-language-label', 'aria-busy': locale.saving}}
         />
     </div>
 

@@ -158,6 +158,6 @@ readonly class UserAnnouncementRepository
      */
     private function resolveContent(Announcement $announcement): string
     {
-        return $this->contentResolver->resolve($announcement)?->text ?? '';
+        return $this->contentResolver->resolve($announcement)->text ?? '';
     }
 }

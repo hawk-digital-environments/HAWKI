@@ -44,3 +44,15 @@ test('another authenticated user triggers an identity change despite an unchange
     await handle.refreshConnection();
     assert.deepEqual(events, ['connected', 'connectionChanged']);
 });
+
+test('public-key hash changes do not change account identity', async () => {
+    const events: string[] = [];
+    let hash = 'old-public-key';
+    const api: any = {getResource: async () => ({...connection(), userinfo: {id: 1, hash}})};
+    const eventBus: any = {async: {triggerVoid: async (name: string) => {events.push(name);}}};
+    const handle = new ConnectionHandle(api, eventBus);
+    await handle.refreshConnection();
+    hash = 'rotated-public-key';
+    await handle.refreshConnection();
+    assert.deepEqual(events, ['connected']);
+});

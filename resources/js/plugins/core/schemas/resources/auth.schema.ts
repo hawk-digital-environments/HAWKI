@@ -1,8 +1,8 @@
 import z from 'zod';
 
 const AuthSchema = z.discriminatedUnion('mode', [
-    z.object({id: z.literal('hawki'), mode: z.literal('credentials'), start_url: z.null(), last_error: z.string().nullable()}),
-    z.object({id: z.literal('hawki'), mode: z.literal('redirect'), start_url: z.string().min(1), last_error: z.string().nullable()})
+    z.object({id: z.literal('hawki'), mode: z.literal('credentials'), start_url: z.null(), last_error: z.enum(['invalid_credentials', 'provider_failed']).nullable()}),
+    z.object({id: z.literal('hawki'), mode: z.literal('redirect'), start_url: z.string().min(1), last_error: z.enum(['invalid_credentials', 'provider_failed']).nullable()})
 ]);
 
 export const LoginResponseSchema = z.object({meta: z.object({next: z.enum(['handshake', 'register'])})});

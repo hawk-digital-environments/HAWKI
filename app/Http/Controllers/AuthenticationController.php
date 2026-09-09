@@ -12,6 +12,8 @@ use App\Services\Auth\LogoutHandler;
 use App\Services\Auth\SpaAuthHandoff;
 use App\Services\Auth\Value\AuthCredentials;
 use App\Services\Auth\Value\LoginNextStep;
+use App\Services\Auth\Value\SpaAuthPage;
+use App\Http\Errors\CodedError;
 use App\Services\Users\Repositories\UserRepository;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Http\JsonResponse;
@@ -39,6 +41,9 @@ class AuthenticationController extends Controller
 
     public function handleLogin(Request $request): Response
     {
+        if ($this->loginHandler->requiresCredentials()) {
+            $this->spaAuthHandoff->discard($request);
+        }
         try {
             $credentials = $this->credentialsFromRequest($request);
             $result = $this->loginHandler->handle($request, $credentials);
@@ -50,19 +55,23 @@ class AuthenticationController extends Controller
                 return redirect($this->spaAuthHandoff->completeSuccess($request, $result->nextStep));
             }
 
-            if ((bool) config('app.spa_auth', false) && $result->nextStep === LoginNextStep::REGISTER) {
+            if ($this->spaAuthHandoff->isEnabled() && $result->nextStep === LoginNextStep::REGISTER) {
                 $this->spaAuthHandoff->markSpaRegistration($request);
             }
 
             return $this->legacyLoginResponse($result->nextStep);
         } catch (\Throwable $e) {
-            $error = $e instanceof AuthFailedException ? $e->getMessage() : 'An unexpected error occurred during authentication.';
+            $error = $e instanceof AuthFailedException ? 'invalid_credentials' : 'provider_failed';
 
             $this->logger->warning('Failed login attempt', ['exception' => $e]);
 
             if ($this->spaAuthHandoff->isPending($request)) {
                 return redirect($this->spaAuthHandoff->completeFailure($request, $error));
             }
+
+            $error = $e instanceof AuthFailedException
+                ? $e->getMessage()
+                : 'An unexpected error occurred during authentication.';
 
             if ($this->loginHandler->requiresCredentials()) {
                 return response()->json([
@@ -72,19 +81,8 @@ class AuthenticationController extends Controller
                 ]);
             }
 
-            return redirect($this->authPath('login'))->withErrors(['login_error' => $error]);
+            return redirect($this->spaAuthHandoff->entryUrlFor(SpaAuthPage::LOGIN))->withErrors(['login_error' => $error]);
         }
-    }
-
-    public function startRedirectLogin(Request $request): Response
-    {
-        if ($this->loginHandler->requiresCredentials()) {
-            return redirect($this->authPath('login'));
-        }
-
-        $this->spaAuthHandoff->start($request, $request->query('next'));
-
-        return $this->handleLogin($request);
     }
 
     private function credentialsFromRequest(Request $request): ?AuthCredentials
@@ -110,27 +108,13 @@ class AuthenticationController extends Controller
 
     private function legacyLoginResponse(LoginNextStep $nextStep): RedirectResponse|JsonResponse
     {
-        $url = $this->authPath($nextStep->value);
+        $url = $this->spaAuthHandoff->entryUrlFor($nextStep);
         if (!$this->loginHandler->requiresCredentials()) {
             return redirect($url);
         }
 
         return response()->json(['success' => true, 'redirectUri' => $url]);
     }
-
-    private function authPath(string $page): string
-    {
-        if ((bool) config('app.spa_auth', false)) {
-            return '/new/auth/' . $page;
-        }
-
-        return '/' . match ($page) {
-            'login' => 'login',
-            'handshake' => 'handshake',
-            'register' => 'register',
-        };
-    }
-
 
     /// Initiate handshake process
     /// sends back the user keychain.
@@ -180,7 +164,7 @@ class AuthenticationController extends Controller
     {
         try {
             if (!$request->getUserContext()->isRegisteringUser()) {
-                abort(403, 'No registration in progress');
+                CodedError::abort('registration_not_in_progress', 403, 'No registration in progress');
             }
 
             // Retrieve user info from session
@@ -221,13 +205,13 @@ class AuthenticationController extends Controller
                 'registration_access',
                 SpaAuthHandoff::SESSION_REGISTRATION_UI_KEY,
             ]);
-            abort(409, 'Registration has already been completed.');
+            return response()->json(['success' => false, 'message' => 'Registration has already been completed.'], 409);
         }
     }
 
     public function logout(Request $request)
     {
-        return redirect($this->logoutHandler->handle($request) ?? $this->authPath('login'));
+        return redirect($this->logoutHandler->handle($request) ?? $this->spaAuthHandoff->entryUrlFor(SpaAuthPage::LOGIN));
     }
 
 }

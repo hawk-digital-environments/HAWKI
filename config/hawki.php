@@ -14,6 +14,8 @@ return [
     | !!! YOU CAN NOT CHANGE THE MIGRATION ATTRIBUTES AFTER MIGRATING THE DATABASE !!!
     */
 
+    'spa_auth' => filter_var(env('HAWKI_SPA_AUTH', false), FILTER_VALIDATE_BOOLEAN),
+
     'migration' => [
         'name' => env('HAWKI_NAME', 'HAWKI'),
         'username' => env('HAWKI_USERNAME', 'HAWKI'),

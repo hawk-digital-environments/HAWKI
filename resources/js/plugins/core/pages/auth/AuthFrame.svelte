@@ -50,7 +50,10 @@
         const currentTheme = theme.theme;
         let cancelled = false;
         videoReady = false;
-        void pickLoginBackground(app.config.get().transfer.baseUrl, currentTheme).then((picked) => {
+        void pickLoginBackground(app.config.get().transfer.baseUrl, currentTheme, {
+            load: url => app.restApi.fetch(url, {credentials: 'omit'}),
+            storage: app.localStorage
+        }).then((picked) => {
             if (!cancelled) video = picked;
         });
         return () => { cancelled = true; };
