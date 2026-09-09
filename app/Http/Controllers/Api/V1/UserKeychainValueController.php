@@ -7,6 +7,7 @@ use App\Http\Requests\Api\V1\UserKeychainUpdateValuesRequest;
 use App\Models\User;
 use App\Models\UserKeychainValue;
 use App\Services\Frontend\Migrations\Repositories\FrontendMigrationUserdataRepository;
+use App\Services\Users\Keychain\KeychainBatchWriter;
 use App\Services\Users\Keychain\Repositories\UserKeychainRepository;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
@@ -56,32 +57,11 @@ class UserKeychainValueController extends Controller
     #[Authorize('update-batch', UserKeychainValue::class)]
     public function batchUpdate(
         UserKeychainUpdateValuesRequest $request,
+        KeychainBatchWriter             $writer,
         UserKeychainRepository          $repository,
     ): DataResponse
     {
-        if ($request->isCleaning()) {
-            $repository->dropAllForUser($request->user());
-        }
-
-        if ($request->hasNewPublicKey()) {
-            $request->user()->update([
-                'publicKey' => $request->getNewPublicKey()
-            ]);
-        }
-
-        if ($request->hasSetList()) {
-            $repository->setValues(
-                $request->user(),
-                ...$request->getSetList()
-            );
-        }
-
-        if ($request->hasRemoveList()) {
-            $repository->removeValues(
-                $request->user(),
-                ...$request->getRemoveList()
-            );
-        }
+        $writer->write($request->user(), $request->getBatch());
 
         return new DataResponse($repository->findAllOfUser($request->user()));
     }

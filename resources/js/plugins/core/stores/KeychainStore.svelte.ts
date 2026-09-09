@@ -1,7 +1,7 @@
 import {createKeychainHandle, type KeychainHandle, type RoomKeys} from '$lib/kernel/keychain/keychainHandle.js';
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
-import {decryptSymmetric, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
+import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
 import {deriveKey} from '$lib/kernel/encryption/utils.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -31,6 +31,10 @@ export class KeychainStore implements DataStore {
 
     private _handle: KeychainHandle | null = null;
     private _app: HawkiApp | null = null;
+    private generation = 0;
+    private sessionUsername: string | null = null;
+    private unlocking: Promise<boolean> | null = null;
+    public cryptoReady = $state(false);
 
     /** Resolves when the initial keychain load has completed (or was skipped
      *  because the connection is unauthenticated). Await this before reading keys. */
@@ -71,20 +75,83 @@ export class KeychainStore implements DataStore {
         await this.handle.initializeNewKeychain();
     }
 
-    /**
-     * Removes the locally stored passkey session (encrypted localStorage blob +
-     * in-memory value). Server-side data is untouched.
-     */
-    public clearLocalSession(): void {
-        try {
-            const connection = this._app?.connection;
-            if (connection?.isAuthenticated) {
-                this._app?.localStorage.removeItem(`${connection.userinfo.username}PK`);
-            }
-        } catch (error) {
-            // Connection not loaded yet — nothing to clean up.
-        }
+    /** Locks the keychain and cancels pending unlocks while retaining the encrypted browser passkey. */
+    public lock(): void {
+        this.generation++;
+        this.unlocking = null;
+        this.cryptoReady = false;
+        this._handle?.clear();
+        this.publicKey = null;
+        this.privateKey = null;
+        this.aiConvKey = null;
+        this.roomKeys = {};
+        this.sessionUsername = null;
         this._app?.passkeySession.clear();
+    }
+
+    /** Forgets this account's saved passkey and locks its keychain, for explicit removal or a profile reset. */
+    public clearLocalSession(): void {
+        const connection = this._app?.connectionOrNull;
+        const username = this.sessionUsername ?? (connection?.hasUserInfo ? connection.userinfo.username : null);
+        if (username) this._app?.localStorage.removeItem(`${username}PK`);
+        this.lock();
+    }
+
+    /** Saves an encrypted passkey for future logins by this account in the same browser. */
+    public async persistPasskey(passkey: string): Promise<void> {
+        const app = this._app!;
+        const generation = this.generation;
+        const connection = app.connection;
+        if (!connection.hasUserInfo) throw new Error('No user available for passkey persistence.');
+        const salt = app.config.get().salts?.passkey;
+        if (!salt) throw new Error('Passkey salt is missing.');
+        const key = await deriveKey(connection.userinfo.email, connection.userinfo.username, salt);
+        const value = (await encryptSymmetric(passkey, key)).toJson();
+        if (generation !== this.generation) throw new Error('Keychain session was cleared.');
+        this.sessionUsername = connection.userinfo.username;
+        const name = `${connection.userinfo.username}PK`;
+        app.localStorage.setItem(name, value);
+        if (app.localStorage.getItem(name) !== value) throw new Error('Passkey could not be saved in browser storage.');
+    }
+
+    /** Every unlock, including local restoration, uses this migration barrier. */
+    public async unlock(passkey: string): Promise<boolean> {
+        if (this.unlocking) return this.unlocking;
+        const unlocking = this.doUnlock(passkey).finally(() => {
+            if (this.unlocking === unlocking) this.unlocking = null;
+        });
+        this.unlocking = unlocking;
+        return this.unlocking;
+    }
+
+    private async doUnlock(passkey: string): Promise<boolean> {
+        const app = this._app!;
+        const connection = app.connection;
+        if (!connection.isAuthenticated || !['initialized', 'legacy_migration_required'].includes(connection.keychain_state)) {
+            throw new Error('This keychain requires account setup or manual recovery.');
+        }
+        const generation = this.generation;
+        this.sessionUsername = connection.userinfo.username;
+        this.cryptoReady = false;
+        try {
+            const valid = await this.validateKeychainPassword(passkey);
+            if (generation !== this.generation) throw new Error('Keychain session was cleared.');
+            if (!valid) {
+                this.clearLocalSession();
+                return false;
+            }
+            app.passkeySession.passkey = passkey;
+            await app.migration.apply('after_passkey');
+            if (generation !== this.generation) throw new Error('Keychain session was cleared.');
+            await this.handle.load();
+            if (generation !== this.generation) throw new Error('Keychain session was cleared.');
+            if (!this.publicKey || !this.privateKey || !this.aiConvKey) throw new Error('The keychain is incomplete.');
+            this.cryptoReady = true;
+            return true;
+        } catch (error) {
+            if (generation === this.generation) this.lock();
+            throw error;
+        }
     }
 
     /** Generates a fresh symmetric key pair for `slug` and persists it in the keychain. */
@@ -129,21 +196,16 @@ export class KeychainStore implements DataStore {
         });
 
         app.events.async.on('logout', () => {
-            // Local session holds the encrypted keychain material; drop it on
-            // logout so a re-login does not pick up the previous user's keys.
-            this.clearLocalSession();
+            this.lock();
         });
     }
 
     public async loadData(app: HawkiApp) {
-        const handle = this.handle;
-
+        const generation = this.generation;
         this._waitingToLoad = (async () => {
             try {
                 const connection = app.connection;
-                if (!connection.isAuthenticated) {
-                    throw new Error('Current connection is not authenticated');
-                }
+                if (!connection.isAuthenticated || !['initialized', 'legacy_migration_required'].includes(connection.keychain_state)) return;
 
                 if (!app.passkeySession.passkey) {
                     const storedPasskey = app.localStorage.getItem(`${connection.userinfo.username}PK`);
@@ -158,12 +220,14 @@ export class KeychainStore implements DataStore {
                         passkeySalt
                     );
                     const encryptedPasskey = loadSymmetricCryptoValueFromObject(JSON.parse(storedPasskey));
-                    app.passkeySession.passkey = await decryptSymmetric(encryptedPasskey, wrappingKey);
+                    const restored = await decryptSymmetric(encryptedPasskey, wrappingKey);
+                    if (generation !== this.generation) return;
+                    app.passkeySession.passkey = restored;
                 }
 
-                await handle.load();
+                await this.unlock(app.passkeySession.passkey!);
             } catch (error) {
-                app.passkeySession.clear();
+                if (generation === this.generation) this.lock();
                 console.warn('Could not restore the local HAWKI keychain session.', error);
             }
         })();

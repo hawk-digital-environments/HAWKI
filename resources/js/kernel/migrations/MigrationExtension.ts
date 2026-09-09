@@ -1,3 +1,4 @@
+import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {JsonApiCollection} from '$lib/kernel/api/jsonApiEncoding.js';
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {Migration} from '$lib/app/schemas/resources/migrations.schema.js';
@@ -91,8 +92,7 @@ export class MigrationExtension implements HawkiAppExtension {
         for (const {id: name, data} of applicableMigrations) {
             const migration = this.migrations.get(name);
             if (!migration) {
-                console.warn(`Migration ${name} not found, expect errors if it is actually needed!`);
-                continue;
+                throw new Error(`Required migration ${name} is unavailable.`);
             }
             if (migration.runType !== runType) {
                 continue;
@@ -151,8 +151,11 @@ export class MigrationExtension implements HawkiAppExtension {
         await app.getOrFail('plugins').bootstrapper.runMigrations(registrar);
     }
 
-    public ready(app: HawkiApp): void {
+    public ready(app: HawkiApp, bootstrapper: Bootstrapper): void {
         this._app = app;
+        bootstrapper.onMigrationStage(async () => {
+            if (app.isAuthenticated) await this.apply('after_login');
+        });
     }
 
     public provideProperties(): Record<string, any> {

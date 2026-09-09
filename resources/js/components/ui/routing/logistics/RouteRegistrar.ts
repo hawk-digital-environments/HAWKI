@@ -324,7 +324,14 @@ function buildRouteNode(kind: RouteNodeKind, componentOrLoader: ComponentOrLoade
  *     }, {middlewares: [requireAdmin]});
  * }
  */
+export interface RouteRegistrarOptions {
+    /** Application-owned access policy, applied before route loaders, including fallbacks. */
+    metaGuards?: (meta: RouteMeta) => RouteMiddleware | RouteMiddleware[];
+}
+
 export class RouteRegistrar {
+    public constructor(private readonly options: RouteRegistrarOptions = {}) {}
+
     private readonly routes = new Map<string, RegisteredRouteOptions>();
     private readonly groups = new Map<string, RegisteredRouteGroupOptions>();
     /**
@@ -467,7 +474,7 @@ export class RouteRegistrar {
      * list) would silently scope the guard to that group's subtree.
      */
     public createNestedRegistrar() {
-        const nestedRegistrar = new RouteRegistrar();
+        const nestedRegistrar = new RouteRegistrar(this.options);
         nestedRegistrar.globalMiddlewares = this.globalMiddlewares;
         return nestedRegistrar;
     }
@@ -536,7 +543,11 @@ export class RouteRegistrar {
             children: options.catchAll ? [] : undefined
         };
 
-        return buildRouteMiddlewareStack(innerRoute, this.globalMiddlewares, options);
+        const guards = this.options.metaGuards?.(options.meta ?? {}) ?? [];
+        return buildRouteMiddlewareStack(innerRoute, this.globalMiddlewares, {
+            ...options,
+            middlewares: [...(Array.isArray(guards) ? guards : [guards]), ...(options.middlewares ?? [])]
+        });
     }
 
     /**

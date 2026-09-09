@@ -154,7 +154,25 @@ export function buildRouteMiddlewareStack(
         ...filterGlobalMiddlewares(globalMiddlewares, options.withoutGlobalMiddlewares),
         ...middlewares
     ];
-    return createNestedMiddlewareRoutes(allMiddlewares, route);
+    // Run leaf guards only once its path matches. Pathless parent guards would
+    // also run for unrelated routes encountered earlier in the route tree.
+    const action = route.action;
+    return {
+        ...route,
+        action: async (context, params) => {
+            const ctx = context as HawkiRouteContext;
+            const run = async (index: number): Promise<RouteResultBody | undefined> => {
+                const middleware = allMiddlewares[index];
+                if (!middleware) return await action?.(context, params) as RouteResultBody | undefined;
+                if (isEffectfulMiddleware(middleware)) {
+                    const dispose = middleware.effect(ctx);
+                    if (dispose) ctx.onCleanup(dispose);
+                }
+                return (await middleware(ctx, () => run(index + 1))) ?? undefined;
+            };
+            return (await run(0)) ?? null;
+        }
+    } satisfies Route;
 }
 
 /** Runtime guard for registrations coming from untyped/JS callers: throws if `middlewares` is set but not an array. */

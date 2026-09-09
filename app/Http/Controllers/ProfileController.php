@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Profile\ApiTokenService;
 use App\Services\Profile\PasskeyService;
 use App\Services\Profile\ProfileService;
+use App\Services\Profile\Values\PasskeyBackupSecret;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -106,7 +107,9 @@ class ProfileController extends Controller
             'iv' => 'required|string',
         ]);
 
-        $passkeyService->backupPassKey($validatedData);
+        // The legacy flow backs up the passkey of whoever is logged in — the service used to read
+        // that from the session itself, it is now passed in explicitly.
+        $passkeyService->backupPassKey($this->backupOwner($request), PasskeyBackupSecret::fromArray($validatedData));
 
         return response()->json([
             'success' => true,
@@ -116,14 +119,28 @@ class ProfileController extends Controller
 
     }
 
-    public function requestPasskeyBackup(PasskeyService $passkeyService): JsonResponse
+    public function requestPasskeyBackup(Request $request, PasskeyService $passkeyService): JsonResponse
     {
 
-        $response = $passkeyService->retrievePasskeyBackup();
+        $backup = $passkeyService->retrievePasskeyBackup($this->backupOwner($request));
+        if ($backup === null) {
+            abort(404, 'No passkey backup found for user');
+        }
+
         return response()->json([
             'success' => true,
-            'passkeyBackup' => $response,
+            'passkeyBackup' => $backup->toArray(),
         ]);
+    }
+
+    private function backupOwner(Request $request): string
+    {
+        $actor = $request->user() ?? $request->getUserContext()->getRegisteringUser();
+        if ($actor === null) {
+            abort(403, 'No authenticated backup owner.');
+        }
+
+        return $actor->username;
     }
 
     // SECTION: API TOKENS
