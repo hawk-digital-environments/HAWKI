@@ -31,6 +31,7 @@ return [
 
     'security' => [
         'passkey' => [
+            'auto_generate' => filter_var(env('APP_SECURITY_PASSKEY_AUTO_GENERATE', false), FILTER_VALIDATE_BOOLEAN),
             'allow_paste' => filter_var(env('APP_SECURITY_PASSKEY_ALLOW_PASTE', true), FILTER_VALIDATE_BOOLEAN),
             'char_limitation'=> filter_var(env('APP_SECURITY_PASSKEY_CHAR_LIMITATION', true), FILTER_VALIDATE_INT),
         ],
