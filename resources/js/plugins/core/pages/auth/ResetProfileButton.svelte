@@ -45,7 +45,7 @@
     bind:open
     busy={pending}
     title={__('ui.auth.inconsistent.confirmTitle')}
-    description={__('ui.auth.inconsistent.confirmDescription')}
+    description={app.config.get().security.passkeyAutoGenerate ? __('ui.auth.inconsistent.automaticConfirmDescription') : __('ui.auth.inconsistent.confirmDescription')}
     okLabel={__('ui.auth.inconsistent.confirm')}
     confirmVariant="delete"
     restoreFocusTo={() => trigger}

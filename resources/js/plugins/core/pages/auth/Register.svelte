@@ -29,7 +29,7 @@
     import Input from '$lib/components/ui/input/Input.svelte';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import Markdown from '$lib/components/util/markdown/Markdown.svelte';
-    import { deriveKey, exportCryptoKeyToString } from '$lib/kernel/encryption/utils.js';
+    import { deriveKey, exportCryptoKeyToString, generatePasskey } from '$lib/kernel/encryption/utils.js';
     import { encryptSymmetric } from '$lib/kernel/encryption/symmetric.js';
     import {
         exportPrivateKeyToString,
@@ -46,6 +46,7 @@
     const app = useApp();
     const { __ } = useTranslator();
     const restricted = app.config.get().security.passkeyRestrictCharacters;
+    const autoGenerate = app.config.get().security.passkeyAutoGenerate;
     let currentPolicy = $state(untrack(() => data.policy));
     // The policy text is served in the current locale; follow language switches made on this page.
     let policyLocale = untrack(() => app.localization.locale.lang);
@@ -75,6 +76,7 @@
     let title: HTMLHeadingElement;
     onMount(() => {
         if (policy) policyOpen = true;
+        else if (autoGenerate) void prepare();
     });
     const passkeyPattern = $derived(restricted ? '[A-Za-z0-9!@#$%^&*()_+-]+' : undefined);
     function validPasskey() {
@@ -93,18 +95,19 @@
             policyOpen = true;
             return;
         }
-        if (!validPasskey()) {
+        if (!autoGenerate && !validPasskey()) {
             invalidField = 'passkey';
             error = __('ui.auth.register.passkeyInvalid');
             return;
         }
-        if (passkey !== repeated) {
+        if (!autoGenerate && passkey !== repeated) {
             invalidField = 'repeat';
             error = __('ui.auth.register.passkeyMismatch');
             return;
         }
         pending = true;
         try {
+            if (autoGenerate && !passkey) passkey = generatePasskey();
             const salts = app.config.get().salts;
             const connection = app.connection;
             if (!salts || !connection.hasUserInfo) throw new Error('Registration configuration is unavailable.');
@@ -219,35 +222,38 @@
         invalidField = null;
         policyOpen = false;
         if (stage === 'policy') stage = 'backup';
+        else if (autoGenerate) void prepare();
     }
 </script>
 <AuthFrame>
     <div class="auth-intro">
         <h1 id="auth-title" tabindex="-1" bind:this={title}>{stage === 'backup' ? __('ui.auth.register.backupTitle') : __('ui.auth.register.title')}</h1>
-        <p class="auth-copy">{stage === 'backup' ? __('ui.auth.register.backupDescription') : __('ui.auth.register.description')}</p>
+        <p class="auth-copy">{stage === 'backup' ? __('ui.auth.register.backupDescription') : autoGenerate ? __('ui.auth.register.automaticDescription') : __('ui.auth.register.description')}</p>
     </div>
     {#if error && invalidField === null}<p class="auth-error" role="alert">{error}</p>{/if}
     {#if stage === 'form'}
         <form class="auth-form" onsubmit={(e) => { e.preventDefault(); void prepare(); }}>
-            <div class="auth-field">
-                <label for="new-passkey">{__('ui.auth.register.passkey')}</label>
-                <Input id="new-passkey" type="password" bind:value={passkey} pattern={passkeyPattern} autocomplete="new-password" required disabled={pending} aria-invalid={invalidField === 'passkey'} aria-describedby={invalidField === 'passkey' ? 'passkey-error' : 'passkey-help'}/>
-                {#if invalidField === 'passkey'}
-                    <small id="passkey-error" class="auth-error" role="alert">{error}</small>
-                {:else}
-                    <small id="passkey-help" class="auth-hint">{__('ui.auth.register.passkeyHint')}</small>
-                {/if}
-            </div>
-            <div class="auth-field">
-                <label for="repeat-passkey">{__('ui.auth.register.repeatPasskey')}</label>
-                <Input id="repeat-passkey" type="password" bind:value={repeated} pattern={passkeyPattern} autocomplete="new-password" required disabled={pending} aria-invalid={invalidField === 'repeat'} aria-describedby={invalidField === 'repeat' ? 'repeat-passkey-error' : undefined}/>
-                {#if invalidField === 'repeat'}<small id="repeat-passkey-error" class="auth-error" role="alert">{error}</small>{/if}
-            </div>
+            {#if !autoGenerate}
+                <div class="auth-field">
+                    <label for="new-passkey">{__('ui.auth.register.passkey')}</label>
+                    <Input id="new-passkey" type="password" bind:value={passkey} pattern={passkeyPattern} autocomplete="new-password" required disabled={pending} aria-invalid={invalidField === 'passkey'} aria-describedby={invalidField === 'passkey' ? 'passkey-error' : 'passkey-help'}/>
+                    {#if invalidField === 'passkey'}
+                        <small id="passkey-error" class="auth-error" role="alert">{error}</small>
+                    {:else}
+                        <small id="passkey-help" class="auth-hint">{__('ui.auth.register.passkeyHint')}</small>
+                    {/if}
+                </div>
+                <div class="auth-field">
+                    <label for="repeat-passkey">{__('ui.auth.register.repeatPasskey')}</label>
+                    <Input id="repeat-passkey" type="password" bind:value={repeated} pattern={passkeyPattern} autocomplete="new-password" required disabled={pending} aria-invalid={invalidField === 'repeat'} aria-describedby={invalidField === 'repeat' ? 'repeat-passkey-error' : undefined}/>
+                    {#if invalidField === 'repeat'}<small id="repeat-passkey-error" class="auth-error" role="alert">{error}</small>{/if}
+                </div>
+            {/if}
             {#if pending}<p role="status" class="auth-hint">{__('ui.auth.register.preparing')}</p>{/if}
-            {#if policy}
+            {#if policy && !autoGenerate}
                 <Button type="button" variant="ghost" disabled={pending} onclick={() => policyOpen = true}>{__('ui.auth.register.readPolicy')}</Button>
             {/if}
-            <Button type="submit" variant="accent" disabled={pending} block>{__('ui.auth.register.continue')}</Button>
+            <Button type="submit" variant="accent" disabled={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
         </form>
     {:else if stage === 'policy'}
         <Button onclick={() => policyOpen = true} variant="accent" block>{__('ui.auth.register.readPolicy')}</Button>

@@ -95,6 +95,12 @@
             </div>
 
             <div class="slide" data-index="5">
+                @if(config('hawki.security.passkey.auto_generate', false))
+                    <h1>{{ __('ui.auth.register.title') }}</h1>
+                    <p id="automatic-passkey-status" role="status"></p>
+                    <p id="automatic-passkey-error" class="red-text" role="alert"></p>
+                    <button id="automatic-passkey-retry" type="button" class="btn-lg-fill" onclick="generateRegistrationPasskey()" hidden>{{ __('ui.auth.register.continue') }}</button>
+                @else
                 <h1>{{ __("Reg_SL5_H") }}</h1>
                 <form id="passkey-form" autocomplete="off">
                     <div class="password-input-wrapper">
@@ -142,6 +148,7 @@
                     <button class="btn-lg-fill" onclick="checkPasskey()">{{ __("Save") }}</button>
                 </div>
 
+                @endif
             </div>
 
             <div class="slide" data-index="6">
@@ -170,7 +177,7 @@
     <script>
         window.waitUntilReady(function () {
             initializeRegistration();
-            switchSlide(1);
+            switchSlide(window.getConfig().security.passkeyAutoGenerate ? 3 : 1);
             cleanupUserData();
             initializePasskeyInputs(true);
         });
