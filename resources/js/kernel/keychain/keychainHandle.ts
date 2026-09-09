@@ -62,6 +62,16 @@ export function createKeychainHandle(
     let loadedRoomKeys: Record<string, RoomKeys> = {};
     let incompleteRoomKeys: Record<string, CryptoKey> = {};
     let passkeyValidator: string | null = null;
+    let generation = 0;
+
+    const clear = () => {
+        generation++;
+        loadedPasskey = null;
+        loadedKeys = {};
+        loadedRoomKeys = {};
+        incompleteRoomKeys = {};
+        passkeyValidator = null;
+    };
 
     const loadPasskeyValidator = async () => {
         return (await app.restApi.getFromResourceAction(
@@ -98,23 +108,29 @@ export function createKeychainHandle(
         if (!passkey) {
             throw new Error('No passkey provided to create keychain handle!');
         }
-        loadedPasskey = await deriveKeychainPassword(app, passkey);
-        return loadedPasskey;
+        const currentGeneration = generation;
+        const key = await deriveKeychainPassword(app, passkey);
+        if (currentGeneration !== generation) throw new Error('Keychain session was cleared.');
+        loadedPasskey = key;
+        return key;
     };
 
-    const load = async () =>
-        await loadKeys(await app.restApi.getResourceCollection('user-keychain-values'));
+    const load = async () => {
+        const currentGeneration = generation;
+        const records = await app.restApi.getResourceCollection('user-keychain-values');
+        if (currentGeneration !== generation) throw new Error('Keychain session was cleared.');
+        await loadKeys(records);
+    };
 
     const loadKeys = async (records: UserKeychainValue[]) => {
+        const currentGeneration = generation;
         const loadingQueue: (() => Promise<void>)[] = [];
-        loadedKeys = {};
+        const nextKeys: typeof loadedKeys = {};
         records.forEach(i => {
             loadingQueue.push((async () => {
                 const type = i.type;
-                if (!loadedKeys[type]) {
-                    loadedKeys[type] = {};
-                }
-                loadedKeys[type]![i.key] = await loadCryptoKeyFromKeychainValue(i);
+                if (!nextKeys[type]) nextKeys[type] = {};
+                nextKeys[type]![i.key] = await loadCryptoKeyFromKeychainValue(i);
             }));
         });
 
@@ -126,7 +142,10 @@ export function createKeychainHandle(
             await Promise.all(batch.map(fn => fn()));
         }
 
+        if (currentGeneration !== generation) throw new Error('Keychain session was cleared.');
+        loadedKeys = nextKeys;
         await loadRoomKeys();
+        if (currentGeneration !== generation) throw new Error('Keychain session was cleared.');
         triggerChange();
     };
 
@@ -315,6 +334,7 @@ export function createKeychainHandle(
     };
 
     return {
+        clear,
         onChange,
         validateKeychainPassword,
         load,

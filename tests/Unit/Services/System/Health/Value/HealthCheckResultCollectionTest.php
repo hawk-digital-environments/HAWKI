@@ -110,7 +110,7 @@ class HealthCheckResultCollectionTest extends TestCase
 
         $data = $sut->jsonSerialize();
 
-        static::assertSame(HealthCheckResult::STATUS_OK, $data['status']);
+        static::assertSame(HealthCheckResultCollection::STATUS_HEALTHY, $data['status']);
         static::assertSame('All checks passed.', $data['message']);
         static::assertArrayHasKey('db', $data['results']);
         static::assertSame(HealthCheckResult::STATUS_OK, $data['results']['db']['status']);
@@ -125,7 +125,7 @@ class HealthCheckResultCollectionTest extends TestCase
 
         $data = $sut->jsonSerialize();
 
-        static::assertSame(HealthCheckResult::STATUS_ERROR, $data['status']);
+        static::assertSame(HealthCheckResultCollection::STATUS_UNHEALTHY, $data['status']);
         static::assertSame('One or more checks failed.', $data['message']);
     }
 }

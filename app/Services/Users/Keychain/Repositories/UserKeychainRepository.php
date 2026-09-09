@@ -101,6 +101,38 @@ class UserKeychainRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
+     * Returns the type of every keychain value stored for a user, one entry per row.
+     *
+     * Only the `type` column is read: this answers "what shape is this user's keychain in"
+     * without pulling the encrypted values, which are large and useless to the server anyway.
+     * @see \App\Services\Users\Keychain\KeychainStateResolver
+     * @return list<string> Raw {@see UserKeychainValueType} values, with duplicates.
+     */
+    public function findAllValueTypesOfUser(User $user): array
+    {
+        return $this->getQueryWithoutContextualScopes('access')
+            ->where('user_id', $user->id)
+            ->pluck('type')
+            ->map(static fn(mixed $type): string => $type instanceof UserKeychainValueType ? $type->value : (string)$type)
+            ->all();
+    }
+
+    /**
+     * @return list<array{key: string, type: string}>
+     */
+    public function findAllKeysAndTypesOfUser(User $user): array
+    {
+        return $this->getQueryWithoutContextualScopes('access')
+            ->where('user_id', $user->id)
+            ->get(['key', 'type'])
+            ->map(static fn(UserKeychainValue $value): array => [
+                'key' => $value->key,
+                'type' => $value->type instanceof UserKeychainValueType ? $value->type->value : (string)$value->type,
+            ])
+            ->all();
+    }
+
+    /**
      * Returns the first available public key of a user, or null if none exists.
      * This can be used as a possibility to decrypt data via a given passkey in the frontend.
      * @param User $user

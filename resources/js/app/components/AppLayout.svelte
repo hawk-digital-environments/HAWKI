@@ -6,22 +6,40 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import AppSidebar from '$lib/app/components/sidebar/AppSidebar.svelte';
     import SidebarContent from '$lib/components/ui/sidebar/SidebarContent.svelte';
     import SidebarRoot from '$lib/components/ui/sidebar/SidebarRoot.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import Button from '$lib/components/ui/button/Button.svelte';
     import Toaster from '$lib/components/ui/toast/Toaster.svelte';
     import AnnouncementDialog from '$lib/app/components/announcements/AnnouncementDialog.svelte';
 
     interface Props {
         /** Page content, rendered in the layout's main column. */
         children: Snippet;
+        meta?: {chrome?: string};
     }
 
-    const {children}: Props = $props();
+    const {children, meta}: Props = $props();
+    const app = useApp();
     const {__} = useTranslator();
 </script>
 
+{#if app.logoutState !== 'idle'}
+    <main id="main-content" tabindex="-1" class="logout-status">
+        <h1>{__('ui.profile.logout')}</h1>
+        {#if app.logoutState === 'failed'}
+            <p role="alert">{__('session.logoutFailed')}</p>
+            <Button onclick={() => { void app.logout().catch(() => {}); }}>{__('session.retryLogout')}</Button>
+        {:else}
+            <p role="status">{__('session.loggingOut')}</p>
+        {/if}
+    </main>
+{:else if meta?.chrome === 'none' || !app.cryptoReady}
+    {@render children()}
+    <Toaster />
+{:else}
 <SidebarRoot>
     <a class="skip-link" href="#main-content">{__('ui.navigation.skipToContent')}</a>
     <AppSidebar />
@@ -32,8 +50,15 @@
     <Toaster />
     <AnnouncementDialog />
 </SidebarRoot>
+{/if}
 
 <style>
+    .logout-status {
+        max-width: 32rem;
+        margin: 15vh auto;
+        padding: var(--space-6);
+    }
+
     .skip-link {
         position: fixed;
         top: var(--space-2);

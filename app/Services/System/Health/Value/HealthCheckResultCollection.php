@@ -33,18 +33,28 @@ readonly class HealthCheckResultCollection implements \JsonSerializable, \Iterat
         $this->results = $results;
     }
 
-    /**
-     * Returns true when every check in the collection passed.
-     * Returns false as soon as any single check reports {@see HealthCheckResult::STATUS_ERROR}.
-     */
+    public const STATUS_HEALTHY = 'healthy';
+    public const STATUS_DEGRADED = 'degraded';
+    public const STATUS_UNHEALTHY = 'unhealthy';
+
+    public function getStatus(): string
+    {
+        $status = self::STATUS_HEALTHY;
+        foreach ($this->results as $result) {
+            if ($result->isError()) return self::STATUS_UNHEALTHY;
+            if ($result->isWarning()) $status = self::STATUS_DEGRADED;
+        }
+        return $status;
+    }
+
     public function isOk(): bool
     {
-        foreach ($this->results as $result) {
-            if ($result->isError()) {
-                return false;
-            }
-        }
-        return true;
+        return $this->getStatus() === self::STATUS_HEALTHY;
+    }
+
+    public function isUnhealthy(): bool
+    {
+        return $this->getStatus() === self::STATUS_UNHEALTHY;
     }
 
     /**
@@ -63,8 +73,12 @@ readonly class HealthCheckResultCollection implements \JsonSerializable, \Iterat
 
         return [
             'results' => $resultsArray,
-            'status' => $this->isOk() ? HealthCheckResult::STATUS_OK : HealthCheckResult::STATUS_ERROR,
-            'message' => $this->isOk() ? 'All checks passed.' : 'One or more checks failed.'
+            'status' => $this->getStatus(),
+            'message' => match ($this->getStatus()) {
+                self::STATUS_HEALTHY => 'All checks passed.',
+                self::STATUS_DEGRADED => 'One or more checks reported a warning.',
+                default => 'One or more checks failed.',
+            }
         ];
     }
 
