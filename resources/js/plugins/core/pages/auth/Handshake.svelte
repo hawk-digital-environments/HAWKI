@@ -31,9 +31,10 @@
     const app = useApp();
     const { __ } = useTranslator();
     const keychain = app.stores.get('keychain');
+    const autoGenerate = app.config.get().security.passkeyAutoGenerate;
     let passkey = $state('');
     let backupCode = $state('');
-    let mode = $state<'passkey' | 'backup'>('passkey');
+    let mode = $state<'passkey' | 'backup'>(autoGenerate ? 'backup' : 'passkey');
     let passkeyInput = $state<HTMLInputElement | null>(null);
     let backupInput = $state<HTMLInputElement | null>(null);
     function switchMode(next: typeof mode) {
@@ -93,7 +94,7 @@
 <AuthFrame>
     <div class="auth-intro">
         <h1 id="auth-title">{__('ui.auth.handshake.title')}</h1>
-        <p class="auth-copy">{mode === 'passkey' ? __('ui.auth.handshake.description') : __('ui.auth.handshake.recoveryDescription')}</p>
+        <p class="auth-copy">{mode === 'passkey' ? (autoGenerate ? __('ui.auth.handshake.ownPasskeyDescription') : __('ui.auth.handshake.description')) : autoGenerate ? __('ui.auth.handshake.backupUnlockDescription') : __('ui.auth.handshake.recoveryDescription')}</p>
     </div>
     {#if error}<p class="auth-error" role="alert">{error}</p>{/if}
     {#if mode === 'passkey'}
@@ -113,13 +114,13 @@
                 <label for="backup-code">{__('ui.auth.handshake.backupCode')}</label>
                 <Input id="backup-code" class="code" bind:value={backupCode} bind:ref={backupInput} oninput={updateBackupCode} pattern={'[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}'} placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="off" spellcheck={false} required disabled={pending}/>
             </div>
-            <Button type="submit" variant="accent" disabled={pending} block>{pending ? __('ui.auth.handshake.unlocking') : __('ui.auth.handshake.recover')}</Button>
+            <Button type="submit" variant="accent" disabled={pending} block>{pending ? __('ui.auth.handshake.unlocking') : autoGenerate ? __('ui.auth.handshake.unlock') : __('ui.auth.handshake.recover')}</Button>
         </form>
         <div class="reset-recovery">
             <ResetProfileButton label={__('ui.auth.handshake.lostBackup')} disabled={pending} variant="ghost"/>
         </div>
         <div class="switch">
-            <Button type="button" variant="ghost" size="sm" disabled={pending} onclick={() => switchMode('passkey')}>{__('ui.auth.handshake.usePasskey')}</Button>
+            <Button type="button" variant="ghost" size="sm" disabled={pending} onclick={() => switchMode('passkey')}>{autoGenerate ? __('ui.auth.handshake.useOwnPasskey') : __('ui.auth.handshake.usePasskey')}</Button>
         </div>
     {/if}
 </AuthFrame>

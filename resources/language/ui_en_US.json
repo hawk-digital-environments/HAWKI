@@ -24,6 +24,7 @@
             "register": {
                 "title": "Set up your keychain",
                 "description": "Choose a passkey that protects your encrypted data on this device.",
+                "automaticDescription": "Your passkey is generated automatically. You will then receive a backup code to download.",
                 "readPolicy": "Read usage policy",
                 "policyDescription": "Please read and accept the usage policy before setting up your keychain.",
                 "confirmPolicy": "Accept and continue",
@@ -54,8 +55,11 @@
                 "recoveryTitle": "Use a backup code",
                 "backupCode": "Backup code",
                 "recover": "Recover passkey",
+                "backupUnlockDescription": "Enter your backup code to unlock your keychain on this device.",
                 "backupMissing": "No backup code is available for this account.",
                 "usePasskey": "Use your passkey instead",
+                "useOwnPasskey": "Use a passkey you chose",
+                "ownPasskeyDescription": "Enter the passkey you chose when you set up your keychain.",
                 "lostBackup": "Lost your backup code?",
                 "recoveryDescription": "Enter the backup code you saved when you set up your keychain."
             },
@@ -64,6 +68,7 @@
                 "description": "The encrypted keychain does not match this account. Reset the profile to create a new one.",
                 "reset": "Reset profile",
                 "confirmTitle": "Reset this profile?",
+                "automaticConfirmDescription": "This permanently deletes your chats, existing keychain, and related profile data. Your keychain will then be created automatically and you will receive a new backup code. This cannot be undone.",
                 "confirmDescription": "This permanently deletes your chats, encrypted keychain, passkey backup, and related profile data. You will then set up a new passkey and backup code. This cannot be undone.",
                 "confirm": "Reset profile"
             },
