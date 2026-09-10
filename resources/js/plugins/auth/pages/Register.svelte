@@ -46,8 +46,9 @@
         generateAsymmetricKeyPair
     } from '$lib/kernel/encryption/asymmetric.js';
     import { generateSymmetricKey } from '$lib/kernel/encryption/symmetric.js';
-    import { onMount, tick, untrack } from 'svelte';
+    import { tick, untrack } from 'svelte';
     import AuthFrame from './AuthFrame.svelte';
+    import RegistrationWelcome from './welcome/RegistrationWelcome.svelte';
     import { authErrorKey, nextDestination } from './authHelpers.js';
 
     const { data }: RouteProps<typeof config> = $props();
@@ -74,7 +75,8 @@
     let consentInput = $state<HTMLInputElement | null>(null);
     let passkey = $state('');
     let repeated = $state('');
-    let stage = $state<'form' | 'policy' | 'backup'>('form');
+    // Starts with the onboarding (see `welcome/RegistrationWelcome.svelte`); the setup itself begins at 'form'.
+    let stage = $state<'welcome' | 'form' | 'policy' | 'backup'>('welcome');
     let error = $state('');
     let pending = $state(false);
     let errorElement = $state<HTMLParagraphElement | null>(null);
@@ -83,12 +85,17 @@
     let backupCode = $state('');
     let committed = $state(false);
     let invalidField = $state<'policy' | 'passkey' | 'repeat' | null>(null);
-    let title: HTMLHeadingElement;
-    onMount(() => {
-        if (!currentPolicy) return;
+    let title = $state<HTMLHeadingElement | null>(null);
+    async function focusTitle() {
+        await tick();
+        title?.focus();
+    }
+    function finishWelcome() {
+        stage = 'form';
         if (policy) policyOpen = true;
         else if (autoGenerate) void prepare();
-    });
+        else void focusTitle();
+    }
     const passkeyPattern = $derived(restricted ? '[A-Za-z0-9!@#$%^&*()_+-]+' : undefined);
     function validPasskey() {
         return passkey.length >= 8 && (!restricted || /^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(passkey));
@@ -251,13 +258,17 @@
     }
 </script>
 <AuthFrame>
-    <div class="auth-intro">
-        <h1 id="auth-title" tabindex="-1" bind:this={title}>{stage === 'backup' ? __('ui.auth.register.backupTitle') : __('ui.auth.register.title')}</h1>
-        <p class="auth-copy">{stage === 'backup' ? __('ui.auth.register.backupDescription') : autoGenerate ? __('ui.auth.register.automaticDescription') : __('ui.auth.register.description')}</p>
-    </div>
+    {#if !(stage === 'welcome' && currentPolicy)}
+        <div class="auth-intro">
+            <h1 id="auth-title" tabindex="-1" bind:this={title}>{stage === 'backup' ? __('ui.auth.register.backupTitle') : __('ui.auth.register.title')}</h1>
+            <p class="auth-copy">{stage === 'backup' ? __('ui.auth.register.backupDescription') : autoGenerate ? __('ui.auth.register.automaticDescription') : __('ui.auth.register.description')}</p>
+        </div>
+    {/if}
     {#if error && invalidField === null}<p class="auth-error" role="alert" tabindex="-1" bind:this={errorElement}>{error}</p>{/if}
     {#if !currentPolicy}
         <p class="auth-error" role="alert" tabindex="-1" bind:this={errorElement}>{__('ui.auth.errors.registration_policy_unavailable')}</p>
+    {:else if stage === 'welcome'}
+        <RegistrationWelcome onFinish={finishWelcome}/>
     {:else if stage === 'form'}
         <form class="auth-form" onsubmit={(e) => { e.preventDefault(); void prepare(); }}>
             {#if !autoGenerate}
