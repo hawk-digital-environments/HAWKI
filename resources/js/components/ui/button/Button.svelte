@@ -125,7 +125,7 @@
     .btn {
         display: inline-flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         border: none;
         font-family: inherit;
         cursor: pointer;
@@ -307,10 +307,7 @@
     .btn--md {
         --btn-icon-size: 18px;
         position: relative;
-        display: grid;
-        grid-template-columns: auto 1fr;
         column-gap: var(--space-3);
-        align-items: center;
         height: 2.5rem;
         min-width: 6rem;
         padding: var(--space-2) var(--space-4);
