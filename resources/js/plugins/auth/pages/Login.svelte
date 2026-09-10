@@ -68,7 +68,7 @@
         if (data.auth.mode === 'redirect') window.location.assign(redirectUrl(data.auth.start_url));
     }
 </script>
-<AuthFrame>
+<AuthFrame canvas>
     <div class="auth-intro">
         <h1 id="auth-title">{__('ui.auth.login.title')}</h1>
         <p class="auth-copy">{data.auth.mode === 'credentials' ? __('ui.auth.login.description') : __('ui.auth.login.redirectDescription')}</p>
