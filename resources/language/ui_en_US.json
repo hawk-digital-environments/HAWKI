@@ -47,10 +47,33 @@
                 "preparing": "Preparing your keychain…",
                 "backupDescription": "Save this backup code somewhere secure. You can use it to recover your passkey on another device.",
                 "backupCode": "Backup code",
-                "downloadBackup": "Download backup code",
-                "finish": "Finish setup",
+                "downloadBackup": "Download",
+                "finish": "Finish",
                 "saving": "Saving your keychain…",
-                "backupTitle": "Save your backup code"
+                "backupTitle": "Save your backup code",
+                "welcome": {
+                    "back": "Back",
+                    "encryption": {
+                        "title": "Welcome to HAWKI",
+                        "body": "From now on your chats are saved, so you can return to them at any time and from any device. Everything you write is encrypted before it leaves your browser. Nobody, not even your university, can read your conversations.",
+                        "action": "Got it"
+                    },
+                    "groups": {
+                        "title": "Group chats",
+                        "body": "In group chats, every member of the group can read your messages. That is the point of a group. Your content stays protected all the same: nobody outside the group can see it. Your data belongs to you alone.",
+                        "action": "Sounds good"
+                    },
+                    "passkey": {
+                        "title": "Your passkey",
+                        "body": "In the next step you choose a personal passkey. Your chats are encrypted with it before they are stored on our server. You also need it when you sign in on a new device; this browser remembers it for you. At the end you can download a backup code in case you ever forget your passkey.",
+                        "action": "Set up passkey"
+                    },
+                    "automaticPasskey": {
+                        "title": "Your passkey and backup code",
+                        "body": "Your passkey is generated for you in the next step. Your chats are encrypted with it before they are stored on our server. This browser remembers the passkey for you. Afterwards you download a backup code, which unlocks your chats on any other device.",
+                        "action": "Continue"
+                    }
+                }
             },
             "handshake": {
                 "title": "Unlock your keychain",

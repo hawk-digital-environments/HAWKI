@@ -47,10 +47,33 @@
                 "preparing": "Schlüsselbund wird vorbereitet…",
                 "backupDescription": "Bewahre diesen Sicherungscode sicher auf. Du kannst damit dein Passwort auf einem anderen Gerät wiederherstellen.",
                 "backupCode": "Sicherungscode",
-                "downloadBackup": "Sicherungscode herunterladen",
-                "finish": "Einrichtung abschließen",
+                "downloadBackup": "Herunterladen",
+                "finish": "Abschließen",
                 "saving": "Schlüsselbund wird gespeichert…",
-                "backupTitle": "Sicherungscode aufbewahren"
+                "backupTitle": "Sicherungscode aufbewahren",
+                "welcome": {
+                    "back": "Zurück",
+                    "encryption": {
+                        "title": "Willkommen bei HAWKI",
+                        "body": "Ab jetzt werden deine Chats gespeichert, damit du jederzeit und von jedem Gerät darauf zurückkommen kannst. Alles, was du schreibst, wird verschlüsselt, bevor es deinen Browser verlässt. Niemand, auch nicht deine Hochschule, kann deine Gespräche lesen.",
+                        "action": "Verstanden"
+                    },
+                    "groups": {
+                        "title": "Gruppenchats",
+                        "body": "In Gruppenchats können alle Mitglieder der Gruppe deine Nachrichten lesen. Das ist der Sinn einer Gruppe. Deine Inhalte bleiben trotzdem geschützt: Außerhalb der Gruppe sieht sie niemand. Deine Daten gehören nur dir.",
+                        "action": "Finde ich gut"
+                    },
+                    "passkey": {
+                        "title": "Dein Passwort",
+                        "body": "Im nächsten Schritt wählst du ein persönliches Passwort. Damit werden deine Chats verschlüsselt, bevor sie auf unserem Server gespeichert werden. Du brauchst es auch, wenn du dich auf einem neuen Gerät anmeldest; dieser Browser merkt es sich für dich. Zum Schluss kannst du einen Sicherungscode herunterladen, falls du dein Passwort einmal vergisst.",
+                        "action": "Passwort einrichten"
+                    },
+                    "automaticPasskey": {
+                        "title": "Dein Passwort und Sicherungscode",
+                        "body": "Dein Passwort wird im nächsten Schritt automatisch für dich erstellt. Damit werden deine Chats verschlüsselt, bevor sie auf unserem Server gespeichert werden. Dieser Browser merkt sich das Passwort für dich. Anschließend lädst du einen Sicherungscode herunter, mit dem du deine Chats auf jedem anderen Gerät entsperrst.",
+                        "action": "Weiter"
+                    }
+                }
             },
             "handshake": {
                 "title": "Schlüsselbund entsperren",

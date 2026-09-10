@@ -1,11 +1,17 @@
 <!--
   @component Shell for the authentication pages (login, keychain setup, unlock, recovery).
 
-  Two panels: a narrow form panel on the left that holds the page content, and a
-  canvas on the right. The canvas plays the deployment's background video (see
-  `public/bg_videos/bg_videos.json`) with the creator credit; without a video it
-  shows the encryption claim over an oversized, cropped HAWKI wordmark. The canvas
-  collapses on small screens, where no video is loaded.
+  Two layouts. With `canvas` (the login page) the page splits into a narrow form
+  panel on the left and a canvas on the right that plays the deployment's
+  background video (see `public/bg_videos/bg_videos.json`) with the creator
+  credit; without a video it shows the encryption claim over an oversized,
+  cropped HAWKI wordmark. The canvas collapses on small screens, where no video
+  is loaded.
+
+  Without `canvas` (every page after the login) the content sits in a single
+  centered column on the plain page background: wordmark top-left, content in the
+  middle of the viewport, preferences bottom-left and the signed-in account with
+  logout bottom-right.
 
   Pages render their content as:
   ```svelte
@@ -29,10 +35,12 @@
     import AuthPreferences from './AuthPreferences.svelte';
 
     interface Props {
+        /** Split layout with the video canvas beside the form panel (login only). */
+        canvas?: boolean;
         children: Snippet;
     }
 
-    const { children }: Props = $props();
+    const { canvas = false, children }: Props = $props();
     const { __ } = useTranslator();
     const app = useApp();
     const theme = useStore('theme');
@@ -42,7 +50,7 @@
     const signedInAs = $derived(connection.hasUserInfo ? connection.userinfo.name : null);
 
     // The canvas is hidden on small screens; don't fetch a video nobody sees.
-    const canvasVisible = $derived(!breakpoint.is('bpSmAndSmaller'));
+    const canvasVisible = $derived(canvas && !breakpoint.is('bpSmAndSmaller'));
     let video = $state<LoginBackgroundVideo | null>(null);
     let videoReady = $state(false);
     $effect(() => {
@@ -60,89 +68,102 @@
     });
 </script>
 
-<div class="auth-page">
-    <main id="main-content" tabindex="-1" class="auth-panel">
+<div class="auth-page" class:canvas>
+    <div class="auth-panel">
         <header class="auth-brand">
             <HawkLogo label={__('ui.auth.logoLabel')}/>
         </header>
-        <section class="auth-body" aria-labelledby="auth-title">
-            {@render children()}
-        </section>
+        <main id="main-content" tabindex="-1" class="auth-main">
+            <section class="auth-body" aria-labelledby="auth-title">
+                {@render children()}
+            </section>
+        </main>
         <footer class="auth-footer">
+            <AuthPreferences/>
             {#if signedInAs}
-                <p class="auth-signed-in">{__('ui.auth.signedInAs', {name: signedInAs})}</p>
-            {/if}
-            <div class="auth-footer-row">
-                <AuthPreferences/>
-                {#if signedInAs}
+                <div class="auth-account">
+                    <p class="auth-signed-in">{__('ui.auth.signedInAs', {name: signedInAs})}</p>
                     <Button variant="ghost" size="sm" onclick={() => { void app.logout().catch(() => {}); }}>{__('ui.profile.logout')}</Button>
-                {/if}
-            </div>
+                </div>
+            {/if}
         </footer>
-    </main>
-    <div class="auth-canvas" class:has-video={video !== null && videoReady}>
-        <p class="auth-claim">{__('ui.auth.claim')}</p>
-        <HawkLogo class="auth-canvas-mark" aria-hidden="true"/>
-        {#if video && canvasVisible}
-            {#key video.src}
-                <!-- Ambient footage, no information: muted, no controls, and skipped by assistive tech. -->
-                <video
-                    class="auth-video"
-                    src={video.src}
-                    autoplay={!reducedMotion.current}
-                    loop
-                    muted
-                    playsinline
-                    disablepictureinpicture
-                    preload="auto"
-                    tabindex="-1"
-                    aria-hidden="true"
-                    oncanplay={() => { videoReady = true; }}
-                    onerror={() => { video = null; }}
-                ></video>
-            {/key}
-            <Link class="auth-credit" href={video.link} target="_blank">{__('ui.auth.videoCredit', {name: video.creator})}</Link>
-        {/if}
     </div>
+    {#if canvas}
+        <div class="auth-canvas" class:has-video={video !== null && videoReady}>
+            <p class="auth-claim">{__('ui.auth.claim')}</p>
+            <HawkLogo class="auth-canvas-mark" aria-hidden="true"/>
+            {#if video && canvasVisible}
+                {#key video.src}
+                    <!-- Ambient footage, no information: muted, no controls, and skipped by assistive tech. -->
+                    <video
+                        class="auth-video"
+                        src={video.src}
+                        autoplay={!reducedMotion.current}
+                        loop
+                        muted
+                        playsinline
+                        disablepictureinpicture
+                        preload="auto"
+                        tabindex="-1"
+                        aria-hidden="true"
+                        oncanplay={() => { videoReady = true; }}
+                        onerror={() => { video = null; }}
+                    ></video>
+                {/key}
+                <Link class="auth-credit" href={video.link} target="_blank">{__('ui.auth.videoCredit', {name: video.creator})}</Link>
+            {/if}
+        </div>
+    {/if}
 </div>
 
 <style>
-    /* ── Page ─────────────────────────────────────────────────────────── */
+    /* ── Page: centered column (default) ──────────────────────────────── */
     .auth-page {
+        --auth-column: 26rem;
         box-sizing: border-box;
         min-height: 100dvh;
         display: grid;
-        grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
-        gap: var(--space-4);
-        padding: var(--space-4);
-        background: var(--color-bg-secondary);
+        grid-template-columns: minmax(0, 1fr);
+        background: var(--color-bg);
     }
-
-    /* ── Form panel ───────────────────────────────────────────────────── */
     .auth-panel {
         box-sizing: border-box;
         display: grid;
         grid-template-rows: auto 1fr auto;
         gap: var(--space-8);
-        padding: clamp(var(--space-6), 4vw, var(--space-10));
-        border-radius: var(--corner-lg);
-        background: var(--color-surface-raised);
-    }
-    .auth-panel:focus-visible {
-        outline: 2px solid var(--color-focus-ring);
-        outline-offset: -2px;
+        padding: clamp(var(--space-5), 4vw, var(--space-10));
     }
     .auth-brand :global(.mark) {
         height: 1.125rem;
     }
+    .auth-main {
+        display: grid;
+        justify-items: center;
+        align-content: center;
+    }
+    .auth-main:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: -2px;
+    }
     .auth-body {
-        align-self: center;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: var(--auth-column);
         display: grid;
         gap: var(--space-6);
         animation: auth-fade var(--duration-medium) var(--easing-out) both;
     }
     .auth-footer {
-        display: grid;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2) var(--space-4);
+    }
+    .auth-account {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
         gap: var(--space-2);
     }
     .auth-signed-in {
@@ -150,12 +171,21 @@
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
     }
-    .auth-footer-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-2);
+
+    /* ── Page: split layout with canvas (login) ───────────────────────── */
+    .auth-page.canvas {
+        grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+        gap: var(--space-4);
+        padding: var(--space-4);
+        background: var(--color-bg-secondary);
+    }
+    .canvas .auth-panel {
+        padding: clamp(var(--space-6), 4vw, var(--space-10));
+        border-radius: var(--corner-lg);
+        background: var(--color-surface-raised);
+    }
+    .canvas .auth-body {
+        max-width: none;
     }
 
     /* ── Shared page content ──────────────────────────────────────────── */
@@ -325,9 +355,16 @@
 
     /* ── Small screens ────────────────────────────────────────────────── */
     @media (--bp-sm-and-smaller) {
-        .auth-page {
+        .auth-panel {
+            gap: var(--space-6);
+            padding: var(--space-4);
+        }
+        .auth-page.canvas {
             grid-template-columns: minmax(0, 1fr);
             padding: var(--space-3);
+        }
+        .canvas .auth-panel {
+            padding: clamp(var(--space-6), 4vw, var(--space-10));
         }
         .auth-canvas {
             display: none;
