@@ -59,6 +59,7 @@ import {
   removeAssistantPrompts,
   requestRemix,
   getAssistant,
+  ASSISTANT_EDIT_INCLUDES,
 } from "$plugins/assistants/api/resources/assistantsClient";
 import {
   createOrUpdateAssistantAvatar
@@ -234,22 +235,16 @@ export class BuilderContext {
 
   /**
    * Open one of the user's own assistants for editing. Refetches the assistant
-   * with the privileged `attachments` include (plus the same relationships the
-   * detail page loads) so the draft carries already-uploaded knowledge files.
-   * The public detail page intentionally omits `attachments` to avoid a 403 for
-   * non-creators; this refetch only runs on the owner-only edit path. Mirrors
-   * the fetch-then-begin shape of {@see remix} and {@see startNew}.
+   * with {@link ASSISTANT_EDIT_INCLUDES} — the privileged relationships the
+   * owner-only edit path may load (knowledge files, prompts, setting values,
+   * attached `ai_tools`), plus the same relationships the detail page loads.
+   * The public detail page intentionally omits the privileged ones to avoid a
+   * 403 for non-creators. Mirrors the fetch-then-begin shape of {@see remix}
+   * and {@see startNew}.
    */
   async edit(id: string): Promise<void> {
     const detailed = await getAssistant(id, {
-      include: [
-        "creator",
-        "assistant_category",
-        "assistant_tags",
-        "assistant_avatar",
-        "assistant_versions",
-        "attachments",
-      ],
+      include: [...ASSISTANT_EDIT_INCLUDES],
     });
     this.begin(detailed, "edit");
   }

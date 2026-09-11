@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Chat\Attachment\Repositories;
 
 use App\Models\AiConvMsg;
-use App\Models\Assistants\Assistant;
 use App\Models\Attachment;
 use App\Models\Message;
 use App\Models\User;
-use App\Services\Chat\Attachment\Values\AttachmentType;
+use App\Services\Storage\Values\AttachmentType;
 use App\Services\Storage\Values\StoredFile;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
@@ -52,20 +51,12 @@ class AttachmentRepository extends AbstractRepository
         return $this->createAttachment($message, $file, $user);
     }
 
-    public function assignToAssistant(
-        Assistant $assistant,
-        StoredFile $file,
-        User $user,
-    ): bool {
-        return $this->createAttachment($assistant, $file, $user);
-    }
-
     /**
-     * Persists an Attachment row linking the given attachable (message or
-     * assistant) to the stored file, owned by the given user.
+     * Persists an Attachment row linking the given chat message to the
+     * stored file, owned by the given user.
      */
     private function createAttachment(
-        AiConvMsg|Assistant|Message $attachable,
+        AiConvMsg|Message $attachable,
         StoredFile $file,
         User $user,
     ): bool {

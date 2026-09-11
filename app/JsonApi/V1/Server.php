@@ -13,6 +13,7 @@ use App\JsonApi\V1\AiProviders\AiProviderSchema;
 use App\JsonApi\V1\AiToolCapabilities\AiToolCapabilitySchema;
 use App\JsonApi\V1\AiTools\AiToolSchema;
 use App\JsonApi\V1\AssistantAvatars\AssistantAvatarSchema;
+use App\JsonApi\V1\AssistantAttachments\AssistantAttachmentSchema;
 use App\JsonApi\V1\Assistants\AssistantSchema;
 use App\JsonApi\V1\AssistantSettings\AssistantSettingSchema;
 use App\JsonApi\V1\AssistantSettingValues\AssistantSettingValueSchema;
@@ -86,6 +87,7 @@ class Server extends BaseServer
             UserKeychainValueSchema::class,
             UserSchema::class,
             AssistantSchema::class,
+            AssistantAttachmentSchema::class,
             AssistantAvatarSchema::class,
             AssistantSettingSchema::class,
             AssistantSettingValueSchema::class,

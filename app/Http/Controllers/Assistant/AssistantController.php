@@ -196,9 +196,9 @@ class AssistantController extends Controller
     /**
      * Upload an attachment file for the assistant. The file content is extracted
      * with the fileconverter and stored permanently.
-     * It is linked to the assistant via the polymorphic attachments table; its
-     * extracted text content is later injected into the assistant's system
-     * prompt by AssistantPromptComposer.
+     * It is linked to the assistant via the dedicated assistant_attachments
+     * table; its extracted text content is later injected into the assistant's
+     * system prompt by AssistantPromptComposer.
      */
     public function uploadAttachment(
         UploadAssistantAttachmentRequest $request,
@@ -233,7 +233,7 @@ class AssistantController extends Controller
         StoreContract $store,
         Assistant $assistant,
     ): Responsable|Response {
-        $attachment = $assistant->attachments()->where('uuid', $request->fileId())->firstOrFail();
+        $attachment = $assistant->assistantAttachments()->where('uuid', $request->fileId())->firstOrFail();
 
         $attachment->delete();
 

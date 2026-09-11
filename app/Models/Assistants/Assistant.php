@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models\Assistants;
 
 use App\Models\Ai\AiTool;
-use App\Models\Attachment;
 use App\Models\Organization;
 use App\Models\User;
 use App\Policies\AssistantPolicy;
@@ -18,7 +17,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * @property bool                            $allow_model_select
@@ -185,11 +183,11 @@ class Assistant extends Model
     }
 
     /**
-     * @return MorphMany<Attachment, $this>
+     * @return HasMany<AssistantAttachment, $this>
      */
-    public function attachments()
+    public function assistantAttachments(): HasMany
     {
-        return $this->morphMany(Attachment::class, 'attachable');
+        return $this->hasMany(AssistantAttachment::class);
     }
 
     /**

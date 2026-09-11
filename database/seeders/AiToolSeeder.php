@@ -31,10 +31,16 @@ use Illuminate\Support\Facades\DB;
  * is invoked), unlike `type=mcp` tools, which fail soft (an unreachable
  * server) rather than fatal.
  *
+ * The `rag` mock is only seeded when no real HAWKI-RAG system is configured
+ * (see {@see realRagConfigured()}) — a configured instance gets its live
+ * `hawki-rag` server and discovered tools from `ai:config:sync` /
+ * `ai:tools:sync`, and a resurrected mock under the same label would be a
+ * dead duplicate.
+ *
  * Uses `DB::table()->updateOrInsert()` rather than the Eloquent models —
  * `AiTool` filters to `active=1` through a contextual global scope
  * (`ActiveFilterScope`, see `AiTool::registerScopes()`), which makes
- * `AiTool::updateOrCreate()` unable to find its *own* previously-seeded
+ * `AiTool::updateOrCreate()` unable to find its *own previously-seeded*
  * inactive row on a second run (the lookup is scoped too) and try to
  * re-insert it into a unique column. The query builder isn't scoped, so this
  * stays idempotent for every row regardless of `active`. Mirrors
@@ -99,6 +105,12 @@ class AiToolSeeder extends Seeder
             ],
         ];
 
+        // The rag mock only exists to demo the tool picker without a
+        // reachable RAG system — skip it once a real one is configured.
+        if ($this->realRagConfigured()) {
+            unset($servers['rag']);
+        }
+
         $ids = [];
         foreach ($servers as $label => $server) {
             DB::table('mcp_servers')->updateOrInsert(
@@ -123,6 +135,27 @@ class AiToolSeeder extends Seeder
     }
 
     /**
+     * Whether a real HAWKI-RAG system is configured: either the MCP server
+     * URL is set in the environment (what `ai:config:sync` reads), or a live
+     * `hawki-rag` server (anything but this seeder's own mock URL) is already
+     * registered. In that case the mock would be a dead duplicate under the
+     * same label and must not be (re-)seeded.
+     */
+    private function realRagConfigured(): bool
+    {
+        $configuredUrl = env('HAWKI_RAG_MCP_API_URL');
+
+        if (\is_string($configuredUrl) && $configuredUrl !== '') {
+            return true;
+        }
+
+        return DB::table('mcp_servers')
+            ->where('server_label', 'hawki-rag')
+            ->where('url', '!=', 'https://rag.mock.hawki.test/mcp')
+            ->exists();
+    }
+
+    /**
      * @param array<string, int> $serverIds
      * @return list<int> every seeded tool's id
      */
@@ -132,6 +165,9 @@ class AiToolSeeder extends Seeder
 
         $definitions = [
             // ── hawki-rag: the two built-in capabilities ────────────────────
+            // (mock only — skipped alongside the rag mock server above when a
+            // real HAWKI-RAG system is configured; the live tools then come
+            // from `ai:tools:sync` discovery instead)
             [
                 'server' => 'rag',
                 'name' => 'hawki-rag-web_search',
@@ -202,6 +238,12 @@ class AiToolSeeder extends Seeder
 
         $ids = [];
         foreach ($definitions as $def) {
+            // Definitions whose server was skipped (rag mock with a real
+            // HAWKI-RAG configured) have nothing to attach to — skip them too.
+            if (!isset($serverIds[$def['server']])) {
+                continue;
+            }
+
             DB::table('ai_tools')->updateOrInsert(
                 ['name' => $def['name']],
                 [

@@ -15,6 +15,7 @@ return [
     App\Providers\StorageServiceProvider::class,
     ...($backupEnabled ? [BackupServiceProvider::class] : []),
     App\Providers\FileConverterServiceProvider::class,
+    App\Providers\RagServiceProvider::class,
     App\Providers\AiServiceProvider::class,
     App\Providers\ConfigServiceProvider::class,
     \App\Providers\EncryptionServiceProvider::class,

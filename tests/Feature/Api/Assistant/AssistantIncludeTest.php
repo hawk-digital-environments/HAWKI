@@ -64,7 +64,7 @@ class AssistantIncludeTest extends TestCase
             'review' => ['assistant_review', 'assistant-reviews'],
             'feedback' => ['assistant_feedback', 'assistant-feedback'],
             'shared_users' => ['shared_users', 'users'],
-            'attachments' => ['attachments', 'attachments'],
+            'attachments' => ['assistant_attachments', 'assistant-attachments'],
         ];
     }
 
@@ -118,10 +118,9 @@ class AssistantIncludeTest extends TestCase
 
         // Bare attachment row — no on-disk file is needed for the include test,
         // which only verifies that the related resource appears in `included`.
-        $assistant->attachments()->create([
+        $assistant->assistantAttachments()->create([
             'uuid' => 'test-include-' . uniqid(),
             'name' => 'knowledge.pdf',
-            'category' => 'assistant',
             'type' => 'document',
             'mime' => 'application/pdf',
             'user_id' => $owner->id,

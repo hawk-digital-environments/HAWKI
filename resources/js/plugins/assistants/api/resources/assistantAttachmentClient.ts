@@ -30,7 +30,7 @@ export interface AttachmentQueueResult {
  *
  * Unlike the legacy endpoint (which resolved with `{ uuid }`), the JSON:API
  * action returns the full assistant resource; the request sends
- * `?include=attachments` so the uploaded file's uuid is read reliably from the
+ * `?include=assistant_attachments` so the uploaded file's uuid is read reliably from the
  * inlined `included` collection (see {@link readAttachmentUuid}).
  *
  * `onProgress` is best-effort (0 then 100): the kernel's `fetch`-based
@@ -55,7 +55,7 @@ export async function uploadAssistantAttachment(
         onProgress?.(0);
         const response = await useApp().restApi.postToResourceAction(
             ASSISTANTS,
-            `${assistantId}/actions/attachment?include=attachments`,
+            `${assistantId}/actions/attachment?include=assistant_attachments`,
             formData,
             { signal },
         );
@@ -138,7 +138,7 @@ function readAttachmentUuid(responseData: any, fileName: string): string | undef
     if (!Array.isArray(included)) return undefined;
 
     const matches = included.filter(
-        (i: any) => i.type === "attachments" && i.attributes?.name === fileName,
+        (i: any) => i.type === "assistant-attachments" && i.attributes?.name === fileName,
     );
     if (matches.length === 0) return undefined;
 

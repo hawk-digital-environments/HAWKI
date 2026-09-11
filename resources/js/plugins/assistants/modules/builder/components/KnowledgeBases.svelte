@@ -3,46 +3,40 @@ import FullWidthToggle from "$plugins/assistants/components/toggle/FullWidthTogg
 import Database01Icon from "$lib/components/ui/icons/iconset/Database01Icon.svelte";
 import { useBuilderContext } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
 import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+import type {ExtendedAiTool} from "$plugins/core/stores/aiToolStoreData.js";
 
 const {__} = useTranslator()
 const builder = useBuilderContext();
 
-const raw= [
-    {
-        "id": 1,
-        "name": "Hochschul-Wissensbasis",
-        "documents": 12450
-    },
-    {
-        "id": 2,
-        "name": "Fachbereichsbibliothek",
-        "documents": 3280
-    }
-];
-
 let {
+    /** Knowledge-database tools assignable for the currently selected model —
+     *  derived by the knowledge page (see `knowledgeToolsOf`). */
+    tools,
     render = 'block'
 } = $props <{
+    tools: ExtendedAiTool[];
     render?: 'block' | 'inline';
 }>();
 
-interface KnowledgeBase {
-    id: number;
-    name: string;
-    documents: number;
-}
-const kdb = (raw as KnowledgeBase[]).map(db => ({ ...db, _toggleId: db.id }));
+// Ids of the tools currently attached to the draft — drives initial toggle state.
+const selectedIds = $derived(
+    new Set((builder.draft.aiTools ?? []).map(t => t.id))
+);
 
+// `FullWidthToggle` is uncontrolled (defaultValue is read once), so the list
+// must not render before the builder's async init() has installed the draft —
+// otherwise toggles for already-attached tools would initialize as off.
+const ready = $derived(builder.draft.id !== null);
 
-let kdbValues = $derived((builder.draft.knowledgeBases ?? []) as string[]);
-
-function onToggleInput(kdbId: number, value: boolean) {
-    const id = String(kdbId);
-    const current = builder.draft.knowledgeBases ?? [];
-
-    builder.set('knowledgeBases', value
-        ? [...new Set([...current, id])]
-        : current.filter(existing => existing !== id));
+// Attaching/detaching works exactly like the model page's ToolSelector: the
+// toggle merges the tool into `draft.aiTools`, and the builder's autosave
+// PATCHes it as the assistant's `ai_tools` relationship.
+function onchange(tool: ExtendedAiTool, active: boolean) {
+    const current = builder.draft.aiTools ?? [];
+    const next = active
+        ? (current.some(t => t.id === tool.id) ? current : [...current, tool])
+        : current.filter(t => t.id !== tool.id);
+    builder.set('aiTools', next);
 }
 
 </script>
@@ -53,28 +47,30 @@ function onToggleInput(kdbId: number, value: boolean) {
      class:renderBlock={render === 'block'}
      class:renderInline={render === 'inline'}
 >
-    <label for="vdb-list">{__('assistants.builder.knowledge.input_vector_databases')}</label>
+    <label for="kdb-list">{__('assistants.builder.knowledge.input_knowledge_databases')}</label>
 
-    <div class="vdb-list" id="vdb-list">
-        {#each kdb as db (db.id)}
-            <FullWidthToggle
-                    icon={Database01Icon}
-                    label={db.name}
-                    description={db.documents + " " + __('assistants.builder.knowledge.documents_unit')}
-                    defaultValue={kdbValues.includes(String(db.id))}
-                    onchange={(value) => onToggleInput(db.id, value)}
-            />
-        {/each}
-    </div>
+    {#if ready}
+        <div class="kdb-list" id="kdb-list">
+            {#each tools as tool (tool.id)}
+                <FullWidthToggle
+                        icon={Database01Icon}
+                        label={tool.displayName}
+                        description={tool.description}
+                        defaultValue={selectedIds.has(tool.id)}
+                        onchange={(value) => onchange(tool, value)}
+                />
+            {/each}
+        </div>
+    {/if}
 
 </div>
 
 
 <style>
-.vdb-list{
-    display: flex;
-    flex-direction: column;
-    gap: .5rem;
-}
+    .kdb-list{
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
 
 </style>

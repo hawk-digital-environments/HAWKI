@@ -34,9 +34,17 @@
     );
 </script>
 
-<select {...mergeProps({class: 'select'}, restProps)} bind:this={ref}>
+<!--
+    `value` is applied on the <select> itself (a reactive property Svelte
+    re-applies whenever the option list or the value changes) rather than as
+    per-<option> `selected` attributes — those only describe the *default*
+    selection and don't reliably apply after initial render, which matters
+    here because options and/or the value routinely arrive asynchronously
+    (lazy-loaded stores, builder draft init).
+-->
+<select {...mergeProps({class: 'select'}, restProps)} value={value} bind:this={ref}>
     {#each normalizedOptions as option (option.value)}
-        <option value={option.value} disabled={option.disabled} selected={option.value === value}>
+        <option value={option.value} disabled={option.disabled}>
             {option.label ?? option.value}
         </option>
     {/each}

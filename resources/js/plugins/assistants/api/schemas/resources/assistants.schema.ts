@@ -30,7 +30,7 @@ import { AssistantAvatarResourceSchema } from './assistant-avatars.schema';
  * |----------------------------------------|---------------------------------|
  * | `assistant_user_prompts: [{text}]`     | `starterPrompts: string[]`      |
  * | `assistant_setting_values: [{value, setting:{key}}]` | `formality` / `answerStyle` / `language` |
- * | `attachments: [{uuid, name, mime}]`    | `files: UploadFile[]`           |
+ * | `assistant_attachments: [{uuid, name, mime}]` | `files: UploadFile[]`  |
  * | `_links: {edit: {meta:{message}}}`     | `actionPermissions: {edit: bool}` |
  * | `assistant_avatar: {icon_css}`         | `avatar: {iconCss}`             |
  *
@@ -89,7 +89,11 @@ const WireAttachmentSchema = z.object({
     id: z.string(),
     uuid: z.string().nullable().optional(),
     name: z.string().nullable().optional(),
-    mime: z.string().nullable().optional()
+    mime: z.string().nullable().optional(),
+    /** Server-side RAG ingestion state; `null` when RAG doesn't apply. */
+    rag_status: z.string().nullable().optional(),
+    /** Server-side ingestion failure reason, when `rag_status` is `failed`. */
+    rag_error: z.string().nullable().optional()
 });
 
 const WireFeedbackSchema = z.object({
@@ -148,7 +152,7 @@ export const AssistantResourceSchema = z.object({
     assistant_setting_values: z.array(WireSettingValueSchema).nullable().optional(),
     assistant_versions: z.array(WireVersionSchema).nullable().optional(),
     assistant_feedback: z.array(WireFeedbackSchema).nullable().optional(),
-    attachments: z.array(WireAttachmentSchema).nullable().optional(),
+    assistant_attachments: z.array(WireAttachmentSchema).nullable().optional(),
     creator: WireUserSchema.nullable().optional(),
     remix_creator: WireUserSchema.nullable().optional(),
     /**
@@ -191,14 +195,16 @@ function settingValue(
 }
 
 /** Server attachments carry no size or timestamps, so those stay undefined and render empty. */
-function toUploadFiles(attachments: AssistantResource['attachments']): UploadFile[] {
+function toUploadFiles(attachments: AssistantResource['assistant_attachments']): UploadFile[] {
     if (!attachments?.length) return [];
     return attachments.map(attachment => ({
         uuid: attachment.uuid ?? undefined,
         name: attachment.name ?? '',
         mimeType: attachment.mime ?? undefined,
         status: 'complete' as const,
-        progress: 100
+        progress: 100,
+        ragStatus: attachment.rag_status ?? null,
+        ragError: attachment.rag_error ?? null
     }));
 }
 
@@ -278,7 +284,7 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
         : null,
     remixedAssistant: wire.remixed_assistant ?? null,
 
-    files: toUploadFiles(wire.attachments),
+    files: toUploadFiles(wire.assistant_attachments),
     aiTools: wire.ai_tools ?? undefined,
 
     actionPermissions: linksToPermissions(wire._links),
@@ -352,7 +358,6 @@ export function createEmptyAssistant(): Assistant {
         creator: { id: '', displayName: '' },
         versions: [],
         files: [],
-        knowledgeBases: [],
         submissionNote: '',
 
         actionPermissions: null,

@@ -9,7 +9,7 @@ use App\Models\Assistants\AssistantSetting;
 use App\Models\User;
 use App\Services\Assistant\AssistantPromptComposer;
 use App\Services\Assistant\Values\AssistantPromptTemplate;
-use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
+use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
@@ -81,7 +81,7 @@ class AssistantPromptComposerTest extends TestCase
         ]);
 
         $storage = app(FileStorageService::class);
-        $repository = app(AttachmentRepository::class);
+        $repository = app(AssistantAttachmentRepository::class);
 
         // .md files: content is forwarded as-is (PlainTextLanguageType::MARKDOWN).
         $markdownFile = $storage->store(
@@ -119,6 +119,29 @@ class AssistantPromptComposerTest extends TestCase
             . str_replace('{{content}}', $expectedContent, AssistantPromptTemplate::KNOWLEDGE_FILES);
 
         self::assertSame($expected, $prompt);
+    }
+
+    /**
+     * Clean cut: while RAG ingestion is enabled, extracted file content must
+     * not be stuffed into the prompt at all — the assistant's knowledge is
+     * reached through the knowledge_base tool instead.
+     */
+    public function testNoKnowledgeFragmentWhenRagHandlesKnowledge(): void
+    {
+        config(['rag.enabled' => true]);
+        Storage::fake(config('filesystems.file_storage', 'local_file_storage'));
+
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'system_prompt' => 'BASE PROMPT',
+            'creator_id' => $user->id,
+            'max_tokens' => 0,
+        ]);
+        $this->attachKnowledgeFiles($assistant, $user);
+
+        $prompt = app(AssistantPromptComposer::class)->compose($assistant, $user);
+
+        static::assertSame('BASE PROMPT', $prompt);
     }
 
     /**
@@ -182,7 +205,7 @@ class AssistantPromptComposerTest extends TestCase
     private function attachKnowledgeFiles(Assistant $assistant, User $uploader): string
     {
         $storage = app(FileStorageService::class);
-        $repository = app(AttachmentRepository::class);
+        $repository = app(AssistantAttachmentRepository::class);
 
         $markdownFile = $storage->store(
             FileReference::fromContent('report.md', 'Revenue grew 12% in Q4.'),

@@ -27,6 +27,7 @@
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {
         ASSISTANT_DETAIL_INCLUDES,
+        deleteAssistant,
         getAssistant,
         toggleAssistantFavorite
     } from "$plugins/assistants/api/resources/assistantsClient";
@@ -42,6 +43,13 @@
     import Chatbox from "$plugins/assistants/components/testChat";
     import {growTransition} from "$lib/utils/transitions/growTransition";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
+    import DropdownMenu from "$lib/components/ui/dropdown-menu/DropdownMenu.svelte";
+    import DropdownMenuItem from "$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte";
+    import ConfirmDialog from "$lib/components/ui/dialog/ConfirmDialog.svelte";
+    import Tooltip from "$lib/components/ui/tooltip/Tooltip.svelte";
+    import PencilEdit01Icon from "$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte";
+    import Delete02Icon from "$lib/components/ui/icons/iconset/Delete02Icon.svelte";
+    import {mergeProps} from "bits-ui";
 
     /**
      * The kernel's route renderer hands each matched page its route params
@@ -151,6 +159,23 @@
         await goToRoute("assistants.builder.general");
     };
 
+    /** Delete flow: the menu's destructive entry opens a `ConfirmDialog`. A
+     *  failed delete rethrows so the dialog stays open (`ConfirmDialog` only
+     *  closes on a resolving confirmation); success returns to the store. */
+    let deleteConfirmOpen = $state(false);
+
+    async function onDeleteConfirm(): Promise<void> {
+        if (!assistant?.id) return;
+        try {
+            await deleteAssistant(assistant.id);
+        } catch (err) {
+            toast.error(`${__('assistants.detail.delete_failed')} ${ApiError.from(err).userMessage}`);
+            throw err;
+        }
+        toast.success(__('assistants.detail.deleted'));
+        goToRoute("assistants.dashboard.store");
+    }
+
     /** Toggles the inline test chat (see `assistants.components.testChat`). */
     let chatOpen = $state(false);
     const startTryOut = () => {
@@ -192,6 +217,15 @@
 
     <div class="page-content">
 
+        {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.delete === true}
+            <ConfirmDialog
+                bind:open={deleteConfirmOpen}
+                title={__('assistants.detail.delete_confirm_title', {name: assistant.name})}
+                description={__('assistants.detail.delete_confirm_description')}
+                onConfirm={onDeleteConfirm}
+            />
+        {/if}
+
         <div class="cover">
             <button
                 class="back"
@@ -203,18 +237,35 @@
                     <ArrowLeft01Icon size="1em" />
                 </span>
             </button>
-            {#if assistant.actionPermissions?.update === true}
-                <button
-                    class="edit"
-                    aria-label={__('assistants.detail.edit_aria')}
-                    style:background="oklch(100% 0 0 / 0.9)"
-                    onclick={startEdit}
-                >
-                    <span class="icon" style:color="oklch(20% 0 0)">
-                        <Settings03Icon size={18} />
-                    </span>
-                    <span class="u-label" style:color="oklch(20% 0 0)">{__('assistants.detail.edit')}</span>
-                </button>
+            {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.delete === true}
+                <DropdownMenu align="end">
+                    {#snippet trigger({props})}
+                        <Tooltip tooltip={__('assistants.detail.menu_aria')}>
+                            {#snippet children(t)}
+                                <button
+                                    {...mergeProps(props, t.props)}
+                                    class="edit"
+                                    aria-label={__('assistants.detail.menu_aria')}
+                                    style:background="oklch(100% 0 0 / 0.9)"
+                                >
+                                    <span class="icon" style:color="oklch(20% 0 0)">
+                                        <Settings03Icon size={18} />
+                                    </span>
+                                </button>
+                            {/snippet}
+                        </Tooltip>
+                    {/snippet}
+                    {#if assistant.actionPermissions?.update === true}
+                        <DropdownMenuItem icon={PencilEdit01Icon} onclick={startEdit}>
+                            {__('assistants.detail.edit')}
+                        </DropdownMenuItem>
+                    {/if}
+                    {#if assistant.actionPermissions?.delete === true}
+                        <DropdownMenuItem variant="destructive" icon={Delete02Icon} onclick={() => deleteConfirmOpen = true}>
+                            {__('assistants.detail.delete')}
+                        </DropdownMenuItem>
+                    {/if}
+                </DropdownMenu>
             {/if}
             <AssistantBanner assistantAvatar={avatar} />
         </div>
@@ -422,16 +473,6 @@
     }
     .edit {
         right: var(--space-3);
-        width: auto;
-        gap: var(--space-1_5);
-        padding: 0 var(--space-3);
-    }
-    .edit .icon {
-        font-size: var(--font-size-sm);
-    }
-    .edit .u-label {
-        font-size: var(--font-size-xs);
-        white-space: nowrap;
     }
     .back:hover,
     .edit:hover {

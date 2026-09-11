@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantAttachment;
 use App\Models\User;
 use App\Services\Assistant\Repositories\AssistantOrganizationRepository;
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
@@ -40,10 +41,12 @@ class AssistantObserver
 
     public function deleting(Assistant $assistant): void
     {
-        // Cascade attachment deletion: the polymorphic attachments table has
-        // no DB-level onDelete clause. Each Attachment::delete() fires its
-        // own deleting listeners, removing the on-disk file as well.
-        $assistant->attachments()->delete();
+        // Cascade attachment deletion row by row: each AssistantAttachment
+        // delete fires its deleting listeners, removing the on-disk file as
+        // well. The FK cascade is only a safety net — a mass delete would
+        // skip the model events and orphan the stored files.
+        $assistant->assistantAttachments()->get()
+            ->each(static fn (AssistantAttachment $attachment) => $attachment->delete());
     }
 
     private function currentUser(): ?User

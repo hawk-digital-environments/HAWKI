@@ -7,14 +7,15 @@ namespace App\Services\Assistant;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantVersion;
 use App\Models\User;
+use App\Services\Assistant\Events\AssistantAttachmentStoredEvent;
 use App\Services\Assistant\Events\AssistantCreatedEvent;
 use App\Services\Assistant\Events\AssistantReleaseStageChangedEvent;
+use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Assistant\Repositories\AssistantOrganizationRepository;
 use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Assistant\Repositories\AssistantReviewRepository;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\AssistantReviewStatus;
-use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
@@ -32,14 +33,14 @@ readonly class AssistantService
         private DatabaseManager $db,
         private EventDispatcher $events,
         private FileStorageService $fileStorage,
-        private AttachmentRepository $attachmentRepository,
+        private AssistantAttachmentRepository $assistantAttachmentRepository,
     ) {
     }
 
     public function remix(Assistant $source, User $creator, ?int $organizationId = null): Assistant
     {
         return $this->db->transaction(function () use ($source, $creator, $organizationId): Assistant {
-            $source->load(['assistantUserPrompts', 'ai_tools', 'assistantTags', 'attachments', 'assistantVersions']);
+            $source->load(['assistantUserPrompts', 'ai_tools', 'assistantTags', 'assistantVersions']);
 
             $resolvedOrgId = null !== $organizationId
                 ? ($this->organizationRepository->getForUserById($creator, $organizationId)->id
@@ -69,13 +70,12 @@ readonly class AssistantService
                 ]), );
             }
 
-            foreach ($source->attachments as $attachment) {
-                $clone->attachments()->create($attachment->only(['uuid', 'name', 'category', 'type', 'mime', 'user_id']));
-            }
-
+            // Knowledge files are intentionally NOT remixed: each assistant
+            // owns its own files (and later its own RAG dataset), so the
+            // clone starts with an empty knowledge base.
             $this->events->dispatch(new AssistantCreatedEvent($clone));
 
-            return $this->repository->loadRelations($clone, ['assistantUserPrompts', 'ai_tools', 'assistantTags', 'attachments', 'assistantVersions']);
+            return $this->repository->loadRelations($clone, ['assistantUserPrompts', 'ai_tools', 'assistantTags', 'assistantVersions']);
         });
     }
 
@@ -183,11 +183,15 @@ readonly class AssistantService
             file: $file,
             category: StoredFileCategory::ASSISTANT,
         );
-        $this->attachmentRepository->assignToAssistant(
+        $assistantAttachment = $this->assistantAttachmentRepository->assignToAssistant(
             assistant: $assistant,
             file: $storedFile,
             user: $user,
         );
+
+        if (null !== $assistantAttachment) {
+            $this->events->dispatch(new AssistantAttachmentStoredEvent($assistant, $assistantAttachment, $user));
+        }
     }
 
     /**

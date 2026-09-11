@@ -95,7 +95,7 @@ class AssistantPolicyTest extends TestCase
             'feedback' => ['assistant_feedback', 'assistant-feedback'],
             'setting values' => ['assistant_setting_values', 'assistant-setting-values'],
             'review' => ['assistant_review', 'assistant-reviews'],
-            'attachments' => ['attachments', 'attachments'],
+            'attachments' => ['assistant_attachments', 'assistant-attachments'],
             'ai tools' => ['ai_tools', 'ai-tools'],
         ];
     }
@@ -272,10 +272,9 @@ class AssistantPolicyTest extends TestCase
         AssistantReview::forceCreate(['assistant_id' => $assistant->id, 'status' => AssistantReviewStatus::PENDING->value]);
         $assistant->assistantUserPrompts()->create(['text' => 'hello']);
         $assistant->ai_tools()->sync([$this->createAiTool()->id]);
-        $assistant->attachments()->create([
+        $assistant->assistantAttachments()->create([
             'uuid' => 'policy-' . uniqid(),
             'name' => 'knowledge.pdf',
-            'category' => 'assistant',
             'type' => 'document',
             'mime' => 'application/pdf',
             'user_id' => $assistant->creator_id,

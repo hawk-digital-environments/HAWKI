@@ -14,6 +14,7 @@ use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\WellKnownAssistantSettingKeys;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Support\Collection;
 
@@ -23,6 +24,8 @@ class AssistantPromptComposer
         private readonly FileStorageService   $fileStorage,
         private readonly Gate                 $gate,
         private readonly ExtractTextCollector $extractTextCollector,
+        #[Config('rag.enabled')]
+        private readonly bool                 $knowledgeHandledByRag = false,
     ) {
     }
 
@@ -83,7 +86,7 @@ class AssistantPromptComposer
      * assistant (the `view` gate): an assistant's knowledge is part of its
      * behaviour, so anyone who can address it experiences the files'
      * effect. The raw file list and downloads stay protected — the
-     * `?include=attachments` JSON:API path remains behind the stricter
+     * `?include=assistant_attachments` JSON:API path remains behind the stricter
      * viewAttachments gate (creator or org admin).
      *
      * Without an actor (rare, e.g. an unresolvable user during the group
@@ -100,18 +103,23 @@ class AssistantPromptComposer
      */
     private function resolveAttachmentFragment(Assistant $assistant, ?User $actor): string
     {
+        // Do not inject knowledge files if RAG ingestion is used.
+        if ($this->knowledgeHandledByRag) {
+            return '';
+        }
+
         if (!$this->actorMayUseKnowledge($assistant, $actor)) {
             return '';
         }
 
-        if ($assistant->attachments->isEmpty()) {
+        if ($assistant->assistantAttachments->isEmpty()) {
             return '';
         }
 
         $blocks = [];
 
-        foreach ($assistant->attachments as $attachment) {
-            $file = $this->fileStorage->retrieve(StoredFileIdentifier::fromAttachment($attachment));
+        foreach ($assistant->assistantAttachments as $attachment) {
+            $file = $this->fileStorage->retrieve(StoredFileIdentifier::fromAssistantAttachment($attachment));
 
             if (null === $file) {
                 continue;

@@ -32,7 +32,7 @@ class AssistantPolicy implements DefinesSensitiveIncludes
         'assistant_setting_values',
         'assistant_feedback',
         'assistant_review',
-        'attachments',
+        'assistant_attachments',
         'ai_tools',
     ];
 
@@ -98,12 +98,12 @@ class AssistantPolicy implements DefinesSensitiveIncludes
     }
 
     /**
-     * Gates the ?include=attachments path: only the creator or org admin
-     * may inspect an assistant's knowledge files. End users never see them —
-     * they only experience the files' effect through the composed system
-     * prompt.
+     * Gates the ?include=assistant_attachments path: only the creator or org
+     * admin may inspect an assistant's knowledge files. End users never see
+     * them — they only experience the files' effect through the composed
+     * system prompt.
      */
-    public function viewAttachments(User $user, Assistant $assistant): bool
+    public function viewAssistantAttachments(User $user, Assistant $assistant): bool
     {
         return $this->isPrivileged($user, $assistant);
     }

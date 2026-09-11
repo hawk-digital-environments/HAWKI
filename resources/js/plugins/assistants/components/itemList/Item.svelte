@@ -3,6 +3,7 @@
     import CloseButton from "$plugins/assistants/components/closeBtn/CloseButton.svelte";
     import type {IconComponent} from '$lib/components/ui/icons';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
+    import type {Snippet} from 'svelte';
 
     let {
         label,
@@ -10,12 +11,15 @@
         icon,
         highlighted = false,
         onDelete,
+        trailing,
     } = $props<{
         label: string,
         description?: string,
         icon?: IconComponent,
         highlighted?: boolean,
         onDelete?: () => void,
+        /** Optional element rendered at the row's right edge, before the delete button (e.g. a status indicator). */
+        trailing?: Snippet,
     }>();
 
 </script>
@@ -36,6 +40,11 @@
                 <p class="description">{description}</p>
             {/if}
         </div>
+        {#if trailing}
+            <div class="trailing">
+                {@render trailing()}
+            </div>
+        {/if}
     </div>
     {#if onDelete}
         <div class="removeBtn">
@@ -58,6 +67,19 @@
     }
     .removeBtn{
         width: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    /* Same 2rem centered slot as .icon-wrapper, so leading icon, trailing
+       element and delete button all share one centerline. */
+    .trailing{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        margin-left: auto;
     }
     .content{
         display: flex;

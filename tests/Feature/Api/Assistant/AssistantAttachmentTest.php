@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Api\Assistant;
 
 use App\Models\Assistants\Assistant;
-use App\Models\Attachment;
+use App\Models\Assistants\AssistantAttachment;
 use App\Models\User;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Storage\FileStorageService;
@@ -88,10 +88,9 @@ class AssistantAttachmentTest extends TestCase
             'creator_id' => $owner->id,
             'release_stage' => 'organizational',
         ]);
-        $attachment = $assistant->attachments()->create([
+        $attachment = $assistant->assistantAttachments()->create([
             'uuid' => 'test-delete-' . uniqid(),
             'name' => 'knowledge.pdf',
-            'category' => 'assistant',
             'type' => 'document',
             'mime' => 'application/pdf',
             'user_id' => $owner->id,
@@ -103,7 +102,7 @@ class AssistantAttachmentTest extends TestCase
             'fileId' => $attachment->uuid,
         ])->assertSuccessful();
 
-        $this->assertDatabaseMissing('attachments', ['id' => $attachment->id]);
+        $this->assertDatabaseMissing('assistant_attachments', ['id' => $attachment->id]);
     }
 
     public function testNonCreatorIsForbiddenFromDeletingAttachment(): void
@@ -113,10 +112,9 @@ class AssistantAttachmentTest extends TestCase
             'creator_id' => $owner->id,
             'release_stage' => 'organizational',
         ]);
-        $attachment = $assistant->attachments()->create([
+        $attachment = $assistant->assistantAttachments()->create([
             'uuid' => 'test-forbidden-' . uniqid(),
             'name' => 'knowledge.pdf',
-            'category' => 'assistant',
             'type' => 'document',
             'mime' => 'application/pdf',
             'user_id' => $owner->id,
@@ -234,10 +232,9 @@ class AssistantAttachmentTest extends TestCase
             'creator_id' => $owner->id,
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
         ]);
-        $attachment = $assistant->attachments()->create([
+        $attachment = $assistant->assistantAttachments()->create([
             'uuid' => 'test-delete-version-' . uniqid(),
             'name' => 'knowledge.pdf',
-            'category' => 'assistant',
             'type' => 'document',
             'mime' => 'application/pdf',
             'user_id' => $owner->id,
@@ -268,10 +265,9 @@ class AssistantAttachmentTest extends TestCase
             'creator_id' => $owner->id,
             'release_stage' => AssistantReleaseStage::DRAFT->value,
         ]);
-        $attachment = $assistant->attachments()->create([
+        $attachment = $assistant->assistantAttachments()->create([
             'uuid' => 'test-delete-skip-' . uniqid(),
             'name' => 'knowledge.pdf',
-            'category' => 'assistant',
             'type' => 'document',
             'mime' => 'application/pdf',
             'user_id' => $owner->id,
@@ -331,10 +327,9 @@ class AssistantAttachmentTest extends TestCase
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
         ]);
         $owner->favoriteAssistants()->attach($assistant->id);
-        $attachment = $assistant->attachments()->create([
+        $attachment = $assistant->assistantAttachments()->create([
             'uuid' => 'test-fav-state-' . uniqid(),
             'name' => 'knowledge.pdf',
-            'category' => 'assistant',
             'type' => 'document',
             'mime' => 'application/pdf',
             'user_id' => $owner->id,

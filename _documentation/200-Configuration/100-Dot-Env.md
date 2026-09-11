@@ -113,6 +113,16 @@ Configuration for document conversion services. Choose between HAWIK's built-in 
 | HAWKI_FILE_CONVERTER_API_KEY | 123456                                                | API key for the HAWKI converter service               |
 | GWDG_FILE_CONVERTER_API_URL  | https://chat-ai.academiccloud.de/v1/documents/convert | URL to the GWDG Docling converter service             |
 
+### RAG Ingestion
+
+| Variable                     | Default Value                | Description                                                                                     |
+|------------------------------|------------------------------|-------------------------------------------------------------------------------------------------|
+| HAWKI_RAG_INGESTION_ENABLED  | false                        | Whether assistant knowledge files are ingested into the external HAWKI-RAG server               |
+| HAWKI_RAG_DRIVER             | hawki_rag                    | Which RAG backend implements ingestion ("hawki_rag"; anything else resolves to a no-op)         |
+| HAWKI_RAG_API_URL            | http://localhost:8080/api    | Base URL of the RAG server's REST ingestion API                                                 |
+| HAWKI_RAG_API_KEY            |                              | Bearer token with the `rag:text-ingest` ability                                                 |
+| HAWKI_RAG_API_TIMEOUT        | 30                           | Request timeout for RAG ingestion calls, in seconds                                             |
+
 ### Pre-processing Binaries
 
 Before passing an uploaded file to the configured converter service, HAWKI can locally pre-process certain image formats that the converter might not support natively. This is done by calling external CLI tools that must be installed on the server:

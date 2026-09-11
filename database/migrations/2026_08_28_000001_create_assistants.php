@@ -230,6 +230,26 @@ return new class() extends Migration {
 
             $table->unique(['assistant_id', 'user_id']);
         });
+
+        Schema::create('assistant_attachments', static function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('assistant_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('uuid');
+            $table->string('name');
+            $table->enum('type', ['image', 'document', 'audio', 'video', 'other']);
+            $table->string('mime');
+            $table->timestamps();
+
+            // RAG ingestion state (null = RAG not applicable, e.g. ingestion
+            // disabled or no extractable text at all).
+            $table->string('rag_status')->nullable();
+            $table->string('rag_task_id')->nullable();
+            $table->text('rag_error')->nullable();
+            $table->timestamp('rag_ingested_at')->nullable();
+
+            $table->index('uuid');
+        });
     }
 
     /**
@@ -250,6 +270,7 @@ return new class() extends Migration {
         Schema::dropIfExists('assistant_tools');
         Schema::dropIfExists('assistant_versions');
         Schema::dropIfExists('assistants');
+        Schema::dropIfExists('assistant_attachments');
         Schema::dropIfExists('assistant_categories');
     }
 };

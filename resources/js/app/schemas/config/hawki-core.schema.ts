@@ -54,6 +54,16 @@ const HawkiCoreSchema = z.object({
         hawkiUserAvatar: z.string()
     }).optional(),
     /**
+     * RAG knowledge-file mode; absent for unauthenticated requests. When
+     * enabled, uploaded assistant knowledge files are ingested into the
+     * assistant's knowledge-base dataset (uploads then require a model that
+     * supports the knowledge-base tool); when disabled, files are injected
+     * into the conversation context per request instead.
+     */
+    rag: z.object({
+        enabled: z.boolean()
+    }).optional(),
+    /**
      * Per-purpose salts for the frontend's client-side key derivation
      * (`deriveKey()` in `kernel/keychain/keychainHandle.ts` and the legacy
      * `public/js/encryption.js`/`handshake_functions.js`), so a key derived for

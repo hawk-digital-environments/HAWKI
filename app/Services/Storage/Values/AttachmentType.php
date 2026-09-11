@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\Chat\Attachment\Values;
+declare(strict_types=1);
 
-use App\Services\Storage\Values\FileType;
+namespace App\Services\Storage\Values;
 
 enum AttachmentType: string
 {

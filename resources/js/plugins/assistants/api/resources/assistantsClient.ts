@@ -49,9 +49,10 @@ export const ASSISTANT_DETAIL_INCLUDES = [
 /** {@link ASSISTANT_DETAIL_INCLUDES} plus the owner-only knowledge files. */
 export const ASSISTANT_EDIT_INCLUDES = [
   ...ASSISTANT_DETAIL_INCLUDES,
-    "attachments",
+    "assistant_attachments",
     "assistant_user_prompts",
     "assistant_setting_values.setting",
+    "ai_tools",
 ] as const;
 
 /** One page of assistants plus the server's paging metadata. */

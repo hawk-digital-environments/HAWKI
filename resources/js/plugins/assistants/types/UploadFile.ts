@@ -1,6 +1,6 @@
 import z from 'zod';
 
-export const uploadFileStatuses = ['pending', 'uploading', 'complete', 'error'] as const;
+export const uploadFileStatuses = ['pending', 'uploading', 'ingesting', 'complete', 'error'] as const;
 
 export const UploadFileStatusSchema = z.enum(uploadFileStatuses);
 
@@ -42,6 +42,15 @@ export const UploadFileSchema = z.object({
     progress: z.number().optional(),
     /** Current upload lifecycle state, mirrored from HAWKI's status classes. */
     status: UploadFileStatusSchema.optional(),
+    /**
+     * Server-side RAG ingestion state of the persisted attachment
+     * (`assistant_attachments.rag_status`): `pending`/`ingesting` while the
+     * knowledge-base pipeline runs, `ingested` on success, `failed`/`skipped`
+     * when it never landed. `null` when RAG doesn't apply to this file.
+     */
+    ragStatus: z.string().nullable().optional(),
+    /** Server-side ingestion failure reason (`assistant_attachments.rag_error`). */
+    ragError: z.string().nullable().optional(),
     /** Last user-facing error message for this file (upload failure, etc.). */
     error: z.string().optional(),
     /** Abort controller for cancelling an in-flight upload. */

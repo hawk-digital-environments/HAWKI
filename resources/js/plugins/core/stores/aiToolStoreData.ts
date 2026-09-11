@@ -3,7 +3,7 @@ import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js'
 import type {AiToolCapability} from '$plugins/core/schemas/resources/ai-tools-capabilities.schema.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 
-type ExtendedAiTool = AiTool & {
+export type ExtendedAiTool = AiTool & {
     isAvailableFor(model: AiModel, withOffline?: boolean): boolean;
     readonly displayName: string;
 }
@@ -21,6 +21,35 @@ type AiToolWrapper = AiTool & {
 } & ExtendedAiTool;
 
 export type AiToolOrCapability = AiToolWrapper | AiToolCapabilityWrapper;
+
+/**
+ * Capability key of knowledge-database tools (mirrors the backend's
+ * `WellKnownCapabilities::KNOWLEDGE_BASE`). The builder manages these on its
+ * Knowledge page — not in the general tool list on the model page.
+ */
+export const KNOWLEDGE_BASE_CAPABILITY = 'knowledge_base';
+
+/**
+ * All knowledge-database tools in a combined store list. The store folds
+ * tools whose `capability_key` matches a registered capability into that
+ * capability's wrapper, so knowledge tools live in two places: as standalone
+ * entries (capability not registered, incl. MCP-backed tools) and inside the
+ * knowledge capability wrapper's `getTools()`.
+ */
+export function knowledgeToolsOf(tools: AiToolOrCapability[]): ExtendedAiTool[] {
+    const standalone: ExtendedAiTool[] = [];
+    let fromCapability: ExtendedAiTool[] = [];
+    for (const tool of tools) {
+        if (tool.is_capability) {
+            if (tool.id === KNOWLEDGE_BASE_CAPABILITY) {
+                fromCapability = tool.getTools();
+            }
+        } else if (tool.capability_key === KNOWLEDGE_BASE_CAPABILITY) {
+            standalone.push(tool);
+        }
+    }
+    return [...standalone, ...fromCapability];
+}
 
 /**
  * Merges raw tools and capabilities into one flat list for display, wrapping each in

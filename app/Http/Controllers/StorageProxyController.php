@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\AiConvMsg;
-use App\Models\Assistants\Assistant;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
 use App\Services\Routing\CacheBusting\CacheBusterGenerator;
 use App\Services\Storage\AvatarStorageService;
@@ -27,7 +27,8 @@ class StorageProxyController extends Controller
     public function __construct(
         private readonly CacheBusterGenerator $cacheBusterGenerator,
         private readonly AvatarStorageService $avatarStorage,
-        private readonly AttachmentRepository $attachmentService,
+        private readonly AttachmentRepository $attachmentRepository,
+        private readonly AssistantAttachmentRepository $assistantAttachmentRepository,
         private readonly FileStorageService $fileStorageService,
         #[CurrentUser()]
         private readonly User $currentUser,
@@ -62,7 +63,7 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
+        $attachable = $this->attachmentRepository->findOneByStoredFileIdentifier($identifier)?->attachable;
 
         if (!$attachable instanceof Message) {
             abort(400, 'Invalid request, attachment is not linked to a message');
@@ -84,7 +85,7 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
+        $attachable = $this->attachmentRepository->findOneByStoredFileIdentifier($identifier)?->attachable;
 
         if (!$attachable instanceof AiConvMsg) {
             abort(400, 'Invalid request, attachment is not linked to a private ai conversation');
@@ -104,13 +105,13 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
+        $assistantAttachment = $this->assistantAttachmentRepository->findOneByStoredFileIdentifier($identifier);
 
-        if (!$attachable instanceof Assistant) {
+        if (null === $assistantAttachment) {
             abort(400, 'Invalid request, attachment is not linked to an assistant');
         }
 
-        Gate::authorize('view', $attachable);
+        Gate::authorize('view', $assistantAttachment->assistant);
 
         return $this->createStreamResponse(
             $request,

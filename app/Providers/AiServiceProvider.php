@@ -16,6 +16,7 @@ use App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemPromptSyncer;
 use App\Services\Ai\Exceptions\InvalidProviderAdapterException;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
+use App\Services\Rag\Config\RagConfig;
 use App\Services\Ai\ModelInformation\Enrichment\AiModelInfoEnrichmentPipeline;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\LiteLlmDriverNameProviderNameMapping;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlmApiEnricher;
@@ -83,7 +84,9 @@ class AiServiceProvider extends ServiceProvider
         $this->app->extend(
             PublicConfigRegistry::class,
             function (PublicConfigRegistry $registry) {
-                return $registry->declare(AiConfig::class);
+                return $registry
+                    ->declare(AiConfig::class)
+                    ->declare(RagConfig::class);
             }
         );
 

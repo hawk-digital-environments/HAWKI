@@ -223,7 +223,7 @@ JsonApiRoute::server('v1')
                 $relationships->hasMany('assistant_tags');
                 $relationships->hasMany('assistant_feedback')->readOnly();
                 $relationships->hasMany('shared_users');
-                $relationships->hasMany('attachments')->readOnly();
+                $relationships->hasMany('assistant_attachments')->readOnly();
             })
             ->actions(static function (ActionRegistrar $actions): void {
                 $actions->withId()->post('actions/remix', 'remix');

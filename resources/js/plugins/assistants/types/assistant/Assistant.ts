@@ -117,9 +117,8 @@ export const AssistantSchema = z.object({
         return AssistantSchema.nullable();
     },
 
-    /** Knowledge files attached to the assistant. Only included on the owner-only edit fetch (`include=attachments`). */
+    /** Knowledge files attached to the assistant. Only included on the owner-only edit fetch (`include=assistant_attachments`). */
     files: z.array(UploadFileSchema).optional(),
-    knowledgeBases: z.array(z.string()).optional(),
     /** Message the creator sends along with a release request, for the reviewer. */
     submissionNote: z.string().optional(),
 

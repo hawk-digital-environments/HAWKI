@@ -4,7 +4,7 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import ToolsList from "$plugins/assistants/modules/builder/components/aiToolComponents/ToolsList.svelte";
     import McpServerSelector from "$plugins/assistants/modules/builder/components/aiToolComponents/McpServerSelector.svelte";
-    import type {AiToolOrCapability} from "$plugins/core/stores/aiToolStoreData.js";
+    import {KNOWLEDGE_BASE_CAPABILITY, type AiToolOrCapability} from "$plugins/core/stores/aiToolStoreData.js";
     import type {McpServer} from "$plugins/core/schemas/resources/mcp-servers.schema.js";
 
     const builder = useBuilderContext();
@@ -24,11 +24,16 @@
     // grouping over several real tools, not a concrete `ai-tools` record, so
     // their `id` isn't something the assistant's `aiTools` relationship can
     // reference — only the individual tools underneath them can.
-    const nonMcpTools = $derived(toolStore.tools.filter(t => !t.server && !t.is_capability));
+    // Knowledge-database tools are excluded too: they live on the builder's
+    // Knowledge page, which attaches them through the same `aiTools`
+    // relationship.
+    const nonMcpTools = $derived(toolStore.tools.filter(t =>
+        !t.server && !t.is_capability && t.capability_key !== KNOWLEDGE_BASE_CAPABILITY
+    ));
     const mcpGroups = $derived.by(() => {
         const groups = new Map<string, {server: McpServer; tools: AiToolOrCapability[]}>();
         for (const tool of toolStore.tools) {
-            if (!tool.server || tool.is_capability) continue;
+            if (!tool.server || tool.is_capability || tool.capability_key === KNOWLEDGE_BASE_CAPABILITY) continue;
             const group = groups.get(tool.server.id) ?? {server: tool.server, tools: []};
             group.tools.push(tool);
             groups.set(tool.server.id, group);

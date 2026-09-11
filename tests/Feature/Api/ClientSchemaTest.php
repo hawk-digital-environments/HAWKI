@@ -344,7 +344,7 @@ class ClientSchemaTest extends TestCase
         $expected = [
             'assistant_category', 'assistant_avatar', 'assistant_setting_values', 'assistant_user_prompts', 'ai_tools',
             'assistant_tags', 'creator', 'remix_creator', 'remixed_assistant',
-            'assistant_versions', 'organization', 'assistant_review', 'assistant_feedback', 'shared_users', 'attachments',
+            'assistant_versions', 'organization', 'assistant_review', 'assistant_feedback', 'shared_users', 'assistant_attachments',
         ];
 
         foreach ($expected as $rel) {
@@ -603,7 +603,7 @@ class ClientSchemaTest extends TestCase
         $resources = $response->json('resources');
 
         // Resources without standalone CRUD routes (relationship-only).
-        $relationOnly = ['assistant-versions', 'organizations', 'attachments'];
+        $relationOnly = ['assistant-versions', 'organizations', 'attachments', 'assistant-attachments'];
 
         foreach ($resources as $type => $resource) {
             self::assertArrayHasKey('type', $resource, "Type '{$type}' missing type field");
@@ -629,7 +629,7 @@ class ClientSchemaTest extends TestCase
         $response = $this->jsonApiRaw('get', '/api/hawki/v1/assistants/schema');
         $resources = $response->json('resources');
 
-        $relationOnly = ['assistant-versions', 'organizations', 'attachments'];
+        $relationOnly = ['assistant-versions', 'organizations', 'attachments', 'assistant-attachments'];
 
         foreach ($relationOnly as $type) {
             self::assertArrayHasKey($type, $resources, "Missing resource: {$type}");

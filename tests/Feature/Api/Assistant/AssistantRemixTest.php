@@ -40,10 +40,9 @@ class AssistantRemixTest extends TestCase
         ]);
         $assistant->ai_tools()->attach($tool->id);
         $assistant->assistantTags()->attach(AssistantTag::create(['text' => 'remix-tag']));
-        $assistant->attachments()->create([
+        $assistant->assistantAttachments()->create([
             'uuid' => 'test-uuid',
             'name' => 'test.png',
-            'category' => 'avatar',
             'type' => 'image',
             'mime' => 'image/png',
             'user_id' => $owner->id,
@@ -93,8 +92,8 @@ class AssistantRemixTest extends TestCase
 
         self::assertEquals(2, $clone->assistantUserPrompts()->count());
         self::assertTrue($clone->assistantTags()->where('text', 'remix-tag')->exists());
-        self::assertEquals(1, $clone->attachments()->count());
-        self::assertEquals('test-uuid', $clone->attachments()->first()->uuid);
+        // Knowledge files are intentionally not remixed.
+        self::assertEquals(0, $clone->assistantAttachments()->count());
 
         $response->assertJson([
             'data' => [
@@ -188,8 +187,11 @@ class AssistantRemixTest extends TestCase
         self::assertFalse($clone->ai_tools()->exists());
     }
 
-    public function testRemixCopiesAttachments(): void
+    public function testRemixDoesNotCopyAttachments(): void
     {
+        // Knowledge files are intentionally not remixed: each assistant owns
+        // its own files (and later its own RAG dataset), so the clone starts
+        // with an empty knowledge base.
         $owner = User::factory()->create();
         $remixUser = User::factory()->create();
 
@@ -198,11 +200,10 @@ class AssistantRemixTest extends TestCase
             'allow_remix' => true,
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
         ]);
-        $assistant->attachments()->createMany([
+        $assistant->assistantAttachments()->createMany([
             [
                 'uuid' => 'file-1',
                 'name' => 'doc.pdf',
-                'category' => 'document',
                 'type' => 'document',
                 'mime' => 'application/pdf',
                 'user_id' => $owner->id,
@@ -210,7 +211,6 @@ class AssistantRemixTest extends TestCase
             [
                 'uuid' => 'file-2',
                 'name' => 'img.png',
-                'category' => 'avatar',
                 'type' => 'image',
                 'mime' => 'image/png',
                 'user_id' => $owner->id,
@@ -223,9 +223,8 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertEquals(2, $clone->attachments()->count());
-        self::assertTrue($clone->attachments()->where('uuid', 'file-1')->exists());
-        self::assertTrue($clone->attachments()->where('uuid', 'file-2')->exists());
+        self::assertEquals(0, $clone->assistantAttachments()->count());
+        self::assertEquals(2, $assistant->assistantAttachments()->count());
     }
 
     public function testRemixDoesNotCopyReviews(): void

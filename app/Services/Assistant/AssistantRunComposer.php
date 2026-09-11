@@ -30,7 +30,7 @@ class AssistantRunComposer
 
     public function compose(Assistant $assistant, ?User $actor = null): ComposedAssistantRun
     {
-        $assistant->loadMissing(['ai_tools', 'attachments']);
+        $assistant->loadMissing(['ai_tools', 'assistantAttachments']);
 
         return new ComposedAssistantRun(
             systemPrompt: $this->promptComposer->compose($assistant, $actor),
