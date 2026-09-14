@@ -4,6 +4,7 @@
     import type {AiToolOrCapability} from "$plugins/core/stores/aiToolStoreData.js";
     import ArrowRight01Icon from "$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte";
     import ServerStack01Icon from "$lib/components/ui/icons/iconset/ServerStack01Icon.svelte";
+    import {StatusIcon} from "$lib/components/ui/icons";
 
     let {
         server,
@@ -28,9 +29,7 @@
             onclick={()=> isOpen = !isOpen}
     >
 
-        <span class="icon-wrapper">
-            <span class="icon"><ServerStack01Icon size="1em" /></span>
-        </span>
+        <StatusIcon icon={ServerStack01Icon}/>
         <span class="text-wrapper">
             <span class="label-row">
                 <span class="u-label">{server.server_label}</span>

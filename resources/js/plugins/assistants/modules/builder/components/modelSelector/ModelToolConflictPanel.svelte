@@ -21,6 +21,7 @@
 <script lang="ts">
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
+    import {StatusIcon} from '$lib/components/ui/icons';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
@@ -62,9 +63,7 @@
     <div class="model-conflict-wrapper" transition:growTransition>
         <div class="conflict-container">
             <div class="conflict-header">
-                <div class="conflict-icon-wrapper">
-                    <Alert02Icon size={12} class="conflict-icon"/>
-                </div>
+                <StatusIcon icon={Alert02Icon} tone="warning" size="xs" class="conflict-icon"/>
                 <div class="conflict-content">
                     <p class="conflict-title">
                         {#if missingTools.length === 1}
@@ -149,16 +148,8 @@
         padding-bottom: var(--space-2_5);
     }
 
-    .conflict-icon-wrapper {
+    .conflict-header :global(.conflict-icon) {
         margin-top: calc(var(--space-0_5) * 0.5);
-        display: flex;
-        height: var(--space-5);
-        width: var(--space-5);
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--corner-xs);
-        background-color: color-mix(in oklch, var(--color-warning) 18%, transparent);
     }
 
     .conflict-content {

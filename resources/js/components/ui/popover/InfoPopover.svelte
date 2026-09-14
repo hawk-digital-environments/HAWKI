@@ -23,6 +23,7 @@
     import type {ComponentProps} from 'svelte';
     import Popover from '$lib/components/ui/popover/Popover.svelte';
     import {mergeProps} from 'bits-ui';
+    import {ActionIcon} from '$lib/components/ui/icons/index.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
 
@@ -79,39 +80,30 @@
 {/if}
 
 {#snippet popoverButton(a: Record<string, any>)}
-    <button
-        bind:this={triggerEl}
-        {...mergeProps(
-            a?.props ?? {},
-            triggerProps ?? {},
-            ariaLabel ? {'aria-label': ariaLabel} : {}
-        ) as Record<string, unknown>}
-        class="info-button">
-        <Icon size="15"/>
-    </button>
+    <ActionIcon
+        bind:el={triggerEl}
+        icon={Icon}
+        label={ariaLabel}
+        size="xs"
+        class="info-button"
+        {...mergeProps(a?.props ?? {}, triggerProps ?? {})}
+    />
 {/snippet}
 
 <style>
-    .info-button {
-        display: inline-block;
-        line-height: 0;
-        padding: 0;
-        border: none;
-        background: none;
+    :global(.info-button) {
         color: var(--color-text-muted);
         cursor: help;
         stroke: currentColor;
-
-        &[data-state*="open"] {
-            :global(svg) {
-                stroke-width: 3;
-            }
-        }
 
         &[data-disabled] {
             cursor: not-allowed;
             color: var(--color-text-disabled)
         }
+    }
+
+    :global(.info-button[data-state*="open"] svg) {
+        stroke-width: 3;
     }
 
     :global(.info-button-popover) {

@@ -247,6 +247,8 @@ return new class() extends Migration {
             $table->string('rag_task_id')->nullable();
             $table->text('rag_error')->nullable();
             $table->timestamp('rag_ingested_at')->nullable();
+            $table->string('rag_document_id')->nullable();
+            $table->string('rag_batch_id')->nullable();
 
             $table->index('uuid');
         });

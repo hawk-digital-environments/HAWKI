@@ -49,6 +49,21 @@ class DeleteRagDocumentOnAssistantAttachmentDeletionTest extends TestCase
         $this->assertDatabaseMissing('assistant_attachments', ['id' => $attachment->id]);
     }
 
+    public function testItPrefersTheStoredRagDocumentHandleOverTheUuid(): void
+    {
+        $attachment = $this->createAttachment('ingested', 'rag-delete-handle', 'adoc_123');
+
+        $this->mock(RagIngesterInterface::class)
+            ->shouldReceive('deleteDocument')
+            ->once()
+            ->with('assistant_' . $this->assistant->id, 'adoc_123')
+            ->andReturn(true);
+
+        $attachment->delete();
+
+        $this->assertDatabaseMissing('assistant_attachments', ['id' => $attachment->id]);
+    }
+
     public function testItOnlyLogsAWarningWhenDeIngestionFails(): void
     {
         $attachment = $this->createAttachment('ingested');
@@ -109,7 +124,7 @@ class DeleteRagDocumentOnAssistantAttachmentDeletionTest extends TestCase
         $this->assertDatabaseMissing('assistant_attachments', ['id' => $skipped->id]);
     }
 
-    private function createAttachment(?string $ragStatus, ?string $uuid = null): AssistantAttachment
+    private function createAttachment(?string $ragStatus, ?string $uuid = null, ?string $ragDocumentId = null): AssistantAttachment
     {
         $attachment = $this->assistant->assistantAttachments()->create([
             'uuid' => $uuid ?? 'rag-delete-' . uniqid(),
@@ -119,9 +134,15 @@ class DeleteRagDocumentOnAssistantAttachmentDeletionTest extends TestCase
             'user_id' => $this->assistant->creator_id,
         ]);
 
-        if (null !== $ragStatus) {
+        $forceFill = ['rag_status' => $ragStatus];
+
+        if (null !== $ragDocumentId) {
+            $forceFill['rag_document_id'] = $ragDocumentId;
+        }
+
+        if (null !== $ragStatus || null !== $ragDocumentId) {
             // rag_* state transitions are repository-owned, hence forceFill.
-            $attachment->forceFill(['rag_status' => $ragStatus])->save();
+            $attachment->forceFill(array_filter($forceFill, static fn ($value): bool => null !== $value))->save();
         }
 
         return $attachment->refresh();

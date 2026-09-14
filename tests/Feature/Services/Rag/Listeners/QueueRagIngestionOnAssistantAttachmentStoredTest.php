@@ -47,9 +47,21 @@ class QueueRagIngestionOnAssistantAttachmentStoredTest extends TestCase
             return $job->assistantId === $assistant->id && $job->assistantAttachmentId === $attachment->id;
         });
 
+        $attachment = $assistant->assistantAttachments()->first();
+
         $this->assertDatabaseHas('assistant_attachments', [
-            'id' => $assistant->assistantAttachments()->first()->id,
+            'id' => $attachment->id,
             'rag_status' => 'pending',
+        ]);
+
+        // The job is revocable: its batch id is persisted and refers to
+        // the real batch the job was dispatched in.
+        $batchId = $attachment->refresh()->rag_batch_id;
+
+        static::assertNotNull($batchId);
+        $this->assertDatabaseHas('job_batches', [
+            'id' => $batchId,
+            'name' => \sprintf('rag-ingestion-assistant-%d-attachment-%d', $assistant->id, $attachment->id),
         ]);
     }
 

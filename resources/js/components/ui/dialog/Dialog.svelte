@@ -32,6 +32,7 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {ActionIcon} from '$lib/components/ui/icons';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
@@ -125,8 +126,16 @@
                 </div>
             {/if}
             {#if closable}
-                <DialogPrimitive.Close class="dialog-close" aria-label={__('ui.dialog.closeLabel')}>
-                    <Cancel01Icon size={16}/>
+                <DialogPrimitive.Close>
+                    {#snippet child({props})}
+                        <ActionIcon
+                            icon={Cancel01Icon}
+                            label={__('ui.dialog.closeLabel')}
+                            size="sm"
+                            class="dialog-close"
+                            {...props}
+                        />
+                    {/snippet}
                 </DialogPrimitive.Close>
             {/if}
         </DialogPrimitive.Content>
@@ -186,26 +195,6 @@
         position: absolute;
         top: var(--space-4);
         right: var(--space-4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--corner-sm);
-        opacity: 0.7;
-        transition: opacity var(--duration-fast, 150ms);
-        color: var(--color-text-muted);
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: var(--space-1);
-
-        &:hover {
-            opacity: 1;
-        }
-
-        &:focus-visible {
-            outline: 2px solid var(--color-focus-ring);
-            outline-offset: 2px;
-        }
 
         &:disabled {
             pointer-events: none;

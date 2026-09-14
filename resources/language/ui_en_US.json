@@ -1,6 +1,10 @@
 {
     "ui": {
         "loading": "Loading…",
+        "common": {
+            "remove": "Remove",
+            "selectEmoji": "Select emoji"
+        },
         "navigation": {
             "skipToContent": "Skip to main content",
             "open": "Open navigation",

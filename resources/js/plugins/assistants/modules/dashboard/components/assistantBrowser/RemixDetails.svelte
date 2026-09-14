@@ -3,6 +3,7 @@
     import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
     import type {Creator} from "$plugins/assistants/types/assistant/Creator";
     import GitPullRequestArrowIcon from "$lib/components/ui/icons/iconset/GitPullRequestArrowIcon.svelte";
+    import {StatusIcon} from "$lib/components/ui/icons";
     import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte";
     import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import InformationCircleIcon from "$lib/components/ui/icons/iconset/InformationCircleIcon.svelte";
@@ -27,9 +28,7 @@
 
 
 <div class="remix-details-card">
-    <div class="icon-wrapper">
-        <span class="icon"><GitPullRequestArrowIcon size="1em" /></span>
-    </div>
+    <StatusIcon icon={GitPullRequestArrowIcon}/>
     <div class="details">
         <div class="assistant-info">
             <p class="name">{__("assistants.remix.remix_from")} {remixedAssistant.name}</p>
@@ -76,12 +75,6 @@
         border: var(--border);
         border-radius: var(--corner-md);
         background-color: var(--color-hover);
-    }
-    .icon-wrapper{
-        display: flex;
-        flex-direction: column;
-        padding: var(--space-1);
-        color: var(--color-accent-500)
     }
     .details{
         display: flex;

@@ -4,8 +4,23 @@
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
     import CheckmarkCircle02Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle02Icon.svelte';
     import CircleIcon from '$lib/components/ui/icons/iconset/CircleIcon.svelte';
+    import {StatusIcon} from '$lib/components/ui/icons';
     import type {IconComponent} from '$lib/components/ui/icons';
     import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
+
+    type StatusTone = 'accent' | 'info' | 'success' | 'warning' | 'error' | 'neutral';
+
+    function statusTone(status?: ValidationState): StatusTone {
+        switch (status) {
+            case ValidationState.SAFE: return 'success';
+            case ValidationState.WARNING: return 'warning';
+            case ValidationState.ERROR: return 'error';
+            case ValidationState.INFO: return 'info';
+            case ValidationState.UNKNOWN:
+            case ValidationState.EMPTY: return 'neutral';
+            default: return 'accent';
+        }
+    }
 
     let {
         label,
@@ -30,15 +45,15 @@
     <div class="icon-wrapper">
         {#if icon}
             {@const ItemIcon = icon}
-            <span class="icon {status}"><ItemIcon size="1em" /></span>
+            <StatusIcon icon={ItemIcon} tone={statusTone(status)} size="sm"/>
         {:else if status === ValidationState.WARNING}
-            <span class="icon {status}"><Alert01Icon size="1em" /></span>
+            <StatusIcon icon={Alert01Icon} tone="warning" size="sm"/>
         {:else if status === ValidationState.ERROR}
-            <span class="icon {status}"><AlertCircleIcon size="1em" /></span>
+            <StatusIcon icon={AlertCircleIcon} tone="error" size="sm"/>
         {:else if status === ValidationState.SAFE}
-            <span class="icon {status}"><CheckmarkCircle02Icon size="1em" /></span>
+            <StatusIcon icon={CheckmarkCircle02Icon} tone="success" size="sm"/>
         {:else if status === ValidationState.UNKNOWN}
-            <span class="icon {status}"><CircleIcon size="1em" /></span>
+            <StatusIcon icon={CircleIcon} tone="neutral" size="sm"/>
         {/if}
     </div>
 
@@ -79,9 +94,6 @@
         border-radius: var(--corner-md);
         background-color: var(--color-hover);
     }
-    .checklist-card.reportCard .icon{
-        margin: 0;
-    }
     .checklist-card.reportCard .icon-wrapper{
         display: flex;
         align-items: center;
@@ -113,23 +125,5 @@
     }
     .report.safe{
         color: var(--color-success);
-    }
-
-
-    .icon{
-        font-size: var(--font-size-lg);
-        line-height: 1;
-    }
-    .icon.warning{
-        color: var(--color-warning);
-    }
-    .icon.error{
-        color: var(--color-error);
-    }
-    .icon.safe{
-        color: var(--color-success);
-    }
-    .icon.unknown{
-        color: var(--color-text);
     }
 </style>

@@ -6,6 +6,7 @@ namespace Tests\Unit\Services\Rag\Implementations;
 
 use App\Services\Rag\Exceptions\RagIngestionRequestException;
 use App\Services\Rag\Implementations\HawkiRagIngester;
+use App\Services\Rag\Values\FileIngestionPayload;
 use App\Services\Rag\Values\RagIngestionOutcome;
 use App\Services\Rag\Values\TextIngestionPayload;
 use Illuminate\Support\Facades\Http;
@@ -192,6 +193,125 @@ class HawkiRagIngesterTest extends TestCase
         }
     }
 
+    public function testItUploadsAFileAndReturnsTaskAndDocumentHandle(): void
+    {
+        Http::fake([
+            self::API_URL . '/documents' => Http::response([
+                'success' => true,
+                'document' => ['document_id' => 'adoc_1'],
+                'pipeline' => ['task_id' => 'task-1', 'job_id' => 'job-1'],
+            ], 202),
+        ]);
+
+        $result = $this->sut->ingestFile($this->filePayload(), 'attachment-file-uuid-etag');
+
+        static::assertSame('task-1', $result->taskId);
+        static::assertSame('adoc_1', $result->documentId);
+
+        Http::assertSent(static function ($request): bool {
+            $body = (string)$request->body();
+
+            return 'POST' === $request->method()
+                && ['Bearer test-key'] === $request->header('Authorization')
+                && ['attachment-file-uuid-etag'] === $request->header('Idempotency-Key')
+                && \str_contains($body, 'name="dataset_id"')
+                && \str_contains($body, 'assistant_1')
+                && \str_contains($body, 'name="display_name"')
+                && \str_contains($body, 'knowledge.pdf')
+                && \str_contains($body, 'attachment_uuid')
+                && \str_contains($body, 'Content-Type: application/pdf');
+        });
+    }
+
+    public function testItReplacesAnExistingDocumentViaItsHandle(): void
+    {
+        Http::fake([
+            self::API_URL . '/documents/adoc_1' => Http::response([
+                'success' => true,
+                'document' => ['document_id' => 'adoc_1'],
+                'pipeline' => ['task_id' => 'task-2'],
+            ], 202),
+        ]);
+
+        $result = $this->sut->ingestFile($this->filePayload(), 'attachment-file-uuid-etag2', 'adoc_1');
+
+        static::assertSame('task-2', $result->taskId);
+        static::assertSame('adoc_1', $result->documentId);
+
+        Http::assertSent(static function ($request): bool {
+            $body = (string)$request->body();
+
+            return 'POST' === $request->method()
+                && \str_contains($request->url(), '/documents/adoc_1')
+                // A replacement stays in the document's dataset: no dataset_id.
+                && !\str_contains($body, 'name="dataset_id"');
+        });
+    }
+
+    public function testItFallsBackToTheDocumentsLatestTaskOnUnchangedReplacements(): void
+    {
+        Http::fake([
+            self::API_URL . '/documents/adoc_1' => Http::response([
+                'success' => true,
+                'operation' => ['type' => 'replace', 'status' => 'skipped', 'reason' => 'unchanged'],
+                'document' => ['document_id' => 'adoc_1', 'latest_task_id' => 'task-prev'],
+            ], 200),
+        ]);
+
+        $result = $this->sut->ingestFile($this->filePayload(), 'attachment-file-uuid-etag2', 'adoc_1');
+
+        static::assertSame('task-prev', $result->taskId);
+        static::assertSame('adoc_1', $result->documentId);
+    }
+
+    public function testItThrowsOnValidationErrorForFileIngestion(): void
+    {
+        Http::fake([
+            self::API_URL . '/documents' => Http::response(json_encode(['message' => 'Invalid']), 422),
+        ]);
+
+        try {
+            $this->sut->ingestFile($this->filePayload(), 'key');
+            static::fail('Expected RagIngestionRequestException was not thrown.');
+        } catch (RagIngestionRequestException $e) {
+            static::assertFalse($e->isTransient());
+        }
+    }
+
+    public function testItThrowsWhenTheFileTaskHandleIsMissing(): void
+    {
+        Http::fake([
+            self::API_URL . '/documents' => Http::response([
+                'success' => true,
+                'document' => ['document_id' => 'adoc_1'],
+            ], 202),
+        ]);
+
+        try {
+            $this->sut->ingestFile($this->filePayload(), 'key');
+            static::fail('Expected RagIngestionRequestException was not thrown.');
+        } catch (RagIngestionRequestException $e) {
+            static::assertStringContainsString('task_id', $e->getMessage());
+        }
+    }
+
+    public function testItThrowsWhenTheDocumentHandleIsMissing(): void
+    {
+        Http::fake([
+            self::API_URL . '/documents' => Http::response([
+                'success' => true,
+                'pipeline' => ['task_id' => 'task-1'],
+            ], 202),
+        ]);
+
+        try {
+            $this->sut->ingestFile($this->filePayload(), 'key');
+            static::fail('Expected RagIngestionRequestException was not thrown.');
+        } catch (RagIngestionRequestException $e) {
+            static::assertStringContainsString('document_id', $e->getMessage());
+        }
+    }
+
     /**
      * @return iterable<string, array{0: string, 1: RagIngestionOutcome}>
      */
@@ -243,18 +363,31 @@ class HawkiRagIngesterTest extends TestCase
     public function testItDeletesDocuments(): void
     {
         Http::fake([
-            self::API_URL . '/datasets/assistant_1/documents/file-uuid' => Http::response([], 204),
+            self::API_URL . '/documents/adoc_1' => Http::response([], 204),
         ]);
 
-        static::assertTrue($this->sut->deleteDocument('assistant_1', 'file-uuid'));
+        static::assertTrue($this->sut->deleteDocument('assistant_1', 'adoc_1'));
     }
 
     public function testItReportsRejectedDocumentDeletionAsFalse(): void
     {
         Http::fake([
-            self::API_URL . '/datasets/assistant_1/documents/file-uuid' => Http::response(json_encode(['message' => 'gone']), 404),
+            self::API_URL . '/documents/file-uuid' => Http::response(json_encode(['message' => 'gone']), 404),
         ]);
 
         static::assertFalse($this->sut->deleteDocument('assistant_1', 'file-uuid'));
+    }
+
+    private function filePayload(): FileIngestionPayload
+    {
+        return new FileIngestionPayload(
+            datasetId: 'assistant_1',
+            externalDocumentId: 'file-uuid',
+            filename: 'knowledge.pdf',
+            mimeType: 'application/pdf',
+            content: '%PDF-1.4 binary content',
+            displayName: 'knowledge.pdf',
+            metadata: ['assistant_id' => 1, 'attachment_uuid' => 'file-uuid'],
+        );
     }
 }

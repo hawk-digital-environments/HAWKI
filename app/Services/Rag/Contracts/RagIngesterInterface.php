@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Rag\Contracts;
 
+use App\Services\Rag\Values\FileIngestionPayload;
+use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
 use App\Services\Rag\Values\TextIngestionPayload;
 
@@ -40,6 +42,15 @@ interface RagIngesterInterface
      * ('' when the ingester cannot provide one).
      */
     public function ingest(TextIngestionPayload $payload, string $idempotencyKey): string;
+
+    /**
+     * Uploads the original file of one attachment into its dataset and
+     * starts server-side processing. When a non-empty
+     * $existingDocumentId (from a previous file ingestion) is passed, the
+     * document is replaced instead of created anew. Returns the polling
+     * handle plus the backend-assigned document id.
+     */
+    public function ingestFile(FileIngestionPayload $payload, string $idempotencyKey, ?string $existingDocumentId = null): FileIngestionResult;
 
     /**
      * Polls the state of a previously started ingestion once. The mapping
