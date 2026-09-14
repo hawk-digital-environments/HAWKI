@@ -34,8 +34,7 @@
  * |-----------|--------------------|---------------------------------------------------------|
  * | `default` | `ChatDefaultMode`  | Normal compose; stays active after send                 |
  * | `edit`    | `ChatEditMode`     | Edit a past user message; locks model/tools/settings UI |
- * | `thread`  | `ChatInThreadMode` | Compose inside a thread; allows nested edit/regen modes |
- * | `regen`   | `ChatRegenMode`    | Regenerate an assistant reply; pre-fills model + params |
+ * | `thread`  | `ChatInThreadMode` | Compose inside a thread; allows a nested edit mode       |
  *
  * ## Checkpointing
  *
@@ -75,7 +74,8 @@
  *                                  -> every slice restores its own snapshot
  * ```
  */
-import {createContext, onDestroy} from 'svelte';
+import {onDestroy} from 'svelte';
+import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
 import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
@@ -87,7 +87,6 @@ import {ModeSlice} from '$plugins/core/modules/chat/components/composer/contexts
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import {ChatEditMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
 import {ChatInThreadMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
-import {ChatRegenMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
 import {GuardSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
 import {MessageSender} from '$plugins/core/modules/chat/components/composer/contexts/sending/MessageSender.js';
 import {OldUiBridgeTransport} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/OldUiBridgeTransport.js';
@@ -421,8 +420,8 @@ export class ComposerContext {
      * @param withCheckpoint
      */
     // Note: the model itself is intentionally NOT reset here — only when `withCheckpoint`
-    // restores a snapshot does the model revert. Modes such as `ChatRegenMode` rely on this:
-    // they call `reset()` first and then set their own model/parameters on the clean slate.
+    // restores a snapshot does the model revert. Modes rely on this: they may call `reset()`
+    // first and then set their own model/parameters on the clean slate.
     public reset(withCheckpoint?: boolean): void {
         if (withCheckpoint) {
             this.checkpointer.restoreCheckpoint();
@@ -439,17 +438,22 @@ export class ComposerContext {
 /**
  * Svelte context accessor pair for the composer.
  *
- * `createContext()` (Svelte >= 5.40) returns a typed `[get, set]` tuple bound to
- * an internal key, which removes the string/symbol key bookkeeping that plain
- * `getContext`/`setContext` require. `get` is re-exported below as
- * {@link useComposerContext} with an extra guard so a missing provider produces
- * an actionable message instead of Svelte's generic one.
+ * `createHmrSafeContext()` mirrors Svelte's `createContext()` `[get, set]`
+ * tuple but keeps its key stable across Vite HMR module re-evaluations (see
+ * its doc block). `get` is re-exported below as {@link useComposerContext}
+ * with an extra guard so a missing provider produces an actionable message
+ * instead of the generic one.
  */
-const [get, set] = createContext<ComposerContext>();
+const [get, set] = createHmrSafeContext<ComposerContext>('hawki.chat.composer-context');
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {
-    const context: ComposerContext | null | undefined = get();
+    let context: ComposerContext | null | undefined;
+    try {
+        context = get();
+    } catch {
+        // Replaced by the actionable error below.
+    }
     if (!context) {
         throw new Error('No ComposerContext found in Svelte context tree. Make sure to call createComposerContext() in a parent component.');
     }
@@ -545,8 +549,6 @@ export function createComposerContext(
                     return new ChatEditMode();
                 case 'thread':
                     return new ChatInThreadMode();
-                case 'regen':
-                    return new ChatRegenMode(aiModelStore, toastContext, app.translator);
                 default:
                     throw new Error(`Unsupported mode ${mode}`);
             }
@@ -622,6 +624,12 @@ export function createComposerContext(
             context.model.set(model);
         }),
         oldUiBridge.onEnterMode((mode, data) => {
+            // The legacy UI still requests modes this composer no longer has (`regen` is a
+            // plain per-message action now) — ignore those instead of throwing.
+            if (mode !== 'edit' && mode !== 'thread') {
+                console.warn(`Ignoring request to enter the unsupported composer mode "${String(mode)}".`);
+                return;
+            }
             context.mode.enter(mode, data);
         }),
         oldUiBridge.onExitThread(() => {

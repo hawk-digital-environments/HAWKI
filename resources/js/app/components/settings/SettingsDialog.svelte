@@ -3,12 +3,19 @@
   settings section has browser-history-aware navigation without leaving the
   current application page.
 -->
+<script module lang="ts">
+    /** A settings section the dialog can be opened on. */
+    export type {SettingsSection} from './types.js';
+</script>
+
 <script lang="ts">
+    import type {SettingsSection} from './types.js';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
     import RouterView from '$lib/components/ui/routing/RouterView.svelte';
     import {createRouter} from '$lib/components/ui/routing/index.js';
+    import {untrack} from 'svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
@@ -21,9 +28,17 @@
     interface Props {
         open?: boolean;
         onOpenChange?: (open: boolean) => void;
+        /**
+         * Section to show when the dialog opens (e.g. from the search
+         * palette). Only read at the moment `open` flips to true; the user
+         * can navigate freely afterwards. Defaults to the general page.
+         */
+        section?: SettingsSection | null;
     }
 
-    let {open = $bindable(false), onOpenChange}: Props = $props();
+    let {open = $bindable(false), onOpenChange, section = null}: Props = $props();
+    const uid = $props.id();
+    const titleId = `${uid}-title`;
     const {__} = useTranslator();
 
     const settingsRouter = createRouter('settings', (registrar) => {
@@ -41,6 +56,16 @@
         {path: '/experiments', label: __('ui.settings.nav.experiments'), icon: FlaskConicalIcon}
     ]);
 
+    // Point the hash router at the requested section before the RouterView
+    // mounts; the strategy writes the hash, and the view resolves from it.
+    // `untrack` keeps the router's own state out of this effect's dependencies
+    // so only `open`/`section` re-run it.
+    $effect(() => {
+        if (open && section) {
+            untrack(() => void settingsRouter.handle.goTo(`/${section}`, {replace: true}));
+        }
+    });
+
     function handleOpenChange(isOpen: boolean): void {
         open = isOpen;
         onOpenChange?.(isOpen);
@@ -52,6 +77,7 @@
     onOpenChange={handleOpenChange}
     contentProps={{class: 'settings-dialog-content'}}
     headerProps={{class: 'settings-dialog-header'}}
+    titleProps={{id: titleId}}
 >
     {#snippet title()}
         <Settings05Icon size={17}/>
@@ -64,30 +90,35 @@
     <div class="settings-layout">
         <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
             <MenuList>
-                {#each navItems as item (item.path)}
-                    {@const Icon = item.icon}
-                    {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/general' && settingsRouter.path === '/')}
-                    <MenuListItem {active}>
-                        {#snippet children({attach})}
-                            <button
-                                type="button"
-                                {@attach attach}
-                                class:active
-                                aria-current={active ? 'page' : undefined}
-                                onclick={() => settingsRouter.handle.goTo(item.path)}
-                            >
-                                <Icon size={16}/>
-                                <span>{item.label}</span>
-                            </button>
-                        {/snippet}
-                    </MenuListItem>
-                {/each}
+                <ul class="settings-nav-list">
+                    {#each navItems as item (item.path)}
+                        {@const Icon = item.icon}
+                        {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/general' && settingsRouter.path === '/')}
+                        <li>
+                            <MenuListItem {active}>
+                                {#snippet children({attach})}
+                                    <button
+                                        type="button"
+                                        {@attach attach}
+                                        class:active
+                                        aria-current={active ? 'page' : undefined}
+                                        onclick={() => settingsRouter.handle.goTo(item.path)}
+                                    >
+                                        <Icon size={16}/>
+                                        <span>{item.label}</span>
+                                    </button>
+                                {/snippet}
+                            </MenuListItem>
+                        </li>
+                    {/each}
+                </ul>
             </MenuList>
         </nav>
 
-        <main class="settings-panel">
+        <!-- Not a <main>: the page already has one; a labelled region is enough inside the dialog. -->
+        <section class="settings-panel" aria-labelledby={titleId}>
             <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
-        </main>
+        </section>
     </div>
 </Dialog>
 
@@ -121,8 +152,18 @@
         background: color-mix(in oklch, var(--color-surface) 55%, transparent);
     }
 
+    .settings-nav-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
     .settings-nav button {
         position: relative;
+        width: 100%;
         /* Above the sliding highlight behind the nav rows. */
         --settings-nav-button-z: 1;
         z-index: var(--settings-nav-button-z);

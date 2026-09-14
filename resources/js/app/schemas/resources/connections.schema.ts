@@ -10,6 +10,7 @@ export const AuthenticatedUserInfoSchema = z.object({
     email: z.string(),
     avatar: z.string().nullable(),
     bio: z.string().nullable(),
+    permissions: z.array(z.string()).default([]),
     /**
      * A hash derived by the user id and public key, which can be used to detect if
      * the user profile has been reset on the server. If this hash changes,
@@ -63,7 +64,8 @@ export const InternalAuthenticatedConnectionSchema = BaseConnectionSchema.extend
      * Information about the authenticated user. This is only present if the client is authenticated with the HAWKI backend.
      */
     userinfo: AuthenticatedUserInfoSchema,
-    migrations_to_apply: z.number().optional()
+    migrations_to_apply: z.number().optional(),
+    keychain_state: z.enum(['initialized', 'legacy_migration_required', 'setup_required', 'inconsistent'])
 });
 
 export type InternalAuthenticatedConnection = z.infer<typeof InternalAuthenticatedConnectionSchema>;

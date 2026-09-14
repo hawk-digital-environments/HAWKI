@@ -88,8 +88,11 @@
             onOpenDetail?.(entry);
             return;
         }
+        // Tab walks the picker without wrapping: past the last (or before the
+        // first) entry the event reaches the bits-ui menu, which closes it and
+        // moves focus on to the next control after the trigger.
         if (event.key === 'Tab') {
-            if (focusContext.focusAdjacent(entry.tool.name, event.shiftKey ? -1 : 1)) {
+            if (focusContext.focusAdjacent(entry.tool.name, event.shiftKey ? -1 : 1, false)) {
                 event.preventDefault();
                 event.stopPropagation();
             }
@@ -135,6 +138,7 @@
                     tool={entry.tool}
                     supported={entry.available}
                     tooltipSuffix={__('chat.composer.toolMenu.clickForInfo')}
+                    focusable={false}
                 />
                 <ArrowRight01Icon size={16}/>
             </button>

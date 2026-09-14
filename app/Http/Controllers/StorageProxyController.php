@@ -13,6 +13,7 @@ use App\Services\Routing\CacheBusting\CacheBusterGenerator;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Exception\InvalidStorageFileIdentifierStringGivenException;
 use App\Services\Storage\FileStorageService;
+use App\Services\Storage\ProviderIconStorageService;
 use App\Services\Storage\Interfaces\StorageServiceInterface;
 use App\Services\Storage\Values\StoredFile;
 use App\Services\Storage\Values\StoredFileCategory;
@@ -30,6 +31,7 @@ class StorageProxyController extends Controller
         private readonly AttachmentRepository $attachmentRepository,
         private readonly AssistantAttachmentRepository $assistantAttachmentRepository,
         private readonly FileStorageService $fileStorageService,
+        private readonly ProviderIconStorageService $providerIconStorage,
         #[CurrentUser()]
         private readonly User $currentUser,
     ) {
@@ -48,6 +50,7 @@ class StorageProxyController extends Controller
             StoredFileCategory::GROUP => $this->streamGroupFile($request, $identifier),
             StoredFileCategory::PRIVATE => $this->streamPrivateFile($request, $identifier),
             StoredFileCategory::ASSISTANT => $this->streamAssistantFile($request, $identifier),
+            StoredFileCategory::PROVIDER_ICON => $this->streamProviderIcon($request, $identifier),
         };
     }
 
@@ -56,6 +59,17 @@ class StorageProxyController extends Controller
         return $this->createStreamResponse(
             $request,
             $this->getFileOrFail($this->avatarStorage, $identifier),
+        );
+    }
+
+    /**
+     * Provider icons are visible to every signed-in user, like the models they decorate.
+     */
+    private function streamProviderIcon(Request $request, StoredFileIdentifier $identifier): StreamedResponse
+    {
+        return $this->createStreamResponse(
+            $request,
+            $this->getFileOrFail($this->providerIconStorage, $identifier)
         );
     }
 

@@ -70,6 +70,8 @@ class FrontendMigrationRepository extends AbstractRepository
      * Performs a LEFT JOIN against `applied_frontend_migrations` to exclude already-applied
      * rows, and a LEFT JOIN against `frontend_migration_userdata` to attach context data.
      * Context data is decrypted inline so callers receive plain arrays.
+     *
+     * @return SupportCollection<int, MigrationToApply>
      */
     public function findAllMigrationsToApplyForUser(User $user): SupportCollection
     {

@@ -1,5 +1,5 @@
 <!--
-@component Page component for the chat module's `/` index route (route name
+@component Page component for the chat module's `/` route (route name
 `chat.index`, see `ChatModule.ts`) — the "new chat" screen. Shows the welcome
 hero and a fresh composer. Sending the first message makes the `ChatTransport`
 create the conversation and navigate to its `chat.conversation` route
@@ -11,6 +11,7 @@ from the store's in-flight cache.
     import ChatComposerDock from '$plugins/core/modules/chat/components/ChatComposerDock.svelte';
     import ChatMessageView from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import ChatWelcome from '$plugins/core/modules/chat/components/ChatWelcome.svelte';
+    import Page from '$lib/components/ui/page/Page.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
@@ -59,54 +60,69 @@ from the store's in-flight cache.
 
     // Land the cursor in the input so typing can start right away.
     $effect(() => {
-        if (composer) composer.focusInput();
+        if (!composer) return;
+        setTimeout(() => composer?.focusInput());
+    });
+
+    // Clicking the "new chat" button in the sidebar while this page is
+    // already open should give the user an active input again.
+    $effect(() => {
+        return app.events.sync.on('onNewChatRequested', () => {
+            if (!composer) return;
+            setTimeout(() => composer?.focusInput());
+        });
     });
 </script>
 
-<section class="chat-page" style:--composer-dock-height="{composerDockHeight}px">
-    <div class="chat-body" class:empty={isEmpty}>
-        <div class="scroll-region" bind:this={scrollRegion}>
-            {#if pendingMessage}
-                <div class="messages" role="log" aria-live="polite" aria-label={__('chat.page.messageHistory')}>
-                    <ChatMessageView
-                        message={pendingMessage}
-                        onDelete={() => undefined}
-                        onDeleteAttachment={() => undefined}
-                    />
-                    <div class="pending-response" role="status">
-                        <span class="spinner" aria-hidden="true"></span>
-                        <span>{__('chat.page.generating')}</span>
+<Page>
+    {#snippet body()}
+        <div class="chat-body" class:empty={isEmpty} style:--composer-dock-height="{composerDockHeight}px">
+            <!-- Scrollable content must be reachable by keyboard; only while there is something to scroll through. -->
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <div
+                class="scroll-region"
+                bind:this={scrollRegion}
+                role={pendingMessage ? 'region' : undefined}
+                tabindex={pendingMessage ? 0 : undefined}
+                aria-label={pendingMessage ? __('chat.page.messageHistory') : undefined}
+            >
+                {#if pendingMessage}
+                    <!-- Not live: the status line below announces the progress on its own. -->
+                    <div class="messages" role="log" aria-live="off" aria-label={__('chat.page.messageHistory')}>
+                        <ChatMessageView
+                            message={pendingMessage}
+                            onDelete={() => undefined}
+                            onDeleteAttachment={() => undefined}
+                        />
+                        <div class="pending-response" role="status">
+                            <span class="spinner" aria-hidden="true"></span>
+                            <span>{__('chat.page.generating')}</span>
+                        </div>
                     </div>
-                </div>
-            {:else}
-                <ChatWelcome composer={composer} />
-            {/if}
-        </div>
+                {:else}
+                    <ChatWelcome composer={composer} />
+                {/if}
+            </div>
 
-        <ChatComposerDock {scrollRegion} bind:height={composerDockHeight}>
-            <ChatComposer
-                context="aiConv"
-                {transport}
-                initialSystemPrompt={defaultPrompt}
-                onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
-                onReady={value => composer = value}
-            />
-        </ChatComposerDock>
-    </div>
-</section>
+            <ChatComposerDock {scrollRegion} bind:height={composerDockHeight}>
+                <ChatComposer
+                    context="aiConv"
+                    {transport}
+                    initialSystemPrompt={defaultPrompt}
+                    onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
+                    onReady={value => composer = value}
+                />
+            </ChatComposerDock>
+        </div>
+    {/snippet}
+</Page>
 
 <style>
-    .chat-page {
-        display: grid;
-        grid-template-rows: minmax(0, 1fr);
-        height: 100%;
-        min-height: 0;
-        background: var(--color-surface-raised);
-    }
-
-    /* Shared canvas for the scroll region and the floating composer. */
+    /* Shared canvas for the scroll region and the floating composer. Fills the
+       Page shell's body area. */
     .chat-body {
         position: relative;
+        height: 100%;
         min-height: 0;
     }
 
@@ -134,6 +150,8 @@ from the store's in-flight cache.
     .empty :global(.composer-dock::before) { display: none; }
 
     .scroll-region { height: 100%; overflow-y: auto; }
+
+    .scroll-region:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: -2px; }
 
     .messages {
         display: flex;
@@ -178,6 +196,6 @@ from the store's in-flight cache.
 
     @media print {
         :global(.app-sidebar) { display: none !important; }
-        .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
+        .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
     }
 </style>

@@ -15,3 +15,7 @@ if (getenv('BACKUP_DISABLED') === false) {
 Schedule::command('ai:models:check-status')->everyFifteenMinutes();
 Schedule::command('ai:tools:check-status ')->everyFifteenMinutes();
 Schedule::command('filestorage:cleanup')->daily();
+Schedule::command('passkey-backups:cleanup-archive')->daily();
+
+\Illuminate\Support\Facades\Schedule::call(fn() => \Illuminate\Support\Facades\Cache::put('admin.scheduler.last_seen', now()->toIso8601String(), 300))->everyMinute();
+\Illuminate\Support\Facades\Schedule::command('usage:summarize-monthly')->monthly()->withoutOverlapping();

@@ -31,4 +31,9 @@ enum StoredFileCategory: string
      * material injected into the assistant's system prompt).
      */
     case ASSISTANT = 'assistant';
+
+    /**
+     * Logos of AI providers, shown next to their models
+     */
+    case PROVIDER_ICON = 'provider_icons';
 }

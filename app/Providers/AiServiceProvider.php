@@ -191,6 +191,7 @@ class AiServiceProvider extends ServiceProvider
             fn(ProviderAdapterRegistry $registry) => $registry
                 ->declare(WellKnownAdapterKeys::ANTHROPIC, AnthropicAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPENAI, OpenAiAdapter::class)
+                ->declare(WellKnownAdapterKeys::OPENAI_LIKE, OpenAiLikeAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPENAI_AZURE, AzureOpenAiAdapter::class)
                 ->declare(WellKnownAdapterKeys::OLLAMA, OllamaAdapter::class)
                 ->declare(WellKnownAdapterKeys::GEMINI, GeminiAdapter::class)

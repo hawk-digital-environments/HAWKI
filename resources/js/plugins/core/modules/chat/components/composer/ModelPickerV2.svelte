@@ -3,17 +3,19 @@
   `modelPickerV2` experiments flag; the stable counterpart is `ModelPicker`).
 
   A richer picker in the style of a command palette: a provider tab rail
-  (first tab: all models, favorites first), a search input that filters
+  (first tab: all models, pinned first), a search input that filters
   across all providers,
-  a fixed-height result list and per-row extras (demand bars, status dot,
-  favorite star, Ctrl+1..9 quick-select). Desktop renders a two-column
-  popover, below the `md` breakpoint a bottom sheet with a horizontal
-  provider pill row instead of the rail.
+  a fixed-height result list and per-row extras (pin
+  button, Alt+Shift+1..9 quick-select). Desktop renders a popover with a
+  `ModelCard` detail column next to the list (following the highlighted row);
+  below the `md` breakpoint a bottom sheet with the current model's card on
+  top and a horizontal provider pill row instead of the rail. Both layouts
+  link to the `/models` showcase page in the footer.
 
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
   `composerContext.model.set(modelId)` (same contract as `ModelPicker`).
-  Favorites are persisted per browser by the registered `model-favorites` store.
+  Pinned models are persisted per browser by the registered `model-favorites` store.
 
   Takes no props — it is a self-contained composer feature component.
 
@@ -29,6 +31,7 @@
   ```
 -->
 <script lang="ts">
+    import ProviderIcon from '$plugins/core/components/ProviderIcon.svelte';
     import {mergeProps} from 'bits-ui';
     import Popover from '$lib/components/ui/popover/Popover.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
@@ -37,19 +40,20 @@
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import SearchIcon from '$lib/components/ui/icons/iconset/SearchIcon.svelte';
-    import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
+    import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
-    import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
-    import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
+    import ModelCard from '$plugins/core/components/ModelCard.svelte';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
+    const router = useRouter();
     const {__} = useTranslator();
 
     const ALL_TAB = '__all__';
@@ -64,17 +68,29 @@
     let activeTab = $state<string>(ALL_TAB);
     let highlightedId = $state<string | null>(null);
     let searchInputEl = $state<HTMLInputElement | null>(null);
+    let triggerEl = $state<HTMLButtonElement | null>(null);
+    let interactedOutside = false;
+
+    // The desktop popover spans the whole composer card instead of hugging the
+    // small trigger button: anchor it to the nearest composer card (see
+    // `ChatComposer.svelte`), falling back to the trigger when rendered elsewhere.
+    const popoverAnchor = $derived.by(() => {
+        const card = triggerEl?.closest<HTMLElement>('.chat-composer-card');
+        // Use the card's bounds without making its inputs part of the popover's
+        // outside-click exclusion, as an HTMLElement anchor would do.
+        return card ? {contextElement: card, getBoundingClientRect: () => card.getBoundingClientRect()} : null;
+    });
 
     const disabled = $derived(composerContext.guard.disablesFeature('models'));
     const current = $derived(composerContext.model.current);
 
     // Unique providers in model order; models without a provider share the "other" tab.
     const providers = $derived.by(() => {
-        const map = new Map<string, {id: string; label: string}>();
+        const map = new Map<string, {id: string; label: string; light?: string | null; dark?: string | null}>();
         for (const model of aiModelStore.models) {
             const id = model.provider?.provider_id ?? OTHER_TAB;
             if (!map.has(id)) {
-                map.set(id, {id, label: model.provider?.name ?? __('chat.composer.modelPicker.otherProvider')});
+                map.set(id, {id, label: model.provider?.name ?? __('chat.composer.modelPicker.otherProvider'), light: model.provider?.icon_url, dark: model.provider?.icon_url_dark});
             }
         }
         return [...map.values()];
@@ -97,7 +113,11 @@
 
     const selectableModels = $derived(visibleModels.entries().flatMap(([_, models]) => models).filter((model) => model.status !== 'offline').toArray());
 
-    // Ctrl+N quick-select targets: the first 9 selectable visible rows.
+    // Model shown in the desktop detail card: follows the highlighted row,
+    // falls back to the current selection while nothing is highlighted.
+    const detailModel = $derived(selectableModels.find(model => model.model_id === highlightedId) ?? current);
+
+    // Quick-select targets: the first 9 selectable visible rows.
     const kbdIndexById = $derived.by(() => {
         const map = new Map<string, number>();
         selectableModels.slice(0, 9).forEach((model, i) => map.set(model.model_id, i + 1));
@@ -127,6 +147,14 @@
         return `mp2-opt-${uid}-${modelId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     }
 
+    // Keep quick-select distinct from the browser's Ctrl/⌘+number tab shortcuts.
+    // The shortcut is exposed on its option as well as visually in the keycap.
+    function quickSelectShortcut(index: number | undefined): string | undefined {
+        return index ? `Alt+Shift+${index}` : undefined;
+    }
+
+    const triggerLabel = $derived(__('chat.composer.modelPicker.switchModelCurrent', {model: current.label}));
+
     function selectTab(id: string): void {
         activeTab = id;
         query = '';
@@ -139,6 +167,11 @@
         }
         composerContext.model.set(model.model_id);
         open = false;
+    }
+
+    function openModelsPage(): void {
+        open = false;
+        void router.goToRoute('models.index');
     }
 
     function toggleFavorite(e: Event, model: AiModel): void {
@@ -173,9 +206,17 @@
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
             moveHighlight(e.key === 'ArrowDown' ? 1 : -1);
+            requestAnimationFrame(() => {
+                if (highlightedId) {
+                    document.getElementById(optionDomId(highlightedId))?.focus();
+                }
+            });
             return;
         }
-        if (e.key === 'Enter') {
+        // Once the arrow key has moved focus into a native model button, that
+        // button owns Enter/Space. Enter in the search field selects the current
+        // highlighted model instead.
+        if (e.key === 'Enter' && e.target === searchInputEl) {
             const model = selectableModels.find(m => m.model_id === highlightedId);
             if (model) {
                 e.preventDefault();
@@ -185,24 +226,25 @@
     }
 
     function handleOpenAutoFocus(e: Event): void {
+        interactedOutside = false;
         // bits-ui would focus the first rail tab; land on the search input instead.
         // Double rAF so the focus lands after bits-ui's own focus management settled.
         e.preventDefault();
         requestAnimationFrame(() => requestAnimationFrame(() => searchInputEl?.focus()));
     }
 
-    function providerInitials(name: string): string {
-        const words = name.trim().split(/\s+/).filter(Boolean);
-        if (words.length >= 2) {
-            return (words[0][0] + words[1][0]).toUpperCase();
+    function handleCloseAutoFocus(e: Event): void {
+        // Outside clicks keep focus on their target. Keyboard dismissal and
+        // model selection still return focus to the trigger.
+        if (interactedOutside) {
+            e.preventDefault();
         }
-        return name.trim().slice(0, 2).toUpperCase();
     }
 </script>
 
 {#snippet triggerContent()}
     <span class="mp2-provider-chip" aria-hidden="true">
-        {providerInitials(current.provider?.name ?? current.label)}
+        <ProviderIcon name={current.provider?.name ?? current.label} light={current.provider?.icon_url} dark={current.provider?.icon_url_dark} size={20} />
     </span>
     <span class="mp2-trigger-label">{current.label}</span>
     <ChevronDownIcon size={14} class="mp2-trigger-chevron"/>
@@ -218,13 +260,67 @@
             class="mp2-search-input"
             placeholder={__('chat.composer.modelPicker.searchPlaceholder')}
             aria-label={__('chat.composer.modelPicker.searchPlaceholder')}
-            role="combobox"
-            aria-expanded="true"
-            aria-controls={listId}
-            aria-activedescendant={highlightedId ? optionDomId(highlightedId) : undefined}
             autocomplete="off"
             spellcheck="false"
         />
+    </div>
+{/snippet}
+
+{#snippet modelRow(model: AiModel, layout: 'popover' | 'sheet')}
+    {@const offline = model.status === 'offline'}
+    {@const selected = model.model_id === current.model_id}
+    {@const favorite = modelFavorites.has(model.model_id)}
+    {@const kbdIndex = layout === 'popover' ? kbdIndexById.get(model.model_id) : undefined}
+    <!-- Both actions are native sibling buttons. This intentionally avoids a
+         listbox: a listbox may only own options/groups, while each row also
+         needs a separately reachable favorite action. -->
+    <div
+        class="mp2-row"
+        class:mp2-row--highlighted={model.model_id === highlightedId}
+        class:mp2-row--offline={offline}
+    >
+        <button
+            type="button"
+            id={optionDomId(model.model_id)}
+            data-model-id={model.model_id}
+            class="mp2-option"
+            disabled={offline}
+            aria-current={selected ? 'true' : undefined}
+            aria-keyshortcuts={quickSelectShortcut(kbdIndex)}
+            onfocus={() => highlightedId = model.model_id}
+            onmouseenter={() => highlightedId = model.model_id}
+            onclick={() => selectModel(model)}
+        >
+            <span class="mp2-row-text">
+                <span class="mp2-row-label">{model.label}</span>
+                <span class="mp2-row-provider">{model.provider?.name ?? __('chat.composer.modelPicker.otherProvider')}</span>
+            </span>
+            <span class="mp2-row-side">
+                {#if selected}
+                    <Tick02Icon size={16} class="mp2-row-check"/>
+                {/if}
+                {#if kbdIndex}
+                    <!-- The keycap handles Alt+Shift+N globally while mounted. -->
+                    <Kbd key={String(kbdIndex)} alt shift onPress={() => selectModel(model)}/>
+                {/if}
+            </span>
+        </button>
+        <button
+            type="button"
+            class="mp2-pin"
+            class:mp2-pin--active={favorite}
+            aria-label={__(
+                favorite
+                    ? 'chat.composer.modelPicker.removeFavorite'
+                    : 'chat.composer.modelPicker.addFavorite',
+                {model: model.label}
+            )}
+            aria-pressed={favorite}
+            onmousedown={(e) => e.preventDefault()}
+            onclick={(e) => toggleFavorite(e, model)}
+        >
+            <PinIcon size={16}/>
+        </button>
     </div>
 {/snippet}
 
@@ -232,78 +328,29 @@
     <div
         id={listId}
         class="mp2-list"
-        role="listbox"
+        role="group"
         aria-label={__('chat.composer.modelPicker.listAriaLabel')}
     >
         {#if visibleModels.size === 0}
-            <div class="mp2-empty">
+            <div class="mp2-empty" role="status">
                 {__('chat.composer.modelPicker.noResults')}
             </div>
         {:else}
             {#each visibleModels.entries() as [provider, models] (provider)}
                 {#if provider !== HIDE_PROVIDER}
-                    <div class="mp2-row mp2-provider">{provider}</div>
-                {/if}
-                {#each models as model (model.model_id)}
-                    {@const offline = model.status === 'offline'}
-                    {@const selected = model.model_id === current.model_id}
-                    {@const favorite = modelFavorites.has(model.model_id)}
-                    {@const kbdIndex = layout === 'popover' ? kbdIndexById.get(model.model_id) : undefined}
-                    <!-- Keyboard interaction lives on the panel (aria-activedescendant pattern),
-                         so the option row itself only needs a click handler. -->
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <div
-                        id={optionDomId(model.model_id)}
-                        data-model-id={model.model_id}
-                        class="mp2-row"
-                        class:mp2-row--highlighted={model.model_id === highlightedId}
-                        class:mp2-row--offline={offline}
-                        role="option"
-                        tabindex={-1}
-                        aria-selected={selected}
-                        aria-disabled={offline || undefined}
-                        onclick={() => selectModel(model)}
-                        onmouseenter={() => {
-                        if (!offline) highlightedId = model.model_id;
-                    }}
-                    >
-                    <span class="mp2-row-text">
-                        <span class="mp2-row-label">{model.label}</span>
-                        <span class="mp2-row-provider">{model.provider?.name ?? __('chat.composer.modelPicker.otherProvider')}</span>
-                    </span>
-                        <span class="mp2-row-side">
-                        {#if selected}
-                            <Tick02Icon size={16} class="mp2-row-check"/>
-                        {/if}
-                            {#if !offline}
-                            <ModelDemandBars model={model} focusable={false}/>
-                        {/if}
-                            <StatusDotForModel model={model} focusable={false}/>
-                            {#if kbdIndex}
-                            <!-- Handles the Ctrl+N quick-select itself: listens
-                                 globally while the row is mounted and shows the
-                                 combination only while Ctrl (⌘ on Apple) is held. -->
-                            <Kbd key={String(kbdIndex)} ctrl onPress={() => selectModel(model)}/>
-                        {/if}
-                            <button
-                                type="button"
-                                class="mp2-star"
-                                class:mp2-star--active={favorite}
-                                aria-label={__(
-                                favorite
-                                    ? 'chat.composer.modelPicker.removeFavorite'
-                                    : 'chat.composer.modelPicker.addFavorite',
-                                {model: model.label}
-                            )}
-                                aria-pressed={favorite}
-                                onmousedown={(e) => e.preventDefault()}
-                                onclick={(e) => toggleFavorite(e, model)}
-                            >
-                            <StarIcon size={16}/>
-                        </button>
-                    </span>
+                    <!-- Groups are ordinary containers rather than listbox groups:
+                         their rows include both a selection and favorite button. -->
+                    <div role="group" aria-label={provider}>
+                        <div class="mp2-row mp2-provider" aria-hidden="true">{provider}</div>
+                        {#each models as model (model.model_id)}
+                            {@render modelRow(model, layout)}
+                        {/each}
                     </div>
-                {/each}
+                {:else}
+                    {#each models as model (model.model_id)}
+                        {@render modelRow(model, layout)}
+                    {/each}
+                {/if}
             {/each}
         {/if}
     </div>
@@ -340,7 +387,7 @@
                                 {...mergeProps(t.props, {onclick: () => selectTab(provider.id)})}
                             >
                                 <span class="mp2-provider-chip mp2-provider-chip--tab" aria-hidden="true">
-                                    {providerInitials(provider.label)}
+                                    <ProviderIcon name={provider.label} light={provider.light} dark={provider.dark} size={28} />
                                 </span>
                             </button>
                         {/snippet}
@@ -351,7 +398,13 @@
                 {@render searchBox()}
                 {@render modelList(layout)}
             </div>
+            <div class="mp2-detail">
+                <div class="mp2-detail-card">
+                    <ModelCard model={detailModel}/>
+                </div>
+            </div>
         {:else}
+            <ModelCard model={current} compact/>
             {@render searchBox()}
             <div class="mp2-pills">
                 <button
@@ -361,7 +414,7 @@
                     aria-pressed={!searching && activeTab === ALL_TAB}
                     onclick={() => selectTab(ALL_TAB)}
                 >
-                    <StarIcon size={14}/>
+                    <PinIcon size={14}/>
                     {__('chat.composer.modelPicker.allTab')}
                 </button>
                 {#each providers as provider (provider.id)}
@@ -372,6 +425,7 @@
                         aria-pressed={!searching && activeTab === provider.id}
                         onclick={() => selectTab(provider.id)}
                     >
+                        <ProviderIcon name={provider.label} light={provider.light} dark={provider.dark} size={20} />
                         {provider.label}
                     </button>
                 {/each}
@@ -379,6 +433,12 @@
             {@render modelList(layout)}
         {/if}
     </div>
+{/snippet}
+
+{#snippet allModelsLink()}
+    <button type="button" class="mp2-all-models" onclick={openModelsPage}>
+        {__('chat.composer.modelPicker.allModelsLink')}
+    </button>
 {/snippet}
 
 {#if aiModelStore.models.length === 0}
@@ -390,12 +450,14 @@
                 type="button"
                 class="mp2-trigger chat-model-trigger"
                 {disabled}
-                aria-label={__('chat.composer.modelPicker.switchModel')}
+                aria-label={triggerLabel}
+                aria-expanded={open}
+                aria-haspopup="dialog"
                 onclick={() => (open = true)}
             >
                 {@render triggerContent()}
             </button>
-            <BottomSheet bind:open title={__('chat.composer.modelPicker.switchModel')}>
+            <BottomSheet bind:open title={__('chat.composer.modelPicker.switchModel')} contentProps={{class: 'mp2-sheet'}}>
                 {@render panel('sheet')}
             </BottomSheet>
         {/snippet}
@@ -404,7 +466,15 @@
                 bind:open
                 side="top"
                 align="start"
-                contentProps={{class: 'mp2-content', onOpenAutoFocus: handleOpenAutoFocus, onkeydown: onPanelKeydown}}
+                contentProps={{
+                    class: 'mp2-content',
+                    customAnchor: popoverAnchor,
+                    trapFocus: false,
+                    onInteractOutside: () => { interactedOutside = true; },
+                    onOpenAutoFocus: handleOpenAutoFocus,
+                    onCloseAutoFocus: handleCloseAutoFocus,
+                    onkeydown: onPanelKeydown
+                }}
             >
                 {#snippet children({props})}
                     <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>
@@ -413,7 +483,9 @@
                                 type="button"
                                 class="mp2-trigger chat-model-trigger"
                                 class:mp2-trigger--open={open}
+                                bind:this={triggerEl}
                                 {disabled}
+                                aria-label={triggerLabel}
                                 {...mergeProps(props, t.props)}
                             >
                                 {@render triggerContent()}
@@ -503,7 +575,9 @@
 
     /* Combined selector so this wins over the .popover-content defaults. */
     :global(.popover-content.mp2-content) {
-        width: auto;
+        /* Full composer width when anchored to the card (see `popoverAnchor`). */
+        width: var(--bits-floating-anchor-width, auto);
+        max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
         padding: 0;
         overflow: hidden;
     }
@@ -512,14 +586,30 @@
 
     .mp2-panel--popover {
         display: flex;
-        width: 24rem;
-        max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* Make this sheet's body a flex column so the panel (and within it only
+       the model list) absorbs the leftover height under the sheet's own
+       max-height cap — everything else stays visible, only the list scrolls. */
+    :global(.sheet-content.mp2-sheet .sheet-body) {
+        display: flex;
+        flex-direction: column;
     }
 
     .mp2-panel--sheet {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* Only the model list may give up height — the card, search, pills and
+       footer link keep their natural size instead of being squeezed. */
+    .mp2-panel--sheet > :global(*:not(.mp2-list)) {
+        flex-shrink: 0;
     }
 
     .mp2-rail {
@@ -574,6 +664,48 @@
         min-width: 0;
     }
 
+    /* ── Detail card (desktop only) ───────────────────────────────────── */
+
+    .mp2-detail {
+        display: flex;
+        flex-direction: column;
+        flex: 0 0 45%;
+        min-width: 0;
+        border-left: var(--border);
+        /* The card's content varies per model; `contain: size` keeps it from
+           contributing to the panel height, so the list column alone sets it and
+           the popover doesn't jump while browsing. The card scrolls if needed. */
+        contain: size;
+    }
+
+    .mp2-detail-card {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: var(--space-3);
+    }
+
+    .mp2-all-models {
+        border: none;
+        border-top: var(--border);
+        background: transparent;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xxs);
+        text-align: center;
+        padding: var(--space-2);
+        cursor: pointer;
+        transition: color var(--duration-fast, 150ms) var(--easing-default);
+
+        &:hover {
+            color: var(--color-text);
+        }
+    }
+
+    .mp2-panel--sheet .mp2-all-models {
+        border: none;
+        padding-bottom: 0;
+    }
+
     /* ── Search ───────────────────────────────────────────────────────── */
 
     .mp2-search {
@@ -614,11 +746,14 @@
 
     /* Fixed height on desktop so the popover does not resize while filtering. */
     .mp2-panel--popover .mp2-list {
-        height: 18rem;
+        /* Also sets the popover height (see `.mp2-detail`) — tall enough for a
+           typical model card without scrolling. */
+        height: 21rem;
     }
 
     .mp2-panel--sheet .mp2-list {
-        max-height: 50vh;
+        flex: 1;
+        min-height: 6rem;
     }
 
     .mp2-empty {
@@ -640,6 +775,27 @@
         padding: var(--space-1_5) var(--space-2_5);
         border-radius: var(--corner-sm);
         cursor: pointer;
+    }
+
+    /* The option fills the row up to the pin button. */
+    .mp2-option {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex: 1;
+        min-width: 0;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+        outline: none;
+
+        &:disabled {
+            cursor: not-allowed;
+        }
     }
 
     .mp2-provider {
@@ -696,7 +852,10 @@
         color: var(--color-text-muted);
     }
 
-    .mp2-star {
+    /* Unpinned rows only reveal the pin button while hovered/highlighted
+       (or while the button itself has keyboard focus); pinned rows always
+       show it so the pinned state stays readable at a glance. */
+    .mp2-pin {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -706,15 +865,28 @@
         background: transparent;
         color: color-mix(in oklch, var(--color-text-muted) 55%, transparent);
         cursor: pointer;
-        transition: color var(--duration-fast, 150ms) var(--easing-default);
+        opacity: 0;
+        transition:
+            color var(--duration-fast, 150ms) var(--easing-default),
+            opacity var(--duration-fast, 150ms) var(--easing-default);
 
         &:hover {
             color: var(--color-text-muted);
         }
+
+        &:focus-visible {
+            opacity: 1;
+        }
     }
 
-    .mp2-star--active {
+    .mp2-row:hover .mp2-pin,
+    .mp2-row--highlighted .mp2-pin {
+        opacity: 1;
+    }
+
+    .mp2-pin--active {
         color: var(--color-warning);
+        opacity: 1;
 
         &:hover {
             color: var(--color-warning);

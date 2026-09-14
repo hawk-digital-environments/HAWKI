@@ -8,20 +8,45 @@
             "history": "Chat history",
             "loading": "Loading chats…",
             "generating": "Generating response",
-            "empty": "Your conversations will appear here."
+            "empty": "Your conversations will appear here.",
+            "unreadMessages": "unread messages",
+            "groups": {
+                "today": "Today",
+                "yesterday": "Yesterday",
+                "last7Days": "Last 7 days",
+                "last30Days": "Last 30 days",
+                "older": "Older"
+            }
         },
         "page": {
             "newChat": "New chat",
             "loading": "Loading conversation…",
             "retry": "Try again",
             "thinking": "Thinking…",
+            "reasoning": "Reasoning",
+            "webSearch": "Web search",
+            "webSearchOpened": "Opened page",
+            "webSearchFind": "Searched within page",
+            "webSearchMore": "+:count more",
             "generating": "Generating response…",
             "responseReady": "The response is complete.",
+            "regenerating": "Regenerating response…",
+            "responseAborted": "The response was cancelled.",
+            "responseFailed": "The response failed: :error",
             "messageHistory": "Message history",
             "skipToComposer": "Skip to message input",
             "loadError": "The conversation could not be loaded.",
             "sendError": "The message could not be sent.",
             "noResponse": "The model returned no response.",
+            "stats": {
+                "label": "Generation statistics",
+                "outputTokens": "Output tokens",
+                "promptTokens": "Input tokens",
+                "tokensPerSecond": "Tokens per second",
+                "timeToFirstToken": "Time to first token",
+                "duration": "Total time",
+                "unknown": "n/a"
+            },
             "noImprovementModel": "No model is available to improve the message.",
             "noConversationOpen": "No conversation is open.",
             "requestFailed": "The AI request failed.",
@@ -32,6 +57,9 @@
         },
         "actions": {
             "copy": "Copy message",
+            "copied": "Message copied",
+            "copyFailed": "The message could not be copied.",
+            "groupLabel": "Actions for message from :author",
             "speak": "Read message aloud",
             "edit": "Edit message",
             "regenerate": "Regenerate response",
@@ -40,6 +68,18 @@
             "deleteAttachment": "Delete attachment",
             "deleteConfirmTitle": "Delete message?",
             "deleteConfirmDescription": "This message will be permanently removed."
+        },
+        "regenerate": {
+            "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
+            "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
+            "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
+        },
+        "thread": {
+            "title": "Thread",
+            "replyCountOne": "1 reply",
+            "replyCount": ":count replies",
+            "reply": "Reply in thread",
+            "writing": "You are writing in this thread"
         },
         "nameMenu": {
             "emptyNameError": "The chat name must not be empty",
@@ -51,12 +91,15 @@
             "deleteConfirmTitle": "Delete chat :name",
             "newNameAriaLabel": "New chat name",
             "actionsTooltip": "Chat actions",
+            "actionsForChat": "Actions for chat :name",
+            "renameAriaLabel": "Rename chat: :name",
             "rename": "Rename",
             "manageRoom": "Manage room",
             "markAsRead": "Mark as read"
         },
         "attachmentDropdown": {
             "deleteTitle": "Delete file",
+            "actionsFor": "Actions for file :name",
             "deleteDescription": "Are you sure you want to delete the file \":name\"?",
             "preview": "Show",
             "download": "Download",
@@ -68,7 +111,10 @@
         },
         "message": {
             "sources": "Sources",
+            "authorHeading": ":author wrote",
             "citationReference": {
+                "label": "Source :number: :domain",
+                "labelNoDomain": "Source :number",
                 "contextError": "Something was coded wrong. This reference is not inside a CitationContext. Please report this bug to the developers."
             }
         },
@@ -90,7 +136,10 @@
             "textareaLabelRoom": "Group message",
             "textareaPlaceholder": "Enter your message here…",
             "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
+            "textareaHint": "Enter sends the message, Shift+Enter inserts a line break.",
+            "textareaHintEscape": "Escape leaves the current mode.",
             "attachFileTooltip": "Attach file",
+            "pastedTextFileName": "Pasted text",
             "error": {
                 "unsupported_file_type": "Files of type \":type\" cannot be attached.",
                 "file_too_large": "The file \":name\" is too large. The maximum allowed size is :maxSize.",
@@ -105,13 +154,12 @@
             },
             "modePanel": {
                 "editTitle": "Edit message",
-                "regenTitle": "Regenerate AI response",
                 "threadTitle": "Write message in thread",
                 "defaultTitle": "Mode",
                 "cancelEdit": "Exit edit mode",
-                "cancelRegen": "Cancel regeneration",
                 "cancelThread": "Leave thread view",
                 "cancelDefault": "Exit mode",
+                "modeExited": "Back in normal writing mode.",
                 "actionBusy": "You can not do this right now. Please wait until the current action is finished."
             },
             "settings": {
@@ -131,7 +179,19 @@
                 "topPInfo": "Limits the AI's choices to the most probable words whose combined probability does not exceed this value. A lower Top P value (e.g. 0.7) leads to more conservative responses; higher values (e.g. 0.9) allow greater variety.",
                 "topPAriaLabel": "Adjust Top P",
                 "adjustSettingsTooltip": "Adjust model settings",
-                "settingsTitle": "Model settings"
+                "settingsTitle": "Model settings",
+                "advancedSettings": "Advanced settings",
+                "reasoningHeading": "Reasoning effort",
+                "reasoningInfo": "Controls how much the model thinks before answering. Higher effort gives more thorough answers but takes longer and uses more tokens.",
+                "reasoningDefault": "Default",
+                "reasoningAriaLabel": "Adjust reasoning effort",
+                "reasoningLevelNone": "Instant",
+                "reasoningLevelMinimal": "Minimal",
+                "reasoningLevelLow": "Low",
+                "reasoningLevelMedium": "Medium",
+                "reasoningLevelHigh": "High",
+                "reasoningLevelXhigh": "Very high",
+                "reasoningLevelMax": "Max"
             },
             "statusDot": {
                 "onlineLabel": "Online",
@@ -198,16 +258,19 @@
                 "otherProvider": "Other",
                 "providerTab": "Show :provider models",
                 "noResults": "No models found.",
-                "favorites": "Favorites",
-                "addFavorite": "Add :model to favorites",
-                "removeFavorite": "Remove :model from favorites",
-                "listAriaLabel": "Available models"
+                "favorites": "Pinned models",
+                "addFavorite": "Pin :model",
+                "removeFavorite": "Unpin :model",
+                "listAriaLabel": "Available models",
+                "switchModelCurrent": "Switch model, current: :model",
+                "allModelsLink": "Explore all models"
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
                 "listAriaLabel": "Attached files, use the arrow keys to browse",
                 "removeFileAriaLabel": "Remove file :file",
-                "uploadError": "Upload error: :issue"
+                "uploadError": "Upload error: :issue",
+                "uploadProgress": "Uploading: :percent %"
             },
             "fileDrop": {
                 "dropLabel": "Drop files here"
@@ -236,10 +299,12 @@
                 "invalidModelTooltip": "Please select a different model or remove incompatible tools/files",
                 "emptyMessageTooltip": "Please enter a message",
                 "sendTooltip": "Send message",
+                "actionInProgressTooltip": "An action is already in progress",
+                "noWriteAccessTooltip": "You do not have write access to this chat",
+                "sendingInProgressTooltip": "Sending is already in progress",
+                "modeCannotSendTooltip": "Sending is not possible in the current mode",
                 "saveLabel": "Save",
-                "regenerateLabel": "Regenerate",
                 "sendLabel": "Send",
-                "cancelRegeneration": "Cancel regeneration",
                 "leaveThread": "Leave thread",
                 "cancelEdit": "Cancel editing",
                 "cancelResponse": "Cancel AI response",
@@ -256,12 +321,6 @@
                 "high": "High",
                 "highTooltip": "High load — responses delayed",
                 "ariaLabel": "Load: :label"
-            },
-            "regen": {
-                "onlyAssistantMessages": "Only assistant messages can be regenerated",
-                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
-                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
-                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
             },
             "sending": {
                 "responseError": "An error occurred while processing the response.",

@@ -6,21 +6,40 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import AppSidebar from '$lib/app/components/sidebar/AppSidebar.svelte';
     import SidebarContent from '$lib/components/ui/sidebar/SidebarContent.svelte';
     import SidebarRoot from '$lib/components/ui/sidebar/SidebarRoot.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import Button from '$lib/components/ui/button/Button.svelte';
     import Toaster from '$lib/components/ui/toast/Toaster.svelte';
+    import AnnouncementDialog from '$lib/app/components/announcements/AnnouncementDialog.svelte';
 
     interface Props {
         /** Page content, rendered in the layout's main column. */
         children: Snippet;
+        meta?: import('$lib/components/ui/routing/logistics/RouteRegistrar.js').RouteMeta;
     }
 
-    const {children}: Props = $props();
+    const {children, meta}: Props = $props();
+    const app = useApp();
     const {__} = useTranslator();
 </script>
 
+{#if app.logoutState !== 'idle'}
+    <main id="main-content" tabindex="-1" class="logout-status">
+        <h1>{__('ui.profile.logout')}</h1>
+        {#if app.logoutState === 'failed'}
+            <p role="alert">{__('ui.session.logoutFailed')}</p>
+            <Button onclick={() => { void app.logout().catch(() => {}); }}>{__('ui.session.retryLogout')}</Button>
+        {:else}
+            <p role="status">{__('ui.session.loggingOut')}</p>
+        {/if}
+    </main>
+{:else if meta?.chrome === 'none' || (!app.cryptoReady && meta?.access !== 'server-session')}
+    {@render children()}
+    <Toaster />
+{:else}
 <SidebarRoot>
     <a class="skip-link" href="#main-content">{__('ui.navigation.skipToContent')}</a>
     <AppSidebar />
@@ -29,9 +48,17 @@
     </SidebarContent>
 
     <Toaster />
+    {#if app.cryptoReady}<AnnouncementDialog />{/if}
 </SidebarRoot>
+{/if}
 
 <style>
+    .logout-status {
+        max-width: 32rem;
+        margin: 15vh auto;
+        padding: var(--space-6);
+    }
+
     .skip-link {
         position: fixed;
         top: var(--space-2);
@@ -52,5 +79,14 @@
 
     .skip-link:focus {
         transform: translateY(0);
+    }
+
+    /* While the mobile drawer is open the main landmark is `inert`, so a skip
+       link pointing at it would be a focusable dead end: hide it along with
+       the content. `SidebarRoot` flags the open drawer on the grid root. */
+    @media (--bp-md-and-smaller) {
+        :global(.sidebar-layout.nav-open) .skip-link {
+            display: none;
+        }
     }
 </style>

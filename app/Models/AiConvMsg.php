@@ -9,6 +9,14 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class AiConvMsg extends Model
 {
+    /**
+     * The conversation history is bucketed by the conversation's updated_at
+     * (Today / Yesterday / …), so any message change must bump it.
+     *
+     * @var list<string>
+     */
+    protected $touches = ['conversation'];
+
     protected $fillable = [
         'conv_id',
         'user_id',

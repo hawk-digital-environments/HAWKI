@@ -5,7 +5,12 @@ namespace Tests\Unit\Services\Ai\Providers\Adapters\Implementations;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
+use App\Services\Ai\Agents\Implementations\Chat\ChatAgent;
+use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
+use App\Services\Ai\Models\Flags\Values\AiModelFlags;
+use App\Services\Ai\Models\Flags\Values\WellKnownModelFlags;
+use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Adapters\Implementations\OpenAiAdapter;
@@ -73,6 +78,34 @@ class OpenAiAdapterTest extends TestCase
                 return $this->injectedClient;
             }
         };
+    }
+
+    private function makeRequestContext(bool $hasReasoning): AgentRequestContext
+    {
+        $flags = AiModelFlags::fromArray(
+            $hasReasoning ? [WellKnownModelFlags::FEATURE_REASONING] : []
+        );
+        $model = $this->createMock(AiModel::class);
+        $model->method('__get')->willReturnCallback(
+            fn(string $key) => $key === 'flags' ? $flags : null
+        );
+
+        return new AgentRequestContext(
+            provider: $this->makeProvider(),
+            model: $model,
+            modelParameters: new AiModelParameters(),
+        );
+    }
+
+    private function makeTextAgent(AgentRequestContext $context, iterable $tools = []): ChatAgent
+    {
+        return new ChatAgent(
+            context: $context,
+            instructions: 'Be helpful.',
+            messages: [],
+            tools: $tools,
+            promptString: 'Hello AI',
+        );
     }
 
     // =========================================================================
@@ -190,6 +223,103 @@ class OpenAiAdapterTest extends TestCase
         $result = $sut->getModels($provider);
 
         static::assertCount(0, $result);
+    }
+
+    // =========================================================================
+    // getAdditionalDriverOptions
+    // =========================================================================
+
+    public function testItGetAdditionalDriverOptionsAddsReasoningForReasoningModels(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: true);
+
+        $result = $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        );
+
+        static::assertSame(['reasoning' => ['summary' => 'auto']], $result);
+    }
+
+    public function testItGetAdditionalDriverOptionsAddsWebSearchSourcesWithoutReasoning(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: false);
+
+        $result = $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context, [new WebSearch()]),
+            $context,
+        );
+
+        static::assertSame(['include' => ['web_search_call.action.sources']], $result);
+    }
+
+    public function testItGetAdditionalDriverOptionsAddsReasoningAndWebSearchSources(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: true);
+
+        $result = $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context, [new WebSearch()]),
+            $context,
+        );
+
+        static::assertSame([
+            'reasoning' => ['summary' => 'auto'],
+            'include' => ['web_search_call.action.sources'],
+        ], $result);
+    }
+
+    public function testItGetAdditionalDriverOptionsReturnsEmptyArrayWithoutReasoningOrWebSearch(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: false);
+
+        $result = $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        );
+
+        static::assertSame([], $result);
+    }
+
+    public function testItGetAdditionalDriverOptionsReturnsEmptyArrayForNonTextAgent(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: true);
+
+        $result = $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->createMock(\Laravel\Ai\Contracts\Agent::class),
+            $context,
+        );
+
+        static::assertSame([], $result);
+    }
+
+    public function testItGetAdditionalDriverOptionsAfterEmptyToolGeneratorWasConsumed(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: false);
+        $tools = (static function (): \Generator {
+            yield from [];
+        })();
+        $agent = $this->makeTextAgent($context, $tools);
+
+        // The SDK collects tools before the gateway requests provider options.
+        static::assertSame([], [...$agent->tools()]);
+        static::assertSame([], $this->makeAdapter()->getAdditionalDriverOptions($agent, $context));
+    }
+
+    public function testItRetainsWebSearchOptionsAfterToolGeneratorWasConsumed(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: true);
+        $webSearch = new WebSearch();
+        $tools = (static function () use ($webSearch): \Generator {
+            yield $webSearch;
+        })();
+        $agent = $this->makeTextAgent($context, $tools);
+
+        static::assertSame([$webSearch], [...$agent->tools()]);
+        static::assertSame([
+            'reasoning' => ['summary' => 'auto'],
+            'include' => ['web_search_call.action.sources'],
+        ], $this->makeAdapter()->getAdditionalDriverOptions($agent, $context));
+        static::assertSame([$webSearch], [...$agent->tools()]);
     }
 
     // =========================================================================

@@ -30,8 +30,10 @@
     import type {Snippet} from 'svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';
+    import {FILE_UPLOAD_ANNOUNCEMENT_ANCHOR} from '$plugins/core/stores/AnnouncementStore.svelte.js';
 
     interface Props {
         /**
@@ -57,6 +59,7 @@
     const composerContext = useComposerContext();
     const toastContext = useToastContext();
     const translator = useTranslator();
+    const announcementStore = useStore('announcements');
 
     let isDragging = $state(false);
     let dragDepth = 0;
@@ -95,6 +98,7 @@
         const files = e.dataTransfer?.files;
         if (files?.length) {
             reportAttachmentIssues(translator, toastContext, composerContext.attachments.add(files));
+            announcementStore.triggerAnchor(FILE_UPLOAD_ANNOUNCEMENT_ANCHOR);
         }
     }
 </script>
@@ -132,7 +136,6 @@
     .chat-drop-overlay {
         position: absolute;
         inset: 0;
-        z-index: 2;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -178,7 +181,6 @@
         --fan-x: 0;
         --fan-y: 0;
         animation-delay: 40ms;
-        z-index: 4;
     }
 
     .chat-drop-page--1 {
@@ -186,7 +188,6 @@
         --fan-x: 0.32rem;
         --fan-y: -0.1rem;
         animation-delay: 80ms;
-        z-index: 3;
     }
 
     .chat-drop-page--2 {
@@ -194,7 +195,6 @@
         --fan-x: 0.6rem;
         --fan-y: -0.18rem;
         animation-delay: 120ms;
-        z-index: 2;
     }
 
     .chat-drop-page--3 {
@@ -202,7 +202,6 @@
         --fan-x: 0.82rem;
         --fan-y: -0.22rem;
         animation-delay: 160ms;
-        z-index: 1;
     }
 
     @keyframes composer-page-fan {

@@ -1,3 +1,5 @@
+import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
+
 /**
  * Svelte CSS transition that expands or collapses an element by animating its
  * height (default) or width from 0 to its natural size, while fading opacity
@@ -67,7 +69,7 @@ export function growTransition(node: Element, params?: GrowTransitionParams) {
         const marginLeft = px(style.marginLeft);
         const marginRight = px(style.marginRight);
         return {
-            duration,
+            duration: motionDuration(duration),
             easing,
             css: (t: number) => `
                 overflow: hidden;
@@ -87,7 +89,7 @@ export function growTransition(node: Element, params?: GrowTransitionParams) {
     const marginTop = px(style.marginTop);
     const marginBottom = px(style.marginBottom);
     return {
-        duration,
+        duration: motionDuration(duration),
         easing,
         css: (t: number) => `
             overflow: hidden;

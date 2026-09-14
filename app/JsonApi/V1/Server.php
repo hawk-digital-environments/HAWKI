@@ -12,6 +12,7 @@ use App\JsonApi\V1\AiModels\AiModelSchema;
 use App\JsonApi\V1\AiProviders\AiProviderSchema;
 use App\JsonApi\V1\AiToolCapabilities\AiToolCapabilitySchema;
 use App\JsonApi\V1\AiTools\AiToolSchema;
+use App\JsonApi\V1\Announcements\AnnouncementSchema;
 use App\JsonApi\V1\AssistantAvatars\AssistantAvatarSchema;
 use App\JsonApi\V1\AssistantAttachments\AssistantAttachmentSchema;
 use App\JsonApi\V1\Assistants\AssistantSchema;
@@ -24,6 +25,7 @@ use App\JsonApi\V1\AssistantReviews\AssistantReviewSchema;
 use App\JsonApi\V1\AssistantTags\AssistantTagSchema;
 use App\JsonApi\V1\AssistantUserPrompts\AssistantUserPromptSchema;
 use App\JsonApi\V1\AssistantVersions\AssistantVersionSchema;
+use App\JsonApi\V1\Auths\AuthSchema;
 use App\JsonApi\V1\Configs\ConfigSchema;
 use App\JsonApi\V1\Connections\ConnectionSchema;
 use App\JsonApi\V1\ExtApps\ExtAppSchema;
@@ -32,6 +34,7 @@ use App\JsonApi\V1\McpServers\McpServerSchema;
 use App\JsonApi\V1\Migrations\MigrationSchema;
 use App\JsonApi\V1\Organizations\OrganizationSchema;
 
+use App\JsonApi\V1\PasskeyBackups\PasskeyBackupSchema;
 use App\JsonApi\V1\RoomMember\RoomMemberSchema;
 use App\JsonApi\V1\RoomMessages\RoomMessagesSchema;
 use App\JsonApi\V1\Rooms\RoomSchema;
@@ -72,12 +75,15 @@ class Server extends BaseServer
             AiProviderSchema::class,
             AiToolCapabilitySchema::class,
             AiToolSchema::class,
+            AnnouncementSchema::class,
             AttachmentSchema::class,
+            AuthSchema::class,
             ConfigSchema::class,
             ConnectionSchema::class,
             ExtAppSchema::class,
             McpServerSchema::class,
             MigrationSchema::class,
+            PasskeyBackupSchema::class,
             RoomMemberSchema::class,
             RoomMessagesSchema::class,
             RoomSchema::class,

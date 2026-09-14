@@ -1,5 +1,11 @@
 import type {HawkiModule} from '$lib/kernel/modules/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
+import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
+import type {Translator} from '$lib/kernel/localization/translator.js';
+import {
+    chatActionSource,
+    chatConversationSource
+} from '$plugins/core/modules/chat/search.js';
 
 const loadIndexPage = async () => import('./pages/ChatIndex.svelte');
 const loadConversationPage = async () => import('./pages/ChatConversation.svelte');
@@ -33,6 +39,11 @@ export class ChatModule implements HawkiModule {
      */
     readonly name = 'chat';
 
+    /** Used e.g. as the search scope label; falls back to the raw module name without it. */
+    public title(translate: Translator['translate']): string {
+        return translate('chat.module.title');
+    }
+
     /**
      * Declares the module's routes. Called by the `ModuleRegistrar` while the
      * owning plugin runs its `modules()` lifecycle hook; every path registered
@@ -46,5 +57,14 @@ export class ChatModule implements HawkiModule {
         registrar
             .lazyRoute('/', loadIndexPage, {name: 'chat.index'})
             .lazyRoute('/:slug', loadConversationPage, {name: 'chat.conversation'});
+    }
+
+    /** Declare sources now; the kernel reads their runtime data after stores load. */
+    public search({group}: ModuleSearchRegistrar): void {
+        group('actions', {kind: 'static', label: t => t('chat.module.title')})
+            .add('actions', chatActionSource);
+
+        group('conversations', {kind: 'static', label: t => t('ui.search.conversations')})
+            .add('conversation-titles', chatConversationSource);
     }
 }

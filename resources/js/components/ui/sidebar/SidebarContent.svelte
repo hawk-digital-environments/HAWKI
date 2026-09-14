@@ -53,6 +53,13 @@
         min-width: 0;
         overflow: hidden;
         background: var(--panel-bg);
+
+        /* Focused programmatically after a route change (see `RouterView`) and
+           by the skip link; a ring around the whole content column would only
+           be noise, the landmark itself is not interactive. */
+        &:focus {
+            outline: none;
+        }
     }
 
     .mobile-navigation-trigger {
@@ -94,7 +101,13 @@
            above the page content.
 
            Pages are expected to reserve room at the top so at-rest content starts
-           *below* the overlay; anything that starts higher renders washed out.*/
+           *below* the overlay; anything that starts higher renders washed out. The
+           tall default suits text-led pages (chat), where the extra dissolve is the
+           point. Pages that lead with full-bleed art mark themselves
+           `data-content-fade="short"` and get a band sized to the trigger instead,
+           so a hero card keeps its colour and its rounded top corners. Pages whose
+           top zone is owned by fixed chrome with its own fade (the chat header's
+           blur) mark themselves `data-content-fade="none"` and get no band at all. */
         .content::before {
             content: '';
             position: absolute;

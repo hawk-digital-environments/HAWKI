@@ -10,6 +10,7 @@ Deeper topics for contributors and the architecture-curious. The frontend is a c
 | Get the mental model of the app + kernel | [The App & Kernel](110-App-and-Kernel.md) |
 | Add a new app-wide subsystem (extension) | [Writing an Extension](120-Writing-an-Extension.md) |
 | Add a feature (stores, schemas, snippets, modules) | [Writing a Plugin](130-Writing-a-Plugin.md) |
+| Add local or server results to the quick finder | [Search providers](140-Search-providers.md) |
 | Know the status of frontend routing | [Routing](200-Routing.md) |
 | Bridge new Svelte code to the legacy JS layer | [Old UI Integration](300-Old-Ui.md) |
 | Work with client-side encryption | [Encryption](400-Encryption.md) |

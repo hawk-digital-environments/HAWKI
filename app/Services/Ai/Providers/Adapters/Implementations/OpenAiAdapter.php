@@ -6,6 +6,8 @@ namespace App\Services\Ai\Providers\Adapters\Implementations;
 
 
 use App\Models\Ai\AiProvider;
+use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
+use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\LaravelAi\Drivers\OpenAiExtended\ExtendedOpenAiGateway;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
@@ -14,6 +16,7 @@ use App\Services\Ai\Providers\Adapters\Traits\OpenAiModelListTrait;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Collection;
+use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\OpenAi\Concerns\CreatesOpenAiClient;
 use Laravel\Ai\Providers\OpenAiProvider;
@@ -66,6 +69,38 @@ class OpenAiAdapter extends AbstractProviderAdapter
     public function getModels(AiProviderProxy $provider): Collection
     {
         return $this->fetchOpenAiModelList($provider, $this->createModelListClient($this->client($provider->driver)));
+    }
+
+    /**
+     * Adds Responses API options required by HAWKI's text-generating agents.
+     *
+     * Reasoning-capable models receive `reasoning.summary` so the gateway can stream
+     * {@see \Laravel\Ai\Streaming\Events\ReasoningDelta} events. Agents with OpenAI's
+     * native {@see WebSearch} tool receive the web-search sources include path, regardless
+     * of whether the model supports reasoning.
+     */
+    public function getAdditionalDriverOptions(Agent $agent, AgentRequestContext $context): array
+    {
+        if (!$agent instanceof AbstractTextGeneratingAgent) {
+            return [];
+        }
+
+        $options = [];
+
+        if ($context->model->flags->hasStrengthReasoning()) {
+            $options['reasoning'] = [
+                'summary' => 'auto',
+            ];
+        }
+
+        foreach ($agent->tools() as $tool) {
+            if ($tool instanceof WebSearch) {
+                $options['include'] = ['web_search_call.action.sources'];
+                break;
+            }
+        }
+
+        return $options;
     }
 
     /**

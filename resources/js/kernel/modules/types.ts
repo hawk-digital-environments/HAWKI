@@ -1,5 +1,10 @@
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
+import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
+import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
+import type {Component} from 'svelte';
+import type {Translator} from '$lib/kernel/localization/translator.js';
+import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
 /**
  * A HAWKI feature module — the unit registered with the {@link ModuleExtension}.
@@ -15,6 +20,22 @@ import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
  */
 export interface HawkiModule {
     readonly name: string;
+    visible?(app: import('$lib/kernel/HawkiApp.js').HawkiApp): boolean;
+
+    /**
+     * The visible title of the module, e.g. in search scope labels.
+     * If not provided, the title falls back to the module's raw name (e.g. `core:chat` → `chat`).
+     */
+    title?(translate: Translator['translate'], locale: Locale): string;
+
+    /** The visible description of the module. */
+    description?(translate: Translator['translate'], locale: Locale): string;
+
+    /**
+     * The icon of the module. Can be either a component or a base64-encoded
+     * image URL (e.g. `data:image/svg+xml;base64,...`).
+     */
+    icon?(locale: Locale): string | IconComponent | Component;
 
     /**
      * Register the module's routes with the given {@link RouteRegistrar}.
@@ -22,6 +43,15 @@ export interface HawkiModule {
      * relative to the module, not the plugin.
      */
     routes?(registrar: RouteRegistrar): void | Promise<void>;
+
+    /** Declare search providers synchronously. Runtime callbacks run after stores load. */
+    search?(registrar: ModuleSearchRegistrar): void;
+
+    /**
+     * Each module can optionally provide a sidebar component that will be rendered in the app's sidebar.
+     * The component will be rendered when the module is active (i.e. when the user navigates to a route that belongs to the module).
+     */
+    sidebar?(locale: Locale): Component;
 }
 
 /** A {@link HawkiModule} paired with the {@link HawkiPlugin} that registered it,

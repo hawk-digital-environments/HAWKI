@@ -5,6 +5,11 @@ existing conversation: the header with rename/export/delete, the scrollable
 message log, and the docked composer. New chats start on the
 sibling `ChatIndex.svelte` page and navigate here once the conversation
 exists; a generation started there keeps streaming through the store.
+
+Screen readers: the log itself is not live (a streaming reply would be read
+token by token). Instead a visually hidden status region announces when a
+reply starts, is regenerated, aborted or finished, and an alert region
+announces streaming errors.
 -->
 <script lang="ts">
     import type {RouteParams} from 'universal-router';
@@ -13,6 +18,8 @@ exists; a generation started there keeps streaming through the store.
     import ChatHeader from '$plugins/core/modules/chat/components/ChatHeader.svelte';
     import ChatMessage from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import ChatWelcome from '$plugins/core/modules/chat/components/ChatWelcome.svelte';
+    import Page from '$lib/components/ui/page/Page.svelte';
+    import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import ArrowReloadHorizontalIcon from '$lib/components/ui/icons/iconset/ArrowReloadHorizontalIcon.svelte';
@@ -21,10 +28,12 @@ exists; a generation started there keeps streaming through the store.
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {ChatTransport} from '$plugins/core/modules/chat/transport/ChatTransport.js';
+    import {ChatTransport, type GenerationEvent} from '$plugins/core/modules/chat/transport/ChatTransport.js';
     import {exportConversation, toConversationExportLabels} from '$plugins/core/modules/chat/utils/exportConversation.js';
+    import {groupMessagesIntoThreads, threadIndexOf} from '$plugins/core/modules/chat/utils/messageThreads.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
+    import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 
     interface Props { params?: RouteParams; }
     const {params = {}}: Props = $props();
@@ -37,7 +46,7 @@ exists; a generation started there keeps streaming through the store.
     const exportLabels = $derived(toConversationExportLabels(getTranslationsFlat('chat.export')));
     const slug = $derived(typeof params.slug === 'string' ? params.slug : null);
     const defaultPrompt = systemPromptStore.getPromptByType('default').prompt;
-    const transport = new ChatTransport(app, store);
+    const transport = new ChatTransport(app, store, {onGeneration: announceGeneration});
 
     let composer = $state<ComposerContext | null>(null);
     let messageToDelete = $state<ChatMessageType | null>(null);
@@ -48,13 +57,29 @@ exists; a generation started there keeps streaming through the store.
     let newTurnActive = $state(false);
     let previousConversationSlug: string | null = null;
     let previousMessageCount = 0;
+    let messageFocusAfterDelete: string | null = null;
+    // True from opening a conversation until the user scrolls up or sends a
+    // message: the log keeps following its bottom edge while the messages
+    // finish rendering (markdown, KaTeX, reasoning blocks) and grow in height.
+    let pinToBottom = false;
     let liveAnnouncement = $state('');
+    let errorAnnouncement = $state('');
     let announcementConversationSlug: string | null = null;
     let wasGenerating = false;
+    // Set by the transport events so the isGenerating effect below only fills
+    // in for replies streamed by another page's transport (started on ChatIndex).
+    let announcedByTransport = false;
 
     // No messages yet: welcome text and composer are centred as one block
     // instead of the composer docking to the bottom of the scroll region.
     const isEmpty = $derived(!store.loading && !store.error && (!store.active || store.active.messages.length === 0));
+    const hasMessages = $derived(!store.loading && !store.error && Boolean(store.active && store.active.messages.length > 0));
+    const historyHeadingId = $props.id();
+
+    // Trunk messages with their thread replies nested under them (legacy
+    // `W.DDD` message ids): the log renders one turn per trunk message and
+    // each `ChatMessage` renders its own thread.
+    const threadGroups = $derived(store.active ? groupMessagesIntoThreads(store.active.messages) : []);
 
     $effect(() => {
         const requestedSlug = slug;
@@ -103,12 +128,17 @@ exists; a generation started there keeps streaming through the store.
 
         if (conversationOpened) {
             newTurnActive = false;
+            pinToBottom = true;
             requestAnimationFrame(() => {
                 if (store.active?.slug === conversationSlug && scrollRegion === region) {
                     region.scrollTop = region.scrollHeight;
                 }
             });
-        } else if (messageAdded && lastMessage?.message_role === 'user') {
+        } else if (messageAdded && lastMessage?.message_role === 'user' && threadIndexOf(lastMessage) === 0) {
+            // Thread replies are excluded: they render inside their trunk
+            // message's thread, which is already in view — scrolling the last
+            // trunk turn to the top would jump away from it.
+            pinToBottom = false;
             // A freshly sent message starts a new turn: `new-turn` reserves a
             // screen of space below it, and this single scroll aligns it with
             // the top of the region. The streaming response then renders into
@@ -130,6 +160,51 @@ exists; a generation started there keeps streaming through the store.
         previousMessageCount = count;
     });
 
+    // Messages keep growing after the open-scroll above (async markdown and
+    // formula rendering, fonts, collapsed reasoning). Follow the bottom edge
+    // for as long as the view is pinned there.
+    $effect(() => {
+        const region = scrollRegion;
+        const messages = messagesElement;
+        if (!region || !messages) return;
+
+        const observer = new ResizeObserver(() => {
+            if (pinToBottom) region.scrollTop = region.scrollHeight;
+        });
+        observer.observe(messages);
+        return () => observer.disconnect();
+    });
+
+    // Any scroll that leaves the bottom edge is the user's: release the pin.
+    function releasePinOnUserScroll() {
+        if (!pinToBottom || !scrollRegion) return;
+        const remaining = scrollRegion.scrollHeight - scrollRegion.clientHeight - scrollRegion.scrollTop;
+        if (remaining > 2) pinToBottom = false;
+    }
+
+    function announceGeneration(event: GenerationEvent) {
+        if (event.slug !== store.active?.slug) return;
+        switch (event.type) {
+            case 'started':
+                errorAnnouncement = '';
+                liveAnnouncement = __(event.regenerate ? 'chat.page.regenerating' : 'chat.page.generating');
+                break;
+            case 'completed':
+                announcedByTransport = true;
+                liveAnnouncement = __('chat.page.responseReady');
+                break;
+            case 'aborted':
+                announcedByTransport = true;
+                liveAnnouncement = __('chat.page.responseAborted');
+                break;
+            case 'failed':
+                announcedByTransport = true;
+                liveAnnouncement = '';
+                errorAnnouncement = __('chat.page.responseFailed', {error: event.error});
+                break;
+        }
+    }
+
     $effect(() => {
         const conversationSlug = store.active?.slug ?? null;
         const generating = conversationSlug ? store.isGenerating(conversationSlug) : false;
@@ -137,14 +212,17 @@ exists; a generation started there keeps streaming through the store.
         if (conversationSlug !== announcementConversationSlug) {
             announcementConversationSlug = conversationSlug;
             wasGenerating = generating;
+            announcedByTransport = false;
             liveAnnouncement = '';
+            errorAnnouncement = '';
             return;
         }
 
         if (wasGenerating && !generating) {
-            liveAnnouncement = __('chat.page.responseReady');
-        } else if (generating) {
-            liveAnnouncement = '';
+            if (!announcedByTransport) {
+                liveAnnouncement = __('chat.page.responseReady');
+            }
+            announcedByTransport = false;
         }
         wasGenerating = generating;
     });
@@ -160,13 +238,40 @@ exists; a generation started there keeps streaming through the store.
     }
 
     async function removeMessage() {
-        if (!messageToDelete) return;
+        if (!messageToDelete || !store.active) return;
+        const messages = store.active.messages;
+        const index = messages.findIndex(message => message.message_id === messageToDelete!.message_id);
+        const neighbourMessageId = (messages[index + 1] ?? messages[index - 1])?.message_id ?? null;
         try {
             await store.removeMessage(messageToDelete.message_id);
+            messageFocusAfterDelete = neighbourMessageId;
         } catch (error) {
             toast.error(error instanceof Error ? error.message : String(error));
         } finally {
             messageToDelete = null;
+        }
+    }
+
+    function restoreFocusAfterMessageDelete(): HTMLElement | null {
+        const messageId = messageFocusAfterDelete;
+        messageFocusAfterDelete = null;
+        if (!messageId) return null;
+        return messagesElement?.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`) ?? scrollRegion;
+    }
+
+    // Regenerate is a plain per-message action, not a composer mode: the transport streams
+    // the replacement reply while the composer stays locked through `store.isGenerating`.
+    async function regenerateMessage(message: ChatMessageType, model: AiModel | null) {
+        const conversationSlug = store.active?.slug;
+        if (!conversationSlug) return;
+        if (store.isGenerating(conversationSlug)) {
+            toast.info(__('chat.composer.modePanel.actionBusy'));
+            return;
+        }
+        try {
+            await transport.regenerateMessage(conversationSlug, message, model?.model_id ?? null, notice => toast.info(notice));
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : String(error));
         }
     }
 
@@ -179,80 +284,99 @@ exists; a generation started there keeps streaming through the store.
     }
 </script>
 
-<section
-    class="chat-page"
-    style:--composer-dock-height="{composerDockHeight}px"
-    style:--scroll-region-height="{scrollRegionHeight}px"
->
-    <div class="u-sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {liveAnnouncement}
-    </div>
-    {#if store.active}
-        <ChatHeader
-            conversation={store.active}
-            generating={store.isGenerating(store.active.slug)}
-            onRename={name => store.rename(store.active!.slug, name)}
-            onDelete={removeConversation}
-            onExport={format => {
-                if (store.active) return exportConversation(store.active, format, exportLabels);
-            }}
-            onSkipToComposer={() => composer?.focusInput()}
-        />
-    {:else}
-        <!-- Keeps the header row of the page grid while the conversation is
-             still loading or failed to load. -->
-        <header class="placeholder-header" aria-hidden="true"></header>
-    {/if}
+<Page>
+    {#snippet header()}
+        {#if store.active}
+            <ChatHeader
+                conversation={store.active}
+                generating={store.isGenerating(store.active.slug)}
+                onRename={name => store.rename(store.active!.slug, name)}
+                onDelete={removeConversation}
+                onExport={format => {
+                    if (store.active) return exportConversation(store.active, format, exportLabels);
+                }}
+                onSkipToComposer={() => composer?.focusInput()}
+            />
+        {:else}
+            <!-- Keeps the header row of the page grid while the conversation is
+                 still loading or failed to load. -->
+            <PageHeaderBar spacer />
+        {/if}
+    {/snippet}
+    {#snippet body()}
+        <div
+            class="chat-body"
+            class:empty={isEmpty}
+            style:--composer-dock-height="{composerDockHeight}px"
+            style:--scroll-region-height="{scrollRegionHeight}px"
+        >
+            <div class="u-sr-only" role="status" aria-live="polite" aria-atomic="true">
+                {liveAnnouncement}
+            </div>
+            <div class="u-sr-only" role="alert" aria-atomic="true">
+                {errorAnnouncement}
+            </div>
+            <!-- Scrollable content must be reachable by keyboard; only while there is a log to scroll through. -->
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <div
+                class="scroll-region"
+                bind:this={scrollRegion}
+                bind:clientHeight={scrollRegionHeight}
+                onscroll={releasePinOnUserScroll}
+                role={hasMessages ? 'region' : undefined}
+                tabindex={hasMessages ? 0 : undefined}
+                aria-label={hasMessages ? __('chat.page.messageHistory') : undefined}
+            >
+                {#if store.loading}
+                    <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
+                {:else if store.error}
+                    <div class="state error" role="alert">
+                        <p>{store.error}</p>
+                        {#if slug}
+                            <Button variant="stroke" size="sm" iconLeft={ArrowReloadHorizontalIcon} onclick={() => store.load(slug)}>
+                                {__('chat.page.retry')}
+                            </Button>
+                        {/if}
+                    </div>
+                {:else if !hasMessages}
+                    <!-- h2: the header already carries the conversation name as h1. -->
+                    <ChatWelcome headingLevel={2} {composer} conversation={store.active} />
+                {:else}
+                    <!-- Not live: the status region above announces replies once they are complete. -->
+                    <div
+                        class="messages"
+                        class:new-turn={newTurnActive}
+                        bind:this={messagesElement}
+                        role="log"
+                        aria-live="off"
+                        aria-labelledby={historyHeadingId}
+                    >
+                        <h2 id={historyHeadingId} class="u-sr-only">{__('chat.page.messageHistory')}</h2>
+                        {#each threadGroups as group (group.message.clientKey ?? group.message.message_id)}
+                            <ChatMessage message={group.message} replies={group.replies} {composer} onRegenerate={regenerateMessage} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
+                        {/each}
+                    </div>
+                {/if}
+            </div>
 
-    <div class="chat-body" class:empty={isEmpty}>
-        <div class="scroll-region" bind:this={scrollRegion} bind:clientHeight={scrollRegionHeight}>
-            {#if store.loading}
-                <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
-            {:else if store.error}
-                <div class="state error">
-                    <p>{store.error}</p>
-                    {#if slug}
-                        <Button variant="stroke" size="sm" iconLeft={ArrowReloadHorizontalIcon} onclick={() => store.load(slug)}>
-                            {__('chat.page.retry')}
-                        </Button>
-                    {/if}
-                </div>
-            {:else if !store.active || store.active.messages.length === 0}
-                <ChatWelcome {composer} conversation={store.active} />
-            {:else}
-                <div
-                    class="messages"
-                    class:new-turn={newTurnActive}
-                    bind:this={messagesElement}
-                    role="log"
-                    aria-live="polite"
-                    aria-relevant="additions"
-                    aria-label={__('chat.page.messageHistory')}
-                >
-                    {#each store.active.messages as message (message.message_id)}
-                        <ChatMessage {message} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
-                    {/each}
-                </div>
+            {#if !store.loading && !store.error}
+                <ChatComposerDock {scrollRegion} bind:height={composerDockHeight}>
+                    {#key slug}
+                        <ChatComposer
+                            context="aiConv"
+                            {transport}
+                            forcedActive={store.isGenerating(store.active?.slug)}
+                            initialSystemPrompt={store.active?.system_prompt ?? defaultPrompt}
+                            onSystemPromptChange={prompt => store.active && store.updateSystemPrompt(store.active.slug, prompt)}
+                            onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
+                            onReady={value => composer = value}
+                        />
+                    {/key}
+                </ChatComposerDock>
             {/if}
         </div>
-
-        {#if !store.loading && !store.error}
-            <ChatComposerDock {scrollRegion} bind:height={composerDockHeight}>
-                {#key slug}
-                    <ChatComposer
-                        context="aiConv"
-                        {transport}
-                        forcedActive={store.isGenerating(store.active?.slug)}
-                        initialSystemPrompt={store.active?.system_prompt ?? defaultPrompt}
-                        onSystemPromptChange={prompt => store.active && store.updateSystemPrompt(store.active.slug, prompt)}
-                        onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
-                        onReady={value => composer = value}
-                    />
-                {/key}
-            </ChatComposerDock>
-        {/if}
-    </div>
-</section>
+    {/snippet}
+</Page>
 
 <ConfirmDialog
     open={messageToDelete !== null}
@@ -260,27 +384,17 @@ exists; a generation started there keeps streaming through the store.
     title={__('chat.actions.deleteConfirmTitle')}
     description={__('chat.actions.deleteConfirmDescription')}
     onConfirm={removeMessage}
+    restoreFocusTo={restoreFocusAfterMessageDelete}
 />
 
 <style>
-    .chat-page {
-        display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
-        height: 100%;
-        min-height: 0;
-        background: var(--color-surface-raised);
-    }
-
     /* Shared canvas for the scroll region and the floating composer: the
-       messages scroll behind the docked composer box. */
+       messages scroll behind the docked composer box. Fills the Page shell's
+       body area. */
     .chat-body {
         position: relative;
+        height: 100%;
         min-height: 0;
-    }
-
-    .placeholder-header {
-        min-height: 3.75rem;
-        border-bottom: var(--divider);
     }
 
     /* Empty chat: the scroll region shrinks to its content so the welcome
@@ -307,6 +421,8 @@ exists; a generation started there keeps streaming through the store.
     .empty :global(.composer-dock::before) { display: none; }
 
     .scroll-region { height: 100%; overflow-y: auto; }
+
+    .scroll-region:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: -2px; }
 
     .messages {
         /* Pixel value, read by the send-scroll: the header fade overhangs the
@@ -365,7 +481,7 @@ exists; a generation started there keeps streaming through the store.
     }
 
     @media print {
-        .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
+        .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
         .messages { padding-bottom: var(--space-5); }
     }
 </style>

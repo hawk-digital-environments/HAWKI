@@ -9,12 +9,17 @@ use App\Http\Controllers\Api\V1\AiModelDescriptionController;
 use App\Http\Controllers\Api\V1\AiModelFlagController;
 use App\Http\Controllers\Api\V1\AiProviderController;
 use App\Http\Controllers\Api\V1\AiToolController;
+use App\Http\Controllers\Api\V1\AnnouncementController;
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
 use App\Http\Controllers\Api\V1\McpServerController;
 use App\Http\Controllers\Api\V1\MigrationController;
 use App\Http\Controllers\Api\V1\OpenaiResponsesController;
+use App\Http\Controllers\Api\V1\PasskeyBackupController;
+use App\Http\Controllers\Api\V1\RegistrationController;
+use App\Http\Controllers\Api\V1\RegistrationPolicyController;
 use App\Http\Controllers\Api\V1\RoomMemberController;
 use App\Http\Controllers\Api\V1\RoomMessageController;
 use App\Http\Controllers\Api\V1\SystemModelController;
@@ -42,6 +47,7 @@ use App\Http\Middleware\ExtApp\AppTokenForbiddenMiddleware;
 use App\Http\Middleware\ExtApp\ExtAppUserOrTokenForbiddenMiddleware;
 use App\Http\Middleware\ExternalAccessRequiredMiddleware;
 use App\JsonApi\V1\Server;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use LaravelJsonApi\Laravel\Facades\JsonApiRoute;
@@ -72,6 +78,11 @@ Route::middleware([
     AppTokenForbiddenMiddleware::class,
 ])->group(static function (): void {
     Route::group(['prefix' => Server::BASE_URL_PREFIX], static function (): void {
+
+        Route::prefix('admin')->middleware(['throttle:120,1', ApiDataScopeContextSettingMiddleware::class])
+            ->withoutMiddleware(ConvertEmptyStringsToNull::class)
+            ->group(__DIR__ . '/admin.php');
+
         Route::get('/proxy/link-preview/favicon', [LinkPreviewController::class, 'getFavicon'])
             ->name('api.link-preview.favicon');
         Route::get('/proxy/link-preview/image', [LinkPreviewController::class, 'getImage'])
@@ -102,9 +113,31 @@ JsonApiRoute::server('v1')
             ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
             ->only('show');
 
+        $server->resource('auth', AuthController::class)
+            ->only('show')
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/login', 'login');
+                $actions->post('actions/logout', 'logout');
+                $actions->post('actions/complete-registration', 'complete')
+                    ->uses(RegistrationController::class . '@complete');
+            });
+
+        $server->resource('passkey-backups', PasskeyBackupController::class)
+            ->middleware('auth:sanctum')
+            ->only('show');
+
         $server->resource('migrations', MigrationController::class)
             ->actions(static function (ActionRegistrar $actions): void {
                 $actions->post('actions/apply', 'markMigrationAsApplied');
+            })
+            ->only('index', 'show');
+
+        $server->resource('announcements', AnnouncementController::class)
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/seen', 'markSeen');
+                $actions->post('actions/accept', 'markAccepted');
+                $actions->get('actions/registration-policy', 'show')
+                    ->uses(RegistrationPolicyController::class . '@show');
             })
             ->only('index', 'show');
 

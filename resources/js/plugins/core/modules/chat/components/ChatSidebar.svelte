@@ -12,11 +12,15 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import {HISTORY_BUCKETS, historyBucket, type HistoryBucket} from '$lib/utils/date.js';
     import type {HTMLAttributes} from 'svelte/elements';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {}
 
     const {class: className, ...restProps}: Props = $props();
+
+    // Prefix for the per-group label ids the nested lists point at.
+    const uid = $props.id();
 
     const store = useStore('chat');
     const router = useRouter();
@@ -24,6 +28,24 @@
     const {__} = useTranslator();
     const toast = useToastContext();
     const expanded = $derived(sidebar.navOpen);
+
+    // The history grouped by age (today / yesterday / …), empty buckets
+    // dropped. The store list is already newest-first, so pushing in order
+    // keeps each bucket sorted. A conversation without any timestamp cannot
+    // be placed and lands in "older".
+    const groups = $derived.by(() => {
+        const byBucket = new Map<HistoryBucket, typeof store.conversations>();
+        for (const conversation of store.conversations) {
+            const bucket = historyBucket(conversation.updated_at ?? conversation.created_at ?? NaN);
+            const members = byBucket.get(bucket);
+            if (members) members.push(conversation);
+            else byBucket.set(bucket, [conversation]);
+        }
+        return HISTORY_BUCKETS.flatMap(bucket => {
+            const conversations = byBucket.get(bucket);
+            return conversations ? [{bucket, conversations}] : [];
+        });
+    });
 
     // Fade the list edge only where there is actually more content in that
     // direction, so a short (or fully scrolled) list shows no fade at all.
@@ -74,7 +96,7 @@
 
 <div {...restProps} class={["chat-sidebar", className]}>
     {#if expanded}
-        <div
+        <nav
             class="history"
             class:fade-top={fadeTop}
             class:fade-bottom={fadeBottom}
@@ -88,30 +110,49 @@
                 <p class="hint">{__('chat.sidebar.empty')}</p>
             {:else}
                 <SidebarItems>
-                    {#each store.conversations as conversation (conversation.slug)}
-                        {@const generating = store.isGenerating(conversation.slug)}
-                        <!-- History rows are label-only: with every row carrying
-                             the same message icon it added no information. The
-                             leading slot is used solely to mark a conversation
-                             that is still generating. -->
-                        {#snippet generatingIndicator()}
-                            <span class="generation-indicator" aria-hidden="true"></span>
-                        {/snippet}
-                        <ChatHistoryItem
-                            media={generating ? generatingIndicator : undefined}
-                            name={conversation.name}
-                            active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
-                            rowLabel={generating
-                                ? `${conversation.name}, ${__('chat.sidebar.generating')}`
-                                : conversation.name}
-                            onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
-                            onRename={name => renameConversation(conversation.slug, name)}
-                            onDelete={() => removeConversation(conversation.slug)}
-                        />
-                    {/each}
+                    <!-- One list of age groups, each holding its own list of
+                         conversations. The group label is not a heading (the page
+                         owns the heading outline); the nested list is named after it
+                         instead, so a screen reader announces "Today, list, 3 items". -->
+                    <ul class="groups">
+                        {#each groups as group (group.bucket)}
+                            {@const labelId = `${uid}-${group.bucket}`}
+                            <li class="group">
+                                <!-- Non-interactive age divider; opts out of the list's
+                                     proximity hover so the highlight does not reach for
+                                     a neighbouring row while the pointer rests here. -->
+                                <span class="group-label" id={labelId} data-list-no-hover>
+                                    {__(`chat.sidebar.groups.${group.bucket}`)}
+                                </span>
+                                <ul class="group-items" aria-labelledby={labelId}>
+                                    {#each group.conversations as conversation (conversation.slug)}
+                                        {@const generating = store.isGenerating(conversation.slug)}
+                                        <!-- History rows are label-only: with every row carrying
+                                             the same message icon it added no information. The
+                                             leading slot is used solely to mark a conversation
+                                             that is still generating. -->
+                                        {#snippet generatingIndicator()}
+                                            <span class="generation-indicator" aria-hidden="true"></span>
+                                        {/snippet}
+                                        <ChatHistoryItem
+                                            media={generating ? generatingIndicator : undefined}
+                                            name={conversation.name}
+                                            href={{name: 'chat.conversation', params: {slug: conversation.slug}}}
+                                            active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
+                                            rowLabel={generating
+                                                ? `${conversation.name}, ${__('chat.sidebar.generating')}`
+                                                : conversation.name}
+                                            onRename={name => renameConversation(conversation.slug, name)}
+                                            onDelete={() => removeConversation(conversation.slug)}
+                                        />
+                                    {/each}
+                                </ul>
+                            </li>
+                        {/each}
+                    </ul>
                 </SidebarItems>
             {/if}
-        </div>
+        </nav>
     {/if}
 </div>
 
@@ -157,6 +198,36 @@
 
     .history::-webkit-scrollbar {
         display: none;
+    }
+
+    /* Plain lists: the rows carry their own metrics, the list adds none. Both
+       levels keep the MenuList row gap so the rows read as one column. */
+    .groups,
+    .group-items {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .group-label {
+        display: block;
+        /* Matches the horizontal rhythm of the rows (SidebarItem) so the label
+           aligns with the row text; the top margin separates it from the
+           previous group without touching the list's own row gap. */
+        padding: 0 var(--space-2_5) var(--space-1) var(--nav-item-pad-x);
+        margin-top: var(--space-3);
+        font-size: var(--font-size-xxs);
+        font-weight: var(--font-weight-medium, 500);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+    }
+
+    .group:first-child .group-label {
+        margin-top: 0;
     }
 
     .hint {

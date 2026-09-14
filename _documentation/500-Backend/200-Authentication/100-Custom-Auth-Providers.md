@@ -114,7 +114,7 @@ SHIBBOLETH_NAME_VAR=displayname      # default; may be comma-separated for conca
 TEST_USERS_ACTIVE=true
 ```
 
-When active and the main provider supports credentials, `TestAuthService` is automatically prepended to the chain so test accounts can log in without touching the real LDAP/OIDC/Shibboleth backend.
+When active and the main provider supports credentials, `TestAuthService` is inserted between the always-available local provider and the configured provider. Test accounts can then sign in without touching the real LDAP backend.
 
 :::warning
 Never enable `TEST_USERS_ACTIVE` in production. The test users bypass all real identity checks.

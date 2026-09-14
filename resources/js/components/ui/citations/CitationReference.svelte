@@ -12,8 +12,10 @@
   ```
 
   Clicking the chip asks the shared `CitationContext` (provided by an
-  ancestor `CitationRoot`) to scroll to and flash the matching `Citation`
-  tile in the `CitationList`, using the `identifier` both share. If no
+  ancestor `CitationRoot`) to focus, scroll to and flash the matching
+  `Citation` tile in the `CitationList`, using the `identifier` both share.
+  The chip's accessible name is "Source N: domain" (from `title`, the source
+  URL) rather than the bare number it shows. If no
   `CitationRoot` is present in the tree — e.g. the message is rendered
   without a citations root — the click shows an error toast instead of
   throwing, since this component may be reused in a context where citations
@@ -43,11 +45,13 @@
         citation: string | EnrichedUrlCitation;
         /** Native `title` attribute shown on hover, typically the source URL. */
         title?: string;
+        /** The citation number as shown in the chip, used for the accessible name ("Source 1: …"). */
+        number?: string;
         /** The chip's visible content, e.g. the citation number "1". */
         children: Snippet;
     }
 
-    const {citation, title, children}: Props = $props();
+    const {citation, title, number = '', children}: Props = $props();
 
     const identifier = $derived.by(() => {
         if (typeof citation === 'string') {
@@ -55,6 +59,22 @@
         }
         return citation.identifier;
     });
+
+    // The chip only knows the identifier; the source URL arrives as the link title.
+    const sourceUrl = $derived(typeof citation === 'string' ? title : citation.url);
+    const domain = $derived.by(() => {
+        if (!sourceUrl) return '';
+        try {
+            return new URL(sourceUrl).hostname.replace(/^www\./, '');
+        } catch {
+            return sourceUrl;
+        }
+    });
+    const label = $derived(
+        domain
+            ? __('chat.message.citationReference.label', {number, domain})
+            : __('chat.message.citationReference.labelNoDomain', {number})
+    );
 
     function handleClick(event: MouseEvent) {
         event.preventDefault();
@@ -68,7 +88,7 @@
     }
 </script>
 
-<Link class="citation-reference" href={citationAnchorId(identifier)} title={title} onclick={handleClick}>
+<Link class="citation-reference" href={citationAnchorId(identifier)} title={title} aria-label={label} onclick={handleClick}>
     {@render children?.()}
 </Link>
 

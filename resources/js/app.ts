@@ -43,6 +43,7 @@ import {LocalizationExtension} from '$lib/kernel/localization/LocalizationExtens
 import {RoutingExtension} from '$lib/kernel/routing/RoutingExtension.js';
 import {provideLegacyGlobals, runLegacyWaitUntilBootstrapQueue, runLegacyWaitUntilReadyQueue, setHawkiApp} from '$lib/legacy/legacy.js';
 import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
+import {SearchExtension} from '$lib/kernel/search/SearchExtension.svelte.js';
 import {SnippetExtension} from '$lib/legacy/SnippetExtension.js';
 import {LegacyToastExtension} from '$lib/legacy/LegacyToastExtension.js';
 import {ShellExtension} from '$lib/kernel/shell/ShellExtension.svelte.js';
@@ -85,6 +86,7 @@ provideLegacyGlobals();
             new RoutingExtension(),
             new StorageExtension(),
             new StoreExtension(),
+            new SearchExtension(),
             new ShellExtension(),
             new SnippetExtension(),
             new LegacyToastExtension()

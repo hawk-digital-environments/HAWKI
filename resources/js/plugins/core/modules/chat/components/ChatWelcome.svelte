@@ -22,9 +22,11 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
         composer?: ComposerContext | null;
         /** The opened conversation, when the welcome shows inside one. */
         conversation?: ChatConversation | null;
+        /** Heading level of the title: h1 on the new-chat page, h2 inside a conversation that already has an h1. */
+        headingLevel?: 1 | 2;
     }
 
-    const {composer = null, conversation = null}: Props = $props();
+    const {composer = null, conversation = null, headingLevel = 1}: Props = $props();
     const app = useApp();
     const {__} = useTranslator();
 
@@ -63,7 +65,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
                 <AiChat01Icon size={28} />
             {/if}
         </span>
-        <h1>{section.title}</h1>
+        <svelte:element this={`h${headingLevel}`} class="title">{section.title}</svelte:element>
         {#if section.description}
             <p>{section.description}</p>
         {/if}
@@ -80,7 +82,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
 {:else}
     <div class="welcome">
         <span class="welcome-icon" aria-hidden="true"><AiChat01Icon size={28} /></span>
-        <h1>{__('chat.page.welcomeTitle')}</h1>
+        <svelte:element this={`h${headingLevel}`} class="title">{__('chat.page.welcomeTitle')}</svelte:element>
         <p>{__('chat.page.welcomeDescription')}</p>
     </div>
 {/if}
@@ -120,7 +122,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
         line-height: 1;
     }
 
-    h1 { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
+    .title { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
     p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }
 
     .starter-prompts {

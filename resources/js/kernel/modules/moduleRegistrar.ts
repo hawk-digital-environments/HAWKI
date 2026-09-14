@@ -3,6 +3,7 @@ import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 import {assign} from 'smob';
+import {SearchRegistry} from '$lib/kernel/search/searchRegistry.js';
 
 /**
  * Per-plugin registrar factory for the {@link ModuleExtension}.
@@ -22,7 +23,8 @@ import {assign} from 'smob';
  */
 export function createModuleRegistrar(
     modules: Map<string, HawkiModuleWithPlugin>,
-    plugin: HawkiPluginWithMetadata
+    plugin: HawkiPluginWithMetadata,
+    searchRegistry = new SearchRegistry()
 ) {
     function add(module: HawkiModule) {
         if (typeof module.name !== 'string' || module.name.trim() === '') {
@@ -47,6 +49,7 @@ export function createModuleRegistrar(
             };
         }
 
+        searchRegistry.registerModule(fullModuleName, registeredModule);
         modules.set(fullModuleName, registeredModule);
     }
 
@@ -55,8 +58,8 @@ export function createModuleRegistrar(
     };
 }
 
-export function createModuleRegistrarFactory(modules: Map<string, HawkiModuleWithPlugin>) {
-    return (plugin: HawkiPluginWithMetadata) => createModuleRegistrar(modules, plugin);
+export function createModuleRegistrarFactory(modules: Map<string, HawkiModuleWithPlugin>, searchRegistry = new SearchRegistry()) {
+    return (plugin: HawkiPluginWithMetadata) => createModuleRegistrar(modules, plugin, searchRegistry);
 }
 
 export type ModuleRegistrar = ReturnType<typeof createModuleRegistrar>;

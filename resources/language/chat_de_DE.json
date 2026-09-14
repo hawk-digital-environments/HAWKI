@@ -8,20 +8,45 @@
             "history": "Chatverlauf",
             "loading": "Chats werden geladen…",
             "generating": "Antwort wird generiert",
-            "empty": "Deine Unterhaltungen erscheinen hier."
+            "empty": "Deine Unterhaltungen erscheinen hier.",
+            "unreadMessages": "ungelesene Nachrichten",
+            "groups": {
+                "today": "Heute",
+                "yesterday": "Gestern",
+                "last7Days": "Letzte 7 Tage",
+                "last30Days": "Letzte 30 Tage",
+                "older": "Älter"
+            }
         },
         "page": {
             "newChat": "Neuer Chat",
             "loading": "Unterhaltung wird geladen…",
             "retry": "Erneut versuchen",
             "thinking": "Denkt nach…",
+            "reasoning": "Gedankengang",
+            "webSearch": "Websuche",
+            "webSearchOpened": "Seite geöffnet",
+            "webSearchFind": "In Seite gesucht",
+            "webSearchMore": "+:count weitere",
             "generating": "Antwort wird generiert…",
             "responseReady": "Die Antwort ist vollständig.",
+            "regenerating": "Antwort wird neu erzeugt…",
+            "responseAborted": "Die Antwort wurde abgebrochen.",
+            "responseFailed": "Die Antwort ist fehlgeschlagen: :error",
             "messageHistory": "Nachrichtenverlauf",
             "skipToComposer": "Zur Nachrichteneingabe springen",
             "loadError": "Die Unterhaltung konnte nicht geladen werden.",
             "sendError": "Die Nachricht konnte nicht gesendet werden.",
             "noResponse": "Das Modell hat keine Antwort zurückgegeben.",
+            "stats": {
+                "label": "Generierungsstatistik",
+                "outputTokens": "Ausgabe-Tokens",
+                "promptTokens": "Eingabe-Tokens",
+                "tokensPerSecond": "Tokens pro Sekunde",
+                "timeToFirstToken": "Zeit bis zum ersten Token",
+                "duration": "Gesamtdauer",
+                "unknown": "k. A."
+            },
             "noImprovementModel": "Es ist kein Modell verfügbar, um die Nachricht zu verbessern.",
             "noConversationOpen": "Es ist keine Unterhaltung geöffnet.",
             "requestFailed": "Die KI-Anfrage ist fehlgeschlagen.",
@@ -32,6 +57,9 @@
         },
         "actions": {
             "copy": "Nachricht kopieren",
+            "copied": "Nachricht kopiert",
+            "copyFailed": "Die Nachricht konnte nicht kopiert werden.",
+            "groupLabel": "Aktionen für Nachricht von :author",
             "speak": "Nachricht vorlesen",
             "edit": "Nachricht bearbeiten",
             "regenerate": "Antwort neu generieren",
@@ -40,6 +68,18 @@
             "deleteAttachment": "Anhang löschen",
             "deleteConfirmTitle": "Nachricht löschen?",
             "deleteConfirmDescription": "Diese Nachricht wird dauerhaft entfernt."
+        },
+        "regenerate": {
+            "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
+            "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
+            "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
+        },
+        "thread": {
+            "title": "Thread",
+            "replyCountOne": "1 Antwort",
+            "replyCount": ":count Antworten",
+            "reply": "Im Thread antworten",
+            "writing": "Du schreibst in diesem Thread"
         },
         "nameMenu": {
             "emptyNameError": "Der Chatname darf nicht leer sein",
@@ -51,12 +91,15 @@
             "deleteConfirmTitle": "Chat :name löschen",
             "newNameAriaLabel": "Neuer Chatname",
             "actionsTooltip": "Chat Aktionen",
+            "actionsForChat": "Aktionen für Chat :name",
+            "renameAriaLabel": "Chat umbenennen: :name",
             "rename": "Umbenennen",
             "manageRoom": "Raum verwalten",
             "markAsRead": "Als gelesen markieren"
         },
         "attachmentDropdown": {
             "deleteTitle": "Datei löschen",
+            "actionsFor": "Aktionen für Datei :name",
             "deleteDescription": "Bist du sicher, dass du die Datei \":name\" löschen möchtest?",
             "preview": "Anzeigen",
             "download": "Herunterladen",
@@ -68,7 +111,10 @@
         },
         "message": {
             "sources": "Quellen",
+            "authorHeading": ":author hat geschrieben",
             "citationReference": {
+                "label": "Quelle :number: :domain",
+                "labelNoDomain": "Quelle :number",
                 "contextError": "Hier wurde etwas falsch programmiert. Diese Referenz befindet sich nicht in einem CitationContext. Bitte melde diesen Fehler den Entwicklern."
             }
         },
@@ -90,7 +136,10 @@
             "textareaLabelRoom": "Gruppennachricht",
             "textareaPlaceholder": "Hier kannst du deine Anfrage stellen…",
             "textareaPlaceholderRoom": "Schreibe eine Gruppennachricht oder nutze die KI mit @hawki...",
+            "textareaHint": "Enter sendet die Nachricht, Umschalt+Enter fügt einen Zeilenumbruch ein.",
+            "textareaHintEscape": "Escape verlässt den aktuellen Modus.",
             "attachFileTooltip": "Datei anhängen",
+            "pastedTextFileName": "Eingefügter Text",
             "error": {
                 "unsupported_file_type": "Dateien vom Typ „:type“ können nicht angehängt werden.",
                 "file_too_large": "Die Datei „:name“ ist zu groß. Maximal erlaubt sind :maxSize.",
@@ -105,13 +154,12 @@
             },
             "modePanel": {
                 "editTitle": "Nachricht bearbeiten",
-                "regenTitle": "KI Nachricht regenerieren",
                 "threadTitle": "Nachricht in Thread schreiben",
                 "defaultTitle": "Modus",
                 "cancelEdit": "Bearbeitungsmodus verlassen",
-                "cancelRegen": "Regenerieren abbrechen",
                 "cancelThread": "Thread-Ansicht verlassen",
                 "cancelDefault": "Modus verlassen",
+                "modeExited": "Zurück im normalen Schreibmodus.",
                 "actionBusy": "You can not do this right now. Please wait until the current action is finished."
             },
             "settings": {
@@ -131,7 +179,19 @@
                 "topPInfo": "Begrenzt die Auswahlmöglichkeiten der KI auf die wahrscheinlichsten Wörter, deren Gesamtwahrscheinlichkeit diesen Wert nicht überschreitet. Ein niedrigerer Top_P-Wert (z. B. 0,7) führt zu zurückhaltenderen Antworten; höhere Werte (z. B. 0,9) ermöglichen eine größere Vielfalt.",
                 "topPAriaLabel": "Top P einstellen",
                 "adjustSettingsTooltip": "Modelleinstellungen anpassen",
-                "settingsTitle": "Modelleinstellungen"
+                "settingsTitle": "Modelleinstellungen",
+                "advancedSettings": "Erweiterte Einstellungen",
+                "reasoningHeading": "Denkaufwand",
+                "reasoningInfo": "Legt fest, wie intensiv das Modell nachdenkt, bevor es antwortet. Höherer Aufwand liefert gründlichere Antworten, dauert aber länger und verbraucht mehr Tokens.",
+                "reasoningDefault": "Standard",
+                "reasoningAriaLabel": "Denkaufwand einstellen",
+                "reasoningLevelNone": "Sofort",
+                "reasoningLevelMinimal": "Minimal",
+                "reasoningLevelLow": "Niedrig",
+                "reasoningLevelMedium": "Mittel",
+                "reasoningLevelHigh": "Hoch",
+                "reasoningLevelXhigh": "Sehr hoch",
+                "reasoningLevelMax": "Maximal"
             },
             "statusDot": {
                 "onlineLabel": "Online",
@@ -198,16 +258,19 @@
                 "otherProvider": "Sonstige",
                 "providerTab": "Modelle von :provider anzeigen",
                 "noResults": "Keine Modelle gefunden.",
-                "favorites": "Favoriten",
-                "addFavorite": ":model zu Favoriten hinzufügen",
-                "removeFavorite": ":model aus Favoriten entfernen",
-                "listAriaLabel": "Verfügbare Modelle"
+                "favorites": "Angepinnte Modelle",
+                "addFavorite": ":model anpinnen",
+                "removeFavorite": ":model loslösen",
+                "listAriaLabel": "Verfügbare Modelle",
+                "switchModelCurrent": "Modell wechseln, aktuell: :model",
+                "allModelsLink": "Alle Modelle entdecken"
             },
             "fileChips": {
                 "conflictMessage": "Vom aktuellen Modell nicht unterstützt",
                 "listAriaLabel": "Angehängte Dateien, mit den Pfeiltasten navigieren",
                 "removeFileAriaLabel": "Datei :file entfernen",
-                "uploadError": "Fehler beim Hochladen: :issue"
+                "uploadError": "Fehler beim Hochladen: :issue",
+                "uploadProgress": "Wird hochgeladen: :percent %"
             },
             "fileDrop": {
                 "dropLabel": "Dateien hier ablegen"
@@ -236,10 +299,12 @@
                 "invalidModelTooltip": "Bitte wähle ein anderes Modell oder entferne inkompatible Tools/Dateien",
                 "emptyMessageTooltip": "Bitte gib eine Nachricht ein",
                 "sendTooltip": "Nachricht senden",
+                "actionInProgressTooltip": "Eine Aktion wird bereits ausgeführt",
+                "noWriteAccessTooltip": "Du hast keinen Schreibzugriff auf diesen Chat",
+                "sendingInProgressTooltip": "Das Senden läuft bereits",
+                "modeCannotSendTooltip": "Senden ist im aktuellen Modus nicht möglich",
                 "saveLabel": "Speichern",
-                "regenerateLabel": "Regenerieren",
                 "sendLabel": "Senden",
-                "cancelRegeneration": "Regeneration abbrechen",
                 "leaveThread": "Thread verlassen",
                 "cancelEdit": "Bearbeitung abbrechen",
                 "cancelResponse": "KI-Antwort abbrechen",
@@ -256,12 +321,6 @@
                 "high": "Hoch",
                 "highTooltip": "Hohe Auslastung — Antworten verzögert",
                 "ariaLabel": "Auslastung: :label"
-            },
-            "regen": {
-                "onlyAssistantMessages": "Nur Nachrichten des Assistenten können regeneriert werden",
-                "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
-                "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
-                "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
             },
             "sending": {
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
