@@ -23,15 +23,19 @@ declare module '$lib/kernel/extendableTypes.js' {
 }
 
 /**
- * Everything a hook handler may need to localize and route an entry.
- * Constructed by the applying component at apply (or click) time, so reads
- * of `locale`/`router` state made through it are tracked by the applying
- * `$derived` and re-apply the hook on change.
+ * Everything a hook handler may need to localize, route, and permission-gate
+ * an entry. Constructed by the applying component at apply (or click) time,
+ * so reads of `locale`/`router`/`can` state made through it are tracked by
+ * the applying `$derived` and re-apply the hook on change (e.g. an entry
+ * gated on `ctx.can(...)` disappears the moment the session's permissions
+ * change).
  */
 export interface SidebarContext {
     locale: Locale;
     translate: Translator['translate'];
     router: RouterHandle;
+    /** Checks the current user's permissions, e.g. to gate an entry behind `'admin.access'`. */
+    can: (permission: string) => boolean;
 }
 
 /**

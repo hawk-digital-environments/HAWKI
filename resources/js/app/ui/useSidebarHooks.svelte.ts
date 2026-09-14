@@ -15,7 +15,7 @@ export function useSidebarContext(): SidebarContext {
     const app = useApp();
     const {translate} = useTranslator();
     const router = useRouter();
-    return {locale: app.localization.locale, translate, router};
+    return {locale: app.localization.locale, translate, router, can: permission => app.can(permission)};
 }
 
 /**
@@ -31,7 +31,8 @@ export class ModuleSelectorEntries {
         const ctx = {
             locale: this.app.localization.locale,
             translate: this.translate,
-            router: this.router
+            router: this.router,
+            can: (permission: string) => this.app.can(permission)
         } satisfies SidebarContext;
         return this.app.hooks.apply('moduleSelectorEntries', [] as ModuleSelectorEntry[], ctx);
     });
@@ -49,7 +50,8 @@ export class SidebarSlots {
         const ctx = {
             locale: this.app.localization.locale,
             translate: this.translate,
-            router: this.router
+            router: this.router,
+            can: (permission: string) => this.app.can(permission)
         } satisfies SidebarContext;
         return this.app.hooks.apply('sidebarSlots', [] as SidebarSlotEntry[], ctx);
     });
