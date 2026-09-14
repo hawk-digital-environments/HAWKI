@@ -8,6 +8,7 @@
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
         "test": "echo \"Heads up: no test specified\" && exit 0",
         "test:auth": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/auth/*.test.ts tests/js/auth/*.test.svelte.ts",
+        "test:admin": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/admin/*.test.ts tests/js/admin/*.test.svelte.ts",
         "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/search/*.test.ts tests/js/search/*.test.svelte.ts",
         "tsc": "tsc -p ./tsconfig.json",
         "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json"
@@ -18,6 +19,9 @@
         "@hugeicons/core-free-icons": "^4.2.3",
         "@hugeicons/svelte": "^1.1.4",
         "@sveltejs/vite-plugin-svelte": "^7.2.0",
+        "@tanstack/charts": "0.18.0",
+        "@tanstack/svelte-form": "^1.33.5",
+        "@tanstack/svelte-table": "^9.2.4",
         "@tsconfig/svelte": "^5.0.8",
         "@types/node": "^26.1.2",
         "bits-ui": "^2.18.1",

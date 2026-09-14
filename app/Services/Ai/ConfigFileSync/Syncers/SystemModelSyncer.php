@@ -18,8 +18,8 @@ use Illuminate\Container\Attributes\Config;
  * Syncs system-model assignments from config into the database.
  *
  * System models are the specific AI model instances that HAWKI selects automatically for
- * built-in tasks such as "default chat", "title generation", "prompt improvement" and
- * "summary". They are configured via `model_providers.system_models` (main app) and
+ * built-in tasks such as "default chat", "title generation", "prompt improvement",
+ * "summary" and "translation". They are configured via `model_providers.system_models` (main app) and
  * `model_providers.system_models_ext_app` (external app).
  *
  * Config keys map to {@see WellKnownSystemModelTypes} via {@see upgradeOldModelTypes()},
@@ -67,6 +67,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
 
         foreach ($this->extAppSystemModels as $key => $modelId) {
+            if (\App\Models\Ai\SystemModel::withoutGlobalScopes()->where('usage_type', WellKnownUsageTypes::EXTERNAL_APP)->where('model_type', $this->upgradeOldModelTypes($key))->where('admin_managed', true)->exists()) continue;
             if ($modelId === null) {
                 try {
                     $this->systemModelRepository->deleteWithTypeFilter(
@@ -113,6 +114,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             return;
         }
 
+        if (\App\Models\Ai\SystemModel::withoutGlobalScopes()->where('usage_type', $usageType)->where('model_type', $modelType)->where('admin_managed', true)->exists()) return;
         $this->systemModelRepository->upsert(
             modelType: $modelType,
             usageType: $usageType,
@@ -146,6 +148,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             'title_generator' => WellKnownSystemModelTypes::TITLE_GENERATION,
             'prompt_improver' => WellKnownSystemModelTypes::PROMPT_IMPROVEMENT,
             'summarizer' => WellKnownSystemModelTypes::SUMMARY,
+            'translator' => WellKnownSystemModelTypes::TRANSLATION,
             // I did not bother to implement a custom exception class for this, as this is only used internally and will be removed soon anyway.
             default => throw new \InvalidArgumentException("Invalid legacy key: $oldModelType")
         };

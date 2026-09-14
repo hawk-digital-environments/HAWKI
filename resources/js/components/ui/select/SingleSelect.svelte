@@ -286,6 +286,10 @@
             color: var(--color-text-muted);
         }
 
+        &[aria-invalid='true'] {
+            border-color: var(--color-error);
+        }
+
         &[data-state="open"] :global(.select-trigger-chevron) {
             transform: rotate(-180deg);
         }

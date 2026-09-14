@@ -56,6 +56,10 @@
             opacity: 0.75;
         }
 
+        &[aria-invalid='true'] {
+            --textarea-border: var(--color-error);
+        }
+
         &:focus-visible {
             outline: none;
             --textarea-border: var(--color-focus-ring);

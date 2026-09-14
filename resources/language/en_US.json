@@ -106,6 +106,7 @@
     "LeaveRoom": "Leave Room",
     "LeftRoom": "left room",
     "Login": "Sign in",
+    "LoginWithProvider": "Sign in with identity provider",
     "LoginFailedMSG": "Sign in failed",
     "MarkAllRead": "Mark All As Read",
     "MemberInvite": "Invite Members",

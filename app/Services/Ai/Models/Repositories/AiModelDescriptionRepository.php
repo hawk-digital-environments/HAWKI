@@ -36,6 +36,8 @@ class AiModelDescriptionRepository extends AbstractRepositoryWithContextualScope
      */
     public function assignDescriptionToModel(AiModel $model, AiModelDescription $description): AiModelDescription
     {
+        $existing = $this->getQueryWithoutContextualScopes()->where('ai_model_id', $model->id)->where('locale', (string)$description->locale)->first();
+        if ($existing?->admin_managed) return $existing;
         return $this->getQueryWithoutContextualScopes()
             ->updateOrCreate(
                 [

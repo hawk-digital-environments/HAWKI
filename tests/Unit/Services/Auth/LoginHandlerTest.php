@@ -20,6 +20,8 @@ use Tests\TestCase;
 #[CoversClass(LoginHandler::class)]
 class LoginHandlerTest extends TestCase
 {
+    use \Illuminate\Foundation\Testing\DatabaseTransactions;
+
     public function testKnownIdentityReplacesThePreviouslyAuthenticatedUser(): void
     {
         $session = new Store('test', new ArraySessionHandler(60));
@@ -29,7 +31,7 @@ class LoginHandlerTest extends TestCase
 
         $auth = $this->app->make(AuthManager::class);
         $auth->guard()->login($this->user(1, 'old-user'));
-        $newUser = $this->user(2, 'new-user');
+        $newUser = User::factory()->create(['username' => 'new-user', 'employeetype' => 'previous-type']);
 
         $repository = $this->createMock(UserRepository::class);
         $repository->expects(self::once())->method('findOneByUsername')->with('new-user')->willReturn($newUser);
@@ -37,7 +39,9 @@ class LoginHandlerTest extends TestCase
         $result = $this->handler($auth, $repository, 'new-user')->handle($request);
 
         self::assertSame(LoginNextStep::HANDSHAKE, $result->nextStep);
-        self::assertSame(2, $auth->guard()->id());
+        self::assertSame($newUser->id, $auth->guard()->id());
+        self::assertSame('employee', $newUser->fresh()->employeetype);
+        self::assertNotNull($newUser->fresh()->last_login_at);
         self::assertFalse($session->has('registration_access'));
         self::assertFalse($session->has('authenticatedUserInfo'));
         self::assertFalse($session->has('auth.registration_ui'));

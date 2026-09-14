@@ -7,6 +7,7 @@ use Spatie\Backup\BackupServiceProvider;
 $backupEnabled = class_exists(BackupServiceProvider::class) && getenv('BACKUP_DISABLED') === false;
 
 return [
+    App\Providers\AdminServiceProvider::class,
     App\Providers\AppServiceProvider::class,
     App\Providers\AuthServiceProvider::class,
     App\Providers\RoutingServiceProvider::class,

@@ -9,6 +9,7 @@ use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Config\AvatarStorageConfig;
 use App\Services\Storage\Config\FileStorageConfig;
 use App\Services\Storage\FileStorageService;
+use App\Services\Storage\ProviderIconStorageService;
 use App\Services\Storage\Filesystem\DefaultDiskWarningFilesystemManager;
 use App\Services\Storage\UrlGenerator;
 use App\Services\Storage\Utils\ContentExtractor;
@@ -60,6 +61,28 @@ class StorageServiceProvider extends ServiceProvider
                 return new AvatarStorageService(
                     context: new StorageServiceContext(
                         allowedMimeTypes: $config->get('filesystems.upload_limits.allowed_avatar_mime_types'),
+                        maxFileSize: $config->get('filesystems.upload_limits.max_avatar_file_size'),
+                        logger: $app->get(LoggerInterface::class),
+                        filesystem: $filesystem,
+                        urlGenerator: $app->get(UrlGenerator::class),
+                        contentExtractor: $app->get(ContentExtractor::class),
+                        attachmentRepository: $app->get(AttachmentRepository::class)
+                    )
+                );
+            }
+        );
+
+        $this->app->singleton(
+            ProviderIconStorageService::class,
+            function (Application $app) {
+                $config = $app->get(Repository::class);
+                // Provider icons share the avatar disk: both are small, public-to-all-users images.
+                $iconDisk = $config->get('filesystems.avatar_storage', 'public');
+                $filesystem = $app->get('filesystem')->disk($iconDisk);
+
+                return new ProviderIconStorageService(
+                    context: new StorageServiceContext(
+                        allowedMimeTypes: [],
                         maxFileSize: $config->get('filesystems.upload_limits.max_avatar_file_size'),
                         logger: $app->get(LoggerInterface::class),
                         filesystem: $filesystem,

@@ -17,7 +17,7 @@ class RedirectLoginController extends Controller
 {
     public function __invoke(Request $request, LoginHandler $login, SpaAuthHandoff $handoff, LoggerInterface $logger): Response
     {
-        if ($login->requiresCredentials()) {
+        if (!$login->supportsRedirect()) {
             return redirect($handoff->urlFor(SpaAuthPage::LOGIN));
         }
 

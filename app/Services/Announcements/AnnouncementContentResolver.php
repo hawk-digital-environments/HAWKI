@@ -47,6 +47,8 @@ readonly class AnnouncementContentResolver
         ];
 
         foreach (array_unique(array_filter($candidates)) as $locale) {
+            $content = $announcement->content[$locale] ?? null;
+            if (is_string($content) && trim($content) !== '') return new AnnouncementContent($locale, $content);
             $file = $this->application->resourcePath("announcements/$announcement->view/$locale.md");
 
             if (is_file($file)) {
