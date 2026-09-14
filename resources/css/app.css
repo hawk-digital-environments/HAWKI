@@ -13,6 +13,7 @@
 
 @import './tokens/breakpoints.css';
 @import './tokens/colors.css';
+@import './tokens/capabilities.css';
 @import './tokens/typography.css';
 @import './tokens/spacing.css';
 @import './tokens/radius.css';

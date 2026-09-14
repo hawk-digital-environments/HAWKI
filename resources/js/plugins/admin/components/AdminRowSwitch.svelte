@@ -1,33 +1,30 @@
 <!--
-  @component Switch inside a table cell that saves one boolean-like change of
-  the row through the surrounding AdminWorkspace as soon as it is flipped.
-  `changes` returns the field values for the new state, e.g. `{active: true}`.
+  @component Switch inside a table cell that saves as soon as it is flipped.
+  `onToggle` receives the new state and does the write, e.g.
+  `onToggle={(enabled) => mutations.update(row, {active: enabled})}`; the
+  switch shows as busy until the returned promise settles.
 -->
 <script lang="ts">
     import Switch from '$lib/components/ui/switch/Switch.svelte';
-    import type { AdminRow } from '../schemas/admin-content.js';
-    import { useAdminWorkspace } from '../workspace.js';
 
     const {
-        row,
         checked,
         label,
-        changes
+        disabled = false,
+        onToggle
     }: {
-        row: AdminRow;
         checked: boolean;
         label: string;
-        changes: (enabled: boolean) => Record<string, unknown>;
+        disabled?: boolean;
+        onToggle: (enabled: boolean) => Promise<void> | void;
     } = $props();
-    const workspace = useAdminWorkspace();
-    const locked = $derived(workspace().busy || workspace().updating.includes(row.id));
     let pending = $state(false);
 
     async function toggle() {
-        if (locked) return;
+        if (disabled || pending) return;
         pending = true;
         try {
-            await workspace().update(row, changes(!checked));
+            await onToggle(!checked);
         } finally {
             pending = false;
         }
@@ -41,13 +38,13 @@
     aria-checked={checked}
     aria-label={label}
     aria-busy={pending || undefined}
-    disabled={locked}
+    {disabled}
     onclick={toggle}
 >
     <Switch
         {checked}
         presentational
-        disabled={locked}
+        {disabled}
     />
 </button>
 

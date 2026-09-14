@@ -11,10 +11,9 @@ trait CreatesResources
 {
     public function store(Request $request): JsonResponse
     {
-        $this->repository()->authorize($request->user());
-        $data = $request->validate(['values' => 'required|array']);
-        $id = $this->mutate($request, 'save', null, fn () => $this->repository()->save(null, $data['values'], $request->user()));
+        $values = $this->attributes($request);
+        $id = $this->mutate($request, 'save', null, fn () => $this->repository()->save(null, $values, $request->user()), values: $values);
 
-        return response()->json(['id' => (string) $id], 201);
+        return $this->resourceResponse($request, (string) $id, 201);
     }
 }
