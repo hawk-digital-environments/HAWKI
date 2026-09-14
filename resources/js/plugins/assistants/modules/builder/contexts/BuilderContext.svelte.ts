@@ -547,7 +547,22 @@ export class BuilderContext {
     }
   }
 
+  /**
+   * The release stage the publish page shows as selected: a draft that hasn't
+   * picked one yet preselects the first option, private. Derived rather than
+   * written to the draft, so just opening the page doesn't count as a release
+   * decision — the exit guard in `ConfirmBuilderExit` keys off
+   * `draft.releaseStage`.
+   */
+  readonly selectedReleaseStage = $derived(
+    this.draft.releaseStage === ReleaseMode.DRAFT ? ReleaseMode.PRIVATE : this.draft.releaseStage,
+  );
+
   async requestRelease(){
+    // Releasing commits the preselected stage, just like an explicit pick.
+    if (this.draft.releaseStage !== this.selectedReleaseStage) {
+      this.set("releaseStage", this.selectedReleaseStage);
+    }
     try {
       if (!(await requestAssistantRelease(this.draft))) {
         this.toast.error(this.translate("assistants.builder.publish.save_failed"));

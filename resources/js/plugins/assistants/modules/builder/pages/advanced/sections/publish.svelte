@@ -28,7 +28,6 @@ interface Props {
 const {}: Props = $props();
 const {__} = useTranslator();
 const builder = useBuilderContext();
-let assistant = $derived(builder.draft);
 
 const statusLabels: Record<ReleaseMode, string> = {
     [ReleaseMode.DRAFT]: __('assistants.builder.publish.status.draft'),
@@ -51,26 +50,24 @@ const publishabilityLabels: Record<ReleaseMode, string> = {
     [ReleaseMode.FEDERATED]: __('assistants.builder.publish.publishability.federated'),
 };
 
-let statusLabel = $derived(statusLabels[assistant.releaseStage]);
-let visibility = $derived(visibilityLabels[assistant.releaseStage]);
-let publishability = $derived(publishabilityLabels[assistant.releaseStage]);
+let statusLabel = $derived(statusLabels[builder.selectedReleaseStage]);
+let visibility = $derived(visibilityLabels[builder.selectedReleaseStage]);
+let publishability = $derived(publishabilityLabels[builder.selectedReleaseStage]);
 
 // The review triggers and the "start review" hint only apply to release paths
 // that actually kick off a review (organisational / federated).
 let requiresReview = $derived(
-    assistant.releaseStage === ReleaseMode.ORGANIZATIONAL ||
-    assistant.releaseStage === ReleaseMode.FEDERATED
+    builder.selectedReleaseStage === ReleaseMode.ORGANIZATIONAL ||
+    builder.selectedReleaseStage === ReleaseMode.FEDERATED
 );
 
 let saveAsText = $derived.by(() => {
-    switch (builder.draft.releaseStage) {
+    switch (builder.selectedReleaseStage) {
         case ReleaseMode.PRIVATE:
             return __('assistants.builder.publish.save_as_private_draft');
         case ReleaseMode.ORGANIZATIONAL:
         case ReleaseMode.FEDERATED:
             return __('assistants.builder.publish.save_as_review');
-        case ReleaseMode.DRAFT:
-            return __('assistants.builder.publish.save_as_draft');
         default:
             return '';
     }
@@ -197,7 +194,6 @@ let saveAsText = $derived.by(() => {
             size="md"
             block
             iconLeft={FloppyDiskIcon}
-            disabled={builder.draft.releaseStage === ReleaseMode.DRAFT}
             onclick={() => {builder.requestRelease()}}
         >{saveAsText}</Button>
 
