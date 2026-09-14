@@ -61,6 +61,10 @@ Route::middleware([
 ])->group(function () {
     Route::group(['prefix' => Server::BASE_URL_PREFIX], static function () {
 
+        Route::prefix('admin')->middleware(['throttle:120,1', ApiDataScopeContextSettingMiddleware::class])
+            ->withoutMiddleware(ConvertEmptyStringsToNull::class)
+            ->group(__DIR__ . '/admin.php');
+
         Route::get('/proxy/link-preview/favicon', [LinkPreviewController::class, 'getFavicon'])
             ->name('api.link-preview.favicon');
         Route::get('/proxy/link-preview/image', [LinkPreviewController::class, 'getImage'])

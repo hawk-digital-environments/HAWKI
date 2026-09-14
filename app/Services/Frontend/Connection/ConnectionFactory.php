@@ -238,7 +238,8 @@ readonly class ConnectionFactory
             email: $user->email,
             hash: md5($user->id . '-' . $user->publicKey),
             avatar: StoredFileIdentifier::tryFromUserAvatar($user),
-            bio: $user->bio
+            bio: $user->bio,
+            permissions: app(\App\Services\Admin\PermissionService::class)->permissionsOf($user)
         );
     }
 

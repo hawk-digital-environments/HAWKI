@@ -4,8 +4,14 @@
   Use ConfirmDialog or InfoDialog for pre-built variants; use this directly
   for dialogs that need custom body content or a non-standard layout.
 
+  The dialog is fully controlled: bits-ui never flips the open state on its
+  own. Every close request (Escape, outside click, the X button) is reported
+  via `onOpenChange(false)` and the dialog only closes once the parent sets
+  `open` to false. A parent can therefore veto a close (e.g. to ask about
+  unsaved changes first) simply by leaving `open` untouched.
+
   Usage — custom body content with a title, description and footer:
-    <Dialog bind:open title="Edit prompt" description="Changes apply immediately.">
+    <Dialog {open} onOpenChange={(o) => open = o} title="Edit prompt" description="Changes apply immediately.">
         {#snippet children()}
             <Textarea bind:value={draft}/>
         {/snippet}
@@ -48,9 +54,9 @@
     const {__} = useTranslator();
     
     interface Props {
-        /** Whether the dialog is open. Supports bind:open for two-way binding. */
+        /** Whether the dialog is open. Controlled: update it from `onOpenChange`. */
         open?: boolean;
-        /** Called when the dialog requests an open-state change. */
+        /** Called when the dialog requests an open-state change; the parent decides by updating `open`. */
         onOpenChange?: (open: boolean) => void;
         /** When true, the dialog shows a "close button" in the top-right corner. */
         closable?: boolean;
@@ -103,7 +109,11 @@
     }: Props = $props();
 </script>
 
-<DialogPrimitive.Root {open} onOpenChange={onOpenChange}>
+<!-- Function binding: bits-ui reads `open` from our prop and routes every
+     change request through `onOpenChange` instead of mutating its own copy.
+     Without this, an outside click or Escape would close the dialog locally
+     while the parent's `open` still says true, leaving both out of sync. -->
+<DialogPrimitive.Root bind:open={() => open, (value) => onOpenChange?.(value)}>
     {#if trigger}
         <DialogPrimitive.Trigger>
             {#snippet child({props})}

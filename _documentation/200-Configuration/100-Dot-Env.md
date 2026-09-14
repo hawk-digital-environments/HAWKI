@@ -246,9 +246,7 @@ This configuration setting is used to specify the queue connection that should b
 
 ## Authentication and Authorization
 
-Access to HAWKI is restricted for registered users. In a production environment, you usually want to connect to your LDAP directory, OpenID provider, or Shibboleth service to make HAWKI available to your staff and/or students. For simpler setups (e.g., a small project setup for a single course), you can use the built-in Test User Authentication mechanism. This allows defining a small set of pre-allocated users in the local database (set up in advance by you).
-
-> ***NOTE:*** If you want a small setup with fixed users but want to allow the users to change their passwords, you can install LDAP (https://github.com/lldap/lldap) on the same machine as HAWKI.
+Access to HAWKI is restricted to registered users. A production installation can connect to LDAP, OIDC or Shibboleth. Administrators can also create local accounts with hashed passwords in the user section at `/new/admin`; these accounts are available alongside the configured external provider. The Test User Authentication mechanism remains intended for local development and automated tests.
 
 Supported authentication methods:
 
@@ -382,3 +380,7 @@ For enhanced security, HAWKI utilizes individual salts for each component to ens
 | Variable         | Description                                |
 |------------------|--------------------------------------------|
 | IMPRINT_LOCATION | The URL to your organization imprint page. |
+
+## Runtime overrides in Administration
+
+An allow-listed subset of settings can be changed under `/new/admin/settings`. These values are stored in `admin_settings` and take precedence over deployment configuration. Reset removes the override and restores the deployment value. Changes are loaded for each request and before each queued job; `.env` remains unchanged. See [Administration](800-Administration.md) for the editable categories and infrastructure exclusions.

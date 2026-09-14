@@ -95,7 +95,8 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             }
         }
 
-        $provider = $this->providerRepository->upsert(
+        $existing = AiProvider::withoutGlobalScopes()->where('provider_id', $providerId)->first();
+        $provider = $existing?->admin_managed ? $existing : $this->providerRepository->upsert(
             providerId: $providerId,
             adapterKey: $adapterKey,
             name: ucfirst($providerId),
@@ -127,6 +128,9 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         if (empty($modelId)) {
             return null;
         }
+
+        $existing = \App\Models\Ai\AiModel::withoutGlobalScopes()->where('model_id', $modelId)->first();
+        if ($existing?->admin_managed) return $modelId;
 
         $settings = AiModelSettings::fromArray([]);
         if (!empty($config['max_tool_calling_rounds'])) {
