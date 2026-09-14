@@ -1,7 +1,56 @@
 <script lang="ts">
     import type { RouteProps } from '$lib/components/ui/routing/index.js';
     const {}: RouteProps = $props();
-    import AdminWorkspace from '../components/AdminWorkspace.svelte';
+    import AdminPage from '../components/AdminPage.svelte';
+    import AdminSearch from '../components/AdminSearch.svelte';
+    import AdminTable from '../components/AdminTable.svelte';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useApp } from '$lib/app/hooks/useApp.svelte.js';
+    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    const app = useApp();
+    const { __ } = useTranslator();
+    const columns: AdminColumn[] = [
+        { id: 'title' },
+        { id: 'type', sortKey: 'kind' },
+        { id: 'is_published', format: 'boolean' },
+        { id: 'starts_at' },
+        { id: 'expires_at' },
+        { id: 'seen_count', sortable: false },
+        { id: 'accepted_count', sortable: false }
+    ];
+    const workspace = useAdminWorkspace(
+        columns,
+        (signal, query) => app.restApi.getResourceCollection('admin-announcements', { query, signal }),
+        {
+            save: (values, row) => {
+                const { type, ...attributes } = values;
+                if (type !== undefined) attributes.kind = type;
+                return row ?
+                        app.restApi.updateResource('admin-announcements', row.id, attributes, {
+                            headers: { 'If-Match': `"${row._version}"` }
+                        })
+                    :   app.restApi.createResource('admin-announcements', attributes);
+            },
+            remove: (row) =>
+                app.restApi.deleteResource('admin-announcements', row.id, {
+                    headers: { 'If-Match': `"${row._version}"` }
+                }),
+            refresh: async () => {
+                for (const name of ['announcements'] as const) {
+                    if (app.stores.has(name)) await app.stores.get(name).loadData?.(app);
+                }
+            }
+        }
+    );
 </script>
 
-<AdminWorkspace section="announcements" />
+<AdminPage
+    section="announcements"
+    {workspace}
+>
+    <AdminSearch {workspace} />
+    <AdminTable
+        caption={__('admin.sections.announcements')}
+        {workspace}
+    />
+</AdminPage>

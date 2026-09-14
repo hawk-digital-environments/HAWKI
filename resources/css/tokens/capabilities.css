@@ -1,0 +1,74 @@
+/* Shared capability colors for model cards, admin controls and chat tools.
+   Set data-capability to the API identifier, then use the local ink/fill tokens.
+   Unknown capabilities fall back to the theme's neutral colors. */
+@layer tokens {
+    :root {
+        --color-capability-file-upload: oklch(48% 0.18 250);
+        --color-capability-vision: oklch(48% 0.23 300);
+        --color-capability-tool-calling: oklch(48% 0.12 75);
+        --color-capability-web-search: oklch(48% 0.11 175);
+        --color-capability-code-execution: oklch(48% 0.15 145);
+        --color-capability-image-generation: oklch(48% 0.22 345);
+        --color-capability-reasoning: oklch(48% 0.23 280);
+        --color-capability-audio: oklch(48% 0.18 45);
+        --color-capability-video: oklch(48% 0.22 320);
+        --color-capability-knowledge-base: oklch(48% 0.1 210);
+        --color-capability-web-fetch: oklch(48% 0.09 190);
+    }
+
+    html.darkMode {
+        --color-capability-file-upload: oklch(80% 0.14 250);
+        --color-capability-vision: oklch(80% 0.18 300);
+        --color-capability-tool-calling: oklch(80% 0.16 75);
+        --color-capability-web-search: oklch(80% 0.15 175);
+        --color-capability-code-execution: oklch(80% 0.19 145);
+        --color-capability-image-generation: oklch(80% 0.19 345);
+        --color-capability-reasoning: oklch(80% 0.15 280);
+        --color-capability-audio: oklch(80% 0.17 45);
+        --color-capability-video: oklch(80% 0.19 320);
+        --color-capability-knowledge-base: oklch(80% 0.12 210);
+        --color-capability-web-fetch: oklch(80% 0.13 190);
+    }
+
+    [data-capability] {
+        --capability-color: var(--color-text-muted);
+        --capability-fill: oklch(from var(--capability-color) 78% c h);
+        --capability-on-fill: oklch(20% 0 0);
+        --capability-surface: color-mix(in oklab, var(--capability-fill) 24%, var(--color-bg));
+        --capability-surface-hover: color-mix(in oklab, var(--capability-fill) 34%, var(--color-bg));
+    }
+
+    [data-capability='file_upload'] {
+        --capability-color: var(--color-capability-file-upload);
+    }
+    [data-capability='vision'] {
+        --capability-color: var(--color-capability-vision);
+    }
+    [data-capability='tool_calling'] {
+        --capability-color: var(--color-capability-tool-calling);
+    }
+    [data-capability='web_search'] {
+        --capability-color: var(--color-capability-web-search);
+    }
+    [data-capability='code_execution'] {
+        --capability-color: var(--color-capability-code-execution);
+    }
+    [data-capability='image_generation'] {
+        --capability-color: var(--color-capability-image-generation);
+    }
+    [data-capability='reasoning'] {
+        --capability-color: var(--color-capability-reasoning);
+    }
+    [data-capability='audio'] {
+        --capability-color: var(--color-capability-audio);
+    }
+    [data-capability='video'] {
+        --capability-color: var(--color-capability-video);
+    }
+    [data-capability='knowledge_base'] {
+        --capability-color: var(--color-capability-knowledge-base);
+    }
+    [data-capability='web_fetch'] {
+        --capability-color: var(--color-capability-web-fetch);
+    }
+}

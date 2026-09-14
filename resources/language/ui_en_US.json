@@ -570,6 +570,7 @@
         "discovery_hint": "Choose models to add. New models start disabled so you can configure them before enabling them.",
         "models_added": "Models added. Open Models to configure and enable them.",
         "add_models": "Add selected models",
+        "view_models": "View models",
         "discovery_search": "Search models",
         "discovery_count": ":shown of :total models",
         "discovery_no_matches": "No models match your search.",
