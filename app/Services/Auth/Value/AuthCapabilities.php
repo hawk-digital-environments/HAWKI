@@ -16,9 +16,11 @@ readonly class AuthCapabilities
     public function __construct(
         /**
          * The service accepts a username and password posted to the login action.
-         * True exactly when the mode is {@see AuthMode::CREDENTIALS}.
+         * True in credentials and mixed mode.
          */
-        public bool $credentials
+        public bool $credentials,
+        /** An external identity-provider redirect is available. */
+        public bool $redirect,
     )
     {
     }

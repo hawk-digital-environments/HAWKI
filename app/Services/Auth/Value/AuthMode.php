@@ -7,7 +7,7 @@ namespace App\Services\Auth\Value;
  * How the visitor is expected to start a login, derived from the configured auth service.
  *
  * This is the discriminator the frontend switches on: it decides whether to render a
- * username/password form or a single "continue to your identity provider" button.
+ * username/password form, an identity-provider button, or both.
  */
 enum AuthMode: string
 {
@@ -23,4 +23,7 @@ enum AuthMode: string
      * must navigate the browser to the accompanying start URL; there is nothing to type.
      */
     case REDIRECT = 'redirect';
+
+    /** Both a local credential form and an external identity provider are available. */
+    case MIXED = 'mixed';
 }

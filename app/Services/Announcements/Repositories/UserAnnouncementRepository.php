@@ -95,7 +95,7 @@ readonly class UserAnnouncementRepository
      */
     private function queryVisibleForUser(User $user)
     {
-        return Announcement::query()
+        return Announcement::query()->where('is_published', true)
             ->where(function ($q) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
@@ -103,6 +103,7 @@ readonly class UserAnnouncementRepository
                 $q->where('is_global', true)
                     ->orWhereJsonContains('target_users', $user->id)
                     ->orWhereHas('users', fn($sub) => $sub->where('user_id', $user->id));
+                foreach (app(\App\Services\Admin\PermissionService::class)->roleIds($user) as $role) $q->orWhereJsonContains('target_roles', $role);
             })
             ->orderByDesc('starts_at');
     }

@@ -46,6 +46,7 @@ class PolicyAnnouncementRepository extends AbstractRepository
     public function findOnePolicyById(int $id): ?Announcement
     {
         return $this->getQuery()
+            ->where('is_published', true)
             ->where('type', self::TYPE_POLICY)
             ->whereKey($id)
             ->first();
@@ -86,6 +87,7 @@ class PolicyAnnouncementRepository extends AbstractRepository
     ): Collection
     {
         $query = $this->getQuery()
+            ->where('is_published', true)
             ->where('type', self::TYPE_POLICY)
             ->where('is_global', true)
             ->when($ignoreId !== null, static fn(Builder $q) => $q->whereKeyNot($ignoreId));
@@ -114,6 +116,7 @@ class PolicyAnnouncementRepository extends AbstractRepository
     private function queryActivePolicies(DateTimeInterface $now): Builder
     {
         return $this->getQuery()
+            ->where('is_published', true)
             ->where('type', self::TYPE_POLICY)
             ->where('is_global', true)
             ->where(static function (Builder $query) use ($now) {

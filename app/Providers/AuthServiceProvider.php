@@ -6,6 +6,7 @@ use App\Services\Auth\ChainedAuthService;
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\LdapService;
+use App\Services\Auth\LocalAuthService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
@@ -43,16 +44,17 @@ class AuthServiceProvider extends ServiceProvider
                 ));
             }
 
-            // If the test authentication is enabled AND the selected auth service supports credentials,
-            // wrap the selected auth service with the test auth service in a chained auth service.
-            // This will first try to authenticate using the test auth service, and if it fails,
-            // it will fall back to the selected auth service.
+            $services = [$app->make(LocalAuthService::class)];
+
             if ($usesTestAuth && $instance instanceof AuthServiceWithCredentialsInterface) {
-                $testAuth = $app->make(TestAuthService::class);
-                $instance = new ChainedAuthService($testAuth, $instance);
+                $services[] = $app->make(TestAuthService::class);
             }
 
-            return $instance;
+            if (!$instance instanceof LocalAuthService) {
+                $services[] = $instance;
+            }
+
+            return count($services) === 1 ? $services[0] : new ChainedAuthService(...$services);
         });
     }
 

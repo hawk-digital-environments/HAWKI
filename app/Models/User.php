@@ -43,13 +43,33 @@ class User extends Authenticatable
         'registration_fingerprint',
     ];
 
+    protected $hidden = [
+        'local_password',
+    ];
+
     protected $casts = [
         'isRemoved' => 'boolean',
+        'admin_disabled' => 'boolean',
+        'last_login_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (User $user) {
+            if (!app()->runningInConsole() || \Illuminate\Support\Facades\Schema::hasTable('role_user')) {
+                app(\App\Services\Admin\EmployeeTypeRoleSyncer::class)->sync($user);
+            }
+        });
+    }
 
     protected static function registerScopes(ScopeRegistrar $registrar): void
     {
         $registrar
+            ->setDefaultDisablingGuard(function (#[\Illuminate\Container\Attributes\CurrentUser] ?User $user) {
+                return $user
+                    ? !\App\Services\Users\UserCondition::cannot($user, 'users.view')
+                    : app()->runningInConsole();
+            })
             ->addScope('access', new KnownUsersAccessScope())
             ->addScope('active', new ActiveFilterScope('isRemoved', '0'));
     }
@@ -115,7 +135,7 @@ class User extends Authenticatable
     {
         $now = now();
 
-        return Announcement::query()
+        return Announcement::query()->where('is_published', true)
             ->where(function ($q) use ($now) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
             })
@@ -125,6 +145,7 @@ class User extends Authenticatable
             ->where(function ($q) {
                 $q->where('is_global', true)
                     ->orWhereJsonContains('target_users', $this->id);
+                foreach (app(\App\Services\Admin\PermissionService::class)->roleIds($this) as $role) $q->orWhereJsonContains('target_roles', $role);
             })
             ->whereDoesntHave('users', function ($q) {
                 $q->where('user_id', $this->id)->whereNotNull('accepted_at');
