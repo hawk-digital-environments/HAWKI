@@ -161,6 +161,7 @@
         tabindex={measuring ? -1 : 0}
         aria-hidden={measuring}
         data-tool-chip={measuring ? undefined : ''}
+        data-capability={tool.capability_key ?? undefined}
         onclick={() => onChipClick(tool)}
         onkeydown={(event) => onChipKeydown(event, tool, index)}
         aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName})}
@@ -252,6 +253,15 @@
     .tool-chip:hover {
         background-color: var(--color-hover);
         color: var(--color-text);
+    }
+
+    .tool-chip[data-capability] {
+        background-color: var(--capability-surface);
+        color: var(--capability-color);
+    }
+
+    .tool-chip[data-capability]:hover {
+        background-color: var(--capability-surface-hover);
     }
 
     .tool-chip.incompatible {

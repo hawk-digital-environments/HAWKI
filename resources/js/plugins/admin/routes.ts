@@ -31,8 +31,7 @@ export function registerAdminRoutes(registrar: RouteRegistrar) {
             meta: {
                 title: `admin.sections.${section.id}`,
                 access: 'server-session',
-                permission: section.permission,
-                adminSection: section.id
+                permission: section.permission
             }
         });
     }
