@@ -1,4 +1,4 @@
-> **Partially outdated.** The conceptual architecture (config → sync → DB), deployment steps, command reference, and MCP tool sections are still accurate. The following sections reference class names from the pre-v2.5 codebase that **no longer exist**: "Database Registry" (old Eloquent class names), "Value Object vs Eloquent Model", "Model Sync" (old service class), the function-calling tool creation example, and "Service Providers". For current implementation details see [Backend → AI Service Layer](../500-Backend/500-AI-Service-Layer/index.md) and [Backend → Provider Adapters](../500-Backend/500-AI-Service-Layer/100-Provider-Adapters.md).
+> **Partially outdated.** Use the explicit import workflow below for deployment; older sync examples further down describe the previous workflow. The following sections reference class names from the pre-v2.5 codebase that **no longer exist**: "Database Registry" (old Eloquent class names), "Value Object vs Eloquent Model", "Model Sync" (old service class), the function-calling tool creation example, and "Service Providers". For current implementation details see [Backend → AI Service Layer](../500-Backend/500-AI-Service-Layer/index.md) and [Backend → Provider Adapters](../500-Backend/500-AI-Service-Layer/100-Provider-Adapters.md).
 
 # AI Models & Tools
 
@@ -33,19 +33,28 @@ Config files are **never read at runtime** for tools or models. After the initia
 
 ---
 
+## Administration and configuration ownership
+
+The separate `admin` frontend plugin provides the panel at `/new/admin`. Grant the first administrator with `bin/env artisan rbac:grant USERNAME admin`.
+
+Providers, models, MCP servers, tools, system models/prompts and model descriptions edited in the panel carry `admin_managed = true`. File imports preserve these records, including credentials and model usage/tool assignments. New configuration can still be imported from deployment files. Provider and model identifiers cannot be changed through the panel.
+
+See [Administration](800-Administration.md) for access, settings, announcements and operational controls.
+
 ## Deployment Quick Start
 
 Follow these steps in order when setting up HAWKI for the first time, or when adding new providers, models, or tools.
 
 ### Step 1 — Initial database setup
 
-Run migrations. The first-run hook in `AppServiceProvider` will automatically sync models and function tools as soon as the tables are created:
+Run migrations, then explicitly import the deployment configuration:
 
 ```bash
-php hawki migrate
+bin/env artisan migrate
+bin/env artisan ai:config:import
 ```
 
-At this point the `ai_models` and `ai_tools` tables are populated automatically from your config files.
+Migrations no longer import AI configuration. `ai:config:import` seeds the configuration and preserves records marked `admin_managed` by edits in Administration. Existing CLI sync commands use the same preservation rules.
 
 ### Step 2 — Verify model sync
 
@@ -56,7 +65,7 @@ php hawki models list
 All providers and models from your config files should be visible. If the list is empty or incomplete, run the sync explicitly:
 
 ```bash
-php hawki models sync
+bin/env artisan ai:config:import
 ```
 
 ### Step 3 — Configure providers and default models
@@ -85,7 +94,7 @@ After editing `.env`, clear the config cache and re-sync so the database reflect
 
 ```bash
 php hawki clear-cache
-php hawki models sync --force
+bin/env artisan ai:config:import --force
 ```
 
 ### Step 4 — Sync function tools (if not done automatically)
@@ -162,6 +171,7 @@ Defines global defaults, system models, and a list of providers:
     'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
     'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
     'summarizer'      => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
+    'translator'      => env('TRANSLATOR_MODEL', 'gpt-4.1-nano'),
 ],
 
 'providers' => [
@@ -255,7 +265,7 @@ After changing `.env` model settings, always clear the config cache and re-sync:
 
 ```bash
 php hawki clear-cache
-php hawki models sync --force
+bin/env artisan ai:config:import --force
 ```
 
 ---
@@ -385,7 +395,7 @@ ai_model_tools  (pivot)
 1. Create `config/model_lists/myprovider_models.php` following the structure of the existing list files.
 2. Add the provider entry to `config/model_providers.php`.
 3. Implement a class conforming to `ProviderAdapterInterface` and register it via `ProviderAdapterRegistry::declare()`.
-4. Run `php hawki models sync --force`.
+4. Run `bin/env artisan ai:config:import --force`.
 
 ### Activate or deactivate a model without touching source code
 
@@ -395,7 +405,7 @@ MODELS_OPENAI_GPT5_ACTIVE=false
 
 # Clear cache and re-sync
 php hawki clear-cache
-php hawki models sync --force
+bin/env artisan ai:config:import --force
 ```
 
 > Tool management how-tos (adding function tools, MCP servers, disabling/re-enabling tools, rotating APP_KEY) are now documented in [Backend → AI Tools & MCP](../500-Backend/500-AI-Service-Layer/300-Tools-and-MCP.md).

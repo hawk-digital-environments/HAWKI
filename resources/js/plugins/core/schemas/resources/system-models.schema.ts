@@ -3,13 +3,13 @@ import z from 'zod';
 /**
  * Validates the `system-models` API resource — the (admin-configurable) assignment of which
  * `ai-models` entry is used by the backend for a given internal purpose (default chat model,
- * title generation, prompt improvement, summarization, ...). This is distinct from the
+ * title generation, prompt improvement, summarization, translation, ...). This is distinct from the
  * user-facing model picker: these are models HAWKI itself calls for its own operations.
  *
  * Registers the resource under the key `'system-models'` in `HawkiResourceSchemas` (see the
  * `declare module` augmentation below).
  */
-export const WellKnownSystemModelTypes = ['default', 'title_generation', 'prompt_improvement', 'summary'] as const;
+export const WellKnownSystemModelTypes = ['default', 'title_generation', 'prompt_improvement', 'summary', 'translation'] as const;
 export type WellKnownSystemModelType = (typeof WellKnownSystemModelTypes)[number];
 
 const SystemModelsSchema = z.object({

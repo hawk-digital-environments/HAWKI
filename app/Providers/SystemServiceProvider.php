@@ -5,7 +5,8 @@ namespace App\Providers;
 use App\Models\User;
 use App\Services\System\Database\Eloquent\ContextualScopes\Contexts\ScopeContext;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
-use App\Services\Users\UserCondition;
+use App\Services\Admin\Permission;
+use App\Services\Admin\PermissionService;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
@@ -26,7 +27,7 @@ class SystemServiceProvider extends ServiceProvider
                     if (!$user) {
                         return $application->runningInConsole();
                     }
-                    return UserCondition::isAdmin($user);
+                    return !array_diff(Permission::values(), app(PermissionService::class)->permissionsOf($user));
                 }
             );
         });

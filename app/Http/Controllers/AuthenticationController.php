@@ -41,11 +41,12 @@ class AuthenticationController extends Controller
 
     public function handleLogin(Request $request): Response
     {
-        if ($this->loginHandler->requiresCredentials()) {
-            $this->spaAuthHandoff->discard($request);
-        }
+        $credentialAttempt = $request->isMethod('POST') && $this->loginHandler->requiresCredentials();
         try {
             $credentials = $this->credentialsFromRequest($request);
+            if ($credentials !== null) {
+                $this->spaAuthHandoff->discard($request);
+            }
             $result = $this->loginHandler->handle($request, $credentials);
             if ($result->isResponse()) {
                 return $result->response;
@@ -59,7 +60,7 @@ class AuthenticationController extends Controller
                 $this->spaAuthHandoff->markSpaRegistration($request);
             }
 
-            return $this->legacyLoginResponse($result->nextStep);
+            return $this->legacyLoginResponse($result->nextStep, $credentials !== null);
         } catch (\Throwable $e) {
             $error = $e instanceof AuthFailedException ? 'invalid_credentials' : 'provider_failed';
 
@@ -73,7 +74,7 @@ class AuthenticationController extends Controller
                 ? $e->getMessage()
                 : 'An unexpected error occurred during authentication.';
 
-            if ($this->loginHandler->requiresCredentials()) {
+            if ($credentialAttempt) {
                 return response()->json([
                     'success' => false,
                     'error' => $error,
@@ -91,6 +92,10 @@ class AuthenticationController extends Controller
             return null;
         }
         if (!$request->isMethod('POST')) {
+            if ($this->loginHandler->supportsRedirect()) {
+                return null;
+            }
+
             throw new AuthFailedException('Login must be performed via POST method.', 400);
         }
 
@@ -106,10 +111,10 @@ class AuthenticationController extends Controller
         return new AuthCredentials(filter_var($credentials['account'], FILTER_UNSAFE_RAW), $credentials['password']);
     }
 
-    private function legacyLoginResponse(LoginNextStep $nextStep): RedirectResponse|JsonResponse
+    private function legacyLoginResponse(LoginNextStep $nextStep, bool $usedCredentials): RedirectResponse|JsonResponse
     {
         $url = $this->spaAuthHandoff->entryUrlFor($nextStep);
-        if (!$this->loginHandler->requiresCredentials()) {
+        if (!$usedCredentials) {
             return redirect($url);
         }
 

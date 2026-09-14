@@ -36,7 +36,7 @@
             <p role="status">{__('ui.session.loggingOut')}</p>
         {/if}
     </main>
-{:else if meta?.chrome === 'none' || !app.cryptoReady}
+{:else if meta?.chrome === 'none' || (!app.cryptoReady && meta?.access !== 'server-session')}
     {@render children()}
     <Toaster />
 {:else}
@@ -48,7 +48,7 @@
     </SidebarContent>
 
     <Toaster />
-    <AnnouncementDialog />
+    {#if app.cryptoReady}<AnnouncementDialog />{/if}
 </SidebarRoot>
 {/if}
 

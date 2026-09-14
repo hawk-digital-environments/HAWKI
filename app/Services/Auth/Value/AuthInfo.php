@@ -11,8 +11,8 @@ namespace App\Services\Auth\Value;
  * The interesting part is the {@see mode}/{@see startUrl} pair, which is a discriminated union:
  *
  * - {@see AuthMode::CREDENTIALS} → {@see startUrl} is `null`; there is a form to fill in.
- * - {@see AuthMode::REDIRECT} → {@see startUrl} points at the route that kicks off the identity
- *   provider round trip; there is nothing to fill in.
+ * - {@see AuthMode::REDIRECT} → {@see startUrl} starts the identity-provider round trip.
+ * - {@see AuthMode::MIXED} → both the credential form and {@see startUrl} are available.
  *
  * @see \App\Services\Auth\AuthInfoFactory  Builds this from the configured auth service.
  */

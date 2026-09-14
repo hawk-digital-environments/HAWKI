@@ -55,28 +55,11 @@ class UsageAnalyzerService
      * Aggregates the previous month's raw usage rows by user, room, type and model,
      * then deletes those raw rows.
      *
-     * The summary storage step is currently a no-op placeholder — implementors should
-     * persist the aggregated data before this method is put into production use.
+     * Daily totals are persisted transactionally before raw rows older than three months are deleted.
      */
     public function summarizeAndCleanup()
     {
-        $lastMonth = Carbon::now()->subMonth()->format('Y-m');
-
-        // Updated summary logic to include the 'model' column
-        $summaries = UsageRecord::selectRaw('user_id, room_id, type, model, SUM(prompt_tokens) as total_prompt_tokens, SUM(completion_tokens) as total_completion_tokens')
-            ->whereMonth('created_at', Carbon::now()->subMonth()->month)
-            ->whereYear('created_at', Carbon::now()->subMonth()->year)
-            ->groupBy('user_id', 'room_id', 'type', 'model')
-            ->get();
-
-        foreach ($summaries as $summary) {
-            // Store summaries in another table, save to a file, or perform another action
-        }
-
-        // Clean up old records
-        UsageRecord::whereMonth('created_at', Carbon::now()->subMonth()->month)
-            ->whereYear('created_at', Carbon::now()->subMonth()->year)
-            ->delete();
+        app(\App\Services\Admin\UsageStatistics::class)->summarize();
     }
 
 }

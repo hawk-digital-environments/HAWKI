@@ -27,6 +27,10 @@ class ChainedAuthService implements AuthServiceInterface,
      */
     private array $services;
 
+    private bool $usingCredentials = false;
+
+    private const string SESSION_SERVICE = 'auth.chained_service';
+
     public function __construct(
         AuthServiceInterface ...$services
     )
@@ -39,6 +43,7 @@ class ChainedAuthService implements AuthServiceInterface,
      */
     public function useCredentials(string $username, string $password): void
     {
+        $this->usingCredentials = true;
         foreach ($this->services as $service) {
             if ($service instanceof AuthServiceWithCredentialsInterface) {
                 $service->useCredentials($username, $password);
@@ -56,6 +61,7 @@ class ChainedAuthService implements AuthServiceInterface,
                 $service->forgetCredentials();
             }
         }
+        $this->usingCredentials = false;
     }
 
     /**
@@ -64,8 +70,15 @@ class ChainedAuthService implements AuthServiceInterface,
     public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
         foreach ($this->services as $service) {
+            if (($service instanceof AuthServiceWithCredentialsInterface) !== $this->usingCredentials) {
+                continue;
+            }
+
             try {
-                return $service->authenticate($request);
+                $result = $service->authenticate($request);
+                $request->session()->put(self::SESSION_SERVICE, $service::class);
+
+                return $result;
             } catch (AuthFailedException) {
                 // Try the next service, keep the exception for debugging purposes
             }
@@ -81,7 +94,11 @@ class ChainedAuthService implements AuthServiceInterface,
      */
     public function getLogoutResponse(Request $request): ?RedirectResponse
     {
+        $authenticatedService = $request->session()->get(self::SESSION_SERVICE);
         foreach ($this->services as $service) {
+            if (is_string($authenticatedService) && $service::class !== $authenticatedService) {
+                continue;
+            }
             if ($service instanceof AuthServiceWithLogoutRedirectInterface) {
                 $response = $service->getLogoutResponse($request);
                 if ($response !== null) {
@@ -91,5 +108,11 @@ class ChainedAuthService implements AuthServiceInterface,
         }
 
         return null;
+    }
+
+    public function supportsRedirectAuthentication(): bool
+    {
+        return collect($this->services)
+            ->contains(fn(AuthServiceInterface $service) => !$service instanceof AuthServiceWithCredentialsInterface);
     }
 }

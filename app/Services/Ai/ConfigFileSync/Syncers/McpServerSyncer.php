@@ -54,6 +54,10 @@ readonly class McpServerSyncer implements ConfigSyncerInterface
             }
 
             $url = $serverConfig['url'];
+            if (\App\Models\Ai\McpServer::query()->where('url', $url)->where('admin_managed', true)->exists()) {
+                $configuredUrls[] = $url;
+                continue;
+            }
             $type = empty($serverConfig['type']) ? McpServerType::SSE : McpServerType::from($serverConfig['type']);
             $label = $serverConfig['server_label'] ?? Str::headline($key);
             $description = $serverConfig['description'] ?? null;
