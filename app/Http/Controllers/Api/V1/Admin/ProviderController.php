@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\JsonApi\V1\Admin\Record;
 use App\Services\Admin\ProviderIconService;
 use App\Services\Admin\Repositories\ProviderRepository;
 use Illuminate\Http\JsonResponse;
@@ -19,18 +20,24 @@ class ProviderController extends ResourceController
     {
     }
 
-    public function test(Request $request, string $id): JsonResponse
+    public function test(Request $request, Record $record): JsonResponse
     {
+        $id = $record->id();
+
         return $this->action($request, 'test', $id, fn () => $this->resource->provider($id));
     }
 
-    public function discover(Request $request, string $id): JsonResponse
+    public function discover(Request $request, Record $record): JsonResponse
     {
+        $id = $record->id();
+
         return $this->action($request, 'discover', $id, fn () => $this->resource->provider($id, onlyNew: true));
     }
 
-    public function inspect(Request $request, string $id): JsonResponse
+    public function inspect(Request $request, Record $record): JsonResponse
     {
+        $id = $record->id();
+
         return $this->action($request, 'inspect', $id, fn () => $this->resource->inspect($id, $request->validate(['model_id' => 'required|string|max:255'])['model_id']));
     }
 

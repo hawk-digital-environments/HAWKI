@@ -73,11 +73,18 @@
         vision: EyeIcon,
         audio: HeadphonesIcon,
         video: Video01Icon,
-        imageGeneration: Image01Icon,
+        image_generation: Image01Icon,
         reasoning: AiBrain01Icon,
-        webSearch: GlobeIcon,
-        codeExecution: SourceCodeIcon,
-        fileUpload: Attachment01Icon
+        web_search: GlobeIcon,
+        code_execution: SourceCodeIcon,
+        file_upload: Attachment01Icon
+    };
+
+    const CAPABILITY_LABEL_KEYS: Record<string, string> = {
+        image_generation: 'imageGeneration',
+        web_search: 'webSearch',
+        code_execution: 'codeExecution',
+        file_upload: 'fileUpload'
     };
 
     const providerName = $derived(model.provider?.name ?? __('chat.composer.modelPicker.otherProvider'));
@@ -111,13 +118,17 @@
         if (model.input.includes('image')) ids.push('vision');
         if (model.input.includes('audio')) ids.push('audio');
         if (model.input.includes('video')) ids.push('video');
-        if (model.output.includes('image')) ids.push('imageGeneration');
+        if (model.output.includes('image')) ids.push('image_generation');
         if (flags.some(flag => flag.startsWith('feature-reasoning-') && flag !== 'feature-reasoning-none')) ids.push('reasoning');
         const native = model.native_capabilities ?? [];
-        if (native.includes('web_search')) ids.push('webSearch');
-        if (native.includes('code_execution')) ids.push('codeExecution');
-        if (model.settings?.['file_upload'] === true) ids.push('fileUpload');
-        return ids.map(id => ({id, label: __(`ai.model.card.capability.${id}`), icon: CAPABILITY_ICONS[id]}));
+        if (native.includes('web_search')) ids.push('web_search');
+        if (native.includes('code_execution')) ids.push('code_execution');
+        if (model.settings?.['file_upload'] === true) ids.push('file_upload');
+        return ids.map(id => ({
+            id,
+            label: __(`ai.model.card.capability.${CAPABILITY_LABEL_KEYS[id] ?? id}`),
+            icon: CAPABILITY_ICONS[id]
+        }));
     });
 
     const limits = $derived(getModelLimits(model));
@@ -176,7 +187,7 @@
                     <ul class="model-card__chips">
                         {#each capabilityBadges as capability (capability.id)}
                             {@const Icon = capability.icon}
-                            <li class="model-card__chip">
+                            <li class="model-card__chip" data-capability={capability.id}>
                                 {#if Icon}
                                     <Icon size={14} aria-hidden="true"/>
                                 {/if}
@@ -390,6 +401,15 @@
         :global(svg) {
             flex-shrink: 0;
             color: var(--color-text-muted);
+        }
+    }
+
+    .model-card__chip[data-capability] {
+        background: var(--capability-surface);
+        color: var(--capability-color);
+
+        :global(svg) {
+            color: inherit;
         }
     }
 

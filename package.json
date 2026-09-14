@@ -9,6 +9,7 @@
         "test": "echo \"Heads up: no test specified\" && exit 0",
         "test:auth": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/auth/*.test.ts tests/js/auth/*.test.svelte.ts",
         "test:admin": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/admin/*.test.ts tests/js/admin/*.test.svelte.ts",
+        "test:admin:types": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tests/js/admin/tsconfig.json --config ./svelte.config.js",
         "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/search/*.test.ts tests/js/search/*.test.svelte.ts",
         "tsc": "tsc -p ./tsconfig.json",
         "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json"

@@ -279,7 +279,9 @@
                 {#each options.filter((option) => !search || option.label
                             .toLowerCase()
                             .includes(search.toLowerCase())) as option (option.value)}
-                    <label class="choice"
+                    <label
+                        class="choice"
+                        data-capability={control.label === 'native_capabilities' ? String(option.value) : undefined}
                         ><input
                             type="checkbox"
                             {disabled}
@@ -604,6 +606,14 @@
     }
     .choice input {
         margin-top: 0.2em;
+    }
+    .choice[data-capability] {
+        color: var(--capability-color);
+        border-radius: var(--corner-xs);
+        background-color: var(--capability-surface);
+    }
+    .choice[data-capability] input {
+        accent-color: var(--capability-color);
     }
     .entry {
         display: grid;

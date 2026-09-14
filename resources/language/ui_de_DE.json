@@ -569,6 +569,7 @@
         "discovery_hint": "Wählen Sie Modelle zum Hinzufügen. Neue Modelle sind zunächst deaktiviert, damit Sie sie vor der Freigabe konfigurieren können.",
         "models_added": "Modelle hinzugefügt. Öffnen Sie Modelle, um sie zu konfigurieren und zu aktivieren.",
         "add_models": "Ausgewählte Modelle hinzufügen",
+        "view_models": "Modelle anzeigen",
         "discovery_search": "Modelle durchsuchen",
         "discovery_count": ":shown von :total Modellen",
         "discovery_no_matches": "Keine Modelle passen zur Suche.",
