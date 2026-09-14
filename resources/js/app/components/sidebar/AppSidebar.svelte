@@ -50,7 +50,8 @@
             lastActiveModule = activeModule;
         }
     });
-    const sidebarModule = $derived(activeModule ?? lastActiveModule ?? app.modules.all[0] ?? null);
+    const visibleModules = $derived(app.modules.all.filter(module => module.visible?.(app) ?? true));
+    const sidebarModule = $derived([activeModule, lastActiveModule].find(module => module && visibleModules.includes(module)) ?? visibleModules[0] ?? null);
     const ModuleSidebar = $derived(sidebarModule?.sidebar?.(app.localization.locale) ?? null);
 
     const chatPath = router.getPath('chat.index');

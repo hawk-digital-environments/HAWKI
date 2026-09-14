@@ -24,4 +24,9 @@ interface WellKnownSystemModelTypes
      * This model is used for summarizing chats. It can be used to generate summaries of chats for display in the chat list or for other purposes.
      */
     public const string SUMMARY = 'summary';
+    /**
+     * This model is used for translating administrative texts (e.g. announcements) from one UI locale into the other available locales.
+     * Generally speaking this can be a smaller/cheap model since translations are short and requested rarely.
+     */
+    public const string TRANSLATION = 'translation';
 }

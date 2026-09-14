@@ -26,7 +26,7 @@
 <script lang="ts">
     import type {Component} from 'svelte';
     import type {HugeiconsProps} from '@hugeicons/svelte';
-    import Avatar from '$lib/components/ui/avatar/Avatar.svelte';
+    import ProviderIcon from './ProviderIcon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import Link from '$lib/components/util/link/Link.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
@@ -151,7 +151,7 @@
     <div class="model-card__body">
         <div class="model-card__main">
             <header class="model-card__header">
-                <Avatar name={providerName} label={providerName} size={compact ? 32 : 40} variant="neutral" aria-hidden="true"/>
+                <ProviderIcon name={providerName} light={model.provider?.icon_url} dark={model.provider?.icon_url_dark} size={compact ? 32 : 40}/>
                 <div class="model-card__title">
                     <h3>{model.label}</h3>
                     <span class="model-card__provider">{providerName}</span>

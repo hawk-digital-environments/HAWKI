@@ -112,6 +112,7 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
         }
 
         $query = $this->getQueryWithoutContextualScopes()
+            ->where('admin_managed', false)
             ->whereNotIn('id', $idFilter)
             ->whereNotIn('model_id', $modelIdFilter);
         if ($provider) {
