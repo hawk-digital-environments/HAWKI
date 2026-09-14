@@ -1,5 +1,6 @@
 <script lang="ts">
     import { tick, untrack } from 'svelte';
+    import { ProviderDiscoverySchema, ModelInspectionSchema } from '../schemas/admin-actions.js';
     import { createForm, revalidateLogic } from '@tanstack/svelte-form';
     import type z from 'zod';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
@@ -7,7 +8,6 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { runAdmin } from '../api.js';
     import { createDraft, prepareValues, serverFieldErrors } from '../form.js';
     import { editorSchema, formValidationSchema } from '../forms/schemas.js';
     import { controlFor, isFieldVisible, normalizeControlValue } from '../forms/controls.js';
@@ -112,9 +112,15 @@
         }
         let stale = false;
         suggesting = true;
-        runAdmin(app, 'providers', 'discover', key)
+        app.restApi
+            .postToResourceAction(
+                'admin-providers',
+                `${encodeURIComponent(key)}/actions/discover`,
+                {},
+                { schema: ProviderDiscoverySchema }
+            )
             .then((response) => {
-                const models = (response.models ?? []).map((model) => ({ value: model.model_id, label: model.label }));
+                const models = response.models.map((model) => ({ value: model.model_id, label: model.label }));
                 discovered.set(key, models);
                 if (!stale) suggestions = models;
             })
@@ -171,9 +177,14 @@
         inspecting = true;
         inspected = null;
         try {
-            const response = await runAdmin(app, 'providers', 'inspect', String(providerId), { model_id: modelId });
+            const response = await app.restApi.postToResourceAction(
+                'admin-providers',
+                `${encodeURIComponent(String(providerId))}/actions/inspect`,
+                { model_id: modelId },
+                { schema: ModelInspectionSchema }
+            );
             if (token !== inspection) return;
-            if (formState.current.values.model_id === modelId) adopt(response.model ?? {});
+            if (formState.current.values.model_id === modelId) adopt(response.model);
             inspected = 'done';
         } catch (failure) {
             console.warn('Model inspection failed.', failure);
@@ -288,7 +299,9 @@
                         {@const control = controlFor(section, definition, formState.current.values, row)}
                         <AdminValueInput
                             id={`${uid}-${definition.key}`}
-                            label={section === 'settings' ? __('admin.settings_labels.' + row?.key) : __('admin.fields.' + definition.key)}
+                            label={section === 'settings' ?
+                                __('admin.settings_labels.' + row?.key)
+                            :   __('admin.fields.' + definition.key)}
                             control={{
                                 ...control,
                                 label: definition.key,
@@ -300,7 +313,8 @@
                                     control.hint ??
                                     (section === 'models' && !row && definition.key === 'model_id' ? modelIdHint()
                                     : section === 'users' && definition.key === 'password' ?
-                                        row ? 'admin.local_password_replace' : 'admin.local_password_hint'
+                                        row ? 'admin.local_password_replace'
+                                        :   'admin.local_password_hint'
                                     : section === 'users' && definition.key === 'password_confirmation' ? undefined
                                     : definition.type.startsWith('secret') ?
                                         row?.[definition.key + '_set'] ?
@@ -313,16 +327,18 @@
                             onchange={(value) => {
                                 delete serverErrors[definition.key];
                                 field.handleChange(value);
-                                if (section === 'system-models' && definition.key === 'model_type' && value === 'translation')
+                                if (
+                                    section === 'system-models' &&
+                                    definition.key === 'model_type' &&
+                                    value === 'translation'
+                                )
                                     form.setFieldValue('prompts', {});
                                 if (section === 'models' && !row && definition.key === 'model_id') adoptLabel(value);
                             }}
-                            onselect={
-                                section === 'models' && !row && definition.key === 'model_id' ?
-                                    (value) => void inspect(value)
-                                :   undefined
-                            }
-                            onBusyChange={(pending) => fieldBusy = pending}
+                            onselect={section === 'models' && !row && definition.key === 'model_id' ?
+                                (value) => void inspect(value)
+                            :   undefined}
+                            onBusyChange={(pending) => (fieldBusy = pending)}
                             onblur={field.handleBlur}
                             disabled={busy || control.disabled || (!!row && !!definition.immutable)}
                             error={fieldError(definition.key)}

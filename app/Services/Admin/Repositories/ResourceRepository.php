@@ -27,12 +27,23 @@ abstract class ResourceRepository
         $table = $definition['table'] ?? (new $definition['model']())->getTable();
         $row = DB::table($table)->where('id', $id)->lockForUpdate()->first();
         abort_unless(null !== $row, 404);
-        abort_unless($version && hash_equals($this->version((array) $row), $version), 409, __('admin.errors.conflict'));
+        abort_unless($version && hash_equals($this->version((array) $row), $version), 412, __('admin.errors.conflict'));
     }
 
     final public function read(User $user, array $filters): array
     {
         return $this->readContent($user, $this->validateFilters($filters));
+    }
+
+    /** Serialize a saved record using the same redaction rules as the collection. */
+    public function readOne(User $user, string $id): array
+    {
+        $definition = $this->definition();
+        $table = $definition['table'] ?? (new $definition['model']())->getTable();
+        $row = DB::table($table)->where('id', $id)->first();
+        abort_if(null === $row, 404);
+
+        return $this->serialize((array) $row, $definition);
     }
 
     final public function version(array $row): string

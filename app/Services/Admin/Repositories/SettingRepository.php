@@ -11,6 +11,14 @@ class SettingRepository extends ResourceRepository
 {
     public const RESOURCE = 'settings';
 
+    public function readOne(User $user, string $id): array
+    {
+        $row = collect(app(SystemSettings::class)->rows())->firstWhere('id', $id);
+        abort_if(null === $row, 404);
+
+        return $row;
+    }
+
     public function update(string $id, array $values, User $actor): void
     {
         app(SystemSettings::class)->save($id, $values['value'] ?? null, $actor->id);
