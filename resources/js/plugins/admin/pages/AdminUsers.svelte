@@ -7,12 +7,13 @@
     import AdminTable from '../components/AdminTable.svelte';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
-    import { type AdminField, type AdminRow } from '../schemas/admin-content.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminField } from '../schemas/admin-content.js';
+    import type { AdminUserResource } from '../schemas/resources/admin-users.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     import { UserTokensSchema, RevokeTokensSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [
+    const columns: AdminColumn<AdminUserResource>[] = [
         { id: 'name' },
         { id: 'username' },
         { id: 'email' },
@@ -21,10 +22,10 @@
         { id: 'last_login_at' }
     ];
     // Directory accounts are managed by the identity provider; only local accounts expose those fields.
-    const editFields = (row: AdminRow, fields: AdminField[]) =>
+    const editFields = (row: AdminUserResource, fields: AdminField[]) =>
         fields.filter(
             (field) =>
-                Boolean(row.local_account) ||
+                row.local_account ||
                 !['name', 'username', 'email', 'employeetype', 'password', 'password_confirmation'].includes(field.key)
         );
     const workspace = useAdminWorkspace(

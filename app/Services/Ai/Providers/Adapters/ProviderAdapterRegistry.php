@@ -66,6 +66,16 @@ class ProviderAdapterRegistry
     }
 
     /**
+     * All adapter keys declared so far, built-in and custom alike, in declaration order.
+     *
+     * @return list<string>
+     */
+    public function keys(): array
+    {
+        return array_keys($this->adapterClasses);
+    }
+
+    /**
      * Registers an adapter class under the given key.
      *
      * The adapter is resolved from the container lazily on the first {@see get()} call for

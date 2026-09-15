@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\ConfigFileSync\Syncers;
 
+use App\Services\Admin\DeletedRecords;
 
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\Tools\Mcp\McpClientFactory;
@@ -34,7 +35,8 @@ readonly class McpServerSyncer implements ConfigSyncerInterface
         #[Config('tools.mcp_servers')]
         private array               $mcpServerConfig,
         private McpServerRepository $serverRepository,
-        private McpClientFactory    $clientFactory
+        private McpClientFactory    $clientFactory,
+        private DeletedRecords      $deletedRecords
     )
     {
     }
@@ -56,6 +58,9 @@ readonly class McpServerSyncer implements ConfigSyncerInterface
             $url = $serverConfig['url'];
             if (\App\Models\Ai\McpServer::query()->where('url', $url)->where('admin_managed', true)->exists()) {
                 $configuredUrls[] = $url;
+                continue;
+            }
+            if ($this->deletedRecords->isDeleted(\App\Services\Admin\Repositories\McpServerRepository::RESOURCE, $url)) {
                 continue;
             }
             $type = empty($serverConfig['type']) ? McpServerType::SSE : McpServerType::from($serverConfig['type']);

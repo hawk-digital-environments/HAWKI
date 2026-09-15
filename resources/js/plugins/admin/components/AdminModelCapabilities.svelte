@@ -17,7 +17,7 @@
     import SourceCodeIcon from '$lib/components/ui/icons/iconset/SourceCodeIcon.svelte';
     import AiImageIcon from '$lib/components/ui/icons/iconset/AiImageIcon.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
-    import type { AdminRow } from '../schemas/admin-content.js';
+    import type { AdminModelResource } from '../schemas/resources/admin-models.schema.js';
     import {
         hasModelCapability,
         modelCapabilities,
@@ -30,7 +30,7 @@
         disabled = false,
         onChange
     }: {
-        row: AdminRow;
+        row: AdminModelResource;
         disabled?: boolean;
         /** Saves the field values a toggle produced; the toggle shows as busy until the promise settles. */
         onChange: (changes: Record<string, unknown>) => Promise<void> | void;

@@ -8,8 +8,10 @@ namespace App\Services\Auth;
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
+use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,7 +22,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ChainedAuthService implements AuthServiceInterface,
     AuthServiceWithCredentialsInterface,
-    AuthServiceWithLogoutRedirectInterface
+    AuthServiceWithLogoutRedirectInterface,
+    AuthServiceWithPostProcessingInterface
 {
     /**
      * @var array<AuthServiceInterface> $services
@@ -28,6 +31,11 @@ class ChainedAuthService implements AuthServiceInterface,
     private array $services;
 
     private bool $usingCredentials = false;
+
+    /**
+     * The service that authenticated the current request; post-processing hooks are forwarded to it.
+     */
+    private ?AuthServiceInterface $authenticatedService = null;
 
     private const string SESSION_SERVICE = 'auth.chained_service';
 
@@ -76,6 +84,7 @@ class ChainedAuthService implements AuthServiceInterface,
 
             try {
                 $result = $service->authenticate($request);
+                $this->authenticatedService = $service;
                 $request->session()->put(self::SESSION_SERVICE, $service::class);
 
                 return $result;
@@ -104,6 +113,54 @@ class ChainedAuthService implements AuthServiceInterface,
                 if ($response !== null) {
                     return $response;
                 }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function afterLoginWithUser(User $user, Request $request): Response|null
+    {
+        $service = $this->resolveAuthenticatedService($request);
+
+        return $service instanceof AuthServiceWithPostProcessingInterface
+            ? $service->afterLoginWithUser($user, $request)
+            : null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function afterLoginWithoutUser(AuthenticatedUserInfo $userInfo, Request $request): Response|null
+    {
+        $service = $this->resolveAuthenticatedService($request);
+
+        return $service instanceof AuthServiceWithPostProcessingInterface
+            ? $service->afterLoginWithoutUser($userInfo, $request)
+            : null;
+    }
+
+    /**
+     * The service that authenticated this login: the one remembered in this instance, or otherwise
+     * the one recorded in the session (e.g. after an external redirect round trip).
+     */
+    private function resolveAuthenticatedService(Request $request): ?AuthServiceInterface
+    {
+        if ($this->authenticatedService !== null) {
+            return $this->authenticatedService;
+        }
+
+        $authenticatedService = $request->session()->get(self::SESSION_SERVICE);
+        if (!is_string($authenticatedService)) {
+            return null;
+        }
+
+        foreach ($this->services as $service) {
+            if ($service::class === $authenticatedService) {
+                return $service;
             }
         }
 

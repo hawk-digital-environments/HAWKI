@@ -67,11 +67,6 @@ return new class extends Migration {
             $table->boolean('admin_disabled')->default(false);
             $table->timestamp('last_login_at')->nullable();
         });
-        Schema::table('announcements', function (Blueprint $table) {
-            $table->json('content')->nullable();
-            $table->json('target_roles')->nullable();
-            $table->boolean('is_published')->default(true);
-        });
         foreach (['ai_providers', 'ai_models', 'mcp_servers', 'ai_tools', 'system_models', 'system_prompts', 'ai_model_descriptions'] as $name) {
             Schema::table($name, fn(Blueprint $table) => $table->boolean('admin_managed')->default(false));
         }
@@ -91,7 +86,6 @@ return new class extends Migration {
         foreach (['ai_providers', 'ai_models', 'mcp_servers', 'ai_tools', 'system_models', 'system_prompts', 'ai_model_descriptions'] as $name) {
             Schema::table($name, fn(Blueprint $table) => $table->dropColumn('admin_managed'));
         }
-        Schema::table('announcements', fn(Blueprint $table) => $table->dropColumn(['content', 'target_roles', 'is_published']));
         Schema::table('users', fn(Blueprint $table) => $table->dropColumn(['admin_disabled', 'last_login_at']));
         foreach (['usage_daily_totals', 'admin_audit_log', 'admin_settings', 'employee_type_role_mappings', 'role_user', 'role_permissions', 'roles'] as $name) {
             Schema::dropIfExists($name);

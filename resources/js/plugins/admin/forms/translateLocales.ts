@@ -31,10 +31,17 @@ export function translationMessages(text: string, source: TranslationTarget, tar
  * target. All requests run in parallel; a single failure rejects the whole call so the
  * caller never applies a half-translated set.
  */
-export async function translateLocales({ text, source, targets, complete }: TranslateLocalesOptions): Promise<Record<string, string>> {
+export async function translateLocales({
+    text,
+    source,
+    targets,
+    complete
+}: TranslateLocalesOptions): Promise<Record<string, string>> {
     const others = targets.filter((target) => target.lang !== source.lang);
     const translations = await Promise.all(
-        others.map(async (target) => [target.lang, (await complete(translationMessages(text, source, target))).trim()] as const)
+        others.map(
+            async (target) => [target.lang, (await complete(translationMessages(text, source, target))).trim()] as const
+        )
     );
     return Object.fromEntries(translations.filter(([, translated]) => translated !== ''));
 }

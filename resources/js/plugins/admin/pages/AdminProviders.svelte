@@ -11,13 +11,13 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useRouter } from '$lib/components/ui/routing/index.js';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
-    import { type AdminRow } from '../schemas/admin-content.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminProviderResource } from '../schemas/resources/admin-providers.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     import { QueuedActionSchema, ProviderDiscoverySchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
     const router = useRouter();
-    const columns: AdminColumn[] = [
+    const columns: AdminColumn<AdminProviderResource>[] = [
         { id: 'name' },
         { id: 'provider_id' },
         { id: 'adapter_key' },
@@ -118,15 +118,15 @@
     </AdminResultDialog>
 </AdminPage>
 
-{#snippet providerName(row: AdminRow)}
+{#snippet providerName(row: AdminProviderResource)}
     <span class="provider-name">
         <ProviderIcon
-            name={String(row.name)}
-            light={typeof row.icon_url === 'string' ? row.icon_url : null}
-            dark={typeof row.icon_url_dark === 'string' ? row.icon_url_dark : null}
+            name={row.name}
+            light={row.icon_url}
+            dark={row.icon_url_dark}
             size={24}
         />
-        <span>{String(row.name)}</span>
+        <span>{row.name}</span>
     </span>
 {/snippet}
 

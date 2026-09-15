@@ -4,14 +4,15 @@
 -->
 <script
     lang="ts"
-    generics="Results extends Record<string, unknown>"
+    generics="Row extends AdminRow, ColumnId extends string, Results extends Record<string, unknown>"
 >
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import Button from '$lib/components/ui/button/Button.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
+    import type { AdminRow } from '../schemas/admin-content.js';
     import type { AdminWorkspace } from '../workspace.svelte.js';
 
-    const { workspace }: { workspace: AdminWorkspace<Results> } = $props();
+    const { workspace }: { workspace: AdminWorkspace<Row, ColumnId, Results> } = $props();
     const { __ } = useTranslator();
 </script>
 

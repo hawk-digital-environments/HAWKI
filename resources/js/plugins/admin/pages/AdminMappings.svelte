@@ -6,10 +6,11 @@
     import AdminTable from '../components/AdminTable.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminRoleMappingResource } from '../schemas/resources/admin-mappings.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [{ id: 'employee_type' }, { id: 'role_id' }];
+    const columns: AdminColumn<AdminRoleMappingResource>[] = [{ id: 'employee_type' }, { id: 'role_id' }];
     const workspace = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-mappings', { query, signal }),

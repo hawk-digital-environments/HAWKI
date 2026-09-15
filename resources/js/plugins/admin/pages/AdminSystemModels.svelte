@@ -6,10 +6,11 @@
     import AdminTable from '../components/AdminTable.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminSystemModelResource } from '../schemas/resources/admin-system-models.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [{ id: 'model_type' }, { id: 'usage_type' }, { id: 'model_id' }];
+    const columns: AdminColumn<AdminSystemModelResource>[] = [{ id: 'model_type' }, { id: 'usage_type' }, { id: 'model_id' }];
     const workspace = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-system-models', { query, signal }),

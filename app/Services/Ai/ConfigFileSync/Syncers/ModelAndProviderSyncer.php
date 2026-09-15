@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\ConfigFileSync\Syncers;
 
+use App\Services\Admin\DeletedRecords;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
@@ -57,6 +58,7 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         private AiProviderProxyResolver      $providerProxyResolver,
         private AiModelUsageRuleRepository   $useRuleRepository,
         private ModelInfoFetcher             $modelInfoFetcher,
+        private DeletedRecords               $deletedRecords,
     )
     {
     }
@@ -96,6 +98,10 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         }
 
         $existing = AiProvider::withoutGlobalScopes()->where('provider_id', $providerId)->first();
+        if (!$existing && $this->deletedRecords->isDeleted(\App\Services\Admin\Repositories\ProviderRepository::RESOURCE, $providerId)) {
+            $metrics->increment('AI providers deleted in Administration');
+            return;
+        }
         $provider = $existing?->admin_managed ? $existing : $this->providerRepository->upsert(
             providerId: $providerId,
             adapterKey: $adapterKey,
@@ -131,6 +137,7 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
 
         $existing = \App\Models\Ai\AiModel::withoutGlobalScopes()->where('model_id', $modelId)->first();
         if ($existing?->admin_managed) return $modelId;
+        if (!$existing && $this->deletedRecords->isDeleted(\App\Services\Admin\Repositories\ModelRepository::RESOURCE, (string)$modelId)) return null;
 
         $settings = AiModelSettings::fromArray([]);
         if (!empty($config['max_tool_calling_rounds'])) {

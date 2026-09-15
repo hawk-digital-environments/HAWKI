@@ -75,7 +75,10 @@ export function serverFieldErrors(error: unknown): Record<string, string> {
     const result: Record<string, string> = {};
     for (const item of body?.errors ?? []) {
         const pointer = item.source?.pointer?.replace(/^\/(?:data\/attributes\/|values\/)?/, '');
-        if (pointer && item.detail) result[pointer.split(/[/.]/)[0]] = item.detail;
+        if (!pointer || !item.detail) continue;
+        const key = pointer.split(/[/.]/)[0];
+        // The backend validates the domain type as `type`; the editor field is `kind`.
+        result[key === 'type' ? 'kind' : key] = item.detail;
     }
     return result;
 }
