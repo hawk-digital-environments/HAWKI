@@ -39,9 +39,9 @@
     } as const;
 </script>
 
-<div class="alert-card variant-{variant}" style="--bg-color: var(--color-{surface})">
+<div class="alert-card variant-{variant}" style="--bg-color: var(--color-{surface}); --first-line-size: var(--font-size-{sizeMapping[size][title ? 0 : 1]})">
     {#if Icon}
-        <div>
+        <div class="alert-icon">
             <Icon size={iconSizeMapping[size]} />
         </div>
     {/if}
@@ -65,8 +65,17 @@
         background-color: var(--bg-color);
     }
 
+    .alert-icon {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        /* As tall as the first text line, so the icon centers on it. */
+        height: calc(var(--first-line-size) * var(--line-height-normal));
+    }
+
     .alert-content {
         display: flex;
+        flex-direction: column;
     }
 
     .variant-destructive {

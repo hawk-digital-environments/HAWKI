@@ -28,6 +28,7 @@ interface Props {
 const {}: Props = $props();
 const {__} = useTranslator();
 const builder = useBuilderContext();
+let assistant = $derived(builder.draft);
 
 const statusLabels: Record<ReleaseMode, string> = {
     [ReleaseMode.DRAFT]: __('assistants.builder.publish.status.draft'),
@@ -36,38 +37,24 @@ const statusLabels: Record<ReleaseMode, string> = {
     [ReleaseMode.FEDERATED]: __('assistants.builder.publish.status.federated'),
 };
 
-const visibilityLabels: Record<ReleaseMode, string> = {
-    [ReleaseMode.DRAFT]: __('assistants.builder.publish.visibility.draft'),
-    [ReleaseMode.PRIVATE]: __('assistants.builder.publish.visibility.private'),
-    [ReleaseMode.ORGANIZATIONAL]: __('assistants.builder.publish.visibility.organizational'),
-    [ReleaseMode.FEDERATED]: __('assistants.builder.publish.visibility.federated'),
-};
-
-const publishabilityLabels: Record<ReleaseMode, string> = {
-    [ReleaseMode.DRAFT]: __('assistants.builder.publish.publishability.draft'),
-    [ReleaseMode.PRIVATE]: __('assistants.builder.publish.publishability.private'),
-    [ReleaseMode.ORGANIZATIONAL]: __('assistants.builder.publish.publishability.organizational'),
-    [ReleaseMode.FEDERATED]: __('assistants.builder.publish.publishability.federated'),
-};
-
-let statusLabel = $derived(statusLabels[builder.selectedReleaseStage]);
-let visibility = $derived(visibilityLabels[builder.selectedReleaseStage]);
-let publishability = $derived(publishabilityLabels[builder.selectedReleaseStage]);
+let statusLabel = $derived(statusLabels[assistant.releaseStage]);
 
 // The review triggers and the "start review" hint only apply to release paths
 // that actually kick off a review (organisational / federated).
 let requiresReview = $derived(
-    builder.selectedReleaseStage === ReleaseMode.ORGANIZATIONAL ||
-    builder.selectedReleaseStage === ReleaseMode.FEDERATED
+    assistant.releaseStage === ReleaseMode.ORGANIZATIONAL ||
+    assistant.releaseStage === ReleaseMode.FEDERATED
 );
 
 let saveAsText = $derived.by(() => {
-    switch (builder.selectedReleaseStage) {
+    switch (builder.draft.releaseStage) {
         case ReleaseMode.PRIVATE:
-            return __('assistants.builder.publish.save_as_private_draft');
+            return __('assistants.builder.publish.save_as_private_assistant');
         case ReleaseMode.ORGANIZATIONAL:
         case ReleaseMode.FEDERATED:
             return __('assistants.builder.publish.save_as_review');
+        case ReleaseMode.DRAFT:
+            return __('assistants.builder.publish.keep_as_draft');
         default:
             return '';
     }
@@ -117,18 +104,6 @@ let saveAsText = $derived.by(() => {
                         icon={TaskEdit01Icon}
                         type={ValidationState.SAFE}
                 />
-            </ReportCard>
-
-            <ReportCard
-                label={__('assistants.builder.publish.risk.label_visibility')}
-            >
-                {visibility}
-            </ReportCard>
-
-            <ReportCard
-                label={__('assistants.builder.publish.risk.label_publishability')}
-            >
-                {publishability}
             </ReportCard>
 
         </ReportPanel>

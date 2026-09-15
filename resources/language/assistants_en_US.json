@@ -266,11 +266,13 @@
                 "description": "Choose the publishing path.",
                 "release_stage": {
                     "title": "Choose the publishing path",
-                    "private_label": "Save as private draft",
+                    "draft_label": "Keep as draft",
+                    "draft_description": "Continue editing later; nothing gets published.",
+                    "private_label": "Save as private assistant",
                     "private_description": "Visible only to you, no approval needed.",
-                    "organizational_label": "Submit for internal review",
+                    "organizational_label": "Share within your university",
                     "organizational_description": "For release within your university.",
-                    "federated_label": "Verified",
+                    "federated_label": "Share across the federation",
                     "federated_description": "Visible across universities. Strict validation."
                 },
                 "status": {
@@ -279,26 +281,12 @@
                     "organizational": "In review",
                     "federated": "In review"
                 },
-                "visibility": {
-                    "draft": "Draft",
-                    "private": "Only you",
-                    "organizational": "University-wide",
-                    "federated": "Public"
-                },
-                "publishability": {
-                    "draft": "Draft",
-                    "private": "Usable privately only",
-                    "organizational": "Usable university-wide",
-                    "federated": "Usable publicly"
-                },
                 "risk": {
                     "title": "Risk overview",
                     "description": "Assistant with knowledge files or tools. Standard review required.",
                     "label_status": "Status",
                     "label_risk_level": "Risk level",
-                    "risk_level_low": "Low risk",
-                    "label_visibility": "Visibility",
-                    "label_publishability": "Publishability"
+                    "risk_level_low": "Low risk"
                 },
                 "completeness": {
                     "title": "Completeness check",
@@ -309,14 +297,14 @@
                 },
                 "review_info": {
                     "title": "Start review",
-                    "description": "As soon as you move the assistant from “Private” to “Available within the university” or “Federated”, a review is triggered.",
+                    "description": "As soon as you move the assistant from “Private” to “University-wide” or “Federated”, a review is triggered.",
                     "note": "MCP configurations are reviewed by us separately."
                 },
                 "input_version_note": "Version note",
                 "input_version_note_placeholder": "What has changed?",
-                "save_as_private_draft": "Save as private draft",
+                "save_as_private_assistant": "Save as private assistant",
                 "save_as_review": "Submit for review",
-                "save_as_draft": "Save as draft",
+                "keep_as_draft": "Keep as draft",
                 "saved": "Assistant saved.",
                 "submitted": "Assistant submitted for review.",
                 "save_failed": "Could not save the assistant."
