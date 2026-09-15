@@ -15,6 +15,8 @@ class AdminServiceProvider extends ServiceProvider
     {
         $this->app->singleton(SystemSettings::class);
         $this->app->singleton(EnvironmentConfigProxy::class);
+        // Both memoize per request/job; workers must not carry grants across requests.
+        $this->app->scoped(\App\Services\Admin\PermissionService::class);
         $this->app->scoped(\App\Services\Admin\RoleGuard::class);
         $this->app->extend(\Illuminate\Foundation\Console\ConfigCacheCommand::class, fn() => new CacheDeploymentConfig($this->app['files']));
         $this->app->booting(function () {
@@ -35,5 +37,14 @@ class AdminServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Queue::before(function () {
             $this->app->make(SystemSettings::class)->apply();
         });
+
+        // The scoped binding is reset per queued job, but a container that handles more than one
+        // request (Octane, and the test harness) must not carry memoized grants across them.
+        \Illuminate\Support\Facades\Event::listen(
+            \Illuminate\Foundation\Http\Events\RequestHandled::class,
+            function (): void {
+                $this->app->make(\App\Services\Admin\PermissionService::class)->forget();
+            }
+        );
     }
 }

@@ -74,6 +74,18 @@ class AdminPanelTest extends TestCase
             ->assertJsonMissingPath('data.0.attributes.type');
     }
 
+    public function testRoleCatalogNamesSystemRolesThroughATranslationKey(): void
+    {
+        $this->actingAs($this->grant(['admin.access', 'users.view']));
+
+        $catalog = collect($this->get('/api/hawki/v1/admin-users')->assertSuccessful()->json('meta.role_catalog'));
+        $system = $catalog->firstWhere('is_system', true);
+        self::assertNotNull($system, 'the seeded system roles must reach the catalog');
+        // The client never recognizes a system role by its seeded English display name.
+        self::assertSame('admin.role_labels.' . $system['slug'], $system['title_label']);
+        self::assertNull($catalog->firstWhere('is_system', false)['title_label']);
+    }
+
     public function testAnnouncementsTargetRolesButNoLongerIndividualUsers(): void
     {
         $this->actingAs($this->grant(['admin.access', 'announcements.manage']));

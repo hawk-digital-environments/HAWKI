@@ -6,6 +6,7 @@ import { AdminToolSchema } from '../../../resources/js/plugins/admin/schemas/res
 import { AdminUserSchema } from '../../../resources/js/plugins/admin/schemas/resources/admin-users.schema.js';
 import {
     permissionChoices,
+    permissionGroups,
     changePermission,
     roleLabel
 } from '../../../resources/js/plugins/admin/forms/authorization.js';
@@ -45,6 +46,15 @@ test('permission controls preserve existing ungrantable and retired grants witho
     assert.deepEqual(changePermission(catalog, [...selected, 'tools.use'], 'tools.use', false), selected);
 });
 
+test('permission groups follow the catalog instead of a hardcoded list, with administration first', () => {
+    assert.deepEqual(permissionGroups(catalog), ['administration', 'tools']);
+    assert.deepEqual(permissionGroups(permissionChoices(catalog, ['retired.permission'])), ['administration', 'tools']);
+    // An unseen group still gets a section of its own, in the order the backend sent it.
+    const extended = [...catalog, { ...catalog[0], name: 'labs.use', group: 'labs' }] as typeof catalog;
+    assert.deepEqual(permissionGroups(extended), ['administration', 'tools', 'labs']);
+    assert.deepEqual(permissionGroups([]), []);
+});
+
 test('admin contracts retain authorization metadata and fail closed for absent tool rules', () => {
     const content = AdminContentSchema.parse({
         rows: [],
@@ -58,10 +68,16 @@ test('admin contracts retain authorization metadata and fail closed for absent t
                 grantable: false
             }
         ],
-        role_catalog: [{ id: 7, name: 'Researchers', slug: 'researchers', is_system: false }]
+        role_catalog: [
+            { id: 7, name: 'Researchers', slug: 'researchers', is_system: false },
+            { id: 1, name: 'Administrator', slug: 'admin', is_system: true, title_label: 'admin.role_labels.admin' }
+        ]
     });
     assert.equal(content.access_rules[0].grantable, false);
     assert.equal(content.role_catalog[0].name, 'Researchers');
+    // Older payloads without the key stay parseable and simply have no translation.
+    assert.equal(content.role_catalog[0].title_label, null);
+    assert.equal(content.role_catalog[1].title_label, 'admin.role_labels.admin');
     const row = {
         id: '1',
         name: 'Search',
@@ -94,10 +110,22 @@ test('manual and mapped assignments keep both sources, and manual edits never se
     });
     assert.deepEqual(user.roles, [3]);
     assert.deepEqual(user.mapped_roles, [3]);
-    const roles = [{ id: 3, name: 'Research group', slug: 'research', is_system: false }];
+    const roles = [
+        { id: 3, name: 'Research group', slug: 'research', is_system: false, title_label: null },
+        // A system role seeded in German still resolves through its translation key.
+        { id: 1, name: 'Administrator*in', slug: 'admin', is_system: true, title_label: 'admin.role_labels.admin' }
+    ];
     assert.equal(
         roleLabel(3, roles, [], (label) => label),
         'Research group'
+    );
+    assert.equal(
+        roleLabel(1, roles, [], (label) => label),
+        'admin.role_labels.admin'
+    );
+    assert.equal(
+        roleLabel(9, roles, [], (label, replacements) => `${label}:${replacements?.id}`),
+        'admin.role_unknown:9'
     );
     const fields = [
         AdminFieldSchema.parse({ key: 'roles', type: 'multi', options: [{ value: 3, label: 'Research group' }] })

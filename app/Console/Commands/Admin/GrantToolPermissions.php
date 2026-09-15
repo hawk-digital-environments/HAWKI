@@ -13,7 +13,7 @@ use Illuminate\Console\Command;
 /** Explicit operator bootstrap for grants that no existing administrator can yet delegate. */
 final class GrantToolPermissions extends Command
 {
-    protected $signature = 'rbac:grant-tool-access {role : Stable role slug} {rule : web_search, image_generation or internal_search}';
+    protected $signature = 'rbac:grant-tool-access {role : Stable role slug} {rule : web_search, web_fetch, image_generation or internal_search}';
     protected $description = 'Explicitly grant a tool access rule to a role; tools still require a published access rule';
 
     public function handle(RoleGuard $guard, AdminAudit $audit): int
