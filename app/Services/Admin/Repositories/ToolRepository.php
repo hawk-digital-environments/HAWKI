@@ -22,7 +22,7 @@ class ToolRepository extends ConfigurationRepository
         $fields = new \App\Services\Admin\ResourceFields();
 
         return ['model' => AiTool::class, 'create' => false, 'delete' => false, 'columns' => ['name', 'type', 'active', 'mapped_capability', 'access_rule'], 'fields' => [
-            $fields->field('description', 'textarea', 'nullable|string|max:10000'), $fields->boolean('active'), $fields->text('mapped_capability'), $fields->field('access_rule', 'select', 'sometimes|required|string|in:unavailable,web_search,image_generation,internal_search', array_keys(\App\Services\Ai\Tools\ToolAccessRules::RULES)), $fields->multiple('models', 'models'),
+            $fields->field('description', 'textarea', 'nullable|string|max:10000'), $fields->boolean('active'), $fields->text('mapped_capability'), $fields->field('access_rule', 'select', 'sometimes|required|string|in:' . implode(',', array_keys(\App\Services\Ai\Tools\ToolAccessRules::RULES)), array_keys(\App\Services\Ai\Tools\ToolAccessRules::RULES)), $fields->multiple('models', 'models'),
         ]];
     }
 

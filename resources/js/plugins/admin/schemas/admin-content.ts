@@ -17,7 +17,13 @@ export const PermissionCatalogEntrySchema = z.object({
     description_label: z.string(),
     grantable: z.boolean()
 });
-export const AccessRuleNameSchema = z.enum(['unavailable', 'web_search', 'image_generation', 'internal_search']);
+export const AccessRuleNameSchema = z.enum([
+    'unavailable',
+    'web_search',
+    'web_fetch',
+    'image_generation',
+    'internal_search'
+]);
 export const AccessRuleSchema = z.object({
     name: AccessRuleNameSchema,
     title_label: z.string(),
@@ -29,7 +35,9 @@ export const RoleCatalogEntrySchema = z.object({
     id: z.number(),
     name: z.string(),
     slug: z.string(),
-    is_system: z.boolean()
+    is_system: z.boolean(),
+    /** Translation key for system roles, so their name is not read from the seeded English text. */
+    title_label: z.string().nullable().default(null)
 });
 export type PermissionCatalogEntry = z.infer<typeof PermissionCatalogEntrySchema>;
 export type AccessRule = z.infer<typeof AccessRuleSchema>;
