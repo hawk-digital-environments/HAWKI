@@ -62,6 +62,8 @@ class StreamController extends Controller
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'required|string',
+                'payload.tools' => 'sometimes|array',
+                'payload.tools.*' => 'string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
@@ -101,6 +103,7 @@ class StreamController extends Controller
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
                 'payload.tools' => 'nullable|array',
+                'payload.tools.*' => 'string',
                 'payload.params' => 'nullable|array',
 
                 'broadcast' => 'required|boolean',
@@ -129,6 +132,11 @@ class StreamController extends Controller
             ], 422);
         }
 
+        // Materialize selections before opening a stream or acknowledging background work.
+        // The context captures the initiating user here and reloads that ID at every execution.
+        $validatedData['payload']['broadcast'] = $validatedData['broadcast'];
+        $agent = $this->aiService->getAgent($validatedData);
+
         if ($validatedData['broadcast']) {
             $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
             try {
@@ -155,20 +163,20 @@ class StreamController extends Controller
             // This is useful for group chat requests where we don't want to block the client waiting for the AI response
             // and we want to handle the request asynchronously.
             // Note: This is not the best practice and should be migrated into a proper job queue in the future.
-            register_shutdown_function(function () use ($validatedData, $model) {
-                $this->handleGroupChatRequest($validatedData, $model);
+            register_shutdown_function(function () use ($validatedData, $model, $agent) {
+                $this->handleGroupChatRequest($validatedData, $model, $agent);
             });
 
             return response()->json(['success' => true]);
         }
 
         if ($validatedData['payload']['stream'] === false) {
-            return response()->json($this->handleNonStreamingRequest($validatedData));
+            return response()->json($this->handleNonStreamingRequest($validatedData, $agent));
         }
 
         try {
             return response()->stream(
-                callback: fn() => yield from $this->handleStreamingRequest($validatedData),
+                callback: fn() => yield from $this->handleStreamingRequest($validatedData, $agent),
                 headers: [
                     'Content-Type' => 'text/event-stream',
                     'Cache-Control' => 'no-cache',
@@ -192,7 +200,8 @@ class StreamController extends Controller
      * Handle streaming request with the new architecture
      */
     private function handleStreamingRequest(
-        array $validatedData
+        array $validatedData,
+        \App\Services\Ai\Agents\Contracts\AgentInterface $agent
     ): iterable
     {
         $hawki = $this->userRepository->findHawki();
@@ -253,7 +262,6 @@ class StreamController extends Controller
         );
 
         try {
-            $agent = $this->aiService->getAgent($validatedData);
 
             $res = $agent->sendStreaming();
 
@@ -266,8 +274,8 @@ class StreamController extends Controller
                 switch (true) {
                     case $chunk instanceof Error:
                         $this->logger->error('Error chunk received from agent response', ['chunk' => $chunk]);
-                        yield $formatData(content: $chunk->message, type: 'message', isDone: true);
-                        break;
+                        yield $formatData(content: $chunk->message, type: 'error', isDone: true, additionalData: ['code' => $chunk->metadata['code'] ?? null]);
+                        return;
                     case $chunk instanceof Citation:
                         $citations[] = $chunk->citation;
                         break;
@@ -310,6 +318,9 @@ class StreamController extends Controller
                 additionalData: ['usage' => $agent->getUsage()->toArray()]
             );
 
+        } catch (\App\Services\Ai\Tools\Exceptions\ToolAccessException $e) {
+            yield $formatData(content: $e->getMessage(), type: 'error', isDone: true, additionalData: ['code' => $e->errorCode]);
+            return;
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [
                 'exception' => $e,
@@ -330,11 +341,12 @@ class StreamController extends Controller
      * Handle a non-streaming request that is not part of a group chat.
      * This is used for the "export" feature, or any other feature that requires a single response from the AI agent without streaming.
      */
-    private function handleNonStreamingRequest(array $validatedData): array
+    private function handleNonStreamingRequest(array $validatedData, \App\Services\Ai\Agents\Contracts\AgentInterface $agent): array
     {
         try {
-            $agent = $this->aiService->getAgent($validatedData);
             $res = $agent->send();
+        } catch (\App\Services\Ai\Tools\Exceptions\ToolAccessException $e) {
+            throw $e;
         } catch (RequestException $e) {
             $this->logger->error('RequestException while sending request to agent', [
                 'exception' => $e,
@@ -366,7 +378,7 @@ class StreamController extends Controller
     /**
      * Handle group chat requests with the new architecture
      */
-    private function handleGroupChatRequest(array $validatedData, AiModel $model): void
+    private function handleGroupChatRequest(array $validatedData, AiModel $model, \App\Services\Ai\Agents\Contracts\AgentInterface $agent): void
     {
         $isUpdate = (bool)($validatedData['isUpdate'] ?? false);
 
@@ -389,7 +401,6 @@ class StreamController extends Controller
             // We set this to true, to tell the request factory to look for the group chat context and not the private context.
             // Ugly as sin, and a real hack, but just a temporary construct until 2.6.0, so go and judge me!
             $validatedData['payload']['broadcast'] = true;
-            $agent = $this->aiService->getAgent($validatedData);
 
             $res = $agent->send();
 
@@ -410,6 +421,7 @@ class StreamController extends Controller
                     'slug' => $room->slug,
                     'isGenerating' => false,
                     'error' => 'Failed to generate response. Please try again later.',
+                    'code' => $e instanceof \App\Services\Ai\Tools\Exceptions\ToolAccessException ? $e->errorCode : null,
                     'model' => $validatedData['payload']['model']
                 ]
             ]));

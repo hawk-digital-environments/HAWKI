@@ -506,7 +506,7 @@ export function createComposerContext(
         }
     );
     const attachment = new AttachmentSlice(app.config);
-    const tool = new ToolSlice(modelContext, aiToolStore);
+    const tool = new ToolSlice(modelContext, aiToolStore, () => toastContext.info(app.translator.__('chat.tools.accessChanged')));
     const guard = new GuardSlice((): ComposerContext => context);
     const modelUsage = new ModelUsageSlice(
         aiModelStore,
@@ -532,7 +532,7 @@ export function createComposerContext(
         }
     };
 
-    const sender = new MessageSender(options.transport ?? new OldUiBridgeTransport(oldUiBridge), app.localization.translator);
+    const sender = new MessageSender(options.transport ?? new OldUiBridgeTransport(oldUiBridge, app), app.localization.translator);
 
     const context = new ComposerContext(
         type,

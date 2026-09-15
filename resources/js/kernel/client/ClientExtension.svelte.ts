@@ -1,4 +1,6 @@
 import {RestApi} from '$lib/kernel/api/RestApi.js';
+import {ApiTransportError} from '$lib/kernel/api/errors.js';
+import type {ApiTransport} from '$lib/kernel/api/transport.js';
 import {createDefaultTransport} from '$lib/kernel/api/transport.js';
 import {type Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
@@ -28,6 +30,7 @@ declare module '$lib/kernel/extendableTypes.js' {
         readonly isAuthenticatedConnection: boolean;
         readonly isAuthenticated: boolean;
         readonly cryptoReady: boolean;
+        readonly authorizationRefreshing: boolean;
         readonly logoutState: 'idle' | 'pending' | 'failed';
 
         refreshConnection(): Promise<Connection>;
@@ -60,13 +63,30 @@ export class ClientExtension implements HawkiAppExtension {
     public readonly client: HawkiClient;
 
     public constructor(private readonly events: HawkiEvents) {
-        const transport = createDefaultTransport(() => {
+        const baseTransport = createDefaultTransport(() => {
             const connection = this.connectionHandle?.tryGetConnection();
             if (this.sessionLost || this.logoutStatus !== 'idle' || !connection?.hasUserInfo) return;
             this.sessionLost = true;
+            this.connectionHandle.invalidate();
             this.events.sync.trigger('sessionLost');
             if (this.app) assignAuthPage(this.app.router, 'login', undefined, 'session_expired');
         });
+        const transport = (async (path, options) => {
+            const actor = this.connectionHandle?.tryGetConnection();
+            const actorId = actor?.isAuthenticated ? actor.userinfo.id : null;
+            try {
+                return await baseTransport(path, options);
+            } catch (error) {
+                const current = this.connectionHandle.tryGetConnection();
+                if (error instanceof ApiTransportError && error.status === 403 &&
+                    !this.connectionHandle.refreshing && !this.sessionLost && this.logoutStatus === 'idle' &&
+                    current?.isAuthenticated && current.userinfo.id === actorId &&
+                    !new URL(path, window.location.origin).pathname.includes('/connections/')) {
+                    void this.refreshConnection().catch(() => undefined);
+                }
+                throw error;
+            }
+        }) as ApiTransport;
         const getConnection = () => this.connectionHandle.connection;
         const restApi = new RestApi(
             this.uriBuilder,
@@ -100,6 +120,7 @@ export class ClientExtension implements HawkiAppExtension {
     public async logout(): Promise<void> {
         if (this.logoutStatus === 'pending') return;
         this.logoutStatus = 'pending';
+        this.connectionHandle.invalidate();
         this.app?.passkeySession.clear();
         try {
             try {
@@ -130,6 +151,7 @@ export class ClientExtension implements HawkiAppExtension {
         this.events.async.on('connectionRefreshFailed', () => {
             if (this.sessionLost || !this.hadUserInfo || this.logoutStatus !== 'idle' || !this.app) return;
             this.sessionLost = true;
+            this.connectionHandle.invalidate();
             this.events.sync.trigger('sessionLost');
             assignAuthPage(this.app.router, 'login', undefined, 'session_expired');
         });
@@ -143,6 +165,7 @@ export class ClientExtension implements HawkiAppExtension {
             const established = this.hadUserInfo;
             this.hadUserInfo = connection.hasUserInfo;
             if (established && this.app?.isMounted) {
+                this.connectionHandle.invalidate();
                 this.events.sync.trigger('sessionLost');
                 const page = connection.isAuthenticated
                     ? connection.keychain_state === 'setup_required' ? 'register'
@@ -196,6 +219,9 @@ export class ClientExtension implements HawkiAppExtension {
             get cryptoReady(): boolean {
                 return extension.logoutStatus === 'idle' && !extension.sessionLost &&
                     (extension.app?.passkeySession.cryptoReady ?? false);
+            },
+            get authorizationRefreshing() {
+                return extension.connectionHandle.refreshing;
             },
             get logoutState() {
                 return extension.logoutStatus;

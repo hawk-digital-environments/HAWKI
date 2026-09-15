@@ -95,7 +95,7 @@ abstract class ResourceController extends Controller
 
         return DB::transaction(static function () use ($request, $repository, $action, $id, $operation, $checkVersion, $values) {
             // Serialize configuration, policy publication and role changes, including creates.
-            DB::table('roles')->where('slug', 'admin')->lockForUpdate()->first();
+            DB::table('roles')->where('name', 'admin')->lockForUpdate()->first();
             $repository->authorize($request->user());
 
             if (null !== $id && $checkVersion) {

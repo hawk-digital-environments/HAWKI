@@ -24,6 +24,7 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
+    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
 
     const {__} = useTranslator();
 
@@ -153,7 +154,9 @@
 </script>
 
 {#snippet chip(tool: typeof tools[number], index: number, measuring = false)}
-    {@const incompatible = !tool.isAvailableFor(composerContext.model.current)}
+    {@const availability = toolAvailabilityFor(tool, composerContext.model.current)}
+    {@const incompatible = availability !== 'available'}
+    {@const availabilityLabel = availability === 'offline' ? __('chat.composer.statusDot.tool.offlineLabel') : availability === 'model-incompatible' ? __('chat.composer.statusDot.tool.notSupportedLabel', {model: composerContext.model.current?.label ?? ''}) : ''}
     <button
         class="tool-chip"
         class:incompatible
@@ -164,10 +167,10 @@
         data-capability={tool.capability_key ?? undefined}
         onclick={() => onChipClick(tool)}
         onkeydown={(event) => onChipKeydown(event, tool, index)}
-        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName})}
+        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName}) + (availabilityLabel ? `, ${availabilityLabel}` : '')}
     >
         <ToolIcon tool={tool} size={12}/>
-        <span class="tool-chip-label">{tool.displayName}</span>
+        <span class="tool-chip-label">{tool.displayName}{availabilityLabel ? ` (${availabilityLabel})` : ''}</span>
         <Cancel01Icon size={12}/>
     </button>
 {/snippet}

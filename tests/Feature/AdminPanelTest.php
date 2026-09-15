@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Ai\AiModel;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Admin\EmployeeTypeRoleSyncer;
 use App\Services\Admin\Permission;
@@ -12,6 +13,7 @@ use App\Services\Admin\PermissionService;
 use App\Services\Admin\Repositories\RoleRepository;
 use App\Services\Admin\Repositories\UserRepository;
 use App\Services\Admin\ResourceCatalog;
+use App\Services\Admin\RoleAssignmentService;
 use App\Services\Admin\SystemSettings;
 use App\Services\Admin\UsageStatistics;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
@@ -65,6 +67,7 @@ class AdminPanelTest extends TestCase
         foreach (array_diff(array_keys(ResourceCatalog::SECTIONS), ['health']) as $section) {
             $this->get('/api/hawki/v1/admin-' . $section)->assertSuccessful()->assertHeader('Content-Type', 'application/vnd.api+json')->assertJsonStructure(['data', 'meta' => ['columns']])->assertJsonMissingPath('content');
         }
+
         $this->get('/api/hawki/v1/admin-settings')->assertOk()
             ->assertJsonPath('data.0.type', 'admin-settings')
             ->assertJsonStructure(['data' => [['attributes' => ['kind']]]])
@@ -237,6 +240,7 @@ class AdminPanelTest extends TestCase
 
         $slot = (array) DB::table('system_models')->where('admin_managed', false)->orderBy('id')->first();
         $model = (array) DB::table('ai_models')->where('admin_managed', false)->whereNotIn('model_id', DB::table('system_models')->select('model_id'))->orderBy('id')->first();
+
         if (!$slot || !$model) {
             self::markTestSkipped('Needs configuration synced from the deployment files.');
         }
@@ -289,9 +293,10 @@ class AdminPanelTest extends TestCase
 
     public function testMappingChangesReplaceDerivedGrantsAndKeepManualGrants(): void
     {
+        $this->grant(Permission::values());
         $user = $this->grant(['usage.view']);
         $user->forceFill(['employeetype' => 'staff'])->save();
-        $adminRole = DB::table('roles')->where('slug', 'admin')->value('id');
+        $adminRole = DB::table('roles')->where('name', 'admin')->value('id');
         DB::table('employee_type_role_mappings')->insert(['employee_type' => 'staff', 'role_id' => $adminRole]);
         app(EmployeeTypeRoleSyncer::class)->sync($user);
         self::assertTrue(app(PermissionService::class)->has($user, 'admin.access'));
@@ -305,7 +310,7 @@ class AdminPanelTest extends TestCase
     {
         $this->actingAs($this->grant(['admin.access', 'roles.manage']));
         $this->saveAdmin(['section' => 'roles', 'values' => ['slug' => 'escalated', 'name' => 'Escalated', 'permissions' => ['settings.manage']]])->assertUnprocessable();
-        $this->assertDatabaseMissing('roles', ['slug' => 'escalated']);
+        $this->assertDatabaseMissing('roles', ['name' => 'escalated']);
     }
 
     public function testUsagePerUserRequiresSeparatePermission(): void
@@ -348,23 +353,23 @@ class AdminPanelTest extends TestCase
     public function testBuiltInRolesKeepSlugButStayEditable(): void
     {
         $this->actingAs($this->grant(Permission::values()));
-        $id = (int) DB::table('roles')->where('slug', 'user')->value('id');
+        $id = (int) DB::table('roles')->where('name', 'user')->value('id');
         $version = static fn () => app(RoleRepository::class)->version((array) DB::table('roles')->find($id));
         $values = ['slug' => 'user', 'name' => 'Members', 'description' => 'Everyone', 'permissions' => ['usage.view']];
         $this->saveAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version(), 'values' => $values])->assertSuccessful();
-        self::assertSame('Members', DB::table('roles')->find($id)->name);
-        self::assertSame(['usage.view'], DB::table('role_permissions')->where('role_id', $id)->pluck('permission')->all());
+        self::assertSame('Members', DB::table('roles')->find($id)->display_name);
+        self::assertSame(['usage.view'], Role::findOrFail($id)->permissions()->pluck('name')->all());
         $this->saveAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version(), 'values' => ['slug' => 'members'] + $values])->assertUnprocessable();
-        self::assertSame('user', DB::table('roles')->find($id)->slug);
+        self::assertSame('user', DB::table('roles')->find($id)->name);
         $this->deleteAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version()])->assertUnprocessable();
     }
 
     public function testStaleEditsAreRejected(): void
     {
         $this->actingAs($this->grant(Permission::values()));
-        $id = DB::table('roles')->insertGetId(['slug' => 'concurrency', 'name' => 'First']);
+        $id = DB::table('roles')->insertGetId(['name' => 'concurrency', 'display_name' => 'First']);
         $version = app(RoleRepository::class)->version((array) DB::table('roles')->find($id));
-        DB::table('roles')->where('id', $id)->update(['name' => 'Second']);
+        DB::table('roles')->where('id', $id)->update(['display_name' => 'Second']);
         $this->saveAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version, 'values' => ['slug' => 'concurrency', 'name' => 'Third', 'permissions' => []]])->assertStatus(412);
     }
 
@@ -403,7 +408,7 @@ class AdminPanelTest extends TestCase
     public function testTableFiltersSupportPaginationSortingAndSearch(): void
     {
         $this->actingAs($this->grant(Permission::values()));
-        DB::table('roles')->insert([['slug' => 'table-a', 'name' => 'Table Alpha'], ['slug' => 'table-b', 'name' => 'Table Beta']]);
+        DB::table('roles')->insert([['name' => 'table-a', 'display_name' => 'Table Alpha'], ['name' => 'table-b', 'display_name' => 'Table Beta']]);
         $query = http_build_query(['page' => ['number' => 2, 'size' => 1], 'sort' => 'name', 'filter' => ['search' => 'Table ']]);
         $response = $this->get('/api/hawki/v1/admin-roles?' . $query)->assertSuccessful()
             ->assertJsonPath('meta.page.total', 2)->assertJsonPath('meta.page.currentPage', 2)
@@ -421,9 +426,11 @@ class AdminPanelTest extends TestCase
     public function testCollectionsValidateQueriesAndRepresentEmptyResults(): void
     {
         $this->actingAs($this->grant(Permission::values()));
+
         foreach (['page[number]=0', 'page[size]=101', 'sort=unknown', 'sort=name,-id'] as $query) {
             $this->get('/api/hawki/v1/admin-roles?' . $query)->assertUnprocessable();
         }
+
         $this->get('/api/hawki/v1/admin-roles?filter[search]=no-such-role-jsonapi')
             ->assertOk()->assertJsonPath('data', [])->assertJsonPath('meta.page.total', 0)
             ->assertJsonPath('links.next', null)->assertJsonStructure(['meta' => ['fields']]);
@@ -469,9 +476,9 @@ class AdminPanelTest extends TestCase
     {
         $user = $this->grant(Permission::values());
         $this->actingAs($user);
-        $id = DB::table('roles')->insertGetId(['slug' => 'pivot-version', 'name' => 'Pivot version']);
+        $id = DB::table('roles')->insertGetId(['name' => 'pivot-version', 'display_name' => 'Pivot version']);
         $version = app(RoleRepository::class)->version((array) DB::table('roles')->find($id));
-        DB::table('role_permissions')->insert(['role_id' => $id, 'permission' => 'usage.view']);
+        Role::findOrFail($id)->givePermissionTo('usage.view');
         $this->saveAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version, 'values' => ['slug' => 'pivot-version', 'name' => 'Pivot version', 'permissions' => []]])->assertStatus(412);
     }
 
@@ -721,8 +728,8 @@ class AdminPanelTest extends TestCase
     {
         $user = $this->grant(['usage.view']);
         $user->forceFill(['employeetype' => 'route-mapping-staff'])->save();
-        $role = DB::table('roles')->insertGetId(['slug' => 'route-mapped', 'name' => 'Mapped role']);
-        DB::table('role_permissions')->insert(['role_id' => $role, 'permission' => 'health.view']);
+        $role = DB::table('roles')->insertGetId(['name' => 'route-mapped', 'display_name' => 'Mapped role']);
+        Role::findOrFail($role)->givePermissionTo('health.view');
         $this->actingAs($this->grant(Permission::values()));
         $values = ['employee_type' => 'route-mapping-staff', 'role_id' => $role];
         $id = $this->postAdminResource('/api/hawki/v1/admin-mappings', ['values' => $values])->assertCreated()->json('data.id');
@@ -768,13 +775,10 @@ class AdminPanelTest extends TestCase
     private function grant(array $permissions): User
     {
         $user = User::factory()->create();
-        $role = DB::table('roles')->insertGetId(['slug' => 'test-' . $user->id, 'name' => 'Test']);
+        $role = DB::table('roles')->insertGetId(['name' => 'test-' . $user->id, 'display_name' => 'Test']);
 
-        foreach ($permissions as $permission) {
-            DB::table('role_permissions')->insert(['role_id' => $role, 'permission' => $permission]);
-        }
-
-        DB::table('role_user')->insert(['role_id' => $role, 'user_id' => $user->id, 'source' => 'manual']);
+        Role::findOrFail($role)->syncPermissions($permissions);
+        app(RoleAssignmentService::class)->replace($user, [(int) $role]);
 
         return $user;
     }

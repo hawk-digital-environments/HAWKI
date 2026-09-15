@@ -1,3 +1,4 @@
+import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
 import type {ToolSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ToolSlice.svelte.js';
 import type {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
 import type {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
@@ -10,8 +11,9 @@ import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js'
  * Describes why a particular model cannot be used given the current chat state.
  */
 export interface ModelUsageIssue {
-    type: 'no_tool_calling' | 'no_file_upload' | 'no_vision' | 'missing_tools';
+    type: 'no_tool_calling' | 'no_file_upload' | 'no_vision' | 'missing_tools' | 'offline_tools';
     missingTools?: AiToolOrCapabilityWithState[];
+    offlineTools?: AiToolOrCapabilityWithState[];
 }
 
 /**
@@ -45,7 +47,7 @@ export class ModelUsageSlice {
      * has added tools or attachments that the selected model doesn't support.
      */
     public isValid = $derived.by(() => {
-        return this.allUsable.some(model => model.model_id === this.model.current.model_id);
+        return this.allUsable.some(model => model.model_id === this.model.current?.model_id);
     });
 
     /**
@@ -83,7 +85,12 @@ export class ModelUsageSlice {
                 issues.push({type: 'no_tool_calling'});
             } else {
                 const missingTools = this.tools.active
-                    .filter(tool => !tool.isAvailableFor(model));
+                    .filter(tool => toolAvailabilityFor(tool, model) === 'model-incompatible');
+                const offlineTools = this.tools.active
+                    .filter(tool => toolAvailabilityFor(tool, model) === 'offline');
+                if (offlineTools.length > 0) {
+                    issues.push({type: 'offline_tools', offlineTools});
+                }
                 if (missingTools.length > 0) {
                     issues.push({type: 'missing_tools', missingTools});
                 }

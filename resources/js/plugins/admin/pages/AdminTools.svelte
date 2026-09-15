@@ -14,23 +14,21 @@
         { id: 'name' },
         { id: 'kind' },
         { id: 'active', format: 'boolean' },
+        { id: 'access_rule', sortable: false },
         { id: 'mapped_capability' }
     ];
     const workspace = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-tools', { query, signal }),
         {
+            editFields: (row, fields) => fields.filter((field) => field.key !== 'access_rule' || (app.can('mcp.manage') && app.can('roles.manage'))),
             save: async (values, row) => {
                 if (!row) throw new Error(__('admin.errors.save'));
                 return app.restApi.updateResource('admin-tools', row.id, values, {
                     headers: { 'If-Match': `"${row._version}"` }
                 });
             },
-            refresh: async () => {
-                for (const name of ['ai-models', 'ai-tools'] as const) {
-                    if (app.stores.has(name)) await app.stores.get(name).loadData?.(app);
-                }
-            }
+            refresh: () => app.refreshConnection()
         }
     );
 </script>
@@ -43,6 +41,11 @@
     {/if}
 {/snippet}
 
+{#snippet accessRule(row: AdminToolResource)}
+    {@const rule = workspace.content?.access_rules.find((entry) => entry.name === row.access_rule)}
+    {__(rule?.title_label ?? 'admin.tool_access_rules.unavailable.title')}
+{/snippet}
+
 <AdminPage
     section="tools"
     {workspace}
@@ -51,7 +54,7 @@
     <AdminTable
         caption={__('admin.sections.tools')}
         {workspace}
-        cells={{ mapped_capability: mappedCapability }}
+        cells={{ mapped_capability: mappedCapability, access_rule: accessRule }}
     />
 </AdminPage>
 

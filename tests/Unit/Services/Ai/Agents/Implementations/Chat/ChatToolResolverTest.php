@@ -196,6 +196,7 @@ class ChatToolResolverTest extends TestCase
         $nativeTool = $this->makeProviderTool();
 
         $laravelResolver = $this->makeToolResolver();
+        $laravelResolver->method('canResolveNative')->willReturn(true);
         $laravelResolver->expects(static::once())
             ->method('resolveNativeToolForCapability')
             ->with('web_search', static::anything(), [])

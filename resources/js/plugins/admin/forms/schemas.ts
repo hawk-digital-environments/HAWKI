@@ -1,4 +1,5 @@
 import z from 'zod';
+import { AccessRuleNameSchema } from '../schemas/admin-content.js';
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
 import type { SectionId } from '../sections.js';
 
@@ -143,6 +144,7 @@ export const mcpSchema = z.object({
     timeouts: timeoutsSchema
 });
 export const toolsSchema = z.object({
+    access_rule: AccessRuleNameSchema,
     description: optionalText(10000),
     active: z.boolean(),
     mapped_capability: optionalText(),

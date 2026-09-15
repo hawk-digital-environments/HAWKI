@@ -10,24 +10,31 @@ use Illuminate\Validation\ValidationException;
 
 class RoleGuard
 {
-    public function __construct(
-        private PermissionService $permissions,
-        private EmployeeTypeRoleSyncer $syncer,
-    ) {
+    private int $mutationDepth = 0;
+
+    public function __construct(private PermissionService $permissions)
+    {
     }
 
     public function mutate(callable $operation): mixed
     {
         return DB::transaction(function () use ($operation) {
-            DB::table('roles')->where('slug', 'admin')->lockForUpdate()->first();
-            $hadAdmin = $this->hasAdministrator();
-            $result = $operation();
+            DB::table('roles')->where('name', 'admin')->lockForUpdate()->first();
+            $outermost = 0 === $this->mutationDepth;
+            $hadAdmin = $outermost && $this->hasAdministrator();
+            ++$this->mutationDepth;
 
-            if ($hadAdmin && !$this->hasAdministrator()) {
-                throw ValidationException::withMessages(['roles' => __('admin.errors.last_admin')]);
+            try {
+                $result = $operation();
+
+                if ($hadAdmin && !$this->hasAdministrator()) {
+                    throw ValidationException::withMessages(['roles' => __('admin.errors.last_admin')]);
+                }
+
+                return $result;
+            } finally {
+                --$this->mutationDepth;
             }
-
-            return $result;
         });
     }
 
@@ -40,7 +47,7 @@ class RoleGuard
 
     public function assertRolesGrantable(array $roles, User $actor): void
     {
-        $this->assertGrantable(DB::table('role_permissions')->whereIn('role_id', $roles)->pluck('permission')->all(), $actor);
+        $this->assertGrantable($this->permissions->permissionsForRoles($roles), $actor);
     }
 
     public function assertEmployeeTypeGrantable(string $employeeType, User $actor): void
@@ -54,9 +61,9 @@ class RoleGuard
 
     public function resyncTypes(array $types): void
     {
-        User::withoutGlobalScopes()->whereIn('employeetype', $types)->orderBy('id')->chunkById(200, function ($users): void {
+        User::withoutGlobalScopes()->whereIn('employeetype', $types)->orderBy('id')->chunkById(200, static function ($users): void {
             foreach ($users as $user) {
-                $this->syncer->sync($user);
+                app(EmployeeTypeRoleSyncer::class)->sync($user);
             }
         });
     }
@@ -68,15 +75,19 @@ class RoleGuard
         }
     }
 
+    /**
+     * @phpstan-impure Reads grants that can change during a mutation.
+     */
     private function hasAdministrator(): bool
     {
-        return DB::table('users')->where('isRemoved', false)->where('admin_disabled', false)
-            ->whereExists(static function ($q): void {
-                $q->selectRaw('1')->from('role_user')->join('role_permissions', 'role_permissions.role_id', '=', 'role_user.role_id')
-                    ->whereColumn('role_user.user_id', 'users.id')->where('permission', 'admin.access');
-            })->whereExists(static function ($q): void {
-                $q->selectRaw('1')->from('role_user')->join('role_permissions', 'role_permissions.role_id', '=', 'role_user.role_id')
-                    ->whereColumn('role_user.user_id', 'users.id')->where('permission', 'roles.manage');
-            })->exists();
+        $query = User::withoutGlobalScopes()->where('isRemoved', false)->where('admin_disabled', false);
+
+        foreach ([Permission::ACCESS, Permission::ROLES_MANAGE] as $permission) {
+            $query->whereHas('roles', static fn ($roles) => $roles->where('guard_name', 'web')
+                ->whereHas('permissions', static fn ($permissions) => $permissions
+                    ->where('guard_name', 'web')->where('name', $permission->value)));
+        }
+
+        return $query->exists();
     }
 }

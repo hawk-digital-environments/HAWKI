@@ -101,7 +101,7 @@ readonly class ChatToolResolver
 
         $innerTool = $toolData->innerTool;
         if ($innerTool === 'auto') {
-            if ($context->model->native_capabilities->has($capability->key)) {
+            if ($this->laravelToolResolver->canResolveNative($capability->key, $context)) {
                 return $this->laravelToolResolver->resolveNativeToolForCapability($capability->key, $context, $toolData->settings);
             }
 
@@ -112,7 +112,7 @@ readonly class ChatToolResolver
             return $this->laravelToolResolver->resolveNativeToolForCapability($capability->key, $context, $toolData->settings);
         }
 
-        return $this->laravelToolResolver->resolveToolByName($toolData->innerTool, $context, $toolData->settings);
+        return $this->laravelToolResolver->resolveToolByName($toolData->innerTool, $context, $toolData->settings, $capability->key);
     }
 
     private function findToolByName(
