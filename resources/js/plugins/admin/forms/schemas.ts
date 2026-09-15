@@ -134,7 +134,7 @@ export const modelsSchema = z.object({
 });
 export const mcpSchema = z.object({
     server_label: text(),
-    type: z.enum(['http', 'sse', 'stdio']),
+    kind: z.enum(['http', 'sse', 'stdio']),
     url: text(2000),
     description: optionalText(10000),
     require_approval: z.enum(['never', 'always']),
@@ -159,7 +159,7 @@ export const systemModelsSchema = z.object({
 });
 export const announcementsSchema = z.object({
     title: text(),
-    type: z.enum(['news', 'system', 'event', 'info', 'policy']),
+    kind: z.enum(['news', 'system', 'event', 'info', 'policy']),
     is_published: z.boolean(),
     is_global: z.boolean(),
     is_forced: z.boolean(),
@@ -260,7 +260,7 @@ export function editorSchema(section: SectionId, fields: AdminField[], row: Admi
             if (row && field.immutable && value !== row[field.key])
                 ctx.addIssue({ code: 'custom', path: [field.key], message: 'admin.errors.immutable' });
         }
-        if (section === 'mcp' && values.type !== 'stdio' && !url.safeParse(values.url).success)
+        if (section === 'mcp' && values.kind !== 'stdio' && !url.safeParse(values.url).success)
             ctx.addIssue({ code: 'custom', path: ['url'], message: 'admin.validation.url' });
         if (section === 'announcements') {
             const parsed = announcementsSchema.safeParse(values);
@@ -274,14 +274,14 @@ export function editorSchema(section: SectionId, fields: AdminField[], row: Admi
                 ctx.addIssue({ code: 'custom', path: ['expires_at'], message: 'admin.validation.dates' });
             if (announcement.is_published && !Object.values(announcement.content).some((value) => value?.trim()))
                 ctx.addIssue({ code: 'custom', path: ['content'], message: 'admin.errors.content_required' });
-            if (announcement.type === 'policy' && (!announcement.is_global || announcement.target_roles.length))
+            if (announcement.kind === 'policy' && (!announcement.is_global || announcement.target_roles.length))
                 ctx.addIssue({ code: 'custom', path: ['is_global'], message: 'admin.errors.global_policy' });
             if (
-                row?.type === 'policy' &&
+                row?.kind === 'policy' &&
                 row.is_published &&
-                (announcement.type !== 'policy' || !announcement.is_published)
+                (announcement.kind !== 'policy' || !announcement.is_published)
             )
-                ctx.addIssue({ code: 'custom', path: ['type'], message: 'admin.errors.published_policy' });
+                ctx.addIssue({ code: 'custom', path: ['kind'], message: 'admin.errors.published_policy' });
         }
         if (section === 'users' && fields.some((field) => field.key === 'password')) {
             const password = typeof values.password === 'string' ? values.password : '';

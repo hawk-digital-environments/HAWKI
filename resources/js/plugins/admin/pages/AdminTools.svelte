@@ -6,13 +6,13 @@
     import AdminTable from '../components/AdminTable.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
-    import type { AdminRow } from '../schemas/admin-content.js';
+    import type { AdminToolResource } from '../schemas/resources/admin-tools.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [
+    const columns: AdminColumn<AdminToolResource>[] = [
         { id: 'name' },
-        { id: 'type', sortKey: 'kind' },
+        { id: 'kind' },
         { id: 'active', format: 'boolean' },
         { id: 'mapped_capability' }
     ];
@@ -35,8 +35,8 @@
     );
 </script>
 
-{#snippet mappedCapability(row: AdminRow)}
-    {#if typeof row.mapped_capability === 'string' && row.mapped_capability}
+{#snippet mappedCapability(row: AdminToolResource)}
+    {#if row.mapped_capability}
         <span class="capability" data-capability={row.mapped_capability}>{row.mapped_capability}</span>
     {:else}
         —

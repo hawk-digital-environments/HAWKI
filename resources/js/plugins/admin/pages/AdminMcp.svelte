@@ -7,14 +7,17 @@
     import AdminTable from '../components/AdminTable.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminMcpServerResource } from '../schemas/resources/admin-mcp.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     import { McpTestSchema, McpDiscoverySchema } from '../schemas/admin-actions.js';
+
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [
+
+    const columns: AdminColumn<AdminMcpServerResource>[] = [
         { id: 'server_label' },
-        { id: 'type', sortKey: 'kind' },
-        { id: 'url' },
+        { id: 'kind', filter: true },
+        { id: 'url', sortable: false },
         { id: 'status', format: 'enum' },
         { id: 'api_key_set', sortable: false }
     ];
@@ -45,13 +48,11 @@
                 }
             }),
             save: (values, row) => {
-                const { type, ...attributes } = values;
-                if (type !== undefined) attributes.kind = type;
                 return row ?
-                        app.restApi.updateResource('admin-mcp', row.id, attributes, {
+                        app.restApi.updateResource('admin-mcp', row.id, values, {
                             headers: { 'If-Match': `"${row._version}"` }
                         })
-                    :   app.restApi.createResource('admin-mcp', attributes);
+                    :   app.restApi.createResource('admin-mcp', values);
             },
             remove: (row) =>
                 app.restApi.deleteResource('admin-mcp', row.id, {

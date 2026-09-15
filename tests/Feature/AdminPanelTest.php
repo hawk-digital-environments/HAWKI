@@ -170,6 +170,95 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseMissing('users', ['username' => 'escalated-local-user']);
     }
 
+    public function testUserManagerCannotTakeOverADisabledAdministrator(): void
+    {
+        $admin = $this->grant(Permission::values());
+        $admin->forceFill(['admin_disabled' => true, 'local_password' => Hash::make('original password 1234')])->save();
+        $manager = $this->grant(['admin.access', 'users.view', 'users.manage']);
+        $this->actingAs($manager);
+        $version = app(UserRepository::class)->version((array) DB::table('users')->find($admin->id));
+        $password = 'correct horse battery staple';
+
+        $this->saveAdmin(['section' => 'users', 'id' => (string) $admin->id, 'version' => $version, 'values' => [
+            'password' => $password,
+            'password_confirmation' => $password,
+        ]])->assertUnprocessable();
+        $this->saveAdmin(['section' => 'users', 'id' => (string) $admin->id, 'version' => $version, 'values' => [
+            'admin_disabled' => false,
+        ]])->assertUnprocessable();
+        $this->postJson('/api/hawki/v1/admin-users/' . $admin->id . '/actions/revoke-tokens')->assertForbidden();
+
+        $admin->refresh();
+        self::assertTrue((bool) $admin->admin_disabled);
+        self::assertTrue(Hash::check('original password 1234', $admin->local_password));
+    }
+
+    public function testAdministratorCanReactivateADisabledAdministrator(): void
+    {
+        $admin = $this->grant(Permission::values());
+        $admin->forceFill(['admin_disabled' => true])->save();
+        $this->actingAs($this->grant(Permission::values()));
+        $version = app(UserRepository::class)->version((array) DB::table('users')->find($admin->id));
+
+        $this->saveAdmin(['section' => 'users', 'id' => (string) $admin->id, 'version' => $version, 'values' => ['admin_disabled' => false]])->assertOk();
+        self::assertFalse((bool) $admin->refresh()->admin_disabled);
+    }
+
+    public function testCustomProviderAdaptersAreOfferedAndAccepted(): void
+    {
+        app(\App\Services\Ai\Providers\Adapters\ProviderAdapterRegistry::class)->declare('custom-test-adapter', \Tests\Unit\Services\Ai\Providers\Adapters\ProviderAdapterRegistryTestFixtures\StubProviderAdapter::class);
+        $this->actingAs($this->grant(['admin.access', 'providers.manage']));
+        $fields = collect($this->get('/api/hawki/v1/admin-providers')->assertSuccessful()->json('meta.fields'));
+        self::assertContains('custom-test-adapter', array_column($fields->firstWhere('key', 'adapter_key')['options'], 'value'));
+        $values = ['name' => 'Custom', 'provider_id' => 'admin-custom-adapter-test', 'adapter_key' => 'custom-test-adapter', 'active' => false];
+        $id = $this->saveAdmin(['section' => 'providers', 'values' => $values])->assertCreated()->json('data.id');
+        $row = $this->get('/api/hawki/v1/admin-providers?filter[search]=admin-custom-adapter-test')->assertOk()->json('data.0');
+        $this->saveAdmin(['section' => 'providers', 'id' => $id, 'version' => $row['meta']['version'], 'values' => ['name' => 'Custom renamed'] + $values])->assertOk();
+        $this->saveAdmin(['section' => 'providers', 'values' => ['provider_id' => 'admin-unknown-adapter-test', 'adapter_key' => 'not-installed'] + $values])->assertUnprocessable();
+    }
+
+    public function testDeletingAModelRemovesItsDescriptions(): void
+    {
+        $this->actingAs($this->grant(Permission::values()));
+        $providerId = $this->saveAdmin(['section' => 'providers', 'values' => ['name' => 'Cascade test', 'provider_id' => 'admin-cascade-test', 'adapter_key' => 'openai', 'active' => true]])->assertSuccessful()->json('data.id');
+        $values = ['label' => 'Cascade', 'model_id' => 'admin-cascade-test-model', 'provider_id' => (int) $providerId, 'active' => true, 'model_type' => 'chat', 'input' => ['text'], 'output' => ['text'], 'tools' => [], 'usage_rules' => ['main'], 'descriptions' => ['en_US' => 'Described', 'de_DE' => 'Beschrieben']];
+        $id = $this->saveAdmin(['section' => 'models', 'values' => $values])->assertSuccessful()->json('data.id');
+        self::assertSame(2, DB::table('ai_model_descriptions')->where('ai_model_id', $id)->count());
+        $row = $this->get('/api/hawki/v1/admin-models?filter[search]=admin-cascade-test-model')->assertOk()->json('data.0');
+        $this->deleteAdmin(['section' => 'models', 'id' => $id, 'version' => $row['meta']['version']])->assertNoContent();
+        $this->assertDatabaseMissing('ai_model_descriptions', ['ai_model_id' => $id]);
+    }
+
+    public function testImportsDoNotRestoreRecordsDeletedInAdministration(): void
+    {
+        $this->actingAs($this->grant(Permission::values()));
+        $deleted = app(\App\Services\Admin\DeletedRecords::class);
+        $metrics = static fn () => new \App\Utils\JobMetrics('test', app(\Psr\Log\LoggerInterface::class));
+
+        $slot = (array) DB::table('system_models')->where('admin_managed', false)->orderBy('id')->first();
+        $model = (array) DB::table('ai_models')->where('admin_managed', false)->whereNotIn('model_id', DB::table('system_models')->select('model_id'))->orderBy('id')->first();
+        if (!$slot || !$model) {
+            self::markTestSkipped('Needs configuration synced from the deployment files.');
+        }
+
+        $slotRow = $this->get('/api/hawki/v1/admin-system-models?' . http_build_query(['filter' => ['where' => ['model_type' => $slot['model_type'], 'usage_type' => $slot['usage_type']]]]))->assertOk()->json('data.0');
+        $this->deleteAdmin(['section' => 'system-models', 'id' => $slot['id'], 'version' => $slotRow['meta']['version']])->assertNoContent();
+        self::assertTrue($deleted->isDeleted('system-models', $slot['usage_type'] . ':' . $slot['model_type']));
+        app(\App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer::class)->sync($metrics());
+        $this->assertDatabaseMissing('system_models', ['model_type' => $slot['model_type'], 'usage_type' => $slot['usage_type']]);
+
+        $this->saveAdmin(['section' => 'system-models', 'values' => ['model_type' => $slot['model_type'], 'usage_type' => $slot['usage_type'], 'model_id' => $slot['model_id']]])->assertCreated();
+        self::assertFalse($deleted->isDeleted('system-models', $slot['usage_type'] . ':' . $slot['model_type']));
+
+        // The provider syncer needs the full container to build model settings, so the model path
+        // is covered by the deletion record it consults; the syncer skips recorded model ids.
+        $modelRow = $this->get('/api/hawki/v1/admin-models?filter[search]=' . rawurlencode($model['model_id']))->assertOk()->json('data.0');
+        $this->deleteAdmin(['section' => 'models', 'id' => $model['id'], 'version' => $modelRow['meta']['version']])->assertNoContent();
+        self::assertTrue($deleted->isDeleted('models', $model['model_id']));
+        $this->saveAdmin(['section' => 'models', 'values' => ['label' => 'Restored', 'model_id' => $model['model_id'], 'provider_id' => (int) $model['provider_id'], 'active' => false, 'model_type' => 'chat', 'input' => ['text'], 'output' => ['text'], 'tools' => [], 'usage_rules' => ['main']]])->assertCreated();
+        self::assertFalse($deleted->isDeleted('models', $model['model_id']));
+    }
+
     public function testAdministratorCanCreateAnOpenAiLikeProvider(): void
     {
         $this->actingAs($this->grant(['admin.access', 'providers.manage']));
@@ -667,6 +756,9 @@ class AdminPanelTest extends TestCase
         $id = $this->postAdminResource('/api/hawki/v1/admin-mcp', ['values' => $values])->assertCreated()->json('data.id');
         $row = $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20MCP')->assertOk()->assertDontSee('mcp-route-secret')->json('data.0');
         self::assertTrue($row['attributes']['api_key_set']);
+        self::assertSame('http', $row['attributes']['kind']);
+        $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20MCP&filter[where][kind]=http')->assertOk()->assertJsonCount(1, 'data');
+        $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20MCP&filter[where][kind]=sse')->assertOk()->assertJsonCount(0, 'data');
         $this->patchAdminResource('/api/hawki/v1/admin-mcp/' . $id, ['version' => $row['meta']['version'], 'values' => ['api_key' => '', 'description' => 'Updated'] + $values])->assertOk();
         self::assertSame('mcp-route-secret', \App\Models\Ai\McpServer::findOrFail($id)->api_key);
         $row = $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20MCP')->assertOk()->json('data.0');

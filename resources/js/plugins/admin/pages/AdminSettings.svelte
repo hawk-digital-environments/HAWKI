@@ -8,11 +8,12 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { AdminFieldSchema } from '../schemas/admin-content.js';
     import { settingsTabs } from '../settings.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminSettingResource } from '../schemas/resources/admin-settings.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
 
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [];
+    const columns: AdminColumn<AdminSettingResource>[] = [];
     const workspace = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-settings', { query, signal }),
@@ -22,11 +23,11 @@
                 AdminFieldSchema.parse({
                     key: 'value',
                     type:
-                        Array.isArray(row.options) && row.options.length ? 'select'
-                        : row.type === 'string' ? 'text'
-                        : String(row.type),
-                    options: row.options ?? [],
-                    required: row.type !== 'string'
+                        row.options.length ? 'select'
+                        : row.kind === 'string' ? 'text'
+                        : row.kind,
+                    options: row.options,
+                    required: row.kind !== 'string'
                 })
             ],
             save: async (values, row) => {

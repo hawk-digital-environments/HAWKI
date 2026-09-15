@@ -13,7 +13,7 @@ import { AdminWorkspace, type AdminWorkspaceOptions } from '../../../resources/j
 function fixture<Results extends Record<string, unknown> = {}>(
     section: SectionId,
     response: unknown = { data: [], meta: {} },
-    options: AdminWorkspaceOptions<Results> = {},
+    options: AdminWorkspaceOptions<AdminRow, Results> = {},
     actionResponse: unknown = {}
 ) {
     const calls: { url: string; options: RequestInit }[] = [];
@@ -30,9 +30,9 @@ function fixture<Results extends Record<string, unknown> = {}>(
         },
         () => AdminRowSchema
     );
-    const workspace = new AdminWorkspace<Results>(
+    const workspace = new AdminWorkspace<AdminRow, string, Results>(
         (label) => label,
-        [{ id: 'type', sortKey: 'kind' }],
+        [{ id: 'kind' }],
         (signal, query) => restApi.getResourceCollection(`admin-${section}`, { query, signal }),
         options
     );
@@ -134,6 +134,25 @@ test('configured actions retain their result and row context after confirmation'
     assert.deepEqual(workspace.results, {});
 });
 
+test('server side actions refresh the dependent caches like writes do', async () => {
+    const events: string[] = [];
+    const { workspace, calls } = fixture(
+        'models',
+        { data: [] },
+        {
+            rowActions: () => ({ refresh: { confirm: true, run: async () => events.push('run') } }),
+            refresh: async () => {
+                events.push('refresh');
+            }
+        }
+    );
+    workspace.action(workspace.rowActions({ id: '17' })[0]);
+    await workspace.confirm();
+    assert.deepEqual(events, ['run', 'refresh']);
+    assert.equal(workspace.notice, 'admin.action_done');
+    assert.equal(calls.filter((call) => call.options.method === 'GET').length, 1, 'the table reloads after the caches');
+});
+
 test('every section decodes collection metadata and edit versions', async () => {
     for (const section of sections) {
         const { workspace, calls } = fixture(section.id, {
@@ -171,13 +190,14 @@ test('invalid collection responses leave a visible load error', async () => {
     }
 });
 
-test('domain types survive decoding and sorting without colliding with resource types', async () => {
+test('domain types keep their kind attribute and are never confused with the resource type', async () => {
     const { workspace, calls } = fixture('announcements', {
         data: [{ type: 'admin-announcements', id: '17', attributes: { kind: 'news' } }]
     });
-    workspace.sorting = [{ id: 'type', desc: true }];
+    workspace.sorting = [{ id: 'kind', desc: true }];
     await workspace.load();
-    assert.equal(workspace.rows[0].type, 'news');
+    assert.equal(workspace.rows[0].kind, 'news');
+    assert.equal(workspace.rows[0].type, undefined);
     assert.equal(new URL(calls[0].url).searchParams.get('sort'), '-kind');
 });
 

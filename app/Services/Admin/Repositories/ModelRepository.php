@@ -135,6 +135,11 @@ class ModelRepository extends ConfigurationRepository
         }
     }
 
+    protected function identity(Model $model): ?string
+    {
+        return (string) $model->getRawOriginal('model_id');
+    }
+
     protected function rowAttributes(array $row): array
     {
         $result = [];

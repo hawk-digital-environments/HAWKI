@@ -37,7 +37,7 @@ Config files are **never read at runtime** for tools or models. After the initia
 
 The separate `admin` frontend plugin provides the panel at `/new/admin`. Grant the first administrator with `bin/env artisan rbac:grant USERNAME admin`.
 
-Providers, models, MCP servers, tools, system models/prompts and model descriptions edited in the panel carry `admin_managed = true`. File imports preserve these records, including credentials and model usage/tool assignments. New configuration can still be imported from deployment files. Provider and model identifiers cannot be changed through the panel.
+Providers, models, MCP servers, tools, system models/prompts and model descriptions edited in the panel carry `admin_managed = true`. File imports preserve these records, including credentials and model usage/tool assignments. Providers, models, system model slots and MCP servers deleted in the panel are remembered as well, so an import does not recreate them until an administrator adds them again. New configuration can still be imported from deployment files. Provider and model identifiers cannot be changed through the panel.
 
 See [Administration](800-Administration.md) for access, settings, announcements and operational controls.
 

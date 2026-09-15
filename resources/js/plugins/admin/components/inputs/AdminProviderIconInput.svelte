@@ -5,8 +5,8 @@
     import Input from '$lib/components/ui/input/Input.svelte';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
-    import { record } from '../forms/controls.js';
-    import { loadProviderIcons, uploadProviderIcon, svgPreview, type SvglIcon } from '../providerIcons.js';
+    import { record } from '../../forms/controls.js';
+    import { loadProviderIcons, uploadProviderIcon, svgPreview, type SvglIcon } from '../../providerIcons.js';
 
     let {
         id,

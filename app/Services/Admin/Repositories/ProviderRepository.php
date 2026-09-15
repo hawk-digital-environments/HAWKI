@@ -95,7 +95,7 @@ class ProviderRepository extends ConfigurationRepository
 
         return ['model' => AiProvider::class, 'columns' => ['name', 'provider_id', 'adapter_key', 'active', 'api_key_set'], 'fields' => [
             $fields->text('name', true), $fields->field('icon', 'provider-icon', 'nullable|array'), $fields->text('provider_id', true) + ['immutable' => true],
-            $fields->select('adapter_key', array_values((new \ReflectionClass(\App\Services\Ai\Providers\Adapters\WellKnownAdapterKeys::class))->getConstants())),
+            $fields->select('adapter_key', app(ProviderAdapterRegistry::class)->keys()),
             $fields->boolean('active'), $fields->field('api_url', 'url', 'nullable|url:http,https|max:2000'),
             $fields->field('model_status_url', 'url', 'nullable|url:http,https|max:2000'), ...$fields->secrets(), $fields->json('settings'),
         ]];
@@ -117,16 +117,17 @@ class ProviderRepository extends ConfigurationRepository
         return $rules;
     }
 
+    protected function identity(Model $model): ?string
+    {
+        return (string) $model->getRawOriginal('provider_id');
+    }
+
     protected function prepare(Model $model, array &$data): void
     {
         parent::prepare($model, $data);
 
         if (\array_key_exists('icon', $data)) {
             $data['icon'] = app(\App\Services\Admin\ProviderIconService::class)->resolve($data['icon'], $model->getAttribute('icon'));
-        }
-
-        if (!app(ProviderAdapterRegistry::class)->has($data['adapter_key'])) {
-            throw ValidationException::withMessages(['adapter_key' => __('admin.errors.adapter')]);
         }
 
         if (!$data['active'] && $model->exists) {

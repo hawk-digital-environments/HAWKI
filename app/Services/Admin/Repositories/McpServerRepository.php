@@ -68,6 +68,11 @@ class McpServerRepository extends ConfigurationRepository
         ]];
     }
 
+    protected function identity(Model $model): ?string
+    {
+        return (string) $model->getRawOriginal('url');
+    }
+
     protected function rules(?int $id, array $values): array
     {
         $rules = parent::rules($id, $values);

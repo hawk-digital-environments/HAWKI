@@ -6,12 +6,13 @@
     import AdminTable from '../components/AdminTable.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminAnnouncementResource } from '../schemas/resources/admin-announcements.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [
+    const columns: AdminColumn<AdminAnnouncementResource>[] = [
         { id: 'title' },
-        { id: 'type', sortKey: 'kind' },
+        { id: 'kind' },
         { id: 'is_published', format: 'boolean' },
         { id: 'starts_at' },
         { id: 'expires_at' },
@@ -23,13 +24,11 @@
         (signal, query) => app.restApi.getResourceCollection('admin-announcements', { query, signal }),
         {
             save: (values, row) => {
-                const { type, ...attributes } = values;
-                if (type !== undefined) attributes.kind = type;
                 return row ?
-                        app.restApi.updateResource('admin-announcements', row.id, attributes, {
+                        app.restApi.updateResource('admin-announcements', row.id, values, {
                             headers: { 'If-Match': `"${row._version}"` }
                         })
-                    :   app.restApi.createResource('admin-announcements', attributes);
+                    :   app.restApi.createResource('admin-announcements', values);
             },
             remove: (row) =>
                 app.restApi.deleteResource('admin-announcements', row.id, {

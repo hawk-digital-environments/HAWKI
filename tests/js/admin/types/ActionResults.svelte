@@ -11,7 +11,7 @@
 
     let { api, allowed = true }: { api: RestApi; allowed?: boolean } = $props();
     const workspace = useAdminWorkspace(
-        [],
+        [{ id: 'name' }],
         (signal, query) => api.getResourceCollection('admin-providers', { signal, query }),
         {
             rowActions: (row) => ({
