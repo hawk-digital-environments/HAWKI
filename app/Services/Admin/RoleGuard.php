@@ -26,6 +26,8 @@ class RoleGuard
 
             try {
                 $result = $operation();
+                // Grants may have changed; later checks in this request must not read the memo.
+                $this->permissions->forget();
 
                 if ($hadAdmin && !$this->hasAdministrator()) {
                     throw ValidationException::withMessages(['roles' => __('admin.errors.last_admin')]);
@@ -34,6 +36,8 @@ class RoleGuard
                 return $result;
             } finally {
                 --$this->mutationDepth;
+                // Also covers a failed operation and anything memoized from a rolled back state.
+                $this->permissions->forget();
             }
         });
     }

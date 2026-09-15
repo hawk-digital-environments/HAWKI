@@ -858,6 +858,12 @@
                             "description": "Search the web through an approved tool or a supported model."
                         }
                     },
+                    "web_fetch": {
+                        "use": {
+                            "title": "Fetch web pages",
+                            "description": "Retrieve the content of a web address through an approved tool or a supported model."
+                        }
+                    },
                     "image_generation": {
                         "use": {
                             "title": "Generate images",
@@ -963,6 +969,10 @@
             "web_search": {
                 "title": "Users with web search access",
                 "description": "Requires permission to use tools and web search."
+            },
+            "web_fetch": {
+                "title": "Users with web page access",
+                "description": "Requires permission to use tools and fetch web pages."
             },
             "image_generation": {
                 "title": "Users with image generation access",

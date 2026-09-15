@@ -858,6 +858,12 @@
                             "description": "Das Web über ein freigegebenes Werkzeug oder ein unterstütztes Modell durchsuchen."
                         }
                     },
+                    "web_fetch": {
+                        "use": {
+                            "title": "Webseiten abrufen",
+                            "description": "Den Inhalt einer Webadresse über ein freigegebenes Werkzeug oder ein unterstütztes Modell abrufen."
+                        }
+                    },
                     "image_generation": {
                         "use": {
                             "title": "Bilder erzeugen",
@@ -963,6 +969,10 @@
             "web_search": {
                 "title": "Personen mit Websuchzugriff",
                 "description": "Erfordert Berechtigungen für Werkzeugnutzung und Websuche."
+            },
+            "web_fetch": {
+                "title": "Personen mit Zugriff auf Webseitenabruf",
+                "description": "Erfordert Berechtigungen für Werkzeugnutzung und Webseitenabruf."
             },
             "image_generation": {
                 "title": "Personen mit Zugriff auf Bilderzeugung",

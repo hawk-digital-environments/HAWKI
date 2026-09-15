@@ -21,10 +21,16 @@ final class NativeToolAuthorizations
         $this->contexts = new \WeakMap();
     }
 
+    /**
+     * The registry keys on object identity, so a shared or cached instance handed back by a public filter
+     * must not become the key: a later registration would silently rebind the earlier one's capability and
+     * actor. Each resolution therefore gets its own clone, which is the object the caller has to pass on.
+     */
     public function register(ProviderTool $tool, string $capability, AgentRequestContext $context): ProviderTool
     {
-        $this->contexts[$tool] = [$capability, \WeakReference::create($context)];
-        return $tool;
+        $owned = clone $tool;
+        $this->contexts[$owned] = [$capability, \WeakReference::create($context)];
+        return $owned;
     }
 
     public function authorize(array $tools): void

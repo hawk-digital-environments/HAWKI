@@ -30,35 +30,52 @@ class LaravelToolResolver
         return app(NativeToolAuthorizations::class)->register($tool, $capabilityKey, $context);
     }
 
-    public function canResolveNative(string $capabilityKey, AgentRequestContext $context): bool
+    /**
+     * Returns the failure that prevents the native implementation from being used, or null when it is usable.
+     * Callers need the distinction: a missing grant is a 403, a model without a usable implementation is a 422.
+     */
+    public function nativeResolutionFailure(string $capabilityKey, AgentRequestContext $context): ?ToolAccessException
     {
         try {
             app(ToolAuthorization::class)->authorizeNative($capabilityKey, $context);
-            return true;
-        } catch (ToolAccessException) {
-            return false;
+            return null;
+        } catch (ToolAccessException $exception) {
+            return $exception;
         }
+    }
+
+    /**
+     * A caller that is denied on one path but merely blocked by configuration on another still holds a grant,
+     * so the configuration failure (422) is the honest answer and keeps clients from re-fetching authorization.
+     */
+    public static function preferredFailure(ToolAccessException ...$failures): ToolAccessException
+    {
+        foreach ($failures as $failure) {
+            if ($failure->errorCode === 'TOOL_UNAVAILABLE') {
+                return $failure;
+            }
+        }
+        return $failures[0] ?? ToolAccessException::unavailable();
     }
 
     public function resolveToolForCapability(string $capabilityKey, AgentRequestContext $context, array $toolSettings = []): Tool
     {
         $candidates = $context->model->tools()->withoutGlobalScopes()
             ->whereRaw('COALESCE(mapped_capability, capability) = ?', [$capabilityKey])->get();
-        $failure = ToolAccessException::denied();
+        // Without a single candidate nothing was denied; the capability simply has no implementation here.
+        $failure = null;
         foreach ($candidates as $record) {
             try {
                 app(ToolAuthorization::class)->authorizeTool($record, $context);
             } catch (ToolAccessException $exception) {
-                if ($exception->errorCode === 'TOOL_UNAVAILABLE') {
-                    $failure = $exception;
-                }
+                $failure = $failure === null ? $exception : self::preferredFailure($failure, $exception);
                 continue;
             }
             $tool = $this->toolConverter->convert($record, $toolSettings);
             $tool = ToolForCapabilityResolvedFilterEvent::dispatch($tool, $capabilityKey, $context, $record, $toolSettings)->getTool();
             return new AuthorizedTool($tool, $record, $context);
         }
-        throw $failure;
+        throw $failure ?? ToolAccessException::unavailable();
     }
 
     public function resolveToolByName(string $toolName, AgentRequestContext $context, array $toolSettings = [], ?string $capabilityKey = null): Tool
