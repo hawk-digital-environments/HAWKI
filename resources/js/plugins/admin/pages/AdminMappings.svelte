@@ -6,6 +6,7 @@
     import AdminTable from '../components/AdminTable.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
+    import { roleLabel } from '../forms/authorization.js';
     import type { AdminRoleMappingResource } from '../schemas/resources/admin-mappings.schema.js';
     import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
@@ -31,13 +32,19 @@
     );
 </script>
 
+{#snippet mappedRole(row: AdminRoleMappingResource)}
+    {roleLabel(row.role_id, workspace.content?.role_catalog ?? [], workspace.fields, __)}
+{/snippet}
+
 <AdminPage
     section="mappings"
+    hint={__('admin.mapping_impact')}
     {workspace}
 >
     <AdminSearch {workspace} />
     <AdminTable
         caption={__('admin.sections.mappings')}
+        cells={{ role_id: mappedRole }}
         {workspace}
     />
 </AdminPage>

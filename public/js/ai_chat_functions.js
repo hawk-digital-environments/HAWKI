@@ -114,6 +114,8 @@ async function sendMessageConv(payload) {
         .filter(uuid => uuid !== null)
     ;
 
+    if (!payload.authorization.validate()) return;
+
     /// Encrypt message
     const convKey = window.userKeychain.aiConvKey;
     const cryptoMsg = await encryptWithSymKey(convKey, inputText, false);
@@ -137,7 +139,11 @@ async function sendMessageConv(payload) {
         }
     };
 
+    if (!payload.authorization.validate()) return;
     const submissionData = await submitMessageToServer(messageObj, `/req/conv/sendMessage/${activeConv.slug}`, plainContent);
+
+    payload.status.markAccepted();
+    if (!payload.authorization.validate()) return;
 
     // Replace the original text
     submissionData.content.text = inputText;
@@ -148,6 +154,7 @@ async function sendMessageConv(payload) {
     messageElement.dataset.rawMsg = submissionData.content.text;
     scrollToLast(true, messageElement);
 
+    if (!payload.authorization.validate()) return;
     payload.waitForResponse(async (response) => {
         const msgAttributes = {
             'threadIndex': activeThreadIndex,
@@ -155,8 +162,9 @@ async function sendMessageConv(payload) {
             'slug': '',
             'stream': true,
             'model': payload.model.model_id,
+                'authorization': payload.authorization,
             'metadata': {
-                'tools': payload.tools.map(tool => tool.toTransferString()),
+                'tools': payload.toolTransfers,
                 'params': payload.parameters
             }
         };
@@ -187,6 +195,7 @@ async function buildRequestObjectForAiConv(
     let messageObj;
     let citations = [];
     let messageTextEl;
+    const previousMessage = isUpdate && messageElement ? window.oldUiMessageHistory.findMessageById(messageElement.id) : null;
 
 
     return new Promise((resolve, reject) => {
@@ -201,12 +210,9 @@ async function buildRequestObjectForAiConv(
                 }
 
                 if (data.type === 'error') {
-                    window.oldUiBridge.triggerSendToast(
-                        data.content, 'error'
-                    );
-                    if (!response.done) {
-                        response.triggerReceived();
-                    }
+                    if (previousMessage) updateMessageElement(messageElement, previousMessage);
+                    else if (messageElement) messageElement.remove();
+                    if (!response.done) response.triggerError(data.content);
                     resolve();
                     return;
                 } else if (data.type === 'header') {
@@ -342,9 +348,10 @@ async function buildRequestObjectForAiConv(
 
                 resolve();
             }
-        }, () => {
+        }, (error) => {
+            if (previousMessage) updateMessageElement(messageElement, previousMessage);
             if (!response.done) {
-                response.triggerError(window.__('legacy.aiChat.streamProcessingError'));
+                response.triggerError(error?.message || window.__('legacy.aiChat.streamProcessingError'));
             }
             if (!isUpdate && messageElement) {
                 messageElement.remove();

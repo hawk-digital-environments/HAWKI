@@ -1,16 +1,19 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Models\Role;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 
 class PermissionService
 {
     public function permissionsOf(?User $user): array
     {
-        if (!$user || $user->admin_disabled || $user->isRemoved) return [];
+        if (!$user || !$this->isEligible($user)) {
+            return [];
+        }
 
         return $this->assignedPermissionsOf($user);
     }
@@ -22,16 +25,28 @@ class PermissionService
      */
     public function assignedPermissionsOf(User $user): array
     {
-        return DB::table('role_permissions')
-            ->join('role_user', 'role_user.role_id', '=', 'role_permissions.role_id')
-            ->where('role_user.user_id', $user->id)
-            ->whereIn('permission', Permission::values())
-            ->distinct()->pluck('permission')->all();
+        // Query the relationship rather than a previously loaded user's grants.
+        return $this->permissionsForRoles($this->roleIds($user));
+    }
+
+    public function isEligible(User $user): bool
+    {
+        return !$user->admin_disabled && !$user->isRemoved
+            && User::withoutGlobalScopes()->whereKey($user->getKey())
+                ->where('admin_disabled', false)->where('isRemoved', false)->exists();
+    }
+
+    public function permissionsForRoles(array $roles): array
+    {
+        return Role::query()->whereKey($roles)->where('guard_name', 'web')
+            ->with(['permissions' => static fn ($query) => $query->where('guard_name', 'web')->whereIn('name', Permission::values())])
+            ->get()->flatMap(static fn (Role $role) => $role->permissions->pluck('name'))
+            ->unique()->sort()->values()->all();
     }
 
     public function has(?User $user, Permission|string $permission): bool
     {
-        return in_array($permission instanceof Permission ? $permission->value : $permission, $this->permissionsOf($user), true);
+        return \in_array($permission instanceof Permission ? $permission->value : $permission, $this->permissionsOf($user), true);
     }
 
     public function authorize(?User $user, Permission|string $permission): void
@@ -41,6 +56,6 @@ class PermissionService
 
     public function roleIds(User $user): array
     {
-        return DB::table('role_user')->where('user_id', $user->id)->distinct()->pluck('role_id')->map(fn($id) => (int)$id)->all();
+        return $user->roles()->where('guard_name', 'web')->pluck('roles.id')->map(static fn ($id) => (int) $id)->all();
     }
 }

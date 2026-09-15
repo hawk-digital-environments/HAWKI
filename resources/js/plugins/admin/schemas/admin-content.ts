@@ -10,8 +10,36 @@ export const AdminFieldSchema = z.object({
     default: z.unknown().optional(),
     options: z.array(z.object({ value: z.union([z.string(), z.number()]), label: z.string() })).default([])
 });
+export const PermissionCatalogEntrySchema = z.object({
+    name: z.string(),
+    group: z.enum(['administration', 'tools']),
+    title_label: z.string(),
+    description_label: z.string(),
+    grantable: z.boolean()
+});
+export const AccessRuleNameSchema = z.enum(['unavailable', 'web_search', 'image_generation', 'internal_search']);
+export const AccessRuleSchema = z.object({
+    name: AccessRuleNameSchema,
+    title_label: z.string(),
+    description_label: z.string(),
+    permissions: z.array(z.string()),
+    grantable: z.boolean()
+});
+export const RoleCatalogEntrySchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    slug: z.string(),
+    is_system: z.boolean()
+});
+export type PermissionCatalogEntry = z.infer<typeof PermissionCatalogEntrySchema>;
+export type AccessRule = z.infer<typeof AccessRuleSchema>;
+export type RoleCatalogEntry = z.infer<typeof RoleCatalogEntrySchema>;
+
 export const AdminContentSchema = z.object({
     rows: z.array(AdminRowSchema),
+    permission_catalog: z.array(PermissionCatalogEntrySchema).default([]),
+    access_rules: z.array(AccessRuleSchema).default([]),
+    role_catalog: z.array(RoleCatalogEntrySchema).default([]),
     fields: z.array(AdminFieldSchema).default([]),
     total: z.number().optional(),
     page: z.number().optional(),

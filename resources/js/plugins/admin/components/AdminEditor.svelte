@@ -12,6 +12,10 @@
     import { fieldHint } from '../forms/hints.js';
     import { issueMessage } from '../forms/validationMessages.js';
     import { ModelLookup } from '../forms/modelLookup.svelte.js';
+    import AdminPermissionInput from './inputs/AdminPermissionInput.svelte';
+    import AdminAccessRuleInput from './inputs/AdminAccessRuleInput.svelte';
+    import { roleLabel } from '../forms/authorization.js';
+    import type { AdminContent } from '../schemas/admin-content.js';
     import AdminValueInput from './inputs/AdminValueInput.svelte';
     import type { AdminField, AdminRow } from '../schemas/admin-content.js';
     import type { SectionId } from '../sections.js';
@@ -19,6 +23,7 @@
     let {
         section,
         fields,
+        content,
         row,
         title,
         onSave,
@@ -27,6 +32,7 @@
     }: {
         section: SectionId;
         fields: AdminField[];
+        content: AdminContent | null;
         row: AdminRow | null;
         title: string;
         onSave: (values: Record<string, unknown>) => Promise<void>;
@@ -66,7 +72,6 @@
                     Object.entries(prepared.errors).map(([key, message]) => [key, __(message)])
                 );
                 error = __('admin.errors.form');
-                await focusError();
                 return;
             }
             try {
@@ -75,13 +80,12 @@
             } catch (failure) {
                 serverErrors = serverFieldErrors(failure);
                 error = failure instanceof Error ? failure.message : __('admin.errors.save');
-                await focusError();
             }
         }
     }));
     const formState = form.useSelector((state) => state);
     const visibleFields = $derived(fields.filter((field) => isFieldVisible(section, field, formState.current.values)));
-    const busy = $derived(formState.current.isSubmitting || fieldBusy);
+    const busy = $derived(formState.current.isSubmitting || fieldBusy || app.authorizationRefreshing);
     /** JSON snapshots of values this editor filled in itself; only those may be replaced by later metadata. */
     const adopted: Record<string, string> = {};
     /** New models get provider model id suggestions plus metadata for the picked one. */
@@ -161,8 +165,8 @@
         error = '';
         serverErrors = {};
         await form.handleSubmit();
-        if (!form.state.isValid) {
-            error = __('admin.errors.form');
+        if (error || !form.state.isValid) {
+            if (!error) error = __('admin.errors.form');
             await focusError();
         }
     }
@@ -199,7 +203,7 @@
                 {lookup.status ? __(lookup.status) : ''}
             </p>{/if}
         {#if row?.mapped_roles && Array.isArray(row.mapped_roles) && row.mapped_roles.length}<p>
-                {__('admin.mapped_roles_hint', { roles: row.mapped_roles.join(', ') })}
+                {__('admin.mapped_roles_hint', { roles: row.mapped_roles.map((id) => roleLabel(Number(id), content?.role_catalog ?? [], fields, __)).join(', ') })}
             </p>{/if}
         <div class="fields">
             {#each visibleFields as definition (definition.key)}
@@ -207,12 +211,32 @@
                     {#snippet children(field)}
                         {@const control = controlFor(section, definition, formState.current.values, row)}
                         {@const modelLookup = definition.key === 'model_id' ? lookup : null}
+                        {#if section === 'roles' && definition.key === 'permissions'}
+                            <AdminPermissionInput id={`${uid}-${definition.key}`} catalog={content?.permission_catalog ?? []}
+                                value={field.state.value} onchange={(value) => {
+                                    delete serverErrors[definition.key];
+                                    field.handleChange(value);
+                                }} onblur={field.handleBlur}
+                                disabled={busy} error={fieldError(definition.key)} />
+                        {:else if section === 'tools' && definition.key === 'access_rule'}
+                            <AdminAccessRuleInput id={`${uid}-${definition.key}`} rules={content?.access_rules ?? []}
+                                value={field.state.value} onchange={(value) => {
+                                    delete serverErrors[definition.key];
+                                    field.handleChange(value);
+                                }} onblur={field.handleBlur}
+                                disabled={busy || !app.can('mcp.manage') || !app.can('roles.manage')}
+                                error={fieldError(definition.key)} />
+                        {:else}
                         <AdminValueInput
                             id={`${uid}-${definition.key}`}
                             label={labelFor(definition)}
                             control={{
                                 ...control,
                                 label: definition.key,
+                                options: ['roles', 'role_id'].includes(definition.key) ? control.options?.map((option) => ({
+                                    ...option,
+                                    label: roleLabel(Number(option.value), content?.role_catalog ?? [], fields, __)
+                                })) : control.options,
                                 suggestions: modelLookup?.suggestions ?? undefined,
                                 hint: hintFor(definition, control)
                             }}
@@ -235,6 +259,7 @@
                             error={fieldError(definition.key)}
                             secret={definition.type === 'secret-json'}
                         />
+                        {/if}
                     {/snippet}
                 </form.Field>
             {/each}
