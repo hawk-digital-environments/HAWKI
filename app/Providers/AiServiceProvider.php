@@ -254,13 +254,7 @@ class AiServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             self::MCP_CLIENT_LIST,
-            /**
-             * @return LazySingletonList<McpServer, HawkiMcpClient>
-             */
-            fn() => new LazySingletonList(
-                fn(McpServer $server) => 'mcp_client_' . $server->id,
-                fn(McpServer $server) => $this->app->get(McpClientFactory::class)->createForServer($server)
-            )
+            fn() => new \App\Services\Ai\Tools\Mcp\McpClientRegistry($this->app->get(McpClientFactory::class))
         );
 
         $this->app->singleton(

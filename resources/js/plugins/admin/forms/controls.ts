@@ -10,6 +10,8 @@ export interface Control {
         | 'boolean'
         | 'select'
         | 'multi'
+        /** Multi-select rendered as chips with a filtered picker; the choices come from `options`. */
+        | 'tags'
         | 'list'
         | 'object'
         | 'pricing'
@@ -124,6 +126,7 @@ export function controlFor(
     row: AdminRow | null
 ): Control {
     const key = field.key;
+    if (section === 'users' && key === 'roles') return { type: 'tags', options: field.options };
     if (section === 'models') {
         if (key === 'descriptions') return { type: 'localized-text' };
         if (['input', 'output'].includes(key)) return { type: 'multi', options: choices(modalities) };

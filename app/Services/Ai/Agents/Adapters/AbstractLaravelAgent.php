@@ -41,7 +41,54 @@ use Laravel\Ai\Responses\StreamableAgentResponse;
  */
 abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgentInterface
 {
-    use Promptable;
+    use Promptable {
+        prompt as private promptThroughSdk;
+        stream as private streamThroughSdk;
+    }
+
+    // HAWKI's context and provider-step guards are supplied by send()/sendStreaming().
+    // Reject alternate SDK entry points rather than accepting a caller-selected driver/model.
+    final public function prompt(\Laravel\Ai\Approvals\Decisions|string $prompt, array $attachments = [], \Laravel\Ai\Enums\Lab|array|string|null $provider = null, ?string $model = null, ?int $timeout = null): AgentResponse
+    {
+        throw \App\Services\Ai\Tools\Exceptions\ToolAccessException::denied();
+    }
+
+    final public function stream(\Laravel\Ai\Approvals\Decisions|string $prompt, array $attachments = [], \Laravel\Ai\Enums\Lab|array|string|null $provider = null, ?string $model = null, ?int $timeout = null): StreamableAgentResponse
+    {
+        throw \App\Services\Ai\Tools\Exceptions\ToolAccessException::denied();
+    }
+
+    final public function queue(\Laravel\Ai\Approvals\Decisions|string $prompt, array $attachments = [], \Laravel\Ai\Enums\Lab|array|string|null $provider = null, ?string $model = null): \Laravel\Ai\Responses\QueuedAgentResponse
+    {
+        throw \App\Services\Ai\Tools\Exceptions\ToolAccessException::denied();
+    }
+
+    final public function broadcast(\Laravel\Ai\Approvals\Decisions|string $prompt, \Illuminate\Broadcasting\Channel|array $channels, array $attachments = [], bool $now = false, \Laravel\Ai\Enums\Lab|array|string|null $provider = null, ?string $model = null): StreamableAgentResponse
+    {
+        throw \App\Services\Ai\Tools\Exceptions\ToolAccessException::denied();
+    }
+
+    final public function broadcastNow(\Laravel\Ai\Approvals\Decisions|string $prompt, \Illuminate\Broadcasting\Channel|array $channels, array $attachments = [], \Laravel\Ai\Enums\Lab|array|string|null $provider = null, ?string $model = null): StreamableAgentResponse
+    {
+        throw \App\Services\Ai\Tools\Exceptions\ToolAccessException::denied();
+    }
+
+    final public function broadcastOnQueue(\Laravel\Ai\Approvals\Decisions|string $prompt, \Illuminate\Broadcasting\Channel|array $channels, array $attachments = [], \Laravel\Ai\Enums\Lab|array|string|null $provider = null, ?string $model = null): \Laravel\Ai\Responses\QueuedAgentResponse
+    {
+        throw \App\Services\Ai\Tools\Exceptions\ToolAccessException::denied();
+    }
+
+    /** Queue producers must persist trusted input and actor IDs, then rebuild through a HAWKI factory. */
+    final public function __serialize(): array
+    {
+        throw \App\Services\Ai\Tools\Exceptions\ToolAccessException::denied();
+    }
+
+    /** Reject legacy serialized SDK jobs before their generic broadcast error handler can run. */
+    final public function __unserialize(array $values): void
+    {
+        throw \App\Services\Ai\Tools\Exceptions\ToolAccessException::denied();
+    }
 
     private Usage|null $usage = null;
 
@@ -83,15 +130,22 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
      */
     public function send(): AgentResponse
     {
+        $driver = $this->getContext()->provider->driver;
+        if ($driver instanceof \Laravel\Ai\Contracts\Providers\TextProvider
+            && method_exists($driver, 'textGateway')
+            && !$driver->textGateway() instanceof \App\Services\Ai\Tools\LaravelAi\AuthorizedTextGateway) {
+            $driver->useTextGateway(new \App\Services\Ai\Tools\LaravelAi\AuthorizedTextGateway($driver->textGateway()));
+        }
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
-        $response = $this->prompt(
+        $response = $this->promptThroughSdk(
             prompt: $this->getPromptString(),
             attachments: $this->getAttachments(),
             provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
             model: $this->getContext()->model->model_id
         );
 
+        app(\App\Services\Ai\Tools\LaravelAi\ToolExecutionState::class)->check($this->getContext());
         $this->usage = $response->usage;
 
         AgentResponseReceivedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response, $response->usage);
@@ -109,9 +163,15 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
      */
     public function sendStreaming(): StreamableAgentResponse
     {
+        $driver = $this->getContext()->provider->driver;
+        if ($driver instanceof \Laravel\Ai\Contracts\Providers\TextProvider
+            && method_exists($driver, 'textGateway')
+            && !$driver->textGateway() instanceof \App\Services\Ai\Tools\LaravelAi\AuthorizedTextGateway) {
+            $driver->useTextGateway(new \App\Services\Ai\Tools\LaravelAi\AuthorizedTextGateway($driver->textGateway()));
+        }
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
-        $response = $this->stream(
+        $response = $this->streamThroughSdk(
             prompt: $this->getPromptString(),
             attachments: $this->getAttachments(),
             provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
@@ -119,6 +179,7 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
         );
 
         $response->then(function (AgentResponse $response) {
+            app(\App\Services\Ai\Tools\LaravelAi\ToolExecutionState::class)->check($this->getContext());
             $this->usage = $response->usage;
 
             AgentStreamCompletedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response, $response->usage);

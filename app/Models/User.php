@@ -19,12 +19,31 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 #[UsePolicy(UserPolicy::class)]
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
     use HasContextualScopesTrait;
+    use HasRoles;
+
+    protected $guard_name = 'web';
+
+    /**
+     * Apply HAWKI account and role-only grant rules to Spatie permission checks.
+     */
+    public function hasPermissionTo($permission, ?string $guardName = null): bool
+    {
+        if (null !== $guardName && 'web' !== $guardName) {
+            return false;
+        }
+
+        $permission = $this->filterPermission($permission, 'web');
+
+        return 'web' === $permission->guard_name
+            && app(\App\Services\Admin\PermissionService::class)->has($this, $permission->name);
+    }
 
     protected $dispatchesEvents = [
         'created' => UserCreatedEvent::class
@@ -56,7 +75,7 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::created(function (User $user) {
-            if (!app()->runningInConsole() || \Illuminate\Support\Facades\Schema::hasTable('role_user')) {
+            if (!app()->runningInConsole() || \Illuminate\Support\Facades\Schema::hasTable('model_has_roles')) {
                 app(\App\Services\Admin\EmployeeTypeRoleSyncer::class)->sync($user);
             }
         });

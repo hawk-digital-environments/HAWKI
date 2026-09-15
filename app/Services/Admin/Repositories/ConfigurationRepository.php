@@ -34,6 +34,7 @@ abstract class ConfigurationRepository extends ResourceRepository
 
         $data = Validator::make($values, $this->rules($id, $values))->validate();
         $original = $model->getRawOriginal();
+        $this->authorizeChanges($model, $data, $actor);
         $this->prepare($model, $data);
 
         foreach ($data as $key => $value) {
@@ -86,6 +87,10 @@ abstract class ConfigurationRepository extends ResourceRepository
      *
      * @param TModel $model
      */
+    protected function authorizeChanges(Model $model, array $data, \App\Models\User $actor): void
+    {
+    }
+
     protected function identity(Model $model): ?string
     {
         return null;

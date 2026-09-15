@@ -60,5 +60,16 @@ class AuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Replace Spatie's granting callback so account checks always run first.
+        // Unknown abilities and permission misses continue to resource policies.
+        \Illuminate\Support\Facades\Gate::before(static function (\App\Models\User $user, string $ability): ?bool {
+            $permissions = app(\App\Services\Admin\PermissionService::class);
+
+            if (!$permissions->isEligible($user)) {
+                return false;
+            }
+
+            return \App\Services\Admin\Permission::tryFrom($ability) && $permissions->has($user, $ability) ? true : null;
+        });
     }
 }
