@@ -9,6 +9,8 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useStore} from "$lib/app/hooks/useStore.svelte";
     import {isAiToolAvailableFor, knowledgeToolsOf} from "$plugins/core/stores/aiToolStoreData.js";
+    import {mockVectorDatabasesEnabled} from "$plugins/assistants/mocks/mockVectorDatabases.svelte.js";
+    import MockedVectorDatabases from "$plugins/assistants/mocks/MockedVectorDatabases.svelte";
 
     /**
      * The kernel's route renderer instantiates page components without passing
@@ -80,8 +82,13 @@
         {/if}
 
         <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
-        {#if availableKnowledgeTools.length > 0}
-            <KnowledgeBases tools={availableKnowledgeTools} />
+        <!-- Mock mode (VITE_MOCK_VECTOR_DATABASES): the mocked list fully
+             replaces the real knowledge-databases component; see
+             mocks/mockVectorDatabases.svelte.ts. -->
+        {#if mockVectorDatabasesEnabled}
+            <MockedVectorDatabases/>
+        {:else if availableKnowledgeTools.length > 0}
+            <KnowledgeBases tools={availableKnowledgeTools}/>
         {/if}
 
 

@@ -555,10 +555,10 @@ export class BuilderContext {
       }
       this.draft = { ...this.draft, requested_release_stage: this.draft.releaseStage };
       this.setToSession();
-      // A private draft is just saved; the other stages go through review, so
-      // say which of the two actually happened.
+      // Draft and private are applied right away; the other stages go through
+      // review, so say which of the two actually happened.
       this.toast.success(
-        this.draft.releaseStage === ReleaseMode.PRIVATE
+        this.draft.releaseStage === ReleaseMode.DRAFT || this.draft.releaseStage === ReleaseMode.PRIVATE
           ? this.translate("assistants.builder.publish.saved")
           : this.translate("assistants.builder.publish.submitted"),
       );
