@@ -90,7 +90,7 @@ class UserRepository extends ResourceRepository
 
             if (array_intersect_key($data, array_flip(['name', 'username', 'email', 'employeetype', 'password', 'password_confirmation']))) {
                 $this->permissions->authorize($actor, Permission::USERS_MANAGE);
-                $this->guard->assertGrantable($this->permissions->permissionsOf($user), $actor);
+                $this->guard->assertGrantable($this->permissions->assignedPermissionsOf($user), $actor);
             }
 
             if ($identity && !filled($user->local_password)) {
@@ -121,7 +121,7 @@ class UserRepository extends ResourceRepository
                     throw ValidationException::withMessages(['admin_disabled' => __('admin.errors.self_disable')]);
                 }
 
-                $this->guard->assertGrantable($this->permissions->permissionsOf($user), $actor);
+                $this->guard->assertGrantable($this->permissions->assignedPermissionsOf($user), $actor);
                 $user->forceFill(['admin_disabled' => $data['admin_disabled']])->save();
 
                 if ($data['admin_disabled']) {
@@ -148,16 +148,16 @@ class UserRepository extends ResourceRepository
 
     public function revokeTokens(User $actor, ?string $id): array
     {
-        app(\App\Services\Admin\PermissionService::class)->authorize($actor, \App\Services\Admin\Permission::USERS_MANAGE);
+        $this->permissions->authorize($actor, Permission::USERS_MANAGE);
         $user = User::withoutGlobalScopes()->findOrFail($id);
-        abort_if([] !== array_diff(app(\App\Services\Admin\PermissionService::class)->permissionsOf($user), app(\App\Services\Admin\PermissionService::class)->permissionsOf($actor)), 403);
+        abort_if([] !== array_diff($this->permissions->assignedPermissionsOf($user), $this->permissions->permissionsOf($actor)), 403);
 
         return ['revoked' => $user->tokens()->delete()];
     }
 
     public function tokens(User $actor, ?string $id): array
     {
-        app(\App\Services\Admin\PermissionService::class)->authorize($actor, \App\Services\Admin\Permission::USERS_MANAGE);
+        $this->permissions->authorize($actor, Permission::USERS_MANAGE);
 
         return ['tokens' => User::withoutGlobalScopes()->findOrFail($id)->tokens()->get(['id', 'name', 'created_at', 'last_used_at', 'expires_at'])->toArray()];
     }

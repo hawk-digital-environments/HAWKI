@@ -6,9 +6,9 @@
     import { tooltip } from '@tanstack/charts/tooltip';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
-    import type { AdminRow } from '../schemas/admin-content.js';
+    import type { AdminUsageResource } from '../schemas/resources/admin-usage.schema.js';
 
-    let { rows, group }: { rows: AdminRow[]; group: string } = $props();
+    let { rows, group }: { rows: AdminUsageResource[]; group: string } = $props();
     const app = useApp();
     const { __ } = useTranslator();
     const locale = $derived(app.localization.locale.lang.replace('_', '-'));
@@ -16,10 +16,10 @@
     const compactNumbers = $derived(new Intl.NumberFormat(locale, { notation: 'compact' }));
     const data = $derived(rows.slice(0, 31).map((row) => ({
         id: row.id,
-        label: String(row.label ?? ''),
-        prompt: Number(row.prompt_tokens ?? 0),
-        completion: Number(row.completion_tokens ?? 0),
-        total: Number(row.prompt_tokens ?? 0) + Number(row.completion_tokens ?? 0)
+        label: row.label,
+        prompt: row.prompt_tokens,
+        completion: row.completion_tokens,
+        total: row.prompt_tokens + row.completion_tokens
     })));
     const definition = $derived(defineChart({
         marks: [barX(data, {

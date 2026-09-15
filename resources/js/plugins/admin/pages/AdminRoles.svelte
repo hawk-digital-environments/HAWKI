@@ -6,18 +6,19 @@
     import AdminTable from '../components/AdminTable.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { type AdminField, type AdminRow } from '../schemas/admin-content.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminField } from '../schemas/admin-content.js';
+    import type { AdminRoleResource } from '../schemas/resources/admin-roles.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [
+    const columns: AdminColumn<AdminRoleResource>[] = [
         { id: 'name' },
         { id: 'slug' },
         { id: 'description' },
         { id: 'is_system', format: 'boolean' }
     ];
     // Built-in roles keep their slug; name, description and permissions stay editable.
-    const editFields = (row: AdminRow, fields: AdminField[]) =>
+    const editFields = (row: AdminRoleResource, fields: AdminField[]) =>
         row.is_system ? fields.map((field) => (field.key === 'slug' ? { ...field, immutable: true } : field)) : fields;
     const workspace = useAdminWorkspace(
         columns,

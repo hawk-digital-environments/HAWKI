@@ -31,6 +31,11 @@ abstract class ResourceController extends Controller
         unset($filters['page'], $filters['size'], $filters['sort'], $filters['direction']);
         $filters['page'] = $data['page']['number'] ?? 1;
         $filters['size'] = $data['page']['size'] ?? 25;
+        // The resources expose the `type` column as `kind`; sort and value filters arrive under that name.
+        if (\is_array($filters['where'] ?? null) && \array_key_exists('kind', $filters['where'])) {
+            $filters['where']['type'] = $filters['where']['kind'];
+            unset($filters['where']['kind']);
+        }
         if (isset($data['sort'])) {
             $filters['sort'] = ltrim($data['sort'], '-');
             if ('kind' === $filters['sort']) {

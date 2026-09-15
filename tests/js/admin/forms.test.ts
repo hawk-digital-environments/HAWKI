@@ -143,7 +143,10 @@ test('system prompts live in the system model form except for translation models
     assert.equal(translationControl.disabled, true);
     assert.equal(translationControl.hint, 'admin.system_prompt_not_used');
     assert.deepEqual(createDraft([prompts], null), { prompts: {} });
-    assert.equal(schema.safeParse({ prompts: { en_US: 'Summarize this chat.', de_DE: 'Fasse den Chat zusammen.' } }).success, true);
+    assert.equal(
+        schema.safeParse({ prompts: { en_US: 'Summarize this chat.', de_DE: 'Fasse den Chat zusammen.' } }).success,
+        true
+    );
     assert.equal(schema.safeParse({ prompts: { en_US: 'x'.repeat(100001) } }).success, false);
     assert.equal(schema.safeParse({ prompts: { fr_FR: 'Résume cette discussion.' } }).success, false);
 });
@@ -185,15 +188,15 @@ test('MCP validates transport URLs and typed configuration', () => {
     const schema = editorSchema('mcp', fields, null);
     const values = {
         server_label: 'Local',
-        type: 'stdio',
+        kind: 'stdio',
         url: '/usr/bin/server',
         require_approval: 'always',
         additional_config: { args: ['--verbose'], env: { TOKEN: 'test' } },
         timeouts: { read: 0.1, connect: 120 }
     };
     assert.equal(schema.safeParse(values).success, true);
-    assert.equal(schema.safeParse({ ...values, type: 'http' }).success, false);
-    assert.equal(schema.safeParse({ ...values, type: 'http', url: 'https://example.test/mcp' }).success, true);
+    assert.equal(schema.safeParse({ ...values, kind: 'http' }).success, false);
+    assert.equal(schema.safeParse({ ...values, kind: 'http', url: 'https://example.test/mcp' }).success, true);
     assert.equal(schema.safeParse({ ...values, timeouts: { read: 121 } }).success, false);
     assert.equal(schema.safeParse({ ...values, additional_config: { headers: { Authorization: 5 } } }).success, false);
 });
@@ -219,7 +222,7 @@ test('user forms only require fields permitted by the server and reject invalid 
 test('announcement schema rejects date order, empty publication and targeted policies', () => {
     const names = [
         'title',
-        'type',
+        'kind',
         'is_published',
         'is_global',
         'is_forced',
@@ -236,7 +239,7 @@ test('announcement schema rejects date order, empty publication and targeted pol
     );
     const valid = {
         title: 'News',
-        type: 'news',
+        kind: 'news',
         is_published: true,
         is_global: false,
         is_forced: false,
@@ -246,7 +249,7 @@ test('announcement schema rejects date order, empty publication and targeted pol
     assert.equal(schema.safeParse(valid).success, true);
     for (const value of [
         { ...valid, content: { en_US: ' ' } },
-        { ...valid, type: 'policy' },
+        { ...valid, kind: 'policy' },
         { ...valid, starts_at: '2026-10-02', expires_at: '2026-10-01' }
     ])
         assert.equal(schema.safeParse(value).success, false);
@@ -302,12 +305,22 @@ test('all formerly JSON configuration fields have structured controls', () => {
             const control = controlFor(
                 section,
                 field(key, 'json'),
-                { adapter_key: 'openai_azure', type: 'http' },
+                { adapter_key: 'openai_azure', kind: 'http' },
                 null
             );
             assert.ok(['object', 'multi', 'pricing'].includes(control.type));
         }
     }
+});
+
+test('MCP connection settings follow the transport kind of the draft', () => {
+    const config = field('additional_config', 'json');
+    const stdio = controlFor('mcp', config, { kind: 'stdio' }, null);
+    const http = controlFor('mcp', config, { kind: 'http' }, null);
+    assert.equal(stdio.type, 'object');
+    assert.equal(http.type, 'object');
+    assert.deepEqual(Object.keys(stdio.type === 'object' ? (stdio.fields ?? {}) : {}), ['args', 'env']);
+    assert.deepEqual(Object.keys(http.type === 'object' ? (http.fields ?? {}) : {}), ['headers', 'http_options']);
 });
 
 test('draft cloning supports reactive row proxies', () => {
