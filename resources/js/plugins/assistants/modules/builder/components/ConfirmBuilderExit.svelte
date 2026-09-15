@@ -1,12 +1,26 @@
 <!--
-  @component Draft-exit guard for the assistant builder. While the assistant
-  being edited is still an unreleased draft, any navigation leaving the
-  builder's routes is intercepted (via the router's navigation-guard API) and
-  the user is asked to keep the draft (saved, visible under "Entwürfe"),
-  discard it (permanently deleted), or continue editing. Both exits redirect
-  to the drafts overview — as the guard's verdict, so the router performs the
-  redirect itself; this component never navigates (and never has to suppress
-  its own guard to do so).
+  @component Exit guard for the assistant builder. Any navigation leaving the
+  builder's routes is intercepted (via the router's navigation-guard API) and,
+  when the session has something undecided, the user is asked what should
+  happen to their work before they go.
+
+  What "discard" means depends on where the session came from — see
+  `BuilderContext.ownsDraftRecord`:
+
+  - **create / remix** mint a brand-new record. Leaving without a decision
+    would strand it in the user's drafts, so the exit is always confirmed and
+    discarding *deletes* the record.
+  - **edit** opened an assistant that already existed (possibly a published
+    one), so deleting it is never on the table. The exit is only confirmed
+    when this session actually changed something, and discarding *reverts*
+    those changes — the assistant goes back to how it was when the builder
+    opened it (`BuilderContext.revertToSessionOrigin`).
+
+  The guard never redirects: it only decides whether the navigation may
+  proceed. Where "leaving the builder" goes is the sidebar's "Zurück" row to
+  choose (it returns to the page the builder was opened from), which keeps a
+  deliberate navigation elsewhere — the module selector, say — going where
+  the user actually pointed it.
 
   Router guards can only cover in-app navigation. Hard document exits —
   editing the address bar, reload, tab close — are deliberately not
@@ -21,10 +35,10 @@
 -->
 <script lang="ts">
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
+    import {clearBuilderReturnPath} from '$plugins/assistants/modules/builder/contexts/builderReturn.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {ReleaseMode} from '$plugins/assistants/types/assistant/ReleaseMode';
     import {ApiError} from '$plugins/assistants/api/errors';
     import ExitDraftDialog from '$plugins/assistants/modules/builder/components/ExitDraftDialog.svelte';
 
@@ -40,22 +54,33 @@
         return path === builderBasePath || path.startsWith(builderBasePath + '/');
     }
 
-    /** Whether the builder session holds an unreleased draft whose exit
-     *  needs confirming — the state half of the decision; the router guard
-     *  adds the path-aware half. */
+    /** Whether the builder session has something undecided whose exit needs
+     *  confirming — the state half of the decision; the router guard adds the
+     *  path-aware half. */
     function shouldConfirmExit(): boolean {
-        // A discarded session has nothing left to decide about.
-        if (builder.isDiscarded) {
+        // Nothing left to decide: the record is already gone, or the user
+        // committed this session's outcome from the Publish tab.
+        if (builder.isDiscarded || builder.isCommitted) {
             return false;
         }
-        // Not a session still initializing, and not an already-released
-        // assistant — private and up is a saved, complete record whose
-        // edits autosave.
+        // Not a session still initializing.
         if (builder.loading || builder.mode === "init" || !builder.draft.id) {
             return false;
         }
-        return builder.draft.releaseStage === ReleaseMode.DRAFT;
+        // create / remix minted the record; leaving without a decision would
+        // strand it in the user's drafts.
+        if (builder.ownsDraftRecord) {
+            return true;
+        }
+        // edit opened an assistant that already existed — only worth asking
+        // about when this session actually changed it.
+        return builder.hasSessionChanges;
     }
+
+    /** Which decision the user is being asked to make — see the component
+     *  comment: a new record can be thrown away, an existing one can only
+     *  have this session's changes rolled back. */
+    const dialogVariant = $derived(builder.ownsDraftRecord ? 'draft' : 'changes');
 
     /** The user's answer once the dialog (and any keep/discard work behind
      *  it) has settled: leave having kept the draft, leave having discarded
@@ -107,16 +132,34 @@
         return 'keep';
     }
 
-    /** Discard: permanently delete the draft. A failed delete settles as
-     *  "stay" — the draft still exists, so the user must not be navigated
-     *  away from an assistant they meant to delete. */
-    async function discardDraft(): Promise<ExitDecision> {
+    /**
+     * Discard: for a record this session minted, delete it permanently; for
+     * an existing assistant, roll this session's changes back instead.
+     *
+     * Either failure settles as "stay" — the record still exists (or still
+     * carries the unwanted changes), so the user must not be navigated away
+     * believing it was dealt with.
+     */
+    async function discardSession(): Promise<ExitDecision> {
         exitBusy = true;
         try {
-            await builder.discardDraft();
+            if (builder.ownsDraftRecord) {
+                await builder.discardDraft();
+            } else {
+                await builder.revertToSessionOrigin();
+                if (builder.isDirty) {
+                    // The save pipeline already reported why it couldn't
+                    // write (toast / inline field error).
+                    toast.error(__('assistants.builder.exit_dialog.revert_failed'));
+                    return 'stay';
+                }
+            }
         } catch (err) {
             const apiErr = ApiError.from(err);
-            toast.error(`${__('assistants.builder.exit_dialog.discard_failed')} ${apiErr.userMessage}`);
+            const message = builder.ownsDraftRecord
+                ? __('assistants.builder.exit_dialog.discard_failed')
+                : __('assistants.builder.exit_dialog.revert_failed');
+            toast.error(`${message} ${apiErr.userMessage}`);
             return 'stay';
         } finally {
             exitBusy = false;
@@ -131,31 +174,31 @@
     }
 
     async function chooseDiscard(): Promise<void> {
-        settleExit(await discardDraft());
+        settleExit(await discardSession());
     }
 
     // Registered for this component's lifetime: $effect's cleanup return
     // unregisters the guard when the builder layout unmounts.
     $effect(() => {
         return router.registerNavigationGuard(async ({to, from}) => {
-            // Only real exits of the builder need the decision: not
-            // entering it, not navigating within it, not a session without
-            // an unreleased draft (see shouldConfirmExit).
-            if (!isBuilderPath(from) || isBuilderPath(to) || !shouldConfirmExit()) {
+            // Only real exits of the builder need the decision: not entering
+            // it, and not navigating within it.
+            if (!isBuilderPath(from) || isBuilderPath(to)) {
                 return true;
             }
-            const decision = await askUser();
-            if (decision === 'stay') {
-                return false;
+            if (shouldConfirmExit()) {
+                const decision = await askUser();
+                if (decision === 'stay') {
+                    return false;
+                }
             }
-            // Both exits land on the drafts overview — the kept or discarded
-            // draft is what the user will want to see next — rather than
-            // wherever the intercepted navigation was headed (usually the
-            // store). `replace`: the intercepted history entry never
-            // rendered anything, so back from the drafts skips over it and
-            // lands on the builder — the same history shape a veto's
-            // pull-back would have left.
-            return {to: 'assistants.dashboard.drafts', replace: true};
+            // The session is over: the origin it remembered belongs to it and
+            // must not be inherited by the next one. Whoever started this
+            // navigation already resolved where it goes (the sidebar's
+            // "Zurück" row reads the origin itself), so the guard just lets
+            // it through rather than redirecting somewhere of its own.
+            clearBuilderReturnPath();
+            return true;
         });
     });
 </script>
@@ -163,6 +206,7 @@
 <ExitDraftDialog
     bind:open={exitDialogOpen}
     busy={exitBusy}
+    variant={dialogVariant}
     onKeep={chooseKeep}
     onDiscard={chooseDiscard}
     onDismiss={() => settleExit('stay')}

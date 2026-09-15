@@ -1,9 +1,15 @@
 <!--
-  @component Decision shown when the user leaves the builder while the
-  assistant is still an unreleased draft: keep the draft (saved, visible
-  under "Entwürfe") or discard it (permanently deleted). Escape and
-  outside clicks dismiss the dialog, meaning "neither — continue editing"
-  (stay in the builder); both are reported through onDismiss.
+  @component Decision shown when the user leaves the builder with something
+  undecided. Which decision depends on `variant`:
+
+  - `'draft'` — the session minted the assistant (create / remix): keep it
+    (saved, visible under "Entwürfe") or discard it (permanently deleted).
+  - `'changes'` — the session edited an assistant that already existed: keep
+    this session's changes or roll them back to how the assistant was when
+    the builder opened it. The assistant itself is never deleted here.
+
+  Escape and outside clicks dismiss the dialog, meaning "neither — continue
+  editing" (stay in the builder); both are reported through onDismiss.
 
   The owner controls `open` entirely: this component never closes itself
   (on keep/discard the owner settles the decision once its work is done —
@@ -24,9 +30,11 @@
         open?: boolean;
         /** Disables the actions and close requests while a keep/discard request is in flight. */
         busy?: boolean;
-        /** Keep the draft: save pending edits, then leave the builder. */
+        /** Which decision to present — see the component comment. */
+        variant?: 'draft' | 'changes';
+        /** Keep: save pending edits, then leave the builder. */
         onKeep?: () => unknown | Promise<unknown>;
-        /** Discard the draft: permanently delete it, then leave the builder. */
+        /** Discard: delete the draft (`'draft'`) or roll the session's changes back (`'changes'`), then leave. */
         onDiscard?: () => unknown | Promise<unknown>;
         /** Dismissed via Escape or an outside click: continue editing in the builder. */
         onDismiss?: () => void;
@@ -35,10 +43,29 @@
     let {
         open = $bindable(false),
         busy = false,
+        variant = 'draft',
         onKeep,
         onDiscard,
         onDismiss
     }: Props = $props();
+
+    /** Each variant's copy, resolved together so the markup below stays one
+     *  set of slots rather than branching per string. */
+    const t = $derived(
+        variant === 'changes'
+            ? {
+                title: __('assistants.builder.exit_dialog.changes_title'),
+                description: __('assistants.builder.exit_dialog.changes_description'),
+                keep: __('assistants.builder.exit_dialog.changes_keep'),
+                discard: __('assistants.builder.exit_dialog.changes_discard')
+            }
+            : {
+                title: __('assistants.builder.exit_dialog.title'),
+                description: __('assistants.builder.exit_dialog.description'),
+                keep: __('assistants.builder.exit_dialog.keep'),
+                discard: __('assistants.builder.exit_dialog.discard')
+            }
+    );
 
     function handleOpenChange(isOpen: boolean): void {
         if (!isOpen && busy) {
@@ -54,17 +81,17 @@
 <Dialog
     {open}
     onOpenChange={handleOpenChange}
-    title={__('assistants.builder.exit_dialog.title')}
-    description={__('assistants.builder.exit_dialog.description')}
+    title={t.title}
+    description={t.description}
     closable={false}
     contentProps={{class: 'exit-draft-dialog-content'}}
 >
     {#snippet footer()}
         <Button variant="delete" size="sm" disabled={busy} onclick={onDiscard}>
-            {__('assistants.builder.exit_dialog.discard')}
+            {t.discard}
         </Button>
         <Button variant="fill" size="sm" disabled={busy} autofocus onclick={onKeep}>
-            {__('assistants.builder.exit_dialog.keep')}
+            {t.keep}
         </Button>
     {/snippet}
 </Dialog>

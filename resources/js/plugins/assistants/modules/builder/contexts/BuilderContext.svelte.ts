@@ -67,6 +67,7 @@ import {
 
 import { BuilderValidatorContext } from "./BuilderValidatorContext.svelte.js";
 import { clone, valuesEqual, IDENTITY_KEYS, getMaxOutputTokensLimit } from "./builderUtils.js";
+import { rememberBuilderReturnPath } from "./builderReturn.js";
 import { ApiError } from "$plugins/assistants/api/errors";
 import type {ToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
 import {useStore} from "$lib/app/hooks/useStore.svelte";
@@ -101,8 +102,12 @@ type BuilderIntent =
  * the builder layout's own `onMount`, a valid place) picks it up via
  * {@link consumeBuilderIntent}.
  */
-export function requestBuilderIntent(intent: BuilderIntent): void {
+export function requestBuilderIntent(intent: BuilderIntent, origin?: string): void {
   sessionStorage.setItem(INTENT_STORAGE_KEY, JSON.stringify(intent));
+  // Where the user is right now, so leaving the builder can return them
+  // there (see `builderReturn.ts`). An entry point with no origin — the
+  // sidebar's "Erstellen" — clears it instead.
+  rememberBuilderReturnPath(origin ?? null);
 }
 
 function consumeBuilderIntent(): BuilderIntent | null {
@@ -134,6 +139,17 @@ export class BuilderContext {
   draft = $state<Assistant>(createEmptyAssistant());
   baseline = $state<Assistant>(createEmptyAssistant());
 
+  /**
+   * The assistant exactly as this session opened it.
+   *
+   * Distinct from {@link baseline}, which tracks the last *saved* state and
+   * therefore absorbs every autosaved edit as it lands ({@link commitKeys}) —
+   * by the time the user leaves, `baseline` has drifted to match `draft` and
+   * no longer remembers what they started from. This one stays put for the
+   * session's lifetime, and is what {@link revertToSessionOrigin} restores.
+   */
+  sessionOrigin = $state<Assistant>(createEmptyAssistant());
+
   mode = $state<BuilderMode>("create");
 
   /** True while `startNew()` is waiting on the server to mint the record. */
@@ -154,6 +170,18 @@ export class BuilderContext {
    *  deleted — e.g. the exit confirmation never needs to ask again. */
   get isDiscarded(): boolean {
     return this.discarded;
+  }
+
+  /** Set once the user saved/published from the Publish tab — see {@link isCommitted}. */
+  private committed = false;
+
+  /**
+   * Whether the user has explicitly committed this session's outcome via the
+   * Publish tab. The exit confirmation then has nothing left to ask: they
+   * already said what should happen to the assistant.
+   */
+  get isCommitted(): boolean {
+    return this.committed;
   }
 
   /** Serializes `updateServer`: an in-flight save plus a "run again" flag so
@@ -260,8 +288,61 @@ export class BuilderContext {
     this.mode = mode;
     this.draft = clone(assistant);
     this.baseline = clone(assistant);
+    this.sessionOrigin = clone(assistant);
     this.setToSession();
     this.validator.init(this.draft);
+  }
+
+  /**
+   * Whether this session minted the record it is working on. A create starts
+   * from a fresh empty assistant and a remix from a server-side clone — both
+   * are new records nobody has seen yet, so discarding one means deleting it
+   * ({@link discardDraft}). An edit opened a record that already existed —
+   * possibly published — which must never be deleted on the way out; its
+   * discard reverts instead ({@link revertToSessionOrigin}).
+   */
+  get ownsDraftRecord(): boolean {
+    return this.mode === "create" || this.mode === "remix";
+  }
+
+  /**
+   * Whether anything has changed since this session opened the assistant —
+   * including edits already autosaved, which {@link isDirty} (draft vs. last
+   * save) no longer reports. Used to decide whether leaving an edit session
+   * is worth confirming at all.
+   */
+  readonly hasSessionChanges = $derived.by(() => {
+    for (const key of Object.keys(this.draft) as (keyof Assistant)[]) {
+      if (IDENTITY_KEYS.has(key)) continue;
+      if (!valuesEqual(this.draft[key], this.sessionOrigin[key])) return true;
+    }
+    return false;
+  });
+
+  /**
+   * Puts the assistant back the way this session found it, on the server.
+   *
+   * Reuses the ordinary save pipeline rather than adding a second write path:
+   * restoring the session-start snapshot over the draft makes every field the
+   * user touched read as "changed" again — in the opposite direction — so
+   * {@link flushSave} sends exactly the requests needed to undo them
+   * (settings, starter prompts, avatar and the main PATCH alike).
+   *
+   * Never rejects; like {@link flushSave} a failure is reported by the
+   * pipeline itself, and callers check {@link isDirty} to see whether the
+   * revert actually landed.
+   */
+  async revertToSessionOrigin(): Promise<void> {
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+    this.draft = clone(this.sessionOrigin);
+    this.validator.clearError(
+      ...(Object.keys(this.draft) as (keyof Assistant)[]),
+    );
+    this.setToSession();
+    await this.flushSave();
   }
 
   readonly changedKeys = $derived.by(() => {
@@ -512,6 +593,7 @@ export class BuilderContext {
         return;
       }
       this.draft = { ...this.draft, requested_release_stage: this.draft.releaseStage };
+      this.committed = true;
       this.setToSession();
       // A private draft is just saved; the other stages go through review, so
       // say which of the two actually happened.
@@ -584,6 +666,7 @@ export class BuilderContext {
         JSON.stringify({
           draft: this.draft,
           baseline: this.baseline,
+          sessionOrigin: this.sessionOrigin,
           mode: this.mode,
         }),
       );
@@ -596,13 +679,17 @@ export class BuilderContext {
     try {
       const raw = sessionStorage.getItem(this.STORAGE_KEY);
       if (!raw) return false;
-      const { draft, baseline, mode } = JSON.parse(raw) as {
+      const { draft, baseline, sessionOrigin, mode } = JSON.parse(raw) as {
         draft: Assistant;
         baseline: Assistant;
+        sessionOrigin?: Assistant;
         mode: BuilderMode;
       };
       this.draft = draft;
       this.baseline = baseline;
+      // Sessions stored before the snapshot existed fall back to the last
+      // saved state — the closest thing to an origin still on record.
+      this.sessionOrigin = sessionOrigin ?? clone(baseline);
       this.mode = mode;
       this.validator.init(baseline);
       return true;

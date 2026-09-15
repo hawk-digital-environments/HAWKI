@@ -16,6 +16,7 @@
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte.js';
+    import {builderReturnPath} from '$plugins/assistants/modules/builder/contexts/builderReturn.js';
     import {useSidebarContext} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import {assistantHandlesStore} from '$plugins/assistants/stores/AssistantHandlesStore.svelte.js';
     import {drillTransition} from '$lib/utils/transitions/drillTransition';
@@ -74,9 +75,18 @@
         }
     }
 
-    /** Drill back out of the builder to the assistant dashboard. */
+    /**
+     * Drill back out of the builder, to the page it was opened from — the
+     * assistant's detail page, the drafts list, wherever the user hit "Edit"
+     * or "Remix". Entering via "Erstellen" remembers no origin (there is no
+     * assistant to go back to), so that falls back to the drafts list, where
+     * the freshly created assistant now lives.
+     *
+     * The exit confirmation runs on top of this as a router navigation guard
+     * (see `ConfirmBuilderExit`), which can still cancel the navigation.
+     */
     function exitBuilder() {
-        router.goToRoute('assistants.dashboard.store');
+        router.goTo(builderReturnPath() ?? router.getPath('assistants.dashboard.drafts'));
     }
 </script>
 

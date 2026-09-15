@@ -60,7 +60,10 @@
     }
 
     const {params = {}}: Props = $props();
-    const {goToRoute} = useRouter();
+    // The handle is kept (not just `goToRoute` destructured off it) because
+    // `path` is a live getter — the builder needs it read at click time.
+    const router = useRouter();
+    const {goToRoute} = router;
 
     const toast = useToastContext();
 
@@ -149,13 +152,13 @@
      */
     const startRemix = async () => {
         if (!assistant?.id) return;
-        requestBuilderIntent({type: "remix", id: assistant.id});
+        requestBuilderIntent({type: "remix", id: assistant.id}, router.path);
         await goToRoute("assistants.builder.general");
     };
 
     const startEdit = async () => {
         if (!assistant?.id) return;
-        requestBuilderIntent({type: "edit", id: assistant.id});
+        requestBuilderIntent({type: "edit", id: assistant.id}, router.path);
         await goToRoute("assistants.builder.general");
     };
 

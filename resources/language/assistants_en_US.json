@@ -163,7 +163,12 @@
                 "keep": "Keep draft",
                 "discard": "Discard draft",
                 "keep_failed": "The draft could not be saved. Please check your input and try again.",
-                "discard_failed": "The draft could not be discarded."
+                "discard_failed": "The draft could not be discarded.",
+                "changes_title": "Discard changes?",
+                "changes_description": "You have changed this assistant. Keep your changes, or discard them and restore it to how it was?",
+                "changes_keep": "Keep changes",
+                "changes_discard": "Discard changes",
+                "revert_failed": "Your changes could not be discarded."
             },
             "general": {
                 "title": "General information",

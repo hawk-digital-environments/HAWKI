@@ -163,7 +163,12 @@
                 "keep": "Entwurf behalten",
                 "discard": "Entwurf verwerfen",
                 "keep_failed": "Der Entwurf konnte nicht gespeichert werden. Bitte prüfe deine Eingaben und versuche es erneut.",
-                "discard_failed": "Der Entwurf konnte nicht verworfen werden."
+                "discard_failed": "Der Entwurf konnte nicht verworfen werden.",
+                "changes_title": "Änderungen verwerfen?",
+                "changes_description": "Du hast diesen Assistenten geändert. Möchtest du deine Änderungen behalten oder verwerfen und den vorherigen Stand wiederherstellen?",
+                "changes_keep": "Änderungen behalten",
+                "changes_discard": "Änderungen verwerfen",
+                "revert_failed": "Deine Änderungen konnten nicht verworfen werden."
             },
             "general": {
                 "title": "Allgemeine Informationen",
