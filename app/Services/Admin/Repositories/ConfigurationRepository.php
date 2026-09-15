@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Admin\Repositories;
 
 use App\Casts\Contracts\CastableInstanceInterface;
+use App\Services\Admin\DeletedRecords;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +34,7 @@ abstract class ConfigurationRepository extends ResourceRepository
 
         $data = Validator::make($values, $this->rules($id, $values))->validate();
         $original = $model->getRawOriginal();
+        $this->authorizeChanges($model, $data, $actor);
         $this->prepare($model, $data);
 
         foreach ($data as $key => $value) {
@@ -56,6 +58,11 @@ abstract class ConfigurationRepository extends ResourceRepository
         $model->save();
         $this->saved($model, $data, $original);
 
+        // Creating a record in Administration ends the deletion that may have kept imports from restoring it.
+        if (null !== ($identity = $this->identity($model))) {
+            app(DeletedRecords::class)->forget(static::RESOURCE, $identity);
+        }
+
         return (int) $model->getKey();
     }
 
@@ -65,7 +72,28 @@ abstract class ConfigurationRepository extends ResourceRepository
         abort_if(false === ($definition['delete'] ?? true), 405);
         $model = $definition['model']::withoutGlobalScopes()->lockForUpdate()->findOrFail($id);
         $this->deleting($model);
+        $identity = $this->identity($model);
         $model->delete();
+
+        // Deployment files may still list the record; the import must not bring it back.
+        if (null !== $identity) {
+            app(DeletedRecords::class)->record(static::RESOURCE, $identity, (int) $actor->id);
+        }
+    }
+
+    /**
+     * The key deployment files identify this record by, or null when imports never recreate it.
+     * Used to remember deletions across config imports, see {@see DeletedRecords}.
+     *
+     * @param TModel $model
+     */
+    protected function authorizeChanges(Model $model, array $data, \App\Models\User $actor): void
+    {
+    }
+
+    protected function identity(Model $model): ?string
+    {
+        return null;
     }
 
     protected function rules(?int $id, array $values): array

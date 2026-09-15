@@ -1,19 +1,21 @@
-import type {HawkiPlugin} from '$lib/kernel/plugins/types.js';
-import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
-import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
+import type { HawkiPlugin } from '$lib/kernel/plugins/types.js';
+import type { ModuleRegistrar } from '$lib/kernel/modules/moduleRegistrar.js';
+import type { ResourceSchemaRegistrar } from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
 import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
 import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
 import AdminSidebar from './components/AdminSidebar.svelte';
-import {AdminModule} from './AdminModule.js';
+import { AdminModule } from './AdminModule.js';
 
 export default class AdminPlugin implements HawkiPlugin {
     readonly name = 'admin';
 
-    modules({add}: ModuleRegistrar) { add(new AdminModule()); }
+    modules({ add }: ModuleRegistrar) {
+        add(new AdminModule());
+    }
 
     resourceSchemas(registrar: ResourceSchemaRegistrar) {
-        registrar.addFromModules(import.meta.glob('./schemas/*.schema.ts', {eager: true}));
+        registrar.addFromModules(import.meta.glob('$lib/plugins/admin/schemas/resources/*.schema.ts', { eager: true }));
     }
 
     /**

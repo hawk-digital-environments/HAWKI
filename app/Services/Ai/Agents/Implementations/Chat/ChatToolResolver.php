@@ -9,6 +9,7 @@ use App\Services\Ai\Agents\Exceptions\InvalidToolTransferStringException;
 use App\Services\Ai\Agents\Implementations\Chat\Values\ToolTransferData;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Models\Capabilities\AiModelCapabilityRegistry;
+use App\Services\Ai\Tools\Exceptions\ToolAccessException;
 use App\Services\Ai\Tools\LaravelAi\LaravelToolResolver;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Providers\Tools\ProviderTool;
@@ -80,8 +81,8 @@ readonly class ChatToolResolver
     /**
      * Resolves a capability transfer string to the appropriate tool implementation.
      *
-     * The `auto` inner-tool keyword checks whether the model declares native support for the
-     * capability; if so, the provider's native tool is preferred over a HAWKI MCP/PHP tool.
+     * The `auto` inner-tool keyword checks whether the provider's native implementation is both
+     * granted and usable for this model; if so, it is preferred over a HAWKI MCP/PHP tool.
      * The `native` keyword forces the provider's own implementation regardless of model flags.
      * Any other inner-tool value is treated as an explicit HAWKI tool name.
      */
@@ -101,18 +102,24 @@ readonly class ChatToolResolver
 
         $innerTool = $toolData->innerTool;
         if ($innerTool === 'auto') {
-            if ($context->model->native_capabilities->has($capability->key)) {
+            $nativeFailure = $this->laravelToolResolver->nativeResolutionFailure($capability->key, $context);
+            if ($nativeFailure === null) {
                 return $this->laravelToolResolver->resolveNativeToolForCapability($capability->key, $context, $toolData->settings);
             }
 
-            return $this->laravelToolResolver->resolveToolForCapability($capability->key, $context, $toolData->settings);
+            try {
+                return $this->laravelToolResolver->resolveToolForCapability($capability->key, $context, $toolData->settings);
+            } catch (ToolAccessException $toolFailure) {
+                // Only a grant failure on *every* path is a denial; anything else is a configuration problem.
+                throw LaravelToolResolver::preferredFailure($nativeFailure, $toolFailure);
+            }
         }
 
         if ($toolData->innerTool === 'native') {
             return $this->laravelToolResolver->resolveNativeToolForCapability($capability->key, $context, $toolData->settings);
         }
 
-        return $this->laravelToolResolver->resolveToolByName($toolData->innerTool, $context, $toolData->settings);
+        return $this->laravelToolResolver->resolveToolByName($toolData->innerTool, $context, $toolData->settings, $capability->key);
     }
 
     private function findToolByName(

@@ -5,6 +5,11 @@ namespace App\Services\Ai\Agents\Exceptions;
 
 class InvalidToolTransferStringException extends \InvalidArgumentException implements AgentExceptionInterface
 {
+    public function render(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(['message' => 'The selected tool is currently unavailable.', 'code' => 'TOOL_UNAVAILABLE'], 422);
+    }
+
     public static function forNotAString(): self
     {
         return new self('Tool transfer strings must be an array of strings.');

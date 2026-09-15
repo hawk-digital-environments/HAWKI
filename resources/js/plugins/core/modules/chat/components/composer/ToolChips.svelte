@@ -32,6 +32,7 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
+    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
 
     const {__} = useTranslator();
 
@@ -161,7 +162,9 @@
 </script>
 
 {#snippet chip(tool: typeof tools[number], index: number, measuring = false)}
-    {@const incompatible = !tool.isAvailableFor(composerContext.model.current)}
+    {@const availability = toolAvailabilityFor(tool, composerContext.model.current)}
+    {@const incompatible = availability !== 'available'}
+    {@const availabilityLabel = availability === 'offline' ? __('chat.composer.statusDot.tool.offlineLabel') : availability === 'model-incompatible' ? __('chat.composer.statusDot.tool.notSupportedLabel', {model: composerContext.model.current?.label ?? ''}) : ''}
     <button
         class="tool-chip"
         class:incompatible
@@ -169,12 +172,13 @@
         tabindex={measuring ? -1 : 0}
         aria-hidden={measuring}
         data-tool-chip={measuring ? undefined : ''}
+        data-capability={tool.capability_key ?? undefined}
         onclick={() => onChipClick(tool)}
         onkeydown={(event) => onChipKeydown(event, tool, index)}
-        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName})}
+        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName}) + (availabilityLabel ? `, ${availabilityLabel}` : '')}
     >
         <ToolIcon tool={tool} size={16}/>
-        <span class="tool-chip-label">{tool.displayName}</span>
+        <span class="tool-chip-label">{tool.displayName}{availabilityLabel ? ` (${availabilityLabel})` : ''}</span>
         <span class="tool-chip-remove" aria-hidden="true"><Cancel01Icon size={16}/></span>
     </button>
 {/snippet}
@@ -272,6 +276,11 @@
         white-space: nowrap;
     }
 
+    .tool-chip-badge {
+        font-variant-numeric: tabular-nums;
+        font-weight: var(--font-weight-medium, 500);
+    }
+
     /* Held back so it stays subordinate to the tool name, coming forward when the
        pointer is anywhere on the chip — the whole pill is the remove control, but the
        X is the only part that reacts. */
@@ -293,14 +302,17 @@
         }
     }
 
-    .tool-chip-badge {
-        font-variant-numeric: tabular-nums;
-        font-weight: var(--font-weight-medium, 500);
+    .tool-chip[data-capability] {
+        background-color: var(--capability-surface);
+        color: var(--capability-color);
+    }
+
+    .tool-chip[data-capability]:hover {
+        background-color: var(--capability-surface-hover);
     }
 
     .tool-chip.incompatible {
         background-color: color-mix(in oklab, var(--color-error) 12%, var(--color-surface-raised));
         color: var(--color-error);
     }
-
 </style>

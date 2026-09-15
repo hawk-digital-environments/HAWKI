@@ -134,46 +134,57 @@ async function onSendMessageToRoom(payload) {
         return;
     }
 
+    if (!payload.authorization.validate()) return;
+
     let plainContent = {
         text: payload.message
     };
 
     let inputText = String(escapeHTML(payload.message));
 
-    payload.waitForResponse(async (res) => {
-        const roomKeys = window.userKeychain.roomKeys[activeRoom.slug] || null;
-        const roomKey = roomKeys ? roomKeys.roomKey : null;
-        const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
+    const roomKeys = window.userKeychain.roomKeys[activeRoom.slug] || null;
+    const roomKey = roomKeys ? roomKeys.roomKey : null;
+    const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
 
-        // Build attachments array for legacy format
-        const attachments = payload.attachments
-            .map(file => payload.status.getFileUuid(file))
-            .filter(uuid => uuid !== null)
-        ;
+    // Build attachments array for legacy format
+    const attachments = payload.attachments
+        .map(file => payload.status.getFileUuid(file))
+        .filter(uuid => uuid !== null)
+    ;
 
-        const messageObj = {
-            'content': {
-                'text': {
-                    'ciphertext': cryptoMsg.ciphertext,
-                    'iv': cryptoMsg.iv,
-                    'tag': cryptoMsg.tag
-                },
-                'attachments': attachments
+    const messageObj = {
+        'content': {
+            'text': {
+                'ciphertext': cryptoMsg.ciphertext,
+                'iv': cryptoMsg.iv,
+                'tag': cryptoMsg.tag
             },
-            'threadId': activeThreadIndex
-        };
+            'attachments': attachments
+        },
+        'threadId': activeThreadIndex
+    };
 
-        const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`, plainContent);
-        submittedObj.content.text = inputText;
-        submittedObj.filteredContent = detectMentioning(inputText);
+    if (!payload.authorization.validate()) return;
+    const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`, plainContent);
+    payload.status.markAccepted();
+    if (!payload.authorization.validate()) return;
+    submittedObj.content.text = inputText;
+    submittedObj.filteredContent = detectMentioning(inputText);
 
-        addMessageToChatlog(submittedObj, false, false);
+    addMessageToChatlog(submittedObj, false, false);
 
+    if (!payload.authorization.validate()) return;
+    let aiKeyBase64;
+    if (payload.containsAiHandle) {
+        const aiKey = (window.userKeychain.roomKeys[activeRoom.slug] || {}).aiKey;
+        const aiKeyRaw = await exportSymmetricKey(aiKey);
+        aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
+    }
+    if (!payload.authorization.validate()) return;
+
+
+    payload.waitForResponse(async (res) => {
         if (payload.containsAiHandle) {
-            const aiKey = (window.userKeychain.roomKeys[activeRoom.slug] || {}).aiKey;
-            const aiKeyRaw = await exportSymmetricKey(aiKey);
-            const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
-
             const msgAttributes = {
                 'threadIndex': activeThreadIndex,
                 'broadcasting': true,
@@ -182,8 +193,9 @@ async function onSendMessageToRoom(payload) {
                 'stream': false,
                 'model': payload.model.model_id,
                 'assistantHandle': payload.assistantHandle ?? null,
+                'authorization': payload.authorization,
                 'metadata': {
-                    'tools': payload.tools.map(tool => tool.toTransferString()),
+                    'tools': payload.toolTransfers,
                     'params': payload.parameters
                 }
             };
@@ -196,8 +208,7 @@ async function onSendMessageToRoom(payload) {
                     }
                 },
                 (e) => {
-                    res.triggerError(e);
-                    return Promise.reject(e);
+                    res.triggerError(e?.message || window.__('legacy.aiChat.streamProcessingError'));
                 });
         } else {
             res.triggerReceived();
@@ -247,7 +258,10 @@ const connectWebSocket = async (roomSlug) => {
 
                 if (receivedPacket.type === 'status') {
                     if (receivedPacket.data.error) {
-                        window.oldUiBridge.triggerSendToast(window.__('legacy.groupchat.serverError'), 'error');
+                        const code = receivedPacket.data.code;
+                        const label = code === 'TOOL_ACCESS_DENIED' ? 'chat.tools.accessDenied' :
+                            code === 'TOOL_UNAVAILABLE' ? 'chat.tools.unavailable' : 'legacy.groupchat.serverError';
+                        window.oldUiBridge.triggerSendToast(window.__(label), 'error');
                     }
 
                     if (receivedPacket.data.isGenerating) {

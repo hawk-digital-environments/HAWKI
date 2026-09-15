@@ -1,23 +1,29 @@
 <script lang="ts">
     import { tick, untrack } from 'svelte';
     import { createForm, revalidateLogic } from '@tanstack/svelte-form';
-    import type z from 'zod';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { runAdmin } from '../api.js';
     import { createDraft, prepareValues, serverFieldErrors } from '../form.js';
     import { editorSchema, formValidationSchema } from '../forms/schemas.js';
-    import { controlFor, isFieldVisible, normalizeControlValue } from '../forms/controls.js';
-    import AdminValueInput from './AdminValueInput.svelte';
+    import { controlFor, isFieldVisible, normalizeControlValue, type Control } from '../forms/controls.js';
+    import { fieldHint } from '../forms/hints.js';
+    import { issueMessage } from '../forms/validationMessages.js';
+    import { ModelLookup } from '../forms/modelLookup.svelte.js';
+    import AdminPermissionInput from './inputs/AdminPermissionInput.svelte';
+    import AdminAccessRuleInput from './inputs/AdminAccessRuleInput.svelte';
+    import { roleLabel } from '../forms/authorization.js';
+    import type { AdminContent } from '../schemas/admin-content.js';
+    import AdminValueInput from './inputs/AdminValueInput.svelte';
     import type { AdminField, AdminRow } from '../schemas/admin-content.js';
     import type { SectionId } from '../sections.js';
 
     let {
         section,
         fields,
+        content,
         row,
         title,
         onSave,
@@ -26,13 +32,15 @@
     }: {
         section: SectionId;
         fields: AdminField[];
+        content: AdminContent | null;
         row: AdminRow | null;
         title: string;
         onSave: (values: Record<string, unknown>) => Promise<void>;
         onClose: () => void;
         restoreFocus: () => HTMLElement | null;
     } = $props();
-    const { __, hasLabel } = useTranslator();
+    const translator = useTranslator();
+    const { __ } = translator;
     const app = useApp();
     const uid = $props.id();
     const initial = untrack(() => {
@@ -42,7 +50,7 @@
         return draft;
     });
     const schema = untrack(() => editorSchema(section, fields, row));
-    const validation = formValidationSchema(schema, (issue) => message(issue));
+    const validation = formValidationSchema(schema, (issue) => issueMessage(issue, translator));
     let error = $state('');
     let fieldBusy = $state(false);
     let serverErrors = $state<Record<string, string>>({});
@@ -64,7 +72,6 @@
                     Object.entries(prepared.errors).map(([key, message]) => [key, __(message)])
                 );
                 error = __('admin.errors.form');
-                await focusError();
                 return;
             }
             try {
@@ -73,78 +80,26 @@
             } catch (failure) {
                 serverErrors = serverFieldErrors(failure);
                 error = failure instanceof Error ? failure.message : __('admin.errors.save');
-                await focusError();
             }
         }
     }));
     const formState = form.useSelector((state) => state);
     const visibleFields = $derived(fields.filter((field) => isFieldVisible(section, field, formState.current.values)));
-    const busy = $derived(formState.current.isSubmitting || fieldBusy);
-    // Discovery only suggests provider model ids that have not been added yet.
-    type Suggestion = { value: string; label: string };
-    const discovered = new Map<string, Suggestion[]>();
-    let suggestions = $state<Suggestion[] | null>(null);
-    let suggesting = $state(false);
-    let discoveryFailed = $state(false);
-    let inspecting = $state(false);
-    let inspected = $state<'done' | 'failed' | null>(null);
-    let inspection = 0;
+    const busy = $derived(formState.current.isSubmitting || fieldBusy || app.authorizationRefreshing);
+    /** Changing a tool's access rule rewrites role grants, so it needs both permissions. */
+    const accessRuleLocked = $derived(!app.can('mcp.manage') || !app.can('roles.manage'));
     /** JSON snapshots of values this editor filled in itself; only those may be replaced by later metadata. */
     const adopted: Record<string, string> = {};
-    const suggestProvider = $derived(
+    /** New models get provider model id suggestions plus metadata for the picked one. */
+    const lookup = untrack(() =>
         section === 'models' && !row && app.can('providers.manage') ?
-            (formState.current.values.provider_id ?? null)
+            new ModelLookup({
+                restApi: app.restApi,
+                providerId: () => formState.current.values.provider_id,
+                modelId: () => formState.current.values.model_id,
+                adopt
+            })
         :   null
-    );
-    $effect(() => {
-        const providerId = suggestProvider;
-        suggestions = null;
-        suggesting = false;
-        discoveryFailed = false;
-        if (providerId === null || providerId === '') {
-            return;
-        }
-        const key = String(providerId);
-        const cached = discovered.get(key);
-        if (cached) {
-            suggestions = cached;
-            return;
-        }
-        let stale = false;
-        suggesting = true;
-        runAdmin(app, 'providers', 'discover', key)
-            .then((response) => {
-                const models = (response.models ?? []).map((model) => ({ value: model.model_id, label: model.label }));
-                discovered.set(key, models);
-                if (!stale) suggestions = models;
-            })
-            .catch((failure) => {
-                console.warn('Model discovery failed.', failure);
-                if (!stale) {
-                    suggestions = [];
-                    discoveryFailed = true;
-                }
-            })
-            .finally(() => {
-                if (!stale) suggesting = false;
-            });
-        return () => {
-            stale = true;
-        };
-    });
-    function modelIdHint(): string {
-        if (suggestProvider === null || suggestProvider === '') return 'admin.model_id_provider_first';
-        if (suggesting) return 'admin.model_id_loading';
-        if (discoveryFailed) return 'admin.model_id_discovery_failed';
-        if (inspecting) return 'admin.model_id_inspecting';
-        if (inspected) return inspected === 'done' ? 'admin.model_id_inspected' : 'admin.model_id_inspect_failed';
-        return suggestions?.length ? 'admin.model_id_suggestions' : 'admin.model_id_no_suggestions';
-    }
-    const inspectionStatus = $derived(
-        inspecting ? __('admin.model_id_inspecting')
-        : inspected === 'done' ? __('admin.model_id_inspected')
-        : inspected === 'failed' ? __('admin.model_id_inspect_failed')
-        : ''
     );
     /** Fill fields from provider metadata, but never overwrite what the admin typed themselves. */
     function adopt(values: Record<string, unknown>) {
@@ -158,29 +113,15 @@
             form.setFieldValue(field.key, next);
         }
     }
-    function adoptLabel(modelId: unknown) {
-        const match = suggestions?.find((suggestion) => suggestion.value === modelId);
-        if (match) adopt({ label: match.label });
+    function hintFor(definition: AdminField, control: Control): string | undefined {
+        if (control.hint) return control.hint;
+        if (lookup && definition.key === 'model_id') return lookup.hint;
+        return fieldHint(section, definition, row);
     }
-    /** A picked suggestion also pulls the provider's metadata for the remaining fields. */
-    async function inspect(modelId: string) {
-        adoptLabel(modelId);
-        const providerId = suggestProvider;
-        if (providerId === null || providerId === '') return;
-        const token = ++inspection;
-        inspecting = true;
-        inspected = null;
-        try {
-            const response = await runAdmin(app, 'providers', 'inspect', String(providerId), { model_id: modelId });
-            if (token !== inspection) return;
-            if (formState.current.values.model_id === modelId) adopt(response.model ?? {});
-            inspected = 'done';
-        } catch (failure) {
-            console.warn('Model inspection failed.', failure);
-            if (token === inspection) inspected = 'failed';
-        } finally {
-            if (token === inspection) inspecting = false;
-        }
+    function labelFor(definition: AdminField): string {
+        return section === 'settings' ?
+                __('admin.settings_labels.' + row?.key)
+            :   __('admin.fields.' + definition.key);
     }
     function close() {
         if (busy) return;
@@ -194,21 +135,6 @@
         const active = document.activeElement;
         discardOrigin = active instanceof HTMLElement && dialog?.contains(active) ? active : dialog;
         discard = true;
-    }
-    function message(issue: z.core.$ZodIssue): string {
-        const key = issue.path.map(String).at(-1);
-        const labelKey = ['admin.form.labels.', 'admin.fields.'].map((prefix) => prefix + key).find(hasLabel);
-        const label = labelKey ? __(labelKey) : key;
-        let text = issue.message.startsWith('admin.') ? __(issue.message) : __('admin.validation.invalid');
-        if (issue.code === 'too_small')
-            text = __(issue.origin === 'string' ? 'admin.validation.min_length' : 'admin.validation.minimum', {
-                value: String(issue.minimum)
-            });
-        if (issue.code === 'too_big')
-            text = __(issue.origin === 'string' ? 'admin.validation.max_length' : 'admin.validation.maximum', {
-                value: String(issue.maximum)
-            });
-        return label ? `${label}: ${text}` : text;
     }
     function fieldError(key: string): string | undefined {
         if (serverErrors[key]) return serverErrors[key];
@@ -241,8 +167,8 @@
         error = '';
         serverErrors = {};
         await form.handleSubmit();
-        if (!form.state.isValid) {
-            error = __('admin.errors.form');
+        if (error || !form.state.isValid) {
+            if (!error) error = __('admin.errors.form');
             await focusError();
         }
     }
@@ -271,63 +197,84 @@
         novalidate
     >
         {#if error}<p role="alert">{error}</p>{/if}
-        {#if section === 'models' && !row}<p
+        {#if lookup}<p
                 class="u-sr-only"
                 role="status"
                 aria-atomic="true"
             >
-                {inspectionStatus}
+                {lookup.status ? __(lookup.status) : ''}
             </p>{/if}
         {#if row?.mapped_roles && Array.isArray(row.mapped_roles) && row.mapped_roles.length}<p>
-                {__('admin.mapped_roles_hint', { roles: row.mapped_roles.join(', ') })}
+                {__('admin.mapped_roles_hint', { roles: row.mapped_roles.map((id) => roleLabel(Number(id), content?.role_catalog ?? [], fields, __)).join(', ') })}
             </p>{/if}
         <div class="fields">
             {#each visibleFields as definition (definition.key)}
                 <form.Field name={definition.key}>
                     {#snippet children(field)}
                         {@const control = controlFor(section, definition, formState.current.values, row)}
+                        {@const modelLookup = definition.key === 'model_id' ? lookup : null}
+                        {#if control.type === 'permissions'}
+                            <AdminPermissionInput
+                                id={`${uid}-${definition.key}`}
+                                label={labelFor(definition)}
+                                catalog={content?.permission_catalog ?? []}
+                                value={field.state.value}
+                                onchange={(value) => {
+                                    delete serverErrors[definition.key];
+                                    field.handleChange(value);
+                                }}
+                                onblur={field.handleBlur}
+                                disabled={busy || control.disabled}
+                                error={fieldError(definition.key)}
+                            />
+                        {:else if control.type === 'access-rule'}
+                            <AdminAccessRuleInput
+                                id={`${uid}-${definition.key}`}
+                                label={labelFor(definition)}
+                                rules={content?.access_rules ?? []}
+                                value={field.state.value}
+                                onchange={(value) => {
+                                    delete serverErrors[definition.key];
+                                    field.handleChange(value);
+                                }}
+                                onblur={field.handleBlur}
+                                disabled={busy || control.disabled || accessRuleLocked}
+                                error={fieldError(definition.key)}
+                            />
+                        {:else}
                         <AdminValueInput
                             id={`${uid}-${definition.key}`}
-                            label={section === 'settings' ? __('admin.settings_labels.' + row?.key) : __('admin.fields.' + definition.key)}
+                            label={labelFor(definition)}
                             control={{
                                 ...control,
                                 label: definition.key,
-                                suggestions:
-                                    section === 'models' && !row && definition.key === 'model_id' ?
-                                        (suggestions ?? undefined)
-                                    :   undefined,
-                                hint:
-                                    control.hint ??
-                                    (section === 'models' && !row && definition.key === 'model_id' ? modelIdHint()
-                                    : section === 'users' && definition.key === 'password' ?
-                                        row ? 'admin.local_password_replace' : 'admin.local_password_hint'
-                                    : section === 'users' && definition.key === 'password_confirmation' ? undefined
-                                    : definition.type.startsWith('secret') ?
-                                        row?.[definition.key + '_set'] ?
-                                            'admin.secret_replace'
-                                        :   'admin.secret_hint'
-                                    : definition.immutable && row ? 'admin.immutable_hint'
-                                    : undefined)
+                                options: ['roles', 'role_id'].includes(definition.key) ? control.options?.map((option) => ({
+                                    ...option,
+                                    label: roleLabel(Number(option.value), content?.role_catalog ?? [], fields, __)
+                                })) : control.options,
+                                suggestions: modelLookup?.suggestions ?? undefined,
+                                hint: hintFor(definition, control)
                             }}
                             value={field.state.value}
                             onchange={(value) => {
                                 delete serverErrors[definition.key];
                                 field.handleChange(value);
-                                if (section === 'system-models' && definition.key === 'model_type' && value === 'translation')
+                                if (
+                                    section === 'system-models' &&
+                                    definition.key === 'model_type' &&
+                                    value === 'translation'
+                                )
                                     form.setFieldValue('prompts', {});
-                                if (section === 'models' && !row && definition.key === 'model_id') adoptLabel(value);
+                                modelLookup?.adoptLabel(value);
                             }}
-                            onselect={
-                                section === 'models' && !row && definition.key === 'model_id' ?
-                                    (value) => void inspect(value)
-                                :   undefined
-                            }
-                            onBusyChange={(pending) => fieldBusy = pending}
+                            onselect={modelLookup ? (value) => void modelLookup.inspect(value) : undefined}
+                            onBusyChange={(pending) => (fieldBusy = pending)}
                             onblur={field.handleBlur}
                             disabled={busy || control.disabled || (!!row && !!definition.immutable)}
                             error={fieldError(definition.key)}
                             secret={definition.type === 'secret-json'}
                         />
+                        {/if}
                     {/snippet}
                 </form.Field>
             {/each}

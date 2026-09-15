@@ -6,13 +6,22 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
     import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
-    import AdminWorkspace from '../components/AdminWorkspace.svelte';
+    import AdminPage from '../components/AdminPage.svelte';
+    import AdminTable from '../components/AdminTable.svelte';
     import AdminUsageChart from '../components/AdminUsageChart.svelte';
-    import type { AdminContent } from '../schemas/admin-content.js';
+    import type { AdminMenuItem } from '../components/AdminActionMenu.svelte';
     import { adminActionIcons } from '../actionIcons.js';
+    import type { AdminUsageResource } from '../schemas/resources/admin-usage.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
     const uid = $props.id();
+    const columns: AdminColumn<AdminUsageResource>[] = [
+        { id: 'label' },
+        { id: 'requests' },
+        { id: 'prompt_tokens' },
+        { id: 'completion_tokens' }
+    ];
     const initial = {
         from: new Date(Date.now() - 29 * 86400000).toISOString().slice(0, 10),
         to: new Date().toISOString().slice(0, 10),
@@ -22,18 +31,28 @@
     let to = $state(initial.to);
     let group = $state(initial.group_by);
     let applied = $state(initial);
-    function exportCsv(content: AdminContent | null) {
-        const keys = content?.columns ?? [];
+    // The statistics are filtered by the form above the table, not by the table state.
+    const workspace = useAdminWorkspace(columns, (signal) =>
+        app.restApi.getResourceCollection('admin-usage', { query: { filter: applied }, signal })
+    );
+    const menuItems = $derived<AdminMenuItem[]>([
+        {
+            label: __('admin.export'),
+            icon: adminActionIcons.export,
+            disabled: !workspace.content || workspace.loading,
+            run: () => exportCsv(workspace.rows)
+        }
+    ]);
+
+    function exportCsv(rows: AdminUsageResource[]) {
+        const keys = columns.map((column) => column.id);
         const encode = (value: unknown) =>
             '"' +
             String(value ?? '')
                 .replace(/^[=+@-]/, "'$&")
                 .replaceAll('"', '""') +
             '"';
-        const csv = [
-            keys.map((key) => __('admin.fields.' + key)),
-            ...(content?.rows ?? []).map((row) => keys.map((key) => row[key]))
-        ]
+        const csv = [keys.map((key) => __('admin.fields.' + key)), ...rows.map((row) => keys.map((key) => row[key]))]
             .map((row) => row.map(encode).join(','))
             .join('\r\n');
         const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }));
@@ -45,75 +64,75 @@
     }
 </script>
 
-<AdminWorkspace
+<AdminPage
     section="usage"
-    searchable={false}
-    query={() => applied}
+    {workspace}
     hint={applied.group_by === 'user' ? __('admin.usage_privacy') : undefined}
-    menuItems={({ content, loading }) => [
-        { label: __('admin.export'), icon: adminActionIcons.export, disabled: !content || loading, run: () => exportCsv(content) }
-    ]}
+    {menuItems}
 >
-    {#snippet filters({ loading, reload })}
-        <form
-            onsubmit={(event) => {
-                event.preventDefault();
-                applied = { from, to, group_by: group };
-                void reload();
-            }}
+    <form
+        onsubmit={(event) => {
+            event.preventDefault();
+            applied = { from, to, group_by: group };
+            void workspace.load();
+        }}
+    >
+        <label for={`${uid}-from`}
+            >{__('admin.from')}<Input
+                id={`${uid}-from`}
+                type="date"
+                bind:value={from}
+                required
+            /></label
         >
-            <label for={`${uid}-from`}
-                >{__('admin.from')}<Input
-                    id={`${uid}-from`}
-                    type="date"
-                    bind:value={from}
-                    required
-                /></label
-            >
-            <label for={`${uid}-to`}
-                >{__('admin.to')}<Input
-                    id={`${uid}-to`}
-                    type="date"
-                    bind:value={to}
-                    min={from}
-                    required
-                /></label
-            >
-            <div class="group-filter">
-                <span id={`${uid}-group-label`}>{__('admin.group_by')}</span><SingleSelect
-                    bind:value={group}
-                    triggerProps={{ 'aria-labelledby': `${uid}-group-label` }}
-                    items={[
-                        'day',
-                        'month',
-                        'model',
-                        'provider',
-                        'type',
-                        ...(app.can('usage.view-per-user') ? ['user'] : [])
-                    ].map((value) => ({ value, label: __('admin.grouping.' + value) }))}
-                />
-            </div>
-            <Button
-                type="submit"
-                variant="stroke"
-                disabled={loading}>{__('admin.apply')}</Button
-            >
-        </form>
-    {/snippet}
-    {#snippet beforeTable({ content })}
-        {#if content?.totals}
-            <dl class="statistics">
-                {#each Object.entries(content.totals) as [key, value]}<div>
-                        <dt>{__('admin.fields.' + key)}</dt>
-                        <dd>{Number(value).toLocaleString(app.localization.locale.lang.replace('_', '-'))}</dd>
-                    </div>{/each}
-            </dl>
-            {#if content.rows.length}
-                <AdminUsageChart rows={content.rows} group={applied.group_by} />
-            {/if}
+        <label for={`${uid}-to`}
+            >{__('admin.to')}<Input
+                id={`${uid}-to`}
+                type="date"
+                bind:value={to}
+                min={from}
+                required
+            /></label
+        >
+        <div class="group-filter">
+            <span id={`${uid}-group-label`}>{__('admin.group_by')}</span><SingleSelect
+                bind:value={group}
+                triggerProps={{ 'aria-labelledby': `${uid}-group-label` }}
+                items={[
+                    'day',
+                    'month',
+                    'model',
+                    'provider',
+                    'type',
+                    ...(app.can('usage.view-per-user') ? ['user'] : [])
+                ].map((value) => ({ value, label: __('admin.grouping.' + value) }))}
+            />
+        </div>
+        <Button
+            type="submit"
+            variant="stroke"
+            disabled={workspace.loading}>{__('admin.apply')}</Button
+        >
+    </form>
+    {#if workspace.content?.totals}
+        <dl class="statistics">
+            {#each Object.entries(workspace.content?.totals) as [key, value]}<div>
+                    <dt>{__('admin.fields.' + key)}</dt>
+                    <dd>{Number(value).toLocaleString(app.localization.locale.lang.replace('_', '-'))}</dd>
+                </div>{/each}
+        </dl>
+        {#if workspace.rows.length}
+            <AdminUsageChart
+                rows={workspace.rows}
+                group={applied.group_by}
+            />
         {/if}
-    {/snippet}
-</AdminWorkspace>
+    {/if}
+    <AdminTable
+        caption={__('admin.sections.usage')}
+        {workspace}
+    />
+</AdminPage>
 
 <style>
     form {
@@ -121,6 +140,7 @@
         align-items: end;
         flex-wrap: wrap;
         gap: var(--space-3);
+        margin-bottom: var(--space-3);
     }
     label,
     .group-filter {

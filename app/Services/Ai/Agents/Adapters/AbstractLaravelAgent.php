@@ -12,11 +12,19 @@ use App\Services\Ai\Agents\Events\AgentStreamCompletedEvent;
 use App\Services\Ai\Agents\Events\AgentStreamInitiatedEvent;
 use App\Services\Ai\Agents\Exceptions\AgentStateException;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
+use App\Services\Ai\Tools\Exceptions\ToolAccessException;
+use App\Services\Ai\Tools\LaravelAi\AuthorizedTextGateway;
+use App\Services\Ai\Tools\LaravelAi\ToolExecutionState;
 use App\Services\Ai\Values\TokenUsage;
+use Illuminate\Broadcasting\Channel;
+use Laravel\Ai\Approvals\Decisions;
 use Laravel\Ai\Contracts\Agent as LaravelAgentInterface;
+use Laravel\Ai\Contracts\Providers\TextProvider;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\QueuedAgentResponse;
 use Laravel\Ai\Responses\StreamableAgentResponse;
 
 /**
@@ -41,7 +49,54 @@ use Laravel\Ai\Responses\StreamableAgentResponse;
  */
 abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgentInterface
 {
-    use Promptable;
+    use Promptable {
+        prompt as private promptThroughSdk;
+        stream as private streamThroughSdk;
+    }
+
+    // HAWKI's context and provider-step guards are supplied by send()/sendStreaming().
+    // Reject alternate SDK entry points rather than accepting a caller-selected driver/model.
+    final public function prompt(Decisions|string $prompt, array $attachments = [], Lab|array|string|null $provider = null, ?string $model = null, ?int $timeout = null): AgentResponse
+    {
+        throw ToolAccessException::denied();
+    }
+
+    final public function stream(Decisions|string $prompt, array $attachments = [], Lab|array|string|null $provider = null, ?string $model = null, ?int $timeout = null): StreamableAgentResponse
+    {
+        throw ToolAccessException::denied();
+    }
+
+    final public function queue(Decisions|string $prompt, array $attachments = [], Lab|array|string|null $provider = null, ?string $model = null): QueuedAgentResponse
+    {
+        throw ToolAccessException::denied();
+    }
+
+    final public function broadcast(Decisions|string $prompt, Channel|array $channels, array $attachments = [], bool $now = false, Lab|array|string|null $provider = null, ?string $model = null): StreamableAgentResponse
+    {
+        throw ToolAccessException::denied();
+    }
+
+    final public function broadcastNow(Decisions|string $prompt, Channel|array $channels, array $attachments = [], Lab|array|string|null $provider = null, ?string $model = null): StreamableAgentResponse
+    {
+        throw ToolAccessException::denied();
+    }
+
+    final public function broadcastOnQueue(Decisions|string $prompt, Channel|array $channels, array $attachments = [], Lab|array|string|null $provider = null, ?string $model = null): QueuedAgentResponse
+    {
+        throw ToolAccessException::denied();
+    }
+
+    /** Queue producers must persist trusted input and actor IDs, then rebuild through a HAWKI factory. */
+    final public function __serialize(): array
+    {
+        throw ToolAccessException::denied();
+    }
+
+    /** Reject legacy serialized SDK jobs before their generic broadcast error handler can run. */
+    final public function __unserialize(array $values): void
+    {
+        throw ToolAccessException::denied();
+    }
 
     private Usage|null $usage = null;
 
@@ -83,15 +138,17 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
      */
     public function send(): AgentResponse
     {
+        $this->installAuthorizedGateway();
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
-        $response = $this->prompt(
+        $response = $this->promptThroughSdk(
             prompt: $this->getPromptString(),
             attachments: $this->getAttachments(),
             provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
             model: $this->getContext()->model->model_id
         );
 
+        app(ToolExecutionState::class)->check($this->getContext());
         $this->usage = $response->usage;
 
         AgentResponseReceivedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response, $response->usage);
@@ -109,9 +166,10 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
      */
     public function sendStreaming(): StreamableAgentResponse
     {
+        $this->installAuthorizedGateway();
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
-        $response = $this->stream(
+        $response = $this->streamThroughSdk(
             prompt: $this->getPromptString(),
             attachments: $this->getAttachments(),
             provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
@@ -119,6 +177,7 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
         );
 
         $response->then(function (AgentResponse $response) {
+            app(ToolExecutionState::class)->check($this->getContext());
             $this->usage = $response->usage;
 
             AgentStreamCompletedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response, $response->usage);
@@ -127,5 +186,28 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
         AgentStreamInitiatedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response);
 
         return $response;
+    }
+
+    /**
+     * Wraps the provider driver so every SDK loop step re-checks tool authorization.
+     *
+     * This is a security guard, so a driver that cannot be wrapped must not be used at all:
+     * every in-tree driver uses the SDK's HasTextGateway trait, and a driver that does not is a
+     * programming error rather than a runtime condition callers could recover from.
+     */
+    private function installAuthorizedGateway(): void
+    {
+        $driver = $this->getContext()->provider->driver;
+        // useTextGateway() is part of the TextProvider contract; textGateway() only comes with HasTextGateway.
+        if (!$driver instanceof TextProvider || !method_exists($driver, 'textGateway')) {
+            throw new \LogicException(sprintf(
+                'Provider driver %s cannot be wrapped in %s; text generation is refused because tool authorization could not be enforced.',
+                get_debug_type($driver),
+                AuthorizedTextGateway::class
+            ));
+        }
+        if (!$driver->textGateway() instanceof AuthorizedTextGateway) {
+            $driver->useTextGateway(new AuthorizedTextGateway($driver->textGateway()));
+        }
     }
 }

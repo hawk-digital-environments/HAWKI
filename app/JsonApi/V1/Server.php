@@ -67,6 +67,19 @@ class Server extends BaseServer
     protected function allSchemas(): array
     {
         return [
+            Admin\ProviderSchema::class,
+            Admin\ModelSchema::class,
+            Admin\McpServerSchema::class,
+            Admin\ToolSchema::class,
+            Admin\SystemModelSchema::class,
+            Admin\AnnouncementSchema::class,
+            Admin\UserSchema::class,
+            Admin\RoleSchema::class,
+            Admin\RoleMappingSchema::class,
+            Admin\SettingSchema::class,
+            Admin\UsageSchema::class,
+            Admin\EnvironmentSchema::class,
+            Admin\HealthSchema::class,
             AiConvMessageSchema::class,
             AiConvSchema::class,
             AiModelDescriptionSchema::class,

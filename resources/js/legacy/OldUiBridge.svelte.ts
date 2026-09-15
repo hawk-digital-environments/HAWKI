@@ -85,6 +85,12 @@ export interface OldUiSendMessagePayload {
     /** Assistant handle (without `@`) the exchange binds to; null for plain runs. */
     assistantHandle: string | null;
     tools: AiToolOrCapabilityWithState[];
+    toolTransfers: readonly string[];
+    authorization: {
+        validate(): boolean;
+        request(url: string, data: unknown, signal: AbortSignal): Promise<Response>;
+        refresh(): void;
+    };
     attachments: File[];
     parameters: OldUiModelParams | null;
 }

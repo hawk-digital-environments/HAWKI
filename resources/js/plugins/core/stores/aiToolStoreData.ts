@@ -133,7 +133,7 @@ function createToolCapabilityWrapper(
     }
 
     function hasNativeCapabilityFor(model: AiModel): boolean {
-        if (model.settings?.native_capabilities === false) {
+        if (!capability.native_model_ids?.includes(model.id) || model.settings?.native_capabilities === false) {
             return false;
         }
         return model.native_capabilities?.includes(capability.id) ?? false;
@@ -215,3 +215,10 @@ function createCapabilityToolList() {
 }
 
 type CapabilityToolList = ReturnType<typeof createCapabilityToolList>;
+
+/** Current catalog membership is resolved first; this separates temporary outages from model conflicts. */
+export function toolAvailabilityFor(tool: AiToolOrCapability, model: AiModel): 'available' | 'offline' | 'model-incompatible' {
+    if (!model) return 'model-incompatible';
+    if (tool.isAvailableFor(model)) return 'available';
+    return tool.isAvailableFor(model, true) ? 'offline' : 'model-incompatible';
+}

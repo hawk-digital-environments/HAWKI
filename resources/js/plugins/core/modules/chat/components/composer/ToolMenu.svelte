@@ -84,13 +84,14 @@
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
     import ToolMenuList from '$plugins/core/modules/chat/components/composer/ToolMenuList.svelte';
     import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
-    import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import {setToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import ZshIcon from '$lib/components/ui/icons/iconset/ZshIcon.svelte';
+    import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
 
     const composerContext = useComposerContext();
     const focusContext = setToolMenuFocusContext();
@@ -116,6 +117,7 @@
     let query = $state('');
 
     const allEntries = $derived.by(() => {
+        if (aiToolStore.authorizationState !== 'ready') return [];
         const models = aiModelStore.models;
 
         return aiToolStore.tools
@@ -137,7 +139,7 @@
                         }
                         composerContext.tools.set(tool, selection, settings);
                     },
-                    disabled: tool.status === 'offline',
+                    disabled: toolAvailabilityFor(tool, composerContext.model.current) === 'offline',
                     // To avoid rebuilding the whole array, we only update the active/supported state in the filteredEntries derived store.
                     active: false,
                     available: false
@@ -240,6 +242,19 @@
         ...groupedEntries.functionTools,
         ...groupedEntries.mcpTools.flatMap(group => group.entries)
     ]);
+
+    $effect(() => {
+        if (!open) return;
+        if (filteredEntries.length === 0) {
+            open = false;
+            detailToolName = null;
+            requestAnimationFrame(() => composerContext.focusInput());
+        } else if (detailToolName && !detailEntry) {
+            detailToolName = null;
+            requestAnimationFrame(() => focusContext.focusFirst());
+        }
+    });
+
     function closeToolDetail() {
         const name = detailToolName;
         detailToolName = null;
@@ -339,15 +354,15 @@
         }
     }
 
+    :global(.tool-menu-item svg) {
+        flex-shrink: 0;
+    }
+
     .no-results {
         padding: var(--space-3) var(--space-3);
         margin: 0;
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         text-align: center;
-    }
-
-    :global(.tool-menu-item svg) {
-        flex-shrink: 0;
     }
 </style>

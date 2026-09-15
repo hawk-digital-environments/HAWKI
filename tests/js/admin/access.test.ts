@@ -28,14 +28,15 @@ function router(permissions: string[], authenticated = true) {
     }});
 }
 
-test('every admin link resolves without chat keys, with its own section metadata', async () => {
+test('every admin link resolves without chat keys, with its own section permission', async () => {
     const instance = router(['admin.access', ...sections.map(section => section.permission)]);
     const urls = generateUrls(instance);
     assert.equal(urls('admin.index'), '/new/admin');
     assert.equal((await instance.resolve(urls('admin.index'))).context.route.name, 'admin.index');
     for (const section of sections) {
         const result = await instance.resolve(urls(`admin.${section.id}`));
-        assert.equal(result.context.route.meta.adminSection, section.id);
+        assert.equal(result.context.route.name, `admin.${section.id}`);
+        assert.equal(result.context.route.meta.permission, section.permission);
     }
 });
 

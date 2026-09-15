@@ -10,6 +10,12 @@ export interface Control {
         | 'boolean'
         | 'select'
         | 'multi'
+        /** Multi-select rendered as chips with a filtered picker; the choices come from `options`. */
+        | 'tags'
+        /** Grouped permission checkboxes fed by `AdminContent.permission_catalog`. */
+        | 'permissions'
+        /** Single tool access rule picked from `AdminContent.access_rules`. */
+        | 'access-rule'
         | 'list'
         | 'object'
         | 'pricing'
@@ -124,6 +130,9 @@ export function controlFor(
     row: AdminRow | null
 ): Control {
     const key = field.key;
+    if (section === 'users' && key === 'roles') return { type: 'tags', options: field.options };
+    if (section === 'roles' && key === 'permissions') return { type: 'permissions' };
+    if (section === 'tools' && key === 'access_rule') return { type: 'access-rule' };
     if (section === 'models') {
         if (key === 'descriptions') return { type: 'localized-text' };
         if (['input', 'output'].includes(key)) return { type: 'multi', options: choices(modalities) };
@@ -191,7 +200,7 @@ export function controlFor(
                 type: 'object',
                 hint: 'admin.form.replace_secret',
                 fields:
-                    values.type === 'stdio' ?
+                    values.kind === 'stdio' ?
                         {
                             args: { type: 'list', item: { type: 'text' } },
                             env: { type: 'object', custom: true, item: { type: 'secret' } }
@@ -271,4 +280,19 @@ export function normalizeControlValue(control: Control, value: unknown): unknown
         if (Object.hasOwn(result, key)) result[key] = normalizeControlValue(child, result[key]);
     }
     return result;
+}
+
+/** Types an admin may pick for a new custom property or list item. */
+export const newValueTypes = ['text', 'number', 'boolean', 'object', 'list'] as const;
+export type NewValueType = (typeof newValueTypes)[number];
+
+/** Starting value for a freshly added property or list item of the given control type. */
+export function emptyValue(type: Control['type']): unknown {
+    return (
+        type === 'number' ? 0
+        : type === 'boolean' ? false
+        : type === 'object' ? {}
+        : type === 'list' ? []
+        : ''
+    );
 }

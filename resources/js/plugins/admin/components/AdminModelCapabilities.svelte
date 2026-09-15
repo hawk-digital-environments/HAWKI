@@ -1,9 +1,9 @@
 <!--
   @component Quick toggles for a model's capabilities inside the models list.
   Each round button switches one capability (file upload, vision, tool calling,
-  native web search, native code execution, image generation) and saves the
-  row through the surrounding AdminWorkspace, exactly like an editor submission
-  that changed only that field.
+  native web search, native code execution, image generation) and hands the
+  changed field values to `onChange`, e.g.
+  `onChange={(changes) => mutations.update(row, changes)}`.
 -->
 <script lang="ts">
     import type { Component } from 'svelte';
@@ -17,19 +17,25 @@
     import SourceCodeIcon from '$lib/components/ui/icons/iconset/SourceCodeIcon.svelte';
     import AiImageIcon from '$lib/components/ui/icons/iconset/AiImageIcon.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
-    import type { AdminRow } from '../schemas/admin-content.js';
+    import type { AdminModelResource } from '../schemas/resources/admin-models.schema.js';
     import {
         hasModelCapability,
         modelCapabilities,
         toggleModelCapability,
         type ModelCapabilityId
     } from '../capabilities.js';
-    import { useAdminWorkspace } from '../workspace.js';
 
-    const { row }: { row: AdminRow } = $props();
+    const {
+        row,
+        disabled = false,
+        onChange
+    }: {
+        row: AdminModelResource;
+        disabled?: boolean;
+        /** Saves the field values a toggle produced; the toggle shows as busy until the promise settles. */
+        onChange: (changes: Record<string, unknown>) => Promise<void> | void;
+    } = $props();
     const { __ } = useTranslator();
-    const workspace = useAdminWorkspace();
-    const locked = $derived(workspace().busy || workspace().updating.includes(row.id));
     const icons: Record<ModelCapabilityId, Component<HugeiconsProps>> = {
         file_upload: Attachment01Icon,
         vision: EyeIcon,
@@ -41,10 +47,10 @@
     let pending = $state<ModelCapabilityId | null>(null);
 
     async function toggle(id: ModelCapabilityId) {
-        if (locked) return;
+        if (disabled || pending) return;
         pending = id;
         try {
-            await workspace().update(row, toggleModelCapability(row, id, !hasModelCapability(row, id)));
+            await onChange(toggleModelCapability(row, id, !hasModelCapability(row, id)));
         } finally {
             pending = null;
         }
@@ -74,7 +80,7 @@
                     aria-checked={enabled}
                     aria-label={label}
                     aria-busy={pending === id || undefined}
-                    disabled={locked}
+                    {disabled}
                 >
                     <Icon
                         size={16}
@@ -98,11 +104,11 @@
         width: 1.75rem;
         height: 1.75rem;
         padding: 0;
-        border: 0;
+        border: 1px dashed var(--color-text-muted);
         border-radius: var(--corner-full);
         cursor: pointer;
         background-color: color-mix(in oklch, var(--color-text-muted) 18%, var(--color-bg));
-        color: color-mix(in oklch, var(--color-text-muted) 60%, var(--color-bg));
+        color: var(--color-text-muted);
         transition:
             background-color var(--duration-fast),
             color var(--duration-fast);
@@ -122,11 +128,12 @@
         opacity: 0.5;
     }
     .toggle[aria-checked='true'] {
-        background-color: var(--color-interactive);
-        color: var(--color-on-interactive);
+        border: 1px solid var(--capability-fill);
+        background-color: var(--capability-fill);
+        color: var(--capability-on-fill);
     }
     .toggle[aria-checked='true']:hover:not(:disabled) {
-        background-color: color-mix(in oklch, var(--color-interactive) 85%, var(--color-text));
-        color: var(--color-on-interactive);
+        background-color: color-mix(in oklab, var(--capability-fill) 85%, white);
+        color: var(--capability-on-fill);
     }
 </style>

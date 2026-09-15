@@ -20,6 +20,7 @@ readonly class AgentRequestContext
         public AiModel           $model,
         public AiModelParameters $modelParameters,
         public string            $usageType = WellKnownUsageTypes::MAIN_APP,
+        public ?int              $actorId = null,
     )
     {
     }

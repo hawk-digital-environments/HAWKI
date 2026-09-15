@@ -66,7 +66,7 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
             context: $context,
             instructions: $payload->systemInstructions(),
             messages: $this->getMessagesFromPayload($payload, $context),
-            tools: $this->toolResolver->findTools($payload->tools(), $context)
+            tools: [...$this->toolResolver->findTools($payload->tools(), $context)]
         );
     }
 

@@ -7,6 +7,11 @@ use Laravel\Ai\Messages\MessageRole;
 
 class InvalidLegacyRequestPayloadException extends \InvalidArgumentException implements AgentExceptionInterface
 {
+    public static function forMissingSystemInstructions(): self
+    {
+        return new self('No system instructions found in messages payload.');
+    }
+
     public static function forMessageMissingFields(): self
     {
         return new self('Each message must have a "role" and "content.text" field.');

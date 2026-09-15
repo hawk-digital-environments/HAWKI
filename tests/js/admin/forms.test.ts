@@ -16,6 +16,7 @@ import {
     providersSchema
 } from '../../../resources/js/plugins/admin/forms/schemas.js';
 import { controlFor, normalizeControlValue } from '../../../resources/js/plugins/admin/forms/controls.js';
+import { fieldHint } from '../../../resources/js/plugins/admin/forms/hints.js';
 
 const field = (key: string, type = 'text') => AdminFieldSchema.parse({ key, type });
 const fields = [
@@ -143,7 +144,10 @@ test('system prompts live in the system model form except for translation models
     assert.equal(translationControl.disabled, true);
     assert.equal(translationControl.hint, 'admin.system_prompt_not_used');
     assert.deepEqual(createDraft([prompts], null), { prompts: {} });
-    assert.equal(schema.safeParse({ prompts: { en_US: 'Summarize this chat.', de_DE: 'Fasse den Chat zusammen.' } }).success, true);
+    assert.equal(
+        schema.safeParse({ prompts: { en_US: 'Summarize this chat.', de_DE: 'Fasse den Chat zusammen.' } }).success,
+        true
+    );
     assert.equal(schema.safeParse({ prompts: { en_US: 'x'.repeat(100001) } }).success, false);
     assert.equal(schema.safeParse({ prompts: { fr_FR: 'Résume cette discussion.' } }).success, false);
 });
@@ -185,15 +189,15 @@ test('MCP validates transport URLs and typed configuration', () => {
     const schema = editorSchema('mcp', fields, null);
     const values = {
         server_label: 'Local',
-        type: 'stdio',
+        kind: 'stdio',
         url: '/usr/bin/server',
         require_approval: 'always',
         additional_config: { args: ['--verbose'], env: { TOKEN: 'test' } },
         timeouts: { read: 0.1, connect: 120 }
     };
     assert.equal(schema.safeParse(values).success, true);
-    assert.equal(schema.safeParse({ ...values, type: 'http' }).success, false);
-    assert.equal(schema.safeParse({ ...values, type: 'http', url: 'https://example.test/mcp' }).success, true);
+    assert.equal(schema.safeParse({ ...values, kind: 'http' }).success, false);
+    assert.equal(schema.safeParse({ ...values, kind: 'http', url: 'https://example.test/mcp' }).success, true);
     assert.equal(schema.safeParse({ ...values, timeouts: { read: 121 } }).success, false);
     assert.equal(schema.safeParse({ ...values, additional_config: { headers: { Authorization: 5 } } }).success, false);
 });
@@ -219,7 +223,7 @@ test('user forms only require fields permitted by the server and reject invalid 
 test('announcement schema rejects date order, empty publication and targeted policies', () => {
     const names = [
         'title',
-        'type',
+        'kind',
         'is_published',
         'is_global',
         'is_forced',
@@ -236,7 +240,7 @@ test('announcement schema rejects date order, empty publication and targeted pol
     );
     const valid = {
         title: 'News',
-        type: 'news',
+        kind: 'news',
         is_published: true,
         is_global: false,
         is_forced: false,
@@ -246,7 +250,7 @@ test('announcement schema rejects date order, empty publication and targeted pol
     assert.equal(schema.safeParse(valid).success, true);
     for (const value of [
         { ...valid, content: { en_US: ' ' } },
-        { ...valid, type: 'policy' },
+        { ...valid, kind: 'policy' },
         { ...valid, starts_at: '2026-10-02', expires_at: '2026-10-01' }
     ])
         assert.equal(schema.safeParse(value).success, false);
@@ -302,12 +306,22 @@ test('all formerly JSON configuration fields have structured controls', () => {
             const control = controlFor(
                 section,
                 field(key, 'json'),
-                { adapter_key: 'openai_azure', type: 'http' },
+                { adapter_key: 'openai_azure', kind: 'http' },
                 null
             );
             assert.ok(['object', 'multi', 'pricing'].includes(control.type));
         }
     }
+});
+
+test('MCP connection settings follow the transport kind of the draft', () => {
+    const config = field('additional_config', 'json');
+    const stdio = controlFor('mcp', config, { kind: 'stdio' }, null);
+    const http = controlFor('mcp', config, { kind: 'http' }, null);
+    assert.equal(stdio.type, 'object');
+    assert.equal(http.type, 'object');
+    assert.deepEqual(Object.keys(stdio.type === 'object' ? (stdio.fields ?? {}) : {}), ['args', 'env']);
+    assert.deepEqual(Object.keys(http.type === 'object' ? (http.fields ?? {}) : {}), ['headers', 'http_options']);
 });
 
 test('draft cloning supports reactive row proxies', () => {
@@ -373,4 +387,29 @@ test('every editable backend setting has one tab and a client validator', () => 
     assert.equal(new Set(grouped).size, grouped.length);
     assert.deepEqual([...grouped].sort(), keys.sort());
     for (const key of keys) assert.ok(settingsSchemas[key], `Missing validator for ${key}`);
+});
+
+test('user roles use the chip picker and directory accounts explain their read-only profile', () => {
+    const roles = AdminFieldSchema.parse({ key: 'roles', type: 'multi', options: [{ value: 2, label: 'Staff' }] });
+    assert.deepEqual(controlFor('users', roles, {}, null), { type: 'tags', options: roles.options });
+    assert.equal(fieldHint('users', roles, null), 'admin.manual_roles_hint');
+    const email = field('email');
+    assert.equal(fieldHint('users', email, null), undefined);
+    assert.equal(fieldHint('users', email, { id: '1', local_account: true }), undefined);
+    assert.equal(fieldHint('users', email, { id: '1', local_account: false }), 'admin.directory_identity_hint');
+    assert.equal(fieldHint('users', field('admin_disabled', 'boolean'), { id: '1', local_account: false }), undefined);
+});
+
+test('permission and access rule editors are chosen by control type, not by the editor branching on keys', () => {
+    const permissions = AdminFieldSchema.parse({ key: 'permissions', type: 'multi' });
+    assert.deepEqual(controlFor('roles', permissions, {}, null), { type: 'permissions' });
+    // The same key elsewhere keeps the generic control, so the dispatch stays section-scoped.
+    assert.notEqual(controlFor('users', permissions, {}, null).type, 'permissions');
+    const accessRule = AdminFieldSchema.parse({
+        key: 'access_rule',
+        type: 'select',
+        options: [{ value: 'web_search', label: 'Web search' }]
+    });
+    assert.deepEqual(controlFor('tools', accessRule, {}, null), { type: 'access-rule' });
+    assert.notEqual(controlFor('mcp', accessRule, {}, null).type, 'access-rule');
 });

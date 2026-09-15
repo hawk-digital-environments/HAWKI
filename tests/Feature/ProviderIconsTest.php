@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Ai\AiProvider;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\Admin\RoleAssignmentService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +19,8 @@ use Tests\TestCase;
 class ProviderIconsTest extends TestCase
 {
     use DatabaseTransactions;
-    private const BASE = '/api/hawki/v1/admin/providers';
+    use \Tests\Support\AdminJsonApiRequests;
+    private const BASE = '/api/hawki/v1/admin-providers';
 
     public function testIconEndpointsRequireProviderPermission(): void
     {
@@ -37,19 +40,19 @@ class ProviderIconsTest extends TestCase
         ], ['Accept' => 'application/json'])->assertOk()->json('icon');
         self::assertSame($svg, $icon['svg']);
         $values = ['name' => 'Icon test', 'provider_id' => 'icon-test', 'adapter_key' => 'openai', 'active' => true, 'icon' => $icon];
-        $id = $this->postJson(self::BASE, ['values' => $values])->assertSuccessful()->json('id');
+        $id = $this->postAdminResource(self::BASE, ['values' => $values])->assertSuccessful()->json('data.id');
         $provider = AiProvider::withoutGlobalScopes()->findOrFail($id);
         self::assertSame($svg, $provider->icon['svg']);
         self::assertSame('data:image/svg+xml;base64,' . base64_encode($svg), $provider->icon_url);
-        $row = collect($this->getJson(self::BASE . '?filter[search]=icon-test')->assertOk()->json('content.rows'))->firstWhere('id', $id);
-        self::assertEquals($icon, $row['icon']);
-        self::assertSame($provider->icon_url, $row['icon_url']);
+        $row = collect($this->getJson(self::BASE . '?filter[search]=icon-test')->assertOk()->json('data'))->firstWhere('id', $id);
+        self::assertEquals($icon, $row['attributes']['icon']);
+        self::assertSame($provider->icon_url, $row['attributes']['icon_url']);
         $values['icon']['svg'] = str_replace('h24', 'h12', $svg);
-        $this->patchJson(self::BASE . '/' . $id, ['values' => $values, 'version' => $row['_version']])->assertSuccessful();
+        $this->patchAdminResource(self::BASE . '/' . $id, ['values' => $values, 'version' => $row['meta']['version']])->assertSuccessful();
         self::assertSame($values['icon']['svg'], $provider->fresh()->icon['svg']);
-        $row = collect($this->getJson(self::BASE . '?filter[search]=icon-test')->assertOk()->json('content.rows'))->firstWhere('id', $id);
+        $row = collect($this->getJson(self::BASE . '?filter[search]=icon-test')->assertOk()->json('data'))->firstWhere('id', $id);
         $values['icon'] = null;
-        $this->patchJson(self::BASE . '/' . $id, ['values' => $values, 'version' => $row['_version']])->assertSuccessful();
+        $this->patchAdminResource(self::BASE . '/' . $id, ['values' => $values, 'version' => $row['meta']['version']])->assertSuccessful();
         self::assertNull($provider->fresh()->icon);
         self::assertNull($provider->fresh()->icon_url);
         Http::assertNothingSent();
@@ -89,9 +92,9 @@ class ProviderIconsTest extends TestCase
             'api_key' => 'test-only-key',
             'icon' => ['source' => 'svgl', 'svgl_id' => 1, 'title' => 'Amazon Q'],
         ];
-        $response = $this->postJson(self::BASE, ['values' => $values]);
+        $response = $this->postAdminResource(self::BASE, ['values' => $values]);
         self::assertSame(201, $response->status(), json_encode($response->json('errors')));
-        $id = $response->json('id');
+        $id = $response->json('data.id');
         $provider = AiProvider::withoutGlobalScopes()->findOrFail($id);
         self::assertSame('openai_like', $provider->adapter_key);
         self::assertSame($values['api_url'], $provider->api_url);
@@ -105,13 +108,10 @@ class ProviderIconsTest extends TestCase
     private function user(array $permissions): User
     {
         $user = User::factory()->create();
-        $role = DB::table('roles')->insertGetId(['slug' => 'icon-test-' . $user->id, 'name' => 'Icon test']);
+        $role = DB::table('roles')->insertGetId(['name' => 'icon-test-' . $user->id, 'display_name' => 'Icon test']);
 
-        foreach ($permissions as $permission) {
-            DB::table('role_permissions')->insert(['role_id' => $role, 'permission' => $permission]);
-        }
-
-        DB::table('role_user')->insert(['role_id' => $role, 'user_id' => $user->id, 'source' => 'manual']);
+        Role::findOrFail($role)->syncPermissions($permissions);
+        app(RoleAssignmentService::class)->replace($user, [(int) $role]);
 
         return $user;
     }

@@ -1,77 +1,144 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import type { RouteProps } from '$lib/components/ui/routing/index.js';
     const {}: RouteProps = $props();
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
-    import AdminWorkspace from '../components/AdminWorkspace.svelte';
+    import AdminPage from '../components/AdminPage.svelte';
+    import AdminTable from '../components/AdminTable.svelte';
     import AdminActionMenu from '../components/AdminActionMenu.svelte';
+    import type { AdminMenuItem } from '../components/AdminActionMenu.svelte';
     import { adminActionIcons } from '../actionIcons.js';
+    import type { AdminHealthResource } from '../schemas/resources/admin-health.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { QueuedActionSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
-</script>
-
-<AdminWorkspace
-    section="health"
-    searchable={false}
-    pollInterval={30000}
-    pageActions={app.can('health.manage') ? [{ id: 'check-ai-status' }] : []}
-    menuItems={({ content, action }) =>
-        app.can('health.manage') && content?.failed_jobs?.length ?
+    const columns: AdminColumn<AdminHealthResource>[] = [
+        { id: 'name' },
+        { id: 'status', format: 'enum' },
+        { id: 'message' },
+        { id: 'response_time' }
+    ];
+    const workspace = useAdminWorkspace(columns, (signal, query) =>
+        app.restApi.getResourceCollection('admin-health', { query, signal })
+    );
+    const failedJobs = $derived(workspace.content?.failed_jobs ?? []);
+    const menuItems = $derived<AdminMenuItem[]>(
+        app.can('health.manage') && failedJobs.length ?
             [
                 {
                     label: __('admin.actions.flush-jobs'),
                     icon: adminActionIcons['flush-jobs'],
                     destructive: true,
-                    run: (target) => action({ id: 'flush-jobs', confirm: true }, undefined, target)
+                    run: (target) =>
+                        workspace.action(
+                            {
+                                id: 'flush-jobs',
+                                confirm: true,
+                                run: () =>
+                                    app.restApi.postToResourceAction(
+                                        'admin-health',
+                                        `actions/flush-jobs`,
+                                        {},
+                                        { schema: QueuedActionSchema }
+                                    )
+                            },
+                            target
+                        )
                 }
             ]
-        :   []}
+        :   []
+    );
+    // Re-reads every 30 s while the tab is visible and nothing is in flight.
+    onMount(() => {
+        const timer = window.setInterval(() => {
+            if (!document.hidden && !workspace.loading && !workspace.busy && !workspace.updating.length)
+                void workspace.load();
+        }, 30000);
+        return () => window.clearInterval(timer);
+    });
+</script>
+
+<AdminPage
+    section="health"
+    {workspace}
+    pageActions={app.can('health.manage') ?
+        [
+            {
+                id: 'check-ai-status',
+                run: () =>
+                    app.restApi.postToResourceAction(
+                        'admin-health',
+                        `actions/check-ai-status`,
+                        {},
+                        { schema: QueuedActionSchema }
+                    )
+            }
+        ]
+    :   []}
+    {menuItems}
 >
-    {#snippet afterTable({ content, busy, dialogOpen, action })}
-        {#if content}
-            <section class="health-details">
-                <h2>{__('admin.queues')}</h2>
-                <dl>
-                    {#each Object.entries(content.queues ?? {}) as [name, value]}<div>
-                            <dt>{name}</dt>
-                            <dd>{value ?? __('admin.values.unknown')}</dd>
-                        </div>{/each}
-                </dl>
-            </section>
-            <section class="health-details">
-                <h2>{__('admin.failed_jobs')}</h2>
-                {#if content.failed_jobs?.length}<ul>
-                        {#each content.failed_jobs as job}<li>
-                                <span>{job.queue} · {job.failed_at}</span>{#if app.can('health.manage')}<AdminActionMenu
-                                        compact
-                                        label={__('admin.row_actions', { name: job.queue + ' · ' + job.failed_at })}
-                                        disabled={busy}
-                                        {dialogOpen}
-                                        items={[
-                                            {
-                                                label: __('admin.actions.retry-job'),
-                                                icon: adminActionIcons['retry-job'],
-                                                run: (target) =>
-                                                    action({ id: 'retry-job', confirm: true }, job.uuid, target)
-                                            }
-                                        ]}
-                                    />{/if}
-                            </li>{/each}
-                    </ul>
-                {:else}<p>{__('admin.no_failed_jobs')}</p>{/if}
-            </section>
-            <section class="health-details">
-                <h2>{__('admin.environment')}</h2>
-                <dl>
-                    {#each Object.entries(content.versions ?? {}) as [key, value]}<div>
-                            <dt>{__('admin.fields.' + key)}</dt>
-                            <dd>{typeof value === 'boolean' ? __(value ? 'admin.yes' : 'admin.no') : value}</dd>
-                        </div>{/each}
-                </dl>
-            </section>
-        {/if}
-    {/snippet}
-</AdminWorkspace>
+    <AdminTable
+        caption={__('admin.sections.health')}
+        {workspace}
+    />
+    {#if workspace.content}
+        <section class="health-details">
+            <h2>{__('admin.queues')}</h2>
+            <dl>
+                {#each Object.entries(workspace.content?.queues ?? {}) as [name, value]}<div>
+                        <dt>{name}</dt>
+                        <dd>{value ?? __('admin.values.unknown')}</dd>
+                    </div>{/each}
+            </dl>
+        </section>
+        <section class="health-details">
+            <h2>{__('admin.failed_jobs')}</h2>
+            {#if failedJobs.length}<ul>
+                    {#each failedJobs as job}<li>
+                            <span>{job.queue} · {job.failed_at}</span>{#if app.can('health.manage')}<AdminActionMenu
+                                    compact
+                                    label={__('admin.row_actions', { name: job.queue + ' · ' + job.failed_at })}
+                                    disabled={workspace.busy}
+                                    dialogOpen={workspace.dialogOpen}
+                                    items={[
+                                        {
+                                            label: __('admin.actions.retry-job'),
+                                            icon: adminActionIcons['retry-job'],
+                                            run: (target) =>
+                                                workspace.action(
+                                                    {
+                                                        id: 'retry-job',
+                                                        confirm: true,
+                                                        run: () =>
+                                                            app.restApi.postToResourceAction(
+                                                                'admin-health',
+                                                                `${encodeURIComponent(job.uuid)}/actions/retry-job`,
+                                                                {},
+                                                                { schema: QueuedActionSchema }
+                                                            )
+                                                    },
+                                                    target
+                                                )
+                                        }
+                                    ]}
+                                />{/if}
+                        </li>{/each}
+                </ul>
+            {:else}<p>{__('admin.no_failed_jobs')}</p>{/if}
+        </section>
+        <section class="health-details">
+            <h2>{__('admin.environment')}</h2>
+            <dl>
+                {#each Object.entries(workspace.content?.versions ?? {}) as [key, value]}<div>
+                        <dt>{__('admin.fields.' + key)}</dt>
+                        <dd>{typeof value === 'boolean' ? __(value ? 'admin.yes' : 'admin.no') : value}</dd>
+                    </div>{/each}
+            </dl>
+        </section>
+    {/if}
+</AdminPage>
 
 <style>
     dt {

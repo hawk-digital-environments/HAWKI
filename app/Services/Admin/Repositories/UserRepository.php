@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Admin\EmployeeTypeRoleSyncer;
 use App\Services\Admin\Permission;
 use App\Services\Admin\PermissionService;
+use App\Services\Admin\RoleAssignmentService;
 use App\Services\Admin\RoleGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -24,6 +25,7 @@ class UserRepository extends ResourceRepository
         private RoleGuard $guard,
         private PermissionService $permissions,
         private EmployeeTypeRoleSyncer $syncer,
+        private RoleAssignmentService $assignments,
     ) {
     }
 
@@ -62,9 +64,7 @@ class UserRepository extends ResourceRepository
                 ])->save();
                 $id = (int) $user->id;
 
-                foreach ($roles as $role) {
-                    DB::table('role_user')->insert(['role_id' => $role, 'user_id' => $id, 'source' => 'manual', 'created_at' => now()]);
-                }
+                $this->assignments->replace($user, $roles);
 
                 return $id;
             }
@@ -90,7 +90,7 @@ class UserRepository extends ResourceRepository
 
             if (array_intersect_key($data, array_flip(['name', 'username', 'email', 'employeetype', 'password', 'password_confirmation']))) {
                 $this->permissions->authorize($actor, Permission::USERS_MANAGE);
-                $this->guard->assertGrantable($this->permissions->permissionsOf($user), $actor);
+                $this->guard->assertGrantable($this->permissions->assignedPermissionsOf($user), $actor);
             }
 
             if ($identity && !filled($user->local_password)) {
@@ -121,7 +121,7 @@ class UserRepository extends ResourceRepository
                     throw ValidationException::withMessages(['admin_disabled' => __('admin.errors.self_disable')]);
                 }
 
-                $this->guard->assertGrantable($this->permissions->permissionsOf($user), $actor);
+                $this->guard->assertGrantable($this->permissions->assignedPermissionsOf($user), $actor);
                 $user->forceFill(['admin_disabled' => $data['admin_disabled']])->save();
 
                 if ($data['admin_disabled']) {
@@ -133,11 +133,7 @@ class UserRepository extends ResourceRepository
                 $this->permissions->authorize($actor, Permission::ROLES_MANAGE);
                 $existing = DB::table('role_user')->where('user_id', $id)->where('source', 'manual')->pluck('role_id')->all();
                 $this->guard->assertRolesGrantable(array_unique(array_merge($existing, $data['roles'])), $actor);
-                DB::table('role_user')->where('user_id', $id)->where('source', 'manual')->delete();
-
-                foreach ($data['roles'] as $role) {
-                    DB::table('role_user')->insert(['role_id' => $role, 'user_id' => $id, 'source' => 'manual', 'created_at' => now()]);
-                }
+                $this->assignments->replace($user, $data['roles']);
             }
 
             $this->guard->assertActorRetainsAccess($actor);
@@ -148,16 +144,16 @@ class UserRepository extends ResourceRepository
 
     public function revokeTokens(User $actor, ?string $id): array
     {
-        app(\App\Services\Admin\PermissionService::class)->authorize($actor, \App\Services\Admin\Permission::USERS_MANAGE);
+        $this->permissions->authorize($actor, Permission::USERS_MANAGE);
         $user = User::withoutGlobalScopes()->findOrFail($id);
-        abort_if([] !== array_diff(app(\App\Services\Admin\PermissionService::class)->permissionsOf($user), app(\App\Services\Admin\PermissionService::class)->permissionsOf($actor)), 403);
+        abort_if([] !== array_diff($this->permissions->assignedPermissionsOf($user), $this->permissions->permissionsOf($actor)), 403);
 
         return ['revoked' => $user->tokens()->delete()];
     }
 
     public function tokens(User $actor, ?string $id): array
     {
-        app(\App\Services\Admin\PermissionService::class)->authorize($actor, \App\Services\Admin\Permission::USERS_MANAGE);
+        $this->permissions->authorize($actor, Permission::USERS_MANAGE);
 
         return ['tokens' => User::withoutGlobalScopes()->findOrFail($id)->tokens()->get(['id', 'name', 'created_at', 'last_used_at', 'expires_at'])->toArray()];
     }

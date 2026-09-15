@@ -21,6 +21,12 @@ enum Permission: string
     case SETTINGS_MANAGE = 'settings.manage';
     case EXTERNAL_APPS_MANAGE = 'external-apps.manage';
 
+    case TOOLS_USE = 'tools.use';
+    case WEB_SEARCH_USE = 'ai.capabilities.web_search.use';
+    case WEB_FETCH_USE = 'ai.capabilities.web_fetch.use';
+    case IMAGE_GENERATION_USE = 'ai.capabilities.image_generation.use';
+    case INTERNAL_SEARCH_USE = 'tools.internal_search.use';
+
     public static function values(): array
     {
         return array_column(self::cases(), 'value');

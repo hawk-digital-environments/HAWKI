@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AiCapabilityController;
 use App\Http\Controllers\Api\V1\AiConvController;
 use App\Http\Controllers\Api\V1\AiModelController;
@@ -55,7 +54,7 @@ use LaravelJsonApi\Laravel\Routing\ActionRegistrar;
 use LaravelJsonApi\Laravel\Routing\Relationships;
 use LaravelJsonApi\Laravel\Routing\ResourceRegistrar;
 
-Route::middleware(['auth:sanctum', 'deprecated:/api/hawki/v1/users/me'])->get('/user', static function (Request $request) {
+Route::middleware(['auth:sanctum', 'deprecated:/api/hawki/v1/users/me'])->get('/user', function (Request $request) {
     return $request->user();
 });
 
@@ -63,8 +62,8 @@ Route::middleware([
     ExternalAccessRequiredMiddleware::class,
     'auth:sanctum',
     BlockExtAppsIfNotAllowedMiddleware::class,
-    AppTokenForbiddenMiddleware::class,
-])->group(static function (): void {
+    AppTokenForbiddenMiddleware::class
+])->group(function () {
     Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
 });
 
@@ -75,13 +74,9 @@ Route::group(['prefix' => Server::BASE_URL_PREFIX], static function (): void {
 Route::middleware([
     'auth:sanctum',
     BlockExtAppsIfNotAllowedMiddleware::class,
-    AppTokenForbiddenMiddleware::class,
-])->group(static function (): void {
-    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function (): void {
-
-        Route::prefix('admin')->middleware(['throttle:120,1', ApiDataScopeContextSettingMiddleware::class])
-            ->withoutMiddleware(ConvertEmptyStringsToNull::class)
-            ->group(__DIR__ . '/admin.php');
+    AppTokenForbiddenMiddleware::class
+])->group(function () {
+    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function () {
 
         Route::get('/proxy/link-preview/favicon', [LinkPreviewController::class, 'getFavicon'])
             ->name('api.link-preview.favicon');
@@ -108,7 +103,74 @@ JsonApiRoute::server('v1')
         AppTokenForbiddenMiddleware::class,
         ApiDataScopeContextSettingMiddleware::class,
     )
-    ->resources(static function (ResourceRegistrar $server): void {
+    ->withoutMiddleware(ConvertEmptyStringsToNull::class)
+    ->resources(function (ResourceRegistrar $server) {
+        Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () use ($server) {
+            $server->resource('admin-providers', Admin\ProviderController::class)
+                ->only('index', 'store', 'update', 'destroy')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->withId()->post('actions/test', 'test');
+                    $actions->withId()->post('actions/discover', 'discover');
+                    $actions->withId()->post('actions/inspect', 'inspect');
+                    $actions->post('actions/import', 'import');
+                    $actions->get('actions/icons', 'icons');
+                    $actions->post('actions/icon-upload', 'uploadIcon');
+                });
+
+            $server->resource('admin-models', Admin\ModelController::class)
+                ->only('index', 'store', 'update', 'destroy')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->withId()->post('actions/refresh', 'refresh');
+                });
+
+            $server->resource('admin-mcp', Admin\McpServerController::class)
+                ->only('index', 'store', 'update', 'destroy')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->withId()->post('actions/test', 'test');
+                    $actions->withId()->post('actions/discover', 'discover');
+                });
+
+            $server->resource('admin-tools', Admin\ToolController::class)
+                ->only('index', 'update');
+
+            $server->resource('admin-system-models', Admin\SystemModelController::class)
+                ->only('index', 'store', 'update', 'destroy');
+
+            $server->resource('admin-announcements', Admin\AnnouncementController::class)
+                ->only('index', 'store', 'update', 'destroy');
+
+            $server->resource('admin-users', Admin\UserController::class)
+                ->only('index', 'store', 'update')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->withId()->post('actions/revoke-tokens', 'revokeTokens');
+                    $actions->withId()->get('actions/tokens', 'tokens');
+                });
+
+            $server->resource('admin-roles', Admin\RoleController::class)
+                ->only('index', 'store', 'update', 'destroy');
+
+            $server->resource('admin-mappings', Admin\RoleMappingController::class)
+                ->only('index', 'store', 'update', 'destroy');
+
+            $server->resource('admin-settings', Admin\SettingController::class)
+                ->only('index', 'update', 'destroy');
+
+            $server->resource('admin-usage', Admin\UsageController::class)
+                ->only('index');
+
+            $server->resource('admin-environment', Admin\EnvironmentController::class)
+                ->only('index');
+
+            $server->resource('admin-health', Admin\HealthController::class)
+                ->only('index')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->post('actions/check-ai-status', 'checkAiStatus');
+                    // This ID identifies a failed job, not a health resource.
+                    $actions->post('{id}/actions/retry-job', 'retryJob');
+                    $actions->post('actions/flush-jobs', 'flushJobs');
+                });
+        });
+
         $server->resource('connections', ConnectionController::class)
             ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
             ->only('show');
@@ -127,7 +189,7 @@ JsonApiRoute::server('v1')
             ->only('show');
 
         $server->resource('migrations', MigrationController::class)
-            ->actions(static function (ActionRegistrar $actions): void {
+            ->actions(function (ActionRegistrar $actions) {
                 $actions->post('actions/apply', 'markMigrationAsApplied');
             })
             ->only('index', 'show');
@@ -137,6 +199,7 @@ JsonApiRoute::server('v1')
                 $actions->post('actions/seen', 'markSeen');
                 $actions->post('actions/accept', 'markAccepted');
                 $actions->get('actions/registration-policy', 'show')
+                    ->name('registrationPolicy')
                     ->uses(RegistrationPolicyController::class . '@show');
             })
             ->only('index', 'show');
@@ -145,7 +208,7 @@ JsonApiRoute::server('v1')
             ->withoutMiddleware(ExternalAccessRequiredMiddleware::class)
             ->middleware(ExtAppUserOrTokenForbiddenMiddleware::class)
             ->only('show')
-            ->actions(static function (ActionRegistrar $actions): void {
+            ->actions(function (ActionRegistrar $actions) {
                 $actions->post('actions/establish-connection', 'establishConnection');
                 $actions->get('actions/proxy-logo/{appId}', 'logoProxy')
                     ->name('proxyLogo')
@@ -160,13 +223,13 @@ JsonApiRoute::server('v1')
 
         $server->resource('mcp-servers', McpServerController::class)
             ->only('index', 'show')
-            ->relationships(static function ($relationships): void {
+            ->relationships(function ($relationships) {
                 $relationships->hasMany('tools')->readOnly();
             });
 
         $server->resource('ai-tools', AiToolController::class)
             ->only('index', 'show')
-            ->relationships(static function ($relationships): void {
+            ->relationships(function ($relationships) {
                 $relationships->hasOne('server')->readOnly();
                 $relationships->hasMany('models')->readOnly();
             });
@@ -176,13 +239,13 @@ JsonApiRoute::server('v1')
 
         $server->resource('ai-providers', AiProviderController::class)
             ->only('index', 'show')
-            ->relationships(static function ($relationships): void {
+            ->relationships(function ($relationships) {
                 $relationships->hasMany('models')->readOnly();
             });
 
         $server->resource('ai-models', AiModelController::class)
             ->only('index', 'show')
-            ->relationships(static function ($relationships): void {
+            ->relationships(function ($relationships) {
                 $relationships->hasOne('provider')->readOnly();
                 $relationships->hasMany('tools')->readOnly();
             });
@@ -195,7 +258,7 @@ JsonApiRoute::server('v1')
 
         $server->resource('system-models', SystemModelController::class)
             ->readOnly()
-            ->relationships(static function (Relationships $relationships): void {
+            ->relationships(function (Relationships $relationships) {
                 $relationships->hasOne('model')->readOnly();
             });
 
@@ -213,7 +276,7 @@ JsonApiRoute::server('v1')
             });
 
         $server->resource('user-keychain-values', UserKeychainValueController::class)
-            ->actions(static function (ActionRegistrar $actions): void {
+            ->actions(function (ActionRegistrar $actions) {
                 $actions->get('actions/validator', 'getPasskeyValidator')
                     ->name('validator');
                 $actions->post('actions/batch-update', 'batchUpdate')
