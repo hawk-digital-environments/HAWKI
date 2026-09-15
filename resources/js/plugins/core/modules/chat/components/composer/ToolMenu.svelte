@@ -88,6 +88,7 @@
     import PlusSignIcon from '$lib/components/ui/icons/iconset/PlusSignIcon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
 
     const composerContext = useComposerContext();
     const focusContext = setToolMenuFocusContext();
@@ -108,6 +109,7 @@
     let detailToolName = $state<string | null>(null);
 
     const allEntries = $derived.by(() => {
+        if (aiToolStore.authorizationState !== 'ready') return [];
         const models = aiModelStore.models;
 
         return aiToolStore.tools
@@ -129,7 +131,7 @@
                         }
                         composerContext.tools.set(tool, selection, settings);
                     },
-                    disabled: tool.status === 'offline',
+                    disabled: toolAvailabilityFor(tool, composerContext.model.current) === 'offline',
                     // To avoid rebuilding the whole array, we only update the active/supported state in the filteredEntries derived store.
                     active: false,
                     available: false
@@ -219,6 +221,18 @@
         ?? orderedEntries[0]
         ?? null
     );
+
+    $effect(() => {
+        if (!open) return;
+        if (filteredEntries.length === 0) {
+            open = false;
+            detailToolName = null;
+            requestAnimationFrame(() => composerContext.focusInput());
+        } else if (detailToolName && !detailEntry) {
+            detailToolName = null;
+            requestAnimationFrame(() => focusContext.focusFirst());
+        }
+    });
 
     function closeToolDetail() {
         const name = detailToolName;

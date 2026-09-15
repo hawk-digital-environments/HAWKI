@@ -308,6 +308,15 @@
                 "responseError": "An error occurred while processing the response.",
                 "sendError": "An error occurred while sending the message."
             }
+        },
+        "tools": {
+            "accessChanged": "Your tool access changed. A selection was removed.",
+            "accessDenied": "You no longer have access to a selected tool. Review your selection and try again.",
+            "unavailable": "A selected tool is currently unavailable for this model. Review your selection.",
+            "authorizationRefreshing": "Tool access is being checked. Please wait before sending with tools.",
+            "messageAccepted": "Your message was saved, but its response could not be generated. Check your selection before regenerating the response.",
+            "offline": "A selected tool is temporarily offline.",
+            "offlineHelp": "Wait for it to come back online, or remove the offline tool to send your message."
         }
     }
 }

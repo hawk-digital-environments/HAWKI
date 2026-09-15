@@ -68,7 +68,8 @@
         if (!tool.is_capability) {
             return [];
         }
-        return tool.getTools().filter(t => aiModelStore.models.some(model => t.isAvailableFor(model)));
+        return tool.getTools().filter(t => aiModelStore.models.some(model => t.isAvailableFor(model, true)) ||
+            (typeof currentState?.toolSelection === 'object' && currentState.toolSelection.id === t.id));
     });
 
     const isCapabilityWithMultipleTools = $derived.by(() => {
@@ -90,7 +91,8 @@
     });
 
     const show = $derived.by(() => {
-        return isCapabilityWithMultipleTools;
+        return isCapabilityWithMultipleTools ||
+            (typeof currentState?.toolSelection === 'object' && currentState.toolSelection.status === 'offline');
     });
 
     const currentState = $derived(composerContext.tools.get(entry.tool, true));
@@ -128,14 +130,14 @@
 
 {#if show}
     <DropdownMenuSeparator/>
-    {#if isCapabilityWithMultipleTools}
+    {#if show}
         <DropdownMenuLabel id={variantLabelId}>{__('chat.composer.toolMenuConfig.variantLabel')}</DropdownMenuLabel>
         <RadioCardGroup
             value={currentToolSelectionString}
             onChange={handleToolSelectionChange}
             aria-labelledby={variantLabelId}
         >
-            <RadioCard value="auto">
+            <RadioCard value="auto" disabled={!isAnyToolAvailableForCurrentModel}>
                 {__('chat.composer.toolMenuConfig.autoLabel')}
                 {#snippet meta()}
                     <StatusDotForTool tool={entry.tool} supported={isAnyToolAvailableForCurrentModel}/>
@@ -145,7 +147,7 @@
                 {/snippet}
             </RadioCard>
             {#if anyModelHasNativeCapability}
-                <RadioCard value="native">
+                <RadioCard value="native" disabled={!hasNativeCapability}>
                     {__('chat.composer.toolMenuConfig.nativeLabel')}
                     {#snippet meta()}
                         <StatusDotForTool tool={entry.tool} supported={hasNativeCapability}/>
@@ -156,10 +158,10 @@
                 </RadioCard>
             {/if}
             {#each toolSelectOptions as option}
-                <RadioCard value={option.name}>
+                <RadioCard value={option.name} disabled={option.status === 'offline'}>
                     {option.displayName}
                     {#snippet meta()}
-                        <StatusDotForTool tool={option} supported={option.isAvailableFor(composerContext.model.current)}/>
+                        <StatusDotForTool tool={option} supported={option.isAvailableFor(composerContext.model.current)} showLabel={option.status === 'offline'} focusable={false}/>
                         <InfoPopover label={option.displayName} info={option.description}/>
                     {/snippet}
                 </RadioCard>

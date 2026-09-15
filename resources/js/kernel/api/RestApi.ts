@@ -8,6 +8,8 @@ import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js
 import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
 
 export type FetchOptions = RequestInit & {
+    /** Forward raw response streams to legacy consumers through the shared transport. */
+    responseType?: 'json' | 'stream';
     /**
      * Optional locale to send with the request. If provided, it will be added as a query parameter to the URL.
      * If not provided, the default locale from the connection will be used.

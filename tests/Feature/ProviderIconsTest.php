@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Ai\AiProvider;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\Admin\RoleAssignmentService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -106,13 +108,10 @@ class ProviderIconsTest extends TestCase
     private function user(array $permissions): User
     {
         $user = User::factory()->create();
-        $role = DB::table('roles')->insertGetId(['slug' => 'icon-test-' . $user->id, 'name' => 'Icon test']);
+        $role = DB::table('roles')->insertGetId(['name' => 'icon-test-' . $user->id, 'display_name' => 'Icon test']);
 
-        foreach ($permissions as $permission) {
-            DB::table('role_permissions')->insert(['role_id' => $role, 'permission' => $permission]);
-        }
-
-        DB::table('role_user')->insert(['role_id' => $role, 'user_id' => $user->id, 'source' => 'manual']);
+        Role::findOrFail($role)->syncPermissions($permissions);
+        app(RoleAssignmentService::class)->replace($user, [(int) $role]);
 
         return $user;
     }

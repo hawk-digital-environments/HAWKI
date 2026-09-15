@@ -15,6 +15,7 @@ class AdminServiceProvider extends ServiceProvider
     {
         $this->app->singleton(SystemSettings::class);
         $this->app->singleton(EnvironmentConfigProxy::class);
+        $this->app->scoped(\App\Services\Admin\RoleGuard::class);
         $this->app->extend(\Illuminate\Foundation\Console\ConfigCacheCommand::class, fn() => new CacheDeploymentConfig($this->app['files']));
         $this->app->booting(function () {
             // Also covers optimize and programmatic Artisan::call('config:cache').

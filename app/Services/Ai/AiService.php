@@ -14,7 +14,6 @@ use App\Services\Ai\SystemModels\SystemModelRepository;
 use App\Services\Ai\SystemPrompts\SystemPromptRepository;
 use App\Services\Ai\Tools\Mcp\HawkiMcpClient;
 use App\Services\Ai\Tools\Repositories\McpServerRepository;
-use App\Utils\Lists\LazySingletonList;
 use Illuminate\Container\Attributes\Give;
 use Illuminate\Container\Attributes\Singleton;
 
@@ -47,11 +46,8 @@ use Illuminate\Container\Attributes\Singleton;
 readonly class AiService
 {
     public function __construct(
-        /**
-         * @var LazySingletonList<McpServer, HawkiMcpClient>
-         */
         #[Give(AiServiceProvider::MCP_CLIENT_LIST)]
-        private LazySingletonList      $mcpClientList,
+        private \App\Services\Ai\Tools\Mcp\McpClientRegistry $mcpClientList,
         private AgentRegistry          $agentRegistry,
         private AiModelRepository      $aiModelRepository,
         private SystemModelRepository  $systemModelRepository,

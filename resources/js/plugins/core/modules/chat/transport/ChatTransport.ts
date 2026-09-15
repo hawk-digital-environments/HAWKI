@@ -2,12 +2,13 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {ChatMessage, MessageStats} from '$plugins/core/modules/chat/types.js';
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
-import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
+import {AiApiError, aiPacketText} from '$lib/kernel/ai/AiApi.js';
 import type {AiMessage, AiStreamRequest} from '$lib/kernel/ai/types.js';
 import {applyThinkingEvent, emptyThinkingTimeline} from '$plugins/core/modules/chat/utils/thinkingEvents.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-import {createToolOrCapabilityWithStateFromTransferString} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
+import {ApiTransportError} from '$lib/kernel/api/errors.js';
+import {validatedToolSnapshot} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 
 /**
  * Lifecycle of one assistant reply as seen by the page that owns the
@@ -31,6 +32,7 @@ interface ChatTransportOptions {
 /** Everything one assistant reply needs, independent of whether the composer or the
  *  regenerate action on a message asked for it. */
 interface AssistantRequest {
+    actorId: number;
     modelId: string;
     /** Tools in their transfer-string form (see `AiToolOrCapabilityWithState.toTransferString`). */
     tools: string[];
@@ -109,7 +111,13 @@ export class ChatTransport implements MessageSenderTransportInterface {
             return;
         }
 
-        const request = this.requestFromContext(context);
+        let request: AssistantRequest;
+        try {
+            request = this.requestFromContext(context);
+        } catch (error) {
+            setResponseFailed(this.errorMessage(error));
+            return;
+        }
         let generationStarted = false;
         let conversationCreated = false;
         let provisionalTitle: string | null = null;
@@ -149,7 +157,9 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 return;
             }
 
+            this.assertCurrentRequest(request);
             const encrypted = await this.store.encryptText(sentMessage);
+            this.assertCurrentRequest(request);
             const userMessage = await this.store.persistMessage(targetSlug, {
                 isAi: false,
                 threadId: request.threadId,
@@ -157,17 +167,27 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 content: {text: encrypted, attachments: this.attachmentUuids(opt)},
                 __plainText: sentMessage
             });
+            status.markAccepted();
+            if (request.actorId !== this.actorId()) throw new Error('TOOL_ACCESS_DENIED');
             this.store.replaceMessage(targetSlug, optimisticMessage.message_id, {...userMessage, clientKey: optimisticMessage.clientKey});
+            this.assertCurrentRequest(request);
         } catch (error) {
             if (targetSlug) {
                 this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
             }
             if (generationStarted && targetSlug) this.store.finishGeneration(targetSlug);
             if (conversationCreated || !targetSlug) this.options.onConversationPending?.(null);
-            setResponseFailed(this.errorMessage(error));
+            setResponseFailed(status.accepted ? this.app.translator.__('chat.tools.messageAccepted') : this.errorMessage(error));
             return;
         }
 
+        try {
+            this.assertCurrentRequest(request);
+        } catch (error) {
+            this.store.finishGeneration(targetSlug);
+            setResponseFailed(status.accepted ? this.app.translator.__('chat.tools.messageAccepted') : this.errorMessage(error));
+            return;
+        }
         const conversationSlug = targetSlug;
         waitForResponse(async response => {
             try {
@@ -182,8 +202,8 @@ export class ChatTransport implements MessageSenderTransportInterface {
      * Re-runs the assistant reply `message` and replaces it in place. `modelId` picks the
      * model; `null` reuses the one that produced the message. A model that is no longer
      * available falls back to the default model. Tools and sampling parameters come from the
-     * message's metadata; tools that no longer exist or that the model cannot use are skipped.
-     * `onNotice` receives a human-readable line for each such fallback. The conversation is
+     * message's metadata. Unavailable tool selections abort regeneration for review.
+     * `onNotice` reports model fallback. The conversation is
      * marked as generating for the duration. Rejects with the error message on failure.
      */
     public async regenerateMessage(
@@ -195,25 +215,18 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const translator = this.app.translator;
         const requestedModelId = modelId ?? message.model;
         const model = this.app.stores.get('ai-models').getModelByIdOrFallback(requestedModelId);
+        if (!model) throw new Error(translator.__('chat.tools.unavailable'));
         if (requestedModelId && model.model_id !== requestedModelId) {
             onNotice?.(translator.__('chat.regenerate.modelNotAvailable', {model: requestedModelId, fallback: model.label}));
         }
 
         const toolStore = this.app.stores.get('ai-tools');
-        const tools: string[] = [];
         const storedTools = message.metadata?.tools;
-        for (const transferString of Array.isArray(storedTools) ? storedTools : []) {
-            if (typeof transferString !== 'string') continue;
-            const tool = createToolOrCapabilityWithStateFromTransferString(transferString, toolStore);
-            if (!tool) {
-                onNotice?.(translator.__('chat.regenerate.toolNotAvailable', {tool: transferString}));
-                continue;
-            }
-            if (!tool.isAvailableFor(model)) {
-                onNotice?.(translator.__('chat.regenerate.toolNotAvailableForModel', {tool: tool.name}));
-                continue;
-            }
-            tools.push(tool.toTransferString());
+        let tools: string[];
+        try {
+            tools = validatedToolSnapshot(Array.isArray(storedTools) ? storedTools : [], toolStore, model);
+        } catch (error) {
+            throw new Error(this.errorMessage(error));
         }
 
         // Only the sampling parameters travel along; everything else falls back to the
@@ -224,6 +237,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         if (typeof storedParams?.top_p === 'number') params.top_p = storedParams.top_p;
 
         const request: AssistantRequest = {
+            actorId: this.actorId(),
             modelId: model.model_id,
             tools,
             params: Object.keys(params).length ? params : null,
@@ -251,9 +265,14 @@ export class ChatTransport implements MessageSenderTransportInterface {
     /** Snapshot of the composer state that shapes the assistant reply for a regular send. */
     private requestFromContext(context: ComposerContext): AssistantRequest {
         const threadId = context.mode.isThread ? Number(context.mode.getState('thread').threadId) : 0;
+        const requested = context.tools.active.map(tool => tool.toTransferString());
+        if (context.tools.reconcile(context.model.current, false)) throw new Error('TOOL_ACCESS_DENIED');
+        const model = this.app.stores.get('ai-models').getOneById(context.model.current);
+        if (!model) throw new Error('TOOL_UNAVAILABLE');
         return {
-            modelId: context.model.current.model_id,
-            tools: context.tools.active.map(tool => tool.toTransferString()),
+            actorId: this.actorId(),
+            modelId: model.model_id,
+            tools: validatedToolSnapshot(requested, this.app.stores.get('ai-tools'), model),
             params: context.modelParameters.requestParameters,
             systemPrompt: context.systemPrompt,
             threadId: Number.isFinite(threadId) ? threadId : 0,
@@ -380,6 +399,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             };
         };
         try {
+            this.assertCurrentRequest(request);
             for await (const packet of this.app.aiApi.stream({
                 model: request.modelId,
                 messages: this.messageHistory(conversationSlug, request.systemPrompt, threadId, regenerateMessageId ?? undefined),
@@ -390,7 +410,11 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 messageId: regenerateMessageId
             }, {signal: controller.signal})) {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
-                if (packet.type === 'error') throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
+                if (packet.type === 'error') {
+                    if (packet.code === 'TOOL_ACCESS_DENIED') void this.app.refreshConnection().catch(() => undefined);
+                    throw new Error(String(packet.code === 'TOOL_ACCESS_DENIED' || packet.code === 'TOOL_UNAVAILABLE'
+                        ? packet.code : packet.content ?? this.app.translator.__('chat.page.requestFailed')));
+                }
                 if (packet.type === 'reasoning_start' || packet.type === 'reasoning_delta'
                     || packet.type === 'reasoning_end' || packet.type === 'provider_tool_event') {
                     thinking = applyThinkingEvent(thinking, packet);
@@ -519,7 +543,25 @@ export class ChatTransport implements MessageSenderTransportInterface {
         return compact.length > 52 ? compact.slice(0, 49) + '…' : compact || this.app.translator.__('chat.page.newChat');
     }
 
+    private actorId(): number {
+        if (!this.app.connection.isAuthenticated) throw new Error('TOOL_ACCESS_DENIED');
+        return this.app.connection.userinfo.id;
+    }
+
+    /** Check the captured choices again after uploads and before dispatch, without changing them. */
+    private assertCurrentRequest(request: AssistantRequest): void {
+        if (request.actorId !== this.actorId()) throw new Error('TOOL_ACCESS_DENIED');
+        const model = this.app.stores.get('ai-models').getOneById(request.modelId);
+        if (!model) throw new Error('TOOL_UNAVAILABLE');
+        const current = validatedToolSnapshot(request.tools, this.app.stores.get('ai-tools'), model);
+        if (current.some((tool, index) => tool !== request.tools[index])) throw new Error('TOOL_ACCESS_DENIED');
+    }
+
     private errorMessage(error: unknown): string {
+        const code = error instanceof ApiTransportError || error instanceof AiApiError ? error.code : error instanceof Error ? error.message : null;
+        if (code === 'TOOL_ACCESS_DENIED') return this.app.translator.__('chat.tools.accessDenied');
+        if (code === 'TOOL_UNAVAILABLE') return this.app.translator.__('chat.tools.unavailable');
+        if (code === 'TOOL_AUTHORIZATION_REFRESHING') return this.app.translator.__('chat.tools.authorizationRefreshing');
         return error instanceof Error ? error.message : this.app.translator.__('chat.page.sendError');
     }
 }

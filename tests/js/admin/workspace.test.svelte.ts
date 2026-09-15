@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
+import type { JsonApiCollection } from '../../../resources/js/kernel/api/jsonApiEncoding.js';
 import { RestApi } from '../../../resources/js/kernel/api/RestApi.js';
 import { UriBuilder } from '../../../resources/js/kernel/api/UriBuilder.js';
 import {
@@ -393,4 +394,239 @@ test('results are independent by action id and retain their own row and trigger'
     assert.deepEqual(workspace.results.tools.response, { tools: ['23'] });
     workspace.closeResult('tools');
     assert.deepEqual(workspace.results, {});
+});
+
+test('revocation clears protected rows and dialogs and a later grant cannot revive confirmation', async () => {
+    let writes = 0;
+    const { workspace } = fixture(
+        'roles',
+        {
+            data: [{ type: 'admin-roles', id: '17', attributes: { name: 'Protected role' } }],
+            meta: { fields: [{ key: 'name', type: 'text' }], delete: true }
+        },
+        {
+            save: async () => {
+                writes++;
+            },
+            remove: async () => {
+                writes++;
+            }
+        }
+    );
+    await workspace.load();
+    workspace.edit(workspace.rows[0], null);
+    workspace.remove(workspace.rows[0], null);
+    assert.ok(workspace.editor);
+    assert.ok(workspace.confirmation);
+    workspace.invalidate();
+    assert.equal(workspace.content, null);
+    assert.deepEqual(workspace.rows, []);
+    assert.equal(workspace.editor, null);
+    assert.equal(workspace.confirmation, null);
+    await workspace.confirm();
+    await assert.rejects(workspace.save({ name: 'Forbidden' }));
+    assert.equal(writes, 0);
+    await workspace.resume();
+    await workspace.confirm();
+    assert.equal(writes, 0);
+    assert.equal(workspace.rows.length, 1);
+    assert.equal(workspace.editor, null);
+});
+
+test('late reads from a revoked actor are discarded even when the reader ignores abort', async () => {
+    let resolve!: (value: JsonApiCollection<AdminRow>) => void;
+    const pending = new Promise<JsonApiCollection<AdminRow>>((done) => {
+        resolve = done;
+    });
+    const workspace = new AdminWorkspace(
+        (label) => label,
+        [{ id: 'name' }],
+        () => pending
+    );
+    const read = workspace.load();
+    workspace.invalidate();
+    resolve([{ type: 'admin-roles', id: '17', name: 'Former actor data' }]);
+    await read;
+    assert.equal(workspace.content, null);
+    assert.equal(workspace.loading, false);
+});
+
+test('late action responses cannot restore dialogs after revocation and regrant', async () => {
+    let finish!: (value: { tokens: string[] }) => void;
+    const response = new Promise<{ tokens: string[] }>((resolve) => {
+        finish = resolve;
+    });
+    const { workspace } = fixture(
+        'users',
+        { data: [] },
+        {
+            rowActions: () => ({ tokens: { confirm: true, dialog: true, run: () => response } })
+        }
+    );
+    workspace.action(workspace.rowActions({ id: '17' })[0]);
+    const action = workspace.confirm();
+    workspace.invalidate();
+    await workspace.resume();
+    finish({ tokens: ['Former actor token metadata'] });
+    await action;
+    assert.deepEqual(workspace.results, {});
+    assert.equal(workspace.confirmation, null);
+    assert.equal(workspace.notice, '');
+});
+
+test('suspending a refresh cancels reads and prevents actions until fresh metadata loads', async () => {
+    let calls = 0;
+    const { workspace } = fixture(
+        'users',
+        { data: [] },
+        {
+            save: async () => {
+                calls++;
+            }
+        }
+    );
+    workspace.suspend();
+    workspace.edit(null, null);
+    workspace.action({
+        id: 'tokens',
+        run: async () => {
+            calls++;
+        }
+    });
+    assert.equal(workspace.editor, null);
+    await assert.rejects(workspace.save({}));
+    await workspace.load();
+    assert.equal(workspace.content, null);
+    assert.equal(calls, 0);
+    await workspace.resume();
+    workspace.edit(null, null);
+    assert.ok(workspace.editor);
+});
+
+test('403 denial stays visible through refresh without replaying the mutation or keeping protected details', async () => {
+    const { ApiTransportError } = await import('../../../resources/js/kernel/api/errors.js');
+    let writes = 0;
+    const { workspace } = fixture(
+        'users',
+        { data: [] },
+        {
+            save: async () => {
+                writes++;
+                workspace.suspend();
+                throw new ApiTransportError(403, [], {}, 'Protected account metadata');
+            }
+        }
+    );
+    await workspace.update({ id: '17' }, {});
+    assert.equal(workspace.authorizationDenied, true);
+    assert.equal(workspace.error, '');
+    await workspace.resume();
+    assert.equal(workspace.authorizationDenied, true);
+    assert.equal(writes, 1);
+});
+
+test('focus restoration falls back when a refresh disabled the original trigger', () => {
+    const { workspace } = fixture('users');
+    class FocusTarget {
+        isConnected = true;
+        matches() {
+            return true;
+        }
+    }
+    const disabled = new FocusTarget() as unknown as HTMLElement;
+    const fallback = new FocusTarget() as unknown as HTMLElement;
+    workspace.focusFallback = () => fallback;
+    assert.equal(workspace.restoreFocus(disabled), fallback);
+});
+
+function refreshFixture() {
+    const response = {
+        data: [{ type: 'admin-roles', id: '17', attributes: { name: 'Role' }, meta: { version: 'v1' } }],
+        meta: { fields: [{ key: 'name', type: 'text' }], create: true, delete: true }
+    };
+    const { workspace } = fixture('roles', response, { save: async () => {}, remove: async () => {} });
+    return { response, workspace };
+}
+
+test('successful same-permission refresh closes changed or deleted edit targets', async () => {
+    for (const change of ['changed', 'deleted']) {
+        const { response, workspace } = refreshFixture();
+        await workspace.load();
+        workspace.edit(workspace.rows[0], null);
+        workspace.suspend();
+        if (change === 'changed') response.data[0].meta.version = 'v2';
+        else response.data = [];
+        await workspace.resume();
+        assert.equal(workspace.editor, null, change);
+        assert.equal(workspace.notice, 'admin.editor_refreshed');
+    }
+});
+
+test('successful same-permission refresh always closes pending confirmations', async () => {
+    const { workspace } = refreshFixture();
+    await workspace.load();
+    workspace.remove(workspace.rows[0], null);
+    workspace.suspend();
+    await workspace.resume();
+    assert.equal(workspace.confirmation, null);
+});
+
+test('successful same-permission refresh preserves unchanged create and edit editor identities', async () => {
+    for (const creating of [false, true]) {
+        const { workspace } = refreshFixture();
+        await workspace.load();
+        workspace.edit(creating ? null : workspace.rows[0], null);
+        const editor = workspace.editor;
+        workspace.suspend();
+        await workspace.resume();
+        assert.equal(workspace.editor, editor, 'keeping the editor instance preserves its form draft');
+        assert.equal(workspace.notice, '');
+    }
+});
+
+test('refresh closes editors when field metadata or create access changes even if a row version is unchanged', async () => {
+    for (const change of ['fields', 'create']) {
+        const { response, workspace } = refreshFixture();
+        await workspace.load();
+        workspace.edit(change === 'create' ? null : workspace.rows[0], null);
+        workspace.suspend();
+        if (change === 'fields') response.meta.fields = [];
+        else response.meta.create = false;
+        await workspace.resume();
+        assert.equal(workspace.editor, null);
+    }
+});
+
+test('same-version editors close when authorization catalog metadata changes', async () => {
+    const { response, workspace } = refreshFixture();
+    await workspace.load();
+    workspace.edit(workspace.rows[0], null);
+    Object.assign(response.meta, {
+        permission_catalog: [
+            {
+                name: 'tools.use',
+                group: 'tools',
+                title_label: 'admin.permissions.tools.use.title',
+                description_label: 'admin.permissions.tools.use.description',
+                grantable: false
+            }
+        ]
+    });
+    workspace.suspend();
+    await workspace.resume();
+    assert.equal(workspace.editor, null);
+});
+
+test('failed refresh closes unverified editors and clears old editable metadata', async () => {
+    const { response, workspace } = refreshFixture();
+    await workspace.load();
+    workspace.edit(workspace.rows[0], null);
+    Object.assign(response.meta, { fields: 'invalid response' });
+    workspace.suspend();
+    await workspace.resume();
+    assert.equal(workspace.editor, null);
+    assert.equal(workspace.content, null);
+    assert.equal(workspace.canEdit, false);
+    assert.equal(workspace.notice, 'admin.editor_unverified');
+    assert.notEqual(workspace.error, '');
 });

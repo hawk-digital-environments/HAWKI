@@ -8,7 +8,7 @@
     lang="ts"
     generics="Row extends AdminRow, ColumnId extends string, Results extends Record<string, unknown>"
 >
-    import type { Snippet } from 'svelte';
+    import { onMount, tick, untrack, type Snippet } from 'svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
     import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
@@ -51,6 +51,39 @@
         app.can('admin.access') && app.can(sections.find((item) => item.id === section)!.permission)
     );
     let toolbar = $state<HTMLDivElement>();
+    let forbidden = $state<HTMLParagraphElement>();
+    const permissionSignature = () => JSON.stringify(
+        app.connection.type === 'internal_authenticated' ? [...app.connection.userinfo.permissions].sort() : []
+    );
+    let previousPermissions = untrack(permissionSignature);
+    function invalidate() {
+        const hadDialog = workspace.dialogOpen;
+        workspace.invalidate();
+        if (hadDialog || !allowed) void tick().then(() => (allowed ? workspace.restoreFocus() : forbidden)?.focus());
+    }
+    $effect(() => {
+        if (!allowed) untrack(invalidate);
+    });
+    onMount(() => {
+        const disposers = [
+            app.events.async.on('connectionRefreshStarted', () => workspace.suspend()),
+            app.events.async.on('connectionRefreshed', async () => {
+                const current = permissionSignature();
+                if (!allowed || current !== previousPermissions) {
+                    invalidate();
+                    if (allowed) workspace.notice = __('admin.authorization_changed');
+                }
+                previousPermissions = current;
+                if (allowed && await workspace.resume()) {
+                    await tick();
+                    if (!workspace.dialogOpen) workspace.restoreFocus()?.focus();
+                }
+            }),
+            app.events.async.on('connectionRefreshFailed', () => invalidate()),
+            app.events.sync.on('sessionLost', () => invalidate())
+        ];
+        return () => disposers.forEach((dispose) => dispose());
+    });
     const toolbarItems = $derived.by<AdminMenuItem[]>(() => [
         {
             label: __('admin.reload'),
@@ -68,7 +101,7 @@
     ]);
 
     $effect(() => {
-        workspace.focusFallback = () => toolbar?.querySelector<HTMLElement>('button') ?? null;
+        workspace.focusFallback = () => toolbar?.querySelector<HTMLElement>('button:not(:disabled)') ?? toolbar ?? forbidden ?? null;
     });
 </script>
 
@@ -78,12 +111,13 @@
             <PageHeaderBar heading={title}>
                 <div
                     class="header-actions"
+                    tabindex="-1"
                     bind:this={toolbar}
                 >
                     <AdminActionMenu
                         label={__('admin.page_actions', { name: title })}
                         items={toolbarItems}
-                        disabled={workspace.busy}
+                        disabled={workspace.busy || app.authorizationRefreshing}
                         compact={breakpoint.is('bpSmAndSmaller')}
                         dialogOpen={workspace.dialogOpen}
                     />
@@ -91,7 +125,7 @@
                         <Button
                             type="button"
                             variant="fill"
-                            disabled={workspace.busy}
+                            disabled={workspace.busy || app.authorizationRefreshing}
                             onclick={(event) => workspace.edit(null, event.currentTarget)}
                         >
                             {__('admin.create')}
@@ -109,11 +143,11 @@
             >
                 {workspace.notice}
             </p>
-            {#if workspace.error}<p
+            {#if workspace.error || workspace.authorizationDenied}<p
                     role="alert"
                     class="error"
                 >
-                    {workspace.error}
+                    {workspace.authorizationDenied ? __('admin.forbidden') : workspace.error}
                 </p>{/if}
             {@render children?.()}
         </div>
@@ -123,6 +157,7 @@
         <AdminEditor
             {section}
             fields={workspace.editor.fields}
+            content={workspace.content}
             row={workspace.editor.row}
             title={title + ' · ' + __(workspace.editor.row ? 'admin.edit' : 'admin.create')}
             onSave={(values) => workspace.save(values)}
@@ -141,7 +176,7 @@
         onConfirm={() => workspace.confirm()}
     />
 {:else}
-    <Page title={__('admin.forbidden_title')}><p>{__('admin.forbidden')}</p></Page>
+    <Page title={__('admin.forbidden_title')}><p bind:this={forbidden} tabindex="-1" role="alert">{__('admin.forbidden')}</p></Page>
 {/if}
 
 <style>

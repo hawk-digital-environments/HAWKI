@@ -16,6 +16,7 @@ import {
     providersSchema
 } from '../../../resources/js/plugins/admin/forms/schemas.js';
 import { controlFor, normalizeControlValue } from '../../../resources/js/plugins/admin/forms/controls.js';
+import { fieldHint } from '../../../resources/js/plugins/admin/forms/hints.js';
 
 const field = (key: string, type = 'text') => AdminFieldSchema.parse({ key, type });
 const fields = [
@@ -386,4 +387,15 @@ test('every editable backend setting has one tab and a client validator', () => 
     assert.equal(new Set(grouped).size, grouped.length);
     assert.deepEqual([...grouped].sort(), keys.sort());
     for (const key of keys) assert.ok(settingsSchemas[key], `Missing validator for ${key}`);
+});
+
+test('user roles use the chip picker and directory accounts explain their read-only profile', () => {
+    const roles = AdminFieldSchema.parse({ key: 'roles', type: 'multi', options: [{ value: 2, label: 'Staff' }] });
+    assert.deepEqual(controlFor('users', roles, {}, null), { type: 'tags', options: roles.options });
+    assert.equal(fieldHint('users', roles, null), 'admin.manual_roles_hint');
+    const email = field('email');
+    assert.equal(fieldHint('users', email, null), undefined);
+    assert.equal(fieldHint('users', email, { id: '1', local_account: true }), undefined);
+    assert.equal(fieldHint('users', email, { id: '1', local_account: false }), 'admin.directory_identity_hint');
+    assert.equal(fieldHint('users', field('admin_disabled', 'boolean'), { id: '1', local_account: false }), undefined);
 });
