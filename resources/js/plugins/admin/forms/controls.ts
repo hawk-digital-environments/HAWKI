@@ -12,6 +12,10 @@ export interface Control {
         | 'multi'
         /** Multi-select rendered as chips with a filtered picker; the choices come from `options`. */
         | 'tags'
+        /** Grouped permission checkboxes fed by `AdminContent.permission_catalog`. */
+        | 'permissions'
+        /** Single tool access rule picked from `AdminContent.access_rules`. */
+        | 'access-rule'
         | 'list'
         | 'object'
         | 'pricing'
@@ -127,6 +131,8 @@ export function controlFor(
 ): Control {
     const key = field.key;
     if (section === 'users' && key === 'roles') return { type: 'tags', options: field.options };
+    if (section === 'roles' && key === 'permissions') return { type: 'permissions' };
+    if (section === 'tools' && key === 'access_rule') return { type: 'access-rule' };
     if (section === 'models') {
         if (key === 'descriptions') return { type: 'localized-text' };
         if (['input', 'output'].includes(key)) return { type: 'multi', options: choices(modalities) };

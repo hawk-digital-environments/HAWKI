@@ -23,6 +23,7 @@ enum Permission: string
 
     case TOOLS_USE = 'tools.use';
     case WEB_SEARCH_USE = 'ai.capabilities.web_search.use';
+    case WEB_FETCH_USE = 'ai.capabilities.web_fetch.use';
     case IMAGE_GENERATION_USE = 'ai.capabilities.image_generation.use';
     case INTERNAL_SEARCH_USE = 'tools.internal_search.use';
 
