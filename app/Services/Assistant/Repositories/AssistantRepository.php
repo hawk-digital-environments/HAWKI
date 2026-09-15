@@ -141,6 +141,16 @@ class AssistantRepository extends AbstractRepository
         return $assistant->ai_tools()->sync($toolIds);
     }
 
+    /**
+     * Copies the provider-tool transfer strings from one assistant to another —
+     * used by the remix flow, gated the same way as {@see syncTools()}.
+     */
+    public function copyProviderTools(Assistant $target, Assistant $source): void
+    {
+        $target->provider_tools = $source->provider_tools;
+        $target->save();
+    }
+
     public function setReleaseStage(Assistant $assistant, AssistantReleaseStage $stage): bool
     {
         if ($assistant->release_stage === $stage) {

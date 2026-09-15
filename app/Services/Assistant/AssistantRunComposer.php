@@ -16,7 +16,9 @@ use Illuminate\Container\Attributes\Singleton;
  * Composes the AI run parameters for a chat exchange driven by an assistant:
  * the fully assembled system prompt, the assistant's model (and whether the
  * client may override it), the sampling parameters, and the tool-transfer
- * strings for the assistant's attached tools.
+ * strings for the assistant's attached tools — the persisted provider-tool
+ * selections (`provider_tools`, capability transfer strings) first, then the
+ * concrete `ai_tools` attachments.
  *
  * This is the single assembly source for every assistant-driven surface —
  * both the agent factory for legacy-payload surfaces (private chat, group
@@ -47,10 +49,13 @@ class AssistantRunComposer
                 'top_p' => $assistant->top_p,
                 'max_tokens' => $assistant->max_tokens,
             ]),
-            toolTransferStrings: $assistant->ai_tools
-                ->map(fn (AiTool $tool): string => $this->transferStringFor($tool, $assistant))
-                ->values()
-                ->all(),
+            toolTransferStrings: [
+                ...($assistant->provider_tools ?? []),
+                ...$assistant->ai_tools
+                    ->map(fn (AiTool $tool): string => $this->transferStringFor($tool, $assistant))
+                    ->values()
+                    ->all(),
+            ],
         );
     }
 

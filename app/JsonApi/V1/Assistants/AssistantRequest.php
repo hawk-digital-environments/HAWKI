@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\JsonApi\V1\Assistants;
 
+use App\Models\Ai\AiTool;
+use App\Services\Ai\Agents\Implementations\Chat\Values\ToolTransferData;
+use App\Services\Ai\Models\Capabilities\AiModelCapabilityRegistry;
 use LaravelJsonApi\Laravel\Http\Requests\ResourceRequest;
 use LaravelJsonApi\Validation\Rule as JsonApiRule;
 
@@ -18,6 +21,7 @@ class AssistantRequest extends ResourceRequest
         'greeting',
         'description',
         'detail_description',
+        'provider_tools',
     ];
 
     public function rules(): array
@@ -40,6 +44,7 @@ class AssistantRequest extends ResourceRequest
             'allow_model_select' => ['boolean'],
             'assistant_category' => ['nullable', JsonApiRule::toOne()],
             'model' => ['string'],
+            'provider_tools' => ['array', 'distinct', $this->providerToolsEntryRule()],
             'max_tokens' => ['integer', 'min:0'],
             'temp' => ['numeric', 'min:0', 'max:1'],
             'top_p' => ['numeric', 'min:0', 'max:1'],
@@ -61,6 +66,71 @@ class AssistantRequest extends ResourceRequest
         }
 
         return $rules;
+    }
+
+    /**
+     * Builds the rule validating every provider-tools entry: a capability transfer
+     * string ("capability:<key>:<native|auto|<tool-name>>") whose capability key is
+     * declared in the {@see AiModelCapabilityRegistry} and whose concrete inner tool
+     * (when one is named) matches an existing tool.
+     *
+     * Concrete tool selections without a capability belong to the assistant's
+     * `ai_tools` relationship, not to this attribute.
+     */
+    private function providerToolsEntryRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if (!\is_array($value)) {
+                return;
+            }
+
+            foreach ($value as $entry) {
+                $this->validateProviderToolsEntry($attribute, $entry, $fail);
+            }
+        };
+    }
+
+    private function validateProviderToolsEntry(string $attribute, mixed $value, \Closure $fail): void
+    {
+        if (!\is_string($value) || $value === '') {
+            $fail('The provider tools must be non-empty transfer strings.');
+
+            return;
+        }
+
+        try {
+            $transferData = ToolTransferData::fromString($value);
+        } catch (\Throwable) {
+            $fail('The provider tool string is not a valid tool transfer string.');
+
+            return;
+        }
+
+        if (!$transferData->isCapability()) {
+            $fail('The provider tools only accept capability transfer strings (capability:<key>:<native|auto|<tool>).');
+
+            return;
+        }
+
+        $registry = app(AiModelCapabilityRegistry::class);
+
+        if (!$registry->has($transferData->toolOrCapability)) {
+            $fail('The provider tool references an unknown capability.');
+
+            return;
+        }
+
+        $innerTool = $transferData->innerTool;
+
+        if ($innerTool !== null && $innerTool !== 'native' && $innerTool !== 'auto') {
+            $toolExists = AiTool::query()
+                ->where('name', $innerTool)
+                ->exists();
+
+            if (!$toolExists) {
+                $fail('The provider tool references an unknown tool.');
+            }
+        }
     }
 
     /**

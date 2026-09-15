@@ -412,6 +412,70 @@ class AssistantUpdateTest extends TestCase
             ->assertJsonPath('errors.0.source.pointer', '/data/attributes/handle');
     }
 
+    public function testCanUpdateAssistantProviderTools(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('patch', "/api/hawki/v1/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'provider_tools' => ['capability:web_search:native', 'capability:web_fetch:auto'],
+        ]))
+            ->assertOk()
+            ->assertJsonPath('data.attributes.provider_tools', ['capability:web_search:native', 'capability:web_fetch:auto']);
+
+        $assistant->refresh();
+        self::assertSame(['capability:web_search:native', 'capability:web_fetch:auto'], $assistant->provider_tools);
+
+        // A real column lands in the version's changed keys automatically.
+        $versions = $assistant->assistantVersions;
+        self::assertCount(1, $versions);
+        self::assertEquals(['provider_tools'], $versions->first()->changed_keys);
+    }
+
+    public function testUpdateRejectsPlainToolNameInProviderTools(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('patch', "/api/hawki/v1/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'provider_tools' => ['hawki-rag-web-search-tool'],
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.0.source.pointer', '/data/attributes/provider_tools');
+    }
+
+    public function testUpdateRejectsUnknownCapabilityInProviderTools(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('patch', "/api/hawki/v1/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'provider_tools' => ['capability:no-such-capability:auto'],
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.0.source.pointer', '/data/attributes/provider_tools');
+    }
+
+    public function testUpdateRejectsMalformedProviderToolTransferString(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('patch', "/api/hawki/v1/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'provider_tools' => ['capability:web_search'],
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.0.source.pointer', '/data/attributes/provider_tools');
+    }
+
     private function updatePayload(Assistant $assistant, array $attributes, array $relationships = []): array
     {
         $data = [

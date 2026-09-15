@@ -187,6 +187,54 @@ class AssistantRemixTest extends TestCase
         self::assertFalse($clone->ai_tools()->exists());
     }
 
+    public function testRemixCopiesProviderToolsWhenUsersShareOrganization(): void
+    {
+        $org = Organization::create(['name' => 'Test Org']);
+        $owner = User::factory()->create();
+        $remixUser = User::factory()->create();
+        $org->users()->attach([$owner->id, $remixUser->id]);
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'allow_remix' => true,
+            'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+            'provider_tools' => ['capability:web_search:native'],
+        ]);
+
+        $this->actingAsUser($remixUser);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/remix")
+            ->assertCreated();
+
+        $clone = Assistant::where('creator_id', $remixUser->id)->first();
+        self::assertSame(['capability:web_search:native'], $clone->provider_tools);
+    }
+
+    public function testRemixDoesNotCopyProviderToolsWhenUsersDifferOrgs(): void
+    {
+        $org1 = Organization::create(['name' => 'Org 1']);
+        $org2 = Organization::create(['name' => 'Org 2']);
+        $owner = User::factory()->create();
+        $remixUser = User::factory()->create();
+        $org1->users()->attach($owner->id);
+        $org2->users()->attach($remixUser->id);
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'allow_remix' => true,
+            'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+            'provider_tools' => ['capability:web_search:native'],
+        ]);
+
+        $this->actingAsUser($remixUser);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/remix")
+            ->assertCreated();
+
+        $clone = Assistant::where('creator_id', $remixUser->id)->first();
+        self::assertNull($clone->provider_tools);
+    }
+
     public function testRemixDoesNotCopyAttachments(): void
     {
         // Knowledge files are intentionally not remixed: each assistant owns

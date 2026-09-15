@@ -62,6 +62,8 @@ return new class() extends Migration {
                 ->nullable()
                 ->constrained('assistants')
                 ->nullOnDelete();
+
+            $table->json('provider_tools')->nullable();
         });
 
         Schema::create('assistant_versions', static function (Blueprint $table): void {
@@ -252,6 +254,7 @@ return new class() extends Migration {
 
             $table->index('uuid');
         });
+
     }
 
     /**

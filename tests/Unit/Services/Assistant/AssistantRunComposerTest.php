@@ -47,6 +47,26 @@ class AssistantRunComposerTest extends TestCase
         static::assertSame(['hawki-rag-query-search'], $run->toolTransferStrings);
     }
 
+    public function testProviderToolsAreMergedBeforeConcreteToolStrings(): void
+    {
+        config(['rag.enabled' => false, 'rag.dataset_prefix' => 'assistant_']);
+
+        $assistant = $this->assistantWithTools([
+            $this->tool('hawki-rag-web-search-tool', WellKnownCapabilities::WEB_SEARCH),
+        ]);
+        $assistant->provider_tools = ['capability:web_search:native'];
+
+        $run = $this->composer()->compose($assistant);
+
+        static::assertSame(
+            [
+                'capability:web_search:native',
+                'hawki-rag-web-search-tool',
+            ],
+            $run->toolTransferStrings,
+        );
+    }
+
     private function composer(): AssistantRunComposer
     {
         $promptComposer = $this->createMock(AssistantPromptComposer::class);
