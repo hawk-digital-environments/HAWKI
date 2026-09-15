@@ -21,16 +21,27 @@ use App\Services\Ai\Tools\AbstractTool;
 use App\Services\Ai\Tools\Exceptions\ToolAccessException;
 use App\Services\Ai\Tools\LaravelAi\AuthorizedTextGateway;
 use App\Services\Ai\Tools\LaravelAi\LaravelToolResolver;
+use App\Services\Ai\Tools\LaravelAi\NativeToolAuthorizations;
 use App\Services\Ai\Tools\ToolAuthorization;
 use App\Services\Ai\Values\OnlineStatus;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Contracts\Gateway\StepTextGateway;
+use Laravel\Ai\Contracts\Providers\TextProvider;
 use Laravel\Ai\Gateway\StepContext;
+use Laravel\Ai\Gateway\TextGenerationLoop;
+use Laravel\Ai\Prompts\AgentPrompt;
+use Laravel\Ai\Providers\Provider;
+use Laravel\Ai\Providers\Tools\WebFetch;
+use Laravel\Ai\Providers\Tools\WebSearch;
+use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\StreamableAgentResponse;
 use Laravel\Ai\Tools\Request;
 use PHPUnit\Framework\Attributes\CoversNothing;
+use Spatie\Permission\Models\Permission as SpatiePermission;
 use Tests\TestCase;
 
 #[CoversNothing()]
@@ -223,6 +234,8 @@ class ToolAuthorizationTest extends TestCase
     {
         $this->role->syncPermissions([]);
         $this->actingAs($this->actor);
+        // The dev container exports APP_ENV=local, so the framework does not auto-skip forgery protection here.
+        $this->withoutMiddleware(PreventRequestForgery::class);
         $this->postJson('/req/streamAI', [
             'broadcast' => false,
             'payload' => ['model' => $this->model->model_id, 'stream' => true,
@@ -231,10 +244,96 @@ class ToolAuthorizationTest extends TestCase
         ])->assertForbidden()->assertJsonPath('code', 'TOOL_ACCESS_DENIED');
     }
 
+    public function testNativeWebFetchNeedsItsOwnGrantAndIsReachableWithIt(): void
+    {
+        // The dev database may not have run the permission migration yet.
+        SpatiePermission::findOrCreate(Permission::WEB_FETCH_USE->value, 'web');
+        [$context, $model] = $this->makeNativeWebFetchContext();
+
+        $this->assertAccessFailure(fn () => app(LaravelToolResolver::class)->resolveNativeToolForCapability('web_fetch', $context), 'TOOL_ACCESS_DENIED');
+        self::assertSame([], app(ToolAuthorization::class)->nativeModelIds('web_fetch', $this->actor));
+
+        $this->role->syncPermissions([Permission::TOOLS_USE->value, Permission::WEB_FETCH_USE->value]);
+        $native = app(LaravelToolResolver::class)->resolveNativeToolForCapability('web_fetch', $context);
+        self::assertInstanceOf(WebFetch::class, $native);
+        self::assertContains((string) $model->id, app(ToolAuthorization::class)->nativeModelIds('web_fetch', $this->actor->fresh()));
+    }
+
+    public function testGrantedSelectionWithoutAnyUsableImplementationIsUnavailableNotDenied(): void
+    {
+        $this->model->tools()->detach();
+        $this->model->update(['settings' => AiModelSettings::fromArray(['tool_calling' => true, 'native_capabilities' => false])]);
+        $this->assertAccessFailure(fn () => [...app(ChatToolResolver::class)->findTools(['capability:web_search:auto'], $this->context)], 'TOOL_UNAVAILABLE');
+
+        $this->actingAs($this->actor);
+        // The dev container exports APP_ENV=local, so the framework does not auto-skip forgery protection here.
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        $this->postJson('/req/streamAI', [
+            'broadcast' => false,
+            'payload' => ['model' => $this->model->model_id, 'stream' => true,
+                'actorId' => $this->actor->id, 'tools' => ['capability:web_search:auto'],
+                'messages' => [['role' => 'system', 'content' => ['text' => 'Test']], ['role' => 'user', 'content' => ['text' => 'Test']]]],
+        ])->assertStatus(422)->assertJsonPath('code', 'TOOL_UNAVAILABLE');
+    }
+
+    public function testASharedNativeToolInstanceCannotCrossAuthorizeTwoContexts(): void
+    {
+        $registry = app(NativeToolAuthorizations::class);
+        $shared = new WebSearch();
+        $mine = $registry->register($shared, 'web_search', $this->context);
+        $actorless = new AgentRequestContext($this->context->provider, $this->model, new AiModelParameters());
+        $theirs = $registry->register($shared, 'web_search', $actorless);
+
+        self::assertNotSame($mine, $theirs);
+        $registry->authorize([$mine]);
+        $this->assertAccessFailure(fn () => $registry->authorize([$theirs]), 'TOOL_ACCESS_DENIED');
+        // The instance the filter event handed out is not itself a key and stays unusable.
+        $this->assertAccessFailure(fn () => $registry->authorize([$shared]), 'TOOL_ACCESS_DENIED');
+    }
+
+    public function testADriverThatCannotBeWrappedRefusesToSend(): void
+    {
+        $driver = new GatewaylessTextProvider($this->createMock(\Laravel\Ai\Contracts\Gateway\Gateway::class), ['name' => 'test', 'driver' => 'test', 'key' => 'test-only'], app(\Illuminate\Contracts\Events\Dispatcher::class));
+        $context = new AgentRequestContext(
+            new \App\Services\Ai\Providers\Values\AiProviderProxy($this->context->provider->getRealProvider(), $this->context->provider->adapter, $driver),
+            $this->model,
+            new AiModelParameters(),
+            actorId: $this->actor->id
+        );
+        $agent = new ToolAuthorizationAgent($context, 'Test', [], [], 'Test');
+        foreach (['send', 'sendStreaming'] as $method) {
+            try {
+                $agent->{$method}();
+                self::fail('Expected a refusal to send through an unwrappable driver.');
+            } catch (\LogicException $exception) {
+                self::assertStringContainsString(GatewaylessTextProvider::class, $exception->getMessage());
+            }
+        }
+    }
+
+    /** @return array{0: AgentRequestContext, 1: AiModel} */
+    private function makeNativeWebFetchContext(): array
+    {
+        $provider = AiProvider::create(['provider_id' => 'fetch-test-' . $this->actor->id, 'name' => 'Fetch test', 'active' => true, 'adapter_key' => 'gemini', 'api_url' => 'https://example.invalid', 'api_key' => 'test-only']);
+        $model = AiModel::create([
+            'model_id' => 'fetch-test-' . $this->actor->id, 'label' => 'Fetch test', 'provider_id' => $provider->id,
+            'active' => true, 'status' => OnlineStatus::ONLINE,
+            'flags' => \App\Services\Ai\Models\Flags\Values\AiModelFlags::fromArray([]),
+            'limits' => new \App\Services\Ai\Models\Limits\Values\NullAiModelLimits(),
+            'pricing' => new \App\Services\Ai\Models\Pricing\Values\NullPricing(),
+            'settings' => AiModelSettings::fromArray(['tool_calling' => true, 'native_capabilities' => true]),
+            'native_capabilities' => NativeAiModelCapabilities::fromArray(['web_fetch']),
+        ]);
+        $model->usageRules()->create(['usage_type' => WellKnownUsageTypes::MAIN_APP]);
+
+        return [new AgentRequestContext(app(AiProviderProxyResolver::class)->resolve($provider), $model, new AiModelParameters(), actorId: $this->actor->id), $model];
+    }
+
     public function testNativeCatalogRetainsTemporaryOfflineStatusButExecutionDenies(): void
     {
         $this->model->update(['status' => OnlineStatus::OFFLINE]);
-        self::assertSame([(string) $this->model->id], app(ToolAuthorization::class)->nativeModelIds('web_search', $this->actor));
+        // Other seeded models may also offer native web search; only this model's presence is the point.
+        self::assertContains((string) $this->model->id, app(ToolAuthorization::class)->nativeModelIds('web_search', $this->actor));
         $this->assertAccessFailure(fn () => app(LaravelToolResolver::class)->resolveNativeToolForCapability('web_search', $this->context), 'TOOL_UNAVAILABLE');
     }
 
@@ -447,5 +546,44 @@ class ToolAuthorizationAgent extends \App\Services\Ai\Agents\Implementations\Cha
     public function middleware(): array
     {
         return [(new \App\Services\Ai\Agents\Middleware\LoggingMiddleware())->useServiceContainerFallback(true)];
+    }
+}
+
+/** A text driver without the SDK's HasTextGateway trait, so the authorization wrapper cannot be installed. */
+class GatewaylessTextProvider extends Provider implements TextProvider
+{
+    public function prompt(AgentPrompt $prompt): AgentResponse
+    {
+        throw new \LogicException('Must never be reached.');
+    }
+
+    public function stream(AgentPrompt $prompt): StreamableAgentResponse
+    {
+        throw new \LogicException('Must never be reached.');
+    }
+
+    public function useTextGateway(StepTextGateway $gateway): self
+    {
+        throw new \LogicException('Must never be reached.');
+    }
+
+    public function textGenerationLoop(): TextGenerationLoop
+    {
+        throw new \LogicException('Must never be reached.');
+    }
+
+    public function defaultTextModel(): string
+    {
+        return 'test';
+    }
+
+    public function cheapestTextModel(): string
+    {
+        return 'test';
+    }
+
+    public function smartestTextModel(): string
+    {
+        return 'test';
     }
 }

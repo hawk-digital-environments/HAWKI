@@ -399,3 +399,17 @@ test('user roles use the chip picker and directory accounts explain their read-o
     assert.equal(fieldHint('users', email, { id: '1', local_account: false }), 'admin.directory_identity_hint');
     assert.equal(fieldHint('users', field('admin_disabled', 'boolean'), { id: '1', local_account: false }), undefined);
 });
+
+test('permission and access rule editors are chosen by control type, not by the editor branching on keys', () => {
+    const permissions = AdminFieldSchema.parse({ key: 'permissions', type: 'multi' });
+    assert.deepEqual(controlFor('roles', permissions, {}, null), { type: 'permissions' });
+    // The same key elsewhere keeps the generic control, so the dispatch stays section-scoped.
+    assert.notEqual(controlFor('users', permissions, {}, null).type, 'permissions');
+    const accessRule = AdminFieldSchema.parse({
+        key: 'access_rule',
+        type: 'select',
+        options: [{ value: 'web_search', label: 'Web search' }]
+    });
+    assert.deepEqual(controlFor('tools', accessRule, {}, null), { type: 'access-rule' });
+    assert.notEqual(controlFor('mcp', accessRule, {}, null).type, 'access-rule');
+});

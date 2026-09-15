@@ -1,21 +1,24 @@
 <script lang="ts">
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import type { AccessRule } from '../../schemas/admin-content.js';
-    let { id, rules, value, onchange, onblur, disabled = false, error }: {
-        id: string; rules: AccessRule[]; value: unknown; onchange: (value: string) => void;
+    let { id, label, rules, value, onchange, onblur, disabled = false, error }: {
+        id: string; label: string; rules: AccessRule[]; value: unknown; onchange: (value: string) => void;
         onblur: () => void; disabled?: boolean; error?: string;
     } = $props();
     const { __ } = useTranslator();
     const editable = $derived(!!rules.find((rule) => rule.name === value)?.grantable);
 </script>
 
-<fieldset role="radiogroup" aria-invalid={!!error} {id} disabled={disabled || !editable} data-invalid={!!error}
+<!-- No explicit `role`: the implicit `group` role lets the `<legend>` name the radios. -->
+<fieldset {id} disabled={disabled || !editable} data-invalid={!!error}
     aria-describedby={`${id}-hint${error ? ` ${id}-error` : ''}`} onfocusout={onblur}>
-    <legend>{__('admin.fields.access_rule')}</legend>
+    <legend>{label}</legend>
     <p id={`${id}-hint`}>{__(editable ? 'admin.access_rule_hint' : 'admin.access_rule_locked')}</p>
     {#each rules as rule (rule.name)}
         <label>
-            <input type="radio" name={id} checked={rule.name === value} disabled={disabled || !editable || !rule.grantable}
+            <!-- Neither `group` nor `radio` supports `aria-invalid`; the error text is linked below instead. -->
+            <input type="radio" name={id} checked={rule.name === value}
+                disabled={disabled || !editable || !rule.grantable}
                 aria-describedby={`${id}-${rule.name}-description${error ? ` ${id}-error` : ''}`}
                 onchange={() => { if (editable && rule.grantable) onchange(rule.name); }} />
             <span><strong>{__(rule.title_label)}</strong><span id={`${id}-${rule.name}-description`}>{__(rule.description_label)}{!rule.grantable ? ` ${__('admin.permission_not_grantable')}` : ''}</span></span>

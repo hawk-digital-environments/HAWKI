@@ -14,6 +14,7 @@ use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
+use App\Services\Ai\Tools\Exceptions\ToolAccessException;
 use App\Services\Ai\Tools\LaravelAi\LaravelToolResolver;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Providers\Provider;
@@ -196,7 +197,7 @@ class ChatToolResolverTest extends TestCase
         $nativeTool = $this->makeProviderTool();
 
         $laravelResolver = $this->makeToolResolver();
-        $laravelResolver->method('canResolveNative')->willReturn(true);
+        $laravelResolver->method('nativeResolutionFailure')->willReturn(null);
         $laravelResolver->expects(static::once())
             ->method('resolveNativeToolForCapability')
             ->with('web_search', static::anything(), [])
@@ -227,6 +228,7 @@ class ChatToolResolverTest extends TestCase
         $tool = $this->makeTool();
 
         $laravelResolver = $this->makeToolResolver();
+        $laravelResolver->method('nativeResolutionFailure')->willReturn(ToolAccessException::unavailable());
         $laravelResolver->expects(static::never())
             ->method('resolveNativeToolForCapability');
         $laravelResolver->expects(static::once())
@@ -246,6 +248,48 @@ class ChatToolResolverTest extends TestCase
 
         static::assertCount(1, $result);
         static::assertSame($tool, $result[0]);
+    }
+
+    // =========================================================================
+    // findTools — capability:auto — nothing resolves
+    // =========================================================================
+
+    public function testItReportsUnavailableWhenAutoSelectionFindsNoUsableImplementation(): void
+    {
+        $laravelResolver = $this->makeToolResolver();
+        $laravelResolver->method('nativeResolutionFailure')->willReturn(ToolAccessException::denied());
+        $laravelResolver->method('resolveToolForCapability')->willThrowException(ToolAccessException::unavailable());
+
+        $sut = $this->makeSut(
+            $this->makeCapabilityRegistry($this->makeCapabilityDefinition('web_search'), 'web_search'),
+            $laravelResolver
+        );
+
+        try {
+            [...$sut->findTools(['capability:web_search:auto'], $this->makeContext())];
+            static::fail('Expected a tool access failure.');
+        } catch (ToolAccessException $exception) {
+            static::assertSame('TOOL_UNAVAILABLE', $exception->errorCode);
+        }
+    }
+
+    public function testItReportsDeniedWhenEveryAutoSelectionPathLacksTheGrant(): void
+    {
+        $laravelResolver = $this->makeToolResolver();
+        $laravelResolver->method('nativeResolutionFailure')->willReturn(ToolAccessException::denied());
+        $laravelResolver->method('resolveToolForCapability')->willThrowException(ToolAccessException::denied());
+
+        $sut = $this->makeSut(
+            $this->makeCapabilityRegistry($this->makeCapabilityDefinition('web_search'), 'web_search'),
+            $laravelResolver
+        );
+
+        try {
+            [...$sut->findTools(['capability:web_search:auto'], $this->makeContext())];
+            static::fail('Expected a tool access failure.');
+        } catch (ToolAccessException $exception) {
+            static::assertSame('TOOL_ACCESS_DENIED', $exception->errorCode);
+        }
     }
 
     // =========================================================================

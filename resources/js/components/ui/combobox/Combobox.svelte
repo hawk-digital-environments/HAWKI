@@ -30,6 +30,7 @@
     import { Combobox as ComboboxPrimitive, mergeProps } from 'bits-ui';
     import type { HTMLInputAttributes } from 'svelte/elements';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
+    import ComboboxList from './ComboboxList.svelte';
 
     let {
         value = '',
@@ -59,8 +60,6 @@
         inputProps?: HTMLInputAttributes;
     } = $props();
 
-    // Disabled notes share the listbox with the options; the NUL prefix keeps them apart from real values.
-    const NOTE = '\u0000';
     let open = $state(false);
     const needle = $derived(value.trim().toLowerCase());
     const matches = $derived(
@@ -119,42 +118,19 @@
             <ChevronDownIcon size={18} />
         </ComboboxPrimitive.Trigger>
     </div>
-    <ComboboxPrimitive.Portal>
-        <ComboboxPrimitive.Content
-            class="combobox-content"
-            sideOffset={4}
-        >
-            <ComboboxPrimitive.Viewport class="combobox-viewport">
-                {#each shown as item (item.value)}
-                    <ComboboxPrimitive.Item
-                        value={item.value}
-                        label={item.value}
-                        class="combobox-item"
-                    >
-                        <span class="combobox-item-value">{item.value}</span>
-                        {#if item.label && item.label !== item.value}
-                            <span class="combobox-item-label">{item.label}</span>
-                        {/if}
-                    </ComboboxPrimitive.Item>
-                {/each}
-                {#if shown.length === 0}
-                    <ComboboxPrimitive.Item
-                        value={`${NOTE}empty`}
-                        label=""
-                        disabled
-                        class="combobox-item combobox-note">{emptyText}</ComboboxPrimitive.Item
-                    >
-                {:else if matches.length > shown.length}
-                    <ComboboxPrimitive.Item
-                        value={`${NOTE}more`}
-                        label=""
-                        disabled
-                        class="combobox-item combobox-note">{moreText(matches.length - shown.length)}</ComboboxPrimitive.Item
-                    >
-                {/if}
-            </ComboboxPrimitive.Viewport>
-        </ComboboxPrimitive.Content>
-    </ComboboxPrimitive.Portal>
+    <ComboboxList
+        items={shown}
+        itemLabel={(item) => item.value}
+        {emptyText}
+        moreText={matches.length > shown.length ? moreText(matches.length - shown.length) : undefined}
+    >
+        {#snippet item(entry)}
+            <span class="value">{entry.value}</span>
+            {#if entry.label && entry.label !== entry.value}
+                <span class="label">{entry.label}</span>
+            {/if}
+        {/snippet}
+    </ComboboxList>
 </ComboboxPrimitive.Root>
 
 <style>
@@ -216,50 +192,10 @@
             transform: rotate(-180deg);
         }
     }
-    :global(.combobox-content) {
-        z-index: var(--layer-overlay);
-        box-sizing: border-box;
-        width: var(--bits-combobox-anchor-width);
-        max-height: calc(var(--bits-combobox-content-available-height, 999px) - var(--space-4));
-        overflow: hidden;
-        border-radius: var(--corner-md);
-        border: var(--border);
-        background-color: var(--color-surface-raised);
-        color: var(--color-text);
-        box-shadow: var(--elevation-2);
-        padding: var(--space-1);
-    }
-    :global(.combobox-viewport) {
-        max-height: calc(var(--bits-combobox-content-available-height, 999px) - var(--space-6));
-        overflow-y: auto;
-    }
-    :global(.combobox-item) {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-1) var(--space-2);
-        padding: var(--space-2);
-        border-radius: var(--corner-sm);
-        font-size: var(--font-size-sm);
-        cursor: pointer;
-        outline: none;
-
-        &[data-highlighted] {
-            background-color: var(--color-surface);
-        }
-        &[data-selected] {
-            background-color: var(--color-highlight);
-            font-weight: var(--font-weight-medium, 500);
-        }
-        &[data-disabled] {
-            cursor: default;
-        }
-    }
-    :global(.combobox-item-value) {
+    .value {
         overflow-wrap: anywhere;
     }
-    :global(.combobox-item-label),
-    :global(.combobox-note) {
+    .label {
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
     }

@@ -59,17 +59,22 @@ class SpatiePermissionsTest extends TestCase
         $user->load('roles.permissions', 'permissions');
         self::assertTrue($user->hasPermissionTo('usage.view'));
         self::assertTrue($user->can('usage.view'));
+        // These writes bypass RoleGuard::mutate(), which is what invalidates the per-request memo.
         $role->syncPermissions([]);
+        app(PermissionService::class)->forget();
         self::assertFalse($user->hasPermissionTo('usage.view'));
         self::assertFalse($user->can('usage.view'));
         $role->syncPermissions(['usage.view']);
+        app(PermissionService::class)->forget();
 
         foreach (['admin_disabled', 'isRemoved'] as $column) {
             DB::table('users')->where('id', $user->id)->update([$column => true]);
+            app(PermissionService::class)->forget();
             self::assertFalse($user->hasPermissionTo('usage.view'));
             self::assertFalse($user->can('usage.view'));
             self::assertSame(['usage.view'], app(PermissionService::class)->assignedPermissionsOf($user));
             DB::table('users')->where('id', $user->id)->update([$column => false]);
+            app(PermissionService::class)->forget();
             self::assertTrue($user->can('usage.view'));
         }
     }
@@ -191,6 +196,73 @@ class SpatiePermissionsTest extends TestCase
         self::assertTrue($user->can('usage.view'));
         self::assertSame(['employeetype'], DB::table('role_user')->where('user_id', $user->id)->pluck('source')->all());
         $this->assertDatabaseHas('admin_audit_log', ['action' => 'revoke', 'resource_type' => 'roles', 'resource_id' => $role->id]);
+    }
+
+    public function testRepeatedChecksForOneUserResolveGrantsOnlyOnce(): void
+    {
+        $user = User::factory()->create();
+        $role = $this->role(['admin.access', 'usage.view']);
+        app(RoleAssignmentService::class)->replace($user, [$role->id]);
+        $permissions = app(PermissionService::class);
+
+        DB::enableQueryLog();
+
+        try {
+            DB::flushQueryLog();
+            self::assertTrue($permissions->has($user, Permission::ACCESS));
+            self::assertGreaterThan(0, \count(DB::getQueryLog()), 'The first check must read the grants.');
+
+            DB::flushQueryLog();
+            self::assertTrue($permissions->has($user, 'usage.view'));
+            self::assertFalse($permissions->has($user, Permission::ROLES_MANAGE));
+            $permissions->authorize($user, 'usage.view');
+            self::assertSame(['admin.access', 'usage.view'], $permissions->permissionsOf($user));
+            self::assertTrue($user->can('usage.view'));
+            self::assertSame([], DB::getQueryLog(), 'Repeated checks must reuse the memoized resolution.');
+        } finally {
+            DB::disableQueryLog();
+        }
+    }
+
+    public function testGrantChangeThroughTheGuardIsVisibleWithoutANewServiceInstance(): void
+    {
+        $user = User::factory()->create();
+        $role = $this->role(['usage.view']);
+        $permissions = app(PermissionService::class);
+        self::assertFalse($permissions->has($user, 'usage.view'));
+
+        app(RoleAssignmentService::class)->replace($user, [$role->id]);
+        self::assertSame($permissions, app(PermissionService::class), 'The service is bound per request.');
+        self::assertTrue($permissions->has($user, 'usage.view'));
+
+        app(RoleAssignmentService::class)->replace($user, []);
+        self::assertFalse($permissions->has($user, 'usage.view'));
+    }
+
+    public function testForgetClearsMemoizedGrantsAndEligibility(): void
+    {
+        $user = User::factory()->create();
+        $role = $this->role(['usage.view']);
+        app(RoleAssignmentService::class)->replace($user, [$role->id]);
+        $permissions = app(PermissionService::class);
+        self::assertTrue($permissions->has($user, 'usage.view'));
+
+        // A direct Spatie write bypasses the guard and therefore the invalidation.
+        $role->syncPermissions([]);
+        self::assertTrue($permissions->has($user, 'usage.view'));
+        $permissions->forget($user->id);
+        self::assertFalse($permissions->has($user, 'usage.view'));
+
+        $role->syncPermissions(['usage.view']);
+        $permissions->forget();
+        self::assertTrue($permissions->has($user, 'usage.view'));
+
+        DB::table('users')->where('id', $user->id)->update(['admin_disabled' => true]);
+        self::assertTrue($permissions->isEligible($user));
+        $permissions->forget();
+        self::assertFalse($permissions->isEligible($user));
+        self::assertSame([], $permissions->permissionsOf($user));
+        self::assertSame(['usage.view'], $permissions->assignedPermissionsOf($user));
     }
 
     private function role(array $permissions): Role

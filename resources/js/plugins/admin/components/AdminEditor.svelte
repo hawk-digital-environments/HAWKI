@@ -86,6 +86,8 @@
     const formState = form.useSelector((state) => state);
     const visibleFields = $derived(fields.filter((field) => isFieldVisible(section, field, formState.current.values)));
     const busy = $derived(formState.current.isSubmitting || fieldBusy || app.authorizationRefreshing);
+    /** Changing a tool's access rule rewrites role grants, so it needs both permissions. */
+    const accessRuleLocked = $derived(!app.can('mcp.manage') || !app.can('roles.manage'));
     /** JSON snapshots of values this editor filled in itself; only those may be replaced by later metadata. */
     const adopted: Record<string, string> = {};
     /** New models get provider model id suggestions plus metadata for the picked one. */
@@ -211,21 +213,34 @@
                     {#snippet children(field)}
                         {@const control = controlFor(section, definition, formState.current.values, row)}
                         {@const modelLookup = definition.key === 'model_id' ? lookup : null}
-                        {#if section === 'roles' && definition.key === 'permissions'}
-                            <AdminPermissionInput id={`${uid}-${definition.key}`} catalog={content?.permission_catalog ?? []}
-                                value={field.state.value} onchange={(value) => {
+                        {#if control.type === 'permissions'}
+                            <AdminPermissionInput
+                                id={`${uid}-${definition.key}`}
+                                label={labelFor(definition)}
+                                catalog={content?.permission_catalog ?? []}
+                                value={field.state.value}
+                                onchange={(value) => {
                                     delete serverErrors[definition.key];
                                     field.handleChange(value);
-                                }} onblur={field.handleBlur}
-                                disabled={busy} error={fieldError(definition.key)} />
-                        {:else if section === 'tools' && definition.key === 'access_rule'}
-                            <AdminAccessRuleInput id={`${uid}-${definition.key}`} rules={content?.access_rules ?? []}
-                                value={field.state.value} onchange={(value) => {
+                                }}
+                                onblur={field.handleBlur}
+                                disabled={busy || control.disabled}
+                                error={fieldError(definition.key)}
+                            />
+                        {:else if control.type === 'access-rule'}
+                            <AdminAccessRuleInput
+                                id={`${uid}-${definition.key}`}
+                                label={labelFor(definition)}
+                                rules={content?.access_rules ?? []}
+                                value={field.state.value}
+                                onchange={(value) => {
                                     delete serverErrors[definition.key];
                                     field.handleChange(value);
-                                }} onblur={field.handleBlur}
-                                disabled={busy || !app.can('mcp.manage') || !app.can('roles.manage')}
-                                error={fieldError(definition.key)} />
+                                }}
+                                onblur={field.handleBlur}
+                                disabled={busy || control.disabled || accessRuleLocked}
+                                error={fieldError(definition.key)}
+                            />
                         {:else}
                         <AdminValueInput
                             id={`${uid}-${definition.key}`}

@@ -8,6 +8,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class ToolAccessException extends HttpException
 {
+    public const ERROR_CODES = ['TOOL_ACCESS_DENIED', 'TOOL_UNAVAILABLE'];
+
     private function __construct(public readonly string $errorCode, int $status, string $message)
     {
         parent::__construct($status, $message);

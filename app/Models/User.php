@@ -130,6 +130,8 @@ class User extends Authenticatable
     public function revokProfile(): void
     {
         $this->update(['isRemoved' => 1]);
+        // Removal happens outside RoleGuard::mutate(), so drop the memoized eligibility here.
+        app(\App\Services\Admin\PermissionService::class)->forget((int) $this->getKey());
     }
 
 

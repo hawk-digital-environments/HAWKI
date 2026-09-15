@@ -2,9 +2,9 @@
     import Input from '$lib/components/ui/input/Input.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import type { PermissionCatalogEntry } from '../../schemas/admin-content.js';
-    import { permissionChoices, changePermission } from '../../forms/authorization.js';
-    let { id, catalog, value, onchange, onblur, disabled = false, error }: {
-        id: string; catalog: PermissionCatalogEntry[]; value: unknown;
+    import { permissionChoices, changePermission, permissionGroups } from '../../forms/authorization.js';
+    let { id, label, catalog, value, onchange, onblur, disabled = false, error }: {
+        id: string; label: string; catalog: PermissionCatalogEntry[]; value: unknown;
         onchange: (value: string[]) => void; onblur: () => void; disabled?: boolean; error?: string;
     } = $props();
     const { __ } = useTranslator();
@@ -16,14 +16,16 @@
         (!entry.grantable && selected.includes(entry.name)) ||
         `${entry.name} ${entry.title_label ? __(entry.title_label) : ''} ${entry.description_label ? __(entry.description_label) : ''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())
     ));
+    // Derived from every choice, not the filtered ones, so the group order does not shift while typing.
+    const groups = $derived(permissionGroups(choices));
 </script>
 
 <fieldset {id} {disabled} data-invalid={!!error} aria-describedby={`${id}-hint${error ? ` ${id}-error` : ''}`} onfocusout={onblur}>
-    <legend>{__('admin.fields.permissions')}</legend>
+    <legend>{label}</legend>
     <p id={`${id}-hint`}>{__('admin.permission_selector_hint')}</p>
     <Input type="search" aria-label={__('admin.permission_search')} bind:value={search} {disabled} />
     <p role="status" aria-atomic="true">{__('admin.permission_count', { count: String(visible.length) })}</p>
-    {#each ['administration', 'tools'] as group}
+    {#each groups as group (group)}
         {@const entries = visible.filter((entry) => entry.group === group)}
         {#if entries.length}
             <fieldset class="group">

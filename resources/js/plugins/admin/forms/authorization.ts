@@ -18,6 +18,14 @@ export function permissionChoices(catalog: PermissionCatalogEntry[], selected: s
     ];
 }
 
+/** Groups present in the catalog, `administration` first and the rest in first-seen order. */
+export function permissionGroups(entries: PermissionCatalogEntry[]): string[] {
+    const groups = [...new Set(entries.map((entry) => entry.group))];
+    return groups.includes('administration') ?
+            ['administration', ...groups.filter((group) => group !== 'administration')]
+        :   groups;
+}
+
 export function changePermission(
     catalog: PermissionCatalogEntry[],
     selected: string[],
@@ -30,11 +38,8 @@ export function changePermission(
 
 export function roleLabel(id: number, catalog: RoleCatalogEntry[], fields: AdminField[], __: Translate): string {
     const role = catalog.find((entry) => entry.id === id);
-    if (role) {
-        const defaults: Record<string, string> = { admin: 'Administrator', user: 'User' };
-        if (role.is_system && defaults[role.slug] === role.name) return __('admin.role_labels.' + role.slug);
-        return role.name;
-    }
+    // The backend sets `title_label` for system roles; custom roles carry their stored name.
+    if (role) return role.title_label ? __(role.title_label) : role.name;
     const option = fields
         .find((field) => ['roles', 'role_id'].includes(field.key))
         ?.options.find((item) => item.value === id);
