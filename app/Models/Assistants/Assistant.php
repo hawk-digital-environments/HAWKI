@@ -34,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string                          $model
  * @property string                          $name
  * @property null|int                        $organization_id
- * @property null|list<string>               $provider_tools
+ * @property null|list<string>               $capabilities
  * @property AssistantReleaseStage           $release_stage
  * @property null|int                        $remixed_assistant_id
  * @property null|int                        $remixed_creator_id
@@ -74,7 +74,7 @@ class Assistant extends Model
         'allow_model_select',
         'category_id',
         'model',
-        'provider_tools',
+        'capabilities',
         'max_tokens',
         'temp',
         'top_p',
@@ -234,7 +234,7 @@ class Assistant extends Model
         return [
             'allow_remix' => 'boolean',
             'allow_model_select' => 'boolean',
-            'provider_tools' => 'array',
+            'capabilities' => 'array',
             'release_stage' => AssistantReleaseStage::class,
             'requested_release_stage' => AssistantReleaseStage::class,
         ];

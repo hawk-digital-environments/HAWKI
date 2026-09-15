@@ -142,12 +142,12 @@ class AssistantRepository extends AbstractRepository
     }
 
     /**
-     * Copies the provider-tool transfer strings from one assistant to another —
+     * Copies the capability transfer strings from one assistant to another —
      * used by the remix flow, gated the same way as {@see syncTools()}.
      */
-    public function copyProviderTools(Assistant $target, Assistant $source): void
+    public function copyCapabilities(Assistant $target, Assistant $source): void
     {
-        $target->provider_tools = $source->provider_tools;
+        $target->capabilities = $source->capabilities;
         $target->save();
     }
 

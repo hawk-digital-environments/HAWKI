@@ -21,7 +21,7 @@ class AssistantRequest extends ResourceRequest
         'greeting',
         'description',
         'detail_description',
-        'provider_tools',
+        'capabilities',
     ];
 
     public function rules(): array
@@ -44,7 +44,7 @@ class AssistantRequest extends ResourceRequest
             'allow_model_select' => ['boolean'],
             'assistant_category' => ['nullable', JsonApiRule::toOne()],
             'model' => ['string'],
-            'provider_tools' => ['array', 'distinct', $this->providerToolsEntryRule()],
+            'capabilities' => ['array', 'distinct', $this->capabilityEntryRule()],
             'max_tokens' => ['integer', 'min:0'],
             'temp' => ['numeric', 'min:0', 'max:1'],
             'top_p' => ['numeric', 'min:0', 'max:1'],
@@ -69,7 +69,7 @@ class AssistantRequest extends ResourceRequest
     }
 
     /**
-     * Builds the rule validating every provider-tools entry: a capability transfer
+     * Builds the rule validating every capabilities entry: a capability transfer
      * string ("capability:<key>:<native|auto|<tool-name>>") whose capability key is
      * declared in the {@see AiModelCapabilityRegistry} and whose concrete inner tool
      * (when one is named) matches an existing tool.
@@ -77,7 +77,7 @@ class AssistantRequest extends ResourceRequest
      * Concrete tool selections without a capability belong to the assistant's
      * `ai_tools` relationship, not to this attribute.
      */
-    private function providerToolsEntryRule(): \Closure
+    private function capabilityEntryRule(): \Closure
     {
         return function (string $attribute, mixed $value, \Closure $fail): void {
             if (!\is_array($value)) {
@@ -85,15 +85,15 @@ class AssistantRequest extends ResourceRequest
             }
 
             foreach ($value as $entry) {
-                $this->validateProviderToolsEntry($attribute, $entry, $fail);
+                $this->validateCapabilityEntry($attribute, $entry, $fail);
             }
         };
     }
 
-    private function validateProviderToolsEntry(string $attribute, mixed $value, \Closure $fail): void
+    private function validateCapabilityEntry(string $attribute, mixed $value, \Closure $fail): void
     {
         if (!\is_string($value) || $value === '') {
-            $fail('The provider tools must be non-empty transfer strings.');
+            $fail('The capabilities must be non-empty transfer strings.');
 
             return;
         }
@@ -101,13 +101,13 @@ class AssistantRequest extends ResourceRequest
         try {
             $transferData = ToolTransferData::fromString($value);
         } catch (\Throwable) {
-            $fail('The provider tool string is not a valid tool transfer string.');
+            $fail('The capability string is not a valid tool transfer string.');
 
             return;
         }
 
         if (!$transferData->isCapability()) {
-            $fail('The provider tools only accept capability transfer strings (capability:<key>:<native|auto|<tool>).');
+            $fail('The capabilities only accept capability transfer strings (capability:<key>:<native|auto|<tool>).');
 
             return;
         }
@@ -115,7 +115,7 @@ class AssistantRequest extends ResourceRequest
         $registry = app(AiModelCapabilityRegistry::class);
 
         if (!$registry->has($transferData->toolOrCapability)) {
-            $fail('The provider tool references an unknown capability.');
+            $fail('The capability references an unknown capability key.');
 
             return;
         }
@@ -128,7 +128,7 @@ class AssistantRequest extends ResourceRequest
                 ->exists();
 
             if (!$toolExists) {
-                $fail('The provider tool references an unknown tool.');
+                $fail('The capability references an unknown tool.');
             }
         }
     }

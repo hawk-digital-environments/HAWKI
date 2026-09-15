@@ -63,7 +63,7 @@ return new class() extends Migration {
                 ->constrained('assistants')
                 ->nullOnDelete();
 
-            $table->json('provider_tools')->nullable();
+            $table->json('capabilities')->nullable()->comment('Selected capability transfer strings (capability:<key>:<native|auto|<tool>>[:<settings>]).');
         });
 
         Schema::create('assistant_versions', static function (Blueprint $table): void {

@@ -1,10 +1,24 @@
+<!--
+  @component MCP-server tool group on the builder's model page: all tools
+  backed by one MCP server, wrapped in the shared {@link ToolGroupCard}
+  chrome (collapsible card with a ":selected of :count selected" header
+  badge that auto-opens when the group holds a preselected tool).
+
+  ## Usage
+  Rendered by `ToolSelector` once per server derived from the flat
+  ai-tools store:
+  ```svelte
+  {#each mcpGroups as group (group.server.id)}
+      <McpServerSelector server={group.server} tools={group.tools} {selectedIds} {onchange}/>
+  {/each}
+  ```
+-->
 <script lang="ts">
     import type {McpServer} from "$plugins/core/schemas/resources/mcp-servers.schema.js";
     import ToolsList from "$plugins/assistants/modules/builder/components/aiToolComponents/ToolsList.svelte";
+    import ToolGroupCard from "$plugins/assistants/modules/builder/components/aiToolComponents/ToolGroupCard.svelte";
     import type {AiToolOrCapability} from "$plugins/core/stores/aiToolStoreData.js";
-    import ArrowRight01Icon from "$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte";
-    import ServerStack01Icon from "$lib/components/ui/icons/iconset/ServerStack01Icon.svelte";
-    import {StatusIcon} from "$lib/components/ui/icons";
+    import ServerStack01Icon from '$lib/components/ui/icons/iconset/ServerStack01Icon.svelte';
 
     let {
         server,
@@ -20,116 +34,23 @@
         selectedIds?: Set<string>;
     }>();
 
-    let isOpen = $state(false);
+    const selectedInGroup = $derived(
+        tools.filter((tool: AiToolOrCapability) => selectedIds.has(tool.id)).length
+    );
 </script>
 
-<div class="mcp-server-wrapper">
-
-    <button class="header"
-            onclick={()=> isOpen = !isOpen}
-    >
-
-        <StatusIcon icon={ServerStack01Icon}/>
-        <span class="text-wrapper">
-            <span class="label-row">
-                <span class="u-label">{server.server_label}</span>
-            </span>
-            {#if server.description}
-                <p class="description">{server.description}</p>
-            {/if}
-        </span>
-        <span class="chevron" class:open={isOpen}>
-            <ArrowRight01Icon size="1em" />
-        </span>
-    </button>
-
-
-    <div class="details-wrapper"
-         class:active={isOpen}
-    >
-        <div class="inner-wrapper">
-            <div class="approvalTags">
-
-                <ToolsList
-                    tools={tools}
-                    borderless={true}
-                    {selectedIds}
-                    {onchange}/>
-            </div>
-
-
-        </div>
+<ToolGroupCard
+    label={server.server_label}
+    description={server.description}
+    icon={ServerStack01Icon}
+    selectedCount={selectedInGroup}
+    totalCount={tools.length}
+>
+    <div class="approvalTags">
+        <ToolsList
+            tools={tools}
+            borderless={true}
+            {selectedIds}
+            {onchange}/>
     </div>
-
-
-</div>
-
-
-<style>
-    .mcp-server-wrapper{
-        position: relative;
-        min-height: 3rem;
-        border: var(--border);
-        border-radius: var(--corner-md);
-        padding: .75rem;
-        margin-top: .5rem;
-        background: var(--color-surface-raised);
-    }
-    .header{
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-        align-items: center;
-        width: 100%;
-        cursor: pointer;
-    }
-    .label-row{
-        display: flex;
-        flex-direction: row;
-        gap: .5rem;
-        align-items: center;
-    }
-
-    .details-wrapper {
-        display: grid;
-        grid-template-rows: 0fr;
-        overflow: hidden;
-        width: 100%;
-        margin-top: 0;
-        transition: all var(--duration-medium);
-    }
-    .details-wrapper.active {
-        grid-template-rows: 1fr;
-        margin-top: .5rem;
-    }
-
-    .inner-wrapper{
-        overflow: hidden;
-    }
-
-
-    .text-wrapper {
-        flex: 1;
-        text-align: left;
-    }
-    .chevron {
-        display: inline-flex;
-        align-items: center;
-        transition: transform var(--duration-medium);
-    }
-    .chevron.open {
-        transform: rotate(90deg);
-    }
-    .text-wrapper .u-label {
-        margin-bottom: 0;
-        color: var(--color-accent-text);
-        text-align: center;
-    }
-    .text-wrapper .description {
-        margin: 0;
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-    }
-
-
-</style>
+</ToolGroupCard>

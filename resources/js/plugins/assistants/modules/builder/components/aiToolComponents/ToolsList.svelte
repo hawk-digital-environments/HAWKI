@@ -2,6 +2,7 @@
     import type {AiToolOrCapability} from "$plugins/core/stores/aiToolStoreData.js";
     import RadioSwitch from "$plugins/assistants/components/radioSwitch/RadioSwitch.svelte";
     import RadioOption from "$plugins/assistants/components/radioSwitch/RadioOption.svelte";
+    import ToolIcon from "$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte";
 
     let {
         tools,
@@ -36,7 +37,11 @@
                 value={tool.id}
                 label={tool.displayName}
                 description={tool.description}
-            />
+            >
+                {#snippet leading()}
+                    <ToolIcon tool={tool} size={20}/>
+                {/snippet}
+            </RadioOption>
         {/each}
     </RadioSwitch>
 </div>

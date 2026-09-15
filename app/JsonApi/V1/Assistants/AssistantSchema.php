@@ -62,11 +62,11 @@ class AssistantSchema extends Schema
             Number::make('max_tokens'),
             Number::make('temp'),
             Number::make('top_p'),
-            ArrayList::make('provider_tools')
+            ArrayList::make('capabilities')
                 ->extractUsing(function (Assistant $assistant) {
                     // Same tier as the `ai_tools` include (creator or org
-                    // admin): tool selections are configuration, not part of
-                    // the public assistant profile. Everyone else gets null —
+                    // admin): capability selections are configuration, not part
+                    // of the public assistant profile. Everyone else gets null —
                     // `->hidden()` cannot express this because its condition
                     // only receives the request, never the model.
                     $user = $this->userContext->getUser();
@@ -76,7 +76,7 @@ class AssistantSchema extends Schema
                     }
 
                     return $this->gate->allows('viewAiTools', $assistant)
-                        ? $assistant->provider_tools
+                        ? $assistant->capabilities
                         : null;
                 }),
             DateTime::make('created_at')->sortable()->readOnly(),

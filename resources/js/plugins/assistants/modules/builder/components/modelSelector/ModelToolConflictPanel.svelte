@@ -45,15 +45,15 @@
     // plain `id`/`status` fields that survive that round-trip.
     const activeTools = $derived(builder.draft.aiTools ?? []);
 
-    // Live store wrappers for the draft's provider-tools transfer strings,
+    // Live store wrappers for the draft's capability transfer strings,
     // re-wrapped with their selection state — `isAvailableFor(model)` then
     // mirrors the composer's per-mode availability (native → the model's
     // native capability, auto → native or any mapped tool, concrete name →
     // that tool). Strings whose capability/tool vanished resolve to null and
     // are skipped.
-    const activeProviderTools = $derived.by(() => {
+    const activeCapabilities = $derived.by(() => {
         const wrapped: AiToolOrCapabilityWithState[] = [];
-        for (const transfer of builder.draft.providerTools ?? []) {
+        for (const transfer of builder.draft.capabilities ?? []) {
             const state = createToolOrCapabilityWithStateFromTransferString(transfer, toolStore);
             if (state) wrapped.push(state);
         }
@@ -65,10 +65,10 @@
     );
 
     function isModelUsable(model: AiModel): boolean {
-        if (activeTools.length === 0 && activeProviderTools.length === 0) return true;
+        if (activeTools.length === 0 && activeCapabilities.length === 0) return true;
         if (!model.settings?.tool_calling) return false;
         return activeTools.every(tool => isAiToolAvailableFor(tool, model))
-            && activeProviderTools.every(tool => tool.isAvailableFor(model));
+            && activeCapabilities.every(tool => tool.isAvailableFor(model));
     }
 
     const missingTools = $derived.by(() => {
@@ -77,7 +77,7 @@
             ...activeTools
                 .filter(tool => !isAiToolAvailableFor(tool, currentModel))
                 .map(tool => ({name: tool.name})),
-            ...activeProviderTools
+            ...activeCapabilities
                 .filter(tool => !tool.isAvailableFor(currentModel))
                 .map(tool => ({name: tool.displayName})),
         ];

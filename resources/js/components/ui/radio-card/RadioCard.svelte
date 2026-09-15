@@ -5,6 +5,13 @@
   current selection. Clicking selects it; can be disabled per-card or via the
   group. Reachable via keyboard with Space/Enter.
 
+  A disabled card can explain itself: pass `disabledTooltip` (string or
+  snippet) and it is shown as a tooltip while the card is disabled. The
+  tooltip's trigger is a wrapper span around the card, so bits-ui's trigger
+  attributes (`data-state`, `data-disabled`) can never collide with the
+  card's own — and the tooltip is hover/long-press only, without adding a
+  tab stop next to the card's own.
+
   Must be used inside a `RadioCardGroup` — it reads shared state (current
   value, group `disabled`, `name`) via `getRadioCardContext()` and throws if
   no group is found in the component tree above it.
@@ -13,26 +20,36 @@
   ```svelte
   <RadioCardGroup value={selection} onChange={handleChange}>
       <RadioCard value="auto">Auto</RadioCard>
-      <RadioCard value="native" disabled={!hasNativeSupport}>Native</RadioCard>
+      <RadioCard
+          value="native"
+          disabled={!hasNativeSupport}
+          disabledTooltip="This option is not available for the selected model.">
+          Native
+      </RadioCard>
   </RadioCardGroup>
   ```
 -->
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';
+    import type {Snippet} from 'svelte';
     import {mergeProps} from 'bits-ui';
     import {Spring} from 'svelte/motion';
     import {getRadioCardContext} from '$lib/components/ui/radio-card/RadioCardContext.svelte.js';
+    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** The value this card represents within the group. */
         value: string;
         /** Disable this card. The group's disabled state also applies. */
         disabled?: boolean;
+        /** Shown as a tooltip while the card is disabled (e.g. why the option is unavailable). Ignored otherwise. */
+        disabledTooltip?: Snippet | string;
     }
 
     const {
         children,
         disabled: givenDisabled,
+        disabledTooltip,
         value,
         class: className,
         ...restProps
@@ -41,6 +58,7 @@
     const ctx = getRadioCardContext();
     const disabled = $derived(givenDisabled || ctx.isDisabled);
     const checked = $derived(ctx.value === value);
+    const showsDisabledTooltip = $derived(disabled && disabledTooltip !== undefined);
 
     // Spring the dot in/out on selection for a snappy, springy feel.
     const dotScale = new Spring(0, {stiffness: 0.3, damping: 0.6});
@@ -61,37 +79,51 @@
     }
 </script>
 
-<div
-    {...mergeProps(
-        {
-            class: `radio-card${className ? ` ${className}` : ''}`,
-            role: 'radio',
-            'aria-checked': checked ? 'true' : 'false',
-            'aria-disabled': disabled ? 'true' : undefined,
-            'data-state': checked ? 'checked' : 'unchecked',
-            'data-disabled': disabled ? '' : undefined,
-            tabindex: disabled ? undefined : 0,
-            onclick: select,
-            onkeydown,
-        },
-        restProps,
-    )}
->
-    <span class="radio-card-indicator" aria-hidden="true">
-        <span class="radio-card-dot" style="transform: scale({dotScale.current})"></span>
-    </span>
-    <div class="radio-card-body">{@render children?.()}</div>
-    <input
-        class="radio-card-input"
-        type="radio"
-        name={ctx.name}
-        {value}
-        {disabled}
-        {checked}
-        tabindex={-1}
-        aria-hidden="true"
-    />
-</div>
+{#snippet card()}
+    <div
+        {...mergeProps(
+            {
+                class: `radio-card${className ? ` ${className}` : ''}`,
+                role: 'radio',
+                'aria-checked': checked ? 'true' : 'false',
+                'aria-disabled': disabled ? 'true' : undefined,
+                'data-state': checked ? 'checked' : 'unchecked',
+                'data-disabled': disabled ? '' : undefined,
+                tabindex: disabled ? undefined : 0,
+                onclick: select,
+                onkeydown,
+            },
+            restProps,
+        )}
+    >
+        <span class="radio-card-indicator" aria-hidden="true">
+            <span class="radio-card-dot" style="transform: scale({dotScale.current})"></span>
+        </span>
+        <div class="radio-card-body">{@render children?.()}</div>
+        <input
+            class="radio-card-input"
+            type="radio"
+            name={ctx.name}
+            {value}
+            {disabled}
+            {checked}
+            tabindex={-1}
+            aria-hidden="true"
+        />
+    </div>
+{/snippet}
+
+{#if showsDisabledTooltip}
+    <Tooltip tooltip={disabledTooltip} delayDuration={300} focusable={false}>
+        {#snippet children({props})}
+            <span {...props} class="radio-card-tooltip-anchor">
+                {@render card()}
+            </span>
+        {/snippet}
+    </Tooltip>
+{:else}
+    {@render card()}
+{/if}
 
 <style>
     .radio-card {
@@ -114,6 +146,19 @@
         transition:
             border-color var(--duration-fast, 150ms) var(--easing-default),
             background-color var(--duration-fast, 150ms) var(--easing-default);
+    }
+
+    /* The tooltip wrapper must not disturb the group's flex layout: it takes
+       the card's place as the stretched flex item. */
+    .radio-card-tooltip-anchor {
+        display: flex;
+    }
+
+    /* Inside the anchor (a row-flex container by default) the card would
+       shrink to content width — grow it so the wrapped card keeps the full
+       width of its unwrapped siblings. */
+    .radio-card-tooltip-anchor .radio-card {
+        flex: 1;
     }
 
     .radio-card:hover {

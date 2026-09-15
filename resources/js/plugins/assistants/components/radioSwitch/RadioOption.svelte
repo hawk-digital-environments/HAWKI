@@ -10,6 +10,9 @@
         description,
         icon,
         variant = 'card',
+        disabled = false,
+        leading = undefined,
+        meta = undefined,
 
     } = $props<{
         value: string;
@@ -17,6 +20,12 @@
         description?: string;
         icon?: IconComponent;
         variant?: 'default' | 'card';
+        /** Disables the option: not toggleable, rendered muted. */
+        disabled?: boolean;
+        /** Optional leading snippet rendered in place of the `icon` component (e.g. a per-row custom icon like `ToolIcon`). */
+        leading?: import('svelte').Snippet | undefined;
+        /** Optional trailing content rendered between the text and the selection indicator (e.g. a status dot). */
+        meta?: import('svelte').Snippet | undefined;
     }>();
 
     const ctx = getContext<RadioGroupContext>('radioGroup');
@@ -41,6 +50,11 @@
     $effect(() => {
         if (index >= 0) ctx.setState(index, { selected: isSelected });
     });
+
+    function select(): void {
+        if (disabled) return;
+        ctx.select(value);
+    }
 </script>
 
 <button
@@ -49,13 +63,35 @@
         class:variantDefault={variant === 'default'}
         class:variantCard={variant === 'card'}
         class:isSelected={isSelected}
+        class:isDisabled={disabled}
+        disabled={disabled}
+        aria-disabled={disabled}
         bind:this={buttonEl}
-        onclick={() => ctx.select(value)}
+        onclick={select}
 >
-    {#if icon}
+    {#if leading}
+        <span class="icon">
+            {@render leading()}
+        </span>
+    {:else if icon}
         {@const IconCmp = icon}
         <span class="icon"><IconCmp size="1em" /></span>
     {/if}
+    <span class="text-wrapper">
+        <span class="label">{label}</span>
+        <span class="description">{description}</span>
+    </span>
+    {#if meta}
+        <span class="meta">
+            {@render meta()}
+        </span>
+    {/if}
+    <span
+        class="radio-indicator"
+        class:checkbox={multiple}
+        class:checked={isSelected}
+        aria-hidden="true"
+    ></span>
     <input
         type={multiple ? 'checkbox' : 'radio'}
         name={ctx.name}
@@ -63,18 +99,9 @@
         checked={isSelected}
         class="sr-only"
         tabindex="-1"
-        onchange={() => ctx.select(value)}
+        disabled={disabled}
+        onchange={select}
     />
-    <span class="text-wrapper">
-        <span class="label">{label}</span>
-        <span class="description">{description}</span>
-    </span>
-    <span
-        class="radio-indicator"
-        class:checkbox={multiple}
-        class:checked={isSelected}
-        aria-hidden="true"
-    ></span>
 </button>
 
 
@@ -106,6 +133,23 @@
 
     .description{
         font-size: var(--font-size-xs);
+    }
+
+    .meta{
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+    }
+
+    button:disabled{
+        cursor: not-allowed;
+    }
+
+    button.isDisabled .label,
+    button.isDisabled .description,
+    button.isDisabled .icon{
+        color: var(--color-text-muted);
+        opacity: .7;
     }
 
     /* Radio indicator: an outlined circle that fills with a dot when selected. */

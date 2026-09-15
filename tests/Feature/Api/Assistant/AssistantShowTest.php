@@ -496,7 +496,7 @@ class AssistantShowTest extends TestCase
             ->assertJsonPath('data.attributes.is_favorite', false);
     }
 
-    public function testProviderToolsVisibleOnlyToThePrivilegedTier(): void
+    public function testCapabilitiesVisibleOnlyToThePrivilegedTier(): void
     {
         $orgId = Organization::first()->id;
         $owner = User::factory()->create();
@@ -504,7 +504,7 @@ class AssistantShowTest extends TestCase
             'creator_id' => $owner->id,
             'organization_id' => $orgId,
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
-            'provider_tools' => ['capability:web_search:native'],
+            'capabilities' => ['capability:web_search:native'],
         ]);
 
         $admin = User::factory()->create();
@@ -514,12 +514,12 @@ class AssistantShowTest extends TestCase
         $outsider = User::factory()->create();
 
         // The privileged tier (creator or org admin — same as the ai_tools
-        // include) sees the provider-tools selection.
+        // include) sees the capability selection.
         foreach (['owner' => $owner, 'admin' => $admin] as $viewer) {
             $this->actingAsUser($viewer);
             $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
                 ->assertOk()
-                ->assertJsonPath('data.attributes.provider_tools', ['capability:web_search:native']);
+                ->assertJsonPath('data.attributes.capabilities', ['capability:web_search:native']);
         }
 
         // Everyone else who can view the assistant gets null instead, and the
@@ -528,10 +528,10 @@ class AssistantShowTest extends TestCase
             $this->actingAsUser($viewer);
             $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
                 ->assertOk()
-                ->assertJsonPath('data.attributes.provider_tools', null);
+                ->assertJsonPath('data.attributes.capabilities', null);
         }
 
-        self::assertSame(['capability:web_search:native'], $assistant->fresh()->provider_tools);
+        self::assertSame(['capability:web_search:native'], $assistant->fresh()->capabilities);
     }
 
     public function testToolSelectionDoesNotSurfaceWithoutInclude(): void

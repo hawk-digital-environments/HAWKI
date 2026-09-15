@@ -1,11 +1,11 @@
 <!--
-  @component Provider-tools block of the builder's model page: one toggle row per
+  @component Capabilities block of the builder's model page: one toggle row per
   registered capability (web search, web fetch, ... — everything except the
   knowledge-base capability, which lives on the builder's Knowledge page).
 
   Enabling a capability persists a capability transfer string
   (`capability:<key>:<native|auto|<tool-name>>`) on the assistant's
-  `providerTools` — unlike the concrete `aiTools` rows, these reference the
+  `capabilities` — unlike the concrete `aiTools` rows, these reference the
   model's native provider tools or any HAWKI tool mapped to the capability, so
   they survive model switches unchanged (mirroring the composer's `ToolMenu`
   semantics; conflicts are surfaced by `ModelToolConflictPanel`).
@@ -16,12 +16,12 @@
 
   ## Usage
   ```svelte
-  <ProviderToolsList
-      capabilities={providerToolCapabilities}
-      selected={selectedProviderTools}
+  <CapabilitiesList
+      capabilities={capabilityEntries}
+      selected={selectedCapabilities}
       model={currentModel}
-      onchange={onProviderToolChange}
-      onModeChange={onProviderToolModeChange}
+      onchange={onCapabilityChange}
+      onModeChange={onCapabilityModeChange}
   />
   ```
 -->
@@ -33,9 +33,9 @@
     import RadioSwitch from "$plugins/assistants/components/radioSwitch/RadioSwitch.svelte";
     import RadioOption from "$plugins/assistants/components/radioSwitch/RadioOption.svelte";
     import RadioCardGroup from "$lib/components/ui/radio-card/RadioCardGroup.svelte";
-    import RadioCard from "$lib/components/ui/radio-card/RadioCard.svelte";
-    import InfoPopover from "$lib/components/ui/popover/InfoPopover.svelte";
-    import StatusDotForTool from "$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte";
+    import VariantCard from "$plugins/assistants/modules/builder/components/aiToolComponents/VariantCard.svelte";
+    import ToolIcon from "$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte";
+    import ToolStatusDot from "$plugins/assistants/modules/builder/components/aiToolComponents/ToolStatusDot.svelte";
 
     const modelStore = useStore('ai-models');
     const {__} = useTranslator();
@@ -84,9 +84,22 @@
     }
 
     // Availability is against the assistant's selected model; without one
-    // (nothing chosen yet) the dots stay neutral/positive.
+    // (nothing chosen yet) the dots stay neutral/positive and every variant
+    // stays enabled. Drives both each variant card's status dot and its
+    // disabled state, so the two can never disagree: an unavailable variant
+    // (e.g. "Native tool" on a model without the native capability) is
+    // visibly disabled instead of silently reverting via the prune effect.
     function supportedForModel(check: (m: AiModel) => boolean): boolean {
         return !model || check(model);
+    }
+
+    // A capability the selected model can't fulfil is disabled (with a
+    // warning dot) — the parent only renders such rows when the user had
+    // selected them earlier, so the row explains itself instead of silently
+    // vanishing. It can never be toggled on, so unavailable selections can't
+    // enter the draft (or the save).
+    function isDisabled(capability: AiToolOrCapability): boolean {
+        return !!model && !capability.isAvailableFor(model);
     }
 
     function handleToggle(value: string, active: boolean) {
@@ -99,43 +112,67 @@
     }
 </script>
 
-<div class="provider-tools-list">
+<div class="capabilities-list">
     <RadioSwitch multiple value={selectedIds} onchange={handleToggle}>
         {#each capabilities as capability (capability.id)}
-            <div class="provider-tool">
+            <div class="capability">
                 <RadioOption
                     value={capability.id}
                     label={capability.displayName}
                     description={capability.description}
-                />
+                    disabled={isDisabled(capability)}
+                >
+                    {#snippet leading()}
+                        <ToolIcon tool={capability} size={20}/>
+                    {/snippet}
+                    {#snippet meta()}
+                        <ToolStatusDot
+                            tool={capability}
+                            supported={!isDisabled(capability)}
+                            {model}
+                        />
+                    {/snippet}
+                </RadioOption>
                 {#if showsVariants(capability)}
-                    <div class="provider-tool-variants">
-                        <span class="variants-label">{__('assistants.builder.tools.providerTools.variantLabel')}</span>
+                    <div class="capability-variants">
+                        <span class="variants-label">{__('assistants.builder.tools.capabilities.variantLabel')}</span>
                         <RadioCardGroup value={modeFor(capability)} onChange={(mode) => handleModeChange(capability, mode)}>
-                            <RadioCard value="auto" class="provider-tool-variant">
-                                {__('assistants.builder.tools.providerTools.autoLabel')}
-                                <span class="variant-meta">
-                                    <StatusDotForTool tool={capability} supported={supportedForModel(m => capability.isAvailableFor(m))}/>
-                                    <InfoPopover info={__('assistants.builder.tools.providerTools.autoInfo')}/>
-                                </span>
-                            </RadioCard>
+                            <VariantCard
+                                value="auto"
+                                disabled={!supportedForModel(m => capability.isAvailableFor(m))}
+                                disabledTooltip={__('assistants.builder.tools.capabilities.variantUnavailable')}
+                                {model}
+                                statusTool={capability}
+                                statusSupported={supportedForModel(m => capability.isAvailableFor(m))}
+                                info={__('assistants.builder.tools.capabilities.autoInfo')}
+                            >
+                                {__('assistants.builder.tools.capabilities.autoLabel')}
+                            </VariantCard>
                             {#if anyModelHasNative(capability)}
-                                <RadioCard value="native" class="provider-tool-variant">
-                                    {__('assistants.builder.tools.providerTools.nativeLabel')}
-                                    <span class="variant-meta">
-                                        <StatusDotForTool tool={capability} supported={supportedForModel(m => capability.hasNativeCapabilityFor(m))}/>
-                                        <InfoPopover info={__('assistants.builder.tools.providerTools.nativeInfo')}/>
-                                    </span>
-                                </RadioCard>
+                                <VariantCard
+                                    value="native"
+                                    disabled={!supportedForModel(m => capability.hasNativeCapabilityFor(m))}
+                                    disabledTooltip={__('assistants.builder.tools.capabilities.variantUnavailable')}
+                                    {model}
+                                    statusTool={capability}
+                                    statusSupported={supportedForModel(m => capability.hasNativeCapabilityFor(m))}
+                                    info={__('assistants.builder.tools.capabilities.nativeInfo')}
+                                >
+                                    {__('assistants.builder.tools.capabilities.nativeLabel')}
+                                </VariantCard>
                             {/if}
                             {#each toolOptionsFor(capability) as option (option.id)}
-                                <RadioCard value={option.name} class="provider-tool-variant">
+                                <VariantCard
+                                    value={option.name}
+                                    disabled={!supportedForModel(m => option.isAvailableFor(m))}
+                                    disabledTooltip={__('assistants.builder.tools.capabilities.variantUnavailable')}
+                                    {model}
+                                    statusTool={option}
+                                    statusSupported={supportedForModel(m => option.isAvailableFor(m))}
+                                    info={option.description}
+                                >
                                     {option.displayName}
-                                    <span class="variant-meta">
-                                        <StatusDotForTool tool={option} supported={supportedForModel(m => option.isAvailableFor(m))}/>
-                                        <InfoPopover info={option.description}/>
-                                    </span>
-                                </RadioCard>
+                                </VariantCard>
                             {/each}
                         </RadioCardGroup>
                     </div>
@@ -146,17 +183,17 @@
 </div>
 
 <style>
-    .provider-tools-list {
+    .capabilities-list {
         display: flex;
         flex-direction: column;
     }
 
-    .provider-tool {
+    .capability {
         display: flex;
         flex-direction: column;
     }
 
-    .provider-tool-variants {
+    .capability-variants {
         display: flex;
         flex-direction: column;
         gap: var(--space-1_5, 0.375rem);
@@ -169,15 +206,9 @@
         color: var(--color-text-muted);
     }
 
-    .provider-tool-variants :global(.provider-tool-variant .radio-card-body) {
+    .capability-variants :global(.capability-variant .radio-card-body) {
         display: flex;
         justify-content: space-between;
         width: 100%;
-    }
-
-    .variant-meta {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2, 0.5rem);
     }
 </style>

@@ -246,16 +246,16 @@
             },
             "tools": {
                 "title": "Tools & MCP",
-                "description": "Wähle einzelne Werkzeuge aus genehmigten MCP-Servern. Jedes Tool beeinflusst die Risikostufe und Veröffentlichungspfade.",
-                "providerTools": {
-                    "title": "Provider-Tools",
-                    "description": "Fähigkeiten wie Websuche, die der Anbieter des Modells nativ oder über ein zugeordnetes HAWKI-Tool erfüllt.",
+                "description": "Wähle Fähigkeiten und Werkzeuge aus genehmigten MCP-Servern. Jedes Tool beeinflusst die Risikostufe und Veröffentlichungspfade.",
+                "capabilities": {
                     "variantLabel": "Variante",
                     "autoLabel": "automatisch",
                     "autoInfo": "Das Modell wählt automatisch die beste Variante für die Aufgabe aus. (Natives Tool bevorzugt, ansonsten die erste verfügbare Alternative)",
                     "nativeLabel": "Natives Tool",
-                    "nativeInfo": "Dieses Tool wird vom Model-Anbieter direkt zur Verfügung gestellt."
-                }
+                    "nativeInfo": "Dieses Tool wird vom Model-Anbieter direkt zur Verfügung gestellt.",
+                    "variantUnavailable": "Diese Option ist für das ausgewählte Modell nicht verfügbar."
+                },
+                "selectedCount": ":selected von :count"
             },
             "test": {
                 "title": "Private Testumgebung",

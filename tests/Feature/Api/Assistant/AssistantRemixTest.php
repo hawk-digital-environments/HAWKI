@@ -187,7 +187,7 @@ class AssistantRemixTest extends TestCase
         self::assertFalse($clone->ai_tools()->exists());
     }
 
-    public function testRemixCopiesProviderToolsWhenUsersShareOrganization(): void
+    public function testRemixCopiesCapabilitiesWhenUsersShareOrganization(): void
     {
         $org = Organization::create(['name' => 'Test Org']);
         $owner = User::factory()->create();
@@ -198,7 +198,7 @@ class AssistantRemixTest extends TestCase
             'creator_id' => $owner->id,
             'allow_remix' => true,
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
-            'provider_tools' => ['capability:web_search:native'],
+            'capabilities' => ['capability:web_search:native'],
         ]);
 
         $this->actingAsUser($remixUser);
@@ -207,10 +207,10 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertSame(['capability:web_search:native'], $clone->provider_tools);
+        self::assertSame(['capability:web_search:native'], $clone->capabilities);
     }
 
-    public function testRemixDoesNotCopyProviderToolsWhenUsersDifferOrgs(): void
+    public function testRemixDoesNotCopyCapabilitiesWhenUsersDifferOrgs(): void
     {
         $org1 = Organization::create(['name' => 'Org 1']);
         $org2 = Organization::create(['name' => 'Org 2']);
@@ -223,7 +223,7 @@ class AssistantRemixTest extends TestCase
             'creator_id' => $owner->id,
             'allow_remix' => true,
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
-            'provider_tools' => ['capability:web_search:native'],
+            'capabilities' => ['capability:web_search:native'],
         ]);
 
         $this->actingAsUser($remixUser);
@@ -232,7 +232,7 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertNull($clone->provider_tools);
+        self::assertNull($clone->capabilities);
     }
 
     public function testRemixDoesNotCopyAttachments(): void
