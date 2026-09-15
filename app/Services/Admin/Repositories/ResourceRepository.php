@@ -35,7 +35,9 @@ abstract class ResourceRepository
         return $this->readContent($user, $this->validateFilters($filters));
     }
 
-    /** Serialize a saved record using the same redaction rules as the collection. */
+    /**
+     * Serialize a saved record using the same redaction rules as the collection.
+     */
     public function readOne(User $user, string $id): array
     {
         $definition = $this->definition();
@@ -85,12 +87,13 @@ abstract class ResourceRepository
         $table = $definition['table'] ?? (new $definition['model']())->getTable();
         $query = DB::table($table);
         $columns = $definition['columns'];
+        $columnMap = $definition['column_map'] ?? [];
         $searchable = array_values(array_intersect($columns, ['name', 'label', 'model_id', 'provider_id', 'server_label', 'title', 'username', 'email', 'employeetype', 'employee_type', 'slug']));
 
         if (!empty($filters['search']) && $searchable) {
-            $query->where(static function ($q) use ($searchable, $filters): void {
+            $query->where(static function ($q) use ($searchable, $filters, $columnMap): void {
                 foreach ($searchable as $field) {
-                    $q->orWhere($field, 'like', '%' . $filters['search'] . '%');
+                    $q->orWhere($columnMap[$field] ?? $field, 'like', '%' . $filters['search'] . '%');
                 }
             });
         }
@@ -99,7 +102,7 @@ abstract class ResourceRepository
 
         foreach (array_filter($filters['where'] ?? [], static fn ($value) => null !== $value && '' !== $value) as $column => $value) {
             abort_unless(\in_array($column, $stored, true), 422);
-            $query->where($column, $value);
+            $query->where($columnMap[$column] ?? $column, $value);
         }
 
         $sort = $filters['sort'] ?? 'id';
@@ -107,7 +110,7 @@ abstract class ResourceRepository
         $total = (clone $query)->count();
         $page = (int) ($filters['page'] ?? 1);
         $size = (int) ($filters['size'] ?? 25);
-        $query->orderBy($sort, $filters['direction'] ?? 'asc');
+        $query->orderBy($columnMap[$sort] ?? $sort, $filters['direction'] ?? 'asc');
 
         if ('id' !== $sort) {
             $query->orderBy('id');
@@ -137,8 +140,9 @@ abstract class ResourceRepository
 
         unset($field);
         $create = $this->canCreate($user);
+        $extra = in_array(static::RESOURCE, ['users', 'mappings'], true) ? ['role_catalog' => DB::table('roles')->get(['id', 'display_name', 'name', 'is_system'])->map(static fn ($role) => ['id' => (int) $role->id, 'name' => $role->display_name, 'slug' => $role->name, 'is_system' => (bool) $role->is_system])->all()] : [];
 
-        return ['rows' => $rows, 'columns' => $columns, 'fields' => $fields, 'total' => $total, 'page' => $page, 'size' => $size, 'create' => $create, 'delete' => $definition['delete'] ?? true];
+        return $extra + ['rows' => $rows, 'columns' => $columns, 'fields' => $fields, 'total' => $total, 'page' => $page, 'size' => $size, 'create' => $create, 'delete' => $definition['delete'] ?? true];
     }
 
     protected function rowAttributes(array $row): array
@@ -169,19 +173,21 @@ abstract class ResourceRepository
         $fields = array_column($definition['fields'], null, 'key');
 
         foreach (array_unique(array_merge($definition['columns'], array_keys($fields))) as $key) {
-            if (!\array_key_exists($key, $row)) {
+            $column = $definition['column_map'][$key] ?? $key;
+
+            if (!\array_key_exists($column, $row)) {
                 continue;
             }
 
             $type = $fields[$key]['type'] ?? '';
 
             if (str_starts_with($type, 'secret')) {
-                $result[$key . '_set'] = filled($row[$key]);
+                $result[$key . '_set'] = filled($row[$column]);
 
                 continue;
             }
 
-            $value = $row[$key];
+            $value = $row[$column];
 
             if (\in_array($type, ['json', 'multi', 'markdown-locales'], true)) {
                 $value = null === $value ? null : json_decode($value, true);
@@ -200,7 +206,7 @@ abstract class ResourceRepository
     private function options(string $key): array
     {
         [$table, $value, $label] = match ($key) {
-            'roles' => ['roles', 'id', 'name'], 'providers' => ['ai_providers', 'id', 'name'],
+            'roles' => ['roles', 'id', 'display_name'], 'providers' => ['ai_providers', 'id', 'name'],
             'tools' => ['ai_tools', 'id', 'name'], 'model_keys' => ['ai_models', 'model_id', 'label'],
             default => ['ai_models', 'id', 'label'],
         };

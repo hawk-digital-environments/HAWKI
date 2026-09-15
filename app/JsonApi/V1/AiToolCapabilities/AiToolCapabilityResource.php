@@ -28,6 +28,7 @@ class AiToolCapabilityResource extends JsonApiResource
     public function attributes($request): iterable
     {
         return [
+            'native_model_ids' => app(\App\Services\Ai\Tools\ToolAuthorization::class)->nativeModelIds($this->resource->key, $request?->user()),
             'title_label' => $this->resource->titleLabel,
             'description_label' => $this->resource->descriptionLabel,
             'icon_path' => ValueSerializer::localFileAsDataUrl($this->resource->iconPath),

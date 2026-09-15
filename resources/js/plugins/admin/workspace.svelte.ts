@@ -1,4 +1,5 @@
 import { onMount } from 'svelte';
+import { ApiTransportError } from '$lib/kernel/api/errors.js';
 import type { ColumnFiltersState, PaginationState, SortingState } from '$lib/components/ui/data-table/types.js';
 import type { FetchCollectionQuery } from '$lib/kernel/api/buildQueryString.js';
 import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
@@ -137,6 +138,8 @@ export class AdminWorkspace<
     loading = $state(true);
     /** Message of the last failed read, write or action; cleared when the next one starts. */
     error = $state('');
+    /** A denied operation remains visible through the coordinated refresh. */
+    authorizationDenied = $state(false);
     search = $state('');
     pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 25 });
     sorting = $state<SortingState>([]);
@@ -171,6 +174,69 @@ export class AdminWorkspace<
     private readonly editFields?: (row: Row, fields: AdminField[]) => AdminField[];
     private readonly operations: AdminWorkspaceOptions<Row, Results>;
     private request?: AbortController;
+    private suspended = $state(false);
+    private generation = 0;
+
+    /** Stop publishing reads while authorization is being checked. */
+    suspend(): void {
+        this.suspended = true;
+        this.generation++;
+        this.request?.abort();
+        this.loading = false;
+    }
+
+    /** Forget protected data and every pending action; a later grant starts fresh. */
+    invalidate(): void {
+        this.suspend();
+        this.content = null;
+        this.editor = null;
+        this.confirmation = null;
+        this.results = {};
+        this.error = '';
+        this.notice = '';
+    }
+
+    /** Reload after authorization succeeds, retaining a draft only if its target and metadata are unchanged.
+     * Returns whether a dialog closed, so the mounted page can restore focus after rendering.
+     */
+    async resume(): Promise<boolean> {
+        const generation = this.generation;
+        const previous = this.content;
+        const editor = this.editor;
+        let closed = !!this.confirmation;
+        // A confirmation captures an action on the old authorization snapshot.
+        this.confirmation = null;
+        this.suspended = false;
+        const loaded = await this.loadContent();
+        if (generation !== this.generation) return false;
+        if (!loaded) this.content = null;
+        if (editor && this.editor === editor) {
+            const current = this.content;
+            const row = editor.row ? current?.rows.find((row) => row.id === editor.row?.id) : null;
+            const fields =
+                row && this.editFields ? this.editFields(row, current?.fields ?? []) : (current?.fields ?? []);
+            const metadata = (content: AdminContent<Row> | null, fields: AdminField[]) =>
+                JSON.stringify({
+                    fields,
+                    permission_catalog: content?.permission_catalog,
+                    access_rules: content?.access_rules,
+                    role_catalog: content?.role_catalog
+                });
+            const targetUnchanged =
+                editor.row ?
+                    !!row && !!editor.row._version && row._version === editor.row._version
+                :   !!current?.create && !!this.operations.save;
+            if (!loaded || !targetUnchanged || metadata(previous, editor.fields) !== metadata(current, fields)) {
+                this.editor = null;
+                this.notice = this.__(loaded ? 'admin.editor_refreshed' : 'admin.editor_unverified');
+                closed = true;
+            } else if (row) {
+                // Keep the editor instance (and its local form draft), but use the current row reference.
+                editor.row = row;
+            }
+        }
+        return closed;
+    }
 
     constructor(
         __: Translate,
@@ -211,6 +277,11 @@ export class AdminWorkspace<
 
     /** Reads the section for the current query; a newer read aborts an older one still in flight. */
     async load(): Promise<void> {
+        await this.loadContent();
+    }
+
+    private async loadContent(): Promise<boolean> {
+        if (this.suspended) return false;
         this.request?.abort();
         const controller = new AbortController();
         this.request = controller;
@@ -218,12 +289,17 @@ export class AdminWorkspace<
         this.error = '';
         try {
             const content = await this.read(controller.signal, this.query);
-            if (!controller.signal.aborted) this.content = adminContent(content) as AdminContent<Row>;
+            if (!controller.signal.aborted) {
+                this.content = adminContent(content) as AdminContent<Row>;
+                return true;
+            }
         } catch (failure) {
-            if (!controller.signal.aborted) this.error = this.message(failure, 'admin.errors.load');
+            if (this.isDenied(failure)) this.authorizationDenied = true;
+            else if (!controller.signal.aborted) this.error = this.message(failure, 'admin.errors.load');
         } finally {
             if (!controller.signal.aborted) this.loading = false;
         }
+        return false;
     }
 
     /** Reads the current search term from the first page. */
@@ -242,16 +318,17 @@ export class AdminWorkspace<
 
     /** Aborts a running read; the page is going away. */
     dispose(): void {
-        this.request?.abort();
+        this.invalidate();
     }
 
     /** `row` must not be changed right now: the page is busy or the row itself is being saved. */
     locked(row: Row): boolean {
-        return this.busy || this.updating.includes(row.id);
+        return this.suspended || this.busy || this.updating.includes(row.id);
     }
 
     /** Opens the editor for `row`, or for a new row when `null`. */
     edit(row: Row | null, trigger: HTMLElement | null): void {
+        if (this.suspended) return;
         this.trigger = trigger;
         const fields = this.fields;
         this.editor = { row, fields: row && this.editFields ? this.editFields(row, fields) : fields };
@@ -259,13 +336,24 @@ export class AdminWorkspace<
 
     /** Persists an editor submission: updates the edited row or creates a new one. */
     async save(values: Record<string, unknown>): Promise<void> {
-        await this.persist(values, this.editor?.row);
-        await this.afterWrite();
+        const generation = this.generation;
+        this.authorizationDenied = false;
+        try {
+            await this.persist(values, this.editor?.row);
+            if (generation === this.generation) {
+                this.editor = null;
+                await this.afterWrite();
+            }
+        } catch (failure) {
+            if (this.isDenied(failure)) this.authorizationDenied = true;
+            throw failure;
+        }
     }
 
     /** Saves `changes` merged into the existing row, like an editor submission that touched only those fields. */
     async update(row: Row, changes: Record<string, unknown>): Promise<void> {
         if (this.locked(row)) return;
+        const generation = this.generation;
         this.updating = [...this.updating, row.id];
         this.error = '';
         try {
@@ -273,9 +361,10 @@ export class AdminWorkspace<
             const prepared = prepareValues(fields, { ...createDraft(fields, row), ...changes });
             if (Object.keys(prepared.errors).length) throw new Error(this.__('admin.errors.invalid_value'));
             await this.persist(prepared.values, row);
-            await this.afterWrite();
+            if (generation === this.generation) await this.afterWrite();
         } catch (failure) {
-            this.error = this.message(failure, 'admin.errors.save');
+            if (this.isDenied(failure)) this.authorizationDenied = true;
+            else if (generation === this.generation) this.error = this.message(failure, 'admin.errors.save');
         } finally {
             this.updating = this.updating.filter((id) => id !== row.id);
         }
@@ -284,7 +373,7 @@ export class AdminWorkspace<
     /** Asks before deleting `row`, or resetting it in resettable sections. */
     remove(row: Row, trigger: HTMLElement | null): void {
         const remove = this.operations.remove;
-        if (!remove) return;
+        if (!remove || this.suspended) return;
         this.trigger = trigger;
         this.confirmation = {
             title: this.__(this.resettable ? 'admin.reset' : 'admin.delete'),
@@ -313,8 +402,10 @@ export class AdminWorkspace<
                 destructive: action.destructive,
                 run: async () => {
                     const trigger = this.trigger;
+                    const generation = this.generation;
                     const response = await action.run();
-                    if (action.dialog) this.results[id] = { id: row.id, response, trigger };
+                    if (action.dialog && generation === this.generation && !this.suspended)
+                        this.results[id] = { id: row.id, response, trigger };
                 }
             });
         }
@@ -323,6 +414,7 @@ export class AdminWorkspace<
 
     /** Runs an action, asking first when it requires confirmation. */
     action(item: AdminAction, trigger?: HTMLElement | null): void {
+        if (this.suspended) return;
         this.trigger = trigger ?? null;
         if (item.confirm) {
             this.confirmation = {
@@ -338,11 +430,13 @@ export class AdminWorkspace<
     /** Runs the pending confirmation; failures land in `error` instead of the caller. */
     async confirm(): Promise<void> {
         const pending = this.confirmation;
-        if (!pending) return;
+        if (!pending || this.suspended) return;
+        this.confirmation = null;
         try {
             await pending.run();
         } catch (failure) {
-            this.error = this.message(failure, 'admin.errors.save');
+            if (this.isDenied(failure)) this.authorizationDenied = true;
+            else this.error = this.message(failure, 'admin.errors.save');
         }
     }
 
@@ -351,25 +445,29 @@ export class AdminWorkspace<
     }
 
     restoreFocus(trigger = this.trigger): HTMLElement | null {
-        return trigger?.isConnected ? trigger : this.focusFallback();
+        return trigger?.isConnected && !trigger.matches?.(':disabled, [aria-disabled="true"]') ?
+                trigger
+            :   this.focusFallback();
     }
 
     private async run(item: AdminAction): Promise<void> {
-        if (this.busy) return;
+        if (this.busy || this.suspended) return;
         this.busy = true;
         this.error = '';
+        const generation = this.generation;
         try {
             await item.run();
-            await this.afterWrite('admin.action_done');
+            if (generation === this.generation) await this.afterWrite('admin.action_done');
         } catch (failure) {
-            this.error = this.message(failure, 'admin.errors.save');
+            if (this.isDenied(failure)) this.authorizationDenied = true;
+            else if (generation === this.generation) this.error = this.message(failure, 'admin.errors.save');
         } finally {
             this.busy = false;
         }
     }
 
     private async persist(values: Record<string, unknown>, row?: Row | null): Promise<void> {
-        if (!this.operations.save) throw new Error(this.__('admin.errors.save'));
+        if (this.suspended || !this.operations.save) throw new Error(this.__('admin.errors.save'));
         await this.operations.save(values, row ?? null);
     }
 
@@ -385,6 +483,10 @@ export class AdminWorkspace<
             this.notice = this.__('admin.saved_refresh');
         }
         await this.load();
+    }
+
+    private isDenied(failure: unknown): boolean {
+        return failure instanceof ApiTransportError && failure.status === 403;
     }
 
     private message(failure: unknown, fallback: string): string {

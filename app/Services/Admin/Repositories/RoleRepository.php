@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Admin\Repositories;
 
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Admin\Permission;
 use App\Services\Admin\RoleGuard;
@@ -15,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 class RoleRepository extends ResourceRepository
 {
     public const RESOURCE = 'roles';
-    protected const VERSION_RELATIONS = [['role_permissions', 'role_id', 'permission']];
+    protected const VERSION_RELATIONS = [['role_has_permissions', 'role_id', 'permission_id']];
 
     public function __construct(private RoleGuard $guard)
     {
@@ -26,36 +27,26 @@ class RoleRepository extends ResourceRepository
         return $this->guard->mutate(function () use ($id, $values, $actor) {
             $data = Validator::make($values, [
                 'name' => 'required|string|max:255', 'description' => 'nullable|string|max:2000',
-                'slug' => ['required', 'alpha_dash', 'max:80', Rule::unique('roles')->ignore($id)],
+                'slug' => ['required', 'alpha_dash', 'max:80', Rule::unique('roles', 'name')->ignore($id)],
                 'permissions' => 'present|array', 'permissions.*' => ['string', Rule::in(Permission::values())],
             ])->validate();
             $this->guard->assertGrantable($data['permissions'], $actor);
-            $existing = $id ? DB::table('roles')->where('id', $id)->first() : null;
+            $existing = $id ? Role::query()->find($id) : null;
             abort_if($id && !$existing, 404);
 
             if ($existing) {
                 $this->guard->assertRolesGrantable([$id], $actor);
             }
 
-            if ($existing?->is_system && $existing->slug !== $data['slug']) {
+            if ($existing?->is_system && $existing->name !== $data['slug']) {
                 throw ValidationException::withMessages(['slug' => __('admin.errors.system_role')]);
             }
 
             $permissions = $data['permissions'];
-            unset($data['permissions']);
-            $data['updated_at'] = now();
-
-            if ($id) {
-                DB::table('roles')->where('id', $id)->update($data);
-            } else {
-                $id = DB::table('roles')->insertGetId($data + ['created_at' => now()]);
-            }
-
-            DB::table('role_permissions')->where('role_id', $id)->delete();
-
-            foreach (array_unique($permissions) as $permission) {
-                DB::table('role_permissions')->insert(['role_id' => $id, 'permission' => $permission]);
-            }
+            $role = $existing ?? new Role();
+            $role->fill(['name' => $data['slug'], 'display_name' => $data['name'], 'description' => $data['description'] ?? null])->save();
+            $id = $role->getKey();
+            $role->syncPermissions(array_values(array_unique($permissions)));
 
             $this->guard->assertActorRetainsAccess($actor);
 
@@ -74,16 +65,30 @@ class RoleRepository extends ResourceRepository
             }
 
             $this->guard->assertRolesGrantable([$id], $actor);
-            DB::table('roles')->where('id', $id)->delete();
+            Role::query()->findOrFail($id)->delete();
             $this->guard->assertActorRetainsAccess($actor);
         });
+    }
+
+    protected function readContent(User $user, array $filters): array
+    {
+        $content = parent::readContent($user, $filters);
+        $grants = app(\App\Services\Admin\PermissionService::class)->permissionsOf($user);
+        $content['permission_catalog'] = array_map(static fn (string $name) => [
+            'name' => $name,
+            'group' => str_starts_with($name, 'tools.') || str_starts_with($name, 'ai.capabilities.') ? 'tools' : 'administration',
+            'title_label' => "admin.permissions.$name.title",
+            'description_label' => "admin.permissions.$name.description",
+            'grantable' => in_array($name, $grants, true),
+        ], Permission::values());
+        return $content;
     }
 
     protected function definition(): array
     {
         $fields = new \App\Services\Admin\ResourceFields();
 
-        return ['table' => 'roles', 'columns' => ['name', 'slug', 'description', 'is_system'], 'fields' => [
+        return ['table' => 'roles', 'column_map' => ['name' => 'display_name', 'slug' => 'name'], 'columns' => ['name', 'slug', 'description', 'is_system'], 'fields' => [
             $fields->text('name', true), $fields->text('slug', true), $fields->field('description', 'textarea', 'nullable|string|max:2000'), $fields->multiple('permissions', Permission::values()),
         ]];
     }
@@ -91,7 +96,7 @@ class RoleRepository extends ResourceRepository
     protected function rowAttributes(array $row): array
     {
         $result = [];
-        $result['permissions'] = DB::table('role_permissions')->where('role_id', $row['id'])->pluck('permission')->all();
+        $result['permissions'] = app(\App\Services\Admin\PermissionService::class)->permissionsForRoles([(int) $row['id']]);
 
         return $result;
     }

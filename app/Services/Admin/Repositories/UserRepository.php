@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Admin\EmployeeTypeRoleSyncer;
 use App\Services\Admin\Permission;
 use App\Services\Admin\PermissionService;
+use App\Services\Admin\RoleAssignmentService;
 use App\Services\Admin\RoleGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -24,6 +25,7 @@ class UserRepository extends ResourceRepository
         private RoleGuard $guard,
         private PermissionService $permissions,
         private EmployeeTypeRoleSyncer $syncer,
+        private RoleAssignmentService $assignments,
     ) {
     }
 
@@ -62,9 +64,7 @@ class UserRepository extends ResourceRepository
                 ])->save();
                 $id = (int) $user->id;
 
-                foreach ($roles as $role) {
-                    DB::table('role_user')->insert(['role_id' => $role, 'user_id' => $id, 'source' => 'manual', 'created_at' => now()]);
-                }
+                $this->assignments->replace($user, $roles);
 
                 return $id;
             }
@@ -133,11 +133,7 @@ class UserRepository extends ResourceRepository
                 $this->permissions->authorize($actor, Permission::ROLES_MANAGE);
                 $existing = DB::table('role_user')->where('user_id', $id)->where('source', 'manual')->pluck('role_id')->all();
                 $this->guard->assertRolesGrantable(array_unique(array_merge($existing, $data['roles'])), $actor);
-                DB::table('role_user')->where('user_id', $id)->where('source', 'manual')->delete();
-
-                foreach ($data['roles'] as $role) {
-                    DB::table('role_user')->insert(['role_id' => $role, 'user_id' => $id, 'source' => 'manual', 'created_at' => now()]);
-                }
+                $this->assignments->replace($user, $data['roles']);
             }
 
             $this->guard->assertActorRetainsAccess($actor);

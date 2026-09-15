@@ -472,6 +472,8 @@
         "secret_set": "Set",
         "secret_unset": "Not set",
         "mapped_roles_hint": "Roles from employee type: :roles. Edit the mapping to change these assignments.",
+        "manual_roles_hint": "Specify which roles this account should belong to.",
+        "directory_identity_hint": "Managed by the identity provider (LDAP, OIDC or Shibboleth) and read-only here.",
         "discard_title": "Discard changes?",
         "discard_description": "Your unsaved changes will be lost.",
         "discard": "Discard",
@@ -706,7 +708,9 @@
             "environment": "Environment",
             "debug": "Debug mode",
             "config_cached": "Configuration cached",
-            "icon": "Provider icon"
+            "icon": "Provider icon",
+            "access_rule": "User access",
+            "mapped_roles": "Derived roles"
         },
         "errors": {
             "translate_model": "No AI model is available for translation. Assign a system model of type \"translation\".",
@@ -750,7 +754,117 @@
             "health_manage": "Manage health checks and failed jobs",
             "settings_view": "View environment",
             "settings_manage": "Manage system settings",
-            "external-apps_manage": "Manage external apps"
+            "external-apps_manage": "Manage external apps",
+            "admin": {
+                "access": {
+                    "title": "Access administration",
+                    "description": "Open administration. Each section also requires its own permission."
+                }
+            },
+            "users": {
+                "view": {
+                    "title": "View users",
+                    "description": "View user accounts and role assignments."
+                },
+                "manage": {
+                    "title": "Manage local users, access and tokens",
+                    "description": "Create local accounts and manage account access and tokens."
+                }
+            },
+            "roles": {
+                "manage": {
+                    "title": "Manage roles and assignments",
+                    "description": "Manage roles, manual assignments and employee-type mappings within your grants."
+                }
+            },
+            "models": {
+                "manage": {
+                    "title": "Manage models and system prompts",
+                    "description": "Configure models, model assignments and system prompts."
+                }
+            },
+            "providers": {
+                "manage": {
+                    "title": "Manage providers and credentials",
+                    "description": "Configure AI providers and their credentials."
+                }
+            },
+            "mcp": {
+                "manage": {
+                    "title": "Manage MCP servers and tools",
+                    "description": "Configure MCP servers and tools. Access-rule changes also require role management."
+                }
+            },
+            "announcements": {
+                "manage": {
+                    "title": "Manage announcements",
+                    "description": "Create and edit announcements."
+                }
+            },
+            "usage": {
+                "view": {
+                    "title": "View usage statistics",
+                    "description": "View aggregate usage and statistics."
+                },
+                "view-per-user": {
+                    "title": "View individual usage",
+                    "description": "View usage attributed to individual users."
+                }
+            },
+            "health": {
+                "view": {
+                    "title": "View system health",
+                    "description": "View service health and job status."
+                },
+                "manage": {
+                    "title": "Manage health checks and failed jobs",
+                    "description": "Run health checks and manage failed jobs."
+                }
+            },
+            "settings": {
+                "view": {
+                    "title": "View environment",
+                    "description": "View deployment and environment settings."
+                },
+                "manage": {
+                    "title": "Manage system settings",
+                    "description": "Change application settings."
+                }
+            },
+            "external-apps": {
+                "manage": {
+                    "title": "Manage external apps",
+                    "description": "Manage external application connections."
+                }
+            },
+            "tools": {
+                "use": {
+                    "title": "Use tools",
+                    "description": "Allow tool use together with the relevant capability permission."
+                },
+                "internal_search": {
+                    "use": {
+                        "title": "Use internal search",
+                        "description": "Search internal content through approved tools; content access still applies."
+                    }
+                }
+            },
+            "ai": {
+                "capabilities": {
+                    "web_search": {
+                        "use": {
+                            "title": "Use web search",
+                            "description": "Search the web through an approved tool or a supported model."
+                        }
+                    },
+                    "image_generation": {
+                        "use": {
+                            "title": "Generate images",
+                            "description": "Generate images through an approved tool or a supported model."
+                        }
+                    }
+                }
+            }
         },
         "actions": {
             "test": "Test connection",
@@ -822,7 +936,48 @@
             "invalid": "Use a static SVG up to 256 KB without scripts, embedded HTML or external references.",
             "upload_failed": "The SVG could not be added. Use a static SVG up to 256 KB and try again.",
             "choose_again": "This icon is no longer available. Reopen the selection."
-        }
+        },
+        "permission_selector_hint": "Choose the permissions this role grants. Permissions you cannot grant stay unchanged.",
+        "permission_search": "Search permissions",
+        "permission_count": ":count permissions shown",
+        "permission_groups": {
+            "administration": "Administration",
+            "tools": "Tool use"
+        },
+        "permission_unknown": "This saved permission is no longer in the available catalog.",
+        "permission_preserved": "Already assigned · you cannot change this permission.",
+        "permission_not_grantable": "You cannot grant this permission.",
+        "access_rule_hint": "This rule determines who may use the tool. The tool must also be enabled and assigned to the selected model.",
+        "access_rule_locked": "You cannot change this tool’s current access rule.",
+        "role_unknown": "Role :id",
+        "role_source_manual": "Manually assigned",
+        "role_source_mapped": "Employee type · read-only",
+        "mapping_impact": "Users with this employee type receive the selected role automatically. Saving updates their derived assignments. Manual role assignments remain in place.",
+        "authorization_changed": "Your access changed. Reopen the editor to review the current permissions.",
+        "tool_access_rules": {
+            "unavailable": {
+                "title": "Unavailable to users",
+                "description": "No user may use this tool."
+            },
+            "web_search": {
+                "title": "Users with web search access",
+                "description": "Requires permission to use tools and web search."
+            },
+            "image_generation": {
+                "title": "Users with image generation access",
+                "description": "Requires permission to use tools and generate images."
+            },
+            "internal_search": {
+                "title": "Users with internal search access",
+                "description": "Requires permission to use tools and internal search."
+            }
+        },
+        "role_labels": {
+            "admin": "Administrator",
+            "user": "User"
+        },
+        "editor_refreshed": "This record or its available settings changed. Reopen the editor to review the current values.",
+        "editor_unverified": "The editor closed because current data could not be loaded. Reload this section before editing."
     },
     "admin.account_disabled": "This account has been disabled."
 }
