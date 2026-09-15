@@ -283,7 +283,7 @@
                 },
                 "risk": {
                     "title": "Risk overview",
-                    "description": "Assistant with knowledge files or tools. Standard review required.",
+                    "description": "The risk level results from knowledge files and tools.",
                     "label_status": "Status",
                     "label_risk_level": "Risk level",
                     "risk_level_low": "Low risk"

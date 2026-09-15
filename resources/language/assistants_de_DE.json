@@ -283,7 +283,7 @@
                 },
                 "risk": {
                     "title": "Risiko-Übersicht",
-                    "description": "Assistent mit Wissensdateien oder Tools. Standardprüfung erforderlich.",
+                    "description": "Die Risikostufe ergibt sich aus Wissensdateien und Tools.",
                     "label_status": "Status",
                     "label_risk_level": "Risikostufe",
                     "risk_level_low": "Niedriges Risiko"
