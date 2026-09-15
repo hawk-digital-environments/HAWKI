@@ -6,7 +6,7 @@
 -->
 <script
     lang="ts"
-    generics="Results extends Record<string, unknown>"
+    generics="Row extends AdminRow, ColumnId extends string, Results extends Record<string, unknown>"
 >
     import type { Snippet } from 'svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
@@ -20,6 +20,7 @@
     import AdminEditor from './AdminEditor.svelte';
     import { adminActionIcons } from '../actionIcons.js';
     import { sections, type SectionId } from '../sections.js';
+    import type { AdminRow } from '../schemas/admin-content.js';
     import type { AdminAction, AdminWorkspace } from '../workspace.svelte.js';
 
     let {
@@ -30,7 +31,7 @@
         hint,
         children
     }: {
-        workspace: AdminWorkspace<Results>;
+        workspace: AdminWorkspace<Row, ColumnId, Results>;
         /** Page identity for labels, access checks and editor controls. */
         section: SectionId;
         /** Section actions offered in the page menu after "reload"; run through `workspace.action(item, trigger)`. */

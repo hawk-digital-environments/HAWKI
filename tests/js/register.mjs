@@ -76,6 +76,7 @@ registerHooks({
             loader: 'ts',
             format: 'esm',
             target: 'es2022',
+            define: {'import.meta.env.MODE': '"test"'},
             sourcefile: file
         }).code;
         if (file.endsWith('.svelte.ts')) {

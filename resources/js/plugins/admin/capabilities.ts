@@ -1,4 +1,4 @@
-import type { AdminRow } from './schemas/admin-content.js';
+import type { AdminModelResource } from './schemas/resources/admin-models.schema.js';
 
 /**
  * Model capabilities that can be switched from the models list without opening
@@ -35,7 +35,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function hasModelCapability(row: AdminRow, id: ModelCapabilityId): boolean {
+export function hasModelCapability(row: AdminModelResource, id: ModelCapabilityId): boolean {
     const { field, key } = definition(id);
     const value = row[field];
     if (field === 'settings') return isRecord(value) && value[key] === true;
@@ -47,14 +47,18 @@ export function hasModelCapability(row: AdminRow, id: ModelCapabilityId): boolea
  * the touched field stays as it is, so the result can be merged into the row
  * and saved like an editor submission.
  */
-export function toggleModelCapability(row: AdminRow, id: ModelCapabilityId, enabled: boolean): Record<string, unknown> {
+export function toggleModelCapability(
+    row: AdminModelResource,
+    id: ModelCapabilityId,
+    enabled: boolean
+): Record<string, unknown> {
     const { field, key } = definition(id);
     const value = row[field];
     if (field === 'settings') return { settings: { ...(isRecord(value) ? value : {}), [key]: enabled } };
-    return { [field]: toggleTag(value, key, enabled) };
+    return { [field]: toggleTag(row[field], key, enabled) };
 }
 
-function toggleTag(list: unknown, key: string, enabled: boolean): unknown[] {
+function toggleTag(list: string[] | null, key: string, enabled: boolean): string[] {
     const rest = (Array.isArray(list) ? list : []).filter((item) => item !== key);
     return enabled ? [...rest, key] : rest;
 }
@@ -63,10 +67,10 @@ function toggleTag(list: unknown, key: string, enabled: boolean): unknown[] {
  * A model is visible to users when its usage rules allow the main application;
  * models restricted to external applications stay hidden from the model picker.
  */
-export function isModelVisible(row: AdminRow): boolean {
+export function isModelVisible(row: AdminModelResource): boolean {
     return Array.isArray(row.usage_rules) && row.usage_rules.includes('main');
 }
 
-export function toggleModelVisible(row: AdminRow, enabled: boolean): Record<string, unknown> {
+export function toggleModelVisible(row: AdminModelResource, enabled: boolean): Record<string, unknown> {
     return { usage_rules: toggleTag(row.usage_rules, 'main', enabled) };
 }

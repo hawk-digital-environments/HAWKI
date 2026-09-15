@@ -6,10 +6,7 @@ import type { JsonApiCollection } from '$lib/kernel/api/jsonApiEncoding.js';
 import { adminContent, type AdminContent, type AdminField, type AdminRow } from './schemas/admin-content.js';
 import { createDraft, prepareValues, rowName } from './form.js';
 
-/** A column of an admin table, declared by the page that renders it. */
-export interface AdminColumn {
-    /** Key of the row value shown in the cell; also the sort key sent to the server. */
-    id: string;
+interface AdminColumnOptions {
     /** Header label; defaults to the `admin.fields.<id>` translation. */
     header?: string;
     /** The column can be sorted. Defaults to `true`. */
@@ -23,11 +20,42 @@ export interface AdminColumn {
 }
 
 /**
+ * A column backed by a row property. Its id must be a key of `Row`; the table
+ * reads and formats that value unless the page supplies a cell snippet.
+ */
+export type AdminDataColumn<Row extends AdminRow> = AdminColumnOptions & { id: keyof Row & string };
+
+/**
+ * A display-only column rendered by a page-provided cell snippet. It has no
+ * row value and must explicitly disable sorting; its id is one of the names the
+ * page lists in the second type argument of {@link AdminColumn}.
+ */
+export type AdminDisplayColumn<Id extends string = never> = Pick<AdminColumnOptions, 'header'> & {
+    id: Id;
+    sortable: false;
+};
+
+/**
+ * A column declared by an admin page: backed by a row property, or display-only
+ * when its id is listed in `Display`.
+ *
+ *     const columns: AdminColumn<AdminModelResource, 'visible' | 'capabilities'>[] = [
+ *         { id: 'label' },
+ *         { id: 'visible', sortable: false }
+ *     ];
+ */
+export type AdminColumn<Row extends AdminRow = AdminRow, Display extends string = never> =
+    AdminDataColumn<Row> | AdminDisplayColumn<Display>;
+
+/**
  * Reads the section content for the current table state. The page supplies
  * it, since every section has its own endpoint, and may
  * ignore `query` when the page filters through its own form instead.
  */
-export type AdminReader = (signal: AbortSignal, query: FetchCollectionQuery) => Promise<JsonApiCollection<AdminRow>>;
+export type AdminReader<Row extends AdminRow> = (
+    signal: AbortSignal,
+    query: FetchCollectionQuery
+) => Promise<JsonApiCollection<Row>>;
 
 /** A server side action offered in the page menu or per row. */
 export interface AdminAction {
@@ -48,13 +76,13 @@ export type AdminRowActions<Results> = {
     };
 };
 
-export interface AdminWorkspaceOptions<Results extends Record<string, unknown> = {}> {
+export interface AdminWorkspaceOptions<Row extends AdminRow = AdminRow, Results extends Record<string, unknown> = {}> {
     /** Actions for the current row; dialog responses infer the workspace result type. */
-    rowActions?: (row: AdminRow) => AdminRowActions<Results>;
+    rowActions?: (row: Row) => AdminRowActions<Results>;
     /** Persist an editor submission; a null row creates a record. */
-    save?: (values: Record<string, unknown>, row: AdminRow | null) => Promise<unknown>;
+    save?: (values: Record<string, unknown>, row: Row | null) => Promise<unknown>;
     /** Delete or reset the given record. */
-    remove?: (row: AdminRow) => Promise<unknown>;
+    remove?: (row: Row) => Promise<unknown>;
     /** Refresh the page's dependent caches after a successful write. */
     refresh?: () => Promise<unknown>;
     /** Value filters that apply before the first read; users can change or clear them in the table. */
@@ -62,11 +90,11 @@ export interface AdminWorkspaceOptions<Results extends Record<string, unknown> =
     /** Rows come from config files; deleting a database row only resets it to the file value. */
     resettable?: boolean;
     /** Narrows or adjusts the editor fields for a given row before the editor opens. */
-    editFields?: (row: AdminRow, fields: AdminField[]) => AdminField[];
+    editFields?: (row: Row, fields: AdminField[]) => AdminField[];
 }
 
-export interface AdminEditorState {
-    row: AdminRow | null;
+export interface AdminEditorState<Row extends AdminRow = AdminRow> {
+    row: Row | null;
     fields: AdminField[];
 }
 
@@ -96,11 +124,15 @@ type Translate = (label: string, replacements?: Record<string, string>) => strin
  * `AdminPage`, `AdminSearch`, `AdminTable` and `AdminResultDialog`; cells call
  * {@link update} directly.
  */
-export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
-    readonly columns: AdminColumn[];
+export class AdminWorkspace<
+    Row extends AdminRow = AdminRow,
+    ColumnId extends string = string,
+    Results extends Record<string, unknown> = {}
+> {
+    readonly columns: ReadonlyArray<AdminColumn<Row, string> & { id: ColumnId }>;
     readonly resettable: boolean;
 
-    content = $state<AdminContent | null>(null);
+    content = $state<AdminContent<Row> | null>(null);
     /** `true` until the first response arrives, and during every later read. */
     loading = $state(true);
     /** Message of the last failed read, write or action; cleared when the next one starts. */
@@ -116,7 +148,7 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
     updating = $state<string[]>([]);
     /** Announced through the status region after a successful write or action. */
     notice = $state('');
-    editor = $state<AdminEditorState | null>(null);
+    editor = $state<AdminEditorState<Row> | null>(null);
     confirmation = $state<AdminConfirmation | null>(null);
     results = $state<{ [Id in keyof Results]?: AdminActionResult<Results[Id]> }>({});
 
@@ -125,7 +157,7 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
     /** Focus target when the trigger left the DOM (e.g. a deleted row's menu); `AdminPage` points it at its toolbar. */
     focusFallback: () => HTMLElement | null = () => null;
 
-    readonly rows = $derived<AdminRow[]>(this.content?.rows ?? []);
+    readonly rows = $derived<Row[]>(this.content?.rows ?? []);
     readonly fields = $derived<AdminField[]>(this.content?.fields ?? []);
     /** Row count on the server; `undefined` when the section returns everything at once. */
     readonly total = $derived(this.content?.total);
@@ -135,16 +167,16 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
     readonly dialogOpen = $derived(!!this.editor || !!this.confirmation || Object.values(this.results).some(Boolean));
 
     private readonly __: Translate;
-    private readonly read: AdminReader;
-    private readonly editFields?: (row: AdminRow, fields: AdminField[]) => AdminField[];
-    private readonly operations: AdminWorkspaceOptions<Results>;
+    private readonly read: AdminReader<AdminRow>;
+    private readonly editFields?: (row: Row, fields: AdminField[]) => AdminField[];
+    private readonly operations: AdminWorkspaceOptions<Row, Results>;
     private request?: AbortController;
 
     constructor(
         __: Translate,
-        columns: AdminColumn[],
-        read: AdminReader,
-        options: AdminWorkspaceOptions<Results> = {}
+        columns: ReadonlyArray<AdminColumn<Row, string> & { id: ColumnId }>,
+        read: AdminReader<AdminRow>,
+        options: AdminWorkspaceOptions<Row, Results> = {}
     ) {
         this.__ = __;
         this.operations = options;
@@ -167,7 +199,7 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
             page: { number: this.pagination.pageIndex + 1, size: this.pagination.pageSize },
             ...(sort ?
                 {
-                    sort: `${sort.desc ? '-' : ''}${this.columns.find((column) => column.id === sort.id)?.sortKey ?? sort.id}`
+                    sort: `${sort.desc ? '-' : ''}${this.sortKey(sort.id)}`
                 }
             :   {}),
             filter: {
@@ -186,7 +218,7 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
         this.error = '';
         try {
             const content = await this.read(controller.signal, this.query);
-            if (!controller.signal.aborted) this.content = adminContent(content);
+            if (!controller.signal.aborted) this.content = adminContent(content) as AdminContent<Row>;
         } catch (failure) {
             if (!controller.signal.aborted) this.error = this.message(failure, 'admin.errors.load');
         } finally {
@@ -214,12 +246,12 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
     }
 
     /** `row` must not be changed right now: the page is busy or the row itself is being saved. */
-    locked(row: AdminRow): boolean {
+    locked(row: Row): boolean {
         return this.busy || this.updating.includes(row.id);
     }
 
     /** Opens the editor for `row`, or for a new row when `null`. */
-    edit(row: AdminRow | null, trigger: HTMLElement | null): void {
+    edit(row: Row | null, trigger: HTMLElement | null): void {
         this.trigger = trigger;
         const fields = this.fields;
         this.editor = { row, fields: row && this.editFields ? this.editFields(row, fields) : fields };
@@ -232,7 +264,7 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
     }
 
     /** Saves `changes` merged into the existing row, like an editor submission that touched only those fields. */
-    async update(row: AdminRow, changes: Record<string, unknown>): Promise<void> {
+    async update(row: Row, changes: Record<string, unknown>): Promise<void> {
         if (this.locked(row)) return;
         this.updating = [...this.updating, row.id];
         this.error = '';
@@ -250,7 +282,7 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
     }
 
     /** Asks before deleting `row`, or resetting it in resettable sections. */
-    remove(row: AdminRow, trigger: HTMLElement | null): void {
+    remove(row: Row, trigger: HTMLElement | null): void {
         const remove = this.operations.remove;
         if (!remove) return;
         this.trigger = trigger;
@@ -269,7 +301,7 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
     }
 
     /** Computes actions using the current row and permissions, retaining each action's result type. */
-    rowActions(row: AdminRow): AdminAction[] {
+    rowActions(row: Row): AdminAction[] {
         const actions = this.operations.rowActions?.(row);
         const items: AdminAction[] = [];
         for (const id in actions) {
@@ -328,8 +360,7 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
         this.error = '';
         try {
             await item.run();
-            this.notice = this.__('admin.action_done');
-            await this.load();
+            await this.afterWrite('admin.action_done');
         } catch (failure) {
             this.error = this.message(failure, 'admin.errors.save');
         } finally {
@@ -337,12 +368,15 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
         }
     }
 
-    private async persist(values: Record<string, unknown>, row?: AdminRow | null): Promise<void> {
+    private async persist(values: Record<string, unknown>, row?: Row | null): Promise<void> {
         if (!this.operations.save) throw new Error(this.__('admin.errors.save'));
         await this.operations.save(values, row ?? null);
     }
 
-    /** A successful write stays successful even if refreshing another cache fails. */
+    /**
+     * Refreshes the dependent caches and re-reads the table after a save, removal or action.
+     * A successful write stays successful even if refreshing another cache fails.
+     */
     private async afterWrite(notice = 'admin.saved'): Promise<void> {
         this.notice = this.__(notice);
         try {
@@ -356,22 +390,39 @@ export class AdminWorkspace<Results extends Record<string, unknown> = {}> {
     private message(failure: unknown, fallback: string): string {
         return failure instanceof Error ? failure.message : this.__(fallback);
     }
+
+    private sortKey(id: string): string {
+        const column = this.columns.find((item) => item.id === id);
+        return column && 'sortKey' in column && column.sortKey ? column.sortKey : id;
+    }
 }
 
 /**
  * Creates the {@link AdminWorkspace} of a section page, reads once on mount
- * and aborts on unmount. Call it once in the page's script:
+ * and aborts on unmount. The row type is the resource type the reader
+ * returns, so registering the section's resource schema types the whole page.
+ * Call it once in the page's script:
  *
+ *     const columns: AdminColumn<AdminProviderResource>[] = [{ id: 'name' }, { id: 'active', format: 'boolean' }];
  *     const workspace = useAdminWorkspace(columns, (signal, query) =>
  *         app.restApi.getResourceCollection('admin-providers', { query, signal })
  *     );
  */
-export function useAdminWorkspace<Results extends Record<string, unknown> = {}>(
-    columns: AdminColumn[],
-    read: AdminReader,
-    options: AdminWorkspaceOptions<Results> = {}
-): AdminWorkspace<Results> {
-    const workspace = new AdminWorkspace<Results>(useTranslator().__, columns, read, options);
+export function useAdminWorkspace<
+    Row extends AdminRow,
+    const Columns extends readonly AdminColumn<NoInfer<Row>, string>[],
+    Results extends Record<string, unknown> = {}
+>(
+    columns: Columns,
+    read: AdminReader<Row>,
+    options: AdminWorkspaceOptions<Row, Results> = {}
+): AdminWorkspace<Row, Columns[number]['id'], Results> {
+    const workspace = new AdminWorkspace<Row, Columns[number]['id'], Results>(
+        useTranslator().__,
+        columns as ReadonlyArray<AdminColumn<Row, string> & { id: Columns[number]['id'] }>,
+        read,
+        options
+    );
     onMount(() => {
         void workspace.load();
         return () => workspace.dispose();

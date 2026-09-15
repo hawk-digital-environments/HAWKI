@@ -4,7 +4,7 @@ import type {CreateRouterOptions, Router} from '$lib/components/ui/routing/logis
 import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
 import type {RouterNodeTree} from '$lib/components/ui/routing/logistics/nodeTree.js';
 import type {RouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
-import {normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
+import {splitLocation} from '$lib/components/ui/routing/logistics/normalizePath.js';
 
 export class RouterState {
     public currentState: Router['state'] = $state('loading');
@@ -48,8 +48,12 @@ export class RouterState {
     public bind(runResolve: (path: string) => void): void {
         $effect(() => this.strategy.bind?.(this.name, this.basePath) ?? (() => void 0));
 
+        // Only the path decides what is rendered: a change confined to the
+        // query or the fragment leaves the current route — and its loaded
+        // data — in place, so it never triggers a resolution. Components
+        // observe those parts reactively through `RouterHandle.query`.
         $effect(() => {
-            const newPath = normalizePath(this.strategy.get());
+            const newPath = splitLocation(this.strategy.get()).path;
             if (newPath === this.resolvePath) {
                 return;
             }

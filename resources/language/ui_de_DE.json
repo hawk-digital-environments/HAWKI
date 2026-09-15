@@ -656,6 +656,7 @@
             "usage_rules": "Nutzungskontexte",
             "server_label": "Servername",
             "type": "Typ",
+            "kind": "Typ",
             "url": "URL oder Befehlspfad",
             "description": "Beschreibung",
             "require_approval": "Freigabe erforderlich",

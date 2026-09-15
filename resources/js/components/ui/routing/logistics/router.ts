@@ -23,7 +23,10 @@
  * pluggable {@link RoutingStrategy} (`'path'` | `'hash'` | `'transient'`, see
  * `strategy/`), so the same resolution/state logic works whether the app
  * owns the browser URL, uses a hash fragment, or runs fully in-memory.
- * `Router.bind()` wires the strategy's changes into `runResolve()`.
+ * `Router.bind()` wires the strategy's changes into `runResolve()` — for the
+ * *path* only. The query string and the fragment stay on the strategy's
+ * location and are exposed through `RouterHandle.query`/`setQuery` (and
+ * `useQueryState()`), so changing them never re-resolves the route.
  *
  * ## Resolution & state
  *
@@ -71,7 +74,7 @@ import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js
 import {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
 import {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
 import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.svelte.js';
-import {mergePaths, normalizeBasePath, normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
+import {joinLocation, mergePaths, normalizeBasePath, normalizePath, splitLocation} from '$lib/components/ui/routing/logistics/normalizePath.js';
 import {isPathActive, type IsPathActiveOptions, isRouteActive} from '$lib/components/ui/routing/logistics/isActive.js';
 import generateUrls, {type UrlParams} from 'universal-router/generateUrls';
 import {createNodeTree} from '$lib/components/ui/routing/logistics/nodeTree.js';
@@ -109,6 +112,26 @@ export interface RouterHandle {
     goTo: (path: string, options?: { replace?: boolean }) => Promise<void>;
     /** Resolves `routeName`/`params` via {@link getPath} and navigates to the result. */
     goToRoute: (routeName: string, params?: UrlParams, options?: { replace?: boolean }) => Promise<void>;
+    /**
+     * The query string of the current location, parsed. Reactive: a read
+     * inside a `$derived`, an `$effect` or a template re-runs when the
+     * location changes. Every read returns a fresh instance, so mutating it
+     * changes nothing — write through {@link setQuery}.
+     */
+    readonly query: URLSearchParams;
+    /**
+     * Merges `changes` into the current query string and publishes the
+     * resulting location through the routing strategy, keeping the path and
+     * the fragment as they are. A `null` or `undefined` value removes the
+     * parameter.
+     *
+     * Only the path takes part in route matching, so this never re-resolves
+     * the route or re-runs loaders: the page stays mounted and observes the
+     * new values through {@link query} — or, for one parameter at a time,
+     * through `useQueryState()`. Updates the current history entry by
+     * default; pass `{replace: false}` to add one.
+     */
+    setQuery: (changes: Record<string, string | null | undefined>, options?: { replace?: boolean }) => void;
     /**
      * Whether `path` is one the active {@link RoutingStrategy} would route
      * through itself (see {@link RoutingStrategy.canHandlePath}). Use this to
@@ -421,7 +444,7 @@ export function createRouterFromRegistrar(
      * resolution targets the path that failed, not the last one that worked.
      */
     async function reload(): Promise<void> {
-        await runResolve(state.resolvePath ?? normalizePath(state.strategy.get()));
+        await runResolve(state.resolvePath ?? splitLocation(state.strategy.get()).path);
     }
 
     /**
@@ -440,27 +463,30 @@ export function createRouterFromRegistrar(
     async function goTo(path: string, options?: { replace?: boolean }): Promise<void> {
         const cancelledRunInFlight = cancelInFlightResolve();
 
-        // Normalized before the strategy stores it so that its "did this
-        // change?" answer below is about the same string `bind()`'s `$effect`
-        // compares against `resolvePath` — the effect normalizes what it reads
-        // back, so `/foo/` and `/foo` are one path to it but would otherwise
-        // be two different history entries to the strategy.
-        const target = normalizePath(path);
+        // The path part is normalized before the strategy stores it so that
+        // its "did this change?" answer below is about the same string
+        // `bind()`'s `$effect` compares against `resolvePath` — the effect
+        // normalizes what it reads back, so `/foo/` and `/foo` are one path to
+        // it but would otherwise be two different history entries to the
+        // strategy. The query and the fragment pass through untouched.
+        const parts = splitLocation(path);
+        const target = joinLocation(parts);
 
         // Normally this is the whole navigation: `set()` marks `bind()`'s
         // resolve `$effect` dirty and that effect runs the resolution. But the
-        // effect only fires when the strategy's stored path actually changed,
-        // so `goTo()` to the path already on screen resolves nothing — which
-        // is correct while the router is idle, and a hang if the line above
-        // just cancelled a resolution of that same path (the user clicking the
-        // link again because the page is taking too long). Only then does this
-        // have to resolve the route itself.
+        // effect only resolves when the *path* changed, so `goTo()` to the
+        // path already on screen — with or without a different query —
+        // resolves nothing. That is correct while the router is idle, and a
+        // hang if the line above just cancelled a resolution of that same path
+        // (the user clicking the link again because the page is taking too
+        // long). Only then does this have to resolve the route itself.
         //
         // It cannot double-resolve either way: `resolveRoute()` assigns
         // `resolvePath` synchronously, so an effect that does fire finds its
         // own `newPath === resolvePath` guard already satisfied.
-        if (!state.strategy.set(target, options) && cancelledRunInFlight) {
-            void runResolve(target);
+        const changed = state.strategy.set(target, options);
+        if (cancelledRunInFlight && (!changed || parts.path === state.resolvePath)) {
+            void runResolve(parts.path);
         }
     }
 
@@ -503,6 +529,34 @@ export function createRouterFromRegistrar(
         return state.dataCache.removeWhere((entry) => entry.path === targetPath);
     }
 
+    /**
+     * Reads the strategy's location rather than `currentPath`: the latter is
+     * the path alone and only moves once a resolution publishes, while the
+     * query has to be readable — and writable — the moment it changes.
+     */
+    function getQuery(): URLSearchParams {
+        return new URLSearchParams(splitLocation(state.strategy.get()).query);
+    }
+
+    /**
+     * Goes straight to the strategy instead of through `goTo()`: the path is
+     * unchanged by construction, so there is no resolution to cancel — and
+     * cancelling one that happens to be in flight would only force `goTo()`
+     * to restart it.
+     */
+    function setQuery(changes: Record<string, string | null | undefined>, options?: { replace?: boolean }): void {
+        const parts = splitLocation(state.strategy.get());
+        const query = new URLSearchParams(parts.query);
+        for (const [key, value] of Object.entries(changes)) {
+            if (value === null || value === undefined) {
+                query.delete(key);
+            } else {
+                query.set(key, value);
+            }
+        }
+        state.strategy.set(joinLocation({...parts, query: query.toString()}), {replace: options?.replace ?? true});
+    }
+
     async function debug(): Promise<void> {
         const dbg = await (import('./debugger.js'));
         dbg.dumpRouterToConsole(state);
@@ -517,6 +571,10 @@ export function createRouterFromRegistrar(
         p: getPath,
         goTo,
         goToRoute,
+        get query() {
+            return getQuery();
+        },
+        setQuery,
         canHandlePath: (path: string) => state.strategy.canHandlePath?.(path) ?? path.startsWith('/'),
         isActive,
         isRouteActive: (routeName: string) => isRouteActive(state.currentContext, routeName)

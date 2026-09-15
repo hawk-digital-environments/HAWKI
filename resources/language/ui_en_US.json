@@ -656,6 +656,7 @@
             "usage_rules": "Usage contexts",
             "server_label": "Server name",
             "type": "Type",
+            "kind": "Type",
             "url": "URL or command path",
             "description": "Description",
             "require_approval": "Approval requirement",

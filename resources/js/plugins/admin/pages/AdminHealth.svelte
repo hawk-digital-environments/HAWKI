@@ -9,11 +9,12 @@
     import AdminActionMenu from '../components/AdminActionMenu.svelte';
     import type { AdminMenuItem } from '../components/AdminActionMenu.svelte';
     import { adminActionIcons } from '../actionIcons.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminHealthResource } from '../schemas/resources/admin-health.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     import { QueuedActionSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [
+    const columns: AdminColumn<AdminHealthResource>[] = [
         { id: 'name' },
         { id: 'status', format: 'enum' },
         { id: 'message' },
