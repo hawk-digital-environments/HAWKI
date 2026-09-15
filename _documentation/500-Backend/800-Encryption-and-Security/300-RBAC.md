@@ -39,11 +39,9 @@ Use `RoleAssignmentService` for membership changes and the guarded admin reposit
 
 ## Migration and rollback
 
-Deploy this migration with application traffic and queue workers paused. The role column rename requires the new application code and migrated schema to become active together. Run `bin/env php artisan migrate --force`, rebuild any deployment config cache, then restart workers.
+A single migration, `2026_09_10_120000_create_administration_tables`, creates the Spatie tables (`roles` with HAWKI's `display_name`, `description` and `is_system` columns, `permissions`, `role_has_permissions`, `model_has_roles`, `model_has_permissions`), the assignment-source table `role_user`, `employee_type_role_mappings`, the admin tables, and the admin columns on `users` and the AI configuration tables. It seeds the built-in `admin` and `user` roles, registers every permission name frozen inside the migration, grants the administrator role the administration names, and gives every user with `employeetype = admin` a manual administrator assignment. The tool and AI-capability names are registered but granted to no role. Because MySQL commits DDL outside the transaction, `up()` and `down()` guard every schema step and use ignore-on-conflict inserts, so a run that failed midway can simply be repeated.
 
-The migration preserves role IDs, employee-type mappings, announcement targets, and assignment sources. It imports the administration permission names frozen inside the migration and deduplicates effective memberships; the tool and AI-capability permission names are registered by the later `add_tool_access_rules` and `add_web_fetch_permission` migrations. The migration reads `role_user` but never writes to it. Because MySQL commits DDL outside the transaction, `up()` and `down()` guard every schema step and use ignore-on-conflict inserts, so a run that failed during the backfill can simply be repeated. `role_permissions` remains a legacy snapshot with no runtime readers or writers. A later cleanup can remove it once the migration is verified.
-
-The migration's `down()` method merges current Spatie role grants back into `role_permissions`: it replaces only rows naming a permission the migration imported and leaves legacy rows with unregistered or retired names intact, then restores the old role column names. Assignment sources remain intact. Roll back application code and schema together while traffic and workers are paused.
+Run `bin/env php artisan migrate --force`, rebuild any deployment config cache, then restart workers. `down()` removes every table and column the migration added, including all role memberships; roll back application code and schema together while traffic and workers are paused.
 
 ## Verification
 
@@ -74,7 +72,7 @@ Tool administration still requires `admin.access` and `mcp.manage`. Tool use req
 | `image_generation` | `tools.use`, `ai.capabilities.image_generation.use` |
 | `internal_search` | `tools.use`, `tools.internal_search.use` |
 
-Every newly discovered tool and every existing tool starts with `access_rule=unavailable`. Migration does not assign new permissions to existing roles. On a fresh installation, the original administration migration gives the built-in administrator the complete registered permission set; tools still start unavailable.
+Every newly discovered tool and every existing tool starts with `access_rule=unavailable`. The migration grants no tool or capability permission to any role, not even the built-in administrator, which receives only the administration names; tools start unavailable until an administrator publishes an access rule and a grant.
 
 For an existing installation, an operator explicitly bootstraps each grant the administrator should be able to delegate:
 
