@@ -1,21 +1,8 @@
-<script
-    module
-    lang="ts"
->
-    import { configurePage } from '$lib/components/ui/routing/index.js';
-
-    export const config = configurePage({
-        loadData: async ({ path }) => ({
-            providerId: new URL(path, window.location.origin).searchParams.get('provider_id')
-        })
-    });
-</script>
-
 <script lang="ts">
     import { untrack } from 'svelte';
-    import type { RouteProps } from '$lib/components/ui/routing/index.js';
+    import { type RouteProps, useQueryState } from '$lib/components/ui/routing/index.js';
     import type { ColumnFiltersState } from '$lib/components/ui/data-table/types.js';
-    const { data: route }: RouteProps<typeof config> = $props();
+    const {}: RouteProps = $props();
     import AdminModelCapabilities from '../components/AdminModelCapabilities.svelte';
     import AdminPage from '../components/AdminPage.svelte';
     import AdminRowSwitch from '../components/AdminRowSwitch.svelte';
@@ -24,22 +11,24 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { isModelVisible, toggleModelVisible } from '../capabilities.js';
-    import { type AdminRow } from '../schemas/admin-content.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminModelResource } from '../schemas/resources/admin-models.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
 
     import { ModelRefreshSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
-    const columns: AdminColumn[] = [
+    const columns: AdminColumn<AdminModelResource, 'visible'>[] = [
         { id: 'label' },
         { id: 'model_id' },
         { id: 'provider_id', filter: true },
         { id: 'active', format: 'boolean' },
         { id: 'visible', sortable: false },
-        { id: 'capabilities', sortable: false }
+        { id: 'flags', sortable: false }
     ];
+    // Share provider filters through links and keep them after reloads.
+    const providerId = useQueryState('provider_id');
     const providerFilter = $derived<ColumnFiltersState>(
-        route.providerId ? [{ id: 'provider_id', value: route.providerId }] : []
+        providerId.current ? [{ id: 'provider_id', value: providerId.current }] : []
     );
     const workspace = useAdminWorkspace(
         columns,
@@ -76,24 +65,28 @@
             }
         }
     );
-    // Following a "View models" link while already on this page swaps the filter in place; the
-    // state ignores the call when the filter already applies, so the initial read runs once.
+    // Links and browser navigation update the filter without remounting the page.
     $effect(() => {
         const filters = providerFilter;
         untrack(() => void workspace.applyColumnFilters(filters));
     });
+    // Table selections update the URL. Assignments do not subscribe this effect to URL changes.
+    $effect(() => {
+        const value = workspace.columnFilters.find((item) => item.id === 'provider_id')?.value;
+        providerId.current = typeof value === 'string' && value ? value : null;
+    });
 </script>
 
-{#snippet active(row: AdminRow)}
+{#snippet active(row: AdminModelResource)}
     <AdminRowSwitch
-        checked={row.active === true}
+        checked={row.active}
         label={__('admin.fields.active')}
         disabled={workspace.locked(row)}
         onToggle={(enabled) => workspace.update(row, { active: enabled })}
     />
 {/snippet}
 
-{#snippet visible(row: AdminRow)}
+{#snippet visible(row: AdminModelResource)}
     <AdminRowSwitch
         checked={isModelVisible(row)}
         label={__('admin.fields.visible')}
@@ -102,7 +95,7 @@
     />
 {/snippet}
 
-{#snippet capabilities(row: AdminRow)}
+{#snippet flags(row: AdminModelResource)}
     <AdminModelCapabilities
         {row}
         disabled={workspace.locked(row)}
@@ -118,6 +111,6 @@
     <AdminTable
         caption={__('admin.sections.models')}
         {workspace}
-        cells={{ active, visible, capabilities }}
+        cells={{ active, visible, flags }}
     />
 </AdminPage>

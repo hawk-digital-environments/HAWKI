@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Admin\Repositories;
 
+use App\Services\Admin\DeletedRecords;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Ai\SystemModel;
@@ -81,6 +82,11 @@ class SystemModelRepository extends ConfigurationRepository
                 $localized->save();
             }
         }
+    }
+
+    protected function identity(Model $model): ?string
+    {
+        return DeletedRecords::systemModelIdentity((string) $model->getRawOriginal('usage_type'), (string) $model->getRawOriginal('model_type'));
     }
 
     protected function deleting(Model $model): void

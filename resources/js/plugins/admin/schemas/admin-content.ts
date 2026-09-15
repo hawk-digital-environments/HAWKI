@@ -1,6 +1,5 @@
 import z from 'zod';
 import type { JsonApiCollection } from '$lib/kernel/api/jsonApiEncoding.js';
-import type { SectionId } from '../sections.js';
 
 export const AdminRowSchema = z.object({ id: z.string() }).catchall(z.unknown());
 export const AdminFieldSchema = z.object({
@@ -27,28 +26,30 @@ export const AdminContentSchema = z.object({
         .optional(),
     status: z.string().optional()
 });
+/** Any admin row; the section resource schemas in `./resources/` narrow it per section. */
 export type AdminRow = z.infer<typeof AdminRowSchema>;
 export type AdminField = z.infer<typeof AdminFieldSchema>;
-export type AdminContent = z.infer<typeof AdminContentSchema>;
-
-type AdminResourceSchemas = { [Path in `admin-${SectionId}`]: AdminRow };
-
-declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiResourceSchemas extends AdminResourceSchemas {}
-}
+export type AdminContent<Row extends AdminRow = AdminRow> = Omit<z.infer<typeof AdminContentSchema>, 'rows'> & {
+    rows: Row[];
+};
 
 /** Converts a decoded section collection into the table and editor content. */
-export function adminContent(collection: JsonApiCollection<AdminRow>): AdminContent {
+/**
+ * Converts a decoded section collection into the table and editor content.
+ * The JSON:API resource type is dropped from every row, and the editor field
+ * the backend calls `type` is keyed `kind` like the row attribute it edits.
+ */
+export function adminContent<Row extends AdminRow>(collection: JsonApiCollection<Row>): AdminContent<Row> {
     const page = collection._meta?.page;
+    const fields = Array.isArray(collection._meta?.fields) ? collection._meta.fields : undefined;
     return AdminContentSchema.parse({
         ...collection._meta,
-        rows: collection.map(({ type, kind, ...row }) => ({
-            ...row,
-            ...(kind === undefined ? {} : { type: kind }),
-            _version: row._meta?.version
-        })),
+        ...(fields ?
+            { fields: fields.map((field) => (field?.key === 'type' ? { ...field, key: 'kind' } : field)) }
+        :   {}),
+        rows: collection.map(({ type, ...row }) => ({ ...row, _version: row._meta?.version })),
         total: page?.total,
         page: page?.currentPage,
         size: page?.perPage
-    });
+    }) as AdminContent<Row>;
 }

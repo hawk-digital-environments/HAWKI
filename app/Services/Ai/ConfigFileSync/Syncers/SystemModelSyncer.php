@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\ConfigFileSync\Syncers;
 
+use App\Services\Admin\DeletedRecords;
 
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
@@ -39,7 +40,8 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         private array                 $extAppSystemModels,
         private Repository            $configRepository,
         private SystemModelRepository $systemModelRepository,
-        private AiModelRepository     $modelRepository
+        private AiModelRepository     $modelRepository,
+        private DeletedRecords        $deletedRecords
     )
     {
     }
@@ -67,7 +69,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
 
         foreach ($this->extAppSystemModels as $key => $modelId) {
-            if (\App\Models\Ai\SystemModel::withoutGlobalScopes()->where('usage_type', WellKnownUsageTypes::EXTERNAL_APP)->where('model_type', $this->upgradeOldModelTypes($key))->where('admin_managed', true)->exists()) continue;
+            if ($this->isAdministered(WellKnownUsageTypes::EXTERNAL_APP, $this->upgradeOldModelTypes($key))) continue;
             if ($modelId === null) {
                 try {
                     $this->systemModelRepository->deleteWithTypeFilter(
@@ -84,6 +86,14 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
 
         $this->doModelSanityCheck($metrics);
+    }
+
+    /** A slot edited or deleted in Administration belongs to the administrators, not to the config files. */
+    private function isAdministered(string $usageType, string $modelType): bool
+    {
+        if (\App\Models\Ai\SystemModel::withoutGlobalScopes()->where('usage_type', $usageType)->where('model_type', $modelType)->where('admin_managed', true)->exists()) return true;
+
+        return $this->deletedRecords->isDeleted(\App\Services\Admin\Repositories\SystemModelRepository::RESOURCE, DeletedRecords::systemModelIdentity($usageType, $modelType));
     }
 
     private function warnForLegacyConfiguration(JobMetrics $metrics): string|null
@@ -114,7 +124,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             return;
         }
 
-        if (\App\Models\Ai\SystemModel::withoutGlobalScopes()->where('usage_type', $usageType)->where('model_type', $modelType)->where('admin_managed', true)->exists()) return;
+        if ($this->isAdministered($usageType, $modelType)) return;
         $this->systemModelRepository->upsert(
             modelType: $modelType,
             usageType: $usageType,

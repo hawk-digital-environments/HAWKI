@@ -11,12 +11,12 @@
     import AdminUsageChart from '../components/AdminUsageChart.svelte';
     import type { AdminMenuItem } from '../components/AdminActionMenu.svelte';
     import { adminActionIcons } from '../actionIcons.js';
-    import type { AdminRow } from '../schemas/admin-content.js';
-    import { useAdminWorkspace, type AdminColumn } from '../workspace.svelte.js';
+    import type { AdminUsageResource } from '../schemas/resources/admin-usage.schema.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
     const uid = $props.id();
-    const columns: AdminColumn[] = [
+    const columns: AdminColumn<AdminUsageResource>[] = [
         { id: 'label' },
         { id: 'requests' },
         { id: 'prompt_tokens' },
@@ -44,7 +44,7 @@
         }
     ]);
 
-    function exportCsv(rows: AdminRow[]) {
+    function exportCsv(rows: AdminUsageResource[]) {
         const keys = columns.map((column) => column.id);
         const encode = (value: unknown) =>
             '"' +

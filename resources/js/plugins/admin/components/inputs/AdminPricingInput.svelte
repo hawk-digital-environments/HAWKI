@@ -2,7 +2,7 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
-    import { record, type Control } from '../forms/controls.js';
+    import { record, type Control } from '../../forms/controls.js';
     import AdminValueInput from './AdminValueInput.svelte';
     let {
         id,
