@@ -68,6 +68,7 @@
         },
         "message": {
             "sources": "Sources",
+            "document": "Document",
             "citationReference": {
                 "contextError": "Something was coded wrong. This reference is not inside a CitationContext. Please report this bug to the developers."
             }

@@ -37,6 +37,20 @@ class AssistantAttachmentRepository extends AbstractRepository
     }
 
     /**
+     * The attachment whose ingestion produced the given RAG managed
+     * document id (`adoc_*`) — the local counterpart of a knowledge-base
+     * search hit. Ties (a replacement re-ingesting into the same managed
+     * document) resolve to the newest attachment.
+     */
+    public function findOneByRagDocumentId(string $ragDocumentId): ?AssistantAttachment
+    {
+        return $this->getQuery()
+            ->where('rag_document_id', $ragDocumentId)
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
      * Persists an AssistantAttachment row linking the stored file to the
      * assistant, owned by the given user. Returns the created model, or
      * null when persisting failed.

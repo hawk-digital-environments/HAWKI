@@ -31,10 +31,14 @@ use Throwable;
  *
  * When the AI model invokes the tool via `__invoke()`:
  *  1. Returns an error immediately if the backing MCP server is marked OFFLINE.
- *  2. Fires {@see BeforeCallingMcpToolFilterEvent}, allowing listeners to short-circuit the
+ *  2. Merges the tool's settings over the model-supplied arguments (settings win) —
+ *     settings are composed server-side (e.g. {@see \App\Services\Assistant\AssistantRunComposer}
+ *     injects the assistant's RAG `dataset_id`) and are trusted, unlike model
+ *     arguments, which must never control server-side scoping.
+ *  3. Fires {@see BeforeCallingMcpToolFilterEvent}, allowing listeners to short-circuit the
  *     call and inject a synthetic result.
- *  3. Calls the MCP server via {@see HawkiMcpClient::callTool()} if no short-circuit occurred.
- *  4. Fires {@see McpToolCalledFilterEvent}, giving listeners a chance to post-process the result.
+ *  4. Calls the MCP server via {@see HawkiMcpClient::callTool()} if no short-circuit occurred.
+ *  5. Fires {@see McpToolCalledFilterEvent}, giving listeners a chance to post-process the result.
  */
 class LaravelMcpTool extends AbstractTool
 {
@@ -99,7 +103,7 @@ class LaravelMcpTool extends AbstractTool
     {
         $this->logger->info(sprintf('Calling MCP tool %s', $this->tool->name));
 
-        $arguments = $this->getArguments();
+        $arguments = array_merge($this->getArguments(), $this->getSettings());
 
         if ($this->tool->server->status === OnlineStatus::OFFLINE) {
             $this->logger->warning(sprintf('MCP tool %s is offline, returning error response', $this->tool->name));

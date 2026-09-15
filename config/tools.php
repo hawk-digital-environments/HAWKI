@@ -58,6 +58,13 @@ return [
             'connection_timeout' => 30,
             'read_timeout'      => 30,
             'api_key'           => env('HAWKI_RAG_MCP_API_KEY'),
+            /*
+             * Whether `resource_link` document references in this server's
+             * tool results are mapped onto locally stored assistant
+             * attachments, so the frontend cites and downloads the original
+             * file through HAWKI's storage proxy instead of the RAG server.
+             */
+            'map_document_to_attachment' => env('HAWKI_RAG_MAP_DOCUMENT_TO_ATTACHMENT', true),
         ],
 
         // Example: Add another MCP server

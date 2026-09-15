@@ -73,17 +73,35 @@ class AiToolSeederTest extends TestCase
             json_decode($server->timeouts, true),
         );
 
-        // The built-in tools exist and point at the real server.
-        foreach (['hawki-rag-web_search', 'hawki-rag-knowledge_base_query'] as $toolName) {
+        // The built-in tools exist, point at the real server, and carry the
+        // live server's tool names — a stale mcp_name makes every call fail
+        // with "Tool not found" on the MCP server.
+        $ragTools = ['hawki-rag-web-search-tool' => 'web-search-tool', 'hawki-rag-query-search' => 'query-search'];
+
+        foreach ($ragTools as $toolName => $mcpName) {
             $this->assertDatabaseHas('ai_tools', [
                 'name' => $toolName,
+                'mcp_name' => $mcpName,
                 'mcp_server_id' => $existingId,
             ]);
         }
 
+        $querySearchConfig = (string) DB::table('ai_tools')->where('name', 'hawki-rag-query-search')->value('mcp_config');
+
+        static::assertStringContainsString(
+            'top_k',
+            $querySearchConfig,
+            'the seeded schema mirrors the server-advertised parameters',
+        );
+        static::assertStringNotContainsString(
+            'dataset_id',
+            $querySearchConfig,
+            'dataset_id is injected server-side and must stay hidden from the model',
+        );
+
         // The rag tools reach every tool-calling model …
         $ragToolIds = DB::table('ai_tools')
-            ->whereIn('name', ['hawki-rag-web_search', 'hawki-rag-knowledge_base_query'])
+            ->whereIn('name', array_keys($ragTools))
             ->pluck('id');
 
         $allModels = DB::table('ai_models')->where('settings', 'like', '%tool_calling%')->pluck('id');
@@ -125,13 +143,13 @@ class AiToolSeederTest extends TestCase
             'url' => 'http://localhost:8080/mcp/rawki',
         ]);
 
-        $this->assertDatabaseHas('ai_tools', ['name' => 'hawki-rag-web_search']);
-        $this->assertDatabaseHas('ai_tools', ['name' => 'hawki-rag-knowledge_base_query']);
+        $this->assertDatabaseHas('ai_tools', ['name' => 'hawki-rag-web-search-tool']);
+        $this->assertDatabaseHas('ai_tools', ['name' => 'hawki-rag-query-search']);
         $this->assertDatabaseHas('ai_tools', ['name' => 'test_tool']);
 
         // Mock branch or not: the rag tools land on every tool-calling model.
         $ragToolIds = DB::table('ai_tools')
-            ->whereIn('name', ['hawki-rag-web_search', 'hawki-rag-knowledge_base_query'])
+            ->whereIn('name', ['hawki-rag-web-search-tool', 'hawki-rag-query-search'])
             ->pluck('id');
 
         foreach (DB::table('ai_models')->where('settings', 'like', '%tool_calling%')->pluck('id') as $modelId) {

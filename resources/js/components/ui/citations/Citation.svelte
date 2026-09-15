@@ -29,9 +29,12 @@
     import Link from '$lib/components/util/link/Link.svelte';
     import UrlPreviewTooltip from '$lib/components/ui/tooltip/UrlPreviewTooltip.svelte';
     import {useCitationContext} from '$lib/components/ui/citations/CitationContext.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import FileAttachmentIcon from '$lib/components/ui/icons/iconset/FileAttachmentIcon.svelte';
     import {onMount} from 'svelte';
 
     const citationContext = useCitationContext();
+    const {__} = useTranslator();
 
     interface Props {
         /** The citation to display. */
@@ -43,6 +46,8 @@
     const {citation, number}: Props = $props();
 
     let container: HTMLDivElement | null = $state(null);
+
+    const isDocument = $derived(citation.document === true);
 
     const domain = $derived.by(() => {
         try {
@@ -69,19 +74,43 @@
 </script>
 
 <div bind:this={container} class="citation-tile">
-    <UrlPreviewTooltip url={citation.url}>
-        {#snippet children({props})}
-            <Link {...props} href={citation.url} target="_blank" title={citation.url}>
-                {#snippet children({favicon})}
+    {#if isDocument}
+        {#if citation.url}
+            <Link href={citation.url} download title={citation.title ?? ''}>
+                {#snippet children()}
                     <span class="citation-tile__header">
                         <span class="citation-tile__number">{number}</span>
-                        {@render favicon()}
-                        <span class="citation-tile__domain">{domain}</span>
+                        <span class="citation-tile__file-icon"><FileAttachmentIcon size={14} /></span>
+                        <span class="citation-tile__domain">
+                            {citation.title ?? __('chat.message.document')}
+                        </span>
                     </span>
                 {/snippet}
             </Link>
-        {/snippet}
-    </UrlPreviewTooltip>
+        {:else}
+            <span class="citation-tile__header">
+                <span class="citation-tile__number">{number}</span>
+                <span class="citation-tile__file-icon"><FileAttachmentIcon size={14} /></span>
+                <span class="citation-tile__domain">
+                    {citation.title ?? __('chat.message.document')}
+                </span>
+            </span>
+        {/if}
+    {:else}
+        <UrlPreviewTooltip url={citation.url}>
+            {#snippet children({props})}
+                <Link {...props} href={citation.url} target="_blank" title={citation.url}>
+                    {#snippet children({favicon})}
+                        <span class="citation-tile__header">
+                            <span class="citation-tile__number">{number}</span>
+                            {@render favicon()}
+                            <span class="citation-tile__domain">{domain}</span>
+                        </span>
+                    {/snippet}
+                </Link>
+            {/snippet}
+        </UrlPreviewTooltip>
+    {/if}
 </div>
 
 <style>
@@ -142,6 +171,12 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .citation-tile__file-icon {
+        display: inline-flex;
+        flex-shrink: 0;
+        color: var(--color-text-muted);
     }
 
     .citation-tile__number {

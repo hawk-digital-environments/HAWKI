@@ -30,6 +30,13 @@ export interface UrlCitation {
      * missing, byte offsets are assumed.
      */
     byteOffset?: boolean;
+    /**
+     * Marks a knowledge-base document source (RAG) rather than a web page.
+     * `url` then points at HAWKI's storage proxy serving the original
+     * attachment — or is empty when the document has no local counterpart,
+     * in which case the tile renders by name only.
+     */
+    document?: boolean;
 }
 
 /**

@@ -69,9 +69,6 @@ class IngestAttachmentToRag implements ShouldQueue
 
     private const int POLL_DELAY_SECONDS = 10;
 
-    /** Hard text length limit of the RAG server per document, in characters. */
-    private const int MAX_TEXT_LENGTH = 1_048_576;
-
     private const string FILE_INGESTION_MODE = 'file';
 
     public function __construct(
@@ -139,19 +136,6 @@ class IngestAttachmentToRag implements ShouldQueue
                         $this->assistantAttachmentId,
                         RagIngestionStatus::SKIPPED,
                         error: 'File has no extractable text.',
-                    );
-
-                    return;
-                }
-
-                if (\mb_strlen($text) > self::MAX_TEXT_LENGTH) {
-                    $assistantAttachmentRepository->updateRagState(
-                        $this->assistantAttachmentId,
-                        RagIngestionStatus::FAILED,
-                        error: \sprintf(
-                            'Extracted text exceeds the RAG server limit of %d characters.',
-                            self::MAX_TEXT_LENGTH,
-                        ),
                     );
 
                     return;

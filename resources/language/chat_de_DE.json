@@ -68,6 +68,7 @@
         },
         "message": {
             "sources": "Quellen",
+            "document": "Dokument",
             "citationReference": {
                 "contextError": "Hier wurde etwas falsch programmiert. Diese Referenz befindet sich nicht in einem CitationContext. Bitte melde diesen Fehler den Entwicklern."
             }

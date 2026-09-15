@@ -76,7 +76,12 @@ class McpClientFactory
 
         $headers = [];
         /** Mapped at {@see Client::connect} to {@see \Mcp\Client\Transport\HttpConfiguration} */
-        $httpOptions = [];
+        // autoSse=false disables the MCP standalone GET SSE stream. The SDK opens that stream via
+        // pcntl_fork (SseConnection::start()), which is unsafe inside a php-fpm worker — the fork
+        // duplicates the FastCGI socket (= the browser response) and corrupts it. HAWKI only uses
+        // initialize/tools-list/tools-call (POST request/response), which do not need the stream.
+        // Per-server opt-in remains possible via additional_config.http_options.autoSse = true.
+        $httpOptions = ['autoSse' => false];
         if (!empty($apiKey)) {
             $headers['Authorization'] = 'Bearer ' . $apiKey;
         }

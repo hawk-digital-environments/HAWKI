@@ -231,21 +231,55 @@ class AiToolSeeder extends Seeder
             // ── hawki-rag: the two built-in capabilities ────────────────────
             // Seeded against whichever server `seedMcpServers()` registered
             // under 'rag' — the mock for the picker demo, or the real
-            // configured one (names match `ai:tools:sync` discovery, so
-            // both stay idempotent).
+            // configured one. Names and schemas mirror the live HAWKI-RAG
+            // MCP server's tools (`App\Mcp\Tools\*` in HAWKI-RAG); keep them
+            // in sync when the server renames tools. Running
+            // `ai:tools:sync --mcp-only` replaces these rows with its own
+            // server-id-suffixed slugs (and drops their model assignments).
             [
                 'server' => 'rag',
-                'name' => 'hawki-rag-web_search',
-                'mcp_name' => 'web_search',
-                'description' => 'Searches the web and returns summarized results.',
+                'name' => 'hawki-rag-web-search-tool',
+                'mcp_name' => 'web-search-tool',
+                'description' => 'Run a web search via the configured provider (brave or tavily).',
                 'capability' => WellKnownCapabilities::WEB_SEARCH,
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'query' => [
+                            'type' => 'string',
+                            'description' => 'A query string to search the web with',
+                        ],
+                        'max_results' => [
+                            'type' => 'integer',
+                            'description' => 'The maximum number of results to return',
+                        ],
+                    ],
+                    'required' => ['query'],
+                ],
             ],
             [
                 'server' => 'rag',
-                'name' => 'hawki-rag-knowledge_base_query',
-                'mcp_name' => 'knowledge_base_query',
-                'description' => 'Queries the connected knowledge base for relevant passages.',
+                'name' => 'hawki-rag-query-search',
+                'mcp_name' => 'query-search',
+                'description' => 'Search and retrieve specific information related to HAWK and internal knowledge base with a query.',
                 'capability' => WellKnownCapabilities::KNOWLEDGE_BASE,
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'query' => [
+                            'type' => 'string',
+                            'description' => 'Retrieve relevant information from the knowledge base. Formulate a precise and context-rich search query including specific names, entities, relationships, dates, or domain terminology. Avoid vague or generic wording.',
+                        ],
+                        'top_k' => [
+                            'type' => 'integer',
+                            'description' => 'Number of chunks to retrieve',
+                        ],
+                    ],
+                    // `dataset_id` is intentionally absent: it is injected
+                    // server-side (AssistantRunComposer -> LaravelMcpTool
+                    // settings) and must stay invisible to the model.
+                    'required' => ['query'],
+                ],
             ],
 
             // ── github-tools: mostly uncategorized, one web_fetch, one mapped ──
@@ -316,7 +350,11 @@ class AiToolSeeder extends Seeder
                     'class_name' => null,
                     'mcp_server_id' => $serverIds[$def['server']],
                     'mcp_name' => $def['mcp_name'],
-                    'mcp_config' => json_encode(['name' => $def['mcp_name']]),
+                    // `mcp_config.inputSchema` is what LaravelMcpTool exposes
+                    // to the model; without it the tool appears parameterless.
+                    'mcp_config' => json_encode(isset($def['inputSchema'])
+                        ? ['name' => $def['mcp_name'], 'inputSchema' => $def['inputSchema']]
+                        : ['name' => $def['mcp_name']]),
                     'description' => $def['description'],
                     'capability' => $def['capability'],
                     'mapped_capability' => $def['mapped_capability'] ?? null,
