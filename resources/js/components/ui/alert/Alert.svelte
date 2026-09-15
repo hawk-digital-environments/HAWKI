@@ -76,6 +76,7 @@
     .alert-content {
         display: flex;
         flex-direction: column;
+        gap: var(--space-0_5, 0.125rem);
     }
 
     .variant-destructive {

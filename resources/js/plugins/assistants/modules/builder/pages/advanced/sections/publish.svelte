@@ -47,7 +47,7 @@ let requiresReview = $derived(
 );
 
 let saveAsText = $derived.by(() => {
-    switch (builder.draft.releaseStage) {
+    switch (assistant.releaseStage) {
         case ReleaseMode.PRIVATE:
             return __('assistants.builder.publish.save_as_private_assistant');
         case ReleaseMode.ORGANIZATIONAL:
