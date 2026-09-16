@@ -39,7 +39,7 @@ Use `RoleAssignmentService` for membership changes and the guarded admin reposit
 
 ## Migration and rollback
 
-A single migration, `2026_09_10_120000_create_administration_tables`, creates the Spatie tables (`roles` with HAWKI's `display_name`, `description` and `is_system` columns, `permissions`, `role_has_permissions`, `model_has_roles`, `model_has_permissions`), the assignment-source table `role_user`, `employee_type_role_mappings`, the admin tables, and the admin columns on `users` and the AI configuration tables. It seeds the built-in `admin` and `user` roles, registers every permission name frozen inside the migration, grants the administrator role the administration names, and gives every user with `employeetype = admin` a manual administrator assignment. The tool and AI-capability names are registered but granted to no role. Because MySQL commits DDL outside the transaction, `up()` and `down()` guard every schema step and use ignore-on-conflict inserts, so a run that failed midway can simply be repeated.
+A single migration, `2026_09_10_120000_create_administration_tables`, creates the Spatie tables (`roles` with HAWKI's `display_name`, `description` and `is_system` columns, `permissions`, `role_has_permissions`, `model_has_roles`, `model_has_permissions`), the assignment-source table `role_user`, `employee_type_role_mappings`, the admin tables, and the admin columns on `users` and the AI configuration tables. It seeds the built-in `admin` and `user` roles, registers every permission name frozen inside the migration, grants the administrator role every registered permission including the tool and AI-capability names, and gives every user with `employeetype = admin` a manual administrator assignment. Because MySQL commits DDL outside the transaction, `up()` and `down()` guard every schema step and use ignore-on-conflict inserts, so a run that failed midway can simply be repeated.
 
 Run `bin/env php artisan migrate --force`, rebuild any deployment config cache, then restart workers. `down()` removes every table and column the migration added, including all role memberships; roll back application code and schema together while traffic and workers are paused.
 
@@ -72,7 +72,7 @@ Tool administration still requires `admin.access` and `mcp.manage`. Tool use req
 | `image_generation` | `tools.use`, `ai.capabilities.image_generation.use` |
 | `internal_search` | `tools.use`, `tools.internal_search.use` |
 
-Every newly discovered tool and every existing tool starts with `access_rule=unavailable`. The migration grants no tool or capability permission to any role, not even the built-in administrator, which receives only the administration names; tools start unavailable until an administrator publishes an access rule and a grant.
+Every newly discovered tool and every existing tool starts with `access_rule=unavailable`. The migration grants the built-in administrator every registered permission, including tool and capability permissions; tools remain unavailable until an administrator publishes an access rule.
 
 For an existing installation, an operator explicitly bootstraps each grant the administrator should be able to delegate:
 

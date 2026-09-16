@@ -14,7 +14,7 @@
     import type { AdminModelResource } from '../schemas/resources/admin-models.schema.js';
     import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
 
-    import { ModelRefreshSchema } from '../schemas/admin-actions.js';
+    import { ModelRefreshSchema, ModelStatusCheckSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
     const columns: AdminColumn<AdminModelResource, 'visible'>[] = [
@@ -22,6 +22,7 @@
         { id: 'model_id' },
         { id: 'provider_id', filter: true },
         { id: 'active', format: 'boolean' },
+        { id: 'status', format: 'enum' },
         { id: 'visible', sortable: false },
         { id: 'flags', sortable: false }
     ];
@@ -106,6 +107,20 @@
 <AdminPage
     section="models"
     {workspace}
+    pageActions={app.can('models.manage') ?
+        [
+            {
+                id: 'check-status',
+                run: () =>
+                    app.restApi.postToResourceAction(
+                        'admin-models',
+                        `actions/check-status`,
+                        {},
+                        { schema: ModelStatusCheckSchema }
+                    )
+            }
+        ]
+    :   []}
 >
     <AdminSearch {workspace} />
     <AdminTable

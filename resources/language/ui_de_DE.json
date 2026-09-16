@@ -877,6 +877,7 @@
             "test": "Verbindung testen",
             "discover": "Ermitteln",
             "refresh": "Metadaten aktualisieren",
+            "check-status": "Modellstatus prüfen",
             "revoke-tokens": "Token widerrufen",
             "tokens": "Token ansehen",
             "check-ai-status": "KI-Status prüfen",

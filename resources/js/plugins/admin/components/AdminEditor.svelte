@@ -85,7 +85,7 @@
     }));
     const formState = form.useSelector((state) => state);
     const visibleFields = $derived(fields.filter((field) => isFieldVisible(section, field, formState.current.values)));
-    const busy = $derived(formState.current.isSubmitting || fieldBusy || app.authorizationRefreshing);
+    const busy = $derived(formState.current.isSubmitting || fieldBusy);
     /** Changing a tool's access rule rewrites role grants, so it needs both permissions. */
     const accessRuleLocked = $derived(!app.can('mcp.manage') || !app.can('roles.manage'));
     /** JSON snapshots of values this editor filled in itself; only those may be replaced by later metadata. */

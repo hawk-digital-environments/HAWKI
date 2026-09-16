@@ -26,6 +26,11 @@ class ModelController extends ResourceController
         return $this->action($request, 'refresh', $id, fn () => $this->resource->refreshModel($id));
     }
 
+    public function checkStatus(Request $request): JsonResponse
+    {
+        return $this->action($request, 'check-status', null, fn () => $this->resource->checkStatus());
+    }
+
     protected function repository(): ModelRepository
     {
         return $this->resource;

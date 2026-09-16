@@ -20,6 +20,8 @@ use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\Limits\Values\ChatAiModelLimits;
+use App\Services\Ai\StatusCheck\ModelStatusUpdater;
+use App\Utils\JobMetrics;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -529,6 +531,7 @@ class AdminPanelTest extends TestCase
         $row = $this->get('/api/hawki/v1/admin-models?filter[search]=admin-config-test')->assertSuccessful()->json('data.0');
         self::assertSame(['text'], $row['attributes']['input']);
         self::assertSame(['main'], $row['attributes']['usage_rules']);
+        self::assertSame('unknown', $row['attributes']['status']);
         DB::table('system_models')->where(['model_type' => 'summary', 'usage_type' => 'main'])->delete();
         $slot = ['section' => 'system-models', 'values' => [
             'model_type' => 'summary',
@@ -687,6 +690,25 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseHas('admin_audit_log', ['resource_type' => 'providers', 'resource_id' => $providerId, 'action' => 'inspect']);
     }
 
+    public function testModelStatusCheckRunsSynchronously(): void
+    {
+        $this->app->instance(ModelStatusUpdater::class, new readonly class extends ModelStatusUpdater {
+            public function __construct()
+            {
+            }
+
+            public function run(): JobMetrics
+            {
+                return new JobMetrics('Test Model Status Update');
+            }
+        });
+        $this->actingAs($this->grant(['admin.access', 'models.manage']));
+
+        $this->postJson('/api/hawki/v1/admin-models/actions/check-status')->assertOk()
+            ->assertJsonPath('checked', true);
+        $this->assertDatabaseHas('admin_audit_log', ['resource_type' => 'models', 'action' => 'check-status']);
+    }
+
     public function testResourceUpdateRoutesRequireTheirOwnPermissions(): void
     {
         $this->actingAs($this->grant(['admin.access']));
@@ -695,7 +717,7 @@ class AdminPanelTest extends TestCase
             $this->patchAdminResource('/api/hawki/v1/admin-' . $resource . '/1', ['values' => ['name' => 'Forbidden']])->assertForbidden();
         }
 
-        foreach (['providers/1/actions/test', 'providers/1/actions/discover', 'providers/1/actions/inspect', 'providers/actions/import', 'models/1/actions/refresh', 'mcp/1/actions/test', 'mcp/1/actions/discover', 'users/1/actions/revoke-tokens', 'health/actions/check-ai-status', 'health/1/actions/retry-job', 'health/actions/flush-jobs'] as $path) {
+        foreach (['providers/1/actions/test', 'providers/1/actions/discover', 'providers/1/actions/inspect', 'providers/actions/import', 'models/1/actions/refresh', 'models/actions/check-status', 'mcp/1/actions/test', 'mcp/1/actions/discover', 'users/1/actions/revoke-tokens', 'health/actions/check-ai-status', 'health/1/actions/retry-job', 'health/actions/flush-jobs'] as $path) {
             $this->postJson('/api/hawki/v1/admin-' . $path)->assertForbidden();
         }
 
