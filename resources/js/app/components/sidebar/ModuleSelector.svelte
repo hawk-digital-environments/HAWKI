@@ -16,7 +16,7 @@
     const app = useApp();
     const router = useRouter();
 
-    const modules = $derived(app.modules.all);
+    const modules = $derived(app.modules.all.filter(module => module.routes));
 
     const { translate } = useTranslator();
     const locale = $derived(app.localization.locale);
@@ -53,7 +53,7 @@
     const currentModuleItem = $derived(findModuleItem(current));
 </script>
 
-<CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule}>
+<CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule} shortcut={false}>
     {#snippet trigger({ props })}
         <CommandPaletteTrigger
             label={currentModuleItem?.label ?? current ?? ''}

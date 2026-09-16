@@ -4,8 +4,13 @@ import type {Translator} from '$lib/kernel/localization/translator.js';
 import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
 import type {Component} from 'svelte';
+import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
 import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
 import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
+import {
+    chatActionSource,
+    chatConversationSource
+} from '$plugins/core/modules/chat/search.js';
 
 const loadIndexPage = async () => import('./pages/ChatIndex.svelte');
 const loadConversationPage = async () => import('./pages/ChatConversation.svelte');
@@ -51,6 +56,15 @@ export class ChatModule implements HawkiModule {
         registrar
             .lazyRoute('/', loadIndexPage, {name: 'chat.index'})
             .lazyRoute('/:slug', loadConversationPage, {name: 'chat.conversation'});
+    }
+
+    /** Declare sources now; the kernel reads their runtime data after stores load. */
+    public search({group}: ModuleSearchRegistrar): void {
+        group('actions', {kind: 'static', label: t => t('chat.module.title')})
+            .add('actions', chatActionSource);
+
+        group('conversations', {kind: 'static', label: t => t('ui.search.conversations')})
+            .add('conversation-titles', chatConversationSource);
     }
 
     public title(translate: Translator['translate'], _locale: Locale): string {

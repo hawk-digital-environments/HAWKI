@@ -102,6 +102,38 @@
                     }
                 }
             }
+        },
+        "search": {
+            "title": "Suche",
+            "placeholder": "Suchen…",
+            "closeHint": "Esc drücken zum Schließen",
+            "closeKey": "Esc",
+            "conversations": "Unterhaltungen",
+            "settings": {
+                "label": "Einstellungen",
+                "general": "Allgemeine Einstellungen",
+                "profile": "Profileinstellungen"
+            },
+            "keyboardHint": "Mit den Pfeiltasten ein Ergebnis auswählen und mit Enter öffnen.",
+            "resultsLabel": "Suchergebnisse",
+            "filters": {
+                "title": "Suchfilter",
+                "allPlugins": "Alle Plugins",
+                "allModules": "Alle Module",
+                "pluginValue": "Plugin: :value",
+                "moduleValue": "Modul: :value"
+            },
+            "searching": "Suche läuft…",
+            "searchingLocal": "Lokale Daten werden durchsucht…",
+            "searchingRemote": "Server wird durchsucht…",
+            "resultCount": ":count Ergebnisse",
+            "resultCountOne": "1 Ergebnis",
+            "unavailable": "Nicht mehr verfügbar",
+            "errorInGroup": "„:group“ konnte nicht durchsucht werden.",
+            "retry": "Erneut versuchen",
+            "retryLabel": "„:group“ erneut durchsuchen",
+            "noResults": "Nichts passt zu „:query“.",
+            "empty": "Noch nichts zum Durchsuchen."
         }
     }
 }

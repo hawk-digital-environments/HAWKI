@@ -182,6 +182,8 @@ That's the whole wiring — the file's location (`$lib/plugins/myPlugin/myPlugin
 
 ## Where to go next
 
+Modules can declare search groups and providers through `HawkiModule.search()`. See [Search providers](140-Search-providers.md) for registration, reactive local data, dynamic JSON:API adapters, and scoped SearchBars.
+
 | I want to…                                                | Read                                                |
 |-----------------------------------------------------------|-----------------------------------------------------|
 | Understand the extension system plugins plug into         | [The App & Kernel](110-App-and-Kernel.md)           |

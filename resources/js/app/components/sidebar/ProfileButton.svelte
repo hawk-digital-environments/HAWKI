@@ -1,6 +1,8 @@
 <!--
   @component Sidebar profile control. Opens the account dropdown with the
-  settings dialog, a light/dark theme toggle and the logout action.
+  settings entry, a light/dark theme toggle and the logout action. The
+  settings dialog itself is owned by `AppSidebar` (it is also opened from the
+  search palette); this component only asks for it via `onOpenSettings`.
 -->
 <script lang="ts">
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
@@ -8,7 +10,6 @@
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
-    import SettingsDialog from '$lib/app/components/settings/SettingsDialog.svelte';
     import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
     import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
@@ -18,6 +19,13 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
+
+    interface Props {
+        /** Called when the user picks "Settings" from the menu. */
+        onOpenSettings: () => void;
+    }
+
+    let {onOpenSettings}: Props = $props();
 
     const app = useApp();
     const themeStore = useStore('theme');
@@ -34,7 +42,6 @@
     const avatarUrl = $derived(app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined);
 
     let menuOpen = $state(false);
-    let settingsOpen = $state(false);
 
     function toggleTheme(): void {
         themeStore.theme = themeStore.isDark ? 'light' : 'dark';
@@ -42,15 +49,13 @@
 
     function openSettings(): void {
         menuOpen = false;
-        settingsOpen = true;
+        onOpenSettings();
     }
 
     function logout(): void {
         app.logout();
     }
 </script>
-
-<SettingsDialog bind:open={settingsOpen}/>
 
 <DropdownMenu
     bind:open={menuOpen}
