@@ -1,6 +1,10 @@
 <!--
   @component Sidebar control that lists the registered app modules in a
   `CommandPalette` and routes to the selected module's index route.
+
+  The highlighted entry is the `module` the parent resolved (so it stays in
+  sync with the module sidebar on routes that belong to no module, like the
+  announcements page); the first entry is only a fallback for an empty prop.
 -->
 <script lang="ts">
     import CommandPalette, {type CommandItemDefinition} from '$lib/components/ui/command/CommandPalette.svelte';
@@ -9,8 +13,16 @@
     import {useApp} from '$lib/app/hooks/useApp.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
     import {useRouter} from '$lib/components/ui/routing/index.js';
-    import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
+    import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
+
+    interface Props {
+        /** Module to show as selected; defaults to the first listed module. */
+        module?: HawkiModuleWithPlugin | null;
+    }
+
+    const {module = null}: Props = $props();
 
     const sidebar = useSidebar();
     const app = useApp();
@@ -33,11 +45,7 @@
 
     let open = $state(false);
 
-    const current = $derived.by(() => {
-        const module = modules.find(candidate =>
-            router.isRouteActive(getModuleRouteGroupName(candidate.plugin.name, candidate.name)));
-        return module ? `${module.plugin.name}:${module.name}` : moduleItems[0]?.value;
-    });
+    const current = $derived(module ? `${module.plugin.name}:${module.name}` : moduleItems[0]?.value);
 
     function selectModule(moduleId: string) {
         const module = modules.find(candidate => `${candidate.plugin.name}:${candidate.name}` === moduleId);

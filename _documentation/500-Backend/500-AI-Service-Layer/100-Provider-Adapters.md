@@ -96,7 +96,7 @@ No core code change is required. The `declare()` method validates that the class
 
 **Built-in adapter keys** (`WellKnownAdapterKeys`):
 
-`anthropic`, `openai`, `openai_like`, `openai_azure`, `ollama`, `open_web_ui`, `gemini`, `gwdg`, `open_router`, `mistral`, `zai`, `huggingface`, `deepseek`, `xai`, `aws_bedrock`, `cohere`
+`anthropic`, `openai`, `openai_like`, `openai_azure`, `ollama`, `open_web_ui`, `gemini`, `gwdg`, `open_router`, `mistral`, `zai`, `huggingface`, `litellm`, `deepseek`, `xai`, `aws_bedrock`, `cohere`
 
 ## `DriverFactory` and `DriverFactoryFactory`
 
