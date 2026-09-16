@@ -99,4 +99,9 @@ class McpServerRepository extends ConfigurationRepository
     {
         AiTool::withoutGlobalScopes()->where('mcp_server_id', $model->getKey())->delete();
     }
+
+    protected function rowAttributes(array $row): array
+    {
+        return ['tools_count' => DB::table('ai_tools')->where('mcp_server_id', $row['id'])->count()];
+    }
 }

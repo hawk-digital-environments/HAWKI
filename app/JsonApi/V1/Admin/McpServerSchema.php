@@ -10,7 +10,7 @@ final class McpServerSchema extends Schema
 {
     protected const REPOSITORY = McpServerRepository::class;
     protected const ATTRIBUTES = [
-        'server_label', 'kind', 'url', 'status', 'api_key_set', 'additional_config_set', 'description', 'require_approval', 'timeouts',
+        'server_label', 'kind', 'url', 'status', 'api_key_set', 'tools_count', 'additional_config_set', 'description', 'require_approval', 'timeouts',
     ];
     public static string $model = Records\McpServer::class;
 
