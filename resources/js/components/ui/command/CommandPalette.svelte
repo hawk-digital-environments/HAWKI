@@ -82,10 +82,13 @@
     // ⌘ on Apple platforms, Ctrl elsewhere.
     const shortcutKeys = isApple ? ['⌘', 'K'] : ['Strg', 'K'];
 
-    // Focus target when the palette opens. Command binds its arrow/Enter
-    // handling to the *root* (which carries tabindex="-1"), so focusing the root
-    // is what makes the list keyboard-drivable now that there is no input.
-    let rootEl = $state<HTMLElement | null>(null);
+    // Focus target when the palette opens. The palette shows no text field,
+    // but Command only exposes the highlighted row to assistive tech through
+    // the input's `aria-activedescendant` (role="combobox"), so a visually
+    // hidden, read-only input is rendered and focused instead of the root:
+    // arrow keys still bubble to the root's handler, and the screen reader
+    // now announces whichever row the highlight moves to.
+    let inputEl = $state<HTMLElement | null>(null);
 
     // Command always keeps one row `data-selected` so Enter has a target, which
     // makes the first row look hovered the moment the palette opens. The
@@ -158,11 +161,12 @@
                 align: 'start' as const,
                 sideOffset: 6,
                 class: 'command-palette',
-                // Land on the command root rather than the content wrapper, so
-                // arrow keys drive the list the moment the palette opens.
+                // Land on the hidden input rather than the content wrapper, so
+                // arrow keys drive the list the moment the palette opens and
+                // the highlighted row is announced (see `inputEl`).
                 onOpenAutoFocus: (event: Event) => {
                     event.preventDefault();
-                    rootEl?.focus();
+                    inputEl?.focus();
                 }
             },
             contentProps
@@ -185,13 +189,19 @@
                 label={paletteLabel}
                 loop
                 shouldFilter={false}
-                bind:ref={rootEl}
                 class={armed ? 'command-root armed' : 'command-root'}
                 onkeydown={armOnArrow}
             >
+                <CommandPrimitive.Input
+                    class="u-sr-only"
+                    readonly
+                    aria-label={paletteLabel}
+                    bind:ref={inputEl}
+                />
                 <CommandResults
                     {groups}
                     {current}
+                    aria-label={paletteLabel}
                     onSelect={choose}
                     bind:viewport={viewportEl}
                     onpointermove={trackPointer}

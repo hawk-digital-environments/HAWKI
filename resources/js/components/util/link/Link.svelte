@@ -3,8 +3,12 @@
   state. Prefer this over a bare `<a>` whenever you need any of:
   - Automatic `rel="noopener noreferrer"` on external links (`target="_blank"`)
     to prevent tabnabbing.
-  - A `disabled` state that keeps the element in the DOM (and in the tab order)
-    while blocking navigation — plain `<a>` has no native disabled behaviour.
+  - A `disabled` state that keeps the element in the DOM while blocking
+    navigation and taking it out of the tab order (`aria-disabled="true"`,
+    `tabindex="-1"`) — plain `<a>` has no native disabled behaviour.
+  - Screen-reader hints appended to the content: `target="_blank"` announces
+    that the link opens in a new tab, a `download` attribute that it downloads
+    a file. Both are visually hidden and translated.
 
   Basic navigation:
 
@@ -14,7 +18,7 @@
 
     <Link href="https://example.com" target="_blank">Open docs</Link>
 
-  Disabled link — greyed out (opacity 0.5), clicks are swallowed:
+  Disabled link — greyed out (`--color-text-disabled`), clicks are swallowed:
 
     <Link href="/delete" disabled>Delete</Link>
 
@@ -51,6 +55,7 @@
     import * as svelte from 'svelte';
     import {mergeProps} from 'bits-ui';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {RouteParams} from 'universal-router';
     import {type RouterScope, useRouterScope} from '$lib/components/ui/routing/index.js';
 
@@ -63,8 +68,8 @@
     interface Props extends NonConflictingProps {
         /**
          * The URL to navigate to. When empty or when `disabled` is true the
-         * rendered `href` becomes `javascript:void(0)` so the element remains
-         * keyboard-focusable without causing navigation.
+         * rendered `href` becomes `javascript:void(0)` so the element stays an
+         * anchor without causing navigation.
          */
         href?: string | { name: string; params?: RouteParams };
 
@@ -101,9 +106,22 @@
         children?: svelte.Snippet<[{ favicon: svelte.Snippet }]>;
 
         /**
+         * Render the anchor yourself (bits-ui style) instead of letting `Link`
+         * do it: receives the computed anchor `props` (href, rel, target,
+         * aria-*, class, click handler), the `favicon` snippet and a `hints`
+         * snippet with the screen-reader-only "opens in a new tab" / "download"
+         * text — spread the props onto your own `<a>` and render `hints` inside
+         * it. Use this when the anchor must live in *your* component, e.g. so
+         * your scoped styles apply to it. The `disabled` colour comes from
+         * `Link`'s own stylesheet and therefore does not apply in this mode.
+         */
+        child?: svelte.Snippet<[{ props: Record<string, any>; favicon: svelte.Snippet; hints: svelte.Snippet }]>;
+
+        /**
          * When true: blocks navigation, sets `href` to `javascript:void(0)`,
-         * and adds the `disabled` CSS class (opacity 0.5, pointer-events none).
-         * The element stays in the DOM and remains keyboard-focusable.
+         * `aria-disabled="true"` and `tabindex="-1"`, and adds the `disabled`
+         * CSS class (muted text colour, pointer-events none). The element stays
+         * in the DOM but leaves the tab order, like a disabled button.
          */
         disabled?: boolean;
 
@@ -134,6 +152,7 @@
         rel: relRaw = '',
         onclick: onclickRaw,
         children,
+        child,
         disabled,
         activeMatch = 'exact',
         active: activeOverride,
@@ -143,6 +162,10 @@
     let faviconFailed = $state(false);
 
     const app = useApp();
+    const {__} = useTranslator();
+
+    /** Whether a `download` attribute was passed (bare, `""`, or a filename all count). */
+    const isDownload = $derived(restProps.download !== undefined && restProps.download !== false);
 
     // Captured here because Svelte context is readable during initialization
     // only, while `router` is a prop that can change afterwards — so the *name*
@@ -310,8 +333,25 @@
         if (isActive) {
             props['aria-current'] = 'page';
         }
+        if (disabled) {
+            props['aria-disabled'] = 'true';
+            props.tabindex = -1;
+        }
         return props;
     });
+
+    /** Everything that goes onto the anchor, whether `Link` or a `child` renders it. */
+    const anchorProps = $derived(mergeProps(
+        {
+            href,
+            class: {
+                disabled: disabled,
+                active: isActive
+            }
+        },
+        dynamicProps,
+        restProps
+    ));
 </script>
 
 {#snippet favicon()}
@@ -327,24 +367,22 @@
     {/if}
 {/snippet}
 
-<a {...mergeProps(
-    {
-        href,
-        class: {
-            disabled: disabled,
-            active: isActive
-        }
-    },
-    dynamicProps,
-    restProps
-)}>
-    {@render children?.({favicon})}
-</a>
+<!-- The hints stay on the same line as the content: whitespace between them
+     would render as a stray space inside inline links (see TextLink). -->
+{#snippet hints()}{#if target === '_blank'}<span class="u-sr-only">{` ${__('ui.link.opensInNewTab')}`}</span>{/if}{#if isDownload}<span class="u-sr-only">{` ${__('ui.link.download')}`}</span>{/if}{/snippet}
+
+{#if child}
+    {@render child({props: anchorProps, favicon, hints})}
+{:else}
+<a {...anchorProps}>{@render children?.({favicon})}{@render hints()}</a>
+{/if}
 
 <style>
     .disabled {
         pointer-events: none;
-        opacity: 0.5;
+        /* A dedicated disabled token instead of opacity: it is contrast-checked
+           against the surfaces, whereas half-transparent text is not. */
+        color: var(--color-text-disabled);
     }
 
     /* Styling hook only — inherits unless a consumer sets the tokens, so the

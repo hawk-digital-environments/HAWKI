@@ -364,6 +364,11 @@ export class OldUiBridge {
         this.sync.trigger(EXIT_MODE_PIPELINE, mode);
     }
 
+    /** Resolves the legacy sidebar URL for a chat or group room. */
+    public resolveChatUrl(slug: string, context: ComposerContextType): string {
+        return `/${context === 'room' ? 'groupchat' : 'chat'}/${encodeURIComponent(slug)}`;
+    }
+
     public triggerOpenChat(slug: string): void {
         if (this.isSendingMessage) {
             return;

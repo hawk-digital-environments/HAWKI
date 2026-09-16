@@ -22,8 +22,10 @@
     import {generateBeamCSS, sizePresets, sizeThemePresets} from './styles';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
+    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const themeStore = useStore('theme');
+    const reducedMotion = useReducedMotion();
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Content to wrap with the border beam effect. */
@@ -140,6 +142,19 @@
     // Sync the external `active` prop into the internal active/fading state so the
     // fade-out animation can run to completion before the beam is fully removed.
     $effect(() => {
+        if (reducedMotion.current) {
+            if (active && (!isActive || isFading)) {
+                isActive = true;
+                isFading = false;
+                onActivate?.();
+            } else if (!active && (isActive || isFading)) {
+                isActive = false;
+                isFading = false;
+                onDeactivate?.();
+            }
+            return;
+        }
+
         if (active && !isActive && !isFading) {
             isActive = true;
         } else if (!active && isActive && !isFading) {
@@ -309,3 +324,23 @@
     {@render children?.()}
     <div data-beam-bloom></div>
 </div>
+
+<style>
+    @media (prefers-reduced-motion: reduce) {
+        :global([data-beam][data-beam]),
+        :global([data-beam][data-beam]::before),
+        :global([data-beam][data-beam]::after),
+        :global([data-beam][data-beam] [data-beam-bloom]) {
+            animation: none;
+        }
+
+        :global([data-beam][data-beam][data-active]::before),
+        :global([data-beam][data-beam][data-active]::after),
+        :global([data-beam][data-beam][data-fading]::before),
+        :global([data-beam][data-beam][data-fading]::after),
+        :global([data-beam][data-beam][data-active] [data-beam-bloom]),
+        :global([data-beam][data-beam][data-fading] [data-beam-bloom]) {
+            opacity: 1;
+        }
+    }
+</style>

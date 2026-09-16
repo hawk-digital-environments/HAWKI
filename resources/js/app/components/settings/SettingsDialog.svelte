@@ -37,6 +37,8 @@
     }
 
     let {open = $bindable(false), onOpenChange, section = null}: Props = $props();
+    const uid = $props.id();
+    const titleId = `${uid}-title`;
     const {__} = useTranslator();
 
     const settingsRouter = createRouter('settings', (registrar) => {
@@ -75,6 +77,7 @@
     onOpenChange={handleOpenChange}
     contentProps={{class: 'settings-dialog-content'}}
     headerProps={{class: 'settings-dialog-header'}}
+    titleProps={{id: titleId}}
 >
     {#snippet title()}
         <Settings05Icon size={17}/>
@@ -87,30 +90,35 @@
     <div class="settings-layout">
         <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
             <MenuList>
-                {#each navItems as item (item.path)}
-                    {@const Icon = item.icon}
-                    {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/general' && settingsRouter.path === '/')}
-                    <MenuListItem {active}>
-                        {#snippet children({attach})}
-                            <button
-                                type="button"
-                                {@attach attach}
-                                class:active
-                                aria-current={active ? 'page' : undefined}
-                                onclick={() => settingsRouter.handle.goTo(item.path)}
-                            >
-                                <Icon size={16}/>
-                                <span>{item.label}</span>
-                            </button>
-                        {/snippet}
-                    </MenuListItem>
-                {/each}
+                <ul class="settings-nav-list">
+                    {#each navItems as item (item.path)}
+                        {@const Icon = item.icon}
+                        {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/general' && settingsRouter.path === '/')}
+                        <li>
+                            <MenuListItem {active}>
+                                {#snippet children({attach})}
+                                    <button
+                                        type="button"
+                                        {@attach attach}
+                                        class:active
+                                        aria-current={active ? 'page' : undefined}
+                                        onclick={() => settingsRouter.handle.goTo(item.path)}
+                                    >
+                                        <Icon size={16}/>
+                                        <span>{item.label}</span>
+                                    </button>
+                                {/snippet}
+                            </MenuListItem>
+                        </li>
+                    {/each}
+                </ul>
             </MenuList>
         </nav>
 
-        <main class="settings-panel">
+        <!-- Not a <main>: the page already has one; a labelled region is enough inside the dialog. -->
+        <section class="settings-panel" aria-labelledby={titleId}>
             <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
-        </main>
+        </section>
     </div>
 </Dialog>
 
@@ -144,8 +152,18 @@
         background: color-mix(in oklch, var(--color-surface) 55%, transparent);
     }
 
+    .settings-nav-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
     .settings-nav button {
         position: relative;
+        width: 100%;
         /* Above the sliding highlight behind the nav rows. */
         --settings-nav-button-z: 1;
         z-index: var(--settings-nav-button-z);

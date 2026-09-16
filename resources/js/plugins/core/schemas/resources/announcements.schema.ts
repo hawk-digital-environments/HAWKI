@@ -16,6 +16,8 @@ const AnnouncementsSchema = z.object({
     title: z.string(),
     /** Category of the announcement, e.g. `policy`, `news`, `system`, `event` or `info`. Kept as a plain string so the backend can introduce new types without a frontend schema change. */
     type: z.string(),
+    /** Whether the announcement applies to every user rather than a targeted audience. */
+    is_global: z.boolean(),
     /** Forced announcements must be accepted; declining them logs the user out. */
     is_forced: z.boolean(),
     /** When set, the announcement is not shown on load but when the anchored feature is first used (e.g. `FileUpload`). */

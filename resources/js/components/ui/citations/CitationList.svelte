@@ -31,12 +31,14 @@
     interface Props {
         /** One or more `Citation` tiles to lay out in the grid. */
         children: Snippet;
+        /** Heading level of the "Sources" heading; one below the message's own heading. Defaults to 3. */
+        headingLevel?: number;
     }
 
-    const {children}: Props = $props();
+    const {children, headingLevel = 3}: Props = $props();
 </script>
 <section class="message-citations">
-    <h3 class="message-citations__heading">{__('chat.message.sources')}</h3>
+    <svelte:element this={`h${headingLevel}`} class="message-citations__heading">{__('chat.message.sources')}</svelte:element>
     <div class="message-citations__grid">
         {@render children?.()}
     </div>

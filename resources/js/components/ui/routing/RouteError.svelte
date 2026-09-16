@@ -9,6 +9,8 @@
   re-rendering the crashed subtree.
 -->
 <script lang="ts">
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
     interface Props {
         /** The failure that got us here. Not necessarily an `Error`. */
         error?: unknown;
@@ -17,22 +19,23 @@
     }
 
     const {error, reset}: Props = $props();
+    const {__} = useTranslator();
 
     const message = $derived(error instanceof Error ? error.message : error ? String(error) : '');
 </script>
 
-<h1>Something went wrong 😵</h1>
+<h1>{__('ui.routing.errorTitle')}</h1>
 
 {#if message}
     <p class="message">{message}</p>
 {/if}
 
 {#if reset}
-    <button type="button" onclick={reset}>Try again</button>
+    <button type="button" onclick={reset}>{__('ui.routing.retry')}</button>
 {/if}
 
 <style>
     .message {
-        color: var(--text-muted, inherit);
+        color: var(--color-text-muted, inherit);
     }
 </style>

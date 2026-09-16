@@ -26,13 +26,14 @@
     const {__} = useTranslator();
 
     type Props = {} & Pick<ComponentProps<typeof ChatNameMenu>,
-        'name' | 'nameClickRenames' | 'slug' | 'allowRename' | 'isRenaming' |
-        'class' | 'buttonProps' | 'block' | 'triggerIcon'>;
+        'name' | 'nameClickRenames' | 'slug' | 'allowRename' | 'isRenaming' | 'open' |
+        'class' | 'buttonProps' | 'block' | 'triggerIcon' | 'showName' | 'focusAfterRename'>;
 
     let {
         name,
         slug,
         isRenaming = $bindable(false),
+        open = $bindable(false),
         ...restProps
     }: Props = $props();
 
@@ -45,6 +46,7 @@
 />
 <ChatNameMenu
     bind:isRenaming={isRenaming}
+    bind:open={open}
     name={name ?? ''}
     slug={slug ?? ''}
     {...restProps}

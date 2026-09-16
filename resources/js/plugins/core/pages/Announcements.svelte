@@ -13,6 +13,9 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {announcementDisplayTitle, parseAnnouncementContent, stripLeadingHeading} from '$lib/app/components/announcements/announcementContent.js';
     import type {Announcement} from '$plugins/core/schemas/resources/announcements.schema.js';
+    import type {RouteProps} from '$lib/components/ui/routing/index.js';
+
+    const {}: RouteProps = $props();
 
     // Policies and system notices (e.g. upload conditions) are acknowledgement
     // flows, not news — they don't belong in the feed.
@@ -48,7 +51,7 @@
                     {/if}
                     <h2>{announcementDisplayTitle(announcement)}</h2>
                     <div class="announcement-card__content">
-                        <Markdown message={cardBody(announcement)}/>
+                        <Markdown message={cardBody(announcement)} headingBaseLevel={3}/>
                     </div>
                     <footer>
                         <span>
