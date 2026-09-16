@@ -12,7 +12,7 @@
     import type { AdminMenuItem } from '../components/AdminActionMenu.svelte';
     import { adminActionIcons } from '../actionIcons.js';
     import type { AdminUsageResource } from '../schemas/resources/admin-usage.schema.js';
-    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
     const uid = $props.id();
@@ -32,15 +32,15 @@
     let group = $state(initial.group_by);
     let applied = $state(initial);
     // The statistics are filtered by the form above the table, not by the table state.
-    const workspace = useAdminWorkspace(columns, (signal) =>
+    const records = useAdminRecordSet(columns, (signal) =>
         app.restApi.getResourceCollection('admin-usage', { query: { filter: applied }, signal })
     );
     const menuItems = $derived<AdminMenuItem[]>([
         {
             label: __('admin.export'),
             icon: adminActionIcons.export,
-            disabled: !workspace.content || workspace.loading,
-            run: () => exportCsv(workspace.rows)
+            disabled: !records.content || records.loading,
+            run: () => exportCsv(records.rows)
         }
     ]);
 
@@ -65,8 +65,8 @@
 </script>
 
 <AdminPage
-    section="usage"
-    {workspace}
+    workspace="usage"
+    recordSet={records}
     hint={applied.group_by === 'user' ? __('admin.usage_privacy') : undefined}
     {menuItems}
 >
@@ -74,7 +74,7 @@
         onsubmit={(event) => {
             event.preventDefault();
             applied = { from, to, group_by: group };
-            void workspace.load();
+            void records.load();
         }}
     >
         <label for={`${uid}-from`}
@@ -111,26 +111,26 @@
         <Button
             type="submit"
             variant="stroke"
-            disabled={workspace.loading}>{__('admin.apply')}</Button
+            disabled={records.loading}>{__('admin.apply')}</Button
         >
     </form>
-    {#if workspace.content?.totals}
+    {#if records.content?.totals}
         <dl class="statistics">
-            {#each Object.entries(workspace.content?.totals) as [key, value]}<div>
+            {#each Object.entries(records.content?.totals) as [key, value]}<div>
                     <dt>{__('admin.fields.' + key)}</dt>
                     <dd>{Number(value).toLocaleString(app.localization.locale.lang.replace('_', '-'))}</dd>
                 </div>{/each}
         </dl>
-        {#if workspace.rows.length}
+        {#if records.rows.length}
             <AdminUsageChart
-                rows={workspace.rows}
+                rows={records.rows}
                 group={applied.group_by}
             />
         {/if}
     {/if}
     <AdminTable
         caption={__('admin.sections.usage')}
-        {workspace}
+        recordSet={records}
     />
 </AdminPage>
 

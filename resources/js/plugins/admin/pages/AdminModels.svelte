@@ -12,7 +12,7 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { isModelVisible, toggleModelVisible } from '../capabilities.js';
     import type { AdminModelResource } from '../schemas/resources/admin-models.schema.js';
-    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
 
     import { ModelRefreshSchema, ModelStatusCheckSchema } from '../schemas/admin-actions.js';
     const app = useApp();
@@ -31,7 +31,7 @@
     const providerFilter = $derived<ColumnFiltersState>(
         providerId.current ? [{ id: 'provider_id', value: providerId.current }] : []
     );
-    const workspace = useAdminWorkspace(
+    const records = useAdminRecordSet(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-models', { query, signal }),
         {
@@ -69,11 +69,11 @@
     // Links and browser navigation update the filter without remounting the page.
     $effect(() => {
         const filters = providerFilter;
-        untrack(() => void workspace.applyColumnFilters(filters));
+        untrack(() => void records.applyColumnFilters(filters));
     });
     // Table selections update the URL. Assignments do not subscribe this effect to URL changes.
     $effect(() => {
-        const value = workspace.columnFilters.find((item) => item.id === 'provider_id')?.value;
+        const value = records.columnFilters.find((item) => item.id === 'provider_id')?.value;
         providerId.current = typeof value === 'string' && value ? value : null;
     });
 </script>
@@ -82,8 +82,8 @@
     <AdminRowSwitch
         checked={row.active}
         label={__('admin.fields.active')}
-        disabled={workspace.locked(row)}
-        onToggle={(enabled) => workspace.update(row, { active: enabled })}
+        disabled={records.locked(row)}
+        onToggle={(enabled) => records.update(row, { active: enabled })}
     />
 {/snippet}
 
@@ -91,22 +91,22 @@
     <AdminRowSwitch
         checked={isModelVisible(row)}
         label={__('admin.fields.visible')}
-        disabled={workspace.locked(row)}
-        onToggle={(enabled) => workspace.update(row, toggleModelVisible(row, enabled))}
+        disabled={records.locked(row)}
+        onToggle={(enabled) => records.update(row, toggleModelVisible(row, enabled))}
     />
 {/snippet}
 
 {#snippet flags(row: AdminModelResource)}
     <AdminModelCapabilities
         {row}
-        disabled={workspace.locked(row)}
-        onChange={(changes) => workspace.update(row, changes)}
+        disabled={records.locked(row)}
+        onChange={(changes) => records.update(row, changes)}
     />
 {/snippet}
 
 <AdminPage
-    section="models"
-    {workspace}
+    workspace="models"
+    recordSet={records}
     pageActions={app.can('models.manage') ?
         [
             {
@@ -122,10 +122,10 @@
         ]
     :   []}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.models')}
-        {workspace}
+        recordSet={records}
         cells={{ active, visible, flags }}
     />
 </AdminPage>
