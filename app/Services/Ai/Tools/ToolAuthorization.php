@@ -105,7 +105,7 @@ final class ToolAuthorization
     {
         $model = AiModel::withoutGlobalScopes()->find($context->model->getKey());
         $provider = $model?->provider()->withoutGlobalScopes()->first();
-        if (!$model || $model->model_id !== $context->model->model_id || !$model->active || $model->status !== OnlineStatus::ONLINE || !$provider?->active
+        if (!$model || $model->model_id !== $context->model->model_id || !$model->active || !$provider?->active
             || (int) $provider->getKey() !== (int) $context->provider->getRealProvider()->getKey()
             || !$model->usageRules()->where('usage_type', $context->usageType)->exists()) {
             throw ToolAccessException::unavailable();

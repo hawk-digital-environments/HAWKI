@@ -25,4 +25,5 @@ export type UserTokens = z.infer<typeof UserTokensSchema>;
 export const QueuedActionSchema = z.object({ queued: z.literal(true) });
 export const McpTestSchema = z.object({ online: z.literal(true) });
 export const ModelRefreshSchema = z.object({ refreshed: z.literal(true) });
+export const ModelStatusCheckSchema = z.object({ checked: z.literal(true) });
 export const RevokeTokensSchema = z.object({ revoked: z.number().int().nonnegative() });

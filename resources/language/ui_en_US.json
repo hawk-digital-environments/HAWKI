@@ -876,6 +876,7 @@
             "test": "Test connection",
             "discover": "Discover",
             "refresh": "Refresh metadata",
+            "check-status": "Check model status",
             "revoke-tokens": "Revoke tokens",
             "tokens": "View tokens",
             "check-ai-status": "Check AI status",

@@ -66,15 +66,18 @@
     });
     onMount(() => {
         const disposers = [
-            app.events.async.on('connectionRefreshStarted', () => workspace.suspend()),
             app.events.async.on('connectionRefreshed', async () => {
                 const current = permissionSignature();
-                if (!allowed || current !== previousPermissions) {
+                const authorizationChanged = !allowed || current !== previousPermissions;
+                if (authorizationChanged) {
                     invalidate();
                     if (allowed) workspace.notice = __('admin.authorization_changed');
                 }
                 previousPermissions = current;
-                if (allowed && await workspace.resume()) {
+                const closed =
+                    allowed &&
+                    (authorizationChanged ? await workspace.resume() : await workspace.revalidate());
+                if (closed) {
                     await tick();
                     if (!workspace.dialogOpen) workspace.restoreFocus()?.focus();
                 }
@@ -117,7 +120,7 @@
                     <AdminActionMenu
                         label={__('admin.page_actions', { name: title })}
                         items={toolbarItems}
-                        disabled={workspace.busy || app.authorizationRefreshing}
+                        disabled={workspace.busy}
                         compact={breakpoint.is('bpSmAndSmaller')}
                         dialogOpen={workspace.dialogOpen}
                     />
@@ -125,7 +128,7 @@
                         <Button
                             type="button"
                             variant="fill"
-                            disabled={workspace.busy || app.authorizationRefreshing}
+                            disabled={workspace.busy}
                             onclick={(event) => workspace.edit(null, event.currentTarget)}
                         >
                             {__('admin.create')}
