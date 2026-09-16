@@ -18,7 +18,7 @@
     import type { AdminContent } from '../schemas/admin-content.js';
     import AdminValueInput from './inputs/AdminValueInput.svelte';
     import type { AdminField, AdminRow } from '../schemas/admin-content.js';
-    import type { SectionId } from '../sections.js';
+    import type { EditorSection } from '../forms/schemas.js';
 
     let {
         section,
@@ -30,7 +30,7 @@
         onClose,
         restoreFocus
     }: {
-        section: SectionId;
+        section: EditorSection;
         fields: AdminField[];
         content: AdminContent | null;
         row: AdminRow | null;

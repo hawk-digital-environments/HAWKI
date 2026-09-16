@@ -21,8 +21,9 @@ class ToolRepository extends ConfigurationRepository
     {
         $fields = new \App\Services\Admin\ResourceFields();
 
-        return ['model' => AiTool::class, 'create' => false, 'delete' => false, 'columns' => ['name', 'type', 'active', 'mapped_capability', 'access_rule'], 'fields' => [
+        return ['model' => AiTool::class, 'create' => false, 'delete' => false, 'columns' => ['name', 'type', 'mcp_server_id', 'active', 'mapped_capability', 'access_rule'], 'fields' => [
             $fields->field('description', 'textarea', 'nullable|string|max:10000'), $fields->boolean('active'), $fields->text('mapped_capability'), $fields->field('access_rule', 'select', 'sometimes|required|string|in:' . implode(',', array_keys(\App\Services\Ai\Tools\ToolAccessRules::RULES)), array_keys(\App\Services\Ai\Tools\ToolAccessRules::RULES)), $fields->multiple('models', 'models'),
+            $fields->field('mcp_server_id', 'select', 'nullable|integer', options: 'mcp_servers'),
         ]];
     }
 
@@ -53,6 +54,7 @@ class ToolRepository extends ConfigurationRepository
     protected function rules(?int $id, array $values): array
     {
         $rules = parent::rules($id, $values);
+        unset($rules['mcp_server_id']);
         $rules['models.*'] = 'integer|distinct|exists:ai_models,id';
 
         return $rules;

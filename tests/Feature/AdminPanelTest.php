@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Ai\AiModel;
+use App\Models\Ai\AiTool;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Admin\EmployeeTypeRoleSyncer;
@@ -804,6 +805,29 @@ class AdminPanelTest extends TestCase
         self::assertSame('mcp-route-secret', \App\Models\Ai\McpServer::findOrFail($id)->api_key);
         $row = $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20MCP')->assertOk()->json('data.0');
         $this->deleteAdminResource('/api/hawki/v1/admin-mcp/' . $id, ['version' => $row['meta']['version']])->assertNoContent();
+    }
+
+    public function testMcpServersExposeTheirToolsAndToolServerIsReadOnly(): void
+    {
+        $this->actingAs($this->grant(Permission::values()));
+        $label = 'Route tools MCP';
+        $serverId = $this->postAdminResource('/api/hawki/v1/admin-mcp', ['values' => ['server_label' => $label, 'type' => 'http', 'url' => 'https://example.test/route-tools', 'require_approval' => 'never']])->assertCreated()->json('data.id');
+        $mcpTool = AiTool::create(['type' => 'mcp', 'name' => 'Route MCP tool', 'mcp_server_id' => $serverId, 'mcp_name' => 'route_mcp_tool', 'mcp_config' => ['inputSchema' => ['type' => 'object']], 'description' => 'MCP tool', 'active' => true, 'access_rule' => 'unavailable']);
+        AiTool::create(['type' => 'function', 'name' => 'Route function tool', 'description' => 'Function tool', 'active' => true, 'access_rule' => 'unavailable']);
+
+        $server = $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20tools%20MCP')->assertOk()->json('data.0');
+        self::assertSame(1, $server['attributes']['tools_count']);
+
+        $tools = $this->get('/api/hawki/v1/admin-tools?filter[where][mcp_server_id]=' . $serverId)->assertOk()->assertJsonCount(1, 'data');
+        $tool = $tools->json('data.0');
+        self::assertSame((string) $mcpTool->id, $tool['id']);
+        self::assertSame((int) $serverId, $tool['attributes']['mcp_server_id']);
+        $field = collect($tools->json('meta.fields'))->firstWhere('key', 'mcp_server_id');
+        self::assertSame('select', $field['type']);
+        self::assertContains(['value' => (int) $serverId, 'label' => $label], $field['options']);
+
+        $this->patchAdminResource('/api/hawki/v1/admin-tools/' . $mcpTool->id, ['version' => $tool['meta']['version'], 'values' => ['description' => 'MCP tool', 'active' => true, 'mapped_capability' => null, 'access_rule' => 'unavailable', 'models' => [], 'mcp_server_id' => null]])->assertOk();
+        self::assertSame((int) $serverId, AiTool::findOrFail($mcpTool->id)->mcp_server_id);
     }
 
     private function grant(array $permissions): User
