@@ -20,14 +20,16 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Laravel\Ai\Responses\Data\ToolCall;
 use Laravel\Ai\Streaming\Events\Citation;
 use Laravel\Ai\Streaming\Events\Error;
 use Laravel\Ai\Streaming\Events\ProviderToolEvent;
 use Laravel\Ai\Streaming\Events\ReasoningDelta;
+use Laravel\Ai\Streaming\Events\ReasoningEnd;
 use Laravel\Ai\Streaming\Events\ReasoningStart;
 use Laravel\Ai\Streaming\Events\StreamEnd;
 use Laravel\Ai\Streaming\Events\TextDelta;
+use Laravel\Ai\Streaming\Events\ToolCall as ToolCallEvent;
+use Laravel\Ai\Streaming\Events\ToolResult;
 use Psr\Log\LoggerInterface;
 
 class StreamController extends Controller
@@ -203,7 +205,7 @@ class StreamController extends Controller
             ], JSON_THROW_ON_ERROR) . "\n";
 
         $formatData = function (
-            string|object $content,
+            string|array|object $content,
             string        $type,
             bool          $isDone = false,
             array|null    $status = null,
@@ -233,16 +235,6 @@ class StreamController extends Controller
                 return $formatError('There was an HAWKI internal issue. Please try again later.');
             }
         };
-
-        $formatStatus = static fn(string $statusKey, mixed $value = '') => $formatData(
-            content: '',
-            type: 'status',
-            isDone: false,
-            status: [
-                'key' => $statusKey,
-                'value' => $value
-            ]
-        );
 
         yield $formatData(
             content: '',
@@ -283,16 +275,22 @@ class StreamController extends Controller
                         yield $formatData(content: $chunk->delta, type: 'message');
                         break;
                     case $chunk instanceof ReasoningStart:
-                        yield $formatStatus('reasoning');
+                        yield $formatData(content: $chunk->toArray(), type: 'reasoning_start');
                         break;
                     case $chunk instanceof ReasoningDelta:
-                        yield $formatStatus('reasoning_delta', $chunk->delta);
+                        yield $formatData(content: $chunk->toArray(), type: 'reasoning_delta');
+                        break;
+                    case $chunk instanceof ReasoningEnd:
+                        yield $formatData(content: $chunk->toArray(), type: 'reasoning_end');
                         break;
                     case $chunk instanceof ProviderToolEvent:
-                        yield $formatStatus('provider_tool_call', $chunk->type);
+                        yield $formatData(content: $chunk->toArray(), type: 'provider_tool_event');
                         break;
-                    case $chunk instanceof ToolCall:
-                        yield $formatStatus('tool_call', $chunk->name);
+                    case $chunk instanceof ToolCallEvent:
+                        yield $formatData(content: $chunk->toArray(), type: 'tool_call');
+                        break;
+                    case $chunk instanceof ToolResult:
+                        yield $formatData(content: $chunk->toArray(), type: 'tool_result');
                         break;
                     case $chunk instanceof StreamEnd:
                         foreach ($this->citationCleaner->cleanMany($citations) as $cleanedCitation) {
@@ -303,7 +301,14 @@ class StreamController extends Controller
                 }
             }
 
-            yield $formatData(content: $res->text, type: 'completion', isDone: true);
+            // Token usage is only known once the stream is fully consumed. It rides
+            // along on the completion packet so clients can show per-response metrics.
+            yield $formatData(
+                content: $res->text,
+                type: 'completion',
+                isDone: true,
+                additionalData: ['usage' => $agent->getUsage()->toArray()]
+            );
 
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [

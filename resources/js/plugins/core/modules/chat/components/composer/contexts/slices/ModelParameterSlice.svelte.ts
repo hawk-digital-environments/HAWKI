@@ -7,6 +7,11 @@ const defaultParameters: Record<AiModelParameterKeyType, any> = {
     top_p: 0.9
 };
 
+/** All reasoning effort levels HAWKI knows about, ordered from least to most effort.
+ *  A model advertises support for a level through its `feature-reasoning-<level>` flag. */
+export const reasoningLevels = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type ReasoningLevel = typeof reasoningLevels[number];
+
 interface ModelParameterSliceCheckpoint {
     parameters: Record<AiModelParameterKeyType, unknown>;
 }
@@ -74,6 +79,28 @@ export class ModelParameterSlice implements CheckpointingInterface<ModelParamete
         return hasNonDefault;
     });
 
+    /** Reasoning effort levels the current model supports (derived from its `feature-reasoning-*` flags),
+     *  in ascending order. Empty when the effort can not be adjusted for this model. */
+    public supportedReasoningLevels = $derived.by((): ReasoningLevel[] => {
+        const flags = this.model.current?.flags ?? [];
+        return reasoningLevels.filter(level => flags.includes(`feature-reasoning-${level}`));
+    });
+
+    /** The reasoning effort to send with the next request, or `null` when the model does not
+     *  support the selected level (or none is selected) — in that case the provider default applies. */
+    public reasoningEffort = $derived.by((): ReasoningLevel | null => {
+        const value = this.get('reasoning_effort');
+        return typeof value === 'string' && (this.supportedReasoningLevels as string[]).includes(value)
+            ? value as ReasoningLevel
+            : null;
+    });
+
+    /** Parameters to send with the next request: `list`, minus a `reasoning_effort` the current model does not support. */
+    public requestParameters = $derived.by((): NonNullable<AiModel['parameters']> => {
+        const {reasoning_effort, ...rest} = this._list as Record<string, unknown>;
+        return this.reasoningEffort ? {...rest, reasoning_effort: this.reasoningEffort} : rest;
+    });
+
     /** Returns the current value for a parameter, falling back to model defaults then global defaults. */
     public get(param: 'temperature' | 'top_p'): number;
     public get(param: AiModelParameterKeyType): unknown;
@@ -83,6 +110,7 @@ export class ModelParameterSlice implements CheckpointingInterface<ModelParamete
 
     /** Sets a single parameter value. */
     public set(param: 'temperature' | 'top_p', value: number | null): void;
+    public set(param: 'reasoning_effort', value: ReasoningLevel | null): void;
     public set(param: AiModelParameterKeyType, value: unknown): void;
     public set(param: AiModelParameterKeyType, value: unknown): void {
         this._list = {...this._list, [param]: value};

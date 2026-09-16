@@ -1,10 +1,11 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
-import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
+import type {ChatMessage, MessageStats} from '$plugins/core/modules/chat/types.js';
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
 import type {AiMessage} from '$lib/kernel/ai/types.js';
 import type {SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
+import {applyThinkingEvent, emptyThinkingTimeline} from '$plugins/core/modules/chat/utils/thinkingEvents.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
 interface ChatTransportOptions {
@@ -95,7 +96,12 @@ export class ChatTransport implements MessageSenderTransportInterface {
             this.store.beginGeneration(targetSlug);
             generationStarted = true;
             if (optimisticMessage) this.store.appendMessage(targetSlug, optimisticMessage);
-            if (conversationCreated) this.options.onConversationCreated?.(targetSlug);
+            if (conversationCreated) {
+                this.options.onConversationCreated?.(targetSlug);
+                // Runs concurrently with the assistant response instead of
+                // waiting for the stream to finish.
+                if (provisionalTitle !== null) void this.generateAndApplyTitle(targetSlug, sentMessage, provisionalTitle);
+            }
 
             await this.uploadAttachments(opt);
             if (status.failed) {
@@ -116,7 +122,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                     __plainText: sentMessage
                 });
                 if (optimisticMessage) {
-                    this.store.replaceMessage(targetSlug, optimisticMessage.message_id, userMessage);
+                    this.store.replaceMessage(targetSlug, optimisticMessage.message_id, {...userMessage, clientKey: optimisticMessage.clientKey});
                 } else {
                     this.store.appendMessage(targetSlug, userMessage);
                 }
@@ -137,9 +143,6 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 await this.streamAssistant(conversationSlug, opt, response);
             } finally {
                 this.store.finishGeneration(conversationSlug);
-                if (conversationCreated && provisionalTitle !== null) {
-                    void this.generateAndApplyTitle(conversationSlug, sentMessage, provisionalTitle);
-                }
             }
         });
     }
@@ -151,8 +154,11 @@ export class ChatTransport implements MessageSenderTransportInterface {
         }
         const user = connection.userinfo;
         const timestamp = new Date().toISOString();
+        const pendingId = `pending-${crypto.randomUUID()}`;
+        const threadId = opt.context.mode.isThread ? Number(opt.context.mode.getState('thread').threadId) : 0;
 
         return {
+            threadId: Number.isFinite(threadId) ? threadId : 0,
             author: {
                 username: user.username,
                 name: user.name,
@@ -173,7 +179,8 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 }))
             },
             created_at: timestamp,
-            message_id: `pending-${crypto.randomUUID()}`,
+            message_id: pendingId,
+            clientKey: pendingId,
             message_role: 'user',
             metadata: {tools: null, params: null},
             model: null,
@@ -221,10 +228,12 @@ export class ChatTransport implements MessageSenderTransportInterface {
             status: 'running'
         } : {
             author: {username: 'HAWKI', name: 'HAWKI', avatar_url: ''},
+            threadId: Number.isFinite(threadId) ? threadId : 0,
             completion: 0,
             content: {text: '', attachments: []},
             created_at: new Date().toISOString(),
             message_id: temporaryId,
+            clientKey: temporaryId,
             message_role: 'assistant',
             metadata: {tools: null, params: null},
             model: context.model.current?.model_id ?? null,
@@ -237,50 +246,91 @@ export class ChatTransport implements MessageSenderTransportInterface {
         else this.store.appendMessage(conversationSlug, temporary);
 
         let text = '';
+        let thinking = emptyThinkingTimeline();
         let citations: UrlCitation[] = [];
         let completion = false;
+        // Generation metrics for the "Stats for Nerds" experiment. Timing is
+        // always collected (it is cheap); the UI decides whether to show it.
+        const startedAt = performance.now();
+        let firstTokenAt: number | null = null;
+        let usage: {promptTokens: number | null; completionTokens: number | null} = {promptTokens: null, completionTokens: null};
+        const buildStats = (): MessageStats => {
+            const now = performance.now();
+            // Output tokens include reasoning tokens (folded in server-side), so the
+            // rate uses the whole request time rather than just the visible text phase.
+            const totalSeconds = (now - startedAt) / 1000;
+            const outputTokens = usage.completionTokens;
+            return {
+                outputTokens,
+                promptTokens: usage.promptTokens,
+                tokensPerSecond: outputTokens !== null && totalSeconds > 0 ? outputTokens / totalSeconds : null,
+                timeToFirstTokenMs: firstTokenAt === null ? null : Math.round(firstTokenAt - startedAt),
+                durationMs: Math.round(now - startedAt)
+            };
+        };
         try {
             for await (const packet of this.app.aiApi.stream({
                 model: context.model.current.model_id,
                 messages: this.messageHistory(conversationSlug, context.systemPrompt, threadId, regenState?.messageId),
                 tools: context.tools.active.map(tool => tool.toTransferString()),
-                params: context.modelParameters.list,
+                params: context.modelParameters.requestParameters,
                 threadIndex: Number.isFinite(threadId) ? threadId : 0,
                 isUpdate: Boolean(regenState),
                 messageId: regenState?.messageId ?? null
             }, {signal: controller.signal})) {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
                 if (packet.type === 'error') throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
-                if (packet.type === 'status') {
+                if (packet.type === 'reasoning_start' || packet.type === 'reasoning_delta'
+                    || packet.type === 'reasoning_end' || packet.type === 'provider_tool_event') {
+                    thinking = applyThinkingEvent(thinking, packet);
+                    // The stream carries no separate status for thinking; derive it from the events.
+                    const status = packet.type === 'reasoning_end' ? 'running' : 'reasoning';
+                    this.store.patchMessage(conversationSlug, temporaryId, {reasoning: thinking.parts, status});
+                } else if (packet.type === 'status') {
                     const status = typeof packet.status === 'string' ? packet.status : packet.status?.key;
                     this.store.patchMessage(conversationSlug, temporaryId, {status: status ?? 'running'});
                 } else if (packet.type === 'message') {
-                    text += aiPacketText(packet.content);
-                    this.store.patchMessage(conversationSlug, temporaryId, {content: {...temporary.content, text}});
+                    const delta = aiPacketText(packet.content);
+                    if (delta) firstTokenAt ??= performance.now();
+                    text += delta;
+                    this.store.patchMessage(conversationSlug, temporaryId, {
+                        content: {...temporary.content, text},
+                        stats: buildStats(),
+                        ...(delta ? {status: 'generating'} : {})
+                    });
                 } else if (packet.type === 'citation' && packet.content) {
                     citations = [...citations, packet.content as UrlCitation];
                     this.store.patchMessage(conversationSlug, temporaryId, {citations});
                 } else if (packet.type === 'completion') {
                     completion = Boolean(packet.isDone);
+                    usage = {
+                        promptTokens: typeof packet.usage?.prompt_tokens === 'number' ? packet.usage.prompt_tokens : null,
+                        completionTokens: typeof packet.usage?.completion_tokens === 'number' ? packet.usage.completion_tokens : null
+                    };
                 }
             }
+            const stats = buildStats();
 
             const finalText = text.trim() ? text : this.app.translator.__('chat.page.noResponse');
-            const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations}));
+            const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations, ...(thinking.parts.length ? {reasoning: thinking.parts} : {}), stats}));
             const saved = await this.store.persistMessage(conversationSlug, {
                 isAi: true,
                 ...(regenState ? {message_id: regenState.messageId} : {threadId: Number.isFinite(threadId) ? threadId : 0}),
                 content: {text: encrypted},
                 metadata: {
                     tools: context.tools.active.map(tool => tool.toTransferString()),
-                    params: context.modelParameters.list
+                    params: context.modelParameters.requestParameters
                 },
                 model: context.model.current.model_id,
                 completion,
                 __plainText: finalText,
-                __citations: citations
+                __citations: citations,
+                __reasoning: thinking.parts.length ? thinking.parts : undefined,
+                __stats: stats
             }, Boolean(regenState));
-            this.store.replaceMessage(conversationSlug, temporaryId, saved);
+            // Keep the render key of the streamed message so the keyed list
+            // does not remount it when the persisted id replaces the temporary one.
+            this.store.replaceMessage(conversationSlug, temporaryId, {...saved, clientKey: temporaryId});
             responseWriter.triggerReceived();
         } catch (error) {
             if (controller.signal.aborted) {

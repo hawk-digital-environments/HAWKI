@@ -4,10 +4,11 @@ import type {
     AiStreamRequest,
     AiStreamResult
 } from '$lib/kernel/ai/types.js';
+import {aiStreamPacketTypes} from '$lib/kernel/ai/types.js';
 import {ApiTransportError} from '$lib/kernel/api/errors.js';
 import type {ApiTransport} from '$lib/kernel/api/transport.js';
 
-const packetTypes = new Set(['header', 'message', 'citation', 'status', 'completion', 'error']);
+const packetTypes = new Set<string>(aiStreamPacketTypes);
 
 export interface AiApiOptions {
     endpoint?: string;

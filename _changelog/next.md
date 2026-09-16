@@ -4,6 +4,7 @@
 
 [//]: # (- The main new features and changes in this version.)
 - Updated list from [available GWDG models](https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html) now includes DeepSeek V4 Flash 0731
+- The new Svelte chat shows a **reasoning timeline** while an assistant answers: the model's thinking text streams in as it is produced, and native web searches appear as steps with the query and the sources that were consulted. OpenAI reasoning models (`reasoning.summary`), Anthropic Claude models with extended thinking (directly and via AWS Bedrock) and OpenAI/Anthropic native web search are covered; other providers keep the plain "thinking…" indicator.
 
 ### Quality of Life
 
@@ -14,6 +15,7 @@
 - Fixed attachments never reaching the AI conversation when `STORAGE_DISK` uses an s3-compatible server (e.g. garage, MinIO): uploaded files were never persisted from the temp area because whole "directory" moves are silently ignored by s3 drivers, so the attachment was never linked to the message. Each file is now copied individually instead.
 - The `s3` disk in `config/filesystems.php` now fails loudly on storage errors and works on s3 servers without ACL support (see Internals section for details).
 - The `check:storage` artisan command now respects the configured `S3_ENDPOINT` and path-style addressing instead of always probing `amazonaws.com`.
+- Tool-call progress never reached the UI during streaming because the stream handler matched the tool-call *data* class instead of the stream *event*. Tool calls are now reported for every provider as `tool_call`/`tool_result` packets.
 
 ### Internals
 
@@ -35,6 +37,10 @@
 - **Storage: driver-agnostic file persistence** (`app/Services/Storage/AbstractFileStorage.php`): `persistTemporaryFile` previously moved the whole temp *directory*, which only works on local disks (via `rename()`); s3-style drivers treat directories as key prefixes and silently ignore such moves. It now copies each file individually (`allFiles()` + `copy()` + one `deleteDirectory()`), which Laravel's contract guarantees for every driver — a server-side `CopyObject` on s3, a native copy on local disks.
 - **Storage: hardened s3 disk config** (`config/filesystems.php`): `throw => true` turns failed Flysystem operations into logged exceptions instead of unchecked `false` returns (the reason the original bug stayed invisible); `retain_visibility => false` skips the `GetObjectAcl` pre-check before each `copy()`, which ACL-less s3 servers (garage, Cloudflare R2) reject.
 - **Storage: `check:storage` now honors custom s3 endpoints** (`app/Console/Commands/CheckStorageConnection.php`) by forwarding the disk's `endpoint`/`use_path_style_endpoint` to its `S3Client` instead of always probing `amazonaws.com`.
+- **Thinking events now flow through the stream as forwarded Laravel AI events instead of a HAWKI-specific status side channel.** `StreamController` emits the package's `ReasoningStart`/`ReasoningDelta`/`ReasoningEnd`, `ProviderToolEvent`, `ToolCall` and `ToolResult` events as typed data packets (`reasoning_start`, `reasoning_delta`, `reasoning_end`, `provider_tool_event`, `tool_call`, `tool_result`) using each event's `toArray()` shape. The former `reasoning`, `reasoning_delta`, `reasoning_end`, `provider_tool_call` and `tool_call` *status* packets are no longer sent, so each thinking event travels once. **The legacy UI (`public/js/message_functions.js`) consumed those statuses for its live thinking block and tool-call indicator; both stop updating.** This is accepted: the legacy UI is being replaced by the Svelte frontend, which derives its "thinking"/"generating" state from the new packets in `ChatTransport`.
+- Provider dialects are resolved on the client in one place: `resources/js/plugins/core/modules/chat/utils/thinkingEvents.ts` is a pure reducer that folds the forwarded packets into a `ReasoningPart[]` timeline. It maps OpenAI's completed `web_search_call` action and Anthropic's `server_tool_use` (completed) + `web_search_tool_result` pair to `web_search` parts. Adding a provider means extending this reducer, not the controller.
+- `ExtendedOpenAiGateway` no longer fabricates extra `ReasoningEnd`/`ReasoningStart` pairs to mark OpenAI reasoning summary parts. It keeps one lifecycle per reasoning item and only prefixes the first delta of each subsequent part with a blank line, so the concatenated summary keeps its markdown sections. Covered by `ExtendedOpenAiGatewayTest` using a raw SSE fixture stream.
+- Added `App\Services\Ai\Providers\Adapters\Values\AnthropicThinkingConfig`, a value object shared by the Anthropic and AWS Bedrock adapters that decides the extended-thinking budget (capped at half of max tokens, minimum 1,024) and the sampling overrides Anthropic requires. Every deviation from the user's configured parameters (thinking disabled, temperature/top-p neutralised) is returned as a warning and logged by the adapters. Behaviour change: a requested thinking budget below 1,024 tokens now disables thinking with a warning instead of being silently raised to the minimum.
 
 ### Deprecation
 

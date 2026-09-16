@@ -29,7 +29,7 @@
  * we render disconnected "snippets" rather than one single-page app tree
  * — see {@link LegacySharedContent.svelte}.
  */
-import {createContext} from 'svelte';
+import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
 import {useApp} from '$lib/app/hooks/useApp.svelte.js';
 
 export type ToastVariant = 'error' | 'success' | 'info';
@@ -126,7 +126,7 @@ export class ToastContext {
     }
 }
 
-const [get, set] = createContext<ToastContext>();
+const [get, set] = createHmrSafeContext<ToastContext>('hawki.toast');
 
 /**
  * Returns the shared {@link ToastContext} — the one function callers should
