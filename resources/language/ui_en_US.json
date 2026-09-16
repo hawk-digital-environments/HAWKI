@@ -572,6 +572,10 @@
         "models_added": "Models added. Open Models to configure and enable them.",
         "add_models": "Add selected models",
         "view_models": "View models",
+        "view_tools": "View tools",
+        "tools": "Tools",
+        "tools_of": "Tools of :server",
+        "show_all_tools": "Show all tools",
         "discovery_search": "Search models",
         "discovery_count": ":shown of :total models",
         "discovery_no_matches": "No models match your search.",
@@ -601,8 +605,7 @@
             "providers": "Providers",
             "models": "Models",
             "system-models": "System models",
-            "mcp": "MCP servers",
-            "tools": "Tools",
+            "mcp": "MCP servers and tools",
             "users": "Users",
             "roles": "Roles and permissions",
             "mappings": "Employee-type assignments",
@@ -616,8 +619,7 @@
             "providers": "Configure AI providers and their credentials.",
             "models": "Enable models and edit descriptions, capabilities, parameters, limits and tool assignments.",
             "system-models": "Choose the models used for default chats, titles, summaries and prompt improvements, and edit their system prompts.",
-            "mcp": "Configure server connections, test availability and discover tools.",
-            "tools": "Manage tool activation, capability mapping and model assignments.",
+            "mcp": "Configure server connections, test availability and discover tools. Select a server to see its tools; built-in HAWKI tools are listed too. Manage activation, capability mapping and model assignments per tool.",
             "users": "Create local accounts, find users, manage access and assign manual roles.",
             "roles": "Define what each role can view and manage.",
             "mappings": "Map each exact employee-type value to a role. Changes also update existing accounts.",
@@ -657,6 +659,8 @@
             "tools": "Tools",
             "usage_rules": "Usage contexts",
             "server_label": "Server name",
+            "mcp_server_id": "MCP server",
+            "tools_count": "Tools",
             "type": "Type",
             "kind": "Type",
             "url": "URL or command path",
@@ -711,6 +715,9 @@
             "icon": "Provider icon",
             "access_rule": "User access",
             "mapped_roles": "Derived roles"
+        },
+        "tool_sources": {
+            "builtin": "Built-in (HAWKI)"
         },
         "errors": {
             "translate_model": "No AI model is available for translation. Assign a system model of type \"translation\".",
@@ -911,6 +918,8 @@
             "user": "User"
         },
         "values": {
+            "function": "Built-in",
+            "mcp": "MCP",
             "online": "Online",
             "offline": "Offline",
             "unknown": "Unknown",

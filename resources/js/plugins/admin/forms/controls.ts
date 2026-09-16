@@ -1,5 +1,5 @@
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
-import type { SectionId } from '../sections.js';
+import type { EditorSection } from './schemas.js';
 
 export interface Control {
     type:
@@ -114,7 +114,7 @@ const mimeTypes = [
     'video/mp4'
 ];
 
-export function isFieldVisible(section: SectionId, field: AdminField, values: Record<string, unknown>): boolean {
+export function isFieldVisible(section: EditorSection, field: AdminField, values: Record<string, unknown>): boolean {
     if (section !== 'providers') return true;
     // No built-in adapter reads model_status_url; status checks use model discovery.
     if (field.key === 'model_status_url') return false;
@@ -124,7 +124,7 @@ export function isFieldVisible(section: SectionId, field: AdminField, values: Re
 }
 
 export function controlFor(
-    section: SectionId,
+    section: EditorSection,
     field: AdminField,
     values: Record<string, unknown>,
     row: AdminRow | null

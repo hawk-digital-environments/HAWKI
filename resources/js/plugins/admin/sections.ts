@@ -3,7 +3,6 @@ export const sections = [
     { id: 'models', permission: 'models.manage', group: 'ai' },
     { id: 'system-models', permission: 'models.manage', group: 'ai' },
     { id: 'mcp', permission: 'mcp.manage', group: 'ai' },
-    { id: 'tools', permission: 'mcp.manage', group: 'ai' },
     { id: 'users', permission: 'users.view', group: 'people' },
     { id: 'roles', permission: 'roles.manage', group: 'people' },
     { id: 'mappings', permission: 'roles.manage', group: 'people' },

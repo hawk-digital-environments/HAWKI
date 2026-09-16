@@ -208,7 +208,7 @@ abstract class ResourceRepository
     {
         [$table, $value, $label] = match ($key) {
             'roles' => ['roles', 'id', 'display_name'], 'providers' => ['ai_providers', 'id', 'name'],
-            'tools' => ['ai_tools', 'id', 'name'], 'model_keys' => ['ai_models', 'model_id', 'label'],
+            'tools' => ['ai_tools', 'id', 'name'], 'mcp_servers' => ['mcp_servers', 'id', 'server_label'], 'model_keys' => ['ai_models', 'model_id', 'label'],
             default => ['ai_models', 'id', 'label'],
         };
 

@@ -8,7 +8,6 @@ const pages = {
     'models': () => import('./pages/AdminModels.svelte'),
     'system-models': () => import('./pages/AdminSystemModels.svelte'),
     'mcp': () => import('./pages/AdminMcp.svelte'),
-    'tools': () => import('./pages/AdminTools.svelte'),
     'users': () => import('./pages/AdminUsers.svelte'),
     'roles': () => import('./pages/AdminRoles.svelte'),
     'mappings': () => import('./pages/AdminMappings.svelte'),

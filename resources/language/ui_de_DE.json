@@ -572,6 +572,10 @@
         "models_added": "Modelle hinzugefügt. Öffnen Sie Modelle, um sie zu konfigurieren und zu aktivieren.",
         "add_models": "Ausgewählte Modelle hinzufügen",
         "view_models": "Modelle anzeigen",
+        "view_tools": "Werkzeuge anzeigen",
+        "tools": "Werkzeuge",
+        "tools_of": "Werkzeuge von :server",
+        "show_all_tools": "Alle Werkzeuge anzeigen",
         "discovery_search": "Modelle durchsuchen",
         "discovery_count": ":shown von :total Modellen",
         "discovery_no_matches": "Keine Modelle passen zur Suche.",
@@ -601,8 +605,7 @@
             "providers": "Anbieter",
             "models": "Modelle",
             "system-models": "Systemmodelle",
-            "mcp": "MCP-Server",
-            "tools": "Werkzeuge",
+            "mcp": "MCP-Server und Werkzeuge",
             "users": "Benutzer",
             "roles": "Rollen und Berechtigungen",
             "mappings": "Zuordnung nach Beschäftigungstyp",
@@ -616,8 +619,7 @@
             "providers": "Konfigurieren Sie KI-Anbieter und ihre Zugangsdaten.",
             "models": "Aktivieren Sie Modelle und bearbeiten Sie Beschreibungen, Fähigkeiten, Parameter, Limits und Werkzeugzuordnungen.",
             "system-models": "Wählen Sie Modelle für neue Chats, Titel, Zusammenfassungen und Promptverbesserungen und bearbeiten Sie die zugehörigen Systemprompts.",
-            "mcp": "Konfigurieren Sie Serververbindungen, prüfen Sie die Verfügbarkeit und laden Sie Werkzeuge.",
-            "tools": "Verwalten Sie Werkzeugaktivierung, Fähigkeiten und Modellzuordnungen.",
+            "mcp": "Konfigurieren Sie Serververbindungen, prüfen Sie die Verfügbarkeit und ermitteln Sie Werkzeuge. Wählen Sie einen Server, um seine Werkzeuge zu sehen; in HAWKI integrierte Werkzeuge werden ebenfalls aufgeführt. Verwalten Sie Aktivierung, Fähigkeiten und Modellzuordnungen je Werkzeug.",
             "users": "Legen Sie lokale Konten an, suchen Sie Benutzer, verwalten Sie den Zugriff und weisen Sie Rollen manuell zu.",
             "roles": "Legen Sie fest, welche Bereiche jede Rolle ansehen und verwalten darf.",
             "mappings": "Ordnen Sie jedem exakten Beschäftigungstyp eine Rolle zu. Änderungen gelten auch für bestehende Konten.",
@@ -657,6 +659,8 @@
             "tools": "Werkzeuge",
             "usage_rules": "Nutzungskontexte",
             "server_label": "Servername",
+            "mcp_server_id": "MCP-Server",
+            "tools_count": "Werkzeuge",
             "type": "Typ",
             "kind": "Typ",
             "url": "URL oder Befehlspfad",
@@ -711,6 +715,9 @@
             "icon": "Provider-Icon",
             "access_rule": "Benutzerzugriff",
             "mapped_roles": "Abgeleitete Rollen"
+        },
+        "tool_sources": {
+            "builtin": "Integriert (HAWKI)"
         },
         "errors": {
             "translate_model": "Für Übersetzungen ist kein KI-Modell verfügbar. Weise ein Systemmodell vom Typ „translation“ zu.",
@@ -911,6 +918,8 @@
             "user": "Benutzer"
         },
         "values": {
+            "function": "Integriert",
+            "mcp": "MCP",
             "online": "Online",
             "offline": "Offline",
             "unknown": "Unbekannt",
