@@ -458,12 +458,16 @@
 
     /* ── Steps ────────────────────────────────────────────────────────── */
 
-    .panel { padding-block: var(--space-1) var(--space-3); }
-
+    /* The panels animate their height from `scrollHeight` (see `collapse`),
+       which includes padding, while the CSS `height` they end up with does
+       not. Padding on the animated element itself would make the panel
+       overshoot by that much while opening and snap back at the end, moving
+       the message below it. So the panels stay bare and the lists inside
+       carry the spacing. */
     .steps {
         list-style: none;
         margin: 0;
-        padding: 0;
+        padding: var(--space-1) 0 var(--space-3);
     }
 
     .step {
@@ -577,7 +581,7 @@
         white-space: nowrap;
     }
 
-    .details-panel { padding-top: var(--space-1); }
+    .details-panel > .sources { padding-top: var(--space-1); }
 
     /* ── Thinking text ────────────────────────────────────────────────── */
 
