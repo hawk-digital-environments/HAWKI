@@ -7,11 +7,11 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import type { AdminSystemModelResource } from '../schemas/resources/admin-system-models.schema.js';
-    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
     const columns: AdminColumn<AdminSystemModelResource>[] = [{ id: 'model_type' }, { id: 'usage_type' }, { id: 'model_id' }];
-    const workspace = useAdminWorkspace(
+    const records = useAdminRecordSet(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-system-models', { query, signal }),
         {
@@ -36,12 +36,12 @@
 </script>
 
 <AdminPage
-    section="system-models"
-    {workspace}
+    workspace="system-models"
+    recordSet={records}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.system-models')}
-        {workspace}
+        recordSet={records}
     />
 </AdminPage>

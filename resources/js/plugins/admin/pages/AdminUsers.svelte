@@ -10,7 +10,7 @@
     import { roleLabel } from '../forms/authorization.js';
     import type { AdminField } from '../schemas/admin-content.js';
     import { type AdminUserResource, directoryManagedFields } from '../schemas/resources/admin-users.schema.js';
-    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
     import { UserTokensSchema, RevokeTokensSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
@@ -36,7 +36,7 @@
         row && !row.local_account ?
             Object.fromEntries(Object.entries(values).filter(([key]) => !directoryManagedFields.includes(key)))
         :   values;
-    const workspace = useAdminWorkspace(
+    const records = useAdminRecordSet(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-users', { query, signal }),
         {
@@ -85,7 +85,7 @@
     {#if ids.length}
         <ul class="assignments">
             {#each ids as id (id)}
-                <li>{roleLabel(id, workspace.content?.role_catalog ?? [], workspace.fields, __)}
+                <li>{roleLabel(id, records.content?.role_catalog ?? [], records.fields, __)}
                     <span class="source">{__(mapped ? 'admin.role_source_mapped' : 'admin.role_source_manual')}</span>
                 </li>
             {/each}
@@ -96,17 +96,17 @@
 {#snippet mappedRoles(row: AdminUserResource)}{@render assignments(row.mapped_roles, true)}{/snippet}
 
 <AdminPage
-    section="users"
-    {workspace}
+    workspace="users"
+    recordSet={records}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.users')}
         cells={{ roles: manualRoles, mapped_roles: mappedRoles }}
-        {workspace}
+        recordSet={records}
     />
     <AdminResultDialog
-        {workspace}
+        recordSet={records}
         action="tokens"
     >
         {#snippet children(response)}

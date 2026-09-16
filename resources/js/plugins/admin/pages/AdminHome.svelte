@@ -5,7 +5,6 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import Link from '$lib/components/util/link/Link.svelte';
-    import { sections } from '../sections.js';
     const app = useApp();
     const { __ } = useTranslator();
 </script>
@@ -16,18 +15,18 @@
 >
     <div class="overview">
         <p class="intro">{__('admin.intro')}</p>
-        {#each ['ai', 'people', 'system'] as group}
-            {@const visible = sections.filter((section) => section.group === group && app.can(section.permission))}
+        {#each app.admin.sections as section (section.name)}
+            {@const visible = section.workspaces.filter((workspace) => app.can(workspace.permission))}
             {#if visible.length}
                 <section>
-                    <h2>{__('admin.groups.' + group)}</h2>
+                    <h2>{__(section.title)}</h2>
                     <ul>
-                        {#each visible as section}<li>
+                        {#each visible as workspace (workspace.name)}<li>
                                 <Link
                                     class="section-link"
-                                    href={{ name: `admin.${section.id}` }}
-                                    ><span>{__('admin.sections.' + section.id)}</span><small
-                                        >{__('admin.descriptions.' + section.id)}</small
+                                    href={{ name: workspace.routeName }}
+                                    ><span>{__(workspace.title)}</span><small
+                                        >{__(workspace.description)}</small
                                     ></Link
                                 >
                             </li>{/each}
@@ -35,7 +34,7 @@
                 </section>
             {/if}
         {/each}
-        {#if !sections.some((section) => app.can(section.permission))}<p role="status">
+        {#if !app.admin.sections.some((section) => section.workspaces.some((workspace) => app.can(workspace.permission)))}<p role="status">
                 {__('admin.no_sections')}
             </p>{/if}
     </div>

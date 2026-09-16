@@ -49,8 +49,8 @@ export type AdminColumn<Row extends AdminRow = AdminRow, Display extends string 
     AdminDataColumn<Row> | AdminDisplayColumn<Display>;
 
 /**
- * Reads the section content for the current table state. The page supplies
- * it, since every section has its own endpoint, and may
+ * Reads the Workspace page content for the current table state. The page supplies
+ * it, since every Workspace page has its own endpoint, and may
  * ignore `query` when the page filters through its own form instead.
  */
 export type AdminReader<Row extends AdminRow> = (
@@ -77,8 +77,8 @@ export type AdminRowActions<Results> = {
     };
 };
 
-export interface AdminWorkspaceOptions<Row extends AdminRow = AdminRow, Results extends Record<string, unknown> = {}> {
-    /** Actions for the current row; dialog responses infer the workspace result type. */
+export interface AdminRecordSetOptions<Row extends AdminRow = AdminRow, Results extends Record<string, unknown> = {}> {
+    /** Actions for the current row; dialog responses infer the record set result type. */
     rowActions?: (row: Row) => AdminRowActions<Results>;
     /** Persist an editor submission; a null row creates a record. */
     save?: (values: Record<string, unknown>, row: Row | null) => Promise<unknown>;
@@ -116,16 +116,16 @@ export interface AdminActionResult<Result> {
 type Translate = (label: string, replacements?: Record<string, string>) => string;
 
 /**
- * Everything one admin section page works with: the columns the page
+ * Everything one admin Workspace page works with: the columns the page
  * declared, the content of the last read, the table state that shapes each
  * read (search, pagination, sorting, value filters), the writes and actions of
- * the section and the dialogs they open (editor, confirmation, action result).
+ * the Workspace page and the dialogs they open (editor, confirmation, action result).
  *
- * A page creates it with {@link useAdminWorkspace} and passes it to
+ * A page creates it with {@link useAdminRecordSet} and passes it to
  * `AdminPage`, `AdminSearch`, `AdminTable` and `AdminResultDialog`; cells call
  * {@link update} directly.
  */
-export class AdminWorkspace<
+export class AdminRecordSet<
     Row extends AdminRow = AdminRow,
     ColumnId extends string = string,
     Results extends Record<string, unknown> = {}
@@ -172,7 +172,7 @@ export class AdminWorkspace<
     private readonly __: Translate;
     private readonly read: AdminReader<AdminRow>;
     private readonly editFields?: (row: Row, fields: AdminField[]) => AdminField[];
-    private readonly operations: AdminWorkspaceOptions<Row, Results>;
+    private readonly operations: AdminRecordSetOptions<Row, Results>;
     private request?: AbortController;
     private suspended = $state(false);
     private generation = 0;
@@ -234,7 +234,7 @@ export class AdminWorkspace<
         __: Translate,
         columns: ReadonlyArray<AdminColumn<Row, string> & { id: ColumnId }>,
         read: AdminReader<AdminRow>,
-        options: AdminWorkspaceOptions<Row, Results> = {}
+        options: AdminRecordSetOptions<Row, Results> = {}
     ) {
         this.__ = __;
         this.operations = options;
@@ -524,34 +524,34 @@ export class AdminWorkspace<
 }
 
 /**
- * Creates the {@link AdminWorkspace} of a section page, reads once on mount
+ * Creates the {@link AdminRecordSet} of a Workspace page, reads once on mount
  * and aborts on unmount. The row type is the resource type the reader
  * returns, so registering the section's resource schema types the whole page.
  * Call it once in the page's script:
  *
  *     const columns: AdminColumn<AdminProviderResource>[] = [{ id: 'name' }, { id: 'active', format: 'boolean' }];
- *     const workspace = useAdminWorkspace(columns, (signal, query) =>
+ *     const records = useAdminRecordSet(columns, (signal, query) =>
  *         app.restApi.getResourceCollection('admin-providers', { query, signal })
  *     );
  */
-export function useAdminWorkspace<
+export function useAdminRecordSet<
     Row extends AdminRow,
     const Columns extends readonly AdminColumn<NoInfer<Row>, string>[],
     Results extends Record<string, unknown> = {}
 >(
     columns: Columns,
     read: AdminReader<Row>,
-    options: AdminWorkspaceOptions<Row, Results> = {}
-): AdminWorkspace<Row, Columns[number]['id'], Results> {
-    const workspace = new AdminWorkspace<Row, Columns[number]['id'], Results>(
+    options: AdminRecordSetOptions<Row, Results> = {}
+): AdminRecordSet<Row, Columns[number]['id'], Results> {
+    const records = new AdminRecordSet<Row, Columns[number]['id'], Results>(
         useTranslator().__,
         columns as ReadonlyArray<AdminColumn<Row, string> & { id: Columns[number]['id'] }>,
         read,
         options
     );
     onMount(() => {
-        void workspace.load();
-        return () => workspace.dispose();
+        void records.load();
+        return () => records.dispose();
     });
-    return workspace;
+    return records;
 }
