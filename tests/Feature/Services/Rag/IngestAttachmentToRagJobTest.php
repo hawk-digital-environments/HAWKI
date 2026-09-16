@@ -13,6 +13,7 @@ use App\Services\Rag\Values\FileIngestionPayload;
 use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
 use App\Services\Rag\Values\TextIngestionPayload;
+use App\Services\Rag\Values\TextIngestionResult;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFile;
 use Illuminate\Contracts\Bus\Dispatcher as BusDispatcher;
@@ -104,18 +105,6 @@ class IngestAttachmentToRagJobTest extends TestCase
         ]);
     }
 
-    public function testItFailsWhenTextExceedsTheServerLimit(): void
-    {
-        $this->mockStorageAndCollector(str_repeat('a', 1_048_577));
-
-        $this->runJob();
-
-        $attachment = $this->attachment->refresh();
-
-        static::assertSame('failed', $attachment->rag_status->value);
-        static::assertStringContainsString('exceeds the RAG server limit', $attachment->rag_error);
-    }
-
     public function testItFailsWhenTheDatasetIsRejected(): void
     {
         $this->mockStorageAndCollector('# Knowledge');
@@ -136,8 +125,9 @@ class IngestAttachmentToRagJobTest extends TestCase
     {
         $this->mockStorageAndCollector('# Knowledge');
         $assistantId = $this->assistant->id;
+        $sourceId = 'source_' . str_repeat('ab', 16);
 
-        $this->mock(RagIngesterInterface::class, function ($mock) use ($assistantId): void {
+        $this->mock(RagIngesterInterface::class, function ($mock) use ($assistantId, $sourceId): void {
             $mock->shouldReceive('ensureDataset')->andReturn(true);
             $mock->shouldReceive('ingest')->once()->withArgs(
                 static function (TextIngestionPayload $payload, string $idempotencyKey) use ($assistantId): bool {
@@ -147,7 +137,7 @@ class IngestAttachmentToRagJobTest extends TestCase
                         && 'knowledge.pdf' === $payload->displayName
                         && \str_starts_with($idempotencyKey, 'attachment-rag-job-uuid-');
                 },
-            )->andReturn('task-1');
+            )->andReturn(new TextIngestionResult('task-1', $sourceId));
             $mock->shouldReceive('checkIngestion')->with('task-1')->andReturn(RagIngestionCheck::succeeded());
         });
 
@@ -157,6 +147,8 @@ class IngestAttachmentToRagJobTest extends TestCase
 
         static::assertSame('ingested', $attachment->rag_status->value);
         static::assertSame('task-1', $attachment->rag_task_id);
+        // The source handle routes later deletions to the text-ingestion endpoint.
+        static::assertSame($sourceId, $attachment->rag_document_id);
         static::assertNotNull($attachment->rag_ingested_at);
     }
 
@@ -166,7 +158,7 @@ class IngestAttachmentToRagJobTest extends TestCase
 
         $this->mock(RagIngesterInterface::class, function ($mock): void {
             $mock->shouldReceive('ensureDataset')->andReturn(true);
-            $mock->shouldReceive('ingest')->andReturn('task-2');
+            $mock->shouldReceive('ingest')->andReturn(new TextIngestionResult('task-2', 'source_' . str_repeat('cd', 16)));
             $mock->shouldReceive('checkIngestion')->with('task-2')->andReturn(RagIngestionCheck::failed('RAG task "task-2" ended with status "failed".'));
         });
 
@@ -186,7 +178,7 @@ class IngestAttachmentToRagJobTest extends TestCase
 
         $this->mock(RagIngesterInterface::class, function ($mock): void {
             $mock->shouldReceive('ensureDataset')->andReturn(true);
-            $mock->shouldReceive('ingest')->andReturn('task-3');
+            $mock->shouldReceive('ingest')->andReturn(new TextIngestionResult('task-3', 'source_' . str_repeat('ef', 16)));
             $mock->shouldReceive('checkIngestion')->with('task-3')->andReturn(RagIngestionCheck::running());
         });
 

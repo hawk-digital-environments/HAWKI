@@ -42,30 +42,73 @@ class HawkiRagIngesterTest extends TestCase
     {
         Http::fake([
             self::API_URL . '/datasets/assistant_1' => Http::response(['success' => true], 200),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(['success' => true], 200),
         ]);
 
         static::assertTrue($this->sut->ensureDataset('assistant_1'));
 
         Http::assertSent(static fn ($request): bool => 'GET' === $request->method());
-        Http::assertNotSent(static fn ($request): bool => 'POST' === $request->method());
+        // The dataset is never (re-)created; the only POST is the self-grant.
+        Http::assertNotSent(static fn ($request): bool => 'POST' === $request->method()
+            && $request->url() === self::API_URL . '/datasets');
     }
 
-    public function testItCreatesAMissingDataset(): void
+    public function testItCreatesAMissingDatasetAndRedeemsTheGrantToken(): void
     {
+        $grantToken = 'dgt_' . str_repeat('ab', 32);
+
         Http::fake([
             self::API_URL . '/datasets/assistant_1' => Http::response(['success' => false], 404),
-            self::API_URL . '/datasets' => Http::response(['dataset_id' => 'assistant_1'], 201),
+            self::API_URL . '/datasets' => Http::response(['dataset_id' => 'assistant_1', 'grant_token' => $grantToken], 201),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(['success' => true, 'replayed' => false], 200),
         ]);
 
         static::assertTrue($this->sut->ensureDataset('assistant_1'));
 
-        Http::assertSent(static function ($request): bool {
+        Http::assertSent(static function ($request) use ($grantToken): bool {
             $body = json_decode((string)$request->body(), true);
 
             return 'POST' === $request->method()
                 && ['Bearer test-key'] === $request->header('Authorization')
                 && 'assistant_1' === ($body['dataset_id'] ?? null);
         });
+
+        // The one-time creation token is redeemed with the self-grant call.
+        Http::assertSent(static function ($request) use ($grantToken): bool {
+            $body = json_decode((string)$request->body(), true);
+
+            return 'POST' === $request->method()
+                && $request->url() === self::API_URL . '/datasets/assistant_1/ingest-grants/self'
+                && ['Bearer test-key'] === $request->header('Authorization')
+                && ['grant_token' => $grantToken] === $body;
+        });
+    }
+
+    public function testItReplaysSelfGrantsWithoutATokenOnExistingDatasets(): void
+    {
+        Http::fake([
+            self::API_URL . '/datasets/assistant_1' => Http::response(['success' => true], 200),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(['success' => true, 'replayed' => true], 200),
+        ]);
+
+        static::assertTrue($this->sut->ensureDataset('assistant_1'));
+
+        Http::assertSent(static fn ($request): bool => 'POST' === $request->method()
+            && $request->url() === self::API_URL . '/datasets/assistant_1/ingest-grants/self'
+            && !\str_contains((string)$request->body(), 'grant_token'));
+    }
+
+    public function testItReturnsFalseWhenACompatibleReplayCannotSelfGrant(): void
+    {
+        // Dataset pre-created by someone else: compatible replay returns the
+        // dataset but never re-issues the creator's one-time token.
+        Http::fake([
+            self::API_URL . '/datasets/assistant_1' => Http::response(['success' => false], 404),
+            self::API_URL . '/datasets' => Http::response(['dataset_id' => 'assistant_1'], 200),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(json_encode(['error' => 'grant_token_required']), 403),
+        ]);
+
+        static::assertFalse($this->sut->ensureDataset('assistant_1'));
     }
 
     public function testItAcceptsACompatibleDuplicateDatasetOnCreation(): void
@@ -73,6 +116,7 @@ class HawkiRagIngesterTest extends TestCase
         Http::fake([
             self::API_URL . '/datasets/assistant_1' => Http::response(['success' => false], 404),
             self::API_URL . '/datasets' => Http::response(['dataset_id' => 'assistant_1'], 200),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(['success' => true], 200),
         ]);
 
         static::assertTrue($this->sut->ensureDataset('assistant_1'));
@@ -80,12 +124,13 @@ class HawkiRagIngesterTest extends TestCase
 
     public function testItResolvesACreateRaceByReCheckingExistence(): void
     {
-        // GET 404, POST 409 (created meanwhile), re-GET 200 -> ready.
+        // GET 404, POST 409 (created meanwhile), re-GET 200, self-grant 200.
         Http::fake([
             self::API_URL . '/datasets/assistant_1' => Http::sequence()
                 ->push(['success' => false], 404)
                 ->push(['success' => true], 200),
             self::API_URL . '/datasets' => Http::response(['message' => 'conflict'], 409),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(['success' => true], 200),
         ]);
 
         static::assertTrue($this->sut->ensureDataset('assistant_1'));
@@ -114,6 +159,47 @@ class HawkiRagIngesterTest extends TestCase
         static::assertFalse($this->sut->ensureDataset('assistant_1'));
     }
 
+    public function testItReturnsFalseWhenTheIngestSelfGrantIsRejected(): void
+    {
+        Http::fake([
+            self::API_URL . '/datasets/assistant_1' => Http::response(['success' => true], 200),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(json_encode(['message' => 'dataset_not_found']), 404),
+        ]);
+
+        static::assertFalse($this->sut->ensureDataset('assistant_1'));
+    }
+
+    public function testItTreatsAThrottledIngestSelfGrantAsTransient(): void
+    {
+        Http::fake([
+            self::API_URL . '/datasets/assistant_1' => Http::response(['success' => true], 200),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(['message' => 'Too Many Attempts.'], 429),
+        ]);
+
+        try {
+            $this->sut->ensureDataset('assistant_1');
+            static::fail('Expected RagIngestionRequestException was not thrown.');
+        } catch (RagIngestionRequestException $e) {
+            static::assertTrue($e->isTransient());
+            static::assertStringContainsString('429', $e->getMessage());
+        }
+    }
+
+    public function testItTreatsAServerErrorOnTheIngestSelfGrantAsTransient(): void
+    {
+        Http::fake([
+            self::API_URL . '/datasets/assistant_1' => Http::response(['success' => true], 200),
+            self::API_URL . '/datasets/assistant_1/ingest-grants/self' => Http::response(['message' => 'boom'], 502),
+        ]);
+
+        try {
+            $this->sut->ensureDataset('assistant_1');
+            static::fail('Expected RagIngestionRequestException was not thrown.');
+        } catch (RagIngestionRequestException $e) {
+            static::assertTrue($e->isTransient());
+        }
+    }
+
     public function testItThrowsTransientExceptionOnServerErrorsForDataset(): void
     {
         Http::fake([
@@ -129,11 +215,12 @@ class HawkiRagIngesterTest extends TestCase
         }
     }
 
-    public function testItIngestsTextAndReturnsTheTaskHandle(): void
+    public function testItIngestsTextAndReturnsTaskAndSourceHandle(): void
     {
         Http::fake([
             self::API_URL . '/integrations/text-ingestions' => Http::response([
                 'task_id' => 'task-1',
+                'source_id' => 'source_' . str_repeat('a', 32),
                 'status' => 'running',
                 'replayed' => false,
             ], 202),
@@ -147,9 +234,10 @@ class HawkiRagIngesterTest extends TestCase
             metadata: ['assistant_id' => 1],
         );
 
-        $handle = $this->sut->ingest($payload, 'attachment-file-uuid-etag');
+        $result = $this->sut->ingest($payload, 'attachment-file-uuid-etag');
 
-        static::assertSame('task-1', $handle);
+        static::assertSame('task-1', $result->taskId);
+        static::assertSame('source_' . str_repeat('a', 32), $result->sourceId);
 
         Http::assertSent(static function ($request): bool {
             return 'POST' === $request->method()
@@ -190,6 +278,22 @@ class HawkiRagIngesterTest extends TestCase
             static::fail('Expected RagIngestionRequestException was not thrown.');
         } catch (RagIngestionRequestException $e) {
             static::assertStringContainsString('task_id', $e->getMessage());
+        }
+    }
+
+    public function testItThrowsWhenTheSourceHandleIsMissing(): void
+    {
+        Http::fake([
+            self::API_URL . '/integrations/text-ingestions' => Http::response(['task_id' => 'task-1'], 202),
+        ]);
+
+        $payload = new TextIngestionPayload('assistant_1', 'file-uuid', 'text', 'doc.md');
+
+        try {
+            $this->sut->ingest($payload, 'key');
+            static::fail('Expected RagIngestionRequestException was not thrown.');
+        } catch (RagIngestionRequestException $e) {
+            static::assertStringContainsString('source_id', $e->getMessage());
         }
     }
 
@@ -376,6 +480,89 @@ class HawkiRagIngesterTest extends TestCase
         ]);
 
         static::assertFalse($this->sut->deleteDocument('assistant_1', 'file-uuid'));
+    }
+
+    public function testItDeletesTextIngestionsThroughTheirSourceHandle(): void
+    {
+        $sourceId = 'source_' . str_repeat('ab', 16);
+
+        Http::fake([
+            self::API_URL . "/integrations/text-ingestions/{$sourceId}" => Http::response([
+                'source_id' => $sourceId,
+                'dataset_id' => 'assistant_1',
+                'status' => 'deleted',
+                'deleted' => true,
+                'replayed' => false,
+            ], 200),
+        ]);
+
+        static::assertTrue($this->sut->deleteDocument('assistant_1', $sourceId));
+
+        Http::assertSent(static function ($request) use ($sourceId): bool {
+            return 'DELETE' === $request->method()
+                && \str_ends_with($request->url(), "/integrations/text-ingestions/{$sourceId}")
+                && ['Bearer test-key'] === $request->header('Authorization')
+                // Underscores in dataset/source ids are outside the server's
+                // Idempotency-Key charset, so the key is a hash instead.
+                && !\str_contains((string)($request->header('Idempotency-Key')[0] ?? ''), '_')
+                && 'delete-' === \substr((string)($request->header('Idempotency-Key')[0] ?? ''), 0, 7);
+        });
+    }
+
+    public function testItRetriesABusyTextIngestionUntilItSucceeds(): void
+    {
+        $sourceId = 'source_' . str_repeat('ab', 16);
+
+        Http::fake([
+            self::API_URL . "/integrations/text-ingestions/{$sourceId}" => Http::sequence()
+                ->push(['error' => 'text_ingestion_source_busy'], 409)
+                ->push(['error' => 'text_ingestion_source_busy'], 409)
+                ->push(['source_id' => $sourceId, 'status' => 'deleted', 'deleted' => true], 200),
+        ]);
+
+        static::assertTrue($this->sut->deleteDocument('assistant_1', $sourceId));
+
+        Http::assertSentCount(3);
+    }
+
+    public function testItReportsRejectedTextIngestionDeletionAsFalse(): void
+    {
+        $sourceId = 'source_' . str_repeat('cd', 16);
+
+        Http::fake([
+            self::API_URL . "/integrations/text-ingestions/{$sourceId}" => Http::response(json_encode(['error' => 'text_ingestion_source_busy']), 409),
+        ]);
+
+        static::assertFalse($this->sut->deleteDocument('assistant_1', $sourceId));
+
+        // Retryable refusals exhaust all attempts before giving up.
+        Http::assertSentCount(3);
+    }
+
+    public function testItDoesNotRetryPermanentTextIngestionDeletionRejections(): void
+    {
+        $sourceId = 'source_' . str_repeat('ef', 16);
+
+        Http::fake([
+            self::API_URL . "/integrations/text-ingestions/{$sourceId}" => Http::response(json_encode(['error' => 'text_ingestion_not_found']), 404),
+        ]);
+
+        static::assertFalse($this->sut->deleteDocument('assistant_1', $sourceId));
+
+        Http::assertSentCount(1);
+    }
+
+    public function testItRetriesServerErrorsOnDocumentDeletion(): void
+    {
+        Http::fake([
+            self::API_URL . '/documents/adoc_1' => Http::sequence()
+                ->push(['message' => 'boom'], 502)
+                ->push([], 204),
+        ]);
+
+        static::assertTrue($this->sut->deleteDocument('assistant_1', 'adoc_1'));
+
+        Http::assertSentCount(2);
     }
 
     private function filePayload(): FileIngestionPayload

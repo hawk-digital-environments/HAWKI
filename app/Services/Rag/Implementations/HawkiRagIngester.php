@@ -11,7 +11,9 @@ use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
 use App\Services\Rag\Values\RagIngestionOutcome;
 use App\Services\Rag\Values\TextIngestionPayload;
+use App\Services\Rag\Values\TextIngestionResult;
 use Illuminate\Container\Attributes\Config;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -33,6 +35,10 @@ class HawkiRagIngester implements RagIngesterInterface
 
     private const array TERMINAL_FAILURE_STATUSES = ['failed', 'error', 'cancelled', 'canceled'];
 
+    private const int DELETE_ATTEMPTS = 3;
+
+    private const int DELETE_RETRY_DELAY_MS = 1000;
+
     public function __construct(
         #[Config('rag.api_url')]
         private string $apiUrl,
@@ -49,7 +55,7 @@ class HawkiRagIngester implements RagIngesterInterface
     public function ensureDataset(string $datasetId): bool
     {
         if ($this->datasetExists($datasetId)) {
-            return true;
+            return $this->selfGrantIngest($datasetId, null);
         }
 
         $url = "{$this->apiUrl}/datasets";
@@ -65,14 +71,55 @@ class HawkiRagIngester implements RagIngesterInterface
         if (409 === $response->status()) {
             // Conflicting metadata or a create race: an existing dataset we
             // can now see means ready, otherwise the conflict is permanent.
-            return $this->datasetExists($datasetId);
+            return $this->datasetExists($datasetId) && $this->selfGrantIngest($datasetId, null);
         }
 
-        return \in_array($response->status(), [200, 201], true);
+        if (201 === $response->status()) {
+            // Fresh creation: the one-time grant token from the response
+            // bootstraps the caller's ingest access (the server only mints
+            // a first grant against that token).
+            return $this->selfGrantIngest(
+                $datasetId,
+                (string)($response->json('grant_token') ?? '') ?: null,
+            );
+        }
+
+        if (200 === $response->status()) {
+            // Compatible replay: the creator's token is never re-issued;
+            // only an already-held grant can replay from here.
+            return $this->selfGrantIngest($datasetId, null);
+        }
+
+        return false;
+    }
+
+    /**
+     * Idempotently grants the configured token's user ingest access to the
+     * dataset, so the token may use the text-ingestion endpoints for it.
+     * A first grant requires the one-time token from the dataset's creation
+     * response; later calls replay on the already-held grant. Throttling
+     * (the server shares its destructive rate limit with deletions) and
+     * server errors surface as transient failures for the caller to retry;
+     * permanent rejections mean the dataset is not usable for ingestion.
+     */
+    private function selfGrantIngest(string $datasetId, ?string $grantToken): bool
+    {
+        $url = "{$this->apiUrl}/datasets/{$datasetId}/ingest-grants/self";
+
+        $response = $this->request()->post($url, null !== $grantToken ? ['grant_token' => $grantToken] : null);
+
+        if ($response->status() >= 500 || 429 === $response->status()) {
+            throw RagIngestionRequestException::forFailedResponse('POST', $url, $response->status(), $response->body());
+        }
+
+        return $response->successful();
     }
 
     /**
      * Whether the dataset currently exists on the RAG server (GET 200 vs 404).
+     *
+     * @phpstan-impure performs a network request, so repeated calls may
+     * return different results
      */
     public function datasetExists(string $datasetId): bool
     {
@@ -90,7 +137,7 @@ class HawkiRagIngester implements RagIngesterInterface
     /**
      * @inheritDoc
      */
-    public function ingest(TextIngestionPayload $payload, string $idempotencyKey): string
+    public function ingest(TextIngestionPayload $payload, string $idempotencyKey): TextIngestionResult
     {
         $url = "{$this->apiUrl}/integrations/text-ingestions";
 
@@ -119,7 +166,13 @@ class HawkiRagIngester implements RagIngesterInterface
             throw RagIngestionRequestException::forMissingTaskId('POST', $url);
         }
 
-        return $taskId;
+        $sourceId = (string)($response->json('source_id') ?? '');
+
+        if ('' === $sourceId) {
+            throw RagIngestionRequestException::forMissingSourceId('POST', $url);
+        }
+
+        return new TextIngestionResult($taskId, $sourceId);
     }
 
     /**
@@ -209,13 +262,54 @@ class HawkiRagIngester implements RagIngesterInterface
      */
     public function deleteDocument(string $datasetId, string $externalDocumentId): bool
     {
+        if (1 === preg_match('/^source_[0-9a-f]{32}$/', $externalDocumentId)) {
+            // Text-mode ingestion: the stored handle is the source id of a
+            // direct-text pipeline run, removed through its own endpoint.
+            // Deletion requires an Idempotency-Key whose charset forbids
+            // the underscores in dataset/source ids, hence the hash.
+            return $this->deleteWithRetry(
+                "{$this->apiUrl}/integrations/text-ingestions/{$externalDocumentId}",
+                'delete-' . hash('sha256', "{$datasetId}|{$externalDocumentId}"),
+            );
+        }
+
         // Unified document endpoint: keys by the managed document id
         // (`adoc_*`) or the legacy indexed uuid alone — no dataset scope.
-        $url = "{$this->apiUrl}/documents/{$externalDocumentId}";
+        return $this->deleteWithRetry("{$this->apiUrl}/documents/{$externalDocumentId}");
+    }
 
-        $response = $this->request()->delete($url);
+    /**
+     * Best-effort deletion that never throws: retryable refusals (source
+     * busy, throttling, server errors, transport failures) are retried up
+     * to {@see self::DELETE_ATTEMPTS} times; permanent 4xx rejections are
+     * final and surface as `false`.
+     */
+    private function deleteWithRetry(string $url, ?string $idempotencyKey = null): bool
+    {
+        $request = $this->request();
+
+        if (null !== $idempotencyKey) {
+            $request = $request->withHeader('Idempotency-Key', $idempotencyKey);
+        }
+
+        $response = $request
+            ->retry(self::DELETE_ATTEMPTS, self::DELETE_RETRY_DELAY_MS, self::isRetryableDeletionFailure(...), throw: false)
+            ->delete($url);
 
         return $response->successful();
+    }
+
+    private static function isRetryableDeletionFailure(\Throwable $exception): bool
+    {
+        if (!$exception instanceof RequestException) {
+            // Transport-level failures (timeouts, refused connections).
+            return true;
+        }
+
+        $status = $exception->response->status();
+
+        // 409 = ingestion start not yet confirmed, 429 = throttled.
+        return $status >= 500 || \in_array($status, [409, 429], true);
     }
 
     /**
