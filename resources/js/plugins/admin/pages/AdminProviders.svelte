@@ -12,7 +12,7 @@
     import { useRouter } from '$lib/components/ui/routing/index.js';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import type { AdminProviderResource } from '../schemas/resources/admin-providers.schema.js';
-    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
     import { QueuedActionSchema, ProviderDiscoverySchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
@@ -24,7 +24,7 @@
         { id: 'active', format: 'boolean' },
         { id: 'api_key_set', sortable: false }
     ];
-    const workspace = useAdminWorkspace(
+    const records = useAdminRecordSet(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-providers', { query, signal }),
         {
@@ -70,8 +70,8 @@
 </script>
 
 <AdminPage
-    section="providers"
-    {workspace}
+    workspace="providers"
+    recordSet={records}
     pageActions={app.can('models.manage') && app.can('mcp.manage') ?
         [
             {
@@ -88,10 +88,10 @@
         ]
     :   []}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.providers')}
-        {workspace}
+        recordSet={records}
         cells={{ name: providerName }}
         rowMenuItems={(row) =>
             app.can('models.manage') ?
@@ -106,7 +106,7 @@
             :   []}
     />
     <AdminResultDialog
-        {workspace}
+        recordSet={records}
         action="discover"
     >
         {#snippet children(response, providerId)}
