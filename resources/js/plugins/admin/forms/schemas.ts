@@ -1,10 +1,10 @@
 import z from 'zod';
 import { AccessRuleNameSchema } from '../schemas/admin-content.js';
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
-import type { SectionId } from '../sections.js';
+import type { WorkspaceId } from '../workspaces.js';
 
-/** Sections that have an editor; `tools` is edited on the MCP page and has no route of its own. */
-export type EditorSection = SectionId | 'tools';
+/** Workspaces that have an editor; `tools` is edited on the MCP page and has no route of its own. */
+export type EditorSection = WorkspaceId | 'tools' | (string & {});
 
 const text = (max = 255) => z.string().trim().min(1).max(max);
 const optionalText = (max = 255) => z.string().max(max).nullish();

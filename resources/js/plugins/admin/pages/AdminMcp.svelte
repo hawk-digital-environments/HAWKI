@@ -13,7 +13,7 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import type { AdminMcpServerResource } from '../schemas/resources/admin-mcp.schema.js';
     import type { AdminToolResource } from '../schemas/resources/admin-tools.schema.js';
-    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
     import { McpTestSchema, McpDiscoverySchema } from '../schemas/admin-actions.js';
 
     const app = useApp();
@@ -32,7 +32,7 @@
     const mcpServerFilter = $derived<ColumnFiltersState>(
         mcpServerId.current ? [{ id: 'mcp_server_id', value: mcpServerId.current }] : []
     );
-    const tools = useAdminWorkspace(
+    const tools = useAdminRecordSet(
         toolColumns,
         (signal, query) => app.restApi.getResourceCollection('admin-tools', { query, signal }),
         {
@@ -61,7 +61,7 @@
         { id: 'tools_count', sortable: false },
         { id: 'api_key_set', sortable: false }
     ];
-    const servers = useAdminWorkspace(
+    const servers = useAdminRecordSet(
         serverColumns,
         (signal, query) => app.restApi.getResourceCollection('admin-mcp', { query, signal }),
         {
@@ -154,14 +154,14 @@
 {/snippet}
 
 <AdminPage
-    section="mcp"
-    workspace={servers}
-    related={[{ workspace: tools, section: 'tools', title: __('admin.tools') }]}
+    workspace="mcp"
+    recordSet={servers}
+    related={[{ recordSet: tools, editor: 'tools', title: __('admin.tools') }]}
 >
-    <AdminSearch workspace={servers} />
+    <AdminSearch recordSet={servers} />
     <AdminTable
         caption={__('admin.sections.mcp')}
-        workspace={servers}
+        recordSet={servers}
         rowMenuItems={(row) => [
             {
                 label: __('admin.view_tools'),
@@ -171,7 +171,7 @@
         ]}
     />
     <AdminResultDialog
-        workspace={servers}
+        recordSet={servers}
         action="discover"
     >
         {#snippet children(response, id)}
@@ -204,10 +204,10 @@
                 </Button>
             {/if}
         </div>
-        <AdminSearch workspace={tools} />
+        <AdminSearch recordSet={tools} />
         <AdminTable
             caption={__('admin.tools')}
-            workspace={tools}
+            recordSet={tools}
             cells={{ mcp_server_id: mcpServer, mapped_capability: mappedCapability, access_rule: accessRule }}
         />
     </section>

@@ -8,7 +8,7 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import type { AdminField } from '../schemas/admin-content.js';
     import type { AdminRoleResource } from '../schemas/resources/admin-roles.schema.js';
-    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
     const columns: AdminColumn<AdminRoleResource>[] = [
@@ -20,7 +20,7 @@
     // Built-in roles keep their slug; name, description and permissions stay editable.
     const editFields = (row: AdminRoleResource, fields: AdminField[]) =>
         row.is_system ? fields.map((field) => (field.key === 'slug' ? { ...field, immutable: true } : field)) : fields;
-    const workspace = useAdminWorkspace(
+    const records = useAdminRecordSet(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-roles', { query, signal }),
         {
@@ -42,13 +42,13 @@
 </script>
 
 <AdminPage
-    section="roles"
-    {workspace}
+    workspace="roles"
+    recordSet={records}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.roles')}
-        {workspace}
+        recordSet={records}
         editSystemRows
     />
 </AdminPage>

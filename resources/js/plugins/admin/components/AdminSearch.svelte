@@ -1,5 +1,5 @@
 <!--
-  @component Search form above an admin table: binds the workspace's search
+  @component Search form above an admin table: binds the record set's search
   term and reads from the first page on submit.
 -->
 <script
@@ -10,9 +10,9 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
     import type { AdminRow } from '../schemas/admin-content.js';
-    import type { AdminWorkspace } from '../workspace.svelte.js';
+    import type { AdminRecordSet } from '../recordSet.svelte.js';
 
-    const { workspace }: { workspace: AdminWorkspace<Row, ColumnId, Results> } = $props();
+    const { recordSet }: { recordSet: AdminRecordSet<Row, ColumnId, Results> } = $props();
     const { __ } = useTranslator();
 </script>
 
@@ -20,18 +20,18 @@
     class="search"
     onsubmit={(event) => {
         event.preventDefault();
-        void workspace.submitSearch();
+        void recordSet.submitSearch();
     }}
 >
     <Input
         type="search"
         aria-label={__('admin.search')}
-        bind:value={workspace.search}
+        bind:value={recordSet.search}
     />
     <Button
         type="submit"
         variant="stroke"
-        disabled={workspace.loading}>{__('admin.search')}</Button
+        disabled={recordSet.loading}>{__('admin.search')}</Button
     >
 </form>
 
