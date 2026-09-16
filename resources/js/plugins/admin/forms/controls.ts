@@ -119,7 +119,9 @@ export function isFieldVisible(section: EditorSection, field: AdminField, values
     // No built-in adapter reads model_status_url; status checks use model discovery.
     if (field.key === 'model_status_url') return false;
     if (field.key === 'api_url')
-        return ['openai_like', 'openai_azure', 'ollama', 'huggingface', 'gwdg'].includes(String(values.adapter_key));
+        return ['openai_like', 'openai_azure', 'ollama', 'huggingface', 'litellm', 'gwdg'].includes(
+            String(values.adapter_key)
+        );
     return true;
 }
 
