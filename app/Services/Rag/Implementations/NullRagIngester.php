@@ -9,6 +9,7 @@ use App\Services\Rag\Values\FileIngestionPayload;
 use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
 use App\Services\Rag\Values\TextIngestionPayload;
+use App\Services\Rag\Values\TextIngestionResult;
 
 /**
  * No-op ingester bound when `rag.driver` resolves to nothing usable. Guards
@@ -23,9 +24,9 @@ class NullRagIngester implements RagIngesterInterface
         return true;
     }
 
-    public function ingest(TextIngestionPayload $payload, string $idempotencyKey): string
+    public function ingest(TextIngestionPayload $payload, string $idempotencyKey): TextIngestionResult
     {
-        return '';
+        return TextIngestionResult::empty();
     }
 
     public function ingestFile(FileIngestionPayload $payload, string $idempotencyKey, ?string $existingDocumentId = null): FileIngestionResult

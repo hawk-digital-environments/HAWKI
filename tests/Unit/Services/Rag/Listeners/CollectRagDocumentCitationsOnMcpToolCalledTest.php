@@ -39,7 +39,7 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
         static::assertStringContainsString('doc-uuid-1', $citations[0]->url);
     }
 
-    public function testMapsAttachmentMetadataOntoAttachmentUrls(): void
+    public function testMapsExternalDocumentReferencesOntoAttachmentUrls(): void
     {
         $attachment = new AssistantAttachment(['uuid' => 'doc-uuid-1', 'name' => 'Lecture.pdf']);
         $attachment->exists = true;
@@ -47,7 +47,7 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
         $listener = $this->listener(byUuid: $attachment);
 
         $listener->handle($this->event($this->tool('hawki-rag'), $this->resultWithHits([
-            ['metadata' => ['title' => 'Lecture.pdf'], 'meta' => ['attachment_uuid' => 'doc-uuid-1'], 'content' => 'chunk'],
+            ['metadata' => ['title' => 'Lecture.pdf', 'external_document_id' => 'doc-uuid-1'], 'content' => 'chunk'],
         ])));
 
         $citations = $this->collector()->drain();
@@ -62,7 +62,7 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
         $listener = $this->listener();
 
         $listener->handle($this->event($this->tool('hawki-rag'), $this->resultWithHits([
-            ['metadata' => ['title' => 'Article.pdf'], 'meta' => ['attachment_uuid' => 'missing-uuid'], 'content' => 'chunk'],
+            ['metadata' => ['title' => 'Article.pdf', 'external_document_id' => 'missing-uuid'], 'content' => 'chunk'],
         ])));
 
         $citations = $this->collector()->drain();
@@ -76,7 +76,7 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
         $listener = $this->listener();
 
         $listener->handle($this->event($this->tool('some-other-server'), $this->resultWithHits([
-            ['metadata' => ['title' => 'Article.pdf'], 'meta' => ['attachment_uuid' => 'doc-uuid-1'], 'content' => 'chunk'],
+            ['metadata' => ['title' => 'Article.pdf', 'external_document_id' => 'doc-uuid-1'], 'content' => 'chunk'],
         ])));
 
         static::assertSame([], $this->collector()->drain());
@@ -89,7 +89,7 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
         $listener = $this->listener();
 
         $listener->handle($this->event($this->tool('hawki-rag'), $this->resultWithHits([
-            ['metadata' => ['title' => 'Article.pdf'], 'meta' => ['attachment_uuid' => 'doc-uuid-1'], 'content' => 'chunk'],
+            ['metadata' => ['title' => 'Article.pdf', 'external_document_id' => 'doc-uuid-1'], 'content' => 'chunk'],
         ])));
 
         static::assertSame([], $this->collector()->drain());
@@ -126,8 +126,8 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
         $listener = $this->listener();
 
         $listener->handle($this->event($this->tool('hawki-rag'), $this->resultWithHits([
-            ['metadata' => ['title' => 'A.pdf'], 'meta' => ['attachment_uuid' => 'uuid-1'], 'content' => 'chunk one'],
-            ['metadata' => ['title' => 'A.pdf'], 'meta' => ['attachment_uuid' => 'uuid-1'], 'content' => 'chunk two'],
+            ['metadata' => ['title' => 'A.pdf', 'external_document_id' => 'uuid-1'], 'content' => 'chunk one'],
+            ['metadata' => ['title' => 'A.pdf', 'external_document_id' => 'uuid-1'], 'content' => 'chunk two'],
         ])));
 
         static::assertCount(1, $this->collector()->drain());

@@ -16,6 +16,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * @property bool $admin_managed
+ */
 #[CollectedBy(AiToolCollection::class)]
 #[UsePolicy(AiToolPolicy::class)]
 class AiTool extends Model

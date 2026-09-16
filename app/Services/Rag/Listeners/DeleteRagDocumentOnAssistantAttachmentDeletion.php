@@ -44,9 +44,10 @@ class DeleteRagDocumentOnAssistantAttachmentDeletion
         }
 
         try {
-            // File-mode ingestions key their RAG document by a
-            // server-assigned handle (rag_document_id); text-mode ones by
-            // the attachment uuid.
+            // Both ingestion modes persist a server-assigned handle in
+            // rag_document_id (`adoc_*` for file ingestions, `source_*`
+            // for text ones); the uuid fallback only covers legacy text
+            // rows ingested before handles were stored.
             $deleted = $this->ingester->deleteDocument(
                 $this->datasetPrefix . (string)$assistantAttachment->assistant_id,
                 $assistantAttachment->rag_document_id ?? $assistantAttachment->uuid,

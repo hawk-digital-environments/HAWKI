@@ -30,9 +30,10 @@ use Psr\Log\LoggerInterface;
  * Queued RAG ingestion of one assistant knowledge file.
  *
  * What is sent is governed by `rag.attachment_ingestion`: "text" pushes
- * the locally extracted text to the text-ingestion endpoint; "file"
- * uploads the original file so the RAG server runs its own conversion
- * (uploading also replaces a previously ingested document via the stored
+ * the locally extracted text to the text-ingestion endpoint (persisting
+ * the returned `source_*` handle in `rag_document_id`); "file" uploads
+ * the original file so the RAG server runs its own conversion (uploading
+ * also replaces a previously ingested document via the stored
  * `rag_document_id` handle).
  *
  * State machine on the attachment row: pending -> ingesting -> ingested |
@@ -163,7 +164,12 @@ class IngestAttachmentToRag implements ShouldQueue
                 $handle = $result->taskId;
                 $documentId = $result->documentId;
             } else {
-                $handle = $ingester->ingest($this->payload($datasetId, $attachment, $text), $this->idempotencyKey($file));
+                // Text ingestions are keyed server-side by a source id
+                // (`source_*`); persisting it routes later deletions to the
+                // text-ingestion endpoint.
+                $result = $ingester->ingest($this->payload($datasetId, $attachment, $text), $this->idempotencyKey($file));
+                $handle = $result->taskId;
+                $documentId = $result->sourceId;
             }
 
             if ('' === $handle) {

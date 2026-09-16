@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string                         $mime
  * @property string                         $name
  * @property null|string                    $rag_batch_id
- * @property null|string                    $rag_document_id
+ * @property null|string                    $rag_document_id backend-assigned RAG handle: `adoc_*` (file ingestion) or `source_*` (text ingestion)
  * @property null|RagIngestionStatus        $rag_status
  * @property string                         $type
  * @property null|\Illuminate\Support\Carbon $updated_at
