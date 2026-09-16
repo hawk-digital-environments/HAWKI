@@ -10,14 +10,17 @@ use App\Models\Assistants\AssistantSetting;
 use App\Models\Assistants\AssistantSettingValue;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Assistant\Values\AssistantReleaseStage;
 use Database\Seeders\AssistantSettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\CoversNothing;
+use Tests\Feature\Api\Assistant\Fixtures\Assistant as AssistantFixture;
 use Tests\TestCase;
 
 #[CoversNothing()]
 class AssistantShowTest extends TestCase
 {
+    use AssistantFixture;
     use RefreshDatabase;
 
     public function testCanShowAssistant(): void
@@ -491,5 +494,60 @@ class AssistantShowTest extends TestCase
         $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
             ->assertOk()
             ->assertJsonPath('data.attributes.is_favorite', false);
+    }
+
+    public function testCapabilitiesVisibleOnlyToThePrivilegedTier(): void
+    {
+        $orgId = Organization::first()->id;
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'organization_id' => $orgId,
+            'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+            'capabilities' => ['capability:web_search:native'],
+        ]);
+
+        $admin = User::factory()->create();
+        $admin->organizations()->attach($orgId, ['role' => 'admin']);
+        $member = User::factory()->create();
+        $member->organizations()->attach($orgId, ['role' => 'member']);
+        $outsider = User::factory()->create();
+
+        // The privileged tier (creator or org admin — same as the ai_tools
+        // include) sees the capability selection.
+        foreach (['owner' => $owner, 'admin' => $admin] as $viewer) {
+            $this->actingAsUser($viewer);
+            $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+                ->assertOk()
+                ->assertJsonPath('data.attributes.capabilities', ['capability:web_search:native']);
+        }
+
+        // Everyone else who can view the assistant gets null instead, and the
+        // stored values are untouched.
+        foreach ([$member, $outsider] as $viewer) {
+            $this->actingAsUser($viewer);
+            $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+                ->assertOk()
+                ->assertJsonPath('data.attributes.capabilities', null);
+        }
+
+        self::assertSame(['capability:web_search:native'], $assistant->fresh()->capabilities);
+    }
+
+    public function testToolSelectionDoesNotSurfaceWithoutInclude(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        $assistant->ai_tools()->sync([$this->createAiTool()->id]);
+
+        $this->actingAsUser($owner);
+
+        // Relationship members serialize as links-only stubs (the dedicated
+        // routes behind them are policy-gated) — the tool identifiers must
+        // not surface without the include, which the policy 403-gates for
+        // non-privileged viewers.
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+            ->assertOk()
+            ->assertJsonMissingPath('data.relationships.ai_tools.data');
     }
 }

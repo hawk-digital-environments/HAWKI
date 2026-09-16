@@ -2,12 +2,16 @@
 
     import SmileIcon from '$lib/components/ui/icons/iconset/SmileIcon.svelte';
     import Popover from '$lib/components/ui/popover/Popover.svelte';
+    import {ActionIcon} from '$lib/components/ui/icons';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
 
     import type { Snippet } from "svelte";
 
+    const {__} = useTranslator();
+
     let {
         onSelect,
-        ariaLabel = "Emoji auswählen",
+        ariaLabel,
         align = "end",
         side = "bottom",
         trigger,
@@ -22,6 +26,8 @@
         /** Optional custom trigger content; defaults to a mood icon. */
         trigger?: Snippet;
     } = $props();
+
+    const triggerLabel = $derived(ariaLabel ?? __('ui.common.selectEmoji'));
 
     let open = $state(false);
     let loaded = $state(false);
@@ -53,18 +59,24 @@
 <div class="emoji-picker">
     <Popover bind:open {side} {align} contentProps={{class: "emoji-popover"}}>
         {#snippet children({props})}
-            <button
-                {...props}
-                type="button"
-                class="trigger"
-                aria-label={ariaLabel}
-            >
-                {#if trigger}
+            {#if trigger}
+                <button
+                    {...props}
+                    type="button"
+                    class="custom-trigger"
+                    aria-label={triggerLabel}
+                >
                     {@render trigger()}
-                {:else}
-                    <SmileIcon size="1em" />
-                {/if}
-            </button>
+                </button>
+            {:else}
+                <ActionIcon
+                    {...props}
+                    icon={SmileIcon}
+                    label={triggerLabel}
+                    size="md"
+                    class="trigger"
+                />
+            {/if}
         {/snippet}
 
         {#snippet popover()}
@@ -80,20 +92,19 @@
         display: inline-flex;
     }
 
-    .trigger {
+    .emoji-picker :global(.trigger) {
+        color: var(--color-text-muted);
+    }
+
+    .emoji-picker :global(.custom-trigger) {
         display: inline-flex;
-        height: 2.5rem;
-        width: 2.5rem;
-        flex-shrink: 0;
         align-items: center;
         justify-content: center;
         background: transparent;
         color: var(--color-text-muted);
-        transition: color var(--duration-fast, 0.15s) ease;
-    }
-
-    .trigger:hover {
-        color: var(--color-text);
+        border: none;
+        padding: 0;
+        cursor: pointer;
     }
 
     /* Neutralize the shared Popover's fixed-width card chrome: the

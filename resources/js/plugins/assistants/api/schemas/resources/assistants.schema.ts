@@ -139,6 +139,8 @@ export const AssistantResourceSchema = z.object({
     max_tokens: z.number().nullable().optional(),
     temp: z.number().nullable().optional(),
     top_p: z.number().nullable().optional(),
+    /** Capability transfer strings (`capability:<key>:<native|auto|<tool>>`). */
+    capabilities: z.array(z.string()).nullable().optional(),
     created_at: z.string().nullable().optional(),
     updated_at: z.string().nullable().optional(),
     /** Backed by a `withCount`, so it can arrive as `0`/`1` rather than a real boolean. */
@@ -286,6 +288,7 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
 
     files: toUploadFiles(wire.assistant_attachments),
     aiTools: wire.ai_tools ?? undefined,
+    capabilities: wire.capabilities ?? [],
 
     actionPermissions: linksToPermissions(wire._links),
     feedbacks: wire.assistant_feedback?.map(feedback => ({
@@ -359,6 +362,7 @@ export function createEmptyAssistant(): Assistant {
         versions: [],
         files: [],
         submissionNote: '',
+        capabilities: [],
 
         actionPermissions: null,
 
@@ -402,6 +406,7 @@ export function assistantToApi(
                 allow_model_select: false,
             }),
             ...(include('model') && { model: assistant.model }),
+            ...(include('capabilities') && { capabilities: assistant.capabilities }),
             ...(include('maxTokens') && { max_tokens: assistant.maxTokens }),
             ...(include('temp') && { temp: assistant.temp }),
             ...(include('topP') && { top_p: assistant.topP }),
@@ -487,6 +492,7 @@ const API_FIELD_TO_KEY: Record<string, keyof Assistant> = {
     allow_model_select: 'allowModelSelect',
     release_stage: 'releaseStage',
     model: 'model',
+    capabilities: 'capabilities',
     max_tokens: 'maxTokens',
     temp: 'temp',
     top_p: 'topP',

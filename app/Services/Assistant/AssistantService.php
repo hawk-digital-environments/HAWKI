@@ -57,6 +57,7 @@ readonly class AssistantService
 
             if (null !== $sourceCreator && $this->organizationRepository->usersShareOrganization($creator, $sourceCreator)) {
                 $this->repository->syncTools($clone, $source->ai_tools->pluck('id')->toArray());
+                $this->repository->copyCapabilities($clone, $source);
             }
 
             $latestVersion = $source->assistantVersions->sortByDesc('version')->first();

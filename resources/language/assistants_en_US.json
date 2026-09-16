@@ -117,6 +117,7 @@
             "back": "Back to the store",
             "edit": "Edit",
             "menu_aria": "Open assistant menu",
+            "favourite_aria": "Toggle favourite",
             "delete": "Delete",
             "delete_confirm_title": "Delete assistant :name",
             "delete_confirm_description": "Are you sure you want to delete this assistant? This action cannot be undone.",
@@ -250,7 +251,16 @@
             },
             "tools": {
                 "title": "Tools & MCP",
-                "description": "Choose individual tools from approved MCP servers. Every tool affects the risk level and the publishing paths."
+                "description": "Choose capabilities and tools from approved MCP servers. Every tool affects the risk level and the publishing paths.",
+                "capabilities": {
+                    "variantLabel": "Variant",
+                    "autoLabel": "automatic",
+                    "autoInfo": "The model automatically selects the best variant for the task. (Native tool preferred, otherwise the first available alternative)",
+                    "nativeLabel": "Native tool",
+                    "nativeInfo": "This tool is provided directly by the model provider.",
+                    "variantUnavailable": "This option is not available for the selected model."
+                },
+                "selectedCount": ":selected of :count"
             },
             "test": {
                 "title": "Private test environment",
@@ -261,11 +271,13 @@
                 "description": "Choose the publishing path.",
                 "release_stage": {
                     "title": "Choose the publishing path",
-                    "private_label": "Save as private draft",
+                    "draft_label": "Keep as draft",
+                    "draft_description": "Continue editing later; nothing gets published.",
+                    "private_label": "Save as private assistant",
                     "private_description": "Visible only to you, no approval needed.",
-                    "organizational_label": "Submit for internal review",
+                    "organizational_label": "Share within your university",
                     "organizational_description": "For release within your university.",
-                    "federated_label": "Verified",
+                    "federated_label": "Share across the federation",
                     "federated_description": "Visible across universities. Strict validation."
                 },
                 "status": {
@@ -274,26 +286,12 @@
                     "organizational": "In review",
                     "federated": "In review"
                 },
-                "visibility": {
-                    "draft": "Draft",
-                    "private": "Only you",
-                    "organizational": "University-wide",
-                    "federated": "Public"
-                },
-                "publishability": {
-                    "draft": "Draft",
-                    "private": "Usable privately only",
-                    "organizational": "Usable university-wide",
-                    "federated": "Usable publicly"
-                },
                 "risk": {
                     "title": "Risk overview",
-                    "description": "Assistant with knowledge files or tools. Standard review required.",
+                    "description": "The risk level results from knowledge files and tools.",
                     "label_status": "Status",
                     "label_risk_level": "Risk level",
-                    "risk_level_low": "Low risk",
-                    "label_visibility": "Visibility",
-                    "label_publishability": "Publishability"
+                    "risk_level_low": "Low risk"
                 },
                 "completeness": {
                     "title": "Completeness check",
@@ -304,14 +302,14 @@
                 },
                 "review_info": {
                     "title": "Start review",
-                    "description": "As soon as you move the assistant from “Private” to “Available within the university” or “Federated”, a review is triggered.",
+                    "description": "As soon as you move the assistant from “Private” to “University-wide” or “Federated”, a review is triggered.",
                     "note": "MCP configurations are reviewed by us separately."
                 },
                 "input_version_note": "Version note",
                 "input_version_note_placeholder": "What has changed?",
-                "save_as_private_draft": "Save as private draft",
+                "save_as_private_assistant": "Save as private assistant",
                 "save_as_review": "Submit for review",
-                "save_as_draft": "Save as draft",
+                "keep_as_draft": "Keep as draft",
                 "saved": "Assistant saved.",
                 "submitted": "Assistant submitted for review.",
                 "save_failed": "Could not save the assistant."

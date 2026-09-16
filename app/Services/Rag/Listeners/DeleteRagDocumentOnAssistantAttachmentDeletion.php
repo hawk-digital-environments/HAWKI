@@ -44,9 +44,12 @@ class DeleteRagDocumentOnAssistantAttachmentDeletion
         }
 
         try {
+            // File-mode ingestions key their RAG document by a
+            // server-assigned handle (rag_document_id); text-mode ones by
+            // the attachment uuid.
             $deleted = $this->ingester->deleteDocument(
                 $this->datasetPrefix . (string)$assistantAttachment->assistant_id,
-                $assistantAttachment->uuid,
+                $assistantAttachment->rag_document_id ?? $assistantAttachment->uuid,
             );
 
             if (!$deleted) {

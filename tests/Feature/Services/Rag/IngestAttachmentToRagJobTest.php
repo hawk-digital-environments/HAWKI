@@ -9,12 +9,15 @@ use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Ai\Agents\Utils\ExtractTextCollector;
 use App\Services\Rag\Contracts\RagIngesterInterface;
+use App\Services\Rag\Values\FileIngestionPayload;
+use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
 use App\Services\Rag\Values\TextIngestionPayload;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFile;
 use Illuminate\Contracts\Bus\Dispatcher as BusDispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
@@ -43,6 +46,14 @@ class IngestAttachmentToRagJobTest extends TestCase
         ]);
         // rag_* state transitions are repository-owned, hence forceFill.
         $this->attachment->forceFill(['rag_status' => 'pending'])->save();
+    }
+
+    public function testItConstructs(): void
+    {
+        $job = new IngestAttachmentToRag(1, 2);
+
+        // Batch cancellation must discard a queued run before execution.
+        static::assertEquals([new SkipIfBatchCancelled()], $job->middleware());
     }
 
     public function testItIgnoresAVanishedAttachment(): void
@@ -201,6 +212,65 @@ class IngestAttachmentToRagJobTest extends TestCase
         ]);
     }
 
+    public function testItUploadsTheOriginalFileInFileModeWithoutExtractingText(): void
+    {
+        config(['rag.attachment_ingestion' => 'file']);
+        $this->mockStorageForFileUpload();
+        $this->mock(ExtractTextCollector::class)->shouldNotReceive('collect');
+        $assistantId = $this->assistant->id;
+
+        $this->mock(RagIngesterInterface::class, function ($mock) use ($assistantId): void {
+            $mock->shouldReceive('ensureDataset')->andReturn(true);
+            $mock->shouldReceive('ingest')->never();
+            $mock->shouldReceive('ingestFile')->once()->withArgs(
+                static function (FileIngestionPayload $payload, string $idempotencyKey, ?string $existingDocumentId) use ($assistantId): bool {
+                    return "assistant_{$assistantId}" === $payload->datasetId
+                        && 'rag-job-uuid' === $payload->externalDocumentId
+                        && 'knowledge.pdf' === $payload->filename
+                        && 'application/pdf' === $payload->mimeType
+                        && '%PDF-1.4 content' === $payload->content
+                        && 'knowledge.pdf' === $payload->displayName
+                        && null === $existingDocumentId
+                        && \str_starts_with($idempotencyKey, 'attachment-rag-job-uuid-');
+                },
+            )->andReturn(new FileIngestionResult('task-4', 'adoc_4'));
+            $mock->shouldReceive('checkIngestion')->with('task-4')->andReturn(RagIngestionCheck::succeeded());
+        });
+
+        $this->runJob();
+
+        $attachment = $this->attachment->refresh();
+
+        static::assertSame('ingested', $attachment->rag_status->value);
+        static::assertSame('task-4', $attachment->rag_task_id);
+        static::assertSame('adoc_4', $attachment->rag_document_id);
+        static::assertNotNull($attachment->rag_ingested_at);
+    }
+
+    public function testItReplacesTheStoredDocumentOnReIngestionInFileMode(): void
+    {
+        config(['rag.attachment_ingestion' => 'file']);
+        $this->attachment->forceFill(['rag_document_id' => 'adoc_old'])->save();
+        $this->mockStorageForFileUpload();
+
+        $this->mock(RagIngesterInterface::class, function ($mock): void {
+            $mock->shouldReceive('ensureDataset')->andReturn(true);
+            $mock->shouldReceive('ingestFile')->once()->withArgs(
+                static fn (FileIngestionPayload $payload, string $idempotencyKey, ?string $existingDocumentId): bool => 'adoc_old' === $existingDocumentId,
+            )->andReturn(new FileIngestionResult('task-5', 'adoc_old'));
+            $mock->shouldReceive('checkIngestion')->with('task-5')->andReturn(RagIngestionCheck::succeeded());
+        });
+
+        $this->runJob();
+
+        $this->assertDatabaseHas('assistant_attachments', [
+            'id' => $this->attachment->id,
+            'rag_status' => 'ingested',
+            'rag_task_id' => 'task-5',
+            'rag_document_id' => 'adoc_old',
+        ]);
+    }
+
     public function testItMarksTheAttachmentFailedWhenTheJobExpires(): void
     {
         (new IngestAttachmentToRag($this->assistant->id, $this->attachment->id))->failed(
@@ -244,5 +314,23 @@ class IngestAttachmentToRagJobTest extends TestCase
             ->withArgs(static fn (StoredFile $file): bool => 'rag-job-uuid' === $file->getUuid())
             ->andReturn($text)
             ->getMock();
+    }
+
+    /**
+     * Binds a storage stub returning a file with content, name, and mime
+     * for file-mode uploads.
+     */
+    private function mockStorageForFileUpload(): void
+    {
+        $storedFile = self::createStub(StoredFile::class);
+        $storedFile->method('getUuid')->willReturn('rag-job-uuid');
+        $storedFile->method('getEtag')->willReturn('etag-1');
+        $storedFile->method('getOriginalFilename')->willReturn('knowledge.pdf');
+        $storedFile->method('getMimeType')->willReturn('application/pdf');
+        $storedFile->method('getContent')->willReturn('%PDF-1.4 content');
+
+        $this->mock(FileStorageService::class)
+            ->shouldReceive('retrieve')
+            ->andReturn($storedFile);
     }
 }

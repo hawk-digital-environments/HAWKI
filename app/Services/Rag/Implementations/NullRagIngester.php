@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Rag\Implementations;
 
 use App\Services\Rag\Contracts\RagIngesterInterface;
+use App\Services\Rag\Values\FileIngestionPayload;
+use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
 use App\Services\Rag\Values\TextIngestionPayload;
 
@@ -24,6 +26,11 @@ class NullRagIngester implements RagIngesterInterface
     public function ingest(TextIngestionPayload $payload, string $idempotencyKey): string
     {
         return '';
+    }
+
+    public function ingestFile(FileIngestionPayload $payload, string $idempotencyKey, ?string $existingDocumentId = null): FileIngestionResult
+    {
+        return FileIngestionResult::empty();
     }
 
     public function checkIngestion(string $handle): RagIngestionCheck

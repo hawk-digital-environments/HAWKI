@@ -10,6 +10,7 @@ use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Rag\Contracts\RagIngesterInterface;
 use App\Services\Rag\Values\RagIngestionStatus;
 use Illuminate\Container\Attributes\Config;
+use Illuminate\Support\Facades\Bus;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -63,9 +64,28 @@ class QueueRagIngestionOnAssistantAttachmentStored
             RagIngestionStatus::PENDING,
         );
 
-        IngestAttachmentToRag::dispatch(
-            $event->assistant->id,
+        // The job travels inside a batch so a still-queued run can be
+        // revoked on attachment deletion (batch cancellation makes the
+        // worker discard it without executing, regardless of the queue
+        // driver). PENDING is written before dispatching so fast workers
+        // — and the sync driver — see an active attachment; the batch id
+        // follows as a second write. A crash in between only degrades
+        // revocation: the job itself still no-ops on a vanished
+        // attachment.
+        $batch = Bus::batch([
+            new IngestAttachmentToRag($event->assistant->id, $event->assistantAttachment->id),
+        ])
+            ->name(\sprintf(
+                'rag-ingestion-assistant-%d-attachment-%d',
+                $event->assistant->id,
+                $event->assistantAttachment->id,
+            ))
+            ->dispatch();
+
+        $this->assistantAttachmentRepository->updateRagState(
             $event->assistantAttachment->id,
+            RagIngestionStatus::PENDING,
+            batchId: $batch->id,
         );
     }
 }

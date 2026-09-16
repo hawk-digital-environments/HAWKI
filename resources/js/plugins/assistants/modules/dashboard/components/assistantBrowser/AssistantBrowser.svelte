@@ -4,6 +4,7 @@
     import Searchbar from "$plugins/assistants/modules/dashboard/components/searchbar/Searchbar.svelte";
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import SearchRemoveIcon from '$lib/components/ui/icons/iconset/SearchRemoveIcon.svelte';
+    import {StatusIcon} from '$lib/components/ui/icons';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import autoAnimate from "@formkit/auto-animate";
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -91,9 +92,7 @@
 {#if list.assistants.length === 0}
     <div class="empty-list-msg">
         {#if list.loading}
-            <div class="icon-wrapper">
-                <span class="icon"><Search01Icon size="1em" /></span>
-            </div>
+            <StatusIcon icon={Search01Icon} tone="neutral" size="xl"/>
         {:else}
             <Tooltip
                     tooltip={__('assistants.browser.no_results')}
@@ -103,9 +102,7 @@
                     hiddenLabel={__('assistants.browser.no_results')}
             >
                 {#snippet children({props})}
-                    <div class="icon-wrapper" {...props}>
-                        <span class="icon"><SearchRemoveIcon size="1em" /></span>
-                    </div>
+                    <StatusIcon {...props} icon={SearchRemoveIcon} tone="neutral" size="xl"/>
                 {/snippet}
             </Tooltip>
         {/if}
@@ -149,24 +146,6 @@
         padding: var(--space-8) 0;
         width: 100%;
         min-height: 20rem;
-    }
-    .empty-list-msg .icon-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 4rem;
-        height: 4rem;
-        border-radius: var(--corner-md);
-        /* Same accent surface/ink pair as the active nav row and the selected
-           filter chip, so the tile follows the theme in both modes. */
-        background-color: var(--color-active-surface);
-    }
-    .empty-list-msg .icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: var(--font-size-2xl);
-        color: var(--color-active-text);
     }
     .empty-list-msg .text{
         display: flex;

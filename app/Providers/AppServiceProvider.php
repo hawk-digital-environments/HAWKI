@@ -19,6 +19,7 @@ use App\Observers\AssistantFeedbackObserver;
 use App\Observers\AssistantObserver;
 use App\Services\Ai\Streaming\AgentStreamer;
 use App\Services\Ai\Streaming\AgentStreamerInterface;
+use App\Services\Rag\Citations\RagCitationCollector;
 use App\Services\System\Http\SsrfSafeGetterMacro;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
 use App\Services\System\Time\CarbonClock;
@@ -85,6 +86,9 @@ class AppServiceProvider extends ServiceProvider
     private function registerAssistantServices(): void
     {
         $this->app->singleton(AgentStreamerInterface::class, AgentStreamer::class);
+        // Per-request: written by the RAG citation listener while MCP tools
+        // execute, drained by StreamController when the stream ends.
+        $this->app->scoped(RagCitationCollector::class);
     }
 
     private function bootObservers(): void

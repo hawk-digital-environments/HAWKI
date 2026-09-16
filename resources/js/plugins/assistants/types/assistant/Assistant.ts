@@ -124,6 +124,13 @@ export const AssistantSchema = z.object({
 
     aiTools: z.array(AiToolsSchema).optional(),
 
+    /**
+     * Selected capabilities as capability transfer strings
+     * (`capability:<key>:<native|auto|<tool-name>>`), mirrored from the
+     * backend's `capabilities` column.
+     */
+    capabilities: z.array(z.string()).nullable().optional(),
+
     /** Map of action name → whether the current user may perform it (`edit`, `remix`, ...); `null` when the server did not evaluate permissions. */
     actionPermissions: z.record(z.string(), z.boolean()).nullable(),
     feedbacks: z.array(AssistantFeedbackSchema).optional()

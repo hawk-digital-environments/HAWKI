@@ -117,6 +117,7 @@
             "back": "Zurück zum Store",
             "edit": "Bearbeiten",
             "menu_aria": "Assistenten-Menü öffnen",
+            "favourite_aria": "Favoritenstatus umschalten",
             "delete": "Löschen",
             "delete_confirm_title": "Assistent :name löschen",
             "delete_confirm_description": "Bist du sicher, dass du diesen Assistenten löschen möchtest? Dieser Vorgang kann nicht rückgängig gemacht werden.",
@@ -250,7 +251,16 @@
             },
             "tools": {
                 "title": "Tools & MCP",
-                "description": "Wähle einzelne Werkzeuge aus genehmigten MCP-Servern. Jedes Tool beeinflusst die Risikostufe und Veröffentlichungspfade."
+                "description": "Wähle Fähigkeiten und Werkzeuge aus genehmigten MCP-Servern. Jedes Tool beeinflusst die Risikostufe und Veröffentlichungspfade.",
+                "capabilities": {
+                    "variantLabel": "Variante",
+                    "autoLabel": "automatisch",
+                    "autoInfo": "Das Modell wählt automatisch die beste Variante für die Aufgabe aus. (Natives Tool bevorzugt, ansonsten die erste verfügbare Alternative)",
+                    "nativeLabel": "Natives Tool",
+                    "nativeInfo": "Dieses Tool wird vom Model-Anbieter direkt zur Verfügung gestellt.",
+                    "variantUnavailable": "Diese Option ist für das ausgewählte Modell nicht verfügbar."
+                },
+                "selectedCount": ":selected von :count"
             },
             "test": {
                 "title": "Private Testumgebung",
@@ -261,39 +271,27 @@
                 "description": "Wähle den Veröffentlichungspfad.",
                 "release_stage": {
                     "title": "Veröffentlichungspfad wählen",
-                    "private_label": "Als privaten Entwurf speichern",
+                    "draft_label": "Als Entwurf behalten",
+                    "draft_description": "Später weiterbearbeiten, nichts wird veröffentlicht.",
+                    "private_label": "Als privaten Assistenten speichern",
                     "private_description": "Nur für dich sichtbar, keine Genehmigung nötig.",
-                    "organizational_label": "Zur internen Prüfung einreichen",
+                    "organizational_label": "Hochschulintern freigeben",
                     "organizational_description": "Für die Freigabe innerhalb deiner Hochschule.",
-                    "federated_label": "Verifiziert",
+                    "federated_label": "Föderiert freigeben",
                     "federated_description": "Hochschulübergreifend sichtbar. Strenge Validierung."
                 },
                 "status": {
-                    "draft": "Draft",
+                    "draft": "Entwurf",
                     "private": "Privat",
                     "organizational": "In Prüfung",
                     "federated": "In Prüfung"
                 },
-                "visibility": {
-                    "draft": "Draft",
-                    "private": "Nur du",
-                    "organizational": "Hochschulweit",
-                    "federated": "Öffentlich"
-                },
-                "publishability": {
-                    "draft": "Draft",
-                    "private": "Nur privat nutzbar",
-                    "organizational": "Hochschulweit nutzbar",
-                    "federated": "Öffentlich nutzbar"
-                },
                 "risk": {
                     "title": "Risiko-Übersicht",
-                    "description": "Assistent mit Wissensdateien oder Tools. Standardprüfung erforderlich.",
+                    "description": "Die Risikostufe ergibt sich aus Wissensdateien und Tools.",
                     "label_status": "Status",
                     "label_risk_level": "Risikostufe",
-                    "risk_level_low": "Niedriges Risiko",
-                    "label_visibility": "Sichtbarkeit",
-                    "label_publishability": "Publizierbarkeit"
+                    "risk_level_low": "Niedriges Risiko"
                 },
                 "completeness": {
                     "title": "Vollständigkeitsprüfung",
@@ -304,14 +302,14 @@
                 },
                 "review_info": {
                     "title": "Prüfung starten",
-                    "description": "Sobald du den Assistenten von „Privat“ auf „In der Hochschule verfügbar“ oder „Föderiert“ stellst, wird eine Prüfung ausgelöst.",
+                    "description": "Sobald du den Assistenten von „Privat“ auf „Hochschulintern“ oder „Föderiert“ stellst, wird eine Prüfung ausgelöst.",
                     "note": "MCP-Konfigurationen werden von uns eigenständig überprüft."
                 },
                 "input_version_note": "Versionshinweis",
                 "input_version_note_placeholder": "Was hat sich geändert?",
-                "save_as_private_draft": "Als privaten Entwurf speichern",
+                "save_as_private_assistant": "Als privaten Assistenten speichern",
                 "save_as_review": "Zur Prüfung einreichen",
-                "save_as_draft": "Als draft Entwurf speichern",
+                "keep_as_draft": "Als Entwurf behalten",
                 "saved": "Assistent gespeichert.",
                 "submitted": "Assistent zur Prüfung eingereicht.",
                 "save_failed": "Speichern fehlgeschlagen."

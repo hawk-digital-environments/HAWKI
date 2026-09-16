@@ -112,6 +112,7 @@
         "message": {
             "sources": "Quellen",
             "authorHeading": ":author hat geschrieben",
+            "document": "Dokument",
             "citationReference": {
                 "label": "Quelle :number: :domain",
                 "labelNoDomain": "Quelle :number",

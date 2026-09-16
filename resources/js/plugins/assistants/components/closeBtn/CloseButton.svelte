@@ -1,69 +1,30 @@
 <script lang="ts">
 
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {ActionIcon} from '$lib/components/ui/icons';
     import type {IconComponent} from '$lib/components/ui/icons';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
+
+    const {__} = useTranslator();
 
     let {
         size = 'small',
         onClick,
-        icon: Icon = Cancel01Icon
+        icon: Icon = Cancel01Icon,
+        label,
     } = $props<{
         size?: "small" | "medium" | "large",
         onClick: () => void,
-        icon?: IconComponent
+        icon?: IconComponent,
+        label?: string,
     }>();
+
+    const actionSize = $derived(size === 'medium' ? 'md' : size === 'large' ? 'lg' : 'xs');
 </script>
 
-<button
-        type="button"
-        aria-label="Entfernen"
-        class="close-btn"
-        class:sizeSmall={size === "small"}
-        class:sizeMedium={size === "medium"}
-        class:sizeLarge={size === "large"}
+<ActionIcon
+        icon={Icon}
+        label={label ?? __('ui.common.remove')}
+        size={actionSize}
         onclick={() => onClick()}
-><Icon size="1em" /></button>
-
-<style>
-    button {
-        position: relative;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        border: none;
-        background: transparent;
-        color: inherit;
-        cursor: pointer;
-        border-radius: var(--corner-full);
-        opacity: 0.7;
-        transition:
-            opacity var(--duration-fast),
-            background-color var(--duration-fast);
-    }
-    button:hover {
-        opacity: 1;
-        background-color: color-mix(in oklch, currentColor 15%, transparent);
-    }
-    .sizeSmall {
-        width: 1.125rem;
-        height: 1.125rem;
-        font-size: 0.9rem;
-    }
-    .sizeMedium {
-        width: 1.5rem;
-        height: 1.5rem;
-        font-size: 1.5rem;
-        opacity: .5;
-        transition: opacity var(--duration-medium);
-    }
-    .sizeMedium:hover {
-        opacity: 1;
-    }
-    .sizeLarge {
-        width: 2rem;
-        height: 2rem;
-        font-size: 2rem;
-    }
-</style>
+/>

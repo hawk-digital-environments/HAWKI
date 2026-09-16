@@ -1,6 +1,7 @@
 <script lang="ts">
 
     import CloseButton from "$plugins/assistants/components/closeBtn/CloseButton.svelte";
+    import {StatusIcon} from '$lib/components/ui/icons';
     import type {IconComponent} from '$lib/components/ui/icons';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import type {Snippet} from 'svelte';
@@ -30,9 +31,7 @@
     >
         {#if icon}
             {@const IconCmp = icon}
-            <div class="icon-wrapper">
-                <span class="icon"><IconCmp size="1em" /></span>
-            </div>
+            <StatusIcon icon={IconCmp}/>
         {/if}
         <div class="text-wrapper">
             <p class="label">{label}</p>
@@ -106,18 +105,5 @@
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
         margin: 0;
-    }
-    .icon-wrapper{
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        background-color: var(--color-accent-100);
-        color: var(--color-accent-text);
-        border-radius: var(--corner-sm);
-    }
-    .icon{
-        font-size: var(--font-size-base);
     }
 </style>

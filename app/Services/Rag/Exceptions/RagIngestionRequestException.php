@@ -42,6 +42,15 @@ class RagIngestionRequestException extends \RuntimeException implements RagExcep
         ));
     }
 
+    public static function forMissingDocumentId(string $method, string $url): self
+    {
+        return new self(\sprintf(
+            'RAG server response for %s %s did not contain a document_id.',
+            $method,
+            $url,
+        ));
+    }
+
     /**
      * Server-side or infrastructure failures are worth retrying later;
      * 4xx responses are permanent.

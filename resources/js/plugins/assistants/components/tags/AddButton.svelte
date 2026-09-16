@@ -3,6 +3,7 @@
     import { tick, onMount } from 'svelte';
     import Add01Icon from "$lib/components/ui/icons/iconset/Add01Icon.svelte";
     import Tick02Icon from "$lib/components/ui/icons/iconset/Tick02Icon.svelte";
+    import {ActionIcon} from "$lib/components/ui/icons";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     const {__} = useTranslator();
 
@@ -151,16 +152,15 @@
             }}
         />
 
-        <button
-                type="button"
-                class="confirm-btn"
-                class:ready={value.trim()}
-                aria-label={confirmAriaLabel}
+        <ActionIcon
+                icon={Tick02Icon}
+                label={confirmAriaLabel}
+                size="sm"
+                tone="accent"
+                active={!!value.trim()}
                 disabled={!value.trim()}
                 onclick={confirm}
-        >
-            <Tick02Icon size="1em" />
-        </button>
+        />
     </div>
     {#if autoFillVals.length > 0}
         <div class="suggestions">
@@ -251,37 +251,6 @@
         from { opacity: 0; transform: scale(0.96); }
         to { opacity: 1; transform: scale(1); }
     }
-    .confirm-btn{
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        width: 1.375rem;
-        height: 1.375rem;
-        padding: 0;
-        border: none;
-        border-radius: var(--corner-full);
-        color: var(--color-text-muted);
-        background: transparent;
-        cursor: pointer;
-        transition:
-            background-color var(--duration-fast),
-            color var(--duration-fast);
-    }
-    .confirm-btn.ready{
-        color: var(--color-accent-text);
-        background: var(--color-accent-100);
-    }
-    .confirm-btn.ready:hover{
-        background: var(--color-accent-200);
-    }
-    .confirm-btn.ready:active{
-        transform: scale(0.92);
-    }
-    .confirm-btn:disabled{
-        opacity: 0.4;
-        cursor: default;
-    }
     input{
         display: inline-block;
         font-size: var(--font-size-xs);
@@ -302,9 +271,6 @@
     .input:focus-visible{
         outline: none;
         box-shadow: none;
-    }
-    .confirm-btn:focus-visible{
-        outline: none;
     }
 
     .suggestions{

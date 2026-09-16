@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\Assistants;
 
 use App\Models\Assistants\Assistant;
+use App\Models\User;
 use App\Policies\AssistantPolicy;
 use App\Services\Assistant\Repositories\AssistantRepository;
+use App\Services\System\UserTypes\UserContext;
+use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use LaravelJsonApi\Contracts\Server\Server;
+use LaravelJsonApi\Eloquent\Fields\ArrayList;
 use LaravelJsonApi\Eloquent\Fields\Boolean;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
@@ -34,6 +38,8 @@ class AssistantSchema extends Schema
     public function __construct(
         Server $server,
         private AssistantRepository $repository,
+        private readonly UserContext $userContext,
+        private readonly GateContract $gate,
     ) {
         parent::__construct($server);
     }
@@ -56,6 +62,23 @@ class AssistantSchema extends Schema
             Number::make('max_tokens'),
             Number::make('temp'),
             Number::make('top_p'),
+            ArrayList::make('capabilities')
+                ->extractUsing(function (Assistant $assistant) {
+                    // Same tier as the `ai_tools` include (creator or org
+                    // admin): capability selections are configuration, not part
+                    // of the public assistant profile. Everyone else gets null —
+                    // `->hidden()` cannot express this because its condition
+                    // only receives the request, never the model.
+                    $user = $this->userContext->getUser();
+
+                    if (!$user instanceof User) {
+                        return null;
+                    }
+
+                    return $this->gate->allows('viewAiTools', $assistant)
+                        ? $assistant->capabilities
+                        : null;
+                }),
             DateTime::make('created_at')->sortable()->readOnly(),
             DateTime::make('updated_at')->sortable()->readOnly(),
             Boolean::make('is_favorite')->readOnly(),

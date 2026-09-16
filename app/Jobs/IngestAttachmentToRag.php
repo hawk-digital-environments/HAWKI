@@ -9,22 +9,31 @@ use App\Services\Ai\Agents\Utils\ExtractTextCollector;
 use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Rag\Contracts\RagIngesterInterface;
 use App\Services\Rag\Exceptions\RagIngestionRequestException;
+use App\Services\Rag\Values\FileIngestionPayload;
 use App\Services\Rag\Values\RagIngestionOutcome;
 use App\Services\Rag\Values\RagIngestionStatus;
 use App\Services\Rag\Values\TextIngestionPayload;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFile;
 use App\Services\Storage\Values\StoredFileIdentifier;
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Psr\Log\LoggerInterface;
 
 /**
  * Queued RAG ingestion of one assistant knowledge file.
+ *
+ * What is sent is governed by `rag.attachment_ingestion`: "text" pushes
+ * the locally extracted text to the text-ingestion endpoint; "file"
+ * uploads the original file so the RAG server runs its own conversion
+ * (uploading also replaces a previously ingested document via the stored
+ * `rag_document_id` handle).
  *
  * State machine on the attachment row: pending -> ingesting -> ingested |
  * failed | skipped. Because the RAG server processes ingestion
@@ -32,13 +41,25 @@ use Psr\Log\LoggerInterface;
  * delay while the task is running instead of blocking a worker slot.
  * Attempts are unlimited but capped by retryUntil; permanent failure and
  * expiry both funnel into {@see failed()}.
+ *
+ * The job travels inside a batch so deleting the attachment can cancel
+ * it: once the batch is cancelled, {@see SkipIfBatchCancelled} makes the
+ * worker discard a still-queued run without executing it (works on any
+ * queue driver).
  */
 class IngestAttachmentToRag implements ShouldQueue
 {
+    use Batchable;
     use Dispatchable;
     use InteractsWithQueue;
     use Queueable;
     use SerializesModels;
+
+    /** @return list<object> */
+    public function middleware(): array
+    {
+        return [new SkipIfBatchCancelled()];
+    }
 
     /** Unlimited attempts; expiry is governed by {@see retryUntil}. */
     public int $tries = 0;
@@ -48,8 +69,7 @@ class IngestAttachmentToRag implements ShouldQueue
 
     private const int POLL_DELAY_SECONDS = 10;
 
-    /** Hard text length limit of the RAG server per document, in characters. */
-    private const int MAX_TEXT_LENGTH = 1_048_576;
+    private const string FILE_INGESTION_MODE = 'file';
 
     public function __construct(
         public readonly int $assistantId,
@@ -64,6 +84,8 @@ class IngestAttachmentToRag implements ShouldQueue
         ExtractTextCollector $extractTextCollector,
         #[Config('rag.dataset_prefix')]
         string $datasetPrefix,
+        #[Config('rag.attachment_ingestion')]
+        string $attachmentIngestion,
         LoggerInterface $logger,
     ): void {
         $attachment = $assistantAttachmentRepository->findOne($this->assistantAttachmentId);
@@ -80,6 +102,7 @@ class IngestAttachmentToRag implements ShouldQueue
             return;
         }
 
+        $ingestsFiles = self::FILE_INGESTION_MODE === $attachmentIngestion;
         $datasetId = $datasetPrefix . $this->assistantId;
 
         try {
@@ -101,29 +124,22 @@ class IngestAttachmentToRag implements ShouldQueue
                 return;
             }
 
-            $text = $extractTextCollector->collect($file);
+            $text = '';
 
-            if ('' === $text) {
-                $assistantAttachmentRepository->updateRagState(
-                    $this->assistantAttachmentId,
-                    RagIngestionStatus::SKIPPED,
-                    error: 'File has no extractable text.',
-                );
+            if (!$ingestsFiles) {
+                // File mode leaves conversion to the RAG server, so local
+                // text extraction and its guards do not apply there.
+                $text = $extractTextCollector->collect($file);
 
-                return;
-            }
+                if ('' === $text) {
+                    $assistantAttachmentRepository->updateRagState(
+                        $this->assistantAttachmentId,
+                        RagIngestionStatus::SKIPPED,
+                        error: 'File has no extractable text.',
+                    );
 
-            if (\mb_strlen($text) > self::MAX_TEXT_LENGTH) {
-                $assistantAttachmentRepository->updateRagState(
-                    $this->assistantAttachmentId,
-                    RagIngestionStatus::FAILED,
-                    error: \sprintf(
-                        'Extracted text exceeds the RAG server limit of %d characters.',
-                        self::MAX_TEXT_LENGTH,
-                    ),
-                );
-
-                return;
+                    return;
+                }
             }
 
             if (!$ingester->ensureDataset($datasetId)) {
@@ -136,7 +152,19 @@ class IngestAttachmentToRag implements ShouldQueue
                 return;
             }
 
-            $handle = $ingester->ingest($this->payload($datasetId, $attachment, $text), $this->idempotencyKey($file));
+            $documentId = null;
+
+            if ($ingestsFiles) {
+                $result = $ingester->ingestFile(
+                    $this->filePayload($datasetId, $attachment, $file),
+                    $this->idempotencyKey($file),
+                    $attachment->rag_document_id ?: null,
+                );
+                $handle = $result->taskId;
+                $documentId = $result->documentId;
+            } else {
+                $handle = $ingester->ingest($this->payload($datasetId, $attachment, $text), $this->idempotencyKey($file));
+            }
 
             if ('' === $handle) {
                 $assistantAttachmentRepository->updateRagState(
@@ -152,6 +180,7 @@ class IngestAttachmentToRag implements ShouldQueue
                 $this->assistantAttachmentId,
                 RagIngestionStatus::INGESTING,
                 taskId: $handle,
+                documentId: $documentId,
             );
 
             $this->resolveCheck($assistantAttachmentRepository, $ingester, $handle);
@@ -248,13 +277,32 @@ class IngestAttachmentToRag implements ShouldQueue
             externalDocumentId: $attachment->uuid,
             text: $text,
             displayName: \mb_substr($attachment->name, 0, 255),
-            metadata: [
-                'assistant_id' => $this->assistantId,
-                'attachment_uuid' => $attachment->uuid,
-                'mime' => $attachment->mime,
-                'uploaded_by' => $attachment->user_id,
-            ],
+            metadata: $this->metadata($attachment),
         );
+    }
+
+    private function filePayload(string $datasetId, AssistantAttachment $attachment, StoredFile $file): FileIngestionPayload
+    {
+        return new FileIngestionPayload(
+            datasetId: $datasetId,
+            externalDocumentId: $attachment->uuid,
+            filename: $file->getOriginalFilename(),
+            mimeType: $file->getMimeType(),
+            content: $file->getContent(),
+            displayName: \mb_substr($attachment->name, 0, 255),
+            metadata: $this->metadata($attachment),
+        );
+    }
+
+    /** @return array<string, string|int|bool|null> */
+    private function metadata(AssistantAttachment $attachment): array
+    {
+        return [
+            'assistant_id' => $this->assistantId,
+            'attachment_uuid' => $attachment->uuid,
+            'mime' => $attachment->mime,
+            'uploaded_by' => $attachment->user_id,
+        ];
     }
 
     private function idempotencyKey(StoredFile $file): string

@@ -379,7 +379,16 @@ class StreamController extends Controller
         $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
 
         try {
-            return ['success' => true, 'content' => json_encode(['text' => $res->text], JSON_THROW_ON_ERROR)];
+            $content = ['text' => $res->text];
+
+            // Provider and RAG document citations ride the same encrypted
+            // content shape as the streaming paths.
+            $citations = $res->meta->citations->all();
+            if ($citations !== []) {
+                $content['citations'] = $citations;
+            }
+
+            return ['success' => true, 'content' => json_encode($content, JSON_THROW_ON_ERROR)];
         } catch (\Throwable $e) {
             $this->logger->error('Error encoding message data to JSON', [
                 'exception' => $e

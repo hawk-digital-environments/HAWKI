@@ -106,7 +106,7 @@
         flex: 1 1 auto;
         min-height: 6.5rem;
     }
-    .symbol-group :global(.trigger){
+    .symbol-group :global(.custom-trigger){
         width: 100%;
         height: 100%;
         background: var(--color-surface-raised);
@@ -114,7 +114,7 @@
         border-radius: var(--corner-sm);
         transition: background-color var(--duration-fast);
     }
-    .symbol-group :global(.trigger:hover){
+    .symbol-group :global(.custom-trigger:hover){
         background: var(--color-hover);
     }
 

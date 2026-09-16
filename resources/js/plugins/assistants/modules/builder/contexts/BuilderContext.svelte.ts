@@ -68,6 +68,7 @@ import {
 import { BuilderValidatorContext } from "./BuilderValidatorContext.svelte.js";
 import { clone, valuesEqual, IDENTITY_KEYS, getMaxOutputTokensLimit } from "./builderUtils.js";
 import { rememberBuilderReturnPath } from "./builderReturn.js";
+import {KNOWLEDGE_BASE_CAPABILITY, isAiToolAvailableFor} from "$plugins/core/stores/aiToolStoreData.js";
 import { ApiError } from "$plugins/assistants/api/errors";
 import type {ToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
 import {useStore} from "$lib/app/hooks/useStore.svelte";
@@ -160,6 +161,11 @@ export class BuilderContext {
   private readonly DEBOUNCE_MS = 1000;
 
   private isNewDraft = false;
+
+  /** The ai-tools the server currently holds (ids, sorted) — the save cycle
+   *  compares its model-filtered payload against this to decide whether the
+   *  `ai_tools` relationship needs (re)sending. See {@link effectiveAiTools}. */
+  private lastSyncedAiToolIds: string[] = [];
 
   /** Set once {@link discardDraft} runs: mutes every reaction of the dying
    *  session — a save still in flight (or its `saveAgain` re-run) failing
@@ -289,6 +295,7 @@ export class BuilderContext {
     this.draft = clone(assistant);
     this.baseline = clone(assistant);
     this.sessionOrigin = clone(assistant);
+    this.lastSyncedAiToolIds = (assistant.aiTools ?? []).map(t => t.id).sort();
     this.setToSession();
     this.validator.init(this.draft);
   }
@@ -343,6 +350,28 @@ export class BuilderContext {
     );
     this.setToSession();
     await this.flushSave();
+  }
+
+  /**
+   * The `ai_tools` the server is allowed to hold right now: the draft's tools
+   * filtered by what the currently selected model can actually fulfil
+   * (knowledge-base tools are exempt — the Knowledge page owns them). The
+   * draft itself keeps every selection, so rows stay visible, toggled, and
+   * covered by `ModelToolConflictPanel`'s warnings; unsupported attachments
+   * merely never leave the builder — and become eligible for saving again
+   * the moment a compatible model is chosen (`setModel` always schedules a
+   * save, so the comparison in the save cycle re-evaluates on every switch).
+   */
+  private effectiveAiTools(): Assistant['aiTools'] {
+    const tools = this.draft.aiTools ?? [];
+    const model = this.aiModelStore.getOneById(this.draft.model);
+    if (!model) {
+      return tools;
+    }
+    return tools.filter(tool =>
+      tool.capability_key === KNOWLEDGE_BASE_CAPABILITY
+      || isAiToolAvailableFor(tool, model)
+    );
   }
 
   readonly changedKeys = $derived.by(() => {
@@ -526,8 +555,21 @@ export class BuilderContext {
 
       if (changedKeys.size) {
         currentField = undefined;
-        const body = assistantToApi(this.draft, changedKeys);
+        // Send only the tools the selected model can fulfil, and force the
+        // relationship into the payload whenever that effective set drifted
+        // from what the server holds (model switch, or an unsupported tool
+        // was toggled on) — the draft keeps the full selection.
+        const effectiveAiTools = this.effectiveAiTools();
+        const effectiveAiToolIds = (effectiveAiTools ?? []).map(t => t.id).sort();
+        if (!valuesEqual(effectiveAiToolIds, this.lastSyncedAiToolIds)) {
+          changedKeys.add('aiTools');
+        }
+        const body = assistantToApi(
+          {...this.draft, aiTools: effectiveAiTools},
+          changedKeys,
+        );
         await updateAssistant(draftId, body);
+        this.lastSyncedAiToolIds = effectiveAiToolIds;
         this.commitKeys([...changedKeys]);
       }
 
@@ -595,10 +637,10 @@ export class BuilderContext {
       this.draft = { ...this.draft, requested_release_stage: this.draft.releaseStage };
       this.committed = true;
       this.setToSession();
-      // A private draft is just saved; the other stages go through review, so
-      // say which of the two actually happened.
+      // Draft and private are applied right away; the other stages go through
+      // review, so say which of the two actually happened.
       this.toast.success(
-        this.draft.releaseStage === ReleaseMode.PRIVATE
+        this.draft.releaseStage === ReleaseMode.DRAFT || this.draft.releaseStage === ReleaseMode.PRIVATE
           ? this.translate("assistants.builder.publish.saved")
           : this.translate("assistants.builder.publish.submitted"),
       );

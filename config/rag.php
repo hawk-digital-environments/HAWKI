@@ -25,4 +25,12 @@ return [
     'timeout' => (int) env('HAWKI_RAG_API_TIMEOUT', 30),
 
     'dataset_prefix' => 'assistant_',
+
+    // What is sent to the RAG server for assistant attachments:
+    // "text" — HAWKI extracts the text locally (ExtractTextCollector)
+    // and pushes it to the text-ingestion endpoint; "file" — the
+    // original file is uploaded to POST /documents and the RAG
+    // server's own converter pipeline runs. Anything other than
+    // "file" resolves to "text".
+    'attachment_ingestion' => env('HAWKI_RAG_ATTACHMENT_INGESTION', 'text'),
 ];

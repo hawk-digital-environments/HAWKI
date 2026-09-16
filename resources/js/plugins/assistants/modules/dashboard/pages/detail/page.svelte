@@ -23,6 +23,7 @@
     import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
     import Clock01Icon from "$lib/components/ui/icons/iconset/Clock01Icon.svelte";
     import ArrowLeft01Icon from "$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte";
+    import {ActionIcon} from "$lib/components/ui/icons";
     import Page from "$lib/components/ui/page/Page.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {
@@ -230,31 +231,27 @@
         {/if}
 
         <div class="cover">
-            <button
-                class="back"
-                aria-label={__('assistants.detail.back')}
-                style:background="oklch(100% 0 0 / 0.9)"
-                onclick={backToStore}
-            >
-                <span class="icon" style:color="oklch(20% 0 0)">
-                    <ArrowLeft01Icon size="1em" />
-                </span>
-            </button>
+            <ActionIcon
+                    icon={ArrowLeft01Icon}
+                    label={__('assistants.detail.back')}
+                    variant="frosted"
+                    class="back"
+                    style="--action-icon-bg: oklch(100% 0 0 / 0.9); --action-icon-color: oklch(20% 0 0); --action-icon-hover-bg: oklch(100% 0 0 / 0.9)"
+                    onclick={backToStore}
+            />
             {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.delete === true}
                 <DropdownMenu align="end">
                     {#snippet trigger({props})}
                         <Tooltip tooltip={__('assistants.detail.menu_aria')}>
                             {#snippet children(t)}
-                                <button
-                                    {...mergeProps(props, t.props)}
-                                    class="edit"
-                                    aria-label={__('assistants.detail.menu_aria')}
-                                    style:background="oklch(100% 0 0 / 0.9)"
-                                >
-                                    <span class="icon" style:color="oklch(20% 0 0)">
-                                        <Settings03Icon size={18} />
-                                    </span>
-                                </button>
+                                <ActionIcon
+                                        {...mergeProps(props, t.props)}
+                                        icon={Settings03Icon}
+                                        label={__('assistants.detail.menu_aria')}
+                                        variant="frosted"
+                                        class="edit"
+                                        style="--action-icon-bg: oklch(100% 0 0 / 0.9); --action-icon-color: oklch(20% 0 0); --action-icon-hover-bg: oklch(100% 0 0 / 0.9)"
+                                />
                             {/snippet}
                         </Tooltip>
                     {/snippet}
@@ -454,43 +451,17 @@
     .cover :global(.banner-container .symbol) {
         font-size: 5rem;
     }
-    .back,
-    .edit {
+    .cover :global(.back),
+    .cover :global(.edit) {
         position: absolute;
         top: var(--space-3);
         z-index: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        padding: 0;
-        border: none;
-        border-radius: var(--corner-full);
-        backdrop-filter: blur(6px);
-        cursor: pointer;
-        transition: background-color var(--duration-fast), transform var(--duration-fast);
     }
-    .back {
+    .cover :global(.back) {
         left: var(--space-3);
     }
-    .edit {
+    .cover :global(.edit) {
         right: var(--space-3);
-    }
-    .back:hover,
-    .edit:hover {
-        transform: scale(1.06);
-    }
-    .back .icon,
-    .edit .icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: var(--font-size-lg);
-    }
-    .back .icon :global(svg),
-    .edit .icon :global(svg) {
-        display: block;
     }
 
     /* Overview: avatar tile beside the name/handle, controls, description. */

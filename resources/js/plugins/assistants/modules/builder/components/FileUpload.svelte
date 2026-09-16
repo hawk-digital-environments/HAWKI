@@ -23,6 +23,7 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
     import { useConfig } from '$lib/app/hooks/useConfig.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import {StatusIcon} from '$lib/components/ui/icons';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
     import RadialProgress from '$lib/components/ui/radial-progress/RadialProgress.svelte';
     import { onDestroy } from 'svelte';
@@ -438,9 +439,7 @@
                     </div>
                 </div>
             {:else}
-                <span class="icon">
-                    <FileUploadIcon size="1em" />
-                </span>
+                <StatusIcon icon={FileUploadIcon} tone="neutral" size="xl"/>
                 <div class="text-wrapper">
                     <p class="u-label">{__('assistants.builder.knowledge.upload_title')}</p>
                     <p class="description">
@@ -521,9 +520,14 @@
                             {#if indicator}
                                 <Tooltip focusable={false} hiddenLabel={indicatorTooltip}>
                                     {#snippet children({props})}
-                                        <span {...props} class="rag-status {indicator.cls}" aria-hidden="true">
-                                            <Database01Icon size="1em" />
-                                        </span>
+                                        <StatusIcon
+                                                {...props}
+                                                icon={Database01Icon}
+                                                tone={indicator.cls === 'pending' ? 'warning' : indicator.cls === 'failed' ? 'error' : 'success'}
+                                                size="md"
+                                                class="rag-status"
+                                                aria-hidden="true"
+                                        />
                                     {/snippet}
                                     {#snippet tooltip()}
                                         {indicatorTooltip}
@@ -596,10 +600,6 @@
         justify-content: center;
         align-items: center;
     }
-    .content-box .icon {
-        font-size: var(--font-size-2xl);
-        color: var(--color-text-muted);
-    }
     .text-wrapper {
         margin-bottom: var(--space-2);
         text-align: center;
@@ -637,22 +637,8 @@
         cursor: help;
         line-height: 0;
     }
-    .rag-status{
-        display: inline-flex;
-        line-height: 0;
+    :global(.rag-status){
         cursor: help;
-        /* Middle ground between the file icon (~17.6px) and the delete icon
-           (24px) so all three row icons read as the same weight. */
-        font-size: 1.25rem;
-    }
-    .rag-status.success{
-        color: var(--color-success);
-    }
-    .rag-status.pending{
-        color: var(--color-warning);
-    }
-    .rag-status.failed{
-        color: var(--color-error);
     }
     .restriction-label {
         font-weight: var(--font-weight-medium);

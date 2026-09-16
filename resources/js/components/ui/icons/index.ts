@@ -9,3 +9,6 @@ import type {HugeiconsProps} from '@hugeicons/svelte';
  * `iconset/` interchangeably.
  */
 export type IconComponent = Component<Omit<HugeiconsProps, 'icon'>>;
+
+export {default as StatusIcon} from './StatusIcon.svelte';
+export {default as ActionIcon} from './ActionIcon.svelte';

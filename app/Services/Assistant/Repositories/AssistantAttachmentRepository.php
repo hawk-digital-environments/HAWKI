@@ -37,6 +37,20 @@ class AssistantAttachmentRepository extends AbstractRepository
     }
 
     /**
+     * The attachment whose ingestion produced the given RAG managed
+     * document id (`adoc_*`) — the local counterpart of a knowledge-base
+     * search hit. Ties (a replacement re-ingesting into the same managed
+     * document) resolve to the newest attachment.
+     */
+    public function findOneByRagDocumentId(string $ragDocumentId): ?AssistantAttachment
+    {
+        return $this->getQuery()
+            ->where('rag_document_id', $ragDocumentId)
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
      * Persists an AssistantAttachment row linking the stored file to the
      * assistant, owned by the given user. Returns the created model, or
      * null when persisting failed.
@@ -73,13 +87,16 @@ class AssistantAttachmentRepository extends AbstractRepository
     /**
      * Advances the RAG ingestion state of an attachment. Sets the ingest
      * timestamp automatically when the status becomes INGESTED; passing
-     * null for taskId/error leaves the stored values untouched.
+     * null for taskId/documentId/batchId/error leaves the stored values
+     * untouched.
      */
     public function updateRagState(
         int $assistantAttachmentId,
         RagIngestionStatus $status,
         ?string $taskId = null,
         ?string $error = null,
+        ?string $documentId = null,
+        ?string $batchId = null,
     ): void {
         $update = ['rag_status' => $status->value];
 
@@ -89,6 +106,14 @@ class AssistantAttachmentRepository extends AbstractRepository
 
         if (null !== $error) {
             $update['rag_error'] = $error;
+        }
+
+        if (null !== $documentId) {
+            $update['rag_document_id'] = $documentId;
+        }
+
+        if (null !== $batchId) {
+            $update['rag_batch_id'] = $batchId;
         }
 
         if (RagIngestionStatus::INGESTED === $status) {

@@ -1,6 +1,7 @@
 <script lang="ts">
 
     import type {IconComponent} from '$lib/components/ui/icons';
+    import {StatusIcon} from '$lib/components/ui/icons';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import InputError from "$plugins/assistants/components/inputError/InputError.svelte";
     import {untrack} from "svelte";
@@ -53,9 +54,7 @@
 >
     {#if icon}
         {@const IconCmp = icon}
-        <div class="icon-wrapper">
-            <span class="icon"><IconCmp size="1em" /></span>
-        </div>
+        <StatusIcon icon={IconCmp}/>
     {/if}
     <div class="text-wrapper">
         <div class="field-header">
@@ -112,14 +111,5 @@
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         margin: 0;
-    }
-    .icon-wrapper{
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-text-muted);
-    }
-    .icon{
-        font-size: var(--font-size-lg);
     }
 </style>
