@@ -24,7 +24,7 @@ return new class() extends Migration {
      * Frozen copy of the administration permission names registered when this migration was
      * written. Deliberately not read from App\Services\Admin\Permission: a later edit of that
      * enum must not retroactively change what a fresh install seeds. The built-in administrator
-     * role receives all of them.
+     * role receives every registered permission.
      */
     private const ADMIN_PERMISSIONS = [
         'admin.access',
@@ -45,8 +45,8 @@ return new class() extends Migration {
     ];
 
     /**
-     * Tool and AI capability permission names. Registered so administrators can grant them,
-     * but deliberately granted to no role: access rules and grants are published explicitly.
+     * Tool and AI capability permission names. Registered for the built-in administrator; no
+     * other role receives them until access rules and grants are published explicitly.
      */
     private const CAPABILITY_PERMISSIONS = [
         'tools.use',
@@ -303,7 +303,7 @@ return new class() extends Migration {
             ));
 
             DB::table('role_has_permissions')->insertOrIgnore(
-                DB::table('permissions')->where('guard_name', 'web')->whereIn('name', self::ADMIN_PERMISSIONS)
+                DB::table('permissions')->where('guard_name', 'web')->whereIn('name', [...self::ADMIN_PERMISSIONS, ...self::CAPABILITY_PERMISSIONS])
                     ->pluck('id')->map(static fn ($id): array => ['permission_id' => (int) $id, 'role_id' => $admin])->all(),
             );
 

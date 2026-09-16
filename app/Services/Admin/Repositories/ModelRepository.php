@@ -10,6 +10,7 @@ use App\Models\Ai\AiProvider;
 use App\Models\Ai\SystemModel;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
+use App\Services\Ai\StatusCheck\ModelStatusUpdater;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -49,11 +50,18 @@ class ModelRepository extends ConfigurationRepository
         return ['refreshed' => true];
     }
 
+    public function checkStatus(): array
+    {
+        app(ModelStatusUpdater::class)->run();
+
+        return ['checked' => true];
+    }
+
     protected function definition(): array
     {
         $fields = new \App\Services\Admin\ResourceFields();
 
-        return ['model' => AiModel::class, 'columns' => ['label', 'model_id', 'provider_id', 'active'], 'fields' => [
+        return ['model' => AiModel::class, 'columns' => ['label', 'model_id', 'provider_id', 'active', 'status'], 'fields' => [
             $fields->reference('provider_id', 'ai_providers', 'providers'), $fields->text('model_id', true) + ['immutable' => true], $fields->text('label', true),
             $fields->field('descriptions', 'localized-text', 'nullable|array'),
             $fields->boolean('active'), $fields->text('model_type', true) + ['default' => 'chat'],

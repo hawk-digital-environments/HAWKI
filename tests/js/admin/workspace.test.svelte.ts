@@ -548,6 +548,89 @@ function refreshFixture() {
     return { response, workspace };
 }
 
+test('routine revalidation stays silent while it reads and publishes fresh rows', async () => {
+    const first: JsonApiCollection<AdminRow> = Object.assign(
+        [{ type: 'admin-roles', id: '17', name: 'Old', _meta: { version: 'v1' } }],
+        { _meta: { fields: [{ key: 'name', type: 'text' }] } }
+    );
+    const second: JsonApiCollection<AdminRow> = Object.assign(
+        [{ type: 'admin-roles', id: '17', name: 'Fresh', _meta: { version: 'v2' } }],
+        { _meta: { fields: [{ key: 'name', type: 'text' }] } }
+    );
+    let finish!: (value: JsonApiCollection<AdminRow>) => void;
+    const pending = new Promise<JsonApiCollection<AdminRow>>((resolve) => {
+        finish = resolve;
+    });
+    let reads = 0;
+    const workspace = new AdminWorkspace(
+        (label) => label,
+        [{ id: 'name' }],
+        () => (reads++ === 0 ? Promise.resolve(first) : pending)
+    );
+    await workspace.load();
+    const revalidation = workspace.revalidate();
+    assert.equal(workspace.loading, false);
+    assert.equal(workspace.rows[0].name, 'Old');
+    finish(second);
+    await revalidation;
+    assert.equal(workspace.loading, false);
+    assert.equal(workspace.rows[0].name, 'Fresh');
+});
+
+test('routine revalidation keeps pending confirmations open', async () => {
+    const { workspace } = refreshFixture();
+    await workspace.load();
+    workspace.remove(workspace.rows[0], null);
+    const confirmation = workspace.confirmation;
+    assert.equal(await workspace.revalidate(), false);
+    assert.equal(workspace.confirmation, confirmation);
+});
+
+test('routine revalidation preserves an unchanged editor instance and updates its row reference', async () => {
+    const { workspace } = refreshFixture();
+    await workspace.load();
+    const previousRow = workspace.rows[0];
+    workspace.edit(previousRow, null);
+    const editor = workspace.editor;
+    assert.equal(await workspace.revalidate(), false);
+    assert.equal(workspace.editor, editor, 'keeping the editor instance preserves its form draft');
+    assert.notEqual(workspace.editor?.row, previousRow);
+    assert.equal(workspace.editor?.row, workspace.rows[0]);
+});
+
+test('routine revalidation closes changed or deleted edit targets', async () => {
+    for (const change of ['changed', 'deleted']) {
+        const { response, workspace } = refreshFixture();
+        await workspace.load();
+        workspace.edit(workspace.rows[0], null);
+        if (change === 'changed') response.data[0].meta.version = 'v2';
+        else response.data = [];
+        assert.equal(await workspace.revalidate(), true);
+        assert.equal(workspace.editor, null, change);
+        assert.equal(workspace.notice, 'admin.editor_refreshed');
+    }
+});
+
+test('routine revalidation is a no-op while suspended', async () => {
+    const { workspace, calls } = fixture('roles');
+    workspace.suspend();
+    assert.equal(await workspace.revalidate(), false);
+    assert.equal(calls.length, 0);
+});
+
+test('failed routine revalidation preserves the editor and previous content', async () => {
+    const { response, workspace } = refreshFixture();
+    await workspace.load();
+    workspace.edit(workspace.rows[0], null);
+    const content = workspace.content;
+    const editor = workspace.editor;
+    Object.assign(response.meta, { fields: 'invalid response' });
+    assert.equal(await workspace.revalidate(), false);
+    assert.equal(workspace.content, content);
+    assert.equal(workspace.editor, editor);
+    assert.notEqual(workspace.error, '');
+});
+
 test('successful same-permission refresh closes changed or deleted edit targets', async () => {
     for (const change of ['changed', 'deleted']) {
         const { response, workspace } = refreshFixture();
@@ -562,7 +645,7 @@ test('successful same-permission refresh closes changed or deleted edit targets'
     }
 });
 
-test('successful same-permission refresh always closes pending confirmations', async () => {
+test('suspend/resume refresh always closes pending confirmations', async () => {
     const { workspace } = refreshFixture();
     await workspace.load();
     workspace.remove(workspace.rows[0], null);
