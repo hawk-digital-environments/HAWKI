@@ -329,12 +329,12 @@ class ToolAuthorizationTest extends TestCase
         return [new AgentRequestContext(app(AiProviderProxyResolver::class)->resolve($provider), $model, new AiModelParameters(), actorId: $this->actor->id), $model];
     }
 
-    public function testNativeCatalogRetainsTemporaryOfflineStatusButExecutionDenies(): void
+    public function testModelOnlineStatusDoesNotGateNativeTool(): void
     {
         $this->model->update(['status' => OnlineStatus::OFFLINE]);
         // Other seeded models may also offer native web search; only this model's presence is the point.
         self::assertContains((string) $this->model->id, app(ToolAuthorization::class)->nativeModelIds('web_search', $this->actor));
-        $this->assertAccessFailure(fn () => app(LaravelToolResolver::class)->resolveNativeToolForCapability('web_search', $this->context), 'TOOL_UNAVAILABLE');
+        self::assertInstanceOf(WebSearch::class, app(LaravelToolResolver::class)->resolveNativeToolForCapability('web_search', $this->context));
     }
 
     public function testAutomaticCapabilityLookupSkipsAnUnauthorizedCandidate(): void

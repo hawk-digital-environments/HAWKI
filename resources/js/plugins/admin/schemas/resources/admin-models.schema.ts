@@ -8,6 +8,7 @@ export const AdminModelSchema = z.object({
     model_id: z.string(),
     provider_id: z.number(),
     active: z.boolean(),
+    status: z.string(),
     descriptions: jsonObject(z.string()),
     model_type: z.string().nullable(),
     documentation_url: z.string().nullable(),

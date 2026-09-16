@@ -31,6 +31,7 @@ export const adminActionIcons: Record<string, IconComponent> = {
     'tokens': Key01Icon,
     'revoke-tokens': CancelCircleIcon,
     'check-ai-status': Activity01Icon,
+    'check-status': Activity01Icon,
     'retry-job': ReloadIcon,
     'flush-jobs': Delete02Icon
 };
