@@ -40,8 +40,8 @@
     ) ?? null);
 
     // On routes that belong to no module (e.g. the announcements page) the
-    // module sidebar sticks to the last active module instead of vanishing,
-    // falling back to the first module for direct page loads.
+    // module sidebar and the module selector stick to the last active module
+    // instead of vanishing, falling back to the first module for direct page loads.
     let lastActiveModule = $state<HawkiModuleWithPlugin | null>(null);
     $effect(() => {
         if (activeModule) {
@@ -79,7 +79,7 @@
         <HawkLogo label={__('ui.navigation.newChat')} />
     </SidebarHeader>
     <nav class="module-selector" aria-label={__('ui.navigation.mainLabel')}>
-        <ModuleSelector />
+        <ModuleSelector module={sidebarModule} />
     </nav>
     <div class="module-sidebar">
         {#if ModuleSidebar}
