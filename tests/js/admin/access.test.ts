@@ -40,6 +40,11 @@ test('every admin link resolves without chat keys, with its own section permissi
     }
 });
 
+test('tools share the MCP section permission without a separate route', () => {
+    assert.equal(sections.some((section) => String(section.id) === 'tools'), false);
+    assert.equal(sections.find((section) => section.id === 'mcp')?.permission, 'mcp.manage');
+});
+
 test('panel permission and section permission are independently enforced', async () => {
     for (const section of sections) {
         for (const permissions of [['admin.access'], [section.permission]]) {

@@ -4,6 +4,19 @@
   the page's workspace. Pages compose AdminSearch, AdminTable or their own
   markup as children.
 -->
+<script module lang="ts">
+    import type { EditorSection } from '../forms/schemas.js';
+    import type { AdminWorkspace } from '../workspace.svelte.js';
+
+    export interface RelatedWorkspace {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        workspace: AdminWorkspace<any, any, any>;
+        section: EditorSection;
+        /** Editor dialog title prefix, e.g. "Tools". */
+        title: string;
+    }
+</script>
+
 <script
     lang="ts"
     generics="Row extends AdminRow, ColumnId extends string, Results extends Record<string, unknown>"
@@ -21,7 +34,7 @@
     import { adminActionIcons } from '../actionIcons.js';
     import { sections, type SectionId } from '../sections.js';
     import type { AdminRow } from '../schemas/admin-content.js';
-    import type { AdminAction, AdminWorkspace } from '../workspace.svelte.js';
+    import type { AdminAction } from '../workspace.svelte.js';
 
     let {
         workspace,
@@ -29,6 +42,7 @@
         pageActions = [],
         menuItems = [],
         hint,
+        related = [],
         children
     }: {
         workspace: AdminWorkspace<Row, ColumnId, Results>;
@@ -40,12 +54,14 @@
         menuItems?: AdminMenuItem[];
         /** Explanatory text under the section description. */
         hint?: string;
+        related?: RelatedWorkspace[];
         children?: Snippet;
     } = $props();
     const app = useApp();
     const { __ } = useTranslator();
     const breakpoint = useBreakpoint();
     const title = $derived(__('admin.sections.' + section));
+    const all = $derived([workspace, ...related.map((item) => item.workspace)]);
     /** The user may see this section; checked reactively so revoked permissions hide the content. */
     const allowed = $derived(
         app.can('admin.access') && app.can(sections.find((item) => item.id === section)!.permission)
@@ -57,8 +73,8 @@
     );
     let previousPermissions = untrack(permissionSignature);
     function invalidate() {
-        const hadDialog = workspace.dialogOpen;
-        workspace.invalidate();
+        const hadDialog = all.some((item) => item.dialogOpen);
+        for (const item of all) item.invalidate();
         if (hadDialog || !allowed) void tick().then(() => (allowed ? workspace.restoreFocus() : forbidden)?.focus());
     }
     $effect(() => {
@@ -71,15 +87,17 @@
                 const authorizationChanged = !allowed || current !== previousPermissions;
                 if (authorizationChanged) {
                     invalidate();
-                    if (allowed) workspace.notice = __('admin.authorization_changed');
+                    if (allowed) for (const item of all) item.notice = __('admin.authorization_changed');
                 }
                 previousPermissions = current;
                 const closed =
                     allowed &&
-                    (authorizationChanged ? await workspace.resume() : await workspace.revalidate());
+                    (await Promise.all(
+                        all.map((item) => (authorizationChanged ? item.resume() : item.revalidate()))
+                    )).some(Boolean);
                 if (closed) {
                     await tick();
-                    if (!workspace.dialogOpen) workspace.restoreFocus()?.focus();
+                    if (!all.some((item) => item.dialogOpen)) workspace.restoreFocus()?.focus();
                 }
             }),
             app.events.async.on('connectionRefreshFailed', () => invalidate()),
@@ -91,8 +109,8 @@
         {
             label: __('admin.reload'),
             icon: adminActionIcons.reload,
-            disabled: workspace.loading,
-            run: () => workspace.load()
+            disabled: all.some((item) => item.loading),
+            run: () => Promise.all(all.map((item) => item.load()))
         },
         ...pageActions.map((item) => ({
             label: __('admin.actions.' + item.id),
@@ -104,7 +122,9 @@
     ]);
 
     $effect(() => {
-        workspace.focusFallback = () => toolbar?.querySelector<HTMLElement>('button:not(:disabled)') ?? toolbar ?? forbidden ?? null;
+        for (const item of all)
+            item.focusFallback = () =>
+                toolbar?.querySelector<HTMLElement>('button:not(:disabled)') ?? toolbar ?? forbidden ?? null;
     });
 </script>
 
@@ -120,9 +140,9 @@
                     <AdminActionMenu
                         label={__('admin.page_actions', { name: title })}
                         items={toolbarItems}
-                        disabled={workspace.busy}
+                        disabled={all.some((item) => item.busy)}
                         compact={breakpoint.is('bpSmAndSmaller')}
-                        dialogOpen={workspace.dialogOpen}
+                        dialogOpen={all.some((item) => item.dialogOpen)}
                     />
                     {#if workspace.canCreate}
                         <Button
@@ -152,6 +172,20 @@
                 >
                     {workspace.authorizationDenied ? __('admin.forbidden') : workspace.error}
                 </p>{/if}
+            {#each related as item}
+                <p
+                    role="status"
+                    class="feedback"
+                >
+                    {item.workspace.notice}
+                </p>
+                {#if item.workspace.error || item.workspace.authorizationDenied}<p
+                        role="alert"
+                        class="error"
+                    >
+                        {item.workspace.authorizationDenied ? __('admin.forbidden') : item.workspace.error}
+                    </p>{/if}
+            {/each}
             {@render children?.()}
         </div>
     </Page>
@@ -178,6 +212,30 @@
         restoreFocusTo={() => workspace.restoreFocus()}
         onConfirm={() => workspace.confirm()}
     />
+    {#each related as item}
+        {#if item.workspace.editor}
+            <AdminEditor
+                section={item.section}
+                fields={item.workspace.editor.fields}
+                content={item.workspace.content}
+                row={item.workspace.editor.row}
+                title={item.title + ' · ' + __(item.workspace.editor.row ? 'admin.edit' : 'admin.create')}
+                onSave={(values) => item.workspace.save(values)}
+                onClose={() => (item.workspace.editor = null)}
+                restoreFocus={() => item.workspace.restoreFocus()}
+            />
+        {/if}
+        <ConfirmDialog
+            open={!!item.workspace.confirmation}
+            title={item.workspace.confirmation?.title}
+            description={item.workspace.confirmation?.description}
+            onOpenChange={(open) => {
+                if (!open) item.workspace.confirmation = null;
+            }}
+            restoreFocusTo={() => item.workspace.restoreFocus()}
+            onConfirm={() => item.workspace.confirm()}
+        />
+    {/each}
 {:else}
     <Page title={__('admin.forbidden_title')}><p bind:this={forbidden} tabindex="-1" role="alert">{__('admin.forbidden')}</p></Page>
 {/if}
