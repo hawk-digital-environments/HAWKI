@@ -67,7 +67,7 @@
     }
 
     function logout(): void {
-        app.logout();
+        void app.logout().catch(() => { /* The root layout shows the retry action. */ });
     }
 </script>
 

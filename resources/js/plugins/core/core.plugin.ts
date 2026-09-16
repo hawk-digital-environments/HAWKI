@@ -1,7 +1,7 @@
 /**
  * The `core` plugin — HAWKI's first-party feature bundle.
  *
- * This is the only plugin shipped with HAWKI by default and it wires together the
+ * This built-in plugin wires together the
  * foundational, always-on features of the frontend:
  *   - **Stores**: registers the core reactive stores ({@link KeychainStore},
  *     {@link AiHandleStore}, {@link AiModelStore}, {@link AiToolStore},

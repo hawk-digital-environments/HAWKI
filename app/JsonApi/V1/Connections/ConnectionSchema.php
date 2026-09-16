@@ -36,6 +36,7 @@ class ConnectionSchema extends Schema
             Attribute::make('ext_app_secrets'),
             Attribute::make('ext_app_connect_request'),
             Attribute::make('migrations_to_apply'),
+            Attribute::make('keychain_state'),
         ];
     }
 

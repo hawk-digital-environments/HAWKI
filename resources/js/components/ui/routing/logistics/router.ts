@@ -363,7 +363,7 @@ export function createRouterFromRegistrar(
     );
 
     const innerUrlGenerator = (() => {
-        const generator = generateUrls(state.innerRouter);
+        const generator = generateUrls(state.innerRouter, {stringifyQueryParams: params => new URLSearchParams(params as Record<string, string>).toString()});
         return (routeName: string, params?: UrlParams) => {
             return normalizePath(generator(routeName, params));
         };

@@ -1,6 +1,115 @@
 {
     "ui": {
+        "session": {
+            "logoutFailed": "Dein Schlüsselbund ist gesperrt. Die Abmeldung vom Server ist fehlgeschlagen. Bitte versuche es erneut.",
+            "retryLogout": "Abmeldung erneut versuchen",
+            "loggingOut": "Abmeldung läuft…"
+        },
         "loading": "Wird geladen…",
+        "auth": {
+            "logoLabel": "HAWKI",
+            "errors": {
+                "auth_redirect_required": "Starte die Anmeldung über deinen Identitätsanbieter.",
+                "registration_policy_unavailable": "Die Registrierung ist vorübergehend nicht verfügbar, weil die Nutzungsbedingungen nicht geladen werden konnten. Bitte versuche es später erneut.",
+                "generic": "Die Anfrage konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
+                "persistPasskey": "Der Schlüsselbund wurde erstellt, aber das Passwort konnte nicht in diesem Browser gespeichert werden. Versuche es erneut, bevor du fortfährst.",
+                "invalid_credentials": "Kontoname oder Passwort sind nicht korrekt.",
+                "provider_failed": "Der Anmeldedienst konnte die Anfrage nicht abschließen.",
+                "session_expired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."
+            },
+            "login": {
+                "title": "Anmelden",
+                "description": "Melde dich mit deinem HAWKI-Konto an.",
+                "account": "Konto",
+                "password": "Passwort",
+                "submit": "Anmelden",
+                "signingIn": "Anmeldung läuft…",
+                "redirectTitle": "Zur Anmeldung weiter",
+                "redirectDescription": "Deine Organisation verwendet einen separaten Anmeldedienst.",
+                "redirect": "Weiter"
+            },
+            "register": {
+                "title": "Schlüsselbund einrichten",
+                "description": "Wähle ein Passwort, das deine verschlüsselten Daten auf diesem Gerät schützt.",
+                "automaticDescription": "Dein Passwort wird automatisch erstellt. Anschließend erhältst du einen Sicherungscode zum Herunterladen.",
+                "readPolicy": "Nutzungsbedingungen lesen",
+                "policyDescription": "Bitte lies und akzeptiere die Nutzungsbedingungen, bevor du deinen Schlüsselbund einrichtest.",
+                "confirmPolicy": "Akzeptieren und weiter",
+                "policyTitle": "Nutzungsbedingungen",
+                "acceptPolicy": "Ich habe diese Bedingungen gelesen und akzeptiere sie.",
+                "policyRequired": "Akzeptiere die Bedingungen, bevor du fortfährst.",
+                "passkey": "Passwort",
+                "repeatPasskey": "Passwort wiederholen",
+                "passkeyHint": "Verwende mindestens 8 Zeichen. Bewahre dieses Passwort sicher auf; es schützt deine verschlüsselten Daten.",
+                "passkeyInvalid": "Wähle ein Passwort mit mindestens 8 erlaubten Zeichen.",
+                "passkeyMismatch": "Die Passwörter stimmen nicht überein.",
+                "continue": "Weiter",
+                "preparing": "Schlüsselbund wird vorbereitet…",
+                "backupDescription": "Bewahre diesen Sicherungscode sicher auf. Du kannst damit dein Passwort auf einem anderen Gerät wiederherstellen.",
+                "backupCode": "Sicherungscode",
+                "downloadBackup": "Herunterladen",
+                "finish": "Abschließen",
+                "saving": "Schlüsselbund wird gespeichert…",
+                "backupTitle": "Sicherungscode aufbewahren",
+                "welcome": {
+                    "back": "Zurück",
+                    "encryption": {
+                        "title": "Willkommen bei HAWKI",
+                        "body": "Ab jetzt werden deine Chats gespeichert, damit du jederzeit und von jedem Gerät darauf zurückkommen kannst. Alles, was du schreibst, wird verschlüsselt, bevor es deinen Browser verlässt. Niemand, auch nicht deine Hochschule, kann deine Gespräche lesen.",
+                        "action": "Verstanden"
+                    },
+                    "groups": {
+                        "title": "Gruppenchats",
+                        "body": "In Gruppenchats können alle Mitglieder der Gruppe deine Nachrichten lesen. Das ist der Sinn einer Gruppe. Deine Inhalte bleiben trotzdem geschützt: Außerhalb der Gruppe sieht sie niemand. Deine Daten gehören nur dir.",
+                        "action": "Finde ich gut"
+                    },
+                    "passkey": {
+                        "title": "Dein Passwort",
+                        "body": "Im nächsten Schritt wählst du ein persönliches Passwort. Damit werden deine Chats verschlüsselt, bevor sie auf unserem Server gespeichert werden. Du brauchst es auch, wenn du dich auf einem neuen Gerät anmeldest; dieser Browser merkt es sich für dich. Zum Schluss kannst du einen Sicherungscode herunterladen, falls du dein Passwort einmal vergisst.",
+                        "action": "Passwort einrichten"
+                    },
+                    "automaticPasskey": {
+                        "title": "Dein Passwort und Sicherungscode",
+                        "body": "Dein Passwort wird im nächsten Schritt automatisch für dich erstellt. Damit werden deine Chats verschlüsselt, bevor sie auf unserem Server gespeichert werden. Dieser Browser merkt sich das Passwort für dich. Anschließend lädst du einen Sicherungscode herunter, mit dem du deine Chats auf jedem anderen Gerät entsperrst.",
+                        "action": "Weiter"
+                    }
+                }
+            },
+            "handshake": {
+                "title": "Schlüsselbund entsperren",
+                "description": "Gib dein Passwort ein, um deine Daten auf diesem Gerät zu entschlüsseln.",
+                "passkey": "Passwort",
+                "unlock": "Entsperren",
+                "unlocking": "Wird entsperrt…",
+                "wrongPasskey": "Mit diesem Passwort kann der Schlüsselbund nicht entsperrt werden.",
+                "recoveryTitle": "Sicherungscode verwenden",
+                "backupCode": "Sicherungscode",
+                "recover": "Passwort wiederherstellen",
+                "backupUnlockDescription": "Gib deinen Sicherungscode ein, um deinen Schlüsselbund auf diesem Gerät zu entsperren.",
+                "backupMissing": "Für dieses Konto ist kein Sicherungscode vorhanden.",
+                "usePasskey": "Stattdessen Passwort verwenden",
+                "useOwnPasskey": "Eigenes Passwort verwenden",
+                "ownPasskeyDescription": "Gib das Passwort ein, das du beim Einrichten deines Schlüsselbunds selbst gewählt hast.",
+                "lostBackup": "Sicherungscode verloren?",
+                "recoveryDescription": "Gib den Sicherungscode ein, den du beim Einrichten deines Schlüsselbunds gespeichert hast."
+            },
+            "inconsistent": {
+                "title": "Dein Schlüsselbund braucht Aufmerksamkeit",
+                "description": "Der verschlüsselte Schlüsselbund passt nicht zu diesem Konto. Setze das Profil zurück, um ein neues einzurichten.",
+                "reset": "Profil zurücksetzen",
+                "confirmTitle": "Dieses Profil zurücksetzen?",
+                "automaticConfirmDescription": "Dadurch werden deine Chats, dein bisheriger Schlüsselbund und die zugehörigen Profildaten dauerhaft gelöscht. Anschließend wird dein Schlüsselbund automatisch neu erstellt und du erhältst einen neuen Sicherungscode. Dies kann nicht rückgängig gemacht werden.",
+                "confirmDescription": "Dadurch werden deine Chats, dein verschlüsselter Schlüsselbund, deine Passwortsicherung und zugehörige Profildaten dauerhaft gelöscht. Anschließend richtest du ein neues Passwort und einen neuen Sicherungscode ein. Dies kann nicht rückgängig gemacht werden.",
+                "confirm": "Profil zurücksetzen"
+            },
+            "claim": "Deine Gespräche sind verschlüsselt. Der Schlüssel bleibt bei dir.",
+            "signedInAs": "Angemeldet als :name",
+            "videoCredit": "Video von :name",
+            "preferences": {
+                "switchToDark": "Dunkles Design verwenden",
+                "switchToLight": "Helles Design verwenden"
+            }
+        },
         "navigation": {
             "skipToContent": "Zum Hauptinhalt springen",
             "open": "Navigation öffnen",

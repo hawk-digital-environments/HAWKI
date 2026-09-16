@@ -8,11 +8,15 @@ use App\Http\Controllers\Api\V1\AiModelFlagController;
 use App\Http\Controllers\Api\V1\AiProviderController;
 use App\Http\Controllers\Api\V1\AiToolController;
 use App\Http\Controllers\Api\V1\AnnouncementController;
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
 use App\Http\Controllers\Api\V1\McpServerController;
 use App\Http\Controllers\Api\V1\MigrationController;
+use App\Http\Controllers\Api\V1\PasskeyBackupController;
+use App\Http\Controllers\Api\V1\RegistrationController;
+use App\Http\Controllers\Api\V1\RegistrationPolicyController;
 use App\Http\Controllers\Api\V1\RoomMemberController;
 use App\Http\Controllers\Api\V1\RoomMessageController;
 use App\Http\Controllers\Api\V1\SystemModelController;
@@ -81,6 +85,19 @@ JsonApiRoute::server('v1')
             ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
             ->only('show');
 
+        $server->resource('auth', AuthController::class)
+            ->only('show')
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/login', 'login');
+                $actions->post('actions/logout', 'logout');
+                $actions->post('actions/complete-registration', 'complete')
+                    ->uses(RegistrationController::class . '@complete');
+            });
+
+        $server->resource('passkey-backups', PasskeyBackupController::class)
+            ->middleware('auth:sanctum')
+            ->only('show');
+
         $server->resource('migrations', MigrationController::class)
             ->actions(function (ActionRegistrar $actions) {
                 $actions->post('actions/apply', 'markMigrationAsApplied');
@@ -91,6 +108,8 @@ JsonApiRoute::server('v1')
             ->actions(function (ActionRegistrar $actions) {
                 $actions->post('actions/seen', 'markSeen');
                 $actions->post('actions/accept', 'markAccepted');
+                $actions->get('actions/registration-policy', 'show')
+                    ->uses(RegistrationPolicyController::class . '@show');
             })
             ->only('index', 'show');
 

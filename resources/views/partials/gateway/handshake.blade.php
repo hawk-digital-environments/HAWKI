@@ -86,12 +86,12 @@
                 if (await getPassKey()) {
                     // This runs the migrations if the user has a passkey already stored in the local storage.
                     // The call in handshake_functions.js at verifyEnteredPassKey runs the same migration when the user is logging fresh
-                    // Nothing in local storage. This is the case when the user runs into the "else-block" below with "switchSlide(1)"
+                    // Without a saved passkey, the branch below opens the configured unlock form.
                     await window.applyMigrations('after_passkey');
                     window.location.href = '/chat';
                 } else {
                     await window.applyMigrations('after_login');
-                    switchSlide(1);
+                    switchSlide(window.getConfig().security.passkeyAutoGenerate ? 2 : 1);
                     setTimeout(() => {
                         if (@json($activeOverlay)) {
                             setOverlay(false, true);
