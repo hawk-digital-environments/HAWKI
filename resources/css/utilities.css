@@ -80,6 +80,14 @@
         color: var(--color-accent-text);
     }
 
+    /* Label look on non-label elements (p/span headings above fields, cards,
+       …). Matches the base layer's `label` element default. */
+    .u-label {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text);
+    }
+
     .u-truncate {
         overflow: hidden;
         text-overflow: ellipsis;

@@ -95,6 +95,10 @@
                     "modelPickerV2": {
                         "title": "New model picker",
                         "description": "A richer model picker with provider tabs, search, favorites and keyboard shortcuts."
+                    },
+                    "statsForNerds": {
+                        "title": "Stats for nerds",
+                        "description": "Shows token counts, tokens per second and timing details below every AI response."
                     }
                 }
             }

@@ -8,13 +8,25 @@
             "history": "Chat history",
             "loading": "Loading chats…",
             "generating": "Generating response",
-            "empty": "Your conversations will appear here."
+            "empty": "Your conversations will appear here.",
+            "groups": {
+                "today": "Today",
+                "yesterday": "Yesterday",
+                "last7Days": "Last 7 days",
+                "last30Days": "Last 30 days",
+                "older": "Older"
+            }
         },
         "page": {
             "newChat": "New chat",
             "loading": "Loading conversation…",
             "retry": "Try again",
             "thinking": "Thinking…",
+            "reasoning": "Reasoning",
+            "webSearch": "Web search",
+            "webSearchOpened": "Opened page",
+            "webSearchFind": "Searched within page",
+            "webSearchMore": "+:count more",
             "generating": "Generating response…",
             "responseReady": "The response is complete.",
             "messageHistory": "Message history",
@@ -22,6 +34,15 @@
             "loadError": "The conversation could not be loaded.",
             "sendError": "The message could not be sent.",
             "noResponse": "The model returned no response.",
+            "stats": {
+                "label": "Generation statistics",
+                "outputTokens": "Output tokens",
+                "promptTokens": "Input tokens",
+                "tokensPerSecond": "Tokens per second",
+                "timeToFirstToken": "Time to first token",
+                "duration": "Total time",
+                "unknown": "n/a"
+            },
             "noImprovementModel": "No model is available to improve the message.",
             "noConversationOpen": "No conversation is open.",
             "requestFailed": "The AI request failed.",
@@ -39,6 +60,13 @@
             "deleteAttachment": "Delete attachment",
             "deleteConfirmTitle": "Delete message?",
             "deleteConfirmDescription": "This message will be permanently removed."
+        },
+        "thread": {
+            "title": "Thread",
+            "replyCountOne": "1 reply",
+            "replyCount": ":count replies",
+            "reply": "Reply in thread",
+            "writing": "You are writing in this thread"
         },
         "nameMenu": {
             "emptyNameError": "The chat name must not be empty",
@@ -90,6 +118,7 @@
             "textareaPlaceholder": "Enter your message here…",
             "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
             "attachFileTooltip": "Attach file",
+            "pastedTextFileName": "Pasted text",
             "error": {
                 "unsupported_file_type": "Files of type \":type\" cannot be attached.",
                 "file_too_large": "The file \":name\" is too large. The maximum allowed size is :maxSize.",
@@ -134,7 +163,19 @@
                 "topPInfo": "Limits the AI's choices to the most probable words whose combined probability does not exceed this value. A lower Top P value (e.g. 0.7) leads to more conservative responses; higher values (e.g. 0.9) allow greater variety.",
                 "topPAriaLabel": "Adjust Top P",
                 "adjustSettingsTooltip": "Adjust model settings",
-                "settingsTitle": "Model settings"
+                "settingsTitle": "Model settings",
+                "advancedSettings": "Advanced settings",
+                "reasoningHeading": "Reasoning effort",
+                "reasoningInfo": "Controls how much the model thinks before answering. Higher effort gives more thorough answers but takes longer and uses more tokens.",
+                "reasoningDefault": "Default",
+                "reasoningAriaLabel": "Adjust reasoning effort",
+                "reasoningLevelNone": "Instant",
+                "reasoningLevelMinimal": "Minimal",
+                "reasoningLevelLow": "Low",
+                "reasoningLevelMedium": "Medium",
+                "reasoningLevelHigh": "High",
+                "reasoningLevelXhigh": "Very high",
+                "reasoningLevelMax": "Max"
             },
             "statusDot": {
                 "onlineLabel": "Online",
