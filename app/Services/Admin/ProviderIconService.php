@@ -16,10 +16,15 @@ class ProviderIconService
 {
     public const MAX_BYTES = 262144;
 
+    /**
+     * The svgl catalogue and its SVG files change rarely, so both are kept for a day.
+     */
+    public const CACHE_TTL = 86400;
+
     public function search(string $search = ''): array
     {
         $aiOnly = '' === trim($search);
-        $icons = Cache::remember($aiOnly ? 'admin.svgl.ai.v2' : 'admin.svgl.all.v2', 3600, function () use ($aiOnly): array {
+        $icons = Cache::remember($aiOnly ? 'admin.svgl.ai.v2' : 'admin.svgl.all.v2', self::CACHE_TTL, function () use ($aiOnly): array {
             try {
                 $entries = Http::connectTimeout(3)->timeout(10)->get($aiOnly ? 'https://api.svgl.app/category/AI' : 'https://api.svgl.app')->throw()->json();
 
@@ -232,6 +237,11 @@ class ProviderIconService
     }
 
     private function download(string $url): string
+    {
+        return Cache::remember('admin.svgl.svg.v1.' . sha1($url), self::CACHE_TTL, fn (): string => $this->fetchSvg($url));
+    }
+
+    private function fetchSvg(string $url): string
     {
         try {
             $response = Http::connectTimeout(3)->timeout(10)->withOptions([
