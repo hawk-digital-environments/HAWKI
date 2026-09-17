@@ -551,6 +551,11 @@ export function createComposerContext(
         (message) => aiHandleStore.getHandlesIn(message)
     );
 
+    $effect(() => {
+        if (aiModelStore.authorizationState !== 'ready') return;
+        if (!aiModelStore.getOneById(modelContext.current.model_id)) modelContext.set(null);
+    });
+
     const unbinders = options.useLegacyBridge === false ? [] : [
         oldUiBridge.onClearActiveConversation(() => {
             context.reset(true);

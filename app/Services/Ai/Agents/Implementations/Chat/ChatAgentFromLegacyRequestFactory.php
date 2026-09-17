@@ -12,7 +12,10 @@ use App\Services\Ai\Agents\Implementations\AbstractAgentFactory;
 use App\Services\Ai\Agents\Utils\AlternatingMessageHistory;
 use App\Services\Ai\Agents\Utils\UserMessageAttachments;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use App\Services\Ai\Exceptions\ModelIdNotAvailableException;
 use App\Services\Ai\Exceptions\ModelNotInPayloadException;
+use App\Services\Ai\Models\Access\Exceptions\ModelAccessException;
+use App\Services\Ai\Models\Access\ModelAuthorization;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Storage\FileStorageService;
@@ -102,7 +105,17 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
             throw new ModelNotInPayloadException($payload);
         }
 
-        return $this->modelRepository->findOneOrFail($modelId);
+        $model = $this->modelRepository->findOne($modelId);
+        if ($model) {
+            return $model;
+        }
+
+        $unscoped = $this->modelRepository->findOne($modelId, $this->modelRepository->makeScopeOverrides(true, true));
+        if ($unscoped && !app(ModelAuthorization::class)->isAllowed($unscoped, auth()->user())) {
+            throw ModelAccessException::denied();
+        }
+
+        throw ModelIdNotAvailableException::forModelId($modelId);
     }
 
     /**

@@ -248,7 +248,7 @@
                             control={{
                                 ...control,
                                 label: definition.key,
-                                options: ['roles', 'role_id'].includes(definition.key) ? control.options?.map((option) => ({
+                                options: ['roles', 'role_id', 'allowed_roles'].includes(definition.key) ? control.options?.map((option) => ({
                                     ...option,
                                     label: roleLabel(Number(option.value), content?.role_catalog ?? [], fields, __)
                                 })) : control.options,
