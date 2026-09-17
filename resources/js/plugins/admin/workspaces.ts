@@ -9,17 +9,19 @@ export const builtInSections = ['ai', 'people', 'system'] as const;
 export type BuiltInSectionId = (typeof builtInSections)[number];
 
 export const builtInWorkspaces = [
-    { id: 'providers', section: 'ai' },
-    { id: 'models', section: 'ai' },
-    { id: 'system-models', section: 'ai' },
-    { id: 'mcp', section: 'ai' },
-    { id: 'users', section: 'people' },
-    { id: 'announcements', section: 'system' },
-    { id: 'usage', section: 'system' },
-    { id: 'health', section: 'system' },
-    { id: 'settings', section: 'system' },
-    { id: 'environment', section: 'system' }
-] as const satisfies ReadonlyArray<{ id: string; section: BuiltInSectionId }>;
+    { id: 'providers', permission: 'providers.manage', section: 'ai' },
+    { id: 'models', permission: 'models.manage', section: 'ai' },
+    { id: 'system-models', permission: 'models.manage', section: 'ai' },
+    { id: 'mcp', permission: 'mcp.manage', section: 'ai' },
+    { id: 'users', permission: 'users.view', section: 'people' },
+    { id: 'roles', permission: 'roles.manage', section: 'people' },
+    { id: 'mappings', permission: 'roles.manage', section: 'people' },
+    { id: 'announcements', permission: 'announcements.manage', section: 'system' },
+    { id: 'usage', permission: 'usage.view', section: 'system' },
+    { id: 'health', permission: 'health.view', section: 'system' },
+    { id: 'settings', permission: 'settings.manage', section: 'system' },
+    { id: 'environment', permission: 'settings.view', section: 'system' }
+] as const satisfies ReadonlyArray<{ id: string; permission: string; section: BuiltInSectionId }>;
 
 /** Ids of the built-in Workspaces; also the keys of their editor schemas and `admin.sections.<id>` labels. */
 export type WorkspaceId = (typeof builtInWorkspaces)[number]['id'];

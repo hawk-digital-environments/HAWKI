@@ -96,7 +96,9 @@ class ProviderRepository extends ConfigurationRepository
 
     public function import(User $actor): array
     {
-        app(\App\Services\Admin\AdministrationAccess::class)->authorize($actor);
+        foreach ([\App\Services\Admin\Permission::MODELS_MANAGE, \App\Services\Admin\Permission::MCP_MANAGE] as $permission) {
+            app(\App\Services\Admin\PermissionService::class)->authorize($actor, $permission);
+        }
 
         Artisan::queue('ai:config:import');
 

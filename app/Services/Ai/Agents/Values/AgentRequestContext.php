@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
+
 namespace App\Services\Ai\Agents\Values;
+
 
 use App\Models\Ai\AiModel;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
@@ -18,6 +20,7 @@ readonly class AgentRequestContext
         public AiModel           $model,
         public AiModelParameters $modelParameters,
         public string            $usageType = WellKnownUsageTypes::MAIN_APP,
+        public ?int              $actorId = null,
     )
     {
     }

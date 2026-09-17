@@ -15,6 +15,9 @@ final class SystemModelAssignmentGuard
 
     public function assertAssignable(AiModel $model, string $usageType): void
     {
+        if ($this->database->table('ai_model_roles')->where('ai_model_id', $model->getKey())->exists()) {
+            throw new SystemModelAssignmentException(SystemModelAssignmentException::RESTRICTED);
+        }
 
         $providerActive = $this->database->table('ai_providers')->where('id', $model->provider_id)->value('active');
         $usageAllowed = $this->database->table('ai_model_usage_rules')
@@ -32,17 +35,23 @@ final class SystemModelAssignmentGuard
      * the usage contexts of its slots.
      *
      * @param array<int, string>     $usageRules
+     * @param array<int, int|string> $allowedRoles
      */
     public function assertConfigurationAllowed(
         AiModel $model,
         bool $active,
         bool $providerActive,
         array $usageRules,
+        array $allowedRoles,
     ): void {
         $slots = $this->database->table('system_models')->where('model_id', $model->model_id)->get(['usage_type']);
 
         if ($slots->isEmpty()) {
             return;
+        }
+
+        if ([] !== $allowedRoles) {
+            throw new SystemModelAssignmentException(SystemModelAssignmentException::RESTRICTED);
         }
 
         foreach ($slots as $slot) {

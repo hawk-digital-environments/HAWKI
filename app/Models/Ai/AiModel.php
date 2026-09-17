@@ -6,6 +6,8 @@ use App\Casts\AsInstance;
 use App\Collections\AiModelCollection;
 use App\Collections\AiModelUsageRuleCollection;
 use App\Collections\AiToolCollection;
+use App\Models\Role;
+use App\Models\Scopes\Ai\AiModelRoleAccessScope;
 use App\Models\Scopes\Generic\ActiveFilterOnRelationScope;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\Generic\UsageTypeFilterOnRelationScope;
@@ -106,7 +108,8 @@ class AiModel extends Model
     {
         $registrar->addScope('active', new ActiveFilterScope())
             ->addScope('provider_active', new ActiveFilterOnRelationScope('provider'))
-            ->addScope('usage_type_filter', new UsageTypeFilterOnRelationScope('usageRules'));
+            ->addScope('usage_type_filter', new UsageTypeFilterOnRelationScope('usageRules'))
+            ->addScope('role_access', new AiModelRoleAccessScope());
     }
 
     /**
@@ -150,6 +153,17 @@ class AiModel extends Model
         return $this->belongsToMany(AiTool::class, 'ai_model_tools', 'ai_model_id', 'ai_tool_id')
             ->withPivot(['type', 'source_id'])
             ->withTimestamps();
+    }
+
+    /**
+     * The roles that may use this model. An empty relation permits every eligible user.
+     *
+     * @return BelongsToMany<Role, $this>
+     */
+    public function allowedRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'ai_model_roles', 'ai_model_id', 'role_id')
+            ->withPivot('created_at');
     }
 
     /**

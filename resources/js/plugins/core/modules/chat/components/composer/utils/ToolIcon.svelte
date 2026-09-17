@@ -24,7 +24,12 @@
     const {tool, size = 16}: Props = $props();
 </script>
 
-<span class="tool-icon" style="width: {size}px; height: {size}px;">
+<span
+    class="tool-icon"
+    data-capability={tool.capability_key ?? undefined}
+    aria-hidden="true"
+    style="width: {size}px; height: {size}px;"
+>
     {#if tool?.is_capability}
         {#if tool?.icon_path.startsWith('data:image/svg+xml;base64,')}
             <span class="tool-icon-svg">
@@ -41,6 +46,10 @@
 <style>
     .tool-icon {
         display: inline-flex;
+    }
+
+    .tool-icon[data-capability] {
+        color: var(--capability-color);
     }
 
     .tool-icon .tool-icon-svg > :global(svg) {

@@ -16,7 +16,7 @@
     <div class="overview">
         <p class="intro">{__('admin.intro')}</p>
         {#each app.admin.sections as section (section.name)}
-            {@const visible = section.workspaces.filter((workspace) => app.isAdmin)}
+            {@const visible = section.workspaces.filter((workspace) => app.can(workspace.permission))}
             {#if visible.length}
                 <section>
                     <h2>{__(section.title)}</h2>
@@ -34,7 +34,7 @@
                 </section>
             {/if}
         {/each}
-        {#if !app.admin.sections.some((section) => section.workspaces.some((workspace) => app.isAdmin))}<p role="status">
+        {#if !app.admin.sections.some((section) => section.workspaces.some((workspace) => app.can(workspace.permission)))}<p role="status">
                 {__('admin.no_sections')}
             </p>{/if}
     </div>

@@ -10,7 +10,7 @@ final class ToolSchema extends Schema
 {
     protected const REPOSITORY = ToolRepository::class;
     protected const ATTRIBUTES = [
-        'name', 'kind', 'mcp_server_id', 'active', 'mapped_capability', 'description', 'models',
+        'name', 'kind', 'mcp_server_id', 'active', 'mapped_capability', 'description', 'models', 'access_rule',
     ];
     public static string $model = Records\Tool::class;
 

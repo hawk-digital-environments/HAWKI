@@ -26,7 +26,11 @@
         app.restApi.getResourceCollection('admin-tools', { query, signal });
     /** The server of a tool is decided by the expanded row, not by the editor. */
     const toolFields = (_row: AdminToolResource, fields: AdminField[]) =>
-        fields.filter((field) => field.key !== 'mcp_server_id');
+        fields.filter(
+            (field) =>
+                field.key !== 'mcp_server_id' &&
+                (field.key !== 'access_rule' || (app.can('mcp.manage') && app.can('roles.manage')))
+        );
     const saveTool = async (values: Record<string, unknown>, row: AdminToolResource | null) => {
         if (!row) throw new Error(__('admin.errors.save'));
         return app.restApi.updateResource('admin-tools', row.id, values, {
@@ -39,11 +43,11 @@
     const mcpServerFilter = $derived<ColumnFiltersState>(
         mcpServerId.current ? [{ id: 'mcp_server_id', value: mcpServerId.current }] : []
     );
-
     const toolColumns: AdminColumn<AdminToolResource>[] = [
         { id: 'name' },
         { id: 'kind', format: 'enum' },
         { id: 'active', sortable: false },
+        { id: 'access_rule', sortable: false },
         { id: 'mapped_capability' }
     ];
     const tools = useAdminWorkspace(toolColumns, readTools, {
@@ -66,6 +70,7 @@
     const builtinToolColumns: AdminColumn<AdminToolResource>[] = [
         { id: 'name' },
         { id: 'active', sortable: false },
+        { id: 'access_rule', sortable: false },
         { id: 'mapped_capability' }
     ];
     /** Built-in HAWKI tools have no server; the API filters them by their `function` type. */
@@ -195,13 +200,23 @@
     />
 {/snippet}
 
+{#snippet accessRule(row: AdminToolResource)}
+    {@const rule = tools.content?.access_rules.find((entry) => entry.name === row.access_rule)}
+    {__(rule?.title_label ?? 'admin.tool_access_rules.unavailable.title')}
+{/snippet}
+
+{#snippet builtinAccessRule(row: AdminToolResource)}
+    {@const rule = builtinTools.content?.access_rules.find((entry) => entry.name === row.access_rule)}
+    {__(rule?.title_label ?? 'admin.tool_access_rules.unavailable.title')}
+{/snippet}
+
 {#snippet serverTools(row: AdminMcpServerResource)}
     {#if showsToolsOf(row.id)}
         <AdminTable
             embedded
             caption={__('admin.tools_of', { server: row.server_label })}
             recordSet={tools}
-            cells={{ active: toolActive, mapped_capability: mappedCapability }}
+            cells={{ active: toolActive, access_rule: accessRule, mapped_capability: mappedCapability }}
         />
     {:else}
         <p
@@ -268,7 +283,7 @@
         <AdminTable
             caption={__('admin.tool_sources.builtin')}
             recordSet={builtinTools}
-            cells={{ active: builtinActive, mapped_capability: mappedCapability }}
+            cells={{ active: builtinActive, access_rule: builtinAccessRule, mapped_capability: mappedCapability }}
         />
     </section>
 </AdminPage>

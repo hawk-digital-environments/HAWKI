@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+
 namespace App\Services\Ai\Models\Repositories;
 
 use App\Models\Ai\AiModel;
@@ -19,6 +20,7 @@ use App\Services\Ai\Values\OnlineStatus;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
 use Carbon\Carbon;
+
 
 /**
  * Repository for {@see AiModel} entities.
@@ -110,6 +112,7 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
         }
 
         $query = $this->getQueryWithoutContextualScopes()
+            ->where('admin_managed', false)
             ->whereNotIn('id', $idFilter)
             ->whereNotIn('model_id', $modelIdFilter);
         if ($provider) {

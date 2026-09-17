@@ -21,10 +21,34 @@ class ToolRepository extends ConfigurationRepository
     {
         $fields = new \App\Services\Admin\ResourceFields();
 
-        return ['model' => AiTool::class, 'create' => false, 'delete' => false, 'columns' => ['name', 'type', 'mcp_server_id', 'active', 'mapped_capability'], 'fields' => [
-            $fields->field('description', 'textarea', 'nullable|string|max:10000'), $fields->boolean('active'), $fields->text('mapped_capability'), $fields->multiple('models', 'models'),
+        return ['model' => AiTool::class, 'create' => false, 'delete' => false, 'columns' => ['name', 'type', 'mcp_server_id', 'active', 'mapped_capability', 'access_rule'], 'fields' => [
+            $fields->field('description', 'textarea', 'nullable|string|max:10000'), $fields->boolean('active'), $fields->text('mapped_capability'), $fields->field('access_rule', 'select', 'sometimes|required|string|in:' . implode(',', array_keys(\App\Services\Ai\Tools\ToolAccessRules::RULES)), array_keys(\App\Services\Ai\Tools\ToolAccessRules::RULES)), $fields->multiple('models', 'models'),
             $fields->field('mcp_server_id', 'select', 'nullable|integer', options: 'mcp_servers'),
         ]];
+    }
+
+    protected function readContent(\App\Models\User $user, array $filters): array
+    {
+        return parent::readContent($user, $filters) + ['access_rules' => \App\Services\Ai\Tools\ToolAccessRules::catalog($user)];
+    }
+
+    protected function fields(\App\Models\User $user): array
+    {
+        return array_values(array_filter(parent::fields($user), static fn (array $field) =>
+            $field['key'] !== 'access_rule' || app(\App\Services\Admin\PermissionService::class)->has($user, 'roles.manage')));
+    }
+
+    protected function authorizeChanges(Model $model, array $data, \App\Models\User $actor): void
+    {
+        if (!array_key_exists('access_rule', $data) || $model->access_rule === $data['access_rule']) {
+            return;
+        }
+        app(\App\Services\Admin\PermissionService::class)->authorize($actor, 'mcp.manage');
+        app(\App\Services\Admin\PermissionService::class)->authorize($actor, 'roles.manage');
+        $rules = \App\Services\Ai\Tools\ToolAccessRules::RULES;
+        abort_unless(isset($rules[$model->access_rule]), 403);
+        app(\App\Services\Admin\RoleGuard::class)->assertGrantable(
+            [...$rules[$model->access_rule], ...$rules[$data['access_rule']]], $actor);
     }
 
     protected function rules(?int $id, array $values): array

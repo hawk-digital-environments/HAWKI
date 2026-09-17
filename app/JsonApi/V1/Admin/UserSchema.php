@@ -10,7 +10,7 @@ final class UserSchema extends Schema
 {
     protected const REPOSITORY = UserRepository::class;
     protected const ATTRIBUTES = [
-        'name', 'username', 'email', 'employeetype', 'admin_disabled', 'last_login_at', 'local_account', 'is_system',
+        'name', 'username', 'email', 'employeetype', 'admin_disabled', 'last_login_at', 'roles', 'mapped_roles', 'local_account', 'is_system',
     ];
     public static string $model = Records\User::class;
 

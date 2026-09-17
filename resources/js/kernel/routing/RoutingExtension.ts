@@ -25,7 +25,7 @@ declare module '$lib/components/ui/routing/extendableTypes.js' {
     }
 
     interface RouteMetaExtensions {
-        admin?: boolean;
+        permission?: string;
         access?: 'public' | 'server-session' | 'crypto-ready';
         chrome?: 'none' | 'app';
     }
