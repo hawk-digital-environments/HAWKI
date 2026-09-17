@@ -10,7 +10,7 @@
     import type { AdminMenuItem } from '../components/AdminActionMenu.svelte';
     import { adminActionIcons } from '../actionIcons.js';
     import type { AdminHealthResource } from '../schemas/resources/admin-health.schema.js';
-    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     import { QueuedActionSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
@@ -20,7 +20,7 @@
         { id: 'message' },
         { id: 'response_time' }
     ];
-    const records = useAdminRecordSet(columns, (signal, query) =>
+    const records = useAdminWorkspace(columns, (signal, query) =>
         app.restApi.getResourceCollection('admin-health', { query, signal })
     );
     const failedJobs = $derived(records.content?.failed_jobs ?? []);

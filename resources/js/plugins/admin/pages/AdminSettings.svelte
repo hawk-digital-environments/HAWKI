@@ -9,12 +9,12 @@
     import { AdminFieldSchema } from '../schemas/admin-content.js';
     import { settingsTabs } from '../settings.js';
     import type { AdminSettingResource } from '../schemas/resources/admin-settings.schema.js';
-    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
 
     const app = useApp();
     const { __ } = useTranslator();
     const columns: AdminColumn<AdminSettingResource>[] = [];
-    const records = useAdminRecordSet(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-settings', { query, signal }),
         {

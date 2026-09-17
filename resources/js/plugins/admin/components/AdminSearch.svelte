@@ -10,9 +10,9 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
     import type { AdminRow } from '../schemas/admin-content.js';
-    import type { AdminRecordSet } from '../recordSet.svelte.js';
+    import type { AdminWorkspace } from '../workspace.svelte.js';
 
-    const { recordSet }: { recordSet: AdminRecordSet<Row, ColumnId, Results> } = $props();
+    const { recordSet }: { recordSet: AdminWorkspace<Row, ColumnId, Results> } = $props();
     const { __ } = useTranslator();
 </script>
 

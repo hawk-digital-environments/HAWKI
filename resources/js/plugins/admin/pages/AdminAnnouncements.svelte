@@ -7,7 +7,7 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import type { AdminAnnouncementResource } from '../schemas/resources/admin-announcements.schema.js';
-    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
     const columns: AdminColumn<AdminAnnouncementResource>[] = [
@@ -19,7 +19,7 @@
         { id: 'seen_count', sortable: false },
         { id: 'accepted_count', sortable: false }
     ];
-    const records = useAdminRecordSet(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-announcements', { query, signal }),
         {
