@@ -6,7 +6,6 @@ namespace App\Services\Ai\SystemModels;
 
 final class SystemModelAssignmentException extends \DomainException
 {
-    public const RESTRICTED = 'restricted';
     public const UNAVAILABLE = 'unavailable';
 
     public function __construct(public readonly string $reason)

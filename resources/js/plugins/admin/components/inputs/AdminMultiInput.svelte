@@ -36,9 +36,7 @@
         options.filter((option) => !search || option.label.toLowerCase().includes(search.toLowerCase()))
     );
     function optionLabel(option: { value: string | number; label: string }) {
-        return control.label === 'permissions' ?
-                __('admin.permissions.' + String(option.value).replaceAll('.', '_'))
-            :   fieldLabel(option.label);
+        return fieldLabel(option.label);
     }
     function toggle(optionValue: string | number, checked: boolean) {
         onchange(checked ? [...items, optionValue] : items.filter((item) => item !== optionValue));

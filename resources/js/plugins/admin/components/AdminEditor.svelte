@@ -12,9 +12,6 @@
     import { fieldHint } from '../forms/hints.js';
     import { issueMessage } from '../forms/validationMessages.js';
     import { ModelLookup } from '../forms/modelLookup.svelte.js';
-    import AdminPermissionInput from './inputs/AdminPermissionInput.svelte';
-    import AdminAccessRuleInput from './inputs/AdminAccessRuleInput.svelte';
-    import { roleLabel } from '../forms/authorization.js';
     import type { AdminContent } from '../schemas/admin-content.js';
     import AdminValueInput from './inputs/AdminValueInput.svelte';
     import type { AdminField, AdminRow } from '../schemas/admin-content.js';
@@ -86,13 +83,11 @@
     const formState = form.useSelector((state) => state);
     const visibleFields = $derived(fields.filter((field) => isFieldVisible(section, field, formState.current.values)));
     const busy = $derived(formState.current.isSubmitting || fieldBusy);
-    /** Changing a tool's access rule rewrites role grants, so it needs both permissions. */
-    const accessRuleLocked = $derived(!app.can('mcp.manage') || !app.can('roles.manage'));
     /** JSON snapshots of values this editor filled in itself; only those may be replaced by later metadata. */
     const adopted: Record<string, string> = {};
     /** New models get provider model id suggestions plus metadata for the picked one. */
     const lookup = untrack(() =>
-        section === 'models' && !row && app.can('providers.manage') ?
+        section === 'models' && !row && app.isAdmin ?
             new ModelLookup({
                 restApi: app.restApi,
                 providerId: () => formState.current.values.provider_id,
@@ -204,54 +199,19 @@
             >
                 {lookup.status ? __(lookup.status) : ''}
             </p>{/if}
-        {#if row?.mapped_roles && Array.isArray(row.mapped_roles) && row.mapped_roles.length}<p>
-                {__('admin.mapped_roles_hint', { roles: row.mapped_roles.map((id) => roleLabel(Number(id), content?.role_catalog ?? [], fields, __)).join(', ') })}
-            </p>{/if}
         <div class="fields">
             {#each visibleFields as definition (definition.key)}
                 <form.Field name={definition.key}>
                     {#snippet children(field)}
                         {@const control = controlFor(section, definition, formState.current.values, row)}
                         {@const modelLookup = definition.key === 'model_id' ? lookup : null}
-                        {#if control.type === 'permissions'}
-                            <AdminPermissionInput
-                                id={`${uid}-${definition.key}`}
-                                label={labelFor(definition)}
-                                catalog={content?.permission_catalog ?? []}
-                                value={field.state.value}
-                                onchange={(value) => {
-                                    delete serverErrors[definition.key];
-                                    field.handleChange(value);
-                                }}
-                                onblur={field.handleBlur}
-                                disabled={busy || control.disabled}
-                                error={fieldError(definition.key)}
-                            />
-                        {:else if control.type === 'access-rule'}
-                            <AdminAccessRuleInput
-                                id={`${uid}-${definition.key}`}
-                                label={labelFor(definition)}
-                                rules={content?.access_rules ?? []}
-                                value={field.state.value}
-                                onchange={(value) => {
-                                    delete serverErrors[definition.key];
-                                    field.handleChange(value);
-                                }}
-                                onblur={field.handleBlur}
-                                disabled={busy || control.disabled || accessRuleLocked}
-                                error={fieldError(definition.key)}
-                            />
-                        {:else}
                         <AdminValueInput
                             id={`${uid}-${definition.key}`}
                             label={labelFor(definition)}
                             control={{
                                 ...control,
                                 label: definition.key,
-                                options: ['roles', 'role_id', 'allowed_roles'].includes(definition.key) ? control.options?.map((option) => ({
-                                    ...option,
-                                    label: roleLabel(Number(option.value), content?.role_catalog ?? [], fields, __)
-                                })) : control.options,
+                                options: control.options,
                                 suggestions: modelLookup?.suggestions ?? undefined,
                                 hint: hintFor(definition, control)
                             }}
@@ -274,7 +234,6 @@
                             error={fieldError(definition.key)}
                             secret={definition.type === 'secret-json'}
                         />
-                        {/if}
                     {/snippet}
                 </form.Field>
             {/each}

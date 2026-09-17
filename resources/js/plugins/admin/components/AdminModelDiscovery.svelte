@@ -91,7 +91,7 @@
                 ><input
                     type="checkbox"
                     checked={candidates.includes(model.model_id)}
-                    disabled={busy || !app.can('models.manage')}
+                    disabled={busy || !app.isAdmin}
                     onchange={(event) =>
                         (candidates =
                             event.currentTarget.checked ?
@@ -102,7 +102,7 @@
         </li>
     {/each}
 </ul>
-{#if app.can('models.manage')}
+{#if app.isAdmin}
     <Button
         variant="fill"
         disabled={busy || candidates.length === 0}

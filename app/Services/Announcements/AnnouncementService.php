@@ -66,7 +66,6 @@ readonly class AnnouncementService
             'starts_at' => $startsAt,
             'expires_at' => $expiresAt,
             'content' => null,
-            'target_roles' => null,
             'is_published' => true,
         ];
         $this->publicationRules->validate(new Announcement(), $data);

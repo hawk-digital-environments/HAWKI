@@ -31,7 +31,6 @@
   ```
 -->
 <script lang="ts">
-    import ProviderIcon from '$plugins/core/components/ProviderIcon.svelte';
     import {mergeProps} from 'bits-ui';
     import Popover from '$lib/components/ui/popover/Popover.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
@@ -86,11 +85,11 @@
 
     // Unique providers in model order; models without a provider share the "other" tab.
     const providers = $derived.by(() => {
-        const map = new Map<string, {id: string; label: string; light?: string | null; dark?: string | null}>();
+        const map = new Map<string, {id: string; label: string}>();
         for (const model of aiModelStore.models) {
             const id = model.provider?.provider_id ?? OTHER_TAB;
             if (!map.has(id)) {
-                map.set(id, {id, label: model.provider?.name ?? __('chat.composer.modelPicker.otherProvider'), light: model.provider?.icon_url, dark: model.provider?.icon_url_dark});
+                map.set(id, {id, label: model.provider?.name ?? __('chat.composer.modelPicker.otherProvider')});
             }
         }
         return [...map.values()];
@@ -240,11 +239,19 @@
             e.preventDefault();
         }
     }
+
+    function providerInitials(name: string): string {
+        const words = name.trim().split(/\s+/).filter(Boolean);
+        if (words.length >= 2) {
+            return (words[0][0] + words[1][0]).toUpperCase();
+        }
+        return name.trim().slice(0, 2).toUpperCase();
+    }
 </script>
 
 {#snippet triggerContent()}
     <span class="mp2-provider-chip" aria-hidden="true">
-        <ProviderIcon name={current.provider?.name ?? current.label} light={current.provider?.icon_url} dark={current.provider?.icon_url_dark} size={20} />
+        {providerInitials(current.provider?.name ?? current.label)}
     </span>
     <span class="mp2-trigger-label">{current.label}</span>
     <ChevronDownIcon size={14} class="mp2-trigger-chevron"/>
@@ -387,7 +394,7 @@
                                 {...mergeProps(t.props, {onclick: () => selectTab(provider.id)})}
                             >
                                 <span class="mp2-provider-chip mp2-provider-chip--tab" aria-hidden="true">
-                                    <ProviderIcon name={provider.label} light={provider.light} dark={provider.dark} size={28} />
+                                    {providerInitials(provider.label)}
                                 </span>
                             </button>
                         {/snippet}
@@ -425,7 +432,6 @@
                         aria-pressed={!searching && activeTab === provider.id}
                         onclick={() => selectTab(provider.id)}
                     >
-                        <ProviderIcon name={provider.label} light={provider.light} dark={provider.dark} size={20} />
                         {provider.label}
                     </button>
                 {/each}

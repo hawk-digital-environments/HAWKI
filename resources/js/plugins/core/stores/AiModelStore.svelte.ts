@@ -98,53 +98,27 @@ export class AiModelStore implements DataStore {
         return this.flagMap.get(flagId) ?? null;
     }
 
-    public authorizationState = $state<'unknown' | 'refreshing' | 'ready'>('unknown');
-    private generation = 0;
-
-    public clear(): void {
-        this.generation++;
-        this.models = [];
-        this.flags = [];
-        this.systemModels = {};
-        this.authorizationState = 'unknown';
-    }
-
-    public ready(app: HawkiApp): void {
-        app.events.sync.on('sessionLost', () => this.clear());
-        app.events.async.on('logout', () => this.clear());
-        app.events.async.on('connectionChanged', () => this.clear());
-        app.events.async.on('connectionRefreshStarted', () => {
-            this.generation++;
-            this.authorizationState = 'refreshing';
-        });
-    }
-
     public async loadData(app: HawkiApp): Promise<void> {
+        // Unauthenticated connections don't have access to AI models, so we skip loading.
         if (!app.connection.isAuthenticated) {
-            this.clear();
             return;
         }
-        const actor = app.connection.userinfo.id;
-        const generation = ++this.generation;
-        this.authorizationState = 'refreshing';
-        try {
-            const [aiModels, systemModels, flags] = await Promise.all([
-                app.restApi.getResourceCollection('ai-models', {query: {include: 'provider,description'}}),
-                app.restApi.getResourceCollection('system-models'),
-                app.restApi.getResourceCollection('ai-model-flags')
-            ]);
-            if (generation !== this.generation || !app.connection.isAuthenticated || app.connection.userinfo.id !== actor) return;
-            this.models = aiModels;
-            this.flags = flags;
-            this.systemModels = systemModels.reduce((map, model) => {
-                map[model.model_type] = aiModels.find(m => m.model_id === model.model_id) ?? aiModels[0];
-                return map;
-            }, {} as Record<string, AiModel>);
-            this.authorizationState = 'ready';
-        } catch (error) {
-            if (generation === this.generation) this.clear();
-            throw error;
-        }
+
+        const [aiModels, systemModels, flags] = await Promise.all([
+            app.restApi.getResourceCollection('ai-models', {query: {include: 'provider,description'}}),
+            app.restApi.getResourceCollection('system-models'),
+            app.restApi.getResourceCollection('ai-model-flags')
+        ]);
+
+        this.models = aiModels;
+        this.flags = flags;
+
+        // We want to be able to easily access system models by their usage type, so we create a map here.
+        this.systemModels = systemModels.reduce((map, model) => {
+            map[model.model_type] = aiModels.find(m => m.model_id === model.model_id)
+                ?? aiModels[0]; // Fallback to the first model if the configured model is not found, to avoid breaking the system.
+            return map;
+        }, {} as Record<string, AiModel>);
     }
 }
 

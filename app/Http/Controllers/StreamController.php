@@ -6,10 +6,7 @@ use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
 use App\Models\Room;
-use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\AiService;
-use App\Services\Ai\Models\Access\Exceptions\ModelAccessException;
-use App\Services\Ai\Tools\Exceptions\ToolAccessException;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
@@ -23,7 +20,6 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Laravel\Ai\Responses\Data\Citation as CitationData;
 use Laravel\Ai\Streaming\Events\Citation;
 use Laravel\Ai\Streaming\Events\Error;
 use Laravel\Ai\Streaming\Events\ProviderToolEvent;
@@ -66,8 +62,6 @@ class StreamController extends Controller
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'required|string',
-                'payload.tools' => 'sometimes|array',
-                'payload.tools.*' => 'string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
@@ -107,7 +101,6 @@ class StreamController extends Controller
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
                 'payload.tools' => 'nullable|array',
-                'payload.tools.*' => 'string',
                 'payload.params' => 'nullable|array',
 
                 'broadcast' => 'required|boolean',
@@ -136,11 +129,6 @@ class StreamController extends Controller
             ], 422);
         }
 
-        // Materialize selections before opening a stream or acknowledging background work.
-        // The context captures the initiating user here and reloads that ID at every execution.
-        $validatedData['payload']['broadcast'] = $validatedData['broadcast'];
-        $agent = $this->aiService->getAgent($validatedData);
-
         if ($validatedData['broadcast']) {
             $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
             try {
@@ -167,20 +155,20 @@ class StreamController extends Controller
             // This is useful for group chat requests where we don't want to block the client waiting for the AI response
             // and we want to handle the request asynchronously.
             // Note: This is not the best practice and should be migrated into a proper job queue in the future.
-            register_shutdown_function(function () use ($validatedData, $model, $agent) {
-                $this->handleGroupChatRequest($validatedData, $model, $agent);
+            register_shutdown_function(function () use ($validatedData, $model) {
+                $this->handleGroupChatRequest($validatedData, $model);
             });
 
             return response()->json(['success' => true]);
         }
 
         if ($validatedData['payload']['stream'] === false) {
-            return response()->json($this->handleNonStreamingRequest($validatedData, $agent));
+            return response()->json($this->handleNonStreamingRequest($validatedData));
         }
 
         try {
             return response()->stream(
-                callback: fn() => yield from $this->handleStreamingRequest($validatedData, $agent),
+                callback: fn() => yield from $this->handleStreamingRequest($validatedData),
                 headers: [
                     'Content-Type' => 'text/event-stream',
                     'Cache-Control' => 'no-cache',
@@ -204,8 +192,7 @@ class StreamController extends Controller
      * Handle streaming request with the new architecture
      */
     private function handleStreamingRequest(
-        array $validatedData,
-        AgentInterface $agent
+        array $validatedData
     ): iterable
     {
         $hawki = $this->userRepository->findHawki();
@@ -266,25 +253,19 @@ class StreamController extends Controller
         );
 
         try {
+            $agent = $this->aiService->getAgent($validatedData);
 
             $res = $agent->sendStreaming();
 
             // We batch the citations first, so we can clean them all at once
             // We do this, because we can do multiple URL requests in parallel, which is faster than doing them one by one
-            /** @var CitationData[] $citations */
+            /** @var \Laravel\Ai\Responses\Data\Citation[] $citations */
             $citations = [];
 
             foreach ($res as $chunk) {
                 switch (true) {
                     case $chunk instanceof Error:
                         $this->logger->error('Error chunk received from agent response', ['chunk' => $chunk]);
-                        $code = $chunk->metadata['code'] ?? null;
-                        // Only an access authorization failure ends the turn; ordinary provider errors are
-                        // reported in place so the rest of the stream (usage, completion) still arrives.
-                        if (in_array($code, [...ToolAccessException::ERROR_CODES, ...ModelAccessException::ERROR_CODES], true)) {
-                            yield $formatData(content: $chunk->message, type: 'error', isDone: true, additionalData: ['code' => $code]);
-                            return;
-                        }
                         yield $formatData(content: $chunk->message, type: 'message', isDone: true);
                         break;
                     case $chunk instanceof Citation:
@@ -329,9 +310,6 @@ class StreamController extends Controller
                 additionalData: ['usage' => $agent->getUsage()->toArray()]
             );
 
-        } catch (ToolAccessException|ModelAccessException $e) {
-            yield $formatData(content: $e->getMessage(), type: 'error', isDone: true, additionalData: ['code' => $e->errorCode]);
-            return;
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [
                 'exception' => $e,
@@ -352,14 +330,11 @@ class StreamController extends Controller
      * Handle a non-streaming request that is not part of a group chat.
      * This is used for the "export" feature, or any other feature that requires a single response from the AI agent without streaming.
      */
-    private function handleNonStreamingRequest(array $validatedData, AgentInterface $agent): array
+    private function handleNonStreamingRequest(array $validatedData): array
     {
         try {
+            $agent = $this->aiService->getAgent($validatedData);
             $res = $agent->send();
-        } catch (ToolAccessException|ModelAccessException $e) {
-            // Not redundant: access exceptions are RuntimeExceptions, so the \Throwable arm below would
-            // otherwise swallow it into a 200 response and drop the 403/422 plus its error code.
-            throw $e;
         } catch (RequestException $e) {
             $this->logger->error('RequestException while sending request to agent', [
                 'exception' => $e,
@@ -391,7 +366,7 @@ class StreamController extends Controller
     /**
      * Handle group chat requests with the new architecture
      */
-    private function handleGroupChatRequest(array $validatedData, AiModel $model, AgentInterface $agent): void
+    private function handleGroupChatRequest(array $validatedData, AiModel $model): void
     {
         $isUpdate = (bool)($validatedData['isUpdate'] ?? false);
 
@@ -414,6 +389,7 @@ class StreamController extends Controller
             // We set this to true, to tell the request factory to look for the group chat context and not the private context.
             // Ugly as sin, and a real hack, but just a temporary construct until 2.6.0, so go and judge me!
             $validatedData['payload']['broadcast'] = true;
+            $agent = $this->aiService->getAgent($validatedData);
 
             $res = $agent->send();
 
@@ -434,7 +410,6 @@ class StreamController extends Controller
                     'slug' => $room->slug,
                     'isGenerating' => false,
                     'error' => 'Failed to generate response. Please try again later.',
-                    'code' => $e instanceof ToolAccessException || $e instanceof ModelAccessException ? $e->errorCode : null,
                     'model' => $validatedData['payload']['model']
                 ]
             ]));
@@ -447,7 +422,7 @@ class StreamController extends Controller
         ];
 
         if (!empty($citations)) {
-            $content['citations'] = array_map(static function (CitationData $citation): array {
+            $content['citations'] = array_map(static function (\Laravel\Ai\Responses\Data\Citation $citation): array {
                 if ($citation instanceof Arrayable) {
                     return $citation->toArray();
                 }

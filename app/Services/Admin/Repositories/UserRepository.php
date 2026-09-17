@@ -5,11 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Admin\Repositories;
 
 use App\Models\User;
-use App\Services\Admin\EmployeeTypeRoleSyncer;
-use App\Services\Admin\Permission;
-use App\Services\Admin\PermissionService;
-use App\Services\Admin\RoleAssignmentService;
-use App\Services\Admin\RoleGuard;
+use App\Services\Admin\AdministrationAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -19,21 +15,14 @@ use Illuminate\Validation\ValidationException;
 class UserRepository extends ResourceRepository
 {
     public const RESOURCE = 'users';
-    protected const VERSION_RELATIONS = [['role_user', 'user_id', 'role_id']];
-
-    public function __construct(
-        private RoleGuard $guard,
-        private PermissionService $permissions,
-        private EmployeeTypeRoleSyncer $syncer,
-        private RoleAssignmentService $assignments,
-    ) {
-    }
 
     public function save(?int $id, array $values, User $actor): int
     {
-        return $this->guard->mutate(function () use ($id, $values, $actor) {
+        return DB::transaction(function () use ($id, $values, $actor) {
+            app(AdministrationAccess::class)->authorize($actor);
+            User::withoutGlobalScopes()->where('employeetype', 'admin')->orderBy('id')->lockForUpdate()->get();
             if (null === $id) {
-                $this->permissions->authorize($actor, Permission::USERS_MANAGE);
+                app(AdministrationAccess::class)->authorize($actor);
                 $data = Validator::make($values, [
                     'name' => 'required|string|max:255',
                     'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')],
@@ -42,18 +31,9 @@ class UserRepository extends ResourceRepository
                     'password' => 'required|string|min:12|max:255|confirmed',
                     'password_confirmation' => 'required|string|max:255',
                     'admin_disabled' => 'sometimes|boolean',
-                    'roles' => 'sometimes|array', 'roles.*' => 'integer|distinct|exists:roles,id',
                 ])->validate();
-                $roles = $data['roles'] ?? [];
-                $this->guard->assertEmployeeTypeGrantable($data['employeetype'], $actor);
-
-                if (\array_key_exists('roles', $data)) {
-                    $this->permissions->authorize($actor, Permission::ROLES_MANAGE);
-                    $this->guard->assertRolesGrantable($roles, $actor);
-                }
-
                 $password = $data['password'];
-                unset($data['password'], $data['password_confirmation'], $data['roles']);
+                unset($data['password'], $data['password_confirmation']);
                 $user = new User();
                 $user->forceFill($data + [
                     'local_password' => Hash::make($password),
@@ -62,11 +42,8 @@ class UserRepository extends ResourceRepository
                     'isRemoved' => false,
                     'registration_fingerprint' => null,
                 ])->save();
-                $id = (int) $user->id;
 
-                $this->assignments->replace($user, $roles);
-
-                return $id;
+                return (int) $user->id;
             }
 
             $user = User::withoutGlobalScopes()->findOrFail($id);
@@ -77,7 +54,6 @@ class UserRepository extends ResourceRepository
                 'email' => ['sometimes', 'required', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($id)],
                 'employeetype' => 'sometimes|required|string|max:255',
                 'admin_disabled' => 'sometimes|boolean',
-                'roles' => 'sometimes|array', 'roles.*' => 'integer|distinct|exists:roles,id',
                 'password' => 'sometimes|nullable|string|min:12|max:255|confirmed',
                 'password_confirmation' => 'required_with:password|nullable|string|max:255',
             ])->validate();
@@ -89,8 +65,7 @@ class UserRepository extends ResourceRepository
             $identity = array_intersect_key($data, array_flip(['name', 'email', 'employeetype']));
 
             if (array_intersect_key($data, array_flip(['name', 'username', 'email', 'employeetype', 'password', 'password_confirmation']))) {
-                $this->permissions->authorize($actor, Permission::USERS_MANAGE);
-                $this->guard->assertGrantable($this->permissions->assignedPermissionsOf($user), $actor);
+                app(AdministrationAccess::class)->authorize($actor);
             }
 
             if ($identity && !filled($user->local_password)) {
@@ -101,13 +76,12 @@ class UserRepository extends ResourceRepository
                 throw ValidationException::withMessages(['password' => __('admin.errors.external_identity')]);
             }
 
-            if ($identity) {
-                if (isset($identity['employeetype'])) {
-                    $this->guard->assertEmployeeTypeGrantable($identity['employeetype'], $actor);
-                }
+            if (($identity['employeetype'] ?? $user->employeetype) !== 'admin' && $user->id === $actor->id) {
+                throw ValidationException::withMessages(['employeetype' => __('admin.errors.self_disable')]);
+            }
 
+            if ($identity) {
                 $user->forceFill($identity)->save();
-                $this->syncer->sync($user);
             }
 
             if (filled($data['password'] ?? null)) {
@@ -115,13 +89,12 @@ class UserRepository extends ResourceRepository
             }
 
             if (\array_key_exists('admin_disabled', $data)) {
-                $this->permissions->authorize($actor, Permission::USERS_MANAGE);
+                app(AdministrationAccess::class)->authorize($actor);
 
                 if ($user->id === $actor->id && $data['admin_disabled']) {
                     throw ValidationException::withMessages(['admin_disabled' => __('admin.errors.self_disable')]);
                 }
 
-                $this->guard->assertGrantable($this->permissions->assignedPermissionsOf($user), $actor);
                 $user->forceFill(['admin_disabled' => $data['admin_disabled']])->save();
 
                 if ($data['admin_disabled']) {
@@ -129,43 +102,23 @@ class UserRepository extends ResourceRepository
                 }
             }
 
-            if (\array_key_exists('roles', $data)) {
-                $this->permissions->authorize($actor, Permission::ROLES_MANAGE);
-                $existing = DB::table('role_user')->where('user_id', $id)->where('source', 'manual')->pluck('role_id')->all();
-                $this->guard->assertRolesGrantable(array_unique(array_merge($existing, $data['roles'])), $actor);
-                $this->assignments->replace($user, $data['roles']);
-            }
-
-            $this->guard->assertActorRetainsAccess($actor);
-
             return (int) $id;
         });
     }
 
     public function revokeTokens(User $actor, ?string $id): array
     {
-        $this->permissions->authorize($actor, Permission::USERS_MANAGE);
+        app(AdministrationAccess::class)->authorize($actor);
         $user = User::withoutGlobalScopes()->findOrFail($id);
-        abort_if([] !== array_diff($this->permissions->assignedPermissionsOf($user), $this->permissions->permissionsOf($actor)), 403);
 
         return ['revoked' => $user->tokens()->delete()];
     }
 
     public function tokens(User $actor, ?string $id): array
     {
-        $this->permissions->authorize($actor, Permission::USERS_MANAGE);
+        app(AdministrationAccess::class)->authorize($actor);
 
         return ['tokens' => User::withoutGlobalScopes()->findOrFail($id)->tokens()->get(['id', 'name', 'created_at', 'last_used_at', 'expires_at'])->toArray()];
-    }
-
-    protected function fields(User $user): array
-    {
-        return array_values(array_filter(parent::fields($user), fn ($field) => $this->permissions->has($user, 'roles' === $field['key'] ? Permission::ROLES_MANAGE : Permission::USERS_MANAGE)));
-    }
-
-    protected function canCreate(User $user): bool
-    {
-        return $this->permissions->has($user, Permission::USERS_MANAGE);
     }
 
     protected function definition(): array
@@ -177,7 +130,7 @@ class UserRepository extends ResourceRepository
             $fields->field('email', 'text', 'required|email:rfc|max:255'), $fields->text('employeetype', true),
             $fields->field('password', 'secret', 'nullable|string|min:12|max:255'),
             $fields->field('password_confirmation', 'secret', 'nullable|string|max:255'),
-            $fields->boolean('admin_disabled'), $fields->multiple('roles', 'roles'),
+            $fields->boolean('admin_disabled'),
         ]];
     }
 
@@ -189,9 +142,6 @@ class UserRepository extends ResourceRepository
             $result['is_system'] = true;
         }
 
-        $roles = DB::table('role_user')->where('user_id', $row['id'])->get();
-        $result['roles'] = $roles->where('source', 'manual')->pluck('role_id')->map(static fn ($id) => (int) $id)->all();
-        $result['mapped_roles'] = $roles->where('source', 'employeetype')->pluck('role_id')->map(static fn ($id) => (int) $id)->all();
         $result['local_account'] = filled($row['local_password'] ?? null);
 
         return $result;

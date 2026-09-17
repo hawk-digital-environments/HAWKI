@@ -39,13 +39,6 @@ export class SendMessageStatus {
         });
     }
 
-    /** The server durably accepted the user message; failures now concern its response. */
-    public accepted = $state(false);
-
-    public markAccepted(): void {
-        this.accepted = true;
-    }
-
     private _status = $state<'sending' | 'failed' | 'responding' | 'received'>('sending');
     private _fileIssues = $state([] as Array<[File, string]>);
     private _awaitedResponse = $state(null as ResponseReader | null);

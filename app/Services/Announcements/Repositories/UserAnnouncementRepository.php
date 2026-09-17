@@ -117,11 +117,6 @@ readonly class UserAnnouncementRepository
         bool $activeOnly = false,
         bool $includePreviousRecipients = true,
     ): Builder {
-        $roleIds = $user->roles()
-            ->where('guard_name', 'web')
-            ->pluck('roles.id')
-            ->map(static fn ($id): int => (int) $id)
-            ->all();
 
         return Announcement::query()
             ->where('is_published', true)
@@ -133,13 +128,9 @@ readonly class UserAnnouncementRepository
                     $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
                 });
             })
-            ->where(static function (Builder $q) use ($user, $roleIds, $includePreviousRecipients): void {
+            ->where(static function (Builder $q) use ($user, $includePreviousRecipients): void {
                 $q->where('is_global', true)
                     ->orWhereJsonContains('target_users', $user->id);
-
-                foreach ($roleIds as $roleId) {
-                    $q->orWhereJsonContains('target_roles', $roleId);
-                }
 
                 if ($includePreviousRecipients) {
                     $q->orWhereHas('users', static fn (Builder $query) => $query->where('user_id', $user->id));

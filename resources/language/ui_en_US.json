@@ -312,7 +312,6 @@
         },
         "form": {
             "replace_secret": "Leave these fields empty to keep the stored configuration. Entering values replaces the entire stored configuration.",
-            "allowed_roles_hint": "Leave empty to allow every user. Otherwise only users holding at least one selected role can see and use this model.",
             "unique_key": "Enter a unique property name.",
             "suggestions_empty": "No matching suggestions",
             "suggestions_more": ":count more suggestions. Keep typing to narrow the list.",
@@ -437,10 +436,10 @@
         "page_actions": ":name actions",
         "title": "Administration",
         "overview": "Overview",
-        "intro": "Manage the AI services, access rules and settings for your HAWKI installation.",
-        "no_sections": "Your role allows panel access. Assign section permissions to use the management tools.",
+        "intro": "Manage AI services, accounts and settings for your HAWKI installation.",
+        "no_sections": "No administration sections are available.",
         "forbidden_title": "Access denied",
-        "forbidden": "Your role does not allow access to this section.",
+        "forbidden": "An administrator account is required to access this section.",
         "create": "Create",
         "edit": "Edit",
         "edit_named": "Edit :name",
@@ -472,8 +471,6 @@
         "local_password_replace": "Leave this empty to keep the sign-in password. A new password must contain at least 12 characters.",
         "secret_set": "Set",
         "secret_unset": "Not set",
-        "mapped_roles_hint": "Roles from employee type: :roles. Edit the mapping to change these assignments.",
-        "manual_roles_hint": "Specify which roles this account should belong to.",
         "directory_identity_hint": "Managed by the identity provider (LDAP, OIDC or Shibboleth) and read-only here.",
         "discard_title": "Discard changes?",
         "discard_description": "Your unsaved changes will be lost.",
@@ -575,7 +572,6 @@
         "view_models": "View models",
         "view_tools": "View tools",
         "tools": "Tools",
-        "allowed_roles_everyone": "All users",
         "tools_of": "Tools of :server",
         "show_all_tools": "Show all tools",
         "discovery_search": "Search models",
@@ -609,8 +605,6 @@
             "system-models": "System models",
             "mcp": "MCP servers and tools",
             "users": "Users",
-            "roles": "Roles and permissions",
-            "mappings": "Employee-type assignments",
             "announcements": "Announcements",
             "usage": "Usage and statistics",
             "health": "Health monitor",
@@ -622,9 +616,7 @@
             "models": "Enable models and edit descriptions, capabilities, parameters, limits and tool assignments.",
             "system-models": "Choose the models used for default chats, titles, summaries and prompt improvements, and edit their system prompts.",
             "mcp": "Configure server connections, test availability and discover tools. Select a server to see its tools; built-in HAWKI tools are listed too. Manage activation, capability mapping and model assignments per tool.",
-            "users": "Create local accounts, find users, manage access and assign manual roles.",
-            "roles": "Define what each role can view and manage.",
-            "mappings": "Map each exact employee-type value to a role. Changes also update existing accounts.",
+            "users": "Create local accounts, find users and manage account access.",
             "announcements": "Write, schedule and publish announcements for everyone or selected audiences.",
             "usage": "Explore request and token usage over time.",
             "health": "Check infrastructure, AI availability, queues and scheduler activity. Refreshes every 30 seconds.",
@@ -659,7 +651,6 @@
             "pricing": "Pricing",
             "flags": "Flags",
             "tools": "Tools",
-            "allowed_roles": "Allowed roles",
             "usage_rules": "Usage contexts",
             "server_label": "Server name",
             "mcp_server_id": "MCP server",
@@ -680,7 +671,6 @@
             "is_published": "Published",
             "is_global": "Everyone",
             "is_forced": "Require acknowledgement",
-            "target_roles": "Target roles",
             "starts_at": "Starts at",
             "expires_at": "Expires at",
             "anchor": "Anchor",
@@ -692,14 +682,10 @@
             "password": "Sign-in password",
             "password_confirmation": "Repeat sign-in password",
             "employeetype": "Employee type",
-            "employee_type": "Employee type",
             "admin_disabled": "Account disabled",
             "last_login_at": "Last sign-in",
-            "roles": "Manual roles",
             "slug": "Role identifier",
             "is_system": "Built-in role",
-            "permissions": "Permissions",
-            "role_id": "Role",
             "key": "Setting",
             "value": "Value",
             "default": "Environment default",
@@ -716,8 +702,7 @@
             "debug": "Debug mode",
             "config_cached": "Configuration cached",
             "icon": "Provider icon",
-            "access_rule": "User access",
-            "mapped_roles": "Derived roles"
+            "target_users": "Target users"
         },
         "tool_sources": {
             "builtin": "Built-in (HAWKI)"
@@ -725,15 +710,10 @@
         "errors": {
             "translate_model": "No AI model is available for translation. Assign a system model of type \"translation\".",
             "translate_failed": "Translation failed. Try again.",
-            "system_role": "The slug of built-in roles cannot be changed.",
             "self_disable": "You cannot disable your own account.",
-            "role_in_use": "Remove assignments first. Built-in roles cannot be deleted.",
-            "last_admin": "At least one active administrator with role management permission must remain.",
-            "permission_escalation": "You can only assign or change permissions you hold yourself.",
             "immutable": "This identifier cannot be changed.",
             "adapter": "Choose an installed provider adapter.",
             "model_in_use": "This model is assigned to a system task. Reassign that task first.",
-            "model_restricted": "A model assigned to a system task must stay available to every user. Remove the role restriction or reassign the task first.",
             "invalid_value": "Enter a valid value.",
             "provider_in_use": "Remove or reassign this provider's models first.",
             "published_policy": "Published policies must remain available for consent history.",
@@ -749,139 +729,6 @@
             "save": "Could not save changes. Please try again.",
             "external_identity": "LDAP or OIDC manages profile details for external accounts.",
             "load": "Could not load this section. Refresh to try again."
-        },
-        "permissions": {
-            "admin_access": "Access administration",
-            "users_view": "View users",
-            "users_manage": "Manage local users, access and tokens",
-            "roles_manage": "Manage roles and assignments",
-            "models_manage": "Manage models and system prompts",
-            "providers_manage": "Manage providers and credentials",
-            "mcp_manage": "Manage MCP servers and tools",
-            "announcements_manage": "Manage announcements",
-            "usage_view": "View usage statistics",
-            "usage_view-per-user": "View individual usage",
-            "health_view": "View system health",
-            "health_manage": "Manage health checks and failed jobs",
-            "settings_view": "View environment",
-            "settings_manage": "Manage system settings",
-            "external-apps_manage": "Manage external apps",
-            "admin": {
-                "access": {
-                    "title": "Access administration",
-                    "description": "Open administration. Each section also requires its own permission."
-                }
-            },
-            "users": {
-                "view": {
-                    "title": "View users",
-                    "description": "View user accounts and role assignments."
-                },
-                "manage": {
-                    "title": "Manage local users, access and tokens",
-                    "description": "Create local accounts and manage account access and tokens."
-                }
-            },
-            "roles": {
-                "manage": {
-                    "title": "Manage roles and assignments",
-                    "description": "Manage roles, manual assignments and employee-type mappings within your grants."
-                }
-            },
-            "models": {
-                "manage": {
-                    "title": "Manage models and system prompts",
-                    "description": "Configure models, model assignments and system prompts."
-                }
-            },
-            "providers": {
-                "manage": {
-                    "title": "Manage providers and credentials",
-                    "description": "Configure AI providers and their credentials."
-                }
-            },
-            "mcp": {
-                "manage": {
-                    "title": "Manage MCP servers and tools",
-                    "description": "Configure MCP servers and tools. Access-rule changes also require role management."
-                }
-            },
-            "announcements": {
-                "manage": {
-                    "title": "Manage announcements",
-                    "description": "Create and edit announcements."
-                }
-            },
-            "usage": {
-                "view": {
-                    "title": "View usage statistics",
-                    "description": "View aggregate usage and statistics."
-                },
-                "view-per-user": {
-                    "title": "View individual usage",
-                    "description": "View usage attributed to individual users."
-                }
-            },
-            "health": {
-                "view": {
-                    "title": "View system health",
-                    "description": "View service health and job status."
-                },
-                "manage": {
-                    "title": "Manage health checks and failed jobs",
-                    "description": "Run health checks and manage failed jobs."
-                }
-            },
-            "settings": {
-                "view": {
-                    "title": "View environment",
-                    "description": "View deployment and environment settings."
-                },
-                "manage": {
-                    "title": "Manage system settings",
-                    "description": "Change application settings."
-                }
-            },
-            "external-apps": {
-                "manage": {
-                    "title": "Manage external apps",
-                    "description": "Manage external application connections."
-                }
-            },
-            "tools": {
-                "use": {
-                    "title": "Use tools",
-                    "description": "Allow tool use together with the relevant capability permission."
-                },
-                "internal_search": {
-                    "use": {
-                        "title": "Use internal search",
-                        "description": "Search internal content through approved tools; content access still applies."
-                    }
-                }
-            },
-            "ai": {
-                "capabilities": {
-                    "web_search": {
-                        "use": {
-                            "title": "Use web search",
-                            "description": "Search the web through an approved tool or a supported model."
-                        }
-                    },
-                    "web_fetch": {
-                        "use": {
-                            "title": "Fetch web pages",
-                            "description": "Retrieve the content of a web address through an approved tool or a supported model."
-                        }
-                    },
-                    "image_generation": {
-                        "use": {
-                            "title": "Generate images",
-                            "description": "Generate images through an approved tool or a supported model."
-                        }
-                    }
-                }
-            }
         },
         "actions": {
             "test": "Test connection",
@@ -957,49 +804,7 @@
             "upload_failed": "The SVG could not be added. Use a static SVG up to 256 KB and try again.",
             "choose_again": "This icon is no longer available. Reopen the selection."
         },
-        "permission_selector_hint": "Choose the permissions this role grants. Permissions you cannot grant stay unchanged.",
-        "permission_search": "Search permissions",
-        "permission_count": ":count permissions shown",
-        "permission_groups": {
-            "administration": "Administration",
-            "tools": "Tool use"
-        },
-        "permission_unknown": "This saved permission is no longer in the available catalog.",
-        "permission_preserved": "Already assigned · you cannot change this permission.",
-        "permission_not_grantable": "You cannot grant this permission.",
-        "access_rule_hint": "This rule determines who may use the tool. The tool must also be enabled and assigned to the selected model.",
-        "access_rule_locked": "You cannot change this tool’s current access rule.",
-        "role_unknown": "Role :id",
-        "role_source_manual": "Manually assigned",
-        "role_source_mapped": "Employee type · read-only",
-        "mapping_impact": "Users with this employee type receive the selected role automatically. Saving updates their derived assignments. Manual role assignments remain in place.",
         "authorization_changed": "Your access changed. Reopen the editor to review the current permissions.",
-        "tool_access_rules": {
-            "unavailable": {
-                "title": "Unavailable to users",
-                "description": "No user may use this tool."
-            },
-            "web_search": {
-                "title": "Users with web search access",
-                "description": "Requires permission to use tools and web search."
-            },
-            "web_fetch": {
-                "title": "Users with web page access",
-                "description": "Requires permission to use tools and fetch web pages."
-            },
-            "image_generation": {
-                "title": "Users with image generation access",
-                "description": "Requires permission to use tools and generate images."
-            },
-            "internal_search": {
-                "title": "Users with internal search access",
-                "description": "Requires permission to use tools and internal search."
-            }
-        },
-        "role_labels": {
-            "admin": "Administrator",
-            "user": "User"
-        },
         "editor_refreshed": "This record or its available settings changed. Reopen the editor to review the current values.",
         "editor_unverified": "The editor closed because current data could not be loaded. Reload this section before editing."
     },

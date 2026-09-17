@@ -41,13 +41,8 @@ export class GuardSlice {
             return 'chat.composer.actions.noMessageTooltip';
         }
 
-        if (context.tools.authorizationPending) {
-            return 'chat.tools.authorizationRefreshing';
-        }
-
         // Ignore model usage issues when the user does not see any AI-related UI elements.
         if (context.modelUsage.issues.length > 0) {
-            if (context.modelUsage.issues.every(issue => issue.type === 'offline_tools')) return 'chat.tools.offline';
             return 'chat.composer.actions.invalidModelTooltip';
         }
 

@@ -52,7 +52,7 @@ readonly class AnnouncementPublicationRules
             return;
         }
 
-        if (!$candidate->is_global || !empty($candidate->target_roles)) {
+        if (!$candidate->is_global || !empty($candidate->target_users)) {
             throw ValidationException::withMessages(['is_global' => __('admin.errors.global_policy')]);
         }
 
