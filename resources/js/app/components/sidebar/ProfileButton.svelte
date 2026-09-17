@@ -68,7 +68,13 @@
     contentProps={{class: 'profile-menu-content'}}
 >
     {#snippet trigger({props})}
-        <SidebarItem label={userName} active={menuOpen} {...props}>
+        <SidebarItem
+            label={userName}
+            active={menuOpen}
+            class="profile-trigger"
+            style={`--profile-avatar-size: ${triggerAvatarSize}px`}
+            {...props}
+        >
             {#snippet media()}
                 <Avatar src={avatarUrl} name={userName} label={userName} size={triggerAvatarSize}/>
             {/snippet}
@@ -100,6 +106,13 @@
 </DropdownMenu>
 
 <style>
+    /* The avatar is wider than the icon column and spills past both sides of
+       it, eating into the row gap. Give that spill back so the space before the
+       name matches the icon rows. */
+    :global(.profile-trigger .icon-wrap) {
+        margin-right: calc((var(--profile-avatar-size) - var(--nav-icon-size)) / 2);
+    }
+
     :global(.profile-menu-content.dropdown-content--dropdown) {
         width: min(15rem, calc(100vw - 2 * var(--space-4)));
     }
