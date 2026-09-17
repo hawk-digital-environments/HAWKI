@@ -160,6 +160,11 @@ class StorageProxyController extends Controller
             abort(404, 'File not found');
         }
 
+        // Every existing caller forces a download; a review-panel preview
+        // (?disposition=inline) is the only opt-in exception, so the default
+        // stays 'attachment' unless explicitly asked otherwise.
+        $disposition = 'inline' === $request->query('disposition') ? 'inline' : 'attachment';
+
         return response()->streamDownload(
             callback: static function () use ($stream): void {
                 fpassthru($stream);
@@ -170,6 +175,7 @@ class StorageProxyController extends Controller
                 'Cache-Control' => 'public, max-age=3600',
                 'ETag' => $etag,
             ],
+            disposition: $disposition,
         );
     }
 }

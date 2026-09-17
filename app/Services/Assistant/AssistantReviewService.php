@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Assistant;
 
+use App\Models\Assistants\AssistantFieldFlag;
 use App\Models\Assistants\AssistantReview;
+use App\Models\Assistants\AssistantReviewLog;
 use App\Models\User;
 use App\Services\Assistant\Values\AssistantReviewStatus;
 use Illuminate\Container\Attributes\Singleton;
@@ -45,6 +47,14 @@ readonly class AssistantReviewService
             if (null !== $reviewer) {
                 $this->deny($review, $reviewer, $review->reason);
             }
+
+            return;
+        }
+
+        if (AssistantReviewStatus::BLOCKED === $newStatus && AssistantReviewStatus::BLOCKED !== $previous) {
+            if (null !== $reviewer) {
+                $this->block($review, $reviewer, $review->reason);
+            }
         }
     }
 
@@ -69,6 +79,12 @@ readonly class AssistantReviewService
                 abort(422 ,"The requested review does not exist.");
             }
 
+            abort_if(
+                AssistantFieldFlag::where('assistant_id', $locked->assistant_id)->where('resolved', false)->exists(),
+                422,
+                'Unresolved review flags must be cleared before approving.',
+            );
+
             // Re-apply the audit fields onto the locked row directly so the
             // update is consistent with the latest persisted state.
             $locked->status = AssistantReviewStatus::APPROVED;
@@ -79,6 +95,7 @@ readonly class AssistantReviewService
             $review->setRawAttributes($locked->getAttributes()); # TODO: use orm
 
             $this->assistantService->promoteRequested($locked->assistant);
+            $this->log($locked, $reviewer);
         });
     }
 
@@ -106,7 +123,48 @@ readonly class AssistantReviewService
             $review->setRawAttributes($locked->getAttributes());
 
             $this->assistantService->revokeRelease($locked->assistant);
+            $this->log($locked, $reviewer);
         });
+    }
+
+    /**
+     * Mark the review blocked with an optional reason, record who blocked it
+     * and when, then demote the assistant back to private. Like a denial,
+     * this leaves the assistant unable to be resubmitted until an admin acts
+     * again — {@see \App\JsonApi\V1\Assistants\ReleaseAssistantRequest} blocks
+     * publication requests while the review is denied *or* blocked.
+     *
+     * @see approve() for the transition-detection contract with applyStatusTransition().
+     */
+    public function block(AssistantReview $review, User $reviewer, ?string $reason = null): void
+    {
+        $this->db->transaction(function () use ($review, $reviewer, $reason): void {
+            $locked = AssistantReview::whereKey($review->id)->lockForUpdate()->first();
+
+            if ($locked === null) {
+                abort(422 ,"The requested review does not exist.");
+            }
+
+            $locked->status = AssistantReviewStatus::BLOCKED;
+            $locked->reason = $reason;
+            $locked->reviewer_id = $reviewer->id;
+            $locked->reviewed_at = Carbon::instance($this->clock->now());
+            $locked->save();
+
+            $review->setRawAttributes($locked->getAttributes());
+
+            $this->assistantService->revokeRelease($locked->assistant);
+            $this->log($locked, $reviewer);
+        });
+    }
+
+    private function log(AssistantReview $review, User $reviewer): void
+    {
+        $review->assistant->assistantReviewLogs()->create([
+            'admin_user_id' => $reviewer->id,
+            'action' => $review->status,
+            'reason' => $review->reason,
+        ]);
     }
 }
 

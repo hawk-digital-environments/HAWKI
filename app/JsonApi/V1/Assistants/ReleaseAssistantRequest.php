@@ -41,8 +41,8 @@ class ReleaseAssistantRequest extends FormRequest
 
                     $review = $assistant?->assistantReview;
 
-                    if (null !== $review && AssistantReviewStatus::DENIED === $review->status) {
-                        $fail('The assistant has a denied review and cannot be submitted for publication until an admin clears the denial.');
+                    if (null !== $review && \in_array($review->status, [AssistantReviewStatus::DENIED, AssistantReviewStatus::BLOCKED], true)) {
+                        $fail('The assistant has a denied or blocked review and cannot be submitted for publication until an admin clears it.');
                     }
                 },
             ],

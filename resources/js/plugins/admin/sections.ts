@@ -4,6 +4,7 @@ export const sections = [
     { id: 'system-models', permission: 'models.manage', group: 'ai' },
     { id: 'mcp', permission: 'mcp.manage', group: 'ai' },
     { id: 'tools', permission: 'mcp.manage', group: 'ai' },
+    { id: 'assistants', permission: 'assistants.manage', group: 'assistants' },
     { id: 'users', permission: 'users.view', group: 'people' },
     { id: 'roles', permission: 'roles.manage', group: 'people' },
     { id: 'mappings', permission: 'roles.manage', group: 'people' },

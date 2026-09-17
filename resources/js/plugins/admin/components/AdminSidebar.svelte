@@ -8,6 +8,8 @@
     import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
+    import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte'
+
     const router = useRouter();
     const { __ } = useTranslator();
 </script>
@@ -23,6 +25,10 @@
         <AdminSidebarGroup
             group="ai"
             icon={AiBrainIcon}
+        />
+        <AdminSidebarGroup
+            group="assistants"
+            icon={BotIcon}
         />
         <AdminSidebarGroup
             group="people"

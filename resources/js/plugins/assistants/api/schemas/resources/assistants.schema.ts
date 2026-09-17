@@ -90,10 +90,21 @@ const WireAttachmentSchema = z.object({
     uuid: z.string().nullable().optional(),
     name: z.string().nullable().optional(),
     mime: z.string().nullable().optional(),
+    size: z.number().nullable().optional(),
+    created_at: z.string().nullable().optional(),
+    identifier: z.string().nullable().optional(),
+    /** Admin review verdict; `null` = not yet reviewed. */
+    review_status: z.string().nullable().optional(),
     /** Server-side RAG ingestion state; `null` when RAG doesn't apply. */
     rag_status: z.string().nullable().optional(),
     /** Server-side ingestion failure reason, when `rag_status` is `failed`. */
     rag_error: z.string().nullable().optional()
+});
+
+const WireReviewSchema = z.object({
+    id: z.string(),
+    status: z.string(),
+    reason: z.string().nullable().optional()
 });
 
 const WireFeedbackSchema = z.object({
@@ -153,6 +164,7 @@ export const AssistantResourceSchema = z.object({
     assistant_user_prompts: z.array(WireUserPromptSchema).nullable().optional(),
     assistant_setting_values: z.array(WireSettingValueSchema).nullable().optional(),
     assistant_versions: z.array(WireVersionSchema).nullable().optional(),
+    assistant_review: WireReviewSchema.nullable().optional(),
     assistant_feedback: z.array(WireFeedbackSchema).nullable().optional(),
     assistant_attachments: z.array(WireAttachmentSchema).nullable().optional(),
     creator: WireUserSchema.nullable().optional(),
@@ -196,17 +208,20 @@ function settingValue(
     return values?.find(entry => entry.setting?.key === key)?.value ?? null;
 }
 
-/** Server attachments carry no size or timestamps, so those stay undefined and render empty. */
 function toUploadFiles(attachments: AssistantResource['assistant_attachments']): UploadFile[] {
     if (!attachments?.length) return [];
     return attachments.map(attachment => ({
         uuid: attachment.uuid ?? undefined,
+        identifier: attachment.identifier ?? undefined,
         name: attachment.name ?? '',
         mimeType: attachment.mime ?? undefined,
+        size: attachment.size ?? undefined,
+        date: attachment.created_at ? new Date(attachment.created_at) : undefined,
         status: 'complete' as const,
         progress: 100,
         ragStatus: attachment.rag_status ?? null,
-        ragError: attachment.rag_error ?? null
+        ragError: attachment.rag_error ?? null,
+        reviewStatus: (attachment.review_status as UploadFile['reviewStatus']) ?? null
     }));
 }
 
@@ -232,6 +247,9 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
     allowModelSelect: false,
     releaseStage: wire.release_stage ?? ReleaseMode.DRAFT,
     requested_release_stage: wire.requested_release_stage ?? null,
+    review: wire.assistant_review
+        ? { id: wire.assistant_review.id, status: wire.assistant_review.status, reason: wire.assistant_review.reason ?? null }
+        : null,
 
     // Not served by the backend yet — see the field docs on `Assistant`.
     riskLevel: null,
@@ -341,6 +359,7 @@ export function createEmptyAssistant(): Assistant {
         allowRemix: false,
         releaseStage: ReleaseMode.DRAFT,
         requested_release_stage: null,
+        review: null,
         riskLevel: null,
         riskNote: null,
         usageCount: null,

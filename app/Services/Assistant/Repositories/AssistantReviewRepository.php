@@ -48,11 +48,16 @@ class AssistantReviewRepository extends AbstractRepository
         $review->save();
     }
 
-    public function deleteReviewForAssistantUnlessDenied(int $assistantId): void
+    /**
+     * A denied or blocked review is a terminal state an admin must clear
+     * explicitly — dropping back to a non-public stage otherwise tears the
+     * review down (see AssistantReleaseStatus).
+     */
+    public function deleteReviewForAssistantUnlessTerminal(int $assistantId): void
     {
         $this->getQuery()
             ->where('assistant_id', $assistantId)
-            ->where('status', '!=', AssistantReviewStatus::DENIED->value)
+            ->whereNotIn('status', [AssistantReviewStatus::DENIED->value, AssistantReviewStatus::BLOCKED->value])
             ->delete();
     }
 }

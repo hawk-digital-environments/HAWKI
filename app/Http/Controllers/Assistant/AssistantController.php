@@ -9,6 +9,7 @@ use App\Http\Requests\Assistant\AddFavoriteAssistantRequest;
 use App\Http\Requests\Assistant\DeleteAssistantAttachmentRequest;
 use App\Http\Requests\Assistant\RemixAssistantRequest;
 use App\Http\Requests\Assistant\RemoveFavoriteAssistantRequest;
+use App\Http\Requests\Assistant\ReviewAssistantAttachmentRequest;
 use App\Http\Requests\Assistant\UploadAssistantAttachmentRequest;
 use App\JsonApi\V1\Assistants\AssistantQuery;
 use App\JsonApi\V1\Assistants\AssistantRequest;
@@ -240,6 +241,24 @@ class AssistantController extends Controller
         if ($this->shouldNotifyUpdate($assistant)) {
             $this->events->dispatch(new AssistantUpdatedEvent($assistant, ['attachments']));
         }
+
+        return $this->refetchedResponse($route, $store, $assistant);
+    }
+
+    /**
+     * Set an admin's ok/corrupted/inadequate judgment on an attachment. Purely
+     * an admin review verdict — does not touch the file itself or trigger a
+     * version bump.
+     */
+    public function reviewAttachment(
+        ReviewAssistantAttachmentRequest $request,
+        Route $route,
+        StoreContract $store,
+        Assistant $assistant,
+    ): Responsable|Response {
+        $attachment = $assistant->assistantAttachments()->where('uuid', $request->fileId())->firstOrFail();
+        $attachment->review_status = $request->reviewStatus();
+        $attachment->save();
 
         return $this->refetchedResponse($route, $store, $assistant);
     }

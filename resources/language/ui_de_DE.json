@@ -614,7 +614,8 @@
             "usage": "Nutzung und Statistik",
             "health": "Systemzustand",
             "settings": "Systemeinstellungen",
-            "environment": "Umgebung"
+            "environment": "Umgebung",
+            "assistants": "Freigabe-Center"
         },
         "descriptions": {
             "providers": "Konfigurieren Sie KI-Anbieter und ihre Zugangsdaten.",
@@ -629,7 +630,8 @@
             "usage": "Untersuchen Sie Anfragen und Tokenverbrauch im Zeitverlauf.",
             "health": "Prüfen Sie Infrastruktur, KI-Verfügbarkeit, Warteschlangen und Zeitplanung. Aktualisiert sich alle 30 Sekunden.",
             "settings": "Verwalten Sie Laufzeiteinstellungen, die Umgebungswerte überschreiben.",
-            "environment": "Prüfen Sie wirksame Einstellungen und Informationen zur Bereitstellung."
+            "environment": "Prüfen Sie wirksame Einstellungen und Informationen zur Bereitstellung.",
+            "assistants": "Prüfen, veröffentlichen und verwalten Sie plattformweit erstellte Assistenzsysteme."
         },
         "fields": {
             "name": "Name",
@@ -714,7 +716,68 @@
             "config_cached": "Konfiguration zwischengespeichert",
             "icon": "Provider-Icon",
             "access_rule": "Benutzerzugriff",
-            "mapped_roles": "Abgeleitete Rollen"
+            "mapped_roles": "Abgeleitete Rollen",
+            "handle": "Handle",
+            "creator": "Ersteller:in",
+            "version": "Version",
+            "based_on": "Basiert auf",
+            "origin": "Ursprung",
+            "created_at": "Erstellt",
+            "updated_at": "Letzte Änderung",
+            "review_status": "Dateiprüfstatus"
+        },
+        "detail": {
+            "general": "Allgemein",
+            "behaviour": "Verhalten",
+            "knowledge": "Wissen",
+            "model": "Modell",
+            "versions": "Versionsverlauf",
+            "admin_log": "Administratives Protokoll",
+            "description": "Beschreibung",
+            "detail_description": "Ausführliche Beschreibung",
+            "category": "Kategorie",
+            "language": "Sprache",
+            "tags": "Schlagwörter",
+            "allow_remix": "Remix erlaubt",
+            "system_prompt": "Systemprompt",
+            "greeting": "Begrüßung",
+            "starter_prompts": "Einstiegsprompts",
+            "formality": "Förmlichkeit",
+            "answer_style": "Antwortstil",
+            "temperature": "Temperatur",
+            "top_p": "Top P",
+            "max_tokens": "Maximale Token",
+            "capabilities": "Fähigkeiten",
+            "no_files": "Keine Wissensdateien angehängt.",
+            "no_versions": "Noch kein Versionsverlauf.",
+            "no_log": "Noch keine administrativen Aktionen.",
+            "unresolved_flags_warning": "Dieses Assistenzsystem hat :count ungelöste Markierung(en). Lösen Sie diese vor der Freigabe.",
+            "ask_for_edit": "Nacharbeit anfordern",
+            "discard": "Verwerfen",
+            "approve": "Freigeben",
+            "confirm": "Bestätigen",
+            "reason_label": "Hinweis an die Ersteller:in",
+            "reason_placeholder": "Entscheidung begründen…",
+            "draft_in_progress": "Eine Admin-Person hat mit der Prüfung begonnen — Markierungen sind gespeichert, aber noch nicht gesendet, verworfen oder entschieden.",
+            "exit_dialog_title": "Nicht gesendetes Prüfungsfeedback",
+            "exit_dialog_description": "Sie haben :count Markierung(en) an diesem Assistenzsystem gesetzt, die noch nicht an die Ersteller:in gesendet, verworfen oder entschieden wurden. Was soll damit geschehen?",
+            "exit_dialog_send": "An Ersteller:in senden",
+            "exit_dialog_discard": "Markierungen verwerfen",
+            "exit_dialog_draft": "Als Entwurf speichern",
+            "exit_dialog_send_failed": "Das Feedback konnte nicht gesendet werden.",
+            "exit_dialog_discard_failed": "Die Markierungen konnten nicht verworfen werden."
+        },
+        "flags": {
+            "flag_selection": "Auswahl markieren",
+            "comment_label": "Kommentar",
+            "comment_placeholder": "Erklären Sie der Ersteller:in das Problem…",
+            "submit": "Markierung hinzufügen",
+            "resolve": "Als gelöst markieren",
+            "reopen": "Wieder öffnen",
+            "remove": "Entfernen",
+            "view": "Ansehen",
+            "download": "Herunterladen",
+            "preview_unsupported": "Dieser Dateityp kann hier nicht angezeigt werden. Zum Ansehen herunterladen."
         },
         "errors": {
             "translate_model": "Für Übersetzungen ist kein KI-Modell verfügbar. Weise ein Systemmodell vom Typ „translation“ zu.",
@@ -759,6 +822,7 @@
             "settings_view": "Umgebung ansehen",
             "settings_manage": "Systemeinstellungen verwalten",
             "external-apps_manage": "Externe Apps verwalten",
+            "assistants_manage": "Veröffentlichung von Assistenzsystemen verwalten",
             "admin": {
                 "access": {
                     "title": "Administration öffnen",
@@ -841,6 +905,12 @@
                     "description": "Verbindungen externer Anwendungen verwalten."
                 }
             },
+            "assistants": {
+                "manage": {
+                    "title": "Veröffentlichung von Assistenzsystemen verwalten",
+                    "description": "Prüfen, veröffentlichen und verwalten Sie plattformweit erstellte Assistenzsysteme."
+                }
+            },
             "tools": {
                 "use": {
                     "title": "Werkzeuge nutzen",
@@ -903,7 +973,8 @@
         "groups": {
             "ai": "KI-Dienste",
             "people": "Benutzer und Zugriff",
-            "system": "System"
+            "system": "System",
+            "assistants": "Assistenzsystemen"
         },
         "grouping": {
             "day": "Tag",
@@ -922,7 +993,23 @@
             "warning": "Warnung",
             "database": "Datenbanküberschreibung",
             "environment": "Umgebung / Standard",
-            "deployment": "Bereitstellung"
+            "deployment": "Bereitstellung",
+            "waiting_for_review": "Warten auf Freigabe",
+            "published": "Veröffentlicht",
+            "private": "Privat",
+            "requires_revision": "Nacharbeit erforderlich",
+            "blocked": "Gesperrt",
+            "remix": "Remix",
+            "original": "Original",
+            "draft": "Entwurf",
+            "organizational": "Organisation",
+            "federated": "Föderiert",
+            "approved": "Freigegeben",
+            "denied": "Abgelehnt",
+            "pending": "Ausstehend",
+            "attachment_ok": "In Ordnung",
+            "corrupted": "Beschädigt",
+            "inadequate": "Unzureichend"
         },
         "icons": {
             "light": "Hell",

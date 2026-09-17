@@ -9,6 +9,7 @@ const pages = {
     'system-models': () => import('./pages/AdminSystemModels.svelte'),
     'mcp': () => import('./pages/AdminMcp.svelte'),
     'tools': () => import('./pages/AdminTools.svelte'),
+    'assistants': () => import('$plugins/assistants/admin/pages/PublishingCenter.svelte'),
     'users': () => import('./pages/AdminUsers.svelte'),
     'roles': () => import('./pages/AdminRoles.svelte'),
     'mappings': () => import('./pages/AdminMappings.svelte'),
@@ -35,4 +36,13 @@ export function registerAdminRoutes(registrar: RouteRegistrar) {
             }
         });
     }
+    registrar.lazyRoute('/assistants/:id', () => import('$plugins/assistants/admin/pages/AssistantDetail.svelte'), {
+        name: 'admin.assistants.detail',
+        middlewares: [authMetaGuards({ access: 'server-session', permission: 'admin.access' })],
+        meta: {
+            title: 'admin.sections.assistants',
+            access: 'server-session',
+            permission: 'assistants.manage'
+        }
+    });
 }

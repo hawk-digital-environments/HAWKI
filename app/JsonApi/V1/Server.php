@@ -21,6 +21,8 @@ use App\JsonApi\V1\AssistantSettingValues\AssistantSettingValueSchema;
 use App\JsonApi\V1\Attachments\AttachmentSchema;
 use App\JsonApi\V1\AssistantCategories\AssistantCategorySchema;
 use App\JsonApi\V1\AssistantFeedback\AssistantFeedbackSchema;
+use App\JsonApi\V1\AssistantFieldFlags\AssistantFieldFlagSchema;
+use App\JsonApi\V1\AssistantReviewLogs\AssistantReviewLogSchema;
 use App\JsonApi\V1\AssistantReviews\AssistantReviewSchema;
 use App\JsonApi\V1\AssistantTags\AssistantTagSchema;
 use App\JsonApi\V1\AssistantUserPrompts\AssistantUserPromptSchema;
@@ -80,6 +82,7 @@ class Server extends BaseServer
             Admin\UsageSchema::class,
             Admin\EnvironmentSchema::class,
             Admin\HealthSchema::class,
+            Admin\AssistantSchema::class,
             AiConvMessageSchema::class,
             AiConvSchema::class,
             AiModelDescriptionSchema::class,
@@ -113,6 +116,8 @@ class Server extends BaseServer
             AssistantCategorySchema::class,
             AssistantFeedbackSchema::class,
             AssistantReviewSchema::class,
+            AssistantReviewLogSchema::class,
+            AssistantFieldFlagSchema::class,
             AssistantTagSchema::class,
             AssistantUserPromptSchema::class,
             AssistantVersionSchema::class,

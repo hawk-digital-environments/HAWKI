@@ -614,7 +614,8 @@
             "usage": "Usage and statistics",
             "health": "Health monitor",
             "settings": "System settings",
-            "environment": "Environment"
+            "environment": "Environment",
+            "assistants": "Publishing Center"
         },
         "descriptions": {
             "providers": "Configure AI providers and their credentials.",
@@ -629,7 +630,8 @@
             "usage": "Explore request and token usage over time.",
             "health": "Check infrastructure, AI availability, queues and scheduler activity. Refreshes every 30 seconds.",
             "settings": "Manage runtime settings that override environment defaults.",
-            "environment": "Inspect effective settings and deployment information."
+            "environment": "Inspect effective settings and deployment information.",
+            "assistants": "Review, publish and manage assistants created across the platform."
         },
         "fields": {
             "name": "Name",
@@ -714,7 +716,68 @@
             "config_cached": "Configuration cached",
             "icon": "Provider icon",
             "access_rule": "User access",
-            "mapped_roles": "Derived roles"
+            "mapped_roles": "Derived roles",
+            "handle": "Handle",
+            "creator": "Creator",
+            "version": "Version",
+            "based_on": "Based on",
+            "origin": "Origin",
+            "created_at": "Created",
+            "updated_at": "Last update",
+            "review_status": "File review status"
+        },
+        "detail": {
+            "general": "General",
+            "behaviour": "Behaviour",
+            "knowledge": "Knowledge",
+            "model": "Model",
+            "versions": "Version history",
+            "admin_log": "Administrative log",
+            "description": "Description",
+            "detail_description": "Detail description",
+            "category": "Category",
+            "language": "Language",
+            "tags": "Tags",
+            "allow_remix": "Remixing allowed",
+            "system_prompt": "System prompt",
+            "greeting": "Greeting",
+            "starter_prompts": "Starter prompts",
+            "formality": "Formality",
+            "answer_style": "Answer style",
+            "temperature": "Temperature",
+            "top_p": "Top P",
+            "max_tokens": "Max tokens",
+            "capabilities": "Capabilities",
+            "no_files": "No knowledge files attached.",
+            "no_versions": "No version history yet.",
+            "no_log": "No administrative actions yet.",
+            "unresolved_flags_warning": "This assistant has :count unresolved flag(s). Resolve them before approving.",
+            "ask_for_edit": "Ask for edit",
+            "discard": "Discard",
+            "approve": "Approve",
+            "confirm": "Confirm",
+            "reason_label": "Note to the creator",
+            "reason_placeholder": "Explain the decision…",
+            "draft_in_progress": "An admin has started reviewing this — flags are saved but not yet sent, discarded, or decided.",
+            "exit_dialog_title": "Unsent review feedback",
+            "exit_dialog_description": "You've flagged :count item(s) on this assistant that haven't been sent to the creator, discarded, or acted on yet. What should happen to them?",
+            "exit_dialog_send": "Send to creator",
+            "exit_dialog_discard": "Discard flags",
+            "exit_dialog_draft": "Save as draft",
+            "exit_dialog_send_failed": "The feedback could not be sent.",
+            "exit_dialog_discard_failed": "The flags could not be discarded."
+        },
+        "flags": {
+            "flag_selection": "Flag selection",
+            "comment_label": "Comment",
+            "comment_placeholder": "Explain the problem to the creator…",
+            "submit": "Add flag",
+            "resolve": "Mark resolved",
+            "reopen": "Reopen",
+            "remove": "Remove",
+            "view": "View",
+            "download": "Download",
+            "preview_unsupported": "This file type can't be previewed here. Download it to view."
         },
         "errors": {
             "translate_model": "No AI model is available for translation. Assign a system model of type \"translation\".",
@@ -759,6 +822,7 @@
             "settings_view": "View environment",
             "settings_manage": "Manage system settings",
             "external-apps_manage": "Manage external apps",
+            "assistants_manage": "Manage assistant publishing",
             "admin": {
                 "access": {
                     "title": "Access administration",
@@ -841,6 +905,12 @@
                     "description": "Manage external application connections."
                 }
             },
+            "assistants": {
+                "manage": {
+                    "title": "Manage assistant publishing",
+                    "description": "Review, publish and manage assistants created across the platform."
+                }
+            },
             "tools": {
                 "use": {
                     "title": "Use tools",
@@ -903,7 +973,8 @@
         "groups": {
             "ai": "AI services",
             "people": "People and access",
-            "system": "System"
+            "system": "System",
+            "assistants":"Assistant System"
         },
         "grouping": {
             "day": "Day",
@@ -922,7 +993,23 @@
             "warning": "Warning",
             "database": "Database override",
             "environment": "Environment / default",
-            "deployment": "Deployment"
+            "deployment": "Deployment",
+            "waiting_for_review": "Waiting for review",
+            "published": "Published",
+            "private": "Private",
+            "requires_revision": "Requires revision",
+            "blocked": "Blocked",
+            "remix": "Remix",
+            "original": "Original",
+            "draft": "Draft",
+            "organizational": "Organization",
+            "federated": "Federated",
+            "approved": "Approved",
+            "denied": "Denied",
+            "pending": "Pending",
+            "attachment_ok": "OK",
+            "corrupted": "Corrupted",
+            "inadequate": "Inadequate"
         },
         "icons": {
             "light": "Light",

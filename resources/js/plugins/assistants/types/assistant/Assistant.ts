@@ -9,7 +9,6 @@ import { ReleaseMode } from './ReleaseMode';
 import { RiskLevel } from './RiskLevel';
 import { AssistantTagSchema } from './AssistantTag';
 import { VersionSchema } from './Version';
-import {AiModelDescription} from "$plugins/core/schemas/resources/ai-model-descriptions";
 
 /**
  * The single working shape of an assistant across the whole app — list, card,
@@ -63,6 +62,18 @@ export const AssistantSchema = z.object({
      * deserializer, and the builder reads it under this exact key.
      */
     requested_release_stage: z.enum(ReleaseMode).nullable(),
+
+    /**
+     * The assistant's current review record (`assistant_reviews`), when one
+     * exists and the caller is privileged to see it (creator, org admin, or
+     * the Publishing Center's site admin) — `null` otherwise, including for
+     * an assistant that has never been submitted for review.
+     */
+    review: z.object({
+        id: z.string(),
+        status: z.string(),
+        reason: z.string().nullable()
+    }).nullable(),
 
     /** Trust & risk classification shown on the detail page. Optional: the
         backend does not yet serve this; it is currently populated from mocks. */

@@ -32,6 +32,9 @@ import AssistantFeedbackSchema from "$plugins/assistants/api/schemas/resources/a
 import AssistantCategoriesSchema from "$plugins/assistants/api/schemas/resources/assistant-categories.schema";
 import AssistantTagsSchema from "$plugins/assistants/api/schemas/resources/assistant-tags.schema";
 import AssistantSettingsSchema from "$plugins/assistants/api/schemas/resources/assistant-settings.schema";
+import AssistantReviewLogSchema from "$plugins/assistants/api/schemas/resources/assistant-review-log.schema";
+import AssistantFieldFlagSchema from "$plugins/assistants/api/schemas/resources/assistant-field-flag.schema";
+import {AdminAssistantSchema} from "$plugins/assistants/admin/schemas/resources/admin-assistant.schema";
 import {BuilderModule} from "$plugins/assistants/modules/builder/BuilderModule";
 
 
@@ -185,6 +188,9 @@ export default class AssistantsPlugin implements HawkiPlugin {
         registrar.add('assistant-categories', AssistantCategoriesSchema)
         registrar.add('assistant-tags', AssistantTagsSchema)
         registrar.add('assistant-settings', AssistantSettingsSchema)
+        registrar.add('assistant-review-logs', AssistantReviewLogSchema)
+        registrar.add('assistant-field-flags', AssistantFieldFlagSchema)
+        registrar.add('admin-assistants', AdminAssistantSchema)
     }
     public modules({add}: ModuleRegistrar): void | Promise<void> {
         add(new DashboardModule());
