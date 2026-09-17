@@ -59,7 +59,7 @@ trait HasContextualScopesTrait
 {
     protected static ServiceLocator $hcst_serviceLocator;
     protected static ScopeContext $hcst_scopeContext;
-    protected static bool $hcst_booted = false;
+    protected static bool $hcst_dependenciesInjected = false;
 
     /**
      * Registers all contextual scopes for this model on the given {@see ScopeRegistrar}.
@@ -78,23 +78,28 @@ trait HasContextualScopesTrait
     {
         static::$hcst_serviceLocator = $serviceLocator;
         static::$hcst_scopeContext = $scopeContext;
+        static::$hcst_dependenciesInjected = true;
     }
 
     /**
      * Laravel boot hook — called automatically by Eloquent on the first model instantiation.
      * Resolves dependencies (or uses injected ones), calls {@see registerScopes()}, and
      * registers one {@see ContextualScopeWrapper} per scope as an Eloquent global scope.
-     * Guarded by a static flag so it runs at most once per model class per process.
+     *
+     * Runs again whenever Eloquent has dropped the model's global scopes (the test runner calls
+     * Model::clearBootedModels() between tests and rebuilds the application). A static "booted"
+     * flag would leave the model without any contextual scope from the second boot on, and the
+     * dependencies would still point at the previous container, so they are re-resolved as well
+     * unless a test injected them explicitly.
      */
     public static function bootHasContextualScopesTrait(): void
     {
-        if (static::$hcst_booted) {
+        if (static::hasRegisteredContextualScopes()) {
             return;
         }
-        static::$hcst_booted = true;
 
         // If the dependencies were not injected manually, we resolve them from the container.
-        if (!isset(static::$hcst_serviceLocator, static::$hcst_scopeContext)) {
+        if (!static::$hcst_dependenciesInjected) {
             static::$hcst_serviceLocator = app(ServiceLocator::class);
             static::$hcst_scopeContext = app(ScopeContext::class);
         }
@@ -130,6 +135,23 @@ trait HasContextualScopesTrait
     public static function getContextualScopes(): array
     {
         static::bootHasContextualScopesTrait();
+        return static::collectContextualScopes();
+    }
+
+    /**
+     * True while the {@see ContextualScopeWrapper} instances of this model are registered as
+     * Eloquent global scopes, false before the first boot and after Eloquent cleared them.
+     */
+    protected static function hasRegisteredContextualScopes(): bool
+    {
+        return static::collectContextualScopes() !== [];
+    }
+
+    /**
+     * @return array<string, ContextualScopeWrapper>
+     */
+    private static function collectContextualScopes(): array
+    {
         return collect(static::getAllGlobalScopes()[static::class] ?? [])
             ->filter(fn($scope) => $scope instanceof ContextualScopeWrapper)
             ->keyBy(fn($scope) => $scope->getScopeKey())

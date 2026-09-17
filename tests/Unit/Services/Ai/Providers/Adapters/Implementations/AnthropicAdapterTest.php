@@ -7,6 +7,7 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use App\Services\Ai\Models\Access\ModelAuthorization;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Flags\Values\WellKnownModelFlags;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
@@ -448,6 +449,12 @@ class AnthropicAdapterTest extends TestCase
             ->onlyMethods(['middleware'])
             ->getMock();
         $agent->method('middleware')->willReturn([]);
+        // The model above is never persisted, so the dispatch-time role check would deny it.
+        $this->app->instance(ModelAuthorization::class, new class() extends ModelAuthorization {
+            public function authorize(AgentRequestContext $context): void
+            {
+            }
+        });
 
         static::assertSame('Hello.', $agent->send()->text);
         Http::assertSentCount(1);

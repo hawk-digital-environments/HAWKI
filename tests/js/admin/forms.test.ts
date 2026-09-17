@@ -104,6 +104,16 @@ test('empty PHP maps normalize recursively without changing array fields', () =>
     assert.deepEqual(createDraft([field('value', 'json')], { id: 'ALLOWED_FILE_MIME_TYPES', value: [] }).value, []);
 });
 
+test('model role restrictions use role tags and validate role ids', () => {
+    const options = [{ value: 1, label: 'Member' }, { value: 2, label: 'Editor' }];
+    assert.deepEqual(controlFor('models', AdminFieldSchema.parse({ key: 'allowed_roles', type: 'multi', options }), {}, null), {
+        type: 'tags',
+        options
+    });
+    assert.equal(modelsSchema.shape.allowed_roles.safeParse([1, 2]).success, true);
+    assert.equal(modelsSchema.shape.allowed_roles.safeParse([1, '2']).success, false);
+});
+
 test('known model parameters validate numeric boundaries and integer budgets', () => {
     assert.equal(
         parametersSchema.safeParse({ temperature: 2, top_p: 1, max_tokens: 1, max_thinking_tokens: 0 }).success,

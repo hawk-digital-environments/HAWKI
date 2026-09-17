@@ -103,3 +103,13 @@ Public tool queries filter authorization before pagination, relationship linkage
 HTTP denial returns `403` with `{code: "TOOL_ACCESS_DENIED", message}`. Unavailable selections return `422` with `TOOL_UNAVAILABLE`. Tool authorization failures during a stream use `{type: "error", content, isDone: true, code}` and end the turn. Ordinary provider error chunks carry no tool code, are delivered in place, and do not terminate the stream. Selection resolution happens before a stream opens; later revocation terminates the stream with the same code. The frontend refreshes authorization once and does not replay the operation. Remote provider-native operations already running cannot be recalled.
 
 Rollback must restore application code and schema together. Returning to an older backend removes tool enforcement; do not leave a frontend advertising tool restrictions while such a backend serves traffic.
+
+## Model access
+
+Administration can restrict a model to roles through `admin-models.attributes.allowed_roles`. The value is an array of role IDs stored in `ai_model_roles`. An empty array permits everyone. A non-empty array requires an eligible user to hold at least one listed `web` role. Disabled and removed users cannot use restricted models, and administrator status does not bypass the role check.
+
+The `role_access` contextual scope hides restricted models from users without a matching role. This also removes tools that are discoverable only through those models. The chat request factory distinguishes a forbidden model from an unknown or otherwise unavailable model. Agent dispatch reloads the initiating actor and the model-role rows before contacting the provider. Tool dispatch checks the model again. An unauthenticated HTTP request sees only unrestricted models. Console queries without an actor do not apply the filter.
+
+Model access denial returns HTTP `403` with `{code: "MODEL_ACCESS_DENIED", message}`. Streaming requests send the same code in the terminal error packet. A model assigned to any system slot cannot have allowed roles, and a model with allowed roles cannot be assigned to a system slot, because system tasks must remain available to every user.
+
+Rollback must remove the model-access code and the `ai_model_roles` schema together. Rolling back only one side either breaks model queries or removes the enforced restriction.

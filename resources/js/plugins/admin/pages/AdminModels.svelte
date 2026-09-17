@@ -11,6 +11,7 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { isModelVisible, toggleModelVisible } from '../capabilities.js';
+    import { roleLabel } from '../forms/authorization.js';
     import type { AdminModelResource } from '../schemas/resources/admin-models.schema.js';
     import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
 
@@ -21,6 +22,7 @@
         { id: 'label' },
         { id: 'model_id' },
         { id: 'provider_id', filter: true },
+        { id: 'allowed_roles', sortable: false },
         { id: 'active', format: 'boolean' },
         { id: 'status', format: 'enum' },
         { id: 'visible', sortable: false },
@@ -96,6 +98,10 @@
     />
 {/snippet}
 
+{#snippet allowed_roles(row: AdminModelResource)}
+    {row.allowed_roles.length ? row.allowed_roles.map((id) => roleLabel(id, records.content?.role_catalog ?? [], records.fields, __)).join(', ') : __('admin.allowed_roles_everyone')}
+{/snippet}
+
 {#snippet flags(row: AdminModelResource)}
     <AdminModelCapabilities
         {row}
@@ -126,6 +132,6 @@
     <AdminTable
         caption={__('admin.sections.models')}
         recordSet={records}
-        cells={{ active, visible, flags }}
+        cells={{ active, visible, flags, allowed_roles }}
     />
 </AdminPage>

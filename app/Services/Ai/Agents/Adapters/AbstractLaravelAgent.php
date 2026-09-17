@@ -12,6 +12,7 @@ use App\Services\Ai\Agents\Events\AgentStreamCompletedEvent;
 use App\Services\Ai\Agents\Events\AgentStreamInitiatedEvent;
 use App\Services\Ai\Agents\Exceptions\AgentStateException;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
+use App\Services\Ai\Models\Access\ModelAuthorization;
 use App\Services\Ai\Tools\Exceptions\ToolAccessException;
 use App\Services\Ai\Tools\LaravelAi\AuthorizedTextGateway;
 use App\Services\Ai\Tools\LaravelAi\ToolExecutionState;
@@ -139,6 +140,7 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
     public function send(): AgentResponse
     {
         $this->installAuthorizedGateway();
+        app(ModelAuthorization::class)->authorize($this->getContext());
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
         $response = $this->promptThroughSdk(
@@ -167,6 +169,7 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
     public function sendStreaming(): StreamableAgentResponse
     {
         $this->installAuthorizedGateway();
+        app(ModelAuthorization::class)->authorize($this->getContext());
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
         $response = $this->streamThroughSdk(
