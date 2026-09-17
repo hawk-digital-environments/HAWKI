@@ -113,6 +113,12 @@ Rendered once per page for either an AI conversation or a group room chat (see
             status.fileIssues.forEach(([file, issue]) => {
                 toastContext.error(`${file.name}: ${issue}`);
             });
+            // A committed message must not remain as an unsent draft when generation is denied.
+            if (status.accepted) {
+                chatContext.clear();
+                chatContext.focusInput();
+                return;
+            }
             // Some files may already have been uploaded and have a uuid assigned.
             // in this case we inherit those uuids in the current context so
             // when the user sends the request again, we don't need to re-upload those files but can reuse the already assigned uuids.

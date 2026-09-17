@@ -18,11 +18,11 @@ class AdminApiRoutingTest extends TestCase
 {
     public function testAdminRoutesRequireAuthenticationBeforeResolvingRecords(): void
     {
-        foreach (ResourceCatalog::SECTIONS as $section) {
+        foreach (array_keys(ResourceCatalog::SECTIONS) as $section) {
             $this->getJson('/api/hawki/v1/admin-' . $section)->assertUnauthorized();
         }
 
-        $this->patchJson('/api/hawki/v1/admin-providers/1')->assertUnauthorized();
+        $this->patchJson('/api/hawki/v1/admin-roles/1')->assertUnauthorized();
         $this->postJson('/api/hawki/v1/admin-providers/1/actions/test')->assertUnauthorized();
         $this->postJson('/api/hawki/v1/admin-health/job-id/actions/retry-job')->assertUnauthorized();
     }
@@ -32,7 +32,7 @@ class AdminApiRoutingTest extends TestCase
         $server = app(Repository::class)->server('v1');
         $version = str_repeat('a', 64);
 
-        foreach (ResourceCatalog::SECTIONS as $section) {
+        foreach (array_keys(ResourceCatalog::SECTIONS) as $section) {
             $type = 'admin-' . $section;
             $schema = $server->schemas()->schemaFor($type);
             $class = $schema->model();
@@ -68,6 +68,6 @@ class AdminApiRoutingTest extends TestCase
             $types[] = mb_substr($type, 6);
         }
 
-        self::assertEqualsCanonicalizing(ResourceCatalog::SECTIONS, array_unique($types));
+        self::assertEqualsCanonicalizing(array_keys(ResourceCatalog::SECTIONS), array_unique($types));
     }
 }

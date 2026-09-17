@@ -30,6 +30,7 @@ class AiToolCapabilitySchema extends Schema
         return [
             ID::make(),
             Attribute::make('title_label'),
+            Attribute::make('native_model_ids'),
             Attribute::make('description_label'),
             Attribute::make('icon_path'),
         ];

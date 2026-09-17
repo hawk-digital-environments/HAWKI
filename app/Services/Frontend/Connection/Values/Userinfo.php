@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+
 namespace App\Services\Frontend\Connection\Values;
 
 use App\Services\Storage\Values\StoredFileIdentifier;
@@ -27,7 +28,7 @@ readonly class Userinfo
         /** Reference to the user's avatar file; `null` when no avatar has been uploaded. */
         public StoredFileIdentifier|null $avatar = null,
         public string|null               $bio = null,
-        public bool                      $isAdmin = false,
+        public array                     $permissions = [],
     )
     {
     }

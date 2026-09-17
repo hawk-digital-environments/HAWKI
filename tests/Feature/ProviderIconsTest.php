@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Ai\AiProvider;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\Admin\RoleAssignmentService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -20,9 +22,9 @@ class ProviderIconsTest extends TestCase
     use \Tests\Support\AdminJsonApiRequests;
     private const BASE = '/api/hawki/v1/admin-providers';
 
-    public function testIconEndpointsRequireAnAdministrator(): void
+    public function testIconEndpointsRequireProviderPermission(): void
     {
-        $this->actingAs(User::factory()->create(['employeetype' => 'staff']));
+        $this->actingAs($this->user(['admin.access']));
         $this->getJson(self::BASE . '/actions/icons')->assertForbidden();
         $this->postJson(self::BASE . '/actions/icon-upload')->assertForbidden();
         Http::assertNothingSent();
@@ -30,7 +32,7 @@ class ProviderIconsTest extends TestCase
 
     public function testUploadSaveReadReplaceAndRemove(): void
     {
-        $this->actingAs(User::factory()->create(['employeetype' => 'admin']));
+        $this->actingAs($this->user(['admin.access', 'providers.manage']));
         Http::preventStrayRequests();
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" style="fill:none;stroke:#000000;stroke-width:1.34899998;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"/></svg>';
         $icon = $this->post(self::BASE . '/actions/icon-upload', [
@@ -58,7 +60,7 @@ class ProviderIconsTest extends TestCase
 
     public function testUploadRejectsActiveSvgAndOversizeFiles(): void
     {
-        $this->actingAs(User::factory()->create(['employeetype' => 'admin']));
+        $this->actingAs($this->user(['admin.access', 'providers.manage']));
 
         foreach ([
             '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
@@ -70,7 +72,7 @@ class ProviderIconsTest extends TestCase
 
     public function testOpenAiLikeProviderCanBeCreatedWithCredentialsAndCatalogueIcon(): void
     {
-        $this->actingAs(User::factory()->create(['employeetype' => 'admin']));
+        $this->actingAs($this->user(['admin.access', 'providers.manage']));
         config(['cache.default' => 'array']);
         Http::preventStrayRequests();
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>';
@@ -105,7 +107,7 @@ class ProviderIconsTest extends TestCase
 
     public function testItResolvesRemoteIconsBeforeOpeningTheMutationTransaction(): void
     {
-        $this->actingAs(User::factory()->create(['employeetype' => 'admin']));
+        $this->actingAs($this->user(['admin.access', 'providers.manage']));
         config(['cache.default' => 'array']);
         $transactionLevel = DB::transactionLevel();
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>';
@@ -133,4 +135,34 @@ class ProviderIconsTest extends TestCase
         self::assertNotSame($version, $updated->json('data.meta.version'));
     }
 
+    public function testRevocationDuringIconResolutionPreventsTheProviderWrite(): void
+    {
+        $actor = $this->user(['admin.access', 'providers.manage']);
+        $this->actingAs($actor);
+        config(['cache.default' => 'array']);
+        Http::fake(static function ($request) use ($actor) {
+            $actor->roles()->detach();
+
+            return Http::response(str_starts_with($request->url(), 'https://api.svgl.app')
+                ? [['id' => 988, 'title' => 'Revocation test', 'route' => 'https://svgl.app/library/revocation.svg']]
+                : '<svg xmlns="http://www.w3.org/2000/svg"/>');
+        });
+
+        $this->postAdminResource(self::BASE, ['values' => [
+            'name' => 'Revocation test', 'provider_id' => 'icon-revocation-test', 'adapter_key' => 'openai', 'active' => true,
+            'icon' => ['source' => 'svgl', 'svgl_id' => 988, 'title' => 'Revocation test'],
+        ]])->assertForbidden();
+        static::assertDatabaseMissing('ai_providers', ['provider_id' => 'icon-revocation-test']);
+    }
+
+    private function user(array $permissions): User
+    {
+        $user = User::factory()->create();
+        $role = DB::table('roles')->insertGetId(['name' => 'icon-test-' . $user->id, 'display_name' => 'Icon test']);
+
+        Role::findOrFail($role)->syncPermissions($permissions);
+        app(RoleAssignmentService::class)->replace($user, [(int) $role]);
+
+        return $user;
+    }
 }

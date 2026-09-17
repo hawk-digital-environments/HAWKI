@@ -7,6 +7,8 @@ export function fieldHint(section: EditorSection, field: AdminField, row: AdminR
     if (section === 'users' && field.key === 'password')
         return row ? 'admin.local_password_replace' : 'admin.local_password_hint';
     if (section === 'users' && field.key === 'password_confirmation') return undefined;
+    if (section === 'users' && field.key === 'roles') return 'admin.manual_roles_hint';
+    if (section === 'models' && field.key === 'allowed_roles') return 'admin.form.allowed_roles_hint';
     if (section === 'users' && row && !row.local_account && directoryManagedFields.includes(field.key))
         return 'admin.directory_identity_hint';
     if (field.type.startsWith('secret'))

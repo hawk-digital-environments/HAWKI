@@ -29,6 +29,10 @@ class ExtAppPolicy
             return $this->deny('Only authenticated users can view external apps.');
         }
 
+        if (is_numeric($this->getService(Request::class)->route()->originalParameter('ext_app'))) {
+            return !\App\Services\Users\UserCondition::cannot($user, 'external-apps.manage');
+        }
+
         return $this->isAdminOrResponse(
             $user,
             additionalCheck: function () {

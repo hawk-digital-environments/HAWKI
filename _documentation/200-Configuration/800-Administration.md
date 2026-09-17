@@ -4,9 +4,35 @@ Open `/new/admin` after signing in. The panel is a separate built-in frontend pl
 
 ## Grant access
 
-Accounts with employee type `admin` can use every panel section. Configure that employee type in the identity provider or through the existing deployment process. Refresh the page after changing access outside the panel.
+```bash
+bin/env artisan rbac:grant tester admin
+bin/env artisan rbac:grant USERNAME ROLE_SLUG
+bin/env artisan rbac:grant USERNAME ROLE_SLUG --revoke
+```
 
-Administrators cannot disable or demote their own account. Disabled accounts lose their API tokens and cannot sign in or continue authenticated requests.
+The administrator role has every registered permission. The `user` role starts without administrative permissions. Custom roles need `admin.access` plus the permissions for the sections they should use. Refresh the page after a role is assigned outside the panel.
+
+| Permission             | Access                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| `admin.access`         | Open the panel                                                                                     |
+| `users.view`           | List users                                                                                         |
+| `users.manage`         | Create local accounts, reset their passwords, disable/re-enable accounts and inspect/revoke tokens |
+| `roles.manage`         | Manage custom roles, manual assignments and employee-type mappings                                 |
+| `providers.manage`     | Manage providers and replace credentials                                                           |
+| `models.manage`        | Manage models, descriptions, system models and prompts                                             |
+| `mcp.manage`           | Manage MCP servers, discovered tools and assignments                                               |
+| `announcements.manage` | Edit, target, schedule and publish announcements                                                   |
+| `usage.view`           | Aggregate usage and CSV export                                                                     |
+| `usage.view-per-user`  | User-level usage, in addition to `usage.view`                                                      |
+| `health.view`          | View health, queues and failed-job metadata                                                        |
+| `health.manage`        | Run status checks and retry/remove failed jobs                                                     |
+| `settings.manage`      | Edit/reset runtime overrides                                                                       |
+| `settings.view`        | View masked environment diagnostics                                                                |
+| `external-apps.manage` | Existing administrative external-app access                                                        |
+
+Built-in roles cannot be deleted and keep their slug, but their name, description and permissions can be edited. Administrators cannot grant permissions they lack, remove their own panel access, disable themselves or remove the last active role administrator. Role changes take effect on the next API request. Disabled accounts lose their API tokens and cannot sign in or continue authenticated requests.
+
+Employee-type mappings use exact strings. Each employee type maps to one role. Saving or deleting a mapping updates matching existing users immediately; login synchronizes derived assignments again. Manual assignments remain separate and survive changes to employee type.
 
 ## Local accounts
 
@@ -20,13 +46,15 @@ Tables support sorting, paging and search where applicable. Edits use version ch
 
 Provider and MCP credentials are write-only. An empty replacement field keeps the existing secret. Provider discovery lists remote models that are not configured yet; selected models are added disabled for review. When creating a single model, choose the provider first: the model ID field then suggests the IDs from that provider's model list that are not configured yet. Picking a suggestion fills the remaining fields from the provider's metadata (label, type, modalities, limits, pricing, flags, documentation URL) while keeping anything already typed. A custom model ID can still be typed. System model assignments require an enabled model/provider with a matching usage rule. Required system models and their providers cannot be disabled or deleted while assigned.
 
-Imports run on the queue and preserve records edited in the panel. Test/discovery actions call the configured services. The MCP servers and tools page lists the servers; expanding a server row shows its tools with activation, capability mapping and model assignments. Built-in function tools without a server are listed in a separate section below the servers. The expanded server is kept in the URL (`mcp_server_id`) so it can be linked. MCP discovery reconciles the selected server's reported tools while preserving activation and description edits made in the panel; function-tool implementations remain defined in PHP.
+The model editor can limit a model to selected roles. Leaving allowed roles empty makes the model available to everyone. Selecting roles hides the model from other users and prevents them from starting or continuing requests with it. System models cannot be restricted, and restricted models cannot be assigned to a system slot.
 
-Announcements support German and English Markdown, preview, drafts, dates and individual user targeting. The **Translate into other languages** button fills the other language from the selected one via the `translation` system model (falls back to the default model) and replaces existing text there. Database content takes precedence over the existing files. Published policies must remain global and cannot be deleted or unpublished through this panel.
+Imports run on the queue and preserve records edited in the panel. Test/discovery actions call the configured services. The MCP servers and tools page lists the servers; expanding a server row shows its tools with activation, access rules, capability mapping and model assignments. Built-in function tools without a server are listed in a separate section below the servers. The expanded server is kept in the URL (`mcp_server_id`) so it can be linked. MCP discovery reconciles the selected server's reported tools while preserving activation and description edits made in the panel; function-tool implementations remain defined in PHP.
+
+Announcements support German and English Markdown, preview, drafts, dates and role/user targeting. The **Translate into other languages** button fills the other language from the selected one via the `translation` system model (falls back to the default model) and replaces existing text there. Database content takes precedence over the existing files. Published policies must remain global and cannot be deleted or unpublished through this panel.
 
 ## Operations
 
-Usage combines raw records with persisted daily totals. A monthly task summarizes raw rows older than three full months before removing them. Historical provider grouping uses the current model-to-provider association.
+Usage combines raw records with persisted daily totals. A monthly task summarizes raw rows older than three full months before removing them. User breakdowns require the separate per-user permission. Historical provider grouping uses the current model-to-provider association.
 
 Health refreshes every 30 seconds while visible. The scheduler writes a heartbeat each minute. AI status checks and file imports require a running queue worker. Failed-job traces and payloads are omitted from responses.
 

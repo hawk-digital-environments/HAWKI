@@ -1,4 +1,5 @@
 import z from 'zod';
+import { AccessRuleNameSchema } from '../schemas/admin-content.js';
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
 import type { WorkspaceId } from '../workspaces.js';
 
@@ -133,6 +134,7 @@ export const modelsSchema = z.object({
     pricing: pricingSchema,
     flags: tags,
     tools: ids,
+    allowed_roles: ids,
     usage_rules: z.array(z.enum(['main', 'external']))
 });
 export const mcpSchema = z.object({
@@ -146,6 +148,7 @@ export const mcpSchema = z.object({
     timeouts: timeoutsSchema
 });
 export const toolsSchema = z.object({
+    access_rule: AccessRuleNameSchema,
     description: optionalText(10000),
     active: z.boolean(),
     mcp_server_id: id.nullable(),
@@ -162,12 +165,12 @@ export const systemModelsSchema = z.object({
     prompts: z.strictObject({ en_US: optionalText(100000), de_DE: optionalText(100000) })
 });
 export const announcementsSchema = z.object({
-    target_users: ids,
     title: text(),
     kind: z.enum(['news', 'system', 'event', 'info', 'policy']),
     is_published: z.boolean(),
     is_global: z.boolean(),
     is_forced: z.boolean(),
+    target_roles: ids,
     starts_at: date,
     expires_at: date,
     anchor: optionalText(),
@@ -181,7 +184,15 @@ export const usersSchema = z.object({
     password: z.string().max(255).optional(),
     password_confirmation: z.string().max(255).optional(),
     admin_disabled: z.boolean(),
+    roles: ids
 });
+export const rolesSchema = z.object({
+    name: text(),
+    slug: text(80).regex(/^[\p{L}\p{M}\p{N}_-]+$/u),
+    description: optionalText(2000),
+    permissions: tags
+});
+export const mappingsSchema = z.object({ employee_type: text(), role_id: id });
 const mimeList = z.array(
     z
         .string()
@@ -228,6 +239,8 @@ const sectionSchemas = {
     'system-models': systemModelsSchema,
     'announcements': announcementsSchema,
     'users': usersSchema,
+    'roles': rolesSchema,
+    'mappings': mappingsSchema
 };
 
 /** A distinct section schema, restricted to the fields the server permits this actor to edit. */
@@ -268,7 +281,7 @@ export function editorSchema(section: EditorSection, fields: AdminField[], row: 
                 ctx.addIssue({ code: 'custom', path: ['expires_at'], message: 'admin.validation.dates' });
             if (announcement.is_published && !Object.values(announcement.content).some((value) => value?.trim()))
                 ctx.addIssue({ code: 'custom', path: ['content'], message: 'admin.errors.content_required' });
-            if (announcement.kind === 'policy' && (!announcement.is_global || announcement.target_users.length))
+            if (announcement.kind === 'policy' && (!announcement.is_global || announcement.target_roles.length))
                 ctx.addIssue({ code: 'custom', path: ['is_global'], message: 'admin.errors.global_policy' });
             if (
                 row?.kind === 'policy' &&

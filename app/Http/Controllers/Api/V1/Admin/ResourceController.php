@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminCollection;
 use App\Http\Resources\AdminResource;
 use App\Services\Admin\AdminAudit;
-use App\Services\Admin\AdministrationAccess;
+use App\Services\Admin\PermissionService;
 use App\Services\Admin\Repositories\ResourceRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -110,8 +110,9 @@ abstract class ResourceController extends Controller
         $ip = $request->ip();
 
         return DB::transaction(static function () use ($request, $repository, $audit, $action, $id, $operation, $checkVersion, $values, $actorId, $ip) {
-            // Serialize configuration and policy publication changes, including creates.
-            DB::table('users')->where('employeetype', 'admin')->orderBy('id')->lockForUpdate()->get();
+            // Serialize configuration, policy publication and role changes, including creates.
+            DB::table('roles')->where('name', 'admin')->lockForUpdate()->first();
+            app(PermissionService::class)->forget((int) $request->user()->getKey());
             $repository->authorize($request->user());
 
             if (null !== $id && $checkVersion) {

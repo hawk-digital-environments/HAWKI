@@ -828,15 +828,16 @@ async function regenerateMessage(payload) {
         throw new Error(`Message element with ID ${payload.mode.messageId} not found.`);
     }
 
+    if (!payload.authorization.validate()) return;
+
     const metadata = {
-        'tools': payload.tools.map(tool => tool.toTransferString()),
+        'tools': payload.toolTransfers,
         'params': payload.parameters
     };
 
     const threadIndex = messageElement.closest('.thread').id;
 
-    //reset message content
-    messageElement.dataset.rawMsg = '';
+    // Keep the original message until a replacement stream actually arrives.
 
     payload.waitForResponse(async (response) => {
 
@@ -850,6 +851,7 @@ async function regenerateMessage(payload) {
                     'regenerationElement': messageElement,
                     'stream': true,
                     'model': payload.model.model_id,
+                'authorization': payload.authorization,
                     'metadata': metadata
                 };
 
@@ -872,10 +874,13 @@ async function regenerateMessage(payload) {
                     'regenerationElement': messageElement,
                     'stream': false,
                     'model': payload.model.model_id,
+                'authorization': payload.authorization,
                     'metadata': metadata
                 };
                 buildRequestObject(msgAttributes, async (updatedText, done) => {
-                    response.triggerReceived();
+                    if (!response.done) response.triggerReceived();
+                }, error => {
+                    if (!response.done) response.triggerError(error?.message || window.__('legacy.aiChat.streamProcessingError'));
                 });
                 break;
         }
