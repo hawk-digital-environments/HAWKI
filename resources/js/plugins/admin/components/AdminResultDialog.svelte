@@ -15,7 +15,7 @@
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import type { AdminRow } from '../schemas/admin-content.js';
-    import type { AdminRecordSet } from '../recordSet.svelte.js';
+    import type { AdminWorkspace } from '../workspace.svelte.js';
 
     const { __ } = useTranslator();
     let {
@@ -24,7 +24,7 @@
         title = __('admin.action_result'),
         children
     }: {
-        recordSet: AdminRecordSet<Row, ColumnId, Results>;
+        recordSet: AdminWorkspace<Row, ColumnId, Results>;
         action: Id;
         /** Defaults to `__('admin.action_result')`. */
         title?: string;

@@ -9,12 +9,12 @@ import {
 } from '../../../resources/js/plugins/admin/schemas/admin-actions.js';
 import { AdminRowSchema, type AdminRow } from '../../../resources/js/plugins/admin/schemas/admin-content.js';
 import { builtInWorkspaces, type WorkspaceId } from '../../../resources/js/plugins/admin/workspaces.js';
-import { AdminRecordSet, type AdminRecordSetOptions } from '../../../resources/js/plugins/admin/recordSet.svelte.js';
+import { AdminWorkspace, type AdminWorkspaceOptions } from '../../../resources/js/plugins/admin/workspace.svelte.js';
 
 function fixture<Results extends Record<string, unknown> = {}>(
     workspace: WorkspaceId,
     response: unknown = { data: [], meta: {} },
-    options: AdminRecordSetOptions<AdminRow, Results> = {},
+    options: AdminWorkspaceOptions<AdminRow, Results> = {},
     actionResponse: unknown = {}
 ) {
     const calls: { url: string; options: RequestInit }[] = [];
@@ -31,7 +31,7 @@ function fixture<Results extends Record<string, unknown> = {}>(
         },
         () => AdminRowSchema
     );
-    const recordSet = new AdminRecordSet<AdminRow, string, Results>(
+    const recordSet = new AdminWorkspace<AdminRow, string, Results>(
         (label) => label,
         [{ id: 'kind' }],
         (signal, query) => restApi.getResourceCollection(`admin-${workspace}`, { query, signal }),
@@ -438,7 +438,7 @@ test('late reads from a revoked actor are discarded even when the reader ignores
     const pending = new Promise<JsonApiCollection<AdminRow>>((done) => {
         resolve = done;
     });
-    const recordSet = new AdminRecordSet(
+    const recordSet = new AdminWorkspace(
         (label) => label,
         [{ id: 'name' }],
         () => pending
@@ -562,7 +562,7 @@ test('routine revalidation stays silent while it reads and publishes fresh rows'
         finish = resolve;
     });
     let reads = 0;
-    const recordSet = new AdminRecordSet(
+    const recordSet = new AdminWorkspace(
         (label) => label,
         [{ id: 'name' }],
         () => (reads++ === 0 ? Promise.resolve(first) : pending)

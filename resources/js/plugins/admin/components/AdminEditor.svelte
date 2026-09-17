@@ -11,7 +11,7 @@
     import { controlFor, isFieldVisible, normalizeControlValue, type Control } from '../forms/controls.js';
     import { fieldHint } from '../forms/hints.js';
     import { issueMessage } from '../forms/validationMessages.js';
-    import { ModelLookup } from '../forms/modelLookup.svelte.js';
+    import { ModelLookup, type ModelSuggestion } from '../forms/modelLookup.svelte.js';
     import type { AdminContent } from '../schemas/admin-content.js';
     import AdminValueInput from './inputs/AdminValueInput.svelte';
     import type { AdminField, AdminRow } from '../schemas/admin-content.js';
@@ -107,6 +107,10 @@
             adopted[field.key] = JSON.stringify(next ?? null);
             form.setFieldValue(field.key, next);
         }
+    }
+    /** Only the model id field is picked from the provider; see `ModelLookup.pickerItems`. */
+    function suggestionsFor(definition: AdminField): ModelSuggestion[] | undefined {
+        return lookup && definition.key === 'model_id' ? lookup.pickerItems : undefined;
     }
     function hintFor(definition: AdminField, control: Control): string | undefined {
         if (control.hint) return control.hint;
@@ -212,7 +216,7 @@
                                 ...control,
                                 label: definition.key,
                                 options: control.options,
-                                suggestions: modelLookup?.suggestions ?? undefined,
+                                suggestions: suggestionsFor(definition),
                                 hint: hintFor(definition, control)
                             }}
                             value={field.state.value}

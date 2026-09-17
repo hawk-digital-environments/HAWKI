@@ -13,7 +13,7 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import type { AdminMcpServerResource } from '../schemas/resources/admin-mcp.schema.js';
     import type { AdminToolResource } from '../schemas/resources/admin-tools.schema.js';
-    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     import { McpTestSchema, McpDiscoverySchema } from '../schemas/admin-actions.js';
 
     const app = useApp();
@@ -31,7 +31,7 @@
     const mcpServerFilter = $derived<ColumnFiltersState>(
         mcpServerId.current ? [{ id: 'mcp_server_id', value: mcpServerId.current }] : []
     );
-    const tools = useAdminRecordSet(
+    const tools = useAdminWorkspace(
         toolColumns,
         (signal, query) => app.restApi.getResourceCollection('admin-tools', { query, signal }),
         {
@@ -60,7 +60,7 @@
         { id: 'tools_count', sortable: false },
         { id: 'api_key_set', sortable: false }
     ];
-    const servers = useAdminRecordSet(
+    const servers = useAdminWorkspace(
         serverColumns,
         (signal, query) => app.restApi.getResourceCollection('admin-mcp', { query, signal }),
         {
