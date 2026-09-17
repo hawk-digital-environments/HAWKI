@@ -73,7 +73,7 @@ export class AdminRegistry {
             );
         }
         const name = `${moduleName}:${definition.id}`;
-        const existing = this.sectionsByName.get(name);
+        const existing = this.sections.find((section) => section.id === definition.id);
         if (existing) {
             throw new Error(
                 `Module "${moduleName}" cannot register admin section "${name}" because module "${existing.module}" already registered it.`
