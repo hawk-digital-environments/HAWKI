@@ -133,6 +133,7 @@ export function controlFor(
 ): Control {
     const key = field.key;
     if (section === 'users' && key === 'roles') return { type: 'tags', options: field.options };
+    if (section === 'models' && key === 'allowed_roles') return { type: 'tags', options: field.options };
     if (section === 'roles' && key === 'permissions') return { type: 'permissions' };
     if (section === 'tools' && key === 'access_rule') return { type: 'access-rule' };
     if (section === 'models') {
