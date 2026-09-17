@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminCollection;
 use App\Http\Resources\AdminResource;
 use App\Services\Admin\AdminAudit;
+use App\Services\Admin\PermissionService;
 use App\Services\Admin\Repositories\ResourceRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,16 +32,20 @@ abstract class ResourceController extends Controller
         unset($filters['page'], $filters['size'], $filters['sort'], $filters['direction']);
         $filters['page'] = $data['page']['number'] ?? 1;
         $filters['size'] = $data['page']['size'] ?? 25;
+
         // The resources expose the `type` column as `kind`; sort and value filters arrive under that name.
         if (\is_array($filters['where'] ?? null) && \array_key_exists('kind', $filters['where'])) {
             $filters['where']['type'] = $filters['where']['kind'];
             unset($filters['where']['kind']);
         }
+
         if (isset($data['sort'])) {
             $filters['sort'] = ltrim($data['sort'], '-');
+
             if ('kind' === $filters['sort']) {
                 $filters['sort'] = 'type';
             }
+
             $filters['direction'] = str_starts_with($data['sort'], '-') ? 'desc' : 'asc';
         }
 
@@ -50,7 +55,9 @@ abstract class ResourceController extends Controller
 
     abstract protected function repository(): ResourceRepository;
 
-    /** Validate the resource document before passing its attributes to the section repository. */
+    /**
+     * Validate the resource document before passing its attributes to the section repository.
+     */
     protected function attributes(Request $request, ?string $id = null): array
     {
         $this->repository()->authorize($request->user());
@@ -67,7 +74,8 @@ abstract class ResourceController extends Controller
         abort_unless('admin-' . $this->repository()::RESOURCE === $data['type'], 409);
         abort_if(null !== $id && $data['id'] !== $id, 409);
         $values = $data['attributes'];
-        if (array_key_exists('kind', $values)) {
+
+        if (\array_key_exists('kind', $values)) {
             $values['type'] = $values['kind'];
             unset($values['kind']);
         }
@@ -80,6 +88,7 @@ abstract class ResourceController extends Controller
         $repository = $this->repository();
         $row = $repository->readOne($request->user(), $id);
         $headers = ['Content-Type' => 'application/vnd.api+json'];
+
         if (isset($row['_version'])) {
             $headers['ETag'] = '"' . $row['_version'] . '"';
         }
@@ -96,6 +105,7 @@ abstract class ResourceController extends Controller
         return DB::transaction(static function () use ($request, $repository, $action, $id, $operation, $checkVersion, $values) {
             // Serialize configuration, policy publication and role changes, including creates.
             DB::table('roles')->where('name', 'admin')->lockForUpdate()->first();
+            app(PermissionService::class)->forget((int) $request->user()->getKey());
             $repository->authorize($request->user());
 
             if (null !== $id && $checkVersion) {

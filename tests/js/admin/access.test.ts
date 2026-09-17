@@ -152,6 +152,18 @@ test('a workspace cannot name an unknown section', () => {
     assert.throws(() => unknownRegistry.collect([module]), /core:chat.*unknown section "missing"/);
 });
 
+test('different modules cannot declare the same section id', () => {
+    const duplicateRegistry = new AdminRegistry();
+    const modules = ['first', 'second'].map(name => moduleWithPlugin({
+        name,
+        adminWorkspaces({section}: AdminWorkspaceRegistrar) {
+            section({id: 'billing', icon, title: 'billing.title'});
+        }
+    }, {name: 'core', isCorePlugin: true}));
+
+    assert.throws(() => duplicateRegistry.collect(modules), /core:second.*core:first/);
+});
+
 test('admin routes require a collected registry', () => {
     assert.throws(
         () => registerAdminRoutes(new RouteRegistrar({metaGuards: authMetaGuards}), new AdminRegistry()),

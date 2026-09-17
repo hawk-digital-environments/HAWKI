@@ -6,9 +6,10 @@ namespace App\Services\Admin\Repositories;
 
 use App\Services\Admin\DeletedRecords;
 use App\Models\Ai\AiModel;
-use App\Models\Ai\AiProvider;
 use App\Models\Ai\SystemModel;
-use App\Models\Ai\SystemPrompt;
+use App\Services\Ai\SystemModels\SystemModelAssignmentException;
+use App\Services\Ai\SystemModels\SystemModelAssignmentGuard;
+use App\Services\Ai\SystemPrompts\SystemPromptRepository;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,12 @@ class SystemModelRepository extends ConfigurationRepository
 {
     public const RESOURCE = 'system-models';
     protected const RELATIONS = ['prompts'];
+
+    public function __construct(
+        private readonly SystemPromptRepository $prompts,
+        private readonly SystemModelAssignmentGuard $assignmentGuard,
+    ) {
+    }
 
     protected function definition(): array
     {
@@ -60,27 +67,13 @@ class SystemModelRepository extends ConfigurationRepository
         $promptKey = ['prompt_type' => $data['model_type'], 'usage_type' => $data['usage_type']];
 
         if (null !== $originalSystemPromptKey && $originalSystemPromptKey !== $promptKey) {
-            DB::table('system_prompts')->where($originalSystemPromptKey)->delete();
+            $this->prompts->deleteForSystemModel($originalSystemPromptKey['prompt_type'], $originalSystemPromptKey['usage_type']);
         }
 
         if (WellKnownSystemModelTypes::TRANSLATION === $data['model_type']) {
-            DB::table('system_prompts')->where($promptKey)->delete();
+            $this->prompts->deleteForSystemModel($promptKey['prompt_type'], $promptKey['usage_type']);
         } elseif (\array_key_exists('prompts', $data)) {
-            foreach (['en_US', 'de_DE'] as $locale) {
-                $prompt = $data['prompts'][$locale] ?? null;
-                $localizedKey = [...$promptKey, 'locale' => $locale];
-
-                if (!\is_string($prompt) || '' === trim($prompt)) {
-                    DB::table('system_prompts')->where($localizedKey)->delete();
-
-                    continue;
-                }
-
-                $localized = SystemPrompt::withoutGlobalScopes()->firstOrNew($localizedKey);
-                $localized->setAttribute('prompt', $prompt);
-                $localized->setAttribute('admin_managed', true);
-                $localized->save();
-            }
+            $this->prompts->replaceForSystemModel($promptKey['prompt_type'], $promptKey['usage_type'], $data['prompts'] ?? []);
         }
     }
 
@@ -91,10 +84,10 @@ class SystemModelRepository extends ConfigurationRepository
 
     protected function deleting(Model $model): void
     {
-        DB::table('system_prompts')
-            ->where('prompt_type', $model->getRawOriginal('model_type'))
-            ->where('usage_type', $model->getRawOriginal('usage_type'))
-            ->delete();
+        $this->prompts->deleteForSystemModel(
+            (string) $model->getRawOriginal('model_type'),
+            (string) $model->getRawOriginal('usage_type'),
+        );
     }
 
     protected function rowAttributes(array $row): array
@@ -124,14 +117,12 @@ class SystemModelRepository extends ConfigurationRepository
     private function validateSystemModel(array $data): void
     {
         $model = AiModel::withoutGlobalScopes()->where('model_id', $data['model_id'])->firstOrFail();
-        $provider = AiProvider::withoutGlobalScopes()->findOrFail($model->provider_id);
 
-        if (DB::table('ai_model_roles')->where('ai_model_id', $model->id)->exists()) {
-            throw ValidationException::withMessages(['model_id' => __('admin.errors.model_restricted')]);
-        }
-
-        if (!$model->active || !$provider->active || !DB::table('ai_model_usage_rules')->where('ai_model_id', $model->id)->where('usage_type', $data['usage_type'])->exists()) {
-            throw ValidationException::withMessages(['model_id' => __('admin.errors.system_model')]);
+        try {
+            $this->assignmentGuard->assertAssignable($model, $data['usage_type']);
+        } catch (SystemModelAssignmentException $exception) {
+            $key = SystemModelAssignmentException::RESTRICTED === $exception->reason ? 'model_restricted' : 'system_model';
+            throw ValidationException::withMessages(['model_id' => __('admin.errors.' . $key)]);
         }
     }
 }

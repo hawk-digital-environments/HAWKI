@@ -60,7 +60,10 @@ class RoleRepository extends ResourceRepository
             $role = DB::table('roles')->where('id', $id)->first();
             abort_unless(null !== $role, 404);
 
-            if ($role->is_system || DB::table('employee_type_role_mappings')->where('role_id', $id)->exists() || DB::table('role_user')->where('role_id', $id)->exists()) {
+            if ($role->is_system
+                || DB::table('employee_type_role_mappings')->where('role_id', $id)->exists()
+                || DB::table('role_user')->where('role_id', $id)->exists()
+                || DB::table('ai_model_roles')->where('role_id', $id)->exists()) {
                 throw ValidationException::withMessages(['role' => __('admin.errors.role_in_use')]);
             }
 

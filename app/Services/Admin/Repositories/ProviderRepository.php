@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Admin\Repositories;
 
+use App\Casts\Contracts\CastableInstanceInterface;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Ai\SystemModel;
 use App\Models\User;
-use App\Casts\Contracts\CastableInstanceInterface;
+use App\Services\Admin\ProviderIconService;
+use App\Services\Admin\ResolvedProviderIcon;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Providers\Adapters\ProviderAdapterRegistry;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
@@ -24,7 +26,19 @@ class ProviderRepository extends ConfigurationRepository
 {
     public const RESOURCE = 'providers';
 
-    /** The provider's model list; with `$onlyNew` reduced to models that are not configured yet (model ids are unique across providers). */
+    /**
+     * Resolve remote content before the controller opens its mutation transaction.
+     */
+    public function resolveIcon(?array $icon, ?string $id, ProviderIconService $icons): ResolvedProviderIcon
+    {
+        $current = null === $id ? null : AiProvider::withoutGlobalScopes()->findOrFail($id)->icon;
+
+        return new ResolvedProviderIcon($icons->resolve($icon, $current));
+    }
+
+    /**
+     * The provider's model list; with `$onlyNew` reduced to models that are not configured yet (model ids are unique across providers).
+     */
     public function provider(?string $id, bool $onlyNew = false): array
     {
         $provider = AiProvider::withoutGlobalScopes()->findOrFail($id);
@@ -43,7 +57,9 @@ class ProviderRepository extends ConfigurationRepository
         }
     }
 
-    /** Metadata the provider and the enrichment pipeline know about one model, keyed like the model editor's fields. */
+    /**
+     * Metadata the provider and the enrichment pipeline know about one model, keyed like the model editor's fields.
+     */
     public function inspect(?string $id, string $modelId): array
     {
         $provider = AiProvider::withoutGlobalScopes()->findOrFail($id);
@@ -113,6 +129,11 @@ class ProviderRepository extends ConfigurationRepository
     {
         $rules = parent::rules($id, $values);
         $rules['provider_id'] = ['required', 'alpha_dash', 'max:100', Rule::unique('ai_providers')->ignore($id)];
+        $rules['icon'] = [static function (string $attribute, mixed $value, \Closure $fail): void {
+            if (!$value instanceof ResolvedProviderIcon) {
+                $fail(__('admin.icons.invalid'));
+            }
+        }];
 
         return $rules;
     }
@@ -127,7 +148,7 @@ class ProviderRepository extends ConfigurationRepository
         parent::prepare($model, $data);
 
         if (\array_key_exists('icon', $data)) {
-            $data['icon'] = app(\App\Services\Admin\ProviderIconService::class)->resolve($data['icon'], $model->getAttribute('icon'));
+            $data['icon'] = $data['icon']->value;
         }
 
         if (!$data['active'] && $model->exists) {
