@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+
 namespace App\Services\Ai\Tools\Repositories;
 
 use App\Models\Ai\AiTool;
@@ -80,6 +81,8 @@ class AiToolRepository extends AbstractRepositoryWithContextualScopes
      */
     public function upsertFunction(ToolInterface $tool, bool $addedByFile = false): AiTool
     {
+        $existing = $this->getQueryWithoutContextualScopes()->where('class_name', get_class($tool))->first();
+        if ($existing?->admin_managed) return $existing;
         return $this->getQueryWithoutContextualScopes()->updateOrCreate(
             ['class_name' => get_class($tool)],
             [
@@ -111,6 +114,11 @@ class AiToolRepository extends AbstractRepositoryWithContextualScopes
             $server->id
         ));
 
+        $existing = $this->getQueryWithoutContextualScopes()->where('mcp_server_id', $server->id)->where('mcp_name', $definition->name)->first();
+        if ($existing?->admin_managed) {
+            $existing->update(['mcp_config' => $definition->config]);
+            return $existing;
+        }
         return $this->getQueryWithoutContextualScopes()->updateOrCreate(
             ['name' => $name],
             [

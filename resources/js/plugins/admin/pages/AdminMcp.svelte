@@ -24,6 +24,7 @@
         { id: 'mcp_server_id', filter: true },
         { id: 'kind', format: 'enum' },
         { id: 'active', format: 'boolean' },
+        { id: 'access_rule', sortable: false },
         { id: 'mapped_capability' }
     ];
     // Share MCP server filters through links and keep them after reloads.
@@ -39,7 +40,7 @@
                 fields.filter(
                     (field) =>
                         field.key !== 'mcp_server_id' &&
-                        true
+                        (field.key !== 'access_rule' || (app.can('mcp.manage') && app.can('roles.manage')))
                 ),
             columnFilters: untrack(() => mcpServerFilter),
             save: async (values, row) => {
@@ -147,6 +148,11 @@
     {/if}
 {/snippet}
 
+{#snippet accessRule(row: AdminToolResource)}
+    {@const rule = tools.content?.access_rules.find((entry) => entry.name === row.access_rule)}
+    {__(rule?.title_label ?? 'admin.tool_access_rules.unavailable.title')}
+{/snippet}
+
 <AdminPage
     workspace="mcp"
     recordSet={servers}
@@ -202,7 +208,7 @@
         <AdminTable
             caption={__('admin.tools')}
             recordSet={tools}
-            cells={{ mcp_server_id: mcpServer, mapped_capability: mappedCapability }}
+            cells={{ mcp_server_id: mcpServer, mapped_capability: mappedCapability, access_rule: accessRule }}
         />
     </section>
 </AdminPage>

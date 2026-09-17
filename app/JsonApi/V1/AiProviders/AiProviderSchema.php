@@ -38,15 +38,15 @@ class AiProviderSchema extends Schema
             Str::make('icon_url')->readOnly(),
             Str::make('icon_url_dark')->readOnly(),
             Boolean::make('active')
-                ->hidden(fn($request) => UserCondition::isNonAdmin($request)),
+                ->hidden(fn($request) => UserCondition::cannot($request, 'providers.manage')),
             Str::make('api_key')->hidden(),
             Str::make('api_url')
-                ->hidden(fn($request) => UserCondition::isNonAdmin($request)),
+                ->hidden(fn($request) => UserCondition::cannot($request, 'providers.manage')),
             Str::make('model_status_url')
-                ->hidden(fn($request) => UserCondition::isNonAdmin($request)),
+                ->hidden(fn($request) => UserCondition::cannot($request, 'providers.manage')),
             ArrayHash::make('additional_config')->hidden(),
             ArrayHash::make('settings')
-                ->hidden(fn($request) => UserCondition::isNonAdmin($request))
+                ->hidden(fn($request) => UserCondition::cannot($request, 'providers.manage'))
                 ->serializeUsing(function (?ProviderSettings $settings) {
                     if (!$settings) {
                         return null;

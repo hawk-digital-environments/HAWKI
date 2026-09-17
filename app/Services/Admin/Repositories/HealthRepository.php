@@ -15,7 +15,7 @@ class HealthRepository extends ResourceRepository
 
     public function healthAction(User $actor, string $command, ?string $id = null): array
     {
-        app(\App\Services\Admin\AdministrationAccess::class)->authorize($actor);
+        app(\App\Services\Admin\PermissionService::class)->authorize($actor, \App\Services\Admin\Permission::HEALTH_MANAGE);
 
         if ('ai:check-status' === $command) {
             Artisan::queue($command);

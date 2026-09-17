@@ -9,6 +9,8 @@ export const AdminUserSchema = z.object({
     employeetype: z.string(),
     admin_disabled: z.boolean(),
     last_login_at: z.string().nullable(),
+    roles: z.array(z.number()),
+    mapped_roles: z.array(z.number()),
     local_account: z.boolean(),
     /** Only the built-in system user has this marker. */
     is_system: z.boolean().optional(),

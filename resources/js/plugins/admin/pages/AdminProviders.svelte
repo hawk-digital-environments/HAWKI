@@ -72,7 +72,7 @@
 <AdminPage
     workspace="providers"
     recordSet={records}
-    pageActions={app.isAdmin ?
+    pageActions={app.can('models.manage') && app.can('mcp.manage') ?
         [
             {
                 id: 'import',
@@ -94,7 +94,7 @@
         recordSet={records}
         cells={{ name: providerName }}
         rowMenuItems={(row) =>
-            app.isAdmin ?
+            app.can('models.manage') ?
                 [
                     {
                         label: __('admin.view_models'),

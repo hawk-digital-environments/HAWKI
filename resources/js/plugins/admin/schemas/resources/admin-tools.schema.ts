@@ -1,4 +1,5 @@
 import z from 'zod';
+import { AccessRuleNameSchema } from '../admin-content.js';
 
 /** Tool rows from ToolSchema.php and ToolRepository.php. */
 export const AdminToolSchema = z.object({
@@ -7,6 +8,7 @@ export const AdminToolSchema = z.object({
     kind: z.string(),
     mcp_server_id: z.number().nullable(),
     active: z.boolean(),
+    access_rule: AccessRuleNameSchema.default('unavailable'),
     mapped_capability: z.string().nullable(),
     description: z.string().nullable(),
     models: z.array(z.number()),

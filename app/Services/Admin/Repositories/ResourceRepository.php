@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Admin\Repositories;
 
 use App\Models\User;
-use App\Services\Admin\AdministrationAccess;
+use App\Services\Admin\PermissionService;
+use App\Services\Admin\ResourceCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -17,7 +18,7 @@ abstract class ResourceRepository
 
     final public function authorize(User $user): void
     {
-        app(AdministrationAccess::class)->authorize($user);
+        app(PermissionService::class)->authorize($user, ResourceCatalog::SECTIONS[static::RESOURCE]);
     }
 
     final public function checkVersion(string $id, ?string $version): void
@@ -51,6 +52,10 @@ abstract class ResourceRepository
     {
         foreach (static::VERSION_RELATIONS as [$table, $key, $sort]) {
             $query = DB::table($table)->where($key, $row['id'])->orderBy($sort);
+
+            if ('role_user' === $table) {
+                $query->orderBy('source');
+            }
 
             $row[$table] = $query->get()->all();
         }
@@ -135,7 +140,10 @@ abstract class ResourceRepository
 
         unset($field);
         $create = $this->canCreate($user);
-        return ['rows' => $rows, 'columns' => $columns, 'fields' => $fields, 'total' => $total, 'page' => $page, 'size' => $size, 'create' => $create, 'delete' => $definition['delete'] ?? true];
+        // System roles carry a translation key so the client never has to recognize the seeded English name.
+        $extra = in_array(static::RESOURCE, ['users', 'mappings', 'models'], true) ? ['role_catalog' => DB::table('roles')->get(['id', 'display_name', 'name', 'is_system'])->map(static fn ($role) => ['id' => (int) $role->id, 'name' => $role->display_name, 'slug' => $role->name, 'is_system' => (bool) $role->is_system, 'title_label' => $role->is_system ? 'admin.role_labels.' . $role->name : null])->all()] : [];
+
+        return $extra + ['rows' => $rows, 'columns' => $columns, 'fields' => $fields, 'total' => $total, 'page' => $page, 'size' => $size, 'create' => $create, 'delete' => $definition['delete'] ?? true];
     }
 
     protected function rowAttributes(array $row): array
@@ -199,7 +207,7 @@ abstract class ResourceRepository
     private function options(string $key): array
     {
         [$table, $value, $label] = match ($key) {
-            'users' => ['users', 'id', 'name'], 'providers' => ['ai_providers', 'id', 'name'],
+            'roles' => ['roles', 'id', 'display_name'], 'providers' => ['ai_providers', 'id', 'name'],
             'tools' => ['ai_tools', 'id', 'name'], 'mcp_servers' => ['mcp_servers', 'id', 'server_label'], 'model_keys' => ['ai_models', 'model_id', 'label'],
             default => ['ai_models', 'id', 'label'],
         };

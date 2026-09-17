@@ -43,6 +43,7 @@ readonly class RegistrationPolicyPublishService
             'is_forced' => $isForced,
             'is_global' => true,
             'target_users' => null,
+            'target_roles' => null,
             'content' => null,
             'is_published' => true,
             'anchor' => $anchor,
