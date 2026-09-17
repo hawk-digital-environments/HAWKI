@@ -6,8 +6,9 @@
   via grid-area (auto-placed in grids without that named area).
 
   Three shapes: custom content via children (the chat header's name and
-  menus), a plain `heading` (the shell's default title row), or a `spacer`
-  that keeps the row reserved while a page loads. Bars whose visible content
+  menus), a plain `heading` (the shell's default title row, optionally with
+  children as trailing bar actions), or a `spacer` that keeps the row
+  reserved while a page loads. Bars whose visible content
   carries no heading can declare one for the document outline via
   `srHeading`, rendered as a visually hidden h1.
 -->
@@ -22,7 +23,8 @@
          *  visible content is not a heading (e.g. the chat header's name
          *  menu). Never combine with `heading`, that would duplicate h1s. */
         srHeading?: string;
-        /** Bar content: menus, actions — when no `heading` is given. */
+        /** Bar content: menus, actions. Rendered alone, or after the
+         *  `heading` as the bar's trailing actions. */
         children?: Snippet;
         /** Empty spacer reserving the header row while a page loads. */
         spacer?: boolean;
@@ -43,6 +45,7 @@
         <!-- Nothing rendered: the row stays reserved until the real bar loads. -->
     {:else if heading}
         <h1 class="page-title">{heading}</h1>
+        {@render children?.()}
     {:else}
         {@render children?.()}
     {/if}

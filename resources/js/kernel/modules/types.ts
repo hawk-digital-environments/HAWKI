@@ -22,6 +22,7 @@ import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
  */
 export interface HawkiModule {
     readonly name: string;
+    visible?(app: import('$lib/kernel/HawkiApp.js').HawkiApp): boolean;
 
     /**
      * The visible title of the module, for example in the sidebar.

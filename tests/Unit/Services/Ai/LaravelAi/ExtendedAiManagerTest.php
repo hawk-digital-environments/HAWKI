@@ -123,9 +123,7 @@ class ExtendedAiManagerTest extends TestCase
     {
         $config = ['driver' => 'test', 'key' => 'secret'];
         $driver = $this->makeDriver();
-        $proxy = $this->makeProxy('prov-cfg', $driver);
-
-        // We need a real enough SUT to intercept getInstanceConfig during instance()
+        // Intercept fresh driver resolution while the temporary config is available.
         $capturedConfig = null;
 
         $sut = new class ($capturedConfig, $driver) extends ExtendedAiManager {
@@ -134,7 +132,7 @@ class ExtendedAiManagerTest extends TestCase
                 // Deliberately skip parent constructor — DecoratorTrait usage
             }
 
-            public function instance($name = null)
+            protected function resolve($name)
             {
                 // Capture what getInstanceConfig returns during the call
                 $this->captured = $this->getInstanceConfig($name);
@@ -157,7 +155,7 @@ class ExtendedAiManagerTest extends TestCase
                 // Skip parent constructor
             }
 
-            public function instance($name = null)
+            protected function resolve($name)
             {
                 return $this->driverStub;
             }
@@ -177,7 +175,7 @@ class ExtendedAiManagerTest extends TestCase
                 // Skip parent constructor
             }
 
-            public function instance($name = null)
+            protected function resolve($name)
             {
                 throw new \RuntimeException('boom');
             }
@@ -185,8 +183,9 @@ class ExtendedAiManagerTest extends TestCase
 
         try {
             $sut->instanceWithConfig('driver', ['key' => 'value']);
-        } catch (\RuntimeException) {
-            // expected
+            static::fail('Expected driver resolution to throw.');
+        } catch (\RuntimeException $exception) {
+            static::assertSame('boom', $exception->getMessage());
         }
 
         static::assertSame([], $sut->getInstanceConfig('driver'));

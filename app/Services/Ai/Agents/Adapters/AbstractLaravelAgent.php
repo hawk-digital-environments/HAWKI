@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Agents\Adapters;
-
 
 use App\Services\Ai\Agents\Contracts\AgentInterface as HawkiAgentInterface;
 use App\Services\Ai\Agents\Events\AgentResponseReceivedEvent;

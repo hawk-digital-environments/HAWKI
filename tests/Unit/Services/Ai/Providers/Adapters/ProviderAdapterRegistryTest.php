@@ -28,7 +28,7 @@ class ProviderAdapterRegistryTest extends TestCase
     private function makeRegistry(): ProviderAdapterRegistry
     {
         $instances = new LazySingletonList(
-            keyGenerator: fn(array|null $args) => $args === null ? '__null__' : implode('_', $args),
+            keyGenerator: fn(array $args) => implode('_', $args),
             factory: function (array $args): ProviderAdapterInterface {
                 [, $class] = $args;
                 return new $class();

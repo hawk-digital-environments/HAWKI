@@ -18,11 +18,16 @@ class Announcement extends Model
         'target_users',
         'anchor',
         'starts_at',
+        'content', 'is_published',
         'expires_at'
     ];
 
     protected $casts = [
         'target_users' => 'array',
+        'content' => 'array',
+        'is_published' => 'boolean',
+        'is_global' => 'boolean',
+        'is_forced' => 'boolean',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
     ];

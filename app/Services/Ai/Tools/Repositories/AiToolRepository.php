@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Tools\Repositories;
 
 use App\Models\Ai\AiTool;

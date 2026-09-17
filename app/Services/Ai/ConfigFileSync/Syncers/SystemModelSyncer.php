@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\ConfigFileSync\Syncers;
 
+use App\Services\Admin\DeletedRecords;
 
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\SystemModels\SystemModelRepository;
+use App\Services\Ai\SystemModels\SystemModelAssignmentException;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use App\Utils\JobMetrics;
@@ -18,8 +20,8 @@ use Illuminate\Container\Attributes\Config;
  * Syncs system-model assignments from config into the database.
  *
  * System models are the specific AI model instances that HAWKI selects automatically for
- * built-in tasks such as "default chat", "title generation", "prompt improvement" and
- * "summary". They are configured via `model_providers.system_models` (main app) and
+ * built-in tasks such as "default chat", "title generation", "prompt improvement",
+ * "summary" and "translation". They are configured via `model_providers.system_models` (main app) and
  * `model_providers.system_models_ext_app` (external app).
  *
  * Config keys map to {@see WellKnownSystemModelTypes} via {@see upgradeOldModelTypes()},
@@ -39,7 +41,8 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         private array                 $extAppSystemModels,
         private Repository            $configRepository,
         private SystemModelRepository $systemModelRepository,
-        private AiModelRepository     $modelRepository
+        private AiModelRepository     $modelRepository,
+        private DeletedRecords        $deletedRecords
     )
     {
     }
@@ -67,6 +70,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
 
         foreach ($this->extAppSystemModels as $key => $modelId) {
+            if ($this->isAdministered(WellKnownUsageTypes::EXTERNAL_APP, $this->upgradeOldModelTypes($key))) continue;
             if ($modelId === null) {
                 try {
                     $this->systemModelRepository->deleteWithTypeFilter(
@@ -83,6 +87,14 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
 
         $this->doModelSanityCheck($metrics);
+    }
+
+    /** A slot edited or deleted in Administration belongs to the administrators, not to the config files. */
+    private function isAdministered(string $usageType, string $modelType): bool
+    {
+        if (\App\Models\Ai\SystemModel::withoutGlobalScopes()->where('usage_type', $usageType)->where('model_type', $modelType)->where('admin_managed', true)->exists()) return true;
+
+        return $this->deletedRecords->isDeleted(\App\Services\Admin\Repositories\SystemModelRepository::RESOURCE, DeletedRecords::systemModelIdentity($usageType, $modelType));
     }
 
     private function warnForLegacyConfiguration(JobMetrics $metrics): string|null
@@ -113,11 +125,18 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             return;
         }
 
-        $this->systemModelRepository->upsert(
-            modelType: $modelType,
-            usageType: $usageType,
-            model: $model
-        );
+        if ($this->isAdministered($usageType, $modelType)) return;
+        try {
+            $this->systemModelRepository->upsert(
+                modelType: $modelType,
+                usageType: $usageType,
+                model: $model
+            );
+        } catch (SystemModelAssignmentException $exception) {
+            $reason = 'is not active for this usage type';
+            $metrics->error("Model with ID '$modelId' for type '$key' $reason.");
+            return;
+        }
 
         $metrics->increment('System model');
     }
@@ -146,6 +165,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             'title_generator' => WellKnownSystemModelTypes::TITLE_GENERATION,
             'prompt_improver' => WellKnownSystemModelTypes::PROMPT_IMPROVEMENT,
             'summarizer' => WellKnownSystemModelTypes::SUMMARY,
+            'translator' => WellKnownSystemModelTypes::TRANSLATION,
             // I did not bother to implement a custom exception class for this, as this is only used internally and will be removed soon anyway.
             default => throw new \InvalidArgumentException("Invalid legacy key: $oldModelType")
         };

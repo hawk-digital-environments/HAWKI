@@ -74,6 +74,75 @@ The JSON:API server registers the following 20 schemas (verified from `app/JsonA
 
 ## Virtual and Non-Eloquent Resources
 
+### Admin section collections
+
+The admin panel uses `/api/hawki/v1/admin-{section}` collections. `routes/api.php` registers them through the same `JsonApiRoute::server('v1')` resource and action declarations as the public API. Their schemas live in `App\JsonApi\V1\Admin` and use separate admin records so public model serialization keeps its existing schemas. They include disabled records, redacted credential indicators and editor fields. Every request requires an active account with employee type `admin`. Mutations are recorded in the administration audit log.
+
+| Sections | Resource operations |
+| --- | --- |
+| `providers`, `models`, `system-models`, `mcp`, `roles`, `mappings`, `announcements` | List, create, update, delete |
+| `users` | List, create, update |
+| `tools` | List, update |
+| `settings` | List, update, reset by deleting an override |
+| `usage`, `health`, `environment` | List |
+
+There are no individual GET routes. Writes return the saved resource; subsequent reads use the collection.
+
+#### Collection responses and queries
+
+`AdminCollection` and `AdminResource` build the JSON:API documents. Records have string identifiers and values in `attributes`. Each versioned record carries its conflict token in `data[].meta.version`. Collection `meta.fields` describes the editor fields; `meta.create` and `meta.delete` indicate available operations. Usage and health add report metadata.
+
+Domain fields named `type`, such as announcement categories and MCP transports, use `attributes.kind`. The frontend converts `kind` back to `type` for editing and sends it as `kind` when saving. Resource identity remains in `data.type`.
+
+Database collections accept these query parameters:
+
+| Parameter | Meaning |
+| --- | --- |
+| `page[number]` | Page number starting at 1, default 1 |
+| `page[size]` | Rows per page, 1–100, default 25 |
+| `sort` | One stored column, with `-` for descending order; default `id` |
+| `filter[search]` | Search supported text columns |
+| `filter[where][column]` | Match a stored column value |
+
+For example, `GET /api/hawki/v1/admin-models?page[number]=2&page[size]=25&sort=label&filter[where][provider_id]=7` reads the second page of one provider's models.
+
+Pagination metadata uses `meta.page.currentPage`, `perPage`, `lastPage` and `total`. Links preserve the filters and include `self`, `first`, `last`, `prev` and `next`. Settings, environment, usage and health return their complete result without pagination metadata. Usage accepts `filter[from]` and `filter[to]` as `YYYY-MM-DD`, `filter[group_by]` as `day`, `month`, `model`, `provider`, `type` or `user`, and optional `filter[model]` and `filter[user]`.
+
+#### Creates, updates and deletes
+
+POST and PATCH require `Content-Type: application/vnd.api+json`. Send a JSON:API resource document with a matching `data.type`; PATCH also requires a string `data.id` matching the URL. For example, creating a provider uses `POST /api/hawki/v1/admin-providers` with:
+
+```json
+{
+  "data": {
+    "type": "admin-providers",
+    "attributes": {
+      "provider_id": "example",
+      "name": "Example provider",
+      "adapter_key": "openai",
+      "active": false
+    }
+  }
+}
+```
+
+Creates return `201`; updates return `200`. Both return the saved resource under `data` using the collection's redaction rules. Secret values do not round-trip. Omit a secret or leave its replacement blank to preserve it.
+
+To update or delete a versioned record, copy its `meta.version` token into `If-Match`, including double quotes. A PATCH to `/api/hawki/v1/admin-providers/17` therefore sends `If-Match: "<version>"` and includes `"id": "17"` inside `data`. Successful creates and updates return the current quoted token as an ETag. DELETE needs no body and returns `204`. Settings retain unversioned updates and resets.
+
+| Status | Meaning |
+| --- | --- |
+| `409` | Resource type or identifier does not match the route |
+| `412` | Missing, malformed or stale version token on a versioned write |
+| `415` | POST/PATCH does not use the required content type |
+| `422` | Invalid document, attributes or query values |
+
+#### Custom actions and frontend integration
+
+Actions have explicit routes such as `POST /admin-providers/{id}/actions/discover` and `GET /admin-users/{id}/actions/tokens`, relative to `/api/hawki/v1`. They use action-specific bodies and plain JSON responses, such as `{ "models": [...] }` or `{ "tokens": [...] }`. They do not use the resource write document or `If-Match` contract.
+
+The frontend registers `AdminRowSchema` for each collection and uses `restApi.getResourceCollection()`, `createResource()`, `updateResource()` and `deleteResource()`. Action helpers validate responses through the schemas in `admin/schemas/admin-actions.ts`. See [Building admin pages](../600-Frontend/600-Advanced/150-Admin-pages.md) for workspace callbacks, table composition and typed result dialogs.
+
 ### `configs`
 
 The `configs` resource is not a hardcoded payload. It is assembled by `PublicConfigRegistry`, a singleton that tracks which `AbstractConfig` subclasses should appear in the response. Each registered config class declares a `publicKey()` string and a `toPublicArray(Request)` method.

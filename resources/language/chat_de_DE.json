@@ -308,6 +308,18 @@
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
                 "sendError": "Fehler beim Senden der Nachricht."
             }
+        },
+        "tools": {
+            "accessChanged": "Dein Werkzeugzugriff hat sich geändert. Eine Auswahl wurde entfernt.",
+            "accessDenied": "Du hast keinen Zugriff mehr auf ein ausgewähltes Werkzeug. Prüfe deine Auswahl und versuche es erneut.",
+            "unavailable": "Ein ausgewähltes Werkzeug ist für dieses Modell derzeit nicht verfügbar. Prüfe deine Auswahl.",
+            "authorizationRefreshing": "Der Werkzeugzugriff wird geprüft. Bitte warte, bevor du mit Werkzeugen sendest.",
+            "messageAccepted": "Deine Nachricht wurde gespeichert, aber die Antwort konnte nicht erstellt werden. Prüfe deine Auswahl, bevor du die Antwort neu erstellst.",
+            "offline": "Ein ausgewähltes Werkzeug ist vorübergehend offline.",
+            "offlineHelp": "Warte, bis es wieder online ist, oder entferne es, um deine Nachricht zu senden."
+        },
+        "models": {
+            "accessDenied": "Du hast keinen Zugriff mehr auf das gewählte Modell. Wähle ein anderes Modell."
         }
     }
 }

@@ -4,32 +4,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    |   Default AI Models
-    |--------------------------------------------------------------------------
-    |   These Models are used as predefined models for each task.
-    |   Make sure that the model is included and active in the providers list below.
-    |
-    */
-    'default_models' => [
-        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
-        'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-2.0-flash'),
-        'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'qwen3-omni-30b-a3b-instruct'),
-        'default_vision_model' => env('DEFAULT_VISION_MODEL', 'qwen3-omni-30b-a3b-instruct'),
-    ],
-
-    /*
-     * The default models to use when accessing HAWKI via an external application
-     * If null, the general default models are used above (can be useful to prevent high cost models being used by external apps)
-     */
-    'default_models_ext_app' => [
-//        'default_model' => null,
-//        'default_web_search_model' => null,
-//        'default_file_upload_model' => null,
-//        'default_vision_model' => null,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     |   System Models
     |--------------------------------------------------------------------------
     |
@@ -40,10 +14,11 @@ return [
     |
     */
     'system_models' => [
-//        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
-        'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
-        'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
-        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
+        'default_model' => env('DEFAULT_MODEL', 'gpt-5.6-luna'),
+        'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-5.6-luna'),
+        'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-5.6-luna'),
+        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-5.6-luna'),
+        'translator' => env('TRANSLATOR_MODEL', 'gpt-5.6-luna'),
     ],
 
     /*
@@ -55,6 +30,7 @@ return [
 //        'title_generator' => null,
 //        'prompt_improver' => null,
 //        'summarizer' => null,
+//        'translator' => null,
     ],
 
     /*
@@ -82,15 +58,6 @@ return [
             'api_url' => env('GWDG_API_URL'),
             'ping_url' => env('GWDG_PING_URL'),
             'models' => require __DIR__ . env('GWDG_MODEL_LIST_DIR', '/model_lists/gwdg_models.php'),
-        ],
-        'google' => [
-            'active' => env('GOOGLE_ACTIVE', true),
-            'api_key' => env('GOOGLE_API_KEY'),
-            'api_url' => env('GOOGLE_API_URL'),
-            // @deprecated this parameter will be removed in the next major version.
-            'stream_url' => env('GOOGLE_STREAM_URL'),
-            'ping_url' => env('GOOGLE_PING_URL'),
-            'models' => require __DIR__ . env('GOOGLE_MODEL_LIST_DIR', '/model_lists/google_models.php'),
         ],
         'ollama' => [
             'active' => env('OLLAMA_ACTIVE', false),
