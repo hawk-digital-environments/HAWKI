@@ -16,8 +16,10 @@ class ProviderController extends ResourceController
     use UpdatesResources;
     use DeletesResources;
 
-    public function __construct(private ProviderRepository $resource)
-    {
+    public function __construct(
+        private ProviderRepository $resource,
+        private ProviderIconService $providerIcons,
+    ) {
     }
 
     public function test(Request $request, Record $record): JsonResponse
@@ -46,7 +48,9 @@ class ProviderController extends ResourceController
         return $this->action($request, 'import', null, fn () => $this->resource->import($request->user()));
     }
 
-    /** Shows AI icons initially and searches the entire svgl catalogue when a term is supplied. */
+    /**
+     * Shows AI icons initially and searches the entire svgl catalogue when a term is supplied.
+     */
     public function icons(Request $request, ProviderIconService $icons): JsonResponse
     {
         $this->resource->authorize($request->user());
@@ -55,7 +59,9 @@ class ProviderController extends ResourceController
         return response()->json(['icons' => $icons->search($data['filter']['search'] ?? '')]);
     }
 
-    /** Validates an upload; the editor persists its SVG when the provider is saved. */
+    /**
+     * Validates an upload; the editor persists its SVG when the provider is saved.
+     */
     public function uploadIcon(Request $request, ProviderIconService $icons): JsonResponse
     {
         $this->resource->authorize($request->user());
@@ -67,5 +73,17 @@ class ProviderController extends ResourceController
     protected function repository(): ProviderRepository
     {
         return $this->resource;
+    }
+
+    protected function attributes(Request $request, ?string $id = null): array
+    {
+        $values = parent::attributes($request, $id);
+
+        if (\array_key_exists('icon', $values)) {
+            $request->validate(['data.attributes.icon' => 'nullable|array']);
+            $values['icon'] = $this->resource->resolveIcon($values['icon'], $id, $this->providerIcons);
+        }
+
+        return $values;
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiTool;
 use App\Models\User;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use App\Services\Ai\Models\Access\Exceptions\ModelAccessException;
 use App\Services\Ai\Models\Access\ModelAuthorization;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
 use App\Services\Ai\Tools\Exceptions\ToolAccessException;
@@ -104,21 +105,10 @@ final class ToolAuthorization
 
     private function currentModel(AgentRequestContext $context): AiModel
     {
-        $model = AiModel::withoutGlobalScopes()->find($context->model->getKey());
-        $provider = $model?->provider()->withoutGlobalScopes()->first();
-        if (!$model || $model->model_id !== $context->model->model_id || !$model->active || !$provider?->active
-            || (int) $provider->getKey() !== (int) $context->provider->getRealProvider()->getKey()
-            || !$model->usageRules()->where('usage_type', $context->usageType)->exists()) {
+        try {
+            return app(ModelAuthorization::class)->authorizeCurrent($context);
+        } catch (ModelAccessException) {
             throw ToolAccessException::unavailable();
         }
-        if (!app(ModelAuthorization::class)->isAllowed($model, $this->actor($context))) {
-            throw ToolAccessException::unavailable();
-        }
-        foreach (['adapter_key', 'api_url', 'api_key', 'additional_config', 'settings'] as $attribute) {
-            if ($provider->getRawOriginal($attribute) !== $context->provider->getRealProvider()->getRawOriginal($attribute)) {
-                throw ToolAccessException::unavailable();
-            }
-        }
-        return $model;
     }
 }

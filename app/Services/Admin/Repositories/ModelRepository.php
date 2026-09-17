@@ -11,6 +11,8 @@ use App\Models\Ai\SystemModel;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
 use App\Services\Ai\StatusCheck\ModelStatusUpdater;
+use App\Services\Ai\SystemModels\SystemModelAssignmentException;
+use App\Services\Ai\SystemModels\SystemModelAssignmentGuard;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -24,6 +26,10 @@ class ModelRepository extends ConfigurationRepository
     public const RESOURCE = 'models';
     protected const RELATIONS = ['descriptions', 'tools', 'usage_rules', 'allowed_roles'];
     protected const VERSION_RELATIONS = [['ai_model_descriptions', 'ai_model_id', 'locale'], ['ai_model_tools', 'ai_model_id', 'ai_tool_id'], ['ai_model_usage_rules', 'ai_model_id', 'usage_type'], ['ai_model_roles', 'ai_model_id', 'role_id']];
+
+    public function __construct(private readonly SystemModelAssignmentGuard $assignmentGuard)
+    {
+    }
 
     public function refreshModel(?string $id): array
     {
@@ -174,20 +180,23 @@ class ModelRepository extends ConfigurationRepository
             return;
         }
 
-        $slots = SystemModel::withoutGlobalScopes()->where('model_id', $model->model_id)->get();
         $providerActive = AiProvider::withoutGlobalScopes()->whereKey($data['provider_id'])->value('active');
         $allowedRoles = \array_key_exists('allowed_roles', $data)
             ? $data['allowed_roles']
             : DB::table('ai_model_roles')->where('ai_model_id', $model->getKey())->pluck('role_id')->all();
 
-        if ($slots->isNotEmpty() && [] !== $allowedRoles) {
-            throw ValidationException::withMessages(['allowed_roles' => __('admin.errors.model_restricted')]);
-        }
-
-        foreach ($slots as $slot) {
-            if (!$data['active'] || !$providerActive || !\in_array($slot->usage_type, $data['usage_rules'], true)) {
-                throw ValidationException::withMessages(['active' => __('admin.errors.model_in_use')]);
-            }
+        try {
+            $this->assignmentGuard->assertConfigurationAllowed(
+                $model,
+                $data['active'],
+                (bool) $providerActive,
+                $data['usage_rules'],
+                $allowedRoles,
+            );
+        } catch (SystemModelAssignmentException $exception) {
+            $key = SystemModelAssignmentException::RESTRICTED === $exception->reason ? 'allowed_roles' : 'active';
+            $message = SystemModelAssignmentException::RESTRICTED === $exception->reason ? 'model_restricted' : 'model_in_use';
+            throw ValidationException::withMessages([$key => __('admin.errors.' . $message)]);
         }
     }
 }

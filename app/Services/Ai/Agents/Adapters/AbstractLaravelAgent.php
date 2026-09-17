@@ -209,8 +209,9 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
                 AuthorizedTextGateway::class
             ));
         }
-        if (!$driver->textGateway() instanceof AuthorizedTextGateway) {
-            $driver->useTextGateway(new AuthorizedTextGateway($driver->textGateway()));
-        }
+        $gateway = $driver->textGateway();
+        $driver->useTextGateway($gateway instanceof AuthorizedTextGateway
+            ? $gateway->withContext($this->getContext())
+            : new AuthorizedTextGateway($gateway, $this->getContext()));
     }
 }

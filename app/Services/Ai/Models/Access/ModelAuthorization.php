@@ -48,14 +48,34 @@ class ModelAuthorization
 
     public function authorize(AgentRequestContext $context): void
     {
+        $this->authorizeCurrent($context);
+    }
+
+    public function authorizeCurrent(AgentRequestContext $context): AiModel
+    {
         $actor = null === $context->actorId
             ? null
             : User::withoutGlobalScopes()->find($context->actorId);
         $model = AiModel::withoutGlobalScopes()->find($context->model->getKey());
+        $provider = $model?->provider()->withoutGlobalScopes()->first();
+        $contextProvider = $context->provider->getRealProvider();
 
-        if (!$model || !$this->isAllowed($model, $actor)) {
+        if ((null !== $context->actorId && (!$actor || !app(PermissionService::class)->isEligible($actor)))
+            || !$model || !$model->active || !$provider?->active
+            || $model->model_id !== $context->model->model_id
+            || (int) $provider->getKey() !== (int) $contextProvider->getKey()
+            || !$model->usageRules()->where('usage_type', $context->usageType)->exists()
+            || !$this->isAllowed($model, $actor)) {
             throw ModelAccessException::denied();
         }
+
+        foreach (['adapter_key', 'api_url', 'api_key', 'additional_config', 'settings'] as $attribute) {
+            if ($provider->getRawOriginal($attribute) !== $contextProvider->getRawOriginal($attribute)) {
+                throw ModelAccessException::denied();
+            }
+        }
+
+        return $model;
     }
 
     private function roleIds(?User $actor): array
