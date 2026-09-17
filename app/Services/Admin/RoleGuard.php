@@ -74,6 +74,8 @@ class RoleGuard
 
     public function assertActorRetainsAccess(User $actor): void
     {
+        $this->permissions->forget((int) $actor->getKey());
+
         if (!$this->permissions->has($actor, Permission::ACCESS)) {
             throw ValidationException::withMessages(['roles' => __('admin.errors.self_disable')]);
         }

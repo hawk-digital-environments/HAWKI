@@ -1,27 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Announcements;
 
 use App\Models\Announcements\Announcement;
 use App\Models\User;
-use App\Services\Translation\LocaleService;
-use Exception;
+use App\Services\Announcements\Repositories\UserAnnouncementRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
-
 readonly class AnnouncementService
 {
     public function __construct(
-        private LocaleService              $localeService,
-        private RegistrationPolicyPublishService $policyPublisher
-    )
-    {
+        private RegistrationPolicyPublishService $policyPublisher,
+        private UserAnnouncementRepository $userAnnouncements,
+        private AnnouncementContentResolver $contentResolver,
+        private AnnouncementPublicationRules $publicationRules,
+    ) {
     }
 
     /**
-     * Create a new announcement
+     * Create a new announcement.
      *
      * Example:
      * $service->createAnnouncement('announcements.terms_update', 'info', true);
@@ -30,25 +31,24 @@ readonly class AnnouncementService
      *        `['de_DE' => '…']`); without one the frontend derives it from the content. Not used
      *        for policies, which are not listed in the announcements feed.
      * @throws \App\Services\Announcements\Exceptions\OverlappingPolicyException when publishing a
-     *         policy whose validity window overlaps an already published one.
+     *                                                                           policy whose validity window overlaps an already published one
      */
     public function createAnnouncement(
-        string  $title,
-        string  $view,
-        string  $type = 'info',
-        bool    $isForced = false,
-        bool    $isGlobal = true,
-        ?array  $targetUsers = null,
+        string $title,
+        string $view,
+        string $type = 'info',
+        bool $isForced = false,
+        bool $isGlobal = true,
+        ?array $targetUsers = null,
         ?string $anchor = null,
         ?string $startsAt = null,
         ?string $expiresAt = null,
-        ?array  $excerpt = null
-    ): Announcement
-    {
+        ?array $excerpt = null,
+    ): Announcement {
         // A policy is the one document users consent to, so two of them may never be in effect at
         // the same time. Catching that here means the operator sees it while publishing, instead
         // of users consenting to whichever policy the tie-break happened to pick.
-        if ($type === 'policy' && $isGlobal) {
+        if ('policy' === $type && $isGlobal) {
             return $this->policyPublisher->publish(
                 $title,
                 $view,
@@ -59,7 +59,7 @@ readonly class AnnouncementService
             );
         }
 
-        return Announcement::create([
+        $data = [
             'title' => $title,
             'view' => $view,
             'type' => $type,
@@ -70,7 +70,13 @@ readonly class AnnouncementService
             'starts_at' => $startsAt,
             'expires_at' => $expiresAt,
             'excerpt' => $excerpt ?: null,
-        ]);
+            'content' => null,
+            'target_roles' => null,
+            'is_published' => true,
+        ];
+        $this->publicationRules->validate(new Announcement(), $data);
+
+        return Announcement::create($data);
     }
 
     public function getUserAnnouncements()
@@ -78,126 +84,94 @@ readonly class AnnouncementService
         $announcements = Auth::user()->unreadAnnouncements();
         // Collect force announcements
         $forceAnnouncements = [];
+
         foreach ($announcements as $announcement) {
-            if ($announcement->is_forced === true && $announcement->anchor == null) {
+            if (true === $announcement->is_forced && null === $announcement->anchor) {
                 $forceAnnouncements[] = $announcement;
             }
         }
+
         Session::put('force_announcements', $forceAnnouncements);
-        return $announcements->map(function ($ann) {
+
+        return $announcements->map(static function ($ann) {
             return [
                 'id' => $ann->id,
                 'title' => $ann->title,
                 'type' => $ann->type,
                 'isForced' => $ann->is_forced,
                 'anchor' => $ann->anchor,
-                'expires_at' => $ann->expires_at
+                'expires_at' => $ann->expires_at,
             ];
         });
     }
 
-
     /**
-     * Find active announcements (system-wide)
+     * Find active announcements (system-wide).
      */
     public function getActiveAnnouncements(): Collection
     {
         $now = now();
 
         return Announcement::query()
-            ->where(function ($q) use ($now) {
+            ->where('is_published', true)
+            ->where(static function ($q) use ($now): void {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
             })
-            ->where(function ($q) use ($now) {
+            ->where(static function ($q) use ($now): void {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>=', $now);
             })
             ->get();
     }
-
 
     public function fetchLatestPolicy(): Announcement
     {
         return $this->getActiveAnnouncements()->where('type', 'policy')->firstOrFail();
     }
 
-
     /**
-     * Validate user access to announcement
+     * Validate user access to announcement.
      */
     public function validateUserAccess(User $user, Announcement $announcement): bool
     {
-        if ($announcement->is_global) {
-            return true;
-        }
-
-        // For non-global announcements, check if user is in the target list
-        return $user->announcements()->where('announcement_id', $announcement->id)->exists();
+        return $this->userAnnouncements->findActiveAnnouncementForUser($user, (int) $announcement->id) !== null;
     }
 
     /**
-     * Get announcement for rendering with access validation
+     * Get announcement for rendering with access validation.
      */
     public function getAnnouncementForUser(User $user, int $announcementId): ?Announcement
     {
-        $announcement = Announcement::find($announcementId);
-
-        if (!$announcement) {
-            return null;
-        }
-
-        if (!$this->validateUserAccess($user, $announcement)) {
-            return null;
-        }
-
-        return $announcement;
+        return $this->userAnnouncements->findActiveAnnouncementForUser($user, $announcementId);
     }
 
-
     /**
-     * Render announcement Blade and return to frontend
+     * Render announcement Blade and return to frontend.
      */
-
     public function renderAnnouncement(Announcement $announcement): string
     {
-        $view = $announcement->view;
-        $lang = $this->localeService->getCurrentLocale()->lang;
-        $file = resource_path("announcements/$view/$lang.md");
-        return file_get_contents($file);
+        return $this->contentResolver->resolve($announcement)?->text ?? '';
     }
 
     /**
-     * Mark announcement as seen for user
+     * Mark announcement as seen for user.
      */
     public function markAnnouncementAsSeen(User $user, int $announcementId): bool
     {
         try {
-            $announcement = Announcement::find($announcementId);
-            if (!$announcement || !$this->validateUserAccess($user, $announcement)) {
-                return false;
-            }
-
-            $user->markAnnouncementAsSeen($announcementId);
-            return true;
-
-        } catch (Exception $e) {
+            return $this->userAnnouncements->markSeen($user, $announcementId) !== null;
+        } catch (\Exception $e) {
             return false;
         }
     }
 
     /**
-     * Mark announcement as accepted for user
+     * Mark announcement as accepted for user.
      */
     public function markAnnouncementAsAccepted(User $user, int $announcementId): bool
     {
         try {
-            $announcement = Announcement::find($announcementId);
-            if (!$announcement || !$this->validateUserAccess($user, $announcement)) {
-                return false;
-            }
-
-            $user->markAnnouncementAsAccepted($announcementId);
-            return true;
-        } catch (Exception $e) {
+            return $this->userAnnouncements->markAccepted($user, $announcementId) !== null;
+        } catch (\Exception $e) {
             return false;
         }
     }

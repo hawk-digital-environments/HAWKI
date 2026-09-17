@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Admin\Repositories;
 
-use App\Models\Ai\AiTool;
 use App\Models\Ai\McpServer;
 use App\Services\Ai\Tools\Mcp\McpClientFactory;
 use App\Services\Ai\Tools\Repositories\AiToolRepository;
+use App\Services\Ai\Tools\Repositories\McpServerRepository as AiMcpServerRepository;
 use App\Services\Ai\Values\OnlineStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -19,15 +19,21 @@ class McpServerRepository extends ConfigurationRepository
 {
     public const RESOURCE = 'mcp';
 
+    public function __construct(
+        private McpClientFactory $clients,
+        private AiMcpServerRepository $servers,
+        private AiToolRepository $tools,
+    ) {
+    }
+
     public function mcp(?string $id, bool $discover): array
     {
         $server = McpServer::findOrFail($id);
 
         try {
-            $client = app(McpClientFactory::class)->createForServer($server);
+            $client = $this->clients->createForServer($server);
             $online = $client->ping();
-            $server->setAttribute('status', $online ? OnlineStatus::ONLINE : OnlineStatus::OFFLINE);
-            $server->save();
+            $this->servers->setOnlineStatus($server, $online ? OnlineStatus::ONLINE : OnlineStatus::OFFLINE);
             abort_unless($online, 502);
 
             if (!$discover) {
@@ -36,18 +42,17 @@ class McpServerRepository extends ConfigurationRepository
 
             $definitions = $client->listToolDefinitions();
 
-            return DB::transaction(static function () use ($server, $definitions) {
-                $repository = app(AiToolRepository::class);
+            return DB::transaction(function () use ($server, $definitions) {
                 $ids = [];
                 $names = [];
 
                 foreach ($definitions as $definition) {
-                    $tool = $repository->upsertMcp($definition, $server);
+                    $tool = $this->tools->upsertMcp($definition, $server);
                     $ids[] = $tool->id;
                     $names[] = $definition->name;
                 }
 
-                $repository->removeAllMcpToolsOf($server, $ids);
+                $this->tools->removeAllMcpToolsOf($server, $ids);
 
                 return ['tools' => $names];
             });
@@ -97,7 +102,7 @@ class McpServerRepository extends ConfigurationRepository
 
     protected function deleting(Model $model): void
     {
-        AiTool::withoutGlobalScopes()->where('mcp_server_id', $model->getKey())->delete();
+        $this->tools->removeAllMcpToolsOf($model);
     }
 
     protected function rowAttributes(array $row): array

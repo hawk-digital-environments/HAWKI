@@ -9,6 +9,7 @@ use App\Services\Admin\DeletedRecords;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\SystemModels\SystemModelRepository;
+use App\Services\Ai\SystemModels\SystemModelAssignmentException;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use App\Utils\JobMetrics;
@@ -125,11 +126,17 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
 
         if ($this->isAdministered($usageType, $modelType)) return;
-        $this->systemModelRepository->upsert(
-            modelType: $modelType,
-            usageType: $usageType,
-            model: $model
-        );
+        try {
+            $this->systemModelRepository->upsert(
+                modelType: $modelType,
+                usageType: $usageType,
+                model: $model
+            );
+        } catch (SystemModelAssignmentException $exception) {
+            $reason = SystemModelAssignmentException::RESTRICTED === $exception->reason ? 'is restricted to selected roles' : 'is not active for this usage type';
+            $metrics->error("Model with ID '$modelId' for type '$key' $reason.");
+            return;
+        }
 
         $metrics->increment('System model');
     }

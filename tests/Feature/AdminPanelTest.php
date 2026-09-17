@@ -563,10 +563,12 @@ class AdminPanelTest extends TestCase
             'locale' => 'en_US',
             'prompt' => 'Updated summary prompt.',
         ]);
-        $this->assertDatabaseMissing('system_prompts', [
+        $this->assertDatabaseHas('system_prompts', [
             'prompt_type' => 'summary',
             'usage_type' => 'main',
             'locale' => 'de_DE',
+            'prompt' => '',
+            'admin_managed' => true,
         ]);
         unset($slot['id'], $slot['version']);
         $this->saveAdmin($slot)->assertUnprocessable();
