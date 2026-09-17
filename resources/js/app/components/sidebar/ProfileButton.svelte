@@ -100,7 +100,7 @@
 </DropdownMenu>
 
 <style>
-    :global(.profile-menu-content.profile-menu-content) {
+    :global(.profile-menu-content.dropdown-content--dropdown) {
         width: min(15rem, calc(100vw - 2 * var(--space-4)));
     }
 

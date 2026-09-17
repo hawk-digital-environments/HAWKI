@@ -69,7 +69,7 @@
             top: 0;
             left: 0;
             bottom: 0;
-            width: min(18rem, 80vw);
+            width: 100%;
             /* Off-canvas drawer: above the page content it slides over. */
             --app-sidebar-z: 20;
             z-index: var(--app-sidebar-z);
