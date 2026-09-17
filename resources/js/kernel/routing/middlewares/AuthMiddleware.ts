@@ -1,7 +1,7 @@
 import {type RouteMiddleware, redirect} from '$lib/components/ui/routing/index.js';
 import type {RouteMeta} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {currentNext} from '$lib/kernel/auth/navigation.js';
-import {permissionMetaGuard} from './PermissionMiddleware.js';
+import {adminMetaGuard} from './AdminMiddleware.js';
 
 export function authMetaGuards(meta: RouteMeta): RouteMiddleware {
     const access = meta.access ?? 'crypto-ready';
@@ -9,7 +9,7 @@ export function authMetaGuards(meta: RouteMeta): RouteMiddleware {
         throw new Error(`Unknown route access: ${String(access)}`);
     }
     return async (ctx, next) => {
-        const permitted = () => permissionMetaGuard(meta)(ctx, next);
+        const permitted = () => adminMetaGuard(meta)(ctx, next);
         if (access === 'public') return permitted();
         const connection = ctx.app.connectionOrNull;
         const destination = currentNext(ctx.app.router, ctx.pathname);

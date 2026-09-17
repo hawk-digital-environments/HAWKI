@@ -18,8 +18,6 @@ const pages = {
     'system-models': () => import('./pages/AdminSystemModels.svelte'),
     'mcp': () => import('./pages/AdminMcp.svelte'),
     'users': () => import('./pages/AdminUsers.svelte'),
-    'roles': () => import('./pages/AdminRoles.svelte'),
-    'mappings': () => import('./pages/AdminMappings.svelte'),
     'announcements': () => import('./pages/AdminAnnouncements.svelte'),
     'usage': () => import('./pages/AdminUsage.svelte'),
     'health': () => import('./pages/AdminHealth.svelte'),
@@ -41,7 +39,7 @@ export class AdminModule implements HawkiModule, AdminWorkspaceProvider {
         return AdminSidebar;
     }
     visible(app: HawkiApp) {
-        return app.can('admin.access');
+        return app.isAdmin;
     }
 
     adminWorkspaces({ section, workspace }: AdminWorkspaceRegistrar) {

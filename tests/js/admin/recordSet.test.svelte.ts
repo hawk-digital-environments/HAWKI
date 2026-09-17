@@ -680,26 +680,6 @@ test('refresh closes editors when field metadata or create access changes even i
     }
 });
 
-test('same-version editors close when authorization catalog metadata changes', async () => {
-    const { response, recordSet } = refreshFixture();
-    await recordSet.load();
-    recordSet.edit(recordSet.rows[0], null);
-    Object.assign(response.meta, {
-        permission_catalog: [
-            {
-                name: 'tools.use',
-                group: 'tools',
-                title_label: 'admin.permissions.tools.use.title',
-                description_label: 'admin.permissions.tools.use.description',
-                grantable: false
-            }
-        ]
-    });
-    recordSet.suspend();
-    await recordSet.resume();
-    assert.equal(recordSet.editor, null);
-});
-
 test('failed refresh closes unverified editors and clears old editable metadata', async () => {
     const { response, recordSet } = refreshFixture();
     await recordSet.load();

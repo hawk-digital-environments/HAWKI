@@ -4,7 +4,7 @@
  * Vocabulary (see `CONTEXT.md`, "Admin Panel"): a **Section** is a titled,
  * icon-bearing cluster in the panel's sidebar and overview (*AI services*,
  * *People and access*, *System*); a **Workspace** is one page inside a
- * Section, guarded by `admin.access` plus its own permission; a **Record Set**
+ * Section, restricted to administrators; a **Record Set**
  * is one set of records a Workspace page works with (rows, writes, actions,
  * dialogs), and a page may hold several.
  *
@@ -20,7 +20,6 @@
  *             workspace({
  *                 id: 'prompts',
  *                 section: 'ai',
- *                 permission: 'prompts.manage',
  *                 title: 'chat.admin.prompts',
  *                 description: 'chat.admin.prompts_description',
  *                 page: () => import('./admin/ChatPrompts.svelte')
@@ -46,8 +45,7 @@ export interface AdminWorkspaceDefinition {
      * Modules; third-party Workspaces live under `/admin/plugins/<plugin>/<id>`.
      */
     id: string;
-    /** Workspace Permission, required in addition to `admin.access`. */
-    permission: string;
+
     /**
      * Section the Workspace belongs to: the id of a Section this Module
      * declared, or of a built-in one (`'ai' | 'people' | 'system'`).

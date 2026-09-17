@@ -104,7 +104,7 @@
                     'model',
                     'provider',
                     'type',
-                    ...(app.can('usage.view-per-user') ? ['user'] : [])
+                    ...(app.isAdmin ? ['user'] : [])
                 ].map((value) => ({ value, label: __('admin.grouping.' + value) }))}
             />
         </div>

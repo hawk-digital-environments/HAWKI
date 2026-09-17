@@ -121,7 +121,7 @@ class SystemModelRepository extends ConfigurationRepository
         try {
             $this->assignmentGuard->assertAssignable($model, $data['usage_type']);
         } catch (SystemModelAssignmentException $exception) {
-            $key = SystemModelAssignmentException::RESTRICTED === $exception->reason ? 'model_restricted' : 'system_model';
+            $key = 'system_model';
             throw ValidationException::withMessages(['model_id' => __('admin.errors.' . $key)]);
         }
     }

@@ -19,7 +19,7 @@ class Announcement extends Model
         'target_users',
         'anchor',
         'starts_at',
-        'content', 'target_roles', 'is_published',
+        'content', 'is_published',
         'expires_at'
     ];
 
@@ -27,7 +27,6 @@ class Announcement extends Model
         'excerpt' => 'array',
         'target_users' => 'array',
         'content' => 'array',
-        'target_roles' => 'array',
         'is_published' => 'boolean',
         'is_global' => 'boolean',
         'is_forced' => 'boolean',

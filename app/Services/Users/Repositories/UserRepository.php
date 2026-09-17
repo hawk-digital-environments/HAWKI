@@ -1,12 +1,9 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Users\Repositories;
 
-
 use App\Models\User;
-use App\Services\Admin\PermissionService;
 use App\Services\Auth\RegistrationGuard;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
@@ -40,7 +37,7 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
     ): User
     {
         // Update or create because the user might already exist (isRemoved = true) and we want to reuse the same record in that case.
-        $user = $this->getQueryWithoutContextualScopes()->updateOrCreate(
+        return $this->getQueryWithoutContextualScopes()->updateOrCreate(
             ['username' => $username],
             [
                 'name' => $name,
@@ -51,11 +48,6 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
                 'isRemoved' => false
             ]
         );
-
-        // Resurrecting a removed account changes eligibility outside RoleGuard::mutate().
-        app(PermissionService::class)->forget((int) $user->getKey());
-
-        return $user;
     }
 
     public function completeLegacyRegistration(
@@ -110,9 +102,6 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
             'isRemoved' => false,
             'registration_fingerprint' => null,
         ]);
-
-        // Re-registering a removed account changes eligibility outside RoleGuard::mutate().
-        app(PermissionService::class)->forget((int) $user->getKey());
 
         return $user;
     }

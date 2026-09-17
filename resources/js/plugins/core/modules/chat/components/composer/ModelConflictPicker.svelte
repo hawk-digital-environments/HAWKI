@@ -34,8 +34,6 @@
     const {__} = useTranslator();
     const currentModel = $derived(composerContext.model.current);
     const usableModels = $derived(composerContext.modelUsage.allUsable);
-    const hasOfflineTools = $derived(composerContext.modelUsage.issues.some(issue => issue.type === 'offline_tools'));
-    const onlyOfflineTools = $derived(hasOfflineTools && composerContext.modelUsage.issues.every(issue => issue.type === 'offline_tools'));
 
     const missingTools: AiToolOrCapabilityWithState[] = $derived.by(() => {
             return composerContext.modelUsage.issues
@@ -102,17 +100,12 @@
                 <!-- role="alert": the warning is announced as soon as the panel appears. -->
                 <div class="conflict-content" role="alert">
                     <p class="conflict-title">
-                        {#if onlyOfflineTools}
-                            {__('chat.tools.offline')}
-                        {:else if missingTools.length === 1}
+                        {#if missingTools.length === 1}
                             {__('chat.composer.modelConflict.conflictTitleSingle', {model: currentModel.label, tool: missingTools[0].displayName})}
                         {:else}
                             {__('chat.composer.modelConflict.conflictTitleMultiple', {model: currentModel.label})}
                         {/if}
                     </p>
-                    {#if hasOfflineTools && !onlyOfflineTools}
-                        <p class="conflict-caps-count">{__('chat.tools.offline')}</p>
-                    {/if}
                     {#if usableModels.length > 0}
                         <p class="conflict-caps-count">
                             {#if usableModels.length === 1}
@@ -158,7 +151,7 @@
                 </div>
             {:else}
                 <p class="conflict-no-models">
-                    {__(onlyOfflineTools ? 'chat.tools.offlineHelp' : 'chat.composer.modelConflict.noModelsAvailable')}
+                    {__('chat.composer.modelConflict.noModelsAvailable')}
                 </p>
             {/if}
         </div>

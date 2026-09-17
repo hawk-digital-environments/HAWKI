@@ -24,8 +24,8 @@ use Illuminate\Validation\ValidationException;
 class ModelRepository extends ConfigurationRepository
 {
     public const RESOURCE = 'models';
-    protected const RELATIONS = ['descriptions', 'tools', 'usage_rules', 'allowed_roles'];
-    protected const VERSION_RELATIONS = [['ai_model_descriptions', 'ai_model_id', 'locale'], ['ai_model_tools', 'ai_model_id', 'ai_tool_id'], ['ai_model_usage_rules', 'ai_model_id', 'usage_type'], ['ai_model_roles', 'ai_model_id', 'role_id']];
+    protected const RELATIONS = ['descriptions', 'tools', 'usage_rules'];
+    protected const VERSION_RELATIONS = [['ai_model_descriptions', 'ai_model_id', 'locale'], ['ai_model_tools', 'ai_model_id', 'ai_tool_id'], ['ai_model_usage_rules', 'ai_model_id', 'usage_type']];
 
     public function __construct(private readonly SystemModelAssignmentGuard $assignmentGuard)
     {
@@ -75,7 +75,6 @@ class ModelRepository extends ConfigurationRepository
             $fields->field('deprecation_date', 'datetime', 'nullable|date'),
             ...array_map($fields->json(...), ['input', 'output', 'parameters', 'native_capabilities', 'settings', 'limits', 'pricing', 'flags']),
             $fields->multiple('tools', 'tools'), $fields->multiple('usage_rules', ['main', 'external']),
-            $fields->field('allowed_roles', 'multi', 'sometimes|array', options: 'roles', default: []),
         ]];
     }
 
@@ -88,7 +87,6 @@ class ModelRepository extends ConfigurationRepository
         $rules['descriptions.de_DE'] = 'nullable|string|max:30000';
         $rules['tools.*'] = 'integer|distinct|exists:ai_tools,id';
         $rules['usage_rules.*'] = 'string|distinct|in:main,external';
-        $rules['allowed_roles.*'] = 'integer|distinct|exists:roles,id';
 
         foreach (['input', 'output'] as $key) {
             $rules[$key . '.*'] = 'string|in:text,image,audio,video';
@@ -143,9 +141,6 @@ class ModelRepository extends ConfigurationRepository
             DB::table('ai_model_usage_rules')->insert(['ai_model_id' => $model->id, 'usage_type' => $usage, 'created_at' => now(), 'updated_at' => now()]);
         }
 
-        if (\array_key_exists('allowed_roles', $data)) {
-            $model->allowedRoles()->syncWithPivotValues($data['allowed_roles'], ['created_at' => now()]);
-        }
     }
 
     protected function deleting(Model $model): void
@@ -169,7 +164,6 @@ class ModelRepository extends ConfigurationRepository
             ->all();
         $result['tools'] = DB::table('ai_model_tools')->where('ai_model_id', $row['id'])->pluck('ai_tool_id')->map(static fn ($id) => (int) $id)->all();
         $result['usage_rules'] = DB::table('ai_model_usage_rules')->where('ai_model_id', $row['id'])->pluck('usage_type')->all();
-        $result['allowed_roles'] = DB::table('ai_model_roles')->where('ai_model_id', $row['id'])->pluck('role_id')->map(static fn ($id) => (int) $id)->all();
 
         return $result;
     }
@@ -181,9 +175,6 @@ class ModelRepository extends ConfigurationRepository
         }
 
         $providerActive = AiProvider::withoutGlobalScopes()->whereKey($data['provider_id'])->value('active');
-        $allowedRoles = \array_key_exists('allowed_roles', $data)
-            ? $data['allowed_roles']
-            : DB::table('ai_model_roles')->where('ai_model_id', $model->getKey())->pluck('role_id')->all();
 
         try {
             $this->assignmentGuard->assertConfigurationAllowed(
@@ -191,11 +182,10 @@ class ModelRepository extends ConfigurationRepository
                 $data['active'],
                 (bool) $providerActive,
                 $data['usage_rules'],
-                $allowedRoles,
             );
         } catch (SystemModelAssignmentException $exception) {
-            $key = SystemModelAssignmentException::RESTRICTED === $exception->reason ? 'allowed_roles' : 'active';
-            $message = SystemModelAssignmentException::RESTRICTED === $exception->reason ? 'model_restricted' : 'model_in_use';
+            $key = 'active';
+            $message = 'model_in_use';
             throw ValidationException::withMessages([$key => __('admin.errors.' . $message)]);
         }
     }

@@ -6,7 +6,6 @@ import type {IconComponent} from '../../../resources/js/components/ui/icons/inde
 import {RouteRegistrar} from '../../../resources/js/components/ui/routing/logistics/RouteRegistrar.js';
 import {RouteHttpError, RouteRedirect} from '../../../resources/js/components/ui/routing/logistics/signals.js';
 import {authMetaGuards} from '../../../resources/js/kernel/routing/middlewares/AuthMiddleware.js';
-import {can} from '../../../resources/js/kernel/auth/permissions.js';
 import type {HawkiModuleWithPlugin} from '../../../resources/js/kernel/modules/types.js';
 import {InternalAuthenticatedConnectionSchema} from '../../../resources/js/app/schemas/resources/connections.schema.js';
 import type {AdminWorkspaceRegistrar} from '../../../resources/js/plugins/admin/api.js';
@@ -40,7 +39,6 @@ function populatedRegistry() {
             workspace({
                 id: 'prompts',
                 section: 'ai',
-                permission: 'prompts.manage',
                 title: 'chat.admin.prompts',
                 description: 'chat.admin.prompts_description',
                 page: loader
@@ -54,7 +52,6 @@ function populatedRegistry() {
             workspace({
                 id: 'invoices',
                 section: 'billing',
-                permission: 'billing.manage',
                 title: 'billing.admin.invoices',
                 description: 'billing.admin.invoices_description',
                 page: loader
@@ -67,32 +64,32 @@ function populatedRegistry() {
 
 const registry = populatedRegistry();
 
-function connection(permissions: string[]) {
+function connection(isAdmin: boolean) {
     return InternalAuthenticatedConnectionSchema.parse({
         id: 'hawki', type: 'internal_authenticated', version: 'test', locale: 'en_US',
-        userinfo: {id: 5, username: 'tester', name: 'Tester', email: 'tester@example.test', avatar: null, bio: null, hash: 'test-hash', permissions},
+        userinfo: {id: 5, username: 'tester', name: 'Tester', email: 'tester@example.test', avatar: null, bio: null, hash: 'test-hash', isAdmin},
         keychain_state: 'initialized',
     });
 }
 
-function router(permissions: string[], authenticated = true) {
+function router(isAdmin: boolean, authenticated = true) {
     Object.assign(globalThis, {window: {location: {pathname: '/new/admin', search: '', hash: ''}}});
     const registrar = new RouteRegistrar({metaGuards: authMetaGuards});
     registrar.group('/admin', (nested) => registerAdminRoutes(nested, registry));
     return new UniversalRouter(registrar.build(), {baseUrl: '/new', context: {
-        app: {connectionOrNull: authenticated ? connection(permissions) : null, cryptoReady: false, router: authRouter()},
+        app: {isAdmin: authenticated && isAdmin, connectionOrNull: authenticated ? connection(isAdmin) : null, cryptoReady: false, router: authRouter()},
     }});
 }
 
-test('every admin link resolves without chat keys, with its own workspace permission', async () => {
-    const instance = router(['admin.access', ...registry.workspaces.map(workspace => workspace.permission)]);
+test('every admin link resolves without chat keys, for an administrator', async () => {
+    const instance = router(true);
     const urls = generateUrls(instance);
     assert.equal(urls('admin.index'), '/new/admin');
     assert.equal((await instance.resolve(urls('admin.index'))).context.route.name, 'admin.index');
     for (const workspace of builtInWorkspaces) {
         const result = await instance.resolve(urls(`admin.${workspace.id}`));
         assert.equal(result.context.route.name, `admin.${workspace.id}`);
-        assert.equal(result.context.route.meta.permission, workspace.permission);
+        assert.equal(result.context.route.meta.admin, true);
     }
     assert.equal(urls('admin.prompts'), '/new/admin/prompts');
     assert.equal(urls('admin.plugins.billing.invoices'), '/new/admin/plugins/billing/invoices');
@@ -100,16 +97,14 @@ test('every admin link resolves without chat keys, with its own workspace permis
 
 test('tools share the MCP workspace permission without a separate route', () => {
     assert.equal(builtInWorkspaces.some((workspace) => String(workspace.id) === 'tools'), false);
-    assert.equal(builtInWorkspaces.find((workspace) => workspace.id === 'mcp')?.permission, 'mcp.manage');
+    assert.ok(builtInWorkspaces.find((workspace) => workspace.id === 'mcp'));
 });
 
-test('panel permission and workspace permission are independently enforced', async () => {
+test('all admin workspaces reject non-admins and redirect anonymous visitors', async () => {
     for (const workspace of registry.workspaces) {
-        for (const permissions of [['admin.access'], [workspace.permission]]) {
-            await assert.rejects(router(permissions).resolve(`/new/admin${workspace.path}`), error => error instanceof RouteHttpError && error.status === 403);
-        }
+        await assert.rejects(router(false).resolve(`/new/admin${workspace.path}`), error => error instanceof RouteHttpError && error.status === 403);
     }
-    await assert.rejects(router([], false).resolve('/new/admin'), error => error instanceof RouteRedirect && error.target === 'auth.login');
+    await assert.rejects(router(false, false).resolve('/new/admin'), error => error instanceof RouteRedirect && error.target === 'auth.login');
 });
 
 test('registry orders built-in and added sections and resolves workspace names', () => {
@@ -128,14 +123,14 @@ test('two core-plugin modules cannot claim the same workspace URL', () => {
         name: 'catalog',
         adminWorkspaces({section, workspace}: AdminWorkspaceRegistrar) {
             section({id: 'catalog', icon, title: 'catalog.title'});
-            workspace({id: 'models', section: 'catalog', permission: 'catalog.manage', title: 'catalog.models', description: 'catalog.models_description', page: loader});
+            workspace({id: 'models', section: 'catalog', title: 'catalog.models', description: 'catalog.models_description', page: loader});
         }
     }, {name: 'core', isCorePlugin: true});
     const second = moduleWithPlugin({
         name: 'inventory',
         adminWorkspaces({section, workspace}: AdminWorkspaceRegistrar) {
             section({id: 'inventory', icon, title: 'inventory.title'});
-            workspace({id: 'models', section: 'inventory', permission: 'inventory.manage', title: 'inventory.models', description: 'inventory.models_description', page: loader});
+            workspace({id: 'models', section: 'inventory', title: 'inventory.models', description: 'inventory.models_description', page: loader});
         }
     }, {name: 'inventory', isCorePlugin: true});
     assert.throws(() => duplicateRegistry.collect([first, second]), /core:catalog.*inventory:inventory|inventory:inventory.*core:catalog/);
@@ -146,7 +141,7 @@ test('a workspace cannot name an unknown section', () => {
     const module = moduleWithPlugin({
         name: 'chat',
         adminWorkspaces({workspace}: AdminWorkspaceRegistrar) {
-            workspace({id: 'prompts', section: 'missing', permission: 'prompts.manage', title: 'prompts.title', description: 'prompts.description', page: loader});
+            workspace({id: 'prompts', section: 'missing', title: 'prompts.title', description: 'prompts.description', page: loader});
         }
     }, {name: 'core', isCorePlugin: true});
     assert.throws(() => unknownRegistry.collect([module]), /core:chat.*unknown section "missing"/);
@@ -169,12 +164,4 @@ test('admin routes require a collected registry', () => {
         () => registerAdminRoutes(new RouteRegistrar({metaGuards: authMetaGuards}), new AdminRegistry()),
         /before the Admin Registry has collected Module Workspaces/
     );
-});
-
-test('permission checks react to revocation and require an authenticated connection', () => {
-    const session = connection(['admin.access']);
-    assert.equal(can(session, 'admin.access'), true);
-    session.userinfo.permissions = [];
-    assert.equal(can(session, 'admin.access'), false);
-    assert.equal(can(null, 'admin.access'), false);
 });

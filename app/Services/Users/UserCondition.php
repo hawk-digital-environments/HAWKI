@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Users;
-
 
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -38,13 +36,7 @@ class UserCondition
         if (!$user) {
             return false;
         }
-        return app(\App\Services\Admin\PermissionService::class)->has($user, 'admin.access');
-    }
-
-    public static function cannot(User|Request|null $user, string $permission): bool
-    {
-        if ($user instanceof Request) $user = $user->user();
-        return !app(\App\Services\Admin\PermissionService::class)->has($user, $permission);
+        return $user->employeetype === 'admin' && !$user->admin_disabled && !$user->isRemoved;
     }
 
     /**

@@ -133,7 +133,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
                 model: $model
             );
         } catch (SystemModelAssignmentException $exception) {
-            $reason = SystemModelAssignmentException::RESTRICTED === $exception->reason ? 'is restricted to selected roles' : 'is not active for this usage type';
+            $reason = 'is not active for this usage type';
             $metrics->error("Model with ID '$modelId' for type '$key' $reason.");
             return;
         }
