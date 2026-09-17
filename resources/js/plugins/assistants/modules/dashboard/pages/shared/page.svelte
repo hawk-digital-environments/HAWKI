@@ -1,6 +1,5 @@
 <script lang="ts">
     import AssistantBrowser from "$plugins/assistants/modules/dashboard/components/assistantBrowser/AssistantBrowser.svelte";
-    import {ReleaseMode} from "$plugins/assistants/types/assistant";
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -32,8 +31,7 @@
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
-            is_favorite: false,
-            release_stage: ['']
+            shared_with_me: true
         });
     });
 </script>

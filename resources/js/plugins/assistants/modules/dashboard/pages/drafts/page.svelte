@@ -33,8 +33,7 @@
             name: searchQuery,
             assistant_category: [...activeFilters],
             release_stage: [
-                ReleaseMode.DRAFT,
-                ReleaseMode.PRIVATE
+                ReleaseMode.DRAFT
             ]
         });
     });

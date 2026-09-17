@@ -15,7 +15,7 @@
      */
     interface Props {
     }
-    
+
     const {}: Props = $props();
 
     const {__} = useTranslator();
@@ -32,23 +32,18 @@
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
-            is_favorite: true,
             release_stage: [
-                ReleaseMode.DRAFT,
-                ReleaseMode.PRIVATE,
-                ReleaseMode.ORGANIZATIONAL,
-                ReleaseMode.FEDERATED
+                ReleaseMode.PRIVATE
             ]
         });
     });
 </script>
-
-<Page title={__('assistants.favourites.title')}>
+<Page title={__('assistants.private.title')}>
     <div class="page-content">
 
         <AssistantBrowser
-                emptyTitle={__('assistants.favourites.empty_title')}
-                emptyDescription={__('assistants.favourites.empty_description')}
+                emptyTitle={__('assistants.private.empty_title')}
+                emptyDescription={__('assistants.private.empty_description')}
                 bind:searchQuery
                 bind:activeFilters
         />

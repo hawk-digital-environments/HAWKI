@@ -53,6 +53,15 @@ class AssistantRepository extends AbstractRepository
     }
 
     /**
+     * Assistants another user shared with the given one (the `sharedUsers`
+     * pivot), independent of their release stage.
+     */
+    public function filterSharedWithUser(Builder $query, User $user): Builder
+    {
+        return $query->whereHas('sharedUsers', static fn ($q) => $q->where('user_id', $user->id));
+    }
+
+    /**
      * Is the user an administrator of the given organization?
      */
     public function isAdminOf(User $user, ?Organization $organization): bool

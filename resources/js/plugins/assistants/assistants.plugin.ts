@@ -10,6 +10,7 @@ import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
 import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
 import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
 import Share02Icon from '$lib/components/ui/icons/iconset/Share02Icon.svelte';
+import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
 import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
 import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
@@ -109,14 +110,25 @@ export default class AssistantsPlugin implements HawkiPlugin {
             {
                 id: 'dashboard.drafts',
                 level: 'dashboard',
+                group: 'my-assistants',
                 label: ctx.translate('assistants.sidebar.drafts'),
                 icon: FileEditIcon,
                 route: 'assistants.dashboard.drafts',
                 active: ctx.router.isRouteActive('assistants.dashboard.drafts')
             },
             {
+                id: 'dashboard.private',
+                level: 'dashboard',
+                group: 'my-assistants',
+                label: ctx.translate('assistants.sidebar.private'),
+                icon: SquareLock02Icon,
+                route: 'assistants.dashboard.private',
+                active: ctx.router.isRouteActive('assistants.dashboard.private')
+            },
+            {
                 id: 'dashboard.favourites',
                 level: 'dashboard',
+                group: 'my-assistants',
                 label: ctx.translate('assistants.sidebar.favourites'),
                 icon: StarIcon,
                 route: 'assistants.dashboard.favourites',
@@ -125,6 +137,7 @@ export default class AssistantsPlugin implements HawkiPlugin {
             {
                 id: 'dashboard.shared',
                 level: 'dashboard',
+                group: 'my-assistants',
                 label: ctx.translate('assistants.sidebar.shared'),
                 icon: Share02Icon,
                 route: 'assistants.dashboard.shared',

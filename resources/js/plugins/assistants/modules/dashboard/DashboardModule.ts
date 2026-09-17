@@ -25,6 +25,11 @@ export class DashboardModule implements HawkiCoreModule {
             {name: "assistants.dashboard.drafts"}
         );
         registrar.lazyRoute(
+            '/private',
+            () => import('$plugins/assistants/modules/dashboard/pages/private/page.svelte'),
+            {name: "assistants.dashboard.private"}
+        );
+        registrar.lazyRoute(
             '/favourites',
             () => import('$plugins/assistants/modules/dashboard/pages/favourites/page.svelte'),
             {name: "assistants.dashboard.favourites"}
