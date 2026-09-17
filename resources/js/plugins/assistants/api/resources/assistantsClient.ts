@@ -53,6 +53,9 @@ export const ASSISTANT_EDIT_INCLUDES = [
     "assistant_user_prompts",
     "assistant_setting_values.setting",
     "ai_tools",
+    // The creator's own review state (denied / needs_revision) drives the
+    // publish page's denial handling.
+    "assistant_review",
 ] as const;
 
 /** One page of assistants plus the server's paging metadata. */
@@ -213,6 +216,9 @@ export async function deleteAssistant(id: string): Promise<void> {
  */
 export async function requestAssistantRelease(assistant: Assistant): Promise<boolean> {
   if (!assistant.id) return false;
+  // Optional version note ("What has changed?"); the backend trims it and
+  // treats blank as "no note", so it is simply omitted when empty.
+  const note = assistant.submissionNote?.trim();
   try {
     await useApp().restApi.postToResourceAction(
       ASSISTANTS,
@@ -222,6 +228,7 @@ export async function requestAssistantRelease(assistant: Assistant): Promise<boo
           type: "assistants",
           attributes: {
             release_stage: assistant.releaseStage,
+            ...(note ? { note } : {}),
           },
         },
       },

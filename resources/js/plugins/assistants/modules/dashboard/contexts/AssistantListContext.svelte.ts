@@ -132,7 +132,6 @@ export class AssistantListContext {
 
     /** Fetch a page. Defaults to re-fetching the current one. */
     public async load(page: number = this.currentPage): Promise<void> {
-        console.log('page', page)
         const ticket = ++this.requestId;
         this.loading = true;
         this.error = null;

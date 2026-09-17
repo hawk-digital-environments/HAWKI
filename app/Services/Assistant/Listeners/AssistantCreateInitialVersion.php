@@ -16,8 +16,10 @@ class AssistantCreateInitialVersion
         }
 
         // version is server-controlled and intentionally not mass-assignable.
+        // `text` carries the creator's release note (written by the release
+        // action); the initial version is created without one.
         $version = (new AssistantVersion())->forceFill([
-            'text' => json_encode(['changes' => []], \JSON_THROW_ON_ERROR),
+            'text' => '',
             'version' => 1.0,
         ]);
         $event->assistant->assistantVersions()->save($version);

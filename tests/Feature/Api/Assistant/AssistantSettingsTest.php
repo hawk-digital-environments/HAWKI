@@ -188,7 +188,7 @@ class AssistantSettingsTest extends TestCase
 
         $version = $assistant->assistantVersions()->latest('version')->first();
         self::assertEquals(['assistant_setting_values'], $version->changed_keys);
-        self::assertSame('{"changes":["assistant_setting_values"]}', $version->text);
+        self::assertSame('', $version->text);
     }
 
     public function testSettingChangeSkipsVersionWhenPrivate(): void

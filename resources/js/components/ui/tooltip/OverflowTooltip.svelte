@@ -107,6 +107,11 @@
 <style>
     .overflow-text {
         display: block;
+        /* A truncating element must be shrinkable: as a flex/grid item the
+           default min-width:auto would floor it at its content width, so the
+           ellipsis (and with it the overflow detection) could never kick in.
+           No-op in block contexts. */
+        min-width: 0;
         font-size: var(--overflow-text-font-size, inherit);
         font-weight: var(--overflow-text-font-weight, inherit);
         color: var(--overflow-text-color, inherit);

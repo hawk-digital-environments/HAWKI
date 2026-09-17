@@ -63,17 +63,19 @@ readonly class AssistantService
             $latestVersion = $source->assistantVersions->sortByDesc('version')->first();
 
             if ($latestVersion) {
-                // version is server-controlled and intentionally not mass-assignable.
+                // A remix starts with the same version number as the source, but an empty note.
+                // The remix's first edit will increment the version.
                 $clone->assistantVersions()->save((new AssistantVersion())->forceFill([
-                    'text' => $latestVersion->text,
+                    'text' => '',
                     'version' => $latestVersion->version,
                     'changed_keys' => $latestVersion->changed_keys,
                 ]), );
             }
 
-            // Knowledge files are intentionally NOT remixed: each assistant
-            // owns its own files (and later its own RAG dataset), so the
-            // clone starts with an empty knowledge base.
+            // Knowledge files are NOT remixed.
+            // Each assistant owns its own files (and later its own RAG dataset), so the
+            // clone starts with an empty knowledge base. 
+            // Otherwise a remix would need to trigger a rag workflow.
             $this->events->dispatch(new AssistantCreatedEvent($clone));
 
             return $this->repository->loadRelations($clone, ['assistantUserPrompts', 'ai_tools', 'assistantTags', 'assistantVersions']);
@@ -85,9 +87,9 @@ readonly class AssistantService
         $this->repository->setFavorite($assistant, $user, $isFavorite);
     }
 
-    public function release(Assistant $assistant, AssistantReleaseStage $target): Assistant
+    public function release(Assistant $assistant, AssistantReleaseStage $target, ?string $note = null): Assistant
     {
-        return $this->db->transaction(function () use ($assistant, $target): Assistant {
+        return $this->db->transaction(function () use ($assistant, $target, $note): Assistant {
             // Re-load inside the transaction under a row lock so concurrent
             // release()/approve()/deny() calls serialise on the same assistant.
             $locked = Assistant::whereKey($assistant->id)->lockForUpdate()->first();
@@ -102,6 +104,19 @@ readonly class AssistantService
             $assistant->load('assistantReview');
 
             $oldStage = $assistant->release_stage;
+            $review = $assistant->assistantReview;
+
+            // A denied review would make the release below a no-op (the request
+            // validator is the primary gate there).
+            // It skips the note so a blocked release cannot overwrite the version history.
+            $isDenied = null !== $review && AssistantReviewStatus::DENIED === $review->status;
+
+            // The note describes the content revision being published, so it is
+            // recorded on the latest version row whichever way the release
+            // resolves — an immediate stage change or a review now pending.
+            if (null !== $note && !$isDenied) {
+                $this->applyVersionNote($assistant, $note);
+            }
 
             // Draft / private are freely settable: publish immediately and drop
             // any pending publication request.
@@ -109,11 +124,9 @@ readonly class AssistantService
                 return $this->applyStageChange($assistant, $target);
             }
 
-            $review = $assistant->assistantReview;
-
             // A denied review blocks publication entirely; the request validator
-            // is the primary gate, this is a defensive no-op for direct callers.
-            if (null !== $review && AssistantReviewStatus::DENIED === $review->status) {
+            // is the primary gate. It's a noop here.
+            if ($isDenied) {
                 return $assistant;
             }
 
@@ -125,7 +138,7 @@ readonly class AssistantService
                 return $this->applyStageChange($assistant, $target);
             }
 
-            // Upward move into a broader public stage. Escalation between two
+            // Upward move into a broader public stage. Release stage change between two
             // public stages (e.g. organizational -> federated) always needs a fresh
             // approval, regardless of the current review status. A first publish
             // from a non-public tier happens right away when already approved.
@@ -137,12 +150,14 @@ readonly class AssistantService
                 return $this->applyStageChange($assistant, $target);
             }
 
-            // Not yet approved, or an escalation that requires re-approval: record
+            // Not yet approved, or a release stage change that requires re-approval: record
             // the desired stage and (re)open the review as pending. The assistant
-            // stays at its current stage until an admin approves it.
+            // stays at its current stage until an admin approves it. Reopening
+            // starts a fresh round, so a previous denial reason is cleared — a
+            // resubmission after NEEDS_REVISION is judged on its own merits.
             $this->reviewRepository->updateOrCreateForAssistant(
                 $assistant->id,
-                ['status' => AssistantReviewStatus::PENDING->value],
+                ['status' => AssistantReviewStatus::PENDING->value, 'reason' => null],
             );
             $this->repository->setRequestedReleaseStage($assistant, $target);
 
@@ -211,5 +226,30 @@ readonly class AssistantService
         }
 
         return $assistant;
+    }
+
+    /**
+     * Records the creator's release note on the latest version.
+     * Locked like the update listener locks the row, so a concurrent
+     * debounced edit cannot interleave within the release transaction.
+     */
+    private function applyVersionNote(Assistant $assistant, string $note): void
+    {
+        $latest = $assistant->assistantVersions()->latest('version')->lockForUpdate()->first();
+
+        if (null === $latest) {
+            // Every assistant normally gets v1.0 from the create listener; this
+            // covers records that predate it.
+            $assistant->assistantVersions()->save(
+                (new AssistantVersion())->forceFill([
+                    'text' => $note,
+                    'version' => 1.0,
+                ]),
+            );
+
+            return;
+        }
+
+        $latest->forceFill(['text' => $note])->save();
     }
 }

@@ -25,7 +25,9 @@ class AssistantCreateInitialVersionTest extends TestCase
         $versions = $assistant->fresh()->assistantVersions()->orderBy('version')->get();
         self::assertCount(1, $versions);
         self::assertSame('1.0', $versions->first()->version);
-        self::assertSame('{"changes":[]}', $versions->first()->text);
+        // `text` is reserved for the creator's release note; the initial
+        // version is created without one.
+        self::assertSame('', $versions->first()->text);
     }
 
     public function testDoesNotClobberExistingVersions(): void

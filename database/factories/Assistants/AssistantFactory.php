@@ -57,8 +57,10 @@ class AssistantFactory extends Factory
     {
         return $this->afterCreating(static function (Assistant $assistant): void {
             if (!$assistant->assistantVersions()->exists()) {
+                // `text` is reserved for the creator's release note; the
+                // factory baseline version is created without one.
                 $assistant->assistantVersions()->save((new \App\Models\Assistants\AssistantVersion())->forceFill([
-                    'text' => json_encode(['changes' => []], \JSON_THROW_ON_ERROR),
+                    'text' => '',
                     'version' => 1.0,
                 ]),);
             }

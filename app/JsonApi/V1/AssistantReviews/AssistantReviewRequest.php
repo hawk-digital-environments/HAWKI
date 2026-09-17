@@ -14,7 +14,11 @@ class AssistantReviewRequest extends ResourceRequest
     {
         return [
             'status' => ['required', Rule::enum(AssistantReviewStatus::class)],
-            'reason' => ['required_if:status,' . AssistantReviewStatus::DENIED->value, 'nullable', 'string'],
+            'reason' => [
+                'required_if:status,' . AssistantReviewStatus::DENIED->value . ',' . AssistantReviewStatus::NEEDS_REVISION->value,
+                'nullable',
+                'string',
+            ],
         ];
     }
 }

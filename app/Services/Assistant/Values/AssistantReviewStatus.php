@@ -9,4 +9,5 @@ enum AssistantReviewStatus: string
     case PENDING = 'pending';
     case APPROVED = 'approved';
     case DENIED = 'denied';
+    case NEEDS_REVISION = 'needs_revision';
 }

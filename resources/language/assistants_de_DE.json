@@ -134,6 +134,7 @@
             "trust_title": "Vertrauen & Risiko",
             "history_title": "Änderungsverlauf",
             "changed_fields": "Felder:",
+            "version_note": "Hinweis:",
             "creation": "Erstellung",
             "feedback_sent": "Feedback gesendet."
         },
@@ -284,7 +285,17 @@
                     "draft": "Entwurf",
                     "private": "Privat",
                     "organizational": "In Prüfung",
-                    "federated": "In Prüfung"
+                    "federated": "In Prüfung",
+                    "denied": "Abgelehnt",
+                    "needs_revision": "Überarbeitung erforderlich"
+                },
+                "denied": {
+                    "description": "Dein Assistent wurde dauerhaft abgelehnt. Bitte wende dich an die Systemverwaltung.",
+                    "reason_label": "Grund:"
+                },
+                "needs_revision": {
+                    "title": "Überarbeitung erforderlich",
+                    "hint": "Dein Assistent muss überarbeitet werden. Setze das Feedback der Review um und reiche ihn erneut ein."
                 },
                 "risk": {
                     "title": "Risiko-Übersicht",
