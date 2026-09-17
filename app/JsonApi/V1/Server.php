@@ -58,8 +58,6 @@ class Server extends BaseServer
             Admin\SystemModelSchema::class,
             Admin\AnnouncementSchema::class,
             Admin\UserSchema::class,
-            Admin\RoleSchema::class,
-            Admin\RoleMappingSchema::class,
             Admin\SettingSchema::class,
             Admin\UsageSchema::class,
             Admin\EnvironmentSchema::class,

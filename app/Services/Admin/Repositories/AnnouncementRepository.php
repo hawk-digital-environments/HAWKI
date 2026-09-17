@@ -27,7 +27,7 @@ class AnnouncementRepository extends ConfigurationRepository
         return ['model' => Announcement::class, 'columns' => ['title', 'type', 'is_published', 'starts_at', 'expires_at', 'seen_count', 'accepted_count'], 'fields' => [
             $fields->text('title', true), $fields->select('type', ['news', 'system', 'event', 'info', 'policy']),
             $fields->boolean('is_published'), $fields->boolean('is_global'), $fields->boolean('is_forced'),
-            $fields->multiple('target_roles', 'roles'),
+            $fields->multiple('target_users', 'users'),
             $fields->field('starts_at', 'datetime', 'nullable|date'), $fields->field('expires_at', 'datetime', 'nullable|date|after_or_equal:starts_at'),
             $fields->text('anchor'), $fields->field('content', 'markdown-locales', 'required|array'),
         ]];
@@ -39,7 +39,7 @@ class AnnouncementRepository extends ConfigurationRepository
         $rules['content.en_US'] = 'nullable|string|max:200000';
         $rules['content.de_DE'] = 'nullable|string|max:200000';
         $rules['content'] = 'required|array:en_US,de_DE';
-        $rules['target_roles.*'] = 'integer|exists:roles,id';
+        $rules['target_users.*'] = 'integer|exists:users,id';
 
         return $rules;
     }

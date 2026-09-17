@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Frontend\Connection;
-
 
 use App\Models\ExtApp;
 use App\Models\User;
@@ -239,7 +237,7 @@ readonly class ConnectionFactory
             hash: md5($user->id . '-' . $user->publicKey),
             avatar: StoredFileIdentifier::tryFromUserAvatar($user),
             bio: $user->bio,
-            permissions: app(\App\Services\Admin\PermissionService::class)->permissionsOf($user)
+            isAdmin: \App\Services\Users\UserCondition::isAdmin($user)
         );
     }
 

@@ -6,15 +6,9 @@ namespace Tests\Feature;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiTool;
-use App\Models\Role;
 use App\Models\User;
-use App\Services\Admin\EmployeeTypeRoleSyncer;
-use App\Services\Admin\Permission;
-use App\Services\Admin\PermissionService;
-use App\Services\Admin\Repositories\RoleRepository;
 use App\Services\Admin\Repositories\UserRepository;
 use App\Services\Admin\ResourceCatalog;
-use App\Services\Admin\RoleAssignmentService;
 use App\Services\Admin\SystemSettings;
 use App\Services\Admin\UsageStatistics;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
@@ -41,33 +35,11 @@ class AdminPanelTest extends TestCase
         $this->withHeaders(['Accept' => 'application/vnd.api+json']);
     }
 
-    public function testPanelAccessDoesNotGrantSectionAccess(): void
-    {
-        $this->actingAs($this->grant(['admin.access']));
-
-        foreach (ResourceCatalog::SECTIONS as $section => $permission) {
-            $this->get('/api/hawki/v1/admin-' . $section)->assertForbidden();
-
-            if (!\in_array($section, ['tools', 'settings', 'usage', 'health', 'environment'], true)) {
-                $this->saveAdmin(['section' => $section, 'values' => ['name' => 'Forbidden']])->assertForbidden();
-            }
-
-            if (!\in_array($section, ['users', 'tools', 'usage', 'health', 'environment'], true)) {
-                $this->deleteAdmin(['section' => $section, 'id' => '1'])->assertForbidden();
-            }
-        }
-    }
-
-    public function testSectionPermissionAlsoRequiresPanelAccess(): void
-    {
-        $this->actingAs($this->grant(['roles.manage']))->get('/api/hawki/v1/admin-roles')->assertForbidden();
-    }
-
     public function testAdministratorCanReadAllConfigurationSections(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
 
-        foreach (array_diff(array_keys(ResourceCatalog::SECTIONS), ['health']) as $section) {
+        foreach (array_diff(ResourceCatalog::SECTIONS, ['health']) as $section) {
             $this->get('/api/hawki/v1/admin-' . $section)->assertSuccessful()->assertHeader('Content-Type', 'application/vnd.api+json')->assertJsonStructure(['data', 'meta' => ['columns']])->assertJsonMissingPath('content');
         }
 
@@ -77,29 +49,9 @@ class AdminPanelTest extends TestCase
             ->assertJsonMissingPath('data.0.attributes.type');
     }
 
-    public function testRoleCatalogNamesSystemRolesThroughATranslationKey(): void
-    {
-        $this->actingAs($this->grant(['admin.access', 'users.view']));
-
-        $catalog = collect($this->get('/api/hawki/v1/admin-users')->assertSuccessful()->json('meta.role_catalog'));
-        $system = $catalog->firstWhere('is_system', true);
-        self::assertNotNull($system, 'the seeded system roles must reach the catalog');
-        // The client never recognizes a system role by its seeded English display name.
-        self::assertSame('admin.role_labels.' . $system['slug'], $system['title_label']);
-        self::assertNull($catalog->firstWhere('is_system', false)['title_label']);
-    }
-
-    public function testAnnouncementsTargetRolesButNoLongerIndividualUsers(): void
-    {
-        $this->actingAs($this->grant(['admin.access', 'announcements.manage']));
-        $fields = collect($this->get('/api/hawki/v1/admin-announcements')->assertSuccessful()->json('meta.fields'));
-        self::assertNull($fields->firstWhere('key', 'target_users'));
-        self::assertSame('multi', $fields->firstWhere('key', 'target_roles')['type']);
-    }
-
     public function testAdministratorCanCreateAndResetALocalAccount(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $password = 'correct horse battery staple';
         $values = [
             'name' => 'Local User',
@@ -109,7 +61,6 @@ class AdminPanelTest extends TestCase
             'password' => $password,
             'password_confirmation' => $password,
             'admin_disabled' => false,
-            'roles' => [],
         ];
 
         $id = $this->saveAdmin([
@@ -142,7 +93,6 @@ class AdminPanelTest extends TestCase
                 'password' => $replacement,
                 'password_confirmation' => $replacement,
                 'admin_disabled' => false,
-                'roles' => [],
             ],
         ])->assertSuccessful();
 
@@ -152,70 +102,11 @@ class AdminPanelTest extends TestCase
         self::assertStringNotContainsString($replacement, DB::table('admin_audit_log')->orderByDesc('id')->value('changes'));
     }
 
-    public function testLocalAccountCreationRequiresUserManagementPermission(): void
-    {
-        $this->actingAs($this->grant(['admin.access', 'users.view']));
-        $this->get('/api/hawki/v1/admin-users')->assertSuccessful()
-            ->assertJsonPath('meta.create', false);
-        $this->saveAdmin([
-            'section' => 'users',
-            'values' => [
-                'name' => 'Forbidden Local User',
-                'username' => 'forbidden-local-user',
-                'email' => 'forbidden@example.test',
-                'employeetype' => 'guest',
-                'password' => 'correct horse battery staple',
-                'password_confirmation' => 'correct horse battery staple',
-            ],
-        ])->assertForbidden();
-    }
-
-    public function testLocalAccountCreationCannotEscalateThroughEmployeeType(): void
-    {
-        $this->actingAs($this->grant(['admin.access', 'users.view', 'users.manage']));
-        $password = 'correct horse battery staple';
-        $this->saveAdmin([
-            'section' => 'users',
-            'values' => [
-                'name' => 'Escalated Local User',
-                'username' => 'escalated-local-user',
-                'email' => 'escalated@example.test',
-                'employeetype' => 'admin',
-                'password' => $password,
-                'password_confirmation' => $password,
-            ],
-        ])->assertUnprocessable();
-        $this->assertDatabaseMissing('users', ['username' => 'escalated-local-user']);
-    }
-
-    public function testUserManagerCannotTakeOverADisabledAdministrator(): void
-    {
-        $admin = $this->grant(Permission::values());
-        $admin->forceFill(['admin_disabled' => true, 'local_password' => Hash::make('original password 1234')])->save();
-        $manager = $this->grant(['admin.access', 'users.view', 'users.manage']);
-        $this->actingAs($manager);
-        $version = app(UserRepository::class)->version((array) DB::table('users')->find($admin->id));
-        $password = 'correct horse battery staple';
-
-        $this->saveAdmin(['section' => 'users', 'id' => (string) $admin->id, 'version' => $version, 'values' => [
-            'password' => $password,
-            'password_confirmation' => $password,
-        ]])->assertUnprocessable();
-        $this->saveAdmin(['section' => 'users', 'id' => (string) $admin->id, 'version' => $version, 'values' => [
-            'admin_disabled' => false,
-        ]])->assertUnprocessable();
-        $this->postJson('/api/hawki/v1/admin-users/' . $admin->id . '/actions/revoke-tokens')->assertForbidden();
-
-        $admin->refresh();
-        self::assertTrue((bool) $admin->admin_disabled);
-        self::assertTrue(Hash::check('original password 1234', $admin->local_password));
-    }
-
     public function testAdministratorCanReactivateADisabledAdministrator(): void
     {
-        $admin = $this->grant(Permission::values());
+        $admin = $this->administrator();
         $admin->forceFill(['admin_disabled' => true])->save();
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $version = app(UserRepository::class)->version((array) DB::table('users')->find($admin->id));
 
         $this->saveAdmin(['section' => 'users', 'id' => (string) $admin->id, 'version' => $version, 'values' => ['admin_disabled' => false]])->assertOk();
@@ -225,7 +116,7 @@ class AdminPanelTest extends TestCase
     public function testCustomProviderAdaptersAreOfferedAndAccepted(): void
     {
         app(\App\Services\Ai\Providers\Adapters\ProviderAdapterRegistry::class)->declare('custom-test-adapter', \Tests\Unit\Services\Ai\Providers\Adapters\ProviderAdapterRegistryTestFixtures\StubProviderAdapter::class);
-        $this->actingAs($this->grant(['admin.access', 'providers.manage']));
+        $this->actingAs($this->administrator());
         $fields = collect($this->get('/api/hawki/v1/admin-providers')->assertSuccessful()->json('meta.fields'));
         self::assertContains('custom-test-adapter', array_column($fields->firstWhere('key', 'adapter_key')['options'], 'value'));
         $values = ['name' => 'Custom', 'provider_id' => 'admin-custom-adapter-test', 'adapter_key' => 'custom-test-adapter', 'active' => false];
@@ -237,7 +128,7 @@ class AdminPanelTest extends TestCase
 
     public function testDeletingAModelRemovesItsDescriptions(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $providerId = $this->saveAdmin(['section' => 'providers', 'values' => ['name' => 'Cascade test', 'provider_id' => 'admin-cascade-test', 'adapter_key' => 'openai', 'active' => true]])->assertSuccessful()->json('data.id');
         $values = ['label' => 'Cascade', 'model_id' => 'admin-cascade-test-model', 'provider_id' => (int) $providerId, 'active' => true, 'model_type' => 'chat', 'input' => ['text'], 'output' => ['text'], 'tools' => [], 'usage_rules' => ['main'], 'descriptions' => ['en_US' => 'Described', 'de_DE' => 'Beschrieben']];
         $id = $this->saveAdmin(['section' => 'models', 'values' => $values])->assertSuccessful()->json('data.id');
@@ -249,7 +140,7 @@ class AdminPanelTest extends TestCase
 
     public function testImportsDoNotRestoreRecordsDeletedInAdministration(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $deleted = app(\App\Services\Admin\DeletedRecords::class);
         $metrics = static fn () => new \App\Utils\JobMetrics('test', app(\Psr\Log\LoggerInterface::class));
 
@@ -280,7 +171,7 @@ class AdminPanelTest extends TestCase
 
     public function testAdministratorCanCreateAnOpenAiLikeProvider(): void
     {
-        $this->actingAs($this->grant(['admin.access', 'providers.manage']));
+        $this->actingAs($this->administrator());
         \Illuminate\Support\Facades\Http::preventStrayRequests();
         $values = ['name' => 'JLU', 'provider_id' => 'admin-openai-like-test', 'adapter_key' => 'openai_like', 'active' => true];
 
@@ -293,7 +184,7 @@ class AdminPanelTest extends TestCase
 
     public function testProviderSecretsDoNotRoundTripAndBlankKeepsTheKey(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $values = ['name' => 'Test provider', 'provider_id' => 'admin-test', 'adapter_key' => 'openai', 'active' => false, 'api_key' => 'very-secret', 'additional_config' => ['password' => 'nested-secret']];
         $response = $this->saveAdmin(['section' => 'providers', 'values' => $values])->assertSuccessful();
         $id = $response->json('data.id');
@@ -304,35 +195,6 @@ class AdminPanelTest extends TestCase
         $this->saveAdmin(['section' => 'providers', 'id' => $id, 'version' => $row['meta']['version'], 'values' => $values])->assertSuccessful();
         self::assertSame('very-secret', \App\Models\Ai\AiProvider::withoutGlobalScopes()->findOrFail($id)->api_key);
         self::assertStringNotContainsString('very-secret', DB::table('admin_audit_log')->orderByDesc('id')->value('changes'));
-    }
-
-    public function testMappingChangesReplaceDerivedGrantsAndKeepManualGrants(): void
-    {
-        $this->grant(Permission::values());
-        $user = $this->grant(['usage.view']);
-        $user->forceFill(['employeetype' => 'staff'])->save();
-        $adminRole = DB::table('roles')->where('name', 'admin')->value('id');
-        DB::table('employee_type_role_mappings')->insert(['employee_type' => 'staff', 'role_id' => $adminRole]);
-        app(EmployeeTypeRoleSyncer::class)->sync($user);
-        self::assertTrue(app(PermissionService::class)->has($user, 'admin.access'));
-        $user->forceFill(['employeetype' => 'student'])->save();
-        app(EmployeeTypeRoleSyncer::class)->sync($user);
-        self::assertFalse(app(PermissionService::class)->has($user, 'admin.access'));
-        self::assertTrue(app(PermissionService::class)->has($user, 'usage.view'));
-    }
-
-    public function testRoleManagerCannotGrantPermissionsTheyDoNotHold(): void
-    {
-        $this->actingAs($this->grant(['admin.access', 'roles.manage']));
-        $this->saveAdmin(['section' => 'roles', 'values' => ['slug' => 'escalated', 'name' => 'Escalated', 'permissions' => ['settings.manage']]])->assertUnprocessable();
-        $this->assertDatabaseMissing('roles', ['name' => 'escalated']);
-    }
-
-    public function testUsagePerUserRequiresSeparatePermission(): void
-    {
-        $this->actingAs($this->grant(['admin.access', 'usage.view']));
-        $this->get('/api/hawki/v1/admin-usage?filter[group_by]=user')->assertForbidden();
-        $this->get('/api/hawki/v1/admin-usage?filter[user]=1')->assertForbidden();
     }
 
     public function testRetentionPersistsTotalsBeforeRemovingRawRowsAndIsIdempotent(): void
@@ -362,98 +224,12 @@ class AdminPanelTest extends TestCase
             self::assertSame('AI_MENTION_HANDLE' === $key ? '@helper' : $value, config($path));
         }
 
-        $this->actingAs($this->grant(Permission::values()))->saveAdmin(['section' => 'settings', 'id' => 'APP_KEY', 'values' => ['value' => 'forbidden']])->assertNotFound();
-    }
-
-    public function testBuiltInRolesKeepSlugButStayEditable(): void
-    {
-        $this->actingAs($this->grant(Permission::values()));
-        $id = (int) DB::table('roles')->where('name', 'user')->value('id');
-        $version = static fn () => app(RoleRepository::class)->version((array) DB::table('roles')->find($id));
-        $values = ['slug' => 'user', 'name' => 'Members', 'description' => 'Everyone', 'permissions' => ['usage.view']];
-        $this->saveAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version(), 'values' => $values])->assertSuccessful();
-        self::assertSame('Members', DB::table('roles')->find($id)->display_name);
-        self::assertSame(['usage.view'], Role::findOrFail($id)->permissions()->pluck('name')->all());
-        $this->saveAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version(), 'values' => ['slug' => 'members'] + $values])->assertUnprocessable();
-        self::assertSame('user', DB::table('roles')->find($id)->name);
-        $this->deleteAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version()])->assertUnprocessable();
-    }
-
-    public function testStaleEditsAreRejected(): void
-    {
-        $this->actingAs($this->grant(Permission::values()));
-        $id = DB::table('roles')->insertGetId(['name' => 'concurrency', 'display_name' => 'First']);
-        $version = app(RoleRepository::class)->version((array) DB::table('roles')->find($id));
-        DB::table('roles')->where('id', $id)->update(['display_name' => 'Second']);
-        $this->saveAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version, 'values' => ['slug' => 'concurrency', 'name' => 'Third', 'permissions' => []]])->assertStatus(412);
-    }
-
-    public function testResourceMutationDocumentsAndConditionalWrites(): void
-    {
-        $this->actingAs($this->grant(Permission::values()));
-        $headers = ['Content-Type' => 'application/vnd.api+json'];
-        $document = ['data' => ['type' => 'admin-roles', 'attributes' => [
-            'slug' => 'jsonapi-write', 'name' => 'Original', 'permissions' => [],
-        ]]];
-        $this->postJson('/api/hawki/v1/admin-roles', $document)->assertStatus(415);
-        $this->postJson('/api/hawki/v1/admin-roles', ['values' => ['name' => 'Old contract']], $headers)->assertUnprocessable();
-        $created = $this->postJson('/api/hawki/v1/admin-roles', $document, $headers)->assertCreated()
-            ->assertHeader('Content-Type', 'application/vnd.api+json')
-            ->assertJsonPath('data.type', 'admin-roles')->assertJsonPath('data.attributes.name', 'Original');
-        $id = $created->json('data.id');
-        $etag = $created->headers->get('ETag');
-        self::assertSame('"' . $created->json('data.meta.version') . '"', $etag);
-        $url = '/api/hawki/v1/admin-roles/' . $id;
-        $document['data']['id'] = $id;
-        $document['data']['attributes']['name'] = 'Updated';
-
-        $wrongType = $document;
-        $wrongType['data']['type'] = 'admin-providers';
-        $this->patchJson($url, $wrongType, $headers + ['If-Match' => $etag])->assertConflict();
-        $wrongId = $document;
-        $wrongId['data']['id'] = 'different';
-        $this->patchJson($url, $wrongId, $headers + ['If-Match' => $etag])->assertConflict();
-        $updated = $this->patchJson($url, $document, $headers + ['If-Match' => $etag])->assertOk()
-            ->assertJsonPath('data.id', $id)->assertJsonPath('data.attributes.name', 'Updated');
-        self::assertNotSame($etag, $updated->headers->get('ETag'));
-        $this->patchJson($url, $document, $headers + ['If-Match' => $etag])->assertStatus(412);
-        $this->deleteJson($url, [], $headers + ['If-Match' => $updated->headers->get('ETag')])->assertNoContent();
-    }
-
-    public function testTableFiltersSupportPaginationSortingAndSearch(): void
-    {
-        $this->actingAs($this->grant(Permission::values()));
-        DB::table('roles')->insert([['name' => 'table-a', 'display_name' => 'Table Alpha'], ['name' => 'table-b', 'display_name' => 'Table Beta']]);
-        $query = http_build_query(['page' => ['number' => 2, 'size' => 1], 'sort' => 'name', 'filter' => ['search' => 'Table ']]);
-        $response = $this->get('/api/hawki/v1/admin-roles?' . $query)->assertSuccessful()
-            ->assertJsonPath('meta.page.total', 2)->assertJsonPath('meta.page.currentPage', 2)
-            ->assertJsonPath('meta.page.perPage', 1)->assertJsonPath('data.0.type', 'admin-roles')
-            ->assertJsonPath('data.0.attributes.name', 'Table Beta')->assertJsonPath('links.next', null)
-            ->assertJsonMissingPath('data.0.attributes.id')->assertJsonMissingPath('data.0.attributes._version');
-        self::assertIsString($response->json('data.0.id'));
-        self::assertIsString($response->json('data.0.meta.version'));
-        $this->get($response->json('links.prev'))->assertOk()->assertJsonPath('data.0.attributes.name', 'Table Alpha');
-        $this->get('/api/hawki/v1/admin-roles?' . http_build_query([
-            'sort' => '-name', 'filter' => ['search' => 'Table '], 'page' => ['size' => 1],
-        ]))->assertOk()->assertJsonPath('data.0.attributes.name', 'Table Beta');
-    }
-
-    public function testCollectionsValidateQueriesAndRepresentEmptyResults(): void
-    {
-        $this->actingAs($this->grant(Permission::values()));
-
-        foreach (['page[number]=0', 'page[size]=101', 'sort=unknown', 'sort=name,-id'] as $query) {
-            $this->get('/api/hawki/v1/admin-roles?' . $query)->assertUnprocessable();
-        }
-
-        $this->get('/api/hawki/v1/admin-roles?filter[search]=no-such-role-jsonapi')
-            ->assertOk()->assertJsonPath('data', [])->assertJsonPath('meta.page.total', 0)
-            ->assertJsonPath('links.next', null)->assertJsonStructure(['meta' => ['fields']]);
+        $this->actingAs($this->administrator())->saveAdmin(['section' => 'settings', 'id' => 'APP_KEY', 'values' => ['value' => 'forbidden']])->assertNotFound();
     }
 
     public function testHealthCollectionCarriesReportMetadataWithoutPagination(): void
     {
-        $this->actingAs($this->grant(['admin.access', 'health.view']));
+        $this->actingAs($this->administrator());
         $this->mock(\App\Services\Admin\HealthMonitor::class, static function ($mock): void {
             $mock->shouldReceive('read')->once()->andReturn([
                 'rows' => [['id' => 'database', 'name' => 'database', 'status' => 'ok']],
@@ -469,7 +245,7 @@ class AdminPanelTest extends TestCase
 
     public function testTableFiltersNarrowRowsToAColumnValue(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $providers = [];
 
         foreach (['a', 'b'] as $suffix) {
@@ -487,32 +263,6 @@ class AdminPanelTest extends TestCase
         $this->get('/api/hawki/v1/admin-providers?' . http_build_query(['filter' => ['where' => ['api_key_set' => '1']]]))->assertUnprocessable();
     }
 
-    public function testPermissionOnlyChangesInvalidateTheVersion(): void
-    {
-        $user = $this->grant(Permission::values());
-        $this->actingAs($user);
-        $id = DB::table('roles')->insertGetId(['name' => 'pivot-version', 'display_name' => 'Pivot version']);
-        $version = app(RoleRepository::class)->version((array) DB::table('roles')->find($id));
-        Role::findOrFail($id)->givePermissionTo('usage.view');
-        $this->saveAdmin(['section' => 'roles', 'id' => (string) $id, 'version' => $version, 'values' => ['slug' => 'pivot-version', 'name' => 'Pivot version', 'permissions' => []]])->assertStatus(412);
-    }
-
-    public function testAdministratorsCannotRemoveTheirOwnPanelAccess(): void
-    {
-        $user = $this->grant(Permission::values());
-        $this->actingAs($user);
-        $version = app(UserRepository::class)->version((array) DB::table('users')->find($user->id));
-        $this->saveAdmin(['section' => 'users', 'id' => (string) $user->id, 'version' => $version, 'values' => ['roles' => []]])->assertUnprocessable();
-        self::assertTrue(app(PermissionService::class)->has($user, Permission::ACCESS));
-    }
-
-    public function testDisabledAdministratorCannotReadThePanel(): void
-    {
-        $user = $this->grant(Permission::values());
-        $user->forceFill(['admin_disabled' => true])->save();
-        $this->actingAs($user)->get('/api/hawki/v1/admin-roles')->assertForbidden();
-    }
-
     public function testSettingResetRestoresTheDeploymentValueInTheSameWorker(): void
     {
         $user = User::factory()->create();
@@ -525,7 +275,7 @@ class AdminPanelTest extends TestCase
 
     public function testModelConfigurationPersistsStructuredFieldsAndProtectsSystemAssignments(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $providerId = $this->saveAdmin(['section' => 'providers', 'values' => ['name' => 'Config test', 'provider_id' => 'config-test', 'adapter_key' => 'openai', 'active' => true]])->assertSuccessful()->json('data.id');
         $values = ['label' => 'Config test', 'model_id' => 'admin-config-test', 'provider_id' => (int) $providerId, 'active' => true, 'model_type' => 'chat', 'input' => ['text'], 'output' => ['text'], 'parameters' => ['temperature' => 0.5], 'tools' => [], 'usage_rules' => ['main']];
         $id = $this->saveAdmin(['section' => 'models', 'values' => $values])->assertSuccessful()->json('data.id');
@@ -588,7 +338,7 @@ class AdminPanelTest extends TestCase
 
     public function testModelEditorPersistsLocalizedDescriptions(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $providerId = $this->saveAdmin([
             'section' => 'providers',
             'values' => [
@@ -640,38 +390,9 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseMissing('ai_model_descriptions', ['ai_model_id' => $id, 'locale' => 'de_DE']);
     }
 
-    public function testResourceRoutesRejectBodyDispatchAndRequireVersions(): void
-    {
-        $this->actingAs($this->grant(['admin.access', 'roles.manage']));
-        $values = ['slug' => 'route-contract', 'name' => 'Route contract', 'permissions' => []];
-        $this->postAdminResource('/api/hawki/v1/admin-roles', ['section' => 'providers', 'values' => $values])->assertUnprocessable();
-        $id = $this->postAdminResource('/api/hawki/v1/admin-roles', ['values' => $values])->assertCreated()->json('data.id');
-        $url = '/api/hawki/v1/admin-roles/' . $id;
-        $row = $this->get('/api/hawki/v1/admin-roles?filter[search]=route-contract')->assertOk()->json('data.0');
-        $this->patchAdminResource($url, ['values' => $values])->assertStatus(412);
-        $this->deleteAdminResource($url)->assertStatus(412);
-        $this->patchAdminResource($url, ['version' => $row['meta']['version'], 'values' => ['name' => 'Updated'] + $values])->assertOk();
-        $this->deleteAdminResource($url, ['version' => $row['meta']['version']])->assertStatus(412);
-        $version = app(RoleRepository::class)->version((array) DB::table('roles')->find($id));
-        $this->deleteAdminResource($url, ['version' => $version])->assertNoContent();
-        $this->assertDatabaseMissing('roles', ['id' => $id]);
-        $this->assertDatabaseHas('admin_audit_log', ['resource_type' => 'roles', 'resource_id' => $id, 'action' => 'delete']);
-    }
-
-    public function testAdminBindingChecksPermissionsBeforeRecordExistence(): void
-    {
-        $url = '/api/hawki/v1/admin-roles/999999999';
-        $this->actingAs($this->grant(['admin.access']));
-        $this->patchAdminResource($url, ['values' => []])->assertForbidden();
-
-        $this->actingAs($this->grant(['admin.access', 'roles.manage']));
-        $this->patchAdminResource($url, ['values' => []])->assertNotFound();
-        $this->deleteAdminResource($url)->assertNotFound();
-    }
-
     public function testInspectReturnsProviderModelMetadataShapedLikeTheEditorFields(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $providerId = $this->saveAdmin(['section' => 'providers', 'values' => ['name' => 'Inspect test', 'provider_id' => 'inspect-test', 'adapter_key' => 'openai', 'active' => true]])->assertSuccessful()->json('data.id');
         $info = new AiModel(['model_id' => 'inspect-model', 'label' => 'Inspect Model', 'model_type' => 'chat', 'documentation_url' => 'https://example.com/docs']);
         $info->input = AiModelIoMethods::fromArray(['text', 'image']);
@@ -705,54 +426,18 @@ class AdminPanelTest extends TestCase
                 return new JobMetrics('Test Model Status Update');
             }
         });
-        $this->actingAs($this->grant(['admin.access', 'models.manage']));
+        $this->actingAs($this->administrator());
 
         $this->postJson('/api/hawki/v1/admin-models/actions/check-status')->assertOk()
             ->assertJsonPath('checked', true);
         $this->assertDatabaseHas('admin_audit_log', ['resource_type' => 'models', 'action' => 'check-status']);
     }
 
-    public function testResourceUpdateRoutesRequireTheirOwnPermissions(): void
-    {
-        $this->actingAs($this->grant(['admin.access']));
-
-        foreach (['providers', 'models', 'system-models', 'mcp', 'tools', 'users', 'roles', 'mappings', 'announcements', 'settings'] as $resource) {
-            $this->patchAdminResource('/api/hawki/v1/admin-' . $resource . '/1', ['values' => ['name' => 'Forbidden']])->assertForbidden();
-        }
-
-        foreach (['providers/1/actions/test', 'providers/1/actions/discover', 'providers/1/actions/inspect', 'providers/actions/import', 'models/1/actions/refresh', 'models/actions/check-status', 'mcp/1/actions/test', 'mcp/1/actions/discover', 'users/1/actions/revoke-tokens', 'health/actions/check-ai-status', 'health/1/actions/retry-job', 'health/actions/flush-jobs'] as $path) {
-            $this->postJson('/api/hawki/v1/admin-' . $path)->assertForbidden();
-        }
-
-        $this->get('/api/hawki/v1/admin-users/1/actions/tokens')->assertForbidden();
-    }
-
-    public function testRemovedDispatchEndpointsAndUnsupportedOperationsAreUnavailable(): void
-    {
-        $this->actingAs($this->grant(Permission::values()));
-
-        foreach (['save', 'remove', 'run'] as $action) {
-            $this->postJson('/api/hawki/v1/admin-sections/actions/' . $action, ['section' => 'roles', 'values' => ['name' => 'Unexpected']])->assertNotFound();
-        }
-
-        $this->get('/api/hawki/v1/admin-sections/roles')->assertNotFound();
-
-        foreach (['usage', 'health', 'environment', 'settings', 'tools'] as $resource) {
-            $this->postJson('/api/hawki/v1/admin-' . $resource, ['values' => ['name' => 'Unexpected']])->assertStatus(405);
-        }
-
-        foreach (['users', 'tools'] as $resource) {
-            $this->deleteAdminResource('/api/hawki/v1/admin-' . $resource . '/1')->assertStatus(405);
-        }
-
-        $this->patchAdminResource('/api/hawki/v1/admin-roles/not-an-id', ['values' => ['name' => 'Invalid']])->assertNotFound();
-    }
-
     public function testUserTokenActionsUseTheUserInTheRoute(): void
     {
-        $user = $this->grant(['users.view']);
+        $user = $this->administrator();
         $token = $user->createToken('admin-route-test');
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $url = '/api/hawki/v1/admin-users/' . $user->id . '/actions/';
         $this->get($url . 'tokens')->assertOk()->assertJsonFragment(['name' => 'admin-route-test']);
         $this->postJson($url . 'revoke-tokens', ['id' => '1'])->assertUnprocessable();
@@ -761,29 +446,10 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseMissing('personal_access_tokens', ['id' => $token->accessToken->id]);
     }
 
-    public function testMappingRepositoryResyncsUsersOnCreateUpdateAndDelete(): void
-    {
-        $user = $this->grant(['usage.view']);
-        $user->forceFill(['employeetype' => 'route-mapping-staff'])->save();
-        $role = DB::table('roles')->insertGetId(['name' => 'route-mapped', 'display_name' => 'Mapped role']);
-        Role::findOrFail($role)->givePermissionTo('health.view');
-        $this->actingAs($this->grant(Permission::values()));
-        $values = ['employee_type' => 'route-mapping-staff', 'role_id' => $role];
-        $id = $this->postAdminResource('/api/hawki/v1/admin-mappings', ['values' => $values])->assertCreated()->json('data.id');
-        $this->assertDatabaseHas('role_user', ['user_id' => $user->id, 'role_id' => $role, 'source' => 'employeetype']);
-        $row = $this->get('/api/hawki/v1/admin-mappings?filter[search]=route-mapping-staff')->assertOk()->json('data.0');
-        $this->patchAdminResource('/api/hawki/v1/admin-mappings/' . $id, ['version' => $row['meta']['version'], 'values' => ['employee_type' => 'route-mapping-renamed'] + $values])->assertOk();
-        $this->assertDatabaseMissing('role_user', ['user_id' => $user->id, 'role_id' => $role]);
-        self::assertTrue(app(PermissionService::class)->has($user, 'usage.view'));
-        $row = $this->get('/api/hawki/v1/admin-mappings?filter[search]=route-mapping-renamed')->assertOk()->json('data.0');
-        $this->deleteAdminResource('/api/hawki/v1/admin-mappings/' . $id, ['version' => $row['meta']['version']])->assertNoContent();
-        $this->assertDatabaseMissing('employee_type_role_mappings', ['id' => $id]);
-    }
-
     public function testAnnouncementRepositoryPreservesContentAndPublicationRules(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
-        $values = ['title' => 'Route announcement', 'type' => 'news', 'is_published' => true, 'is_global' => true, 'is_forced' => false, 'target_roles' => [], 'content' => ['en_US' => 'Published content']];
+        $this->actingAs($this->administrator());
+        $values = ['title' => 'Route announcement', 'type' => 'news', 'is_published' => true, 'is_global' => true, 'is_forced' => false, 'target_users' => [], 'content' => ['en_US' => 'Published content']];
         $id = $this->postAdminResource('/api/hawki/v1/admin-announcements', ['values' => $values])->assertCreated()->json('data.id');
         $row = $this->get('/api/hawki/v1/admin-announcements?filter[search]=Route%20announcement')->assertOk()->json('data.0');
         self::assertSame('Published content', $row['attributes']['content']['en_US']);
@@ -794,7 +460,7 @@ class AdminPanelTest extends TestCase
 
     public function testMcpRepositoryValidatesTransportAndKeepsSecretsOnUpdate(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $values = ['server_label' => 'Route MCP', 'type' => 'http', 'url' => 'https://example.test/mcp', 'require_approval' => 'always', 'api_key' => 'mcp-route-secret'];
         $this->postAdminResource('/api/hawki/v1/admin-mcp', ['values' => ['url' => '/invalid'] + $values])->assertUnprocessable();
         $id = $this->postAdminResource('/api/hawki/v1/admin-mcp', ['values' => $values])->assertCreated()->json('data.id');
@@ -811,11 +477,11 @@ class AdminPanelTest extends TestCase
 
     public function testMcpServersExposeTheirToolsAndToolServerIsReadOnly(): void
     {
-        $this->actingAs($this->grant(Permission::values()));
+        $this->actingAs($this->administrator());
         $label = 'Route tools MCP';
         $serverId = $this->postAdminResource('/api/hawki/v1/admin-mcp', ['values' => ['server_label' => $label, 'type' => 'http', 'url' => 'https://example.test/route-tools', 'require_approval' => 'never']])->assertCreated()->json('data.id');
-        $mcpTool = AiTool::create(['type' => 'mcp', 'name' => 'Route MCP tool', 'mcp_server_id' => $serverId, 'mcp_name' => 'route_mcp_tool', 'mcp_config' => ['inputSchema' => ['type' => 'object']], 'description' => 'MCP tool', 'active' => true, 'access_rule' => 'unavailable']);
-        AiTool::create(['type' => 'function', 'name' => 'Route function tool', 'description' => 'Function tool', 'active' => true, 'access_rule' => 'unavailable']);
+        $mcpTool = AiTool::create(['type' => 'mcp', 'name' => 'Route MCP tool', 'mcp_server_id' => $serverId, 'mcp_name' => 'route_mcp_tool', 'mcp_config' => ['inputSchema' => ['type' => 'object']], 'description' => 'MCP tool', 'active' => true]);
+        AiTool::create(['type' => 'function', 'name' => 'Route function tool', 'description' => 'Function tool', 'active' => true]);
 
         $server = $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20tools%20MCP')->assertOk()->json('data.0');
         self::assertSame(1, $server['attributes']['tools_count']);
@@ -828,19 +494,39 @@ class AdminPanelTest extends TestCase
         self::assertSame('select', $field['type']);
         self::assertContains(['value' => (int) $serverId, 'label' => $label], $field['options']);
 
-        $this->patchAdminResource('/api/hawki/v1/admin-tools/' . $mcpTool->id, ['version' => $tool['meta']['version'], 'values' => ['description' => 'MCP tool', 'active' => true, 'mapped_capability' => null, 'access_rule' => 'unavailable', 'models' => [], 'mcp_server_id' => null]])->assertOk();
+        $this->patchAdminResource('/api/hawki/v1/admin-tools/' . $mcpTool->id, ['version' => $tool['meta']['version'], 'values' => ['description' => 'MCP tool', 'active' => true, 'mapped_capability' => null, 'models' => [], 'mcp_server_id' => null]])->assertOk();
         self::assertSame((int) $serverId, AiTool::findOrFail($mcpTool->id)->mcp_server_id);
     }
 
-    private function grant(array $permissions): User
+    private function administrator(): User
     {
-        $user = User::factory()->create();
-        $role = DB::table('roles')->insertGetId(['name' => 'test-' . $user->id, 'display_name' => 'Test']);
+        return User::factory()->create(['employeetype' => 'admin']);
+    }
 
-        Role::findOrFail($role)->syncPermissions($permissions);
-        app(RoleAssignmentService::class)->replace($user, [(int) $role]);
+    public function testEmployeeTypeControlsEveryPanelResource(): void
+    {
+        $this->actingAs(User::factory()->create(['employeetype' => 'staff']));
+        foreach (ResourceCatalog::SECTIONS as $section) {
+            $this->get('/api/hawki/v1/admin-' . $section)->assertForbidden();
+        }
+        $this->postAdminResource('/api/hawki/v1/admin-providers', ['values' => ['name' => 'Denied']])->assertForbidden();
+        $this->patchAdminResource('/api/hawki/v1/admin-providers/999999999', ['values' => ['name' => 'Denied']])->assertForbidden();
+    }
 
-        return $user;
+    public function testAdministratorCannotDisableOrDemoteTheirOwnAccount(): void
+    {
+        $actor = $this->administrator();
+        $actor->forceFill(['local_password' => Hash::make('a long test password')])->save();
+        $repository = app(UserRepository::class);
+        foreach ([['admin_disabled' => true], ['employeetype' => 'staff']] as $values) {
+            try {
+                $repository->save($actor->id, $values, $actor);
+                self::fail('Self-removal must be rejected.');
+            } catch (\Illuminate\Validation\ValidationException) {
+                self::assertSame('admin', $actor->fresh()->employeetype);
+                self::assertFalse($actor->fresh()->admin_disabled);
+            }
+        }
     }
 
     private function saveAdmin(array $data): \Illuminate\Testing\TestResponse

@@ -306,9 +306,6 @@ export class AdminRecordSet<
         const metadata = (content: AdminContent<Row> | null, fields: AdminField[]) =>
             JSON.stringify({
                 fields,
-                permission_catalog: content?.permission_catalog,
-                access_rules: content?.access_rules,
-                role_catalog: content?.role_catalog
             });
         const targetUnchanged =
             editor.row ?

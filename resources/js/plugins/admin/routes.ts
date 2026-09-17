@@ -1,11 +1,10 @@
 import type { RouteRegistrar } from '$lib/components/ui/routing/index.js';
-import { authMetaGuards } from '$lib/kernel/routing/middlewares/AuthMiddleware.js';
 import type { AdminRegistry } from './registry.js';
 
 export function registerAdminRoutes(registrar: RouteRegistrar, registry: AdminRegistry) {
     registrar.lazyRoute('/', () => import('./pages/AdminHome.svelte'), {
         name: 'admin.index',
-        meta: { title: 'admin.title', access: 'server-session', permission: 'admin.access' }
+        meta: { title: 'admin.title', access: 'server-session', admin: true }
     });
     if (!registry.collected) {
         throw new Error('Admin routes cannot be registered before the Admin Registry has collected Module Workspaces.');
@@ -13,11 +12,10 @@ export function registerAdminRoutes(registrar: RouteRegistrar, registry: AdminRe
     for (const workspace of registry.workspaces) {
         registrar.lazyRoute(workspace.path, workspace.page, {
             name: workspace.routeName,
-            middlewares: [authMetaGuards({ access: 'server-session', permission: 'admin.access' })],
             meta: {
                 title: workspace.title,
                 access: 'server-session',
-                permission: workspace.permission
+                admin: true
             }
         });
     }

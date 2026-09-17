@@ -51,7 +51,6 @@ test('local user creation requires a matching twelve-character password', () => 
         field('password', 'secret'),
         field('password_confirmation', 'secret'),
         field('admin_disabled', 'boolean'),
-        field('roles', 'multi')
     ];
     const values = {
         name: 'Local User',
@@ -61,7 +60,6 @@ test('local user creation requires a matching twelve-character password', () => 
         password: 'long-enough-password',
         password_confirmation: 'long-enough-password',
         admin_disabled: false,
-        roles: []
     };
     const createSchema = editorSchema('users', userFields, null);
     assert.equal(createSchema.safeParse(values).success, true);
@@ -102,16 +100,6 @@ test('empty PHP maps normalize recursively without changing array fields', () =>
     });
     assert.deepEqual(createDraft([field('input', 'json')], { id: '1', input: [] }).input, []);
     assert.deepEqual(createDraft([field('value', 'json')], { id: 'ALLOWED_FILE_MIME_TYPES', value: [] }).value, []);
-});
-
-test('model role restrictions use role tags and validate role ids', () => {
-    const options = [{ value: 1, label: 'Member' }, { value: 2, label: 'Editor' }];
-    assert.deepEqual(controlFor('models', AdminFieldSchema.parse({ key: 'allowed_roles', type: 'multi', options }), {}, null), {
-        type: 'tags',
-        options
-    });
-    assert.equal(modelsSchema.shape.allowed_roles.safeParse([1, 2]).success, true);
-    assert.equal(modelsSchema.shape.allowed_roles.safeParse([1, '2']).success, false);
 });
 
 test('known model parameters validate numeric boundaries and integer budgets', () => {
@@ -222,14 +210,6 @@ test('setting schemas validate MIME syntax, integer ranges and empty allowlists'
     assert.equal(settingsSchemas.MAX_FILE_SIZE.safeParse(1.5).success, false);
 });
 
-test('user forms only require fields permitted by the server and reject invalid choices', () => {
-    const roles = AdminFieldSchema.parse({ key: 'roles', type: 'multi', options: [{ value: 3, label: 'Member' }] });
-    const schema = editorSchema('users', [roles], { id: '10' });
-    assert.deepEqual(schema.parse({ roles: [3] }), { roles: [3] });
-    assert.equal(schema.safeParse({ roles: [4] }).success, false);
-    assert.equal(schema.safeParse({ roles: [3, 3] }).success, false);
-});
-
 test('announcement schema rejects date order, empty publication and targeted policies', () => {
     const names = [
         'title',
@@ -237,7 +217,7 @@ test('announcement schema rejects date order, empty publication and targeted pol
         'is_published',
         'is_global',
         'is_forced',
-        'target_roles',
+        'target_users',
         'starts_at',
         'expires_at',
         'anchor',
@@ -254,7 +234,7 @@ test('announcement schema rejects date order, empty publication and targeted pol
         is_published: true,
         is_global: false,
         is_forced: false,
-        target_roles: [],
+        target_users: [],
         content: { en_US: 'Hello' }
     };
     assert.equal(schema.safeParse(valid).success, true);
@@ -397,29 +377,4 @@ test('every editable backend setting has one tab and a client validator', () => 
     assert.equal(new Set(grouped).size, grouped.length);
     assert.deepEqual([...grouped].sort(), keys.sort());
     for (const key of keys) assert.ok(settingsSchemas[key], `Missing validator for ${key}`);
-});
-
-test('user roles use the chip picker and directory accounts explain their read-only profile', () => {
-    const roles = AdminFieldSchema.parse({ key: 'roles', type: 'multi', options: [{ value: 2, label: 'Staff' }] });
-    assert.deepEqual(controlFor('users', roles, {}, null), { type: 'tags', options: roles.options });
-    assert.equal(fieldHint('users', roles, null), 'admin.manual_roles_hint');
-    const email = field('email');
-    assert.equal(fieldHint('users', email, null), undefined);
-    assert.equal(fieldHint('users', email, { id: '1', local_account: true }), undefined);
-    assert.equal(fieldHint('users', email, { id: '1', local_account: false }), 'admin.directory_identity_hint');
-    assert.equal(fieldHint('users', field('admin_disabled', 'boolean'), { id: '1', local_account: false }), undefined);
-});
-
-test('permission and access rule editors are chosen by control type, not by the editor branching on keys', () => {
-    const permissions = AdminFieldSchema.parse({ key: 'permissions', type: 'multi' });
-    assert.deepEqual(controlFor('roles', permissions, {}, null), { type: 'permissions' });
-    // The same key elsewhere keeps the generic control, so the dispatch stays section-scoped.
-    assert.notEqual(controlFor('users', permissions, {}, null).type, 'permissions');
-    const accessRule = AdminFieldSchema.parse({
-        key: 'access_rule',
-        type: 'select',
-        options: [{ value: 'web_search', label: 'Web search' }]
-    });
-    assert.deepEqual(controlFor('tools', accessRule, {}, null), { type: 'access-rule' });
-    assert.notEqual(controlFor('mcp', accessRule, {}, null).type, 'access-rule');
 });

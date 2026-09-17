@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
-use App\Models\Role;
 use App\Models\User;
 use App\Services\Admin\Repositories\SystemModelRepository as AdminSystemModelRepository;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer;
@@ -59,34 +58,6 @@ class SystemModelLifecycleTest extends TestCase
         ])->get(['prompt', 'admin_managed']);
         self::assertCount(2, $prompts);
         self::assertTrue($prompts->every(static fn ($prompt) => '' === $prompt->prompt && (bool) $prompt->admin_managed));
-    }
-
-    public function testConfigurationImportRejectsARestrictedModelForASystemSlot(): void
-    {
-        $model = $this->createModel('restricted-slot');
-        $role = Role::create([
-            'name' => 'restricted-system-slot-' . $model->id,
-            'display_name' => 'Restricted system slot',
-            'guard_name' => 'web',
-        ]);
-        $model->allowedRoles()->attach($role->id, ['created_at' => now()]);
-        $metrics = $this->metrics();
-
-        (new SystemModelSyncer(
-            ['summarizer' => $model->model_id],
-            [],
-            app(ConfigRepository::class),
-            app(SystemModelRepository::class),
-            app(\App\Services\Ai\Models\Repositories\AiModelRepository::class),
-            app(\App\Services\Admin\DeletedRecords::class),
-        ))->sync($metrics);
-
-        $this->assertDatabaseMissing('system_models', [
-            'model_type' => 'summary',
-            'usage_type' => WellKnownUsageTypes::MAIN_APP,
-            'model_id' => $model->model_id,
-        ]);
-        self::assertTrue($metrics->hasErrors());
     }
 
     private function createModel(string $suffix): AiModel

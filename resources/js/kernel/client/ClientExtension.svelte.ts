@@ -15,11 +15,10 @@ import type {HawkiEvents} from '$lib/kernel/events/EventExtension.js';
 import {assignAuthPage, authPageUrl} from '$lib/kernel/auth/navigation.js';
 import {LogoutResponseSchema} from '$lib/kernel/auth/schemas.js';
 import {registerConnectionRefresher} from '$lib/kernel/client/connection/connectionRefresher.js';
-import {can} from '$lib/kernel/auth/permissions.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
-        can(permission: string): boolean;
+        readonly isAdmin: boolean;
         readonly client: HawkiClient;
         readonly restApi: RestApi;
         readonly aiApi: AiApi;
@@ -180,7 +179,10 @@ export class ClientExtension implements HawkiAppExtension {
     public provideProperties(): Record<string, unknown> {
         const extension = this;
         return {
-            can: (permission: string) => can(extension.connectionHandle.tryGetConnection(), permission),
+            get isAdmin() {
+                const connection = extension.connectionHandle.tryGetConnection();
+                return connection?.isAuthenticated === true && connection.userinfo.isAdmin;
+            },
             get client(): HawkiClient {
                 return extension.client;
             },
