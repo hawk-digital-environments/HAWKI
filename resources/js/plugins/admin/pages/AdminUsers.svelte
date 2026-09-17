@@ -9,7 +9,7 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import type { AdminField } from '../schemas/admin-content.js';
     import { type AdminUserResource, directoryManagedFields } from '../schemas/resources/admin-users.schema.js';
-    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     import { UserTokensSchema, RevokeTokensSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
@@ -33,7 +33,7 @@
         row && !row.local_account ?
             Object.fromEntries(Object.entries(values).filter(([key]) => !directoryManagedFields.includes(key)))
         :   values;
-    const records = useAdminRecordSet(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-users', { query, signal }),
         {

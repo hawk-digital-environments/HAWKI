@@ -3,8 +3,8 @@
     import AdminTable from '../../../../resources/js/plugins/admin/components/AdminTable.svelte';
     import {
         type AdminReader,
-        useAdminRecordSet
-    } from '../../../../resources/js/plugins/admin/recordSet.svelte.js';
+        useAdminWorkspace
+    } from '../../../../resources/js/plugins/admin/workspace.svelte.js';
 
     type TestRow = {
         id: string;
@@ -14,7 +14,7 @@
     };
 
     const reader: AdminReader<TestRow> = async () => [] as unknown as JsonApiCollection<TestRow>;
-    const records = useAdminRecordSet(
+    const records = useAdminWorkspace(
         [{ id: 'label' }, { id: 'active' }, { id: 'controls', sortable: false }] as const,
         reader
     );
@@ -23,12 +23,12 @@
     // @ts-expect-error Rows keep the resource shape; nothing is renamed.
     records.rows[0].type;
 
-    useAdminRecordSet(
+    useAdminWorkspace(
         // @ts-expect-error A data column id must be a row key.
         [{ id: 'lable' }] as const,
         reader
     );
-    useAdminRecordSet(
+    useAdminWorkspace(
         // @ts-expect-error A display-only column must explicitly disable sorting.
         [{ id: 'controls' }] as const,
         reader

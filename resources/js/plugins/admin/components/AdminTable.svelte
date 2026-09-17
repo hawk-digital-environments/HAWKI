@@ -15,7 +15,7 @@
     import { adminActionIcons } from '../actionIcons.js';
     import { rowName } from '../form.js';
     import type { AdminField, AdminRow } from '../schemas/admin-content.js';
-    import type { AdminColumn, AdminRecordSet } from '../recordSet.svelte.js';
+    import type { AdminColumn, AdminWorkspace } from '../workspace.svelte.js';
     import AdminActionMenu, { type AdminMenuItem } from './AdminActionMenu.svelte';
 
     let {
@@ -25,7 +25,7 @@
         rowMenuItems,
         editSystemRows = false
     }: {
-        recordSet: AdminRecordSet<Row, ColumnId, Results>;
+        recordSet: AdminWorkspace<Row, ColumnId, Results>;
         caption: string;
         /** Replaces the cells of the given column ids with a snippet. */
         cells?: { [Id in ColumnId]?: Snippet<[Row]> };

@@ -12,7 +12,7 @@
     import type { AdminMenuItem } from '../components/AdminActionMenu.svelte';
     import { adminActionIcons } from '../actionIcons.js';
     import type { AdminUsageResource } from '../schemas/resources/admin-usage.schema.js';
-    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     const app = useApp();
     const { __ } = useTranslator();
     const uid = $props.id();
@@ -32,7 +32,7 @@
     let group = $state(initial.group_by);
     let applied = $state(initial);
     // The statistics are filtered by the form above the table, not by the table state.
-    const records = useAdminRecordSet(columns, (signal) =>
+    const records = useAdminWorkspace(columns, (signal) =>
         app.restApi.getResourceCollection('admin-usage', { query: { filter: applied }, signal })
     );
     const menuItems = $derived<AdminMenuItem[]>([

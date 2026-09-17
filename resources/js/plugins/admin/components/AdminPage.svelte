@@ -6,11 +6,11 @@
 -->
 <script module lang="ts">
     import type { EditorSection } from '../forms/schemas.js';
-    import type { AdminRecordSet } from '../recordSet.svelte.js';
+    import type { AdminWorkspace } from '../workspace.svelte.js';
 
     export interface RelatedRecordSet {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        recordSet: AdminRecordSet<any, any, any>;
+        recordSet: AdminWorkspace<any, any, any>;
         editor: EditorSection;
         /** Editor dialog title prefix, e.g. "Tools". */
         title: string;
@@ -34,7 +34,7 @@
     import { adminActionIcons } from '../actionIcons.js';
     import type { WorkspaceId } from '../workspaces.js';
     import type { AdminRow } from '../schemas/admin-content.js';
-    import type { AdminAction } from '../recordSet.svelte.js';
+    import type { AdminAction } from '../workspace.svelte.js';
 
     let {
         recordSet,
@@ -45,7 +45,7 @@
         related = [],
         children
     }: {
-        recordSet: AdminRecordSet<Row, ColumnId, Results>;
+        recordSet: AdminWorkspace<Row, ColumnId, Results>;
         /** Page identity for labels, access checks and editor controls. */
         workspace: WorkspaceId | (string & {});
         /** Workspace actions offered in the page menu after "reload"; run through `recordSet.action(item, trigger)`. */
