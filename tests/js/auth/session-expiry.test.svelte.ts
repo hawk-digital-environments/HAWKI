@@ -223,7 +223,7 @@ test('permission refresh never enters the connectionChanged authentication handl
     client.init(app, {onPreparationStage: () => {}} as any);
     let refreshed = 0;
     const handle = (client as any).connectionHandle;
-    handle.restApi.getResource = async () => ({...authenticated, userinfo: {...authenticated.userinfo, permissions: []}});
+    handle.restApi.getResource = async () => ({...authenticated, userinfo: {...authenticated.userinfo, isAdmin: false}});
     handle.events.async.triggerVoid = async (name: string, payload: unknown) => {
         if (name === 'connectionRefreshed') refreshed++;
         await handlers.get(name)?.(payload);

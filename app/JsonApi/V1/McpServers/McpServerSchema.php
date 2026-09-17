@@ -32,24 +32,24 @@ class McpServerSchema extends Schema
         return [
             ID::make(),
             Str::make('type')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(fn($request) => UserCondition::isNonAdmin($request)),
             Str::make('url')
                 // @todo is this needed for creation of assistants?
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(fn($request) => UserCondition::isNonAdmin($request)),
             Str::make('server_label'),
             Str::make('status')->readOnly(),
             Str::make('version')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(fn($request) => UserCondition::isNonAdmin($request)),
             Str::make('protocol_version')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(fn($request) => UserCondition::isNonAdmin($request)),
             Str::make('description'),
             Str::make('require_approval'),
             ArrayHash::make('timeouts')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage'))
+                ->hidden(fn($request) => UserCondition::isNonAdmin($request))
                 ->serializeUsing(fn(McpServerTimeouts $timeouts) => $timeouts->toArray()),
             Str::make('api_key')->hidden(),
             Boolean::make('added_by_file')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage'))
+                ->hidden(fn($request) => UserCondition::isNonAdmin($request))
                 ->readOnly(),
             ArrayHash::make('additional_config')->hidden(),
             DateTime::make('created_at')->readOnly(),

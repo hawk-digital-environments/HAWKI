@@ -506,7 +506,7 @@ export function createComposerContext(
         }
     );
     const attachment = new AttachmentSlice(app.config);
-    const tool = new ToolSlice(modelContext, aiToolStore, () => toastContext.info(app.translator.__('chat.tools.accessChanged')));
+    const tool = new ToolSlice(modelContext, aiToolStore);
     const guard = new GuardSlice((): ComposerContext => context);
     const modelUsage = new ModelUsageSlice(
         aiModelStore,
@@ -532,7 +532,7 @@ export function createComposerContext(
         }
     };
 
-    const sender = new MessageSender(options.transport ?? new OldUiBridgeTransport(oldUiBridge, app), app.localization.translator);
+    const sender = new MessageSender(options.transport ?? new OldUiBridgeTransport(oldUiBridge), app.localization.translator);
 
     const context = new ComposerContext(
         type,
@@ -550,11 +550,6 @@ export function createComposerContext(
         options.onImproveMessage ?? ((message, systemPrompt) => oldUiBridge.triggerImproveMessage(message, systemPrompt)),
         (message) => aiHandleStore.getHandlesIn(message)
     );
-
-    $effect(() => {
-        if (aiModelStore.authorizationState !== 'ready') return;
-        if (!aiModelStore.getOneById(modelContext.current.model_id)) modelContext.set(null);
-    });
 
     const unbinders = options.useLegacyBridge === false ? [] : [
         oldUiBridge.onClearActiveConversation(() => {

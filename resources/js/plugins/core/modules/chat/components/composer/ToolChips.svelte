@@ -24,7 +24,6 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
-    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
 
     const {__} = useTranslator();
 
@@ -154,9 +153,7 @@
 </script>
 
 {#snippet chip(tool: typeof tools[number], index: number, measuring = false)}
-    {@const availability = toolAvailabilityFor(tool, composerContext.model.current)}
-    {@const incompatible = availability !== 'available'}
-    {@const availabilityLabel = availability === 'offline' ? __('chat.composer.statusDot.tool.offlineLabel') : availability === 'model-incompatible' ? __('chat.composer.statusDot.tool.notSupportedLabel', {model: composerContext.model.current?.label ?? ''}) : ''}
+    {@const incompatible = !tool.isAvailableFor(composerContext.model.current)}
     <button
         class="tool-chip"
         class:incompatible
@@ -164,13 +161,12 @@
         tabindex={measuring ? -1 : 0}
         aria-hidden={measuring}
         data-tool-chip={measuring ? undefined : ''}
-        data-capability={tool.capability_key ?? undefined}
         onclick={() => onChipClick(tool)}
         onkeydown={(event) => onChipKeydown(event, tool, index)}
-        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName}) + (availabilityLabel ? `, ${availabilityLabel}` : '')}
+        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName})}
     >
         <ToolIcon tool={tool} size={12}/>
-        <span class="tool-chip-label">{tool.displayName}{availabilityLabel ? ` (${availabilityLabel})` : ''}</span>
+        <span class="tool-chip-label">{tool.displayName}</span>
         <Cancel01Icon size={12}/>
     </button>
 {/snippet}
@@ -256,15 +252,6 @@
     .tool-chip:hover {
         background-color: var(--color-hover);
         color: var(--color-text);
-    }
-
-    .tool-chip[data-capability] {
-        background-color: var(--capability-surface);
-        color: var(--capability-color);
-    }
-
-    .tool-chip[data-capability]:hover {
-        background-color: var(--capability-surface-hover);
     }
 
     .tool-chip.incompatible {

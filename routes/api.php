@@ -124,12 +124,6 @@ JsonApiRoute::server('v1')
                     $actions->withId()->get('actions/tokens', 'tokens');
                 });
 
-            $server->resource('admin-roles', Admin\RoleController::class)
-                ->only('index', 'store', 'update', 'destroy');
-
-            $server->resource('admin-mappings', Admin\RoleMappingController::class)
-                ->only('index', 'store', 'update', 'destroy');
-
             $server->resource('admin-settings', Admin\SettingController::class)
                 ->only('index', 'update', 'destroy');
 

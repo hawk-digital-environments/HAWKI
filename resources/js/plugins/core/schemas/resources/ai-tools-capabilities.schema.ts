@@ -29,9 +29,7 @@ const AiToolCapabilitiesSchema = z.object({
     title_label: z.string(),
     description_label: z.string().nullable(),
     /** Path/URL to the icon representing this capability in the UI. */
-    icon_path: z.string(),
-    /** Explicit native authorization; older servers deny native selection by default. */
-    native_model_ids: z.array(z.string()).default([])
+    icon_path: z.string()
 }).strict();
 
 export default AiToolCapabilitiesSchema;

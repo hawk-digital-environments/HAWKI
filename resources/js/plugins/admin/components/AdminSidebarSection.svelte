@@ -18,7 +18,7 @@
     const router = useRouter();
     const sidebar = useSidebar();
     const { __ } = useTranslator();
-    const visible = $derived(section.workspaces.filter((workspace) => app.can(workspace.permission)));
+    const visible = $derived(section.workspaces.filter((workspace) => app.isAdmin));
     const activeWorkspace = $derived(visible.find((workspace) => router.isRouteActive(workspace.routeName))?.name);
     const collapsed = $derived(!sidebar.navOpen);
     let expanded = $state(false);

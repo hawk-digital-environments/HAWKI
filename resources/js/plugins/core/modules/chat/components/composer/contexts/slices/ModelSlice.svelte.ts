@@ -33,7 +33,7 @@ export class ModelSlice implements CheckpointingInterface<ModelSliceCheckpoint> 
         private onUpdateCurrentModel: (model: AiModel) => void,
         initialModel: AiModel | null = null
     ) {
-        this._current = $state(initialModel ?? modelStore.getSystemModelByType('default') ?? modelStore.models[0]);
+        this._current = $state(initialModel ?? modelStore.getSystemModelByType('default')!);
     }
 
     private _current: AiModel;
@@ -50,7 +50,7 @@ export class ModelSlice implements CheckpointingInterface<ModelSliceCheckpoint> 
 
     /** The currently selected AI model. */
     public get current(): AiModel {
-        return this.modelStore.getOneById(this._current) ?? this._current;
+        return this._current;
     }
 
     /**

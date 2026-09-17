@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Agents\Implementations;
-
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
@@ -98,8 +96,7 @@ abstract class AbstractAgentFactory implements AgentFactoryInterface
             provider: $providerProxy,
             model: $model,
             modelParameters: $parameters,
-            usageType: $usageType,
-            actorId: auth()->id()
+            usageType: $usageType
         );
     }
 }

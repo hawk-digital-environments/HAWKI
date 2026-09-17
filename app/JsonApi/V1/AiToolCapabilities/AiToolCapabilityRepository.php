@@ -19,8 +19,7 @@ class AiToolCapabilityRepository extends AbstractRepository implements QueriesAl
      */
     public function find(string $resourceId): ?object
     {
-        return app(\App\Services\Ai\Tools\ToolAuthorization::class)->canDiscoverCapability($resourceId, auth()->user())
-            ? $this->registry->getDefinition($resourceId) : null;
+        return $this->registry->getDefinition($resourceId);
     }
 
     /**
@@ -30,7 +29,7 @@ class AiToolCapabilityRepository extends AbstractRepository implements QueriesAl
     {
         return GenericQueryAll::make(
             collect($this->registry->getIterator())
-                ->map(fn($_, string $key) => $this->find($key))->filter()
+                ->map(fn($_, string $key) => $this->registry->getDefinition($key))
         );
     }
 }

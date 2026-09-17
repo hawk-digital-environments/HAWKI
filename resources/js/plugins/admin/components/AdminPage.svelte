@@ -67,14 +67,14 @@
     if (!entry) throw new Error(`Unknown admin workspace "${workspace}"`);
     const title = $derived(__(entry.title));
     const all = $derived([recordSet, ...related.map((item) => item.recordSet)]);
-    /** Checked reactively so revoked permissions hide the Workspace content. */
-    const allowed = $derived(app.can('admin.access') && app.can(entry.permission));
+    /** Checked reactively so revoked admin access hides the Workspace content. */
+    const allowed = $derived(app.isAdmin);
     let toolbar = $state<HTMLDivElement>();
     let forbidden = $state<HTMLParagraphElement>();
-    const permissionSignature = () => JSON.stringify(
-        app.connection.type === 'internal_authenticated' ? [...app.connection.userinfo.permissions].sort() : []
+    const accessSignature = () => JSON.stringify(
+        app.isAdmin
     );
-    let previousPermissions = untrack(permissionSignature);
+    let previousAccess = untrack(accessSignature);
     function invalidate() {
         const hadDialog = all.some((item) => item.dialogOpen);
         for (const item of all) item.invalidate();
@@ -86,13 +86,13 @@
     onMount(() => {
         const disposers = [
             app.events.async.on('connectionRefreshed', async () => {
-                const current = permissionSignature();
-                const authorizationChanged = !allowed || current !== previousPermissions;
+                const current = accessSignature();
+                const authorizationChanged = !allowed || current !== previousAccess;
                 if (authorizationChanged) {
                     invalidate();
                     if (allowed) for (const item of all) item.notice = __('admin.authorization_changed');
                 }
-                previousPermissions = current;
+                previousAccess = current;
                 const closed =
                     allowed &&
                     (await Promise.all(

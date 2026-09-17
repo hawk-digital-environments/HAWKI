@@ -57,27 +57,27 @@ test('public-key hash changes do not change account identity', async () => {
     assert.deepEqual(events, ['connected', 'connectionRefreshStarted', 'connectionRefreshed']);
 });
 
-test('permission-only refresh preserves connection identity and awaits one coalesced notification', async () => {
+test('admin access refresh preserves connection identity and awaits one coalesced notification', async () => {
     const events: string[] = [];
     let calls = 0;
-    let permissions = ['admin.access'];
+    let isAdmin = true;
     let release!: () => void;
     const listener = new Promise<void>(resolve => {release = resolve;});
-    const api: any = {getResource: async () => {calls++; return {...connection(), userinfo: {id: 1, hash: 'same', permissions: [...permissions]}};}};
+    const api: any = {getResource: async () => {calls++; return {...connection(), userinfo: {id: 1, hash: 'same', isAdmin}};}};
     const eventBus: any = {async: {triggerVoid: async (name: string) => {
         events.push(name);
         if (name === 'connectionRefreshed') await listener;
     }}};
     const handle = new ConnectionHandle(api, eventBus);
     const previous = await handle.refreshConnection();
-    permissions = [];
+    isAdmin = false;
     const first = handle.refreshConnection();
     const second = handle.refreshConnection();
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(handle.refreshing, true);
     assert.equal(calls, 2);
     assert.equal(handle.connection, previous);
-    assert.deepEqual((handle.connection as any).userinfo.permissions, []);
+    assert.equal((handle.connection as any).userinfo.isAdmin, false);
     release();
     await Promise.all([first, second]);
     assert.equal(handle.refreshing, false);

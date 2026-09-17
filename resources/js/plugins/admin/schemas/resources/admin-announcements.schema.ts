@@ -13,7 +13,6 @@ export const AdminAnnouncementSchema = z.object({
     accepted_count: z.number(),
     is_global: z.boolean(),
     is_forced: z.boolean(),
-    target_roles: z.array(z.number()).nullable(),
     anchor: z.string().nullable(),
     /** Localized Markdown, resolved from legacy announcement content when necessary. */
     content: jsonObject(z.string()),

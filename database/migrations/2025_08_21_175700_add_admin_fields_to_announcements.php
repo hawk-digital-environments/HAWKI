@@ -17,13 +17,12 @@ return new class extends Migration
     {
         Schema::table('announcements', function (Blueprint $table) {
             $table->json('content')->nullable();
-            $table->json('target_roles')->nullable();
             $table->boolean('is_published')->default(true);
         });
     }
 
     public function down(): void
     {
-        Schema::table('announcements', fn(Blueprint $table) => $table->dropColumn(['content', 'target_roles', 'is_published']));
+        Schema::table('announcements', fn(Blueprint $table) => $table->dropColumn(['content', 'is_published']));
     }
 };

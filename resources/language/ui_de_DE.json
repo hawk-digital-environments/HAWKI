@@ -313,7 +313,6 @@
         },
         "form": {
             "replace_secret": "Lass diese Felder leer, um die gespeicherte Konfiguration beizubehalten. Eingegebene Werte ersetzen die gesamte gespeicherte Konfiguration.",
-            "allowed_roles_hint": "Leer lassen, damit alle Nutzer das Modell verwenden können. Andernfalls sehen und nutzen nur Nutzer mit mindestens einer der gewählten Rollen dieses Modell.",
             "unique_key": "Gib einen eindeutigen Eigenschaftsnamen ein.",
             "suggestions_empty": "Keine passenden Vorschläge",
             "suggestions_more": ":count weitere Vorschläge. Weiter eingeben, um die Liste einzugrenzen.",
@@ -438,10 +437,10 @@
         "page_actions": "Aktionen für :name",
         "title": "Administration",
         "overview": "Übersicht",
-        "intro": "Verwalten Sie KI-Dienste, Zugriffsrechte und Einstellungen Ihrer HAWKI-Installation.",
-        "no_sections": "Ihre Rolle erlaubt den Panelzugriff. Für die Verwaltungsbereiche sind weitere Berechtigungen nötig.",
+        "intro": "Verwalten Sie KI-Dienste, Konten und Einstellungen Ihrer HAWKI-Installation.",
+        "no_sections": "Es sind keine Verwaltungsbereiche verfügbar.",
         "forbidden_title": "Zugriff verweigert",
-        "forbidden": "Ihre Rolle erlaubt keinen Zugriff auf diesen Bereich.",
+        "forbidden": "Für diesen Bereich ist ein Administratorkonto erforderlich.",
         "create": "Erstellen",
         "edit": "Bearbeiten",
         "edit_named": ":name bearbeiten",
@@ -473,8 +472,6 @@
         "local_password_replace": "Leer lassen, um das Anmeldepasswort beizubehalten. Ein neues Passwort muss mindestens 12 Zeichen lang sein.",
         "secret_set": "Hinterlegt",
         "secret_unset": "Nicht hinterlegt",
-        "mapped_roles_hint": "Rollen aus dem Beschäftigungstyp: :roles. Ändern Sie die Zuordnung, um diese Rollen anzupassen.",
-        "manual_roles_hint": "Legen Sie fest, welche Rollen dieses Konto erhalten soll.",
         "directory_identity_hint": "Wird vom Identitätsanbieter (LDAP, OIDC oder Shibboleth) verwaltet und ist hier schreibgeschützt.",
         "discard_title": "Änderungen verwerfen?",
         "discard_description": "Ihre ungespeicherten Änderungen gehen verloren.",
@@ -576,7 +573,6 @@
         "view_models": "Modelle anzeigen",
         "view_tools": "Werkzeuge anzeigen",
         "tools": "Werkzeuge",
-        "allowed_roles_everyone": "Alle Nutzer",
         "tools_of": "Werkzeuge von :server",
         "show_all_tools": "Alle Werkzeuge anzeigen",
         "discovery_search": "Modelle durchsuchen",
@@ -610,8 +606,6 @@
             "system-models": "Systemmodelle",
             "mcp": "MCP-Server und Werkzeuge",
             "users": "Benutzer",
-            "roles": "Rollen und Berechtigungen",
-            "mappings": "Zuordnung nach Beschäftigungstyp",
             "announcements": "Ankündigungen",
             "usage": "Nutzung und Statistik",
             "health": "Systemzustand",
@@ -623,9 +617,7 @@
             "models": "Aktivieren Sie Modelle und bearbeiten Sie Beschreibungen, Fähigkeiten, Parameter, Limits und Werkzeugzuordnungen.",
             "system-models": "Wählen Sie Modelle für neue Chats, Titel, Zusammenfassungen und Promptverbesserungen und bearbeiten Sie die zugehörigen Systemprompts.",
             "mcp": "Konfigurieren Sie Serververbindungen, prüfen Sie die Verfügbarkeit und ermitteln Sie Werkzeuge. Wählen Sie einen Server, um seine Werkzeuge zu sehen; in HAWKI integrierte Werkzeuge werden ebenfalls aufgeführt. Verwalten Sie Aktivierung, Fähigkeiten und Modellzuordnungen je Werkzeug.",
-            "users": "Legen Sie lokale Konten an, suchen Sie Benutzer, verwalten Sie den Zugriff und weisen Sie Rollen manuell zu.",
-            "roles": "Legen Sie fest, welche Bereiche jede Rolle ansehen und verwalten darf.",
-            "mappings": "Ordnen Sie jedem exakten Beschäftigungstyp eine Rolle zu. Änderungen gelten auch für bestehende Konten.",
+            "users": "Legen Sie lokale Konten an, suchen Sie Benutzer und verwalten Sie den Kontozugriff.",
             "announcements": "Verfassen, planen und veröffentlichen Sie Ankündigungen für alle oder ausgewählte Zielgruppen.",
             "usage": "Untersuchen Sie Anfragen und Tokenverbrauch im Zeitverlauf.",
             "health": "Prüfen Sie Infrastruktur, KI-Verfügbarkeit, Warteschlangen und Zeitplanung. Aktualisiert sich alle 30 Sekunden.",
@@ -660,7 +652,6 @@
             "pricing": "Preise",
             "flags": "Kennzeichnungen",
             "tools": "Werkzeuge",
-            "allowed_roles": "Erlaubte Rollen",
             "usage_rules": "Nutzungskontexte",
             "server_label": "Servername",
             "mcp_server_id": "MCP-Server",
@@ -681,7 +672,6 @@
             "is_published": "Veröffentlicht",
             "is_global": "Alle",
             "is_forced": "Bestätigung erforderlich",
-            "target_roles": "Zielrollen",
             "starts_at": "Beginn",
             "expires_at": "Ende",
             "anchor": "Anker",
@@ -693,14 +683,10 @@
             "password": "Anmeldepasswort",
             "password_confirmation": "Anmeldepasswort wiederholen",
             "employeetype": "Beschäftigungstyp",
-            "employee_type": "Beschäftigungstyp",
             "admin_disabled": "Konto deaktiviert",
             "last_login_at": "Letzte Anmeldung",
-            "roles": "Manuelle Rollen",
             "slug": "Rollenkennung",
             "is_system": "Integrierte Rolle",
-            "permissions": "Berechtigungen",
-            "role_id": "Rolle",
             "key": "Einstellung",
             "value": "Wert",
             "default": "Umgebungsstandard",
@@ -717,8 +703,7 @@
             "debug": "Debugmodus",
             "config_cached": "Konfiguration zwischengespeichert",
             "icon": "Provider-Icon",
-            "access_rule": "Benutzerzugriff",
-            "mapped_roles": "Abgeleitete Rollen"
+            "target_users": "Zielbenutzer"
         },
         "tool_sources": {
             "builtin": "Integriert (HAWKI)"
@@ -726,15 +711,10 @@
         "errors": {
             "translate_model": "Für Übersetzungen ist kein KI-Modell verfügbar. Weise ein Systemmodell vom Typ „translation“ zu.",
             "translate_failed": "Die Übersetzung ist fehlgeschlagen. Versuche es erneut.",
-            "system_role": "Die Kennung integrierter Rollen kann nicht geändert werden.",
             "self_disable": "Sie können Ihr eigenes Konto nicht deaktivieren.",
-            "role_in_use": "Entfernen Sie zuerst die Zuordnungen. Integrierte Rollen können nicht gelöscht werden.",
-            "last_admin": "Mindestens ein aktiver Administrator mit Berechtigung zur Rollenverwaltung muss erhalten bleiben.",
-            "permission_escalation": "Sie können nur Berechtigungen zuweisen oder ändern, die Sie selbst besitzen.",
             "immutable": "Diese Kennung kann nicht geändert werden.",
             "adapter": "Wählen Sie einen installierten Anbieteradapter.",
             "model_in_use": "Dieses Modell ist einer Systemaufgabe zugeordnet. Ändern Sie zuerst diese Zuordnung.",
-            "model_restricted": "Ein Modell, das einer Systemaufgabe zugeordnet ist, muss für alle Nutzer verfügbar bleiben. Entfernen Sie zuerst die Rollenbeschränkung oder ändern Sie die Zuordnung.",
             "invalid_value": "Geben Sie einen gültigen Wert ein.",
             "provider_in_use": "Entfernen Sie zuerst die Modelle dieses Anbieters oder ordnen Sie sie neu zu.",
             "published_policy": "Veröffentlichte Nutzungsbedingungen müssen für den Zustimmungsverlauf erhalten bleiben.",
@@ -750,139 +730,6 @@
             "save": "Änderungen konnten nicht gespeichert werden. Versuchen Sie es erneut.",
             "external_identity": "Profildaten externer Konten werden von LDAP oder OIDC verwaltet.",
             "load": "Dieser Bereich konnte nicht geladen werden. Aktualisieren Sie die Ansicht."
-        },
-        "permissions": {
-            "admin_access": "Administration öffnen",
-            "users_view": "Benutzer ansehen",
-            "users_manage": "Lokale Benutzer, Zugriff und Token verwalten",
-            "roles_manage": "Rollen und Zuordnungen verwalten",
-            "models_manage": "Modelle und Systemprompts verwalten",
-            "providers_manage": "Anbieter und Zugangsdaten verwalten",
-            "mcp_manage": "MCP-Server und Werkzeuge verwalten",
-            "announcements_manage": "Ankündigungen verwalten",
-            "usage_view": "Nutzungsstatistiken ansehen",
-            "usage_view-per-user": "Personenbezogene Nutzung ansehen",
-            "health_view": "Systemzustand ansehen",
-            "health_manage": "Systemprüfungen und fehlgeschlagene Aufgaben verwalten",
-            "settings_view": "Umgebung ansehen",
-            "settings_manage": "Systemeinstellungen verwalten",
-            "external-apps_manage": "Externe Apps verwalten",
-            "admin": {
-                "access": {
-                    "title": "Administration öffnen",
-                    "description": "Administration öffnen. Jeder Bereich benötigt zusätzlich seine eigene Berechtigung."
-                }
-            },
-            "users": {
-                "view": {
-                    "title": "Benutzer ansehen",
-                    "description": "Benutzerkonten und Rollenzuweisungen ansehen."
-                },
-                "manage": {
-                    "title": "Lokale Benutzer, Zugriff und Token verwalten",
-                    "description": "Lokale Konten erstellen sowie Kontozugriff und Tokens verwalten."
-                }
-            },
-            "roles": {
-                "manage": {
-                    "title": "Rollen und Zuordnungen verwalten",
-                    "description": "Rollen, manuelle Zuweisungen und Beschäftigungstyp-Zuordnungen im Rahmen Ihrer Berechtigungen verwalten."
-                }
-            },
-            "models": {
-                "manage": {
-                    "title": "Modelle und Systemprompts verwalten",
-                    "description": "Modelle, Modellzuweisungen und Systemprompts konfigurieren."
-                }
-            },
-            "providers": {
-                "manage": {
-                    "title": "Anbieter und Zugangsdaten verwalten",
-                    "description": "KI-Anbieter und deren Zugangsdaten konfigurieren."
-                }
-            },
-            "mcp": {
-                "manage": {
-                    "title": "MCP-Server und Werkzeuge verwalten",
-                    "description": "MCP-Server und Werkzeuge konfigurieren. Änderungen an Zugriffsregeln benötigen zusätzlich die Rollenverwaltung."
-                }
-            },
-            "announcements": {
-                "manage": {
-                    "title": "Ankündigungen verwalten",
-                    "description": "Ankündigungen erstellen und bearbeiten."
-                }
-            },
-            "usage": {
-                "view": {
-                    "title": "Nutzungsstatistiken ansehen",
-                    "description": "Zusammengefasste Nutzung und Statistiken ansehen."
-                },
-                "view-per-user": {
-                    "title": "Personenbezogene Nutzung ansehen",
-                    "description": "Die Nutzung einzelner Personen ansehen."
-                }
-            },
-            "health": {
-                "view": {
-                    "title": "Systemzustand ansehen",
-                    "description": "Dienstzustand und Auftragsstatus ansehen."
-                },
-                "manage": {
-                    "title": "Systemprüfungen und fehlgeschlagene Aufgaben verwalten",
-                    "description": "Zustandsprüfungen ausführen und fehlgeschlagene Aufträge verwalten."
-                }
-            },
-            "settings": {
-                "view": {
-                    "title": "Umgebung ansehen",
-                    "description": "Bereitstellungs- und Umgebungseinstellungen ansehen."
-                },
-                "manage": {
-                    "title": "Systemeinstellungen verwalten",
-                    "description": "Anwendungseinstellungen ändern."
-                }
-            },
-            "external-apps": {
-                "manage": {
-                    "title": "Externe Apps verwalten",
-                    "description": "Verbindungen externer Anwendungen verwalten."
-                }
-            },
-            "tools": {
-                "use": {
-                    "title": "Werkzeuge nutzen",
-                    "description": "Werkzeuge zusammen mit der jeweiligen Funktionsberechtigung nutzen."
-                },
-                "internal_search": {
-                    "use": {
-                        "title": "Interne Suche nutzen",
-                        "description": "Interne Inhalte über freigegebene Werkzeuge durchsuchen; Inhaltsberechtigungen gelten weiterhin."
-                    }
-                }
-            },
-            "ai": {
-                "capabilities": {
-                    "web_search": {
-                        "use": {
-                            "title": "Websuche nutzen",
-                            "description": "Das Web über ein freigegebenes Werkzeug oder ein unterstütztes Modell durchsuchen."
-                        }
-                    },
-                    "web_fetch": {
-                        "use": {
-                            "title": "Webseiten abrufen",
-                            "description": "Den Inhalt einer Webadresse über ein freigegebenes Werkzeug oder ein unterstütztes Modell abrufen."
-                        }
-                    },
-                    "image_generation": {
-                        "use": {
-                            "title": "Bilder erzeugen",
-                            "description": "Bilder über ein freigegebenes Werkzeug oder ein unterstütztes Modell erzeugen."
-                        }
-                    }
-                }
-            }
         },
         "actions": {
             "test": "Verbindung testen",
@@ -958,49 +805,7 @@
             "upload_failed": "Das SVG konnte nicht übernommen werden. Verwende ein statisches SVG bis 256 KB und versuche es erneut.",
             "choose_again": "Dieses Icon ist nicht mehr verfügbar. Öffne die Auswahl erneut."
         },
-        "permission_selector_hint": "Wählen Sie die Berechtigungen dieser Rolle. Berechtigungen, die Sie nicht vergeben dürfen, bleiben unverändert.",
-        "permission_search": "Berechtigungen suchen",
-        "permission_count": ":count Berechtigungen angezeigt",
-        "permission_groups": {
-            "administration": "Administration",
-            "tools": "Werkzeugnutzung"
-        },
-        "permission_unknown": "Diese gespeicherte Berechtigung ist nicht mehr im verfügbaren Katalog enthalten.",
-        "permission_preserved": "Bereits zugewiesen · Sie dürfen diese Berechtigung nicht ändern.",
-        "permission_not_grantable": "Sie dürfen diese Berechtigung nicht vergeben.",
-        "access_rule_hint": "Diese Regel legt fest, wer das Werkzeug nutzen darf. Das Werkzeug muss außerdem aktiviert und dem gewählten Modell zugewiesen sein.",
-        "access_rule_locked": "Sie dürfen die aktuelle Zugriffsregel dieses Werkzeugs nicht ändern.",
-        "role_unknown": "Rolle :id",
-        "role_source_manual": "Manuell zugewiesen",
-        "role_source_mapped": "Beschäftigungstyp · schreibgeschützt",
-        "mapping_impact": "Personen mit diesem Beschäftigungstyp erhalten die ausgewählte Rolle automatisch. Beim Speichern werden ihre abgeleiteten Zuweisungen aktualisiert. Manuelle Rollenzuweisungen bleiben bestehen.",
         "authorization_changed": "Ihre Zugriffsrechte wurden geändert. Öffnen Sie den Editor erneut, um die aktuellen Berechtigungen zu prüfen.",
-        "tool_access_rules": {
-            "unavailable": {
-                "title": "Für Benutzer nicht verfügbar",
-                "description": "Niemand darf dieses Werkzeug nutzen."
-            },
-            "web_search": {
-                "title": "Personen mit Websuchzugriff",
-                "description": "Erfordert Berechtigungen für Werkzeugnutzung und Websuche."
-            },
-            "web_fetch": {
-                "title": "Personen mit Zugriff auf Webseitenabruf",
-                "description": "Erfordert Berechtigungen für Werkzeugnutzung und Webseitenabruf."
-            },
-            "image_generation": {
-                "title": "Personen mit Zugriff auf Bilderzeugung",
-                "description": "Erfordert Berechtigungen für Werkzeugnutzung und Bilderzeugung."
-            },
-            "internal_search": {
-                "title": "Personen mit internem Suchzugriff",
-                "description": "Erfordert Berechtigungen für Werkzeugnutzung und interne Suche."
-            }
-        },
-        "role_labels": {
-            "admin": "Administrator",
-            "user": "Benutzer"
-        },
         "editor_refreshed": "Dieser Datensatz oder seine verfügbaren Einstellungen wurden geändert. Öffnen Sie den Editor erneut, um die aktuellen Werte zu prüfen.",
         "editor_unverified": "Der Editor wurde geschlossen, weil die aktuellen Daten nicht geladen werden konnten. Laden Sie diesen Bereich vor dem Bearbeiten erneut."
     },

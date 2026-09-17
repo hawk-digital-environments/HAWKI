@@ -5,10 +5,8 @@
     import AdminResultDialog from '../components/AdminResultDialog.svelte';
     import AdminSearch from '../components/AdminSearch.svelte';
     import AdminTable from '../components/AdminTable.svelte';
-    import Badge from '$lib/components/ui/badge/Badge.svelte';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
-    import { roleLabel } from '../forms/authorization.js';
     import type { AdminField } from '../schemas/admin-content.js';
     import { type AdminUserResource, directoryManagedFields } from '../schemas/resources/admin-users.schema.js';
     import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
@@ -20,8 +18,6 @@
         { id: 'username' },
         { id: 'email' },
         { id: 'employeetype' },
-        { id: 'roles', sortable: false },
-        { id: 'mapped_roles', sortable: false },
         { id: 'admin_disabled', format: 'boolean' },
         { id: 'last_login_at' }
     ];
@@ -43,7 +39,7 @@
         {
             rowActions: (row) => ({
                 'tokens':
-                    app.can('users.manage') ?
+                    app.isAdmin ?
                         {
                             dialog: true,
                             run: () =>
@@ -55,7 +51,7 @@
                         }
                     :   undefined,
                 'revoke-tokens':
-                    app.can('users.manage') ?
+                    app.isAdmin ?
                         {
                             confirm: true,
                             destructive: true,
@@ -82,22 +78,6 @@
     );
 </script>
 
-{#snippet assignments(ids: number[])}
-    {#if ids.length}
-        <ul class="assignments">
-            {#each ids as id (id)}
-                <li>
-                    <Badge variant="secondary">
-                        {roleLabel(id, records.content?.role_catalog ?? [], records.fields, __)}
-                    </Badge>
-                </li>
-            {/each}
-        </ul>
-    {:else}—{/if}
-{/snippet}
-{#snippet manualRoles(row: AdminUserResource)}{@render assignments(row.roles)}{/snippet}
-{#snippet mappedRoles(row: AdminUserResource)}{@render assignments(row.mapped_roles)}{/snippet}
-
 <AdminPage
     workspace="users"
     recordSet={records}
@@ -105,7 +85,6 @@
     <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.users')}
-        cells={{ roles: manualRoles, mapped_roles: mappedRoles }}
         recordSet={records}
     />
     <AdminResultDialog
@@ -121,14 +100,3 @@
         {/snippet}
     </AdminResultDialog>
 </AdminPage>
-
-<style>
-    .assignments {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-1);
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-</style>

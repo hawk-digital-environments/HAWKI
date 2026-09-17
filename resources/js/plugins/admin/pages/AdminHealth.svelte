@@ -25,7 +25,7 @@
     );
     const failedJobs = $derived(records.content?.failed_jobs ?? []);
     const menuItems = $derived<AdminMenuItem[]>(
-        app.can('health.manage') && failedJobs.length ?
+        app.isAdmin && failedJobs.length ?
             [
                 {
                     label: __('admin.actions.flush-jobs'),
@@ -63,7 +63,7 @@
 <AdminPage
     workspace="health"
     recordSet={records}
-    pageActions={app.can('health.manage') ?
+    pageActions={app.isAdmin ?
         [
             {
                 id: 'check-ai-status',
@@ -97,7 +97,7 @@
             <h2>{__('admin.failed_jobs')}</h2>
             {#if failedJobs.length}<ul>
                     {#each failedJobs as job}<li>
-                            <span>{job.queue} · {job.failed_at}</span>{#if app.can('health.manage')}<AdminActionMenu
+                            <span>{job.queue} · {job.failed_at}</span>{#if app.isAdmin}<AdminActionMenu
                                     compact
                                     label={__('admin.row_actions', { name: job.queue + ' · ' + job.failed_at })}
                                     disabled={records.busy}

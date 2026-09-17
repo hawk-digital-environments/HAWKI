@@ -33,7 +33,6 @@ class AiTool extends Model
         'capability',
         'mapped_capability',
         'active',
-        'access_rule',
         // @todo 'added_by_file' is a temporary field until we get rid of the config files
         'added_by_file',
     ];
@@ -44,15 +43,6 @@ class AiTool extends Model
         'added_by_file' => 'boolean',
         'type' => ToolType::class,
     ];
-
-    protected static function booted(): void
-    {
-        static::addGlobalScope('tool_discovery', static function (\Illuminate\Database\Eloquent\Builder $query): void {
-            if (request()->is('api/hawki/v1/*') && !request()->is('api/hawki/v1/admin-*')) {
-                app(\App\Services\Ai\Tools\ToolAuthorization::class)->discoverable($query, auth()->user());
-            }
-        });
-    }
 
     protected static function registerScopes(ScopeRegistrar $registrar): void
     {

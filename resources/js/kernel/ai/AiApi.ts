@@ -25,12 +25,6 @@ export class AiApiError extends Error {
         super(message, options);
         this.name = 'AiApiError';
     }
-
-    public get code(): string | undefined {
-        if (this.cause instanceof ApiTransportError) return this.cause.code;
-        return this.responseBody && typeof this.responseBody === 'object' && 'code' in this.responseBody &&
-            typeof this.responseBody.code === 'string' ? this.responseBody.code : undefined;
-    }
 }
 
 /**
@@ -82,7 +76,7 @@ export class AiApi {
 
         for await (const packet of this.stream(request, options)) {
             if (packet.type === 'error') {
-                throw new AiApiError(aiPacketText(packet.content) || 'The AI request failed.', undefined, packet);
+                throw new AiApiError(aiPacketText(packet.content) || 'The AI request failed.');
             }
             if (packet.type === 'message') {
                 streamedText += aiPacketText(packet.content);
