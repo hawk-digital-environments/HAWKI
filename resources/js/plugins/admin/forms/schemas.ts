@@ -134,6 +134,7 @@ export const modelsSchema = z.object({
     pricing: pricingSchema,
     flags: tags,
     tools: ids,
+    allowed_roles: ids,
     usage_rules: z.array(z.enum(['main', 'external']))
 });
 export const mcpSchema = z.object({

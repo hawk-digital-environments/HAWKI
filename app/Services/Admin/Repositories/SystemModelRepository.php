@@ -126,6 +126,10 @@ class SystemModelRepository extends ConfigurationRepository
         $model = AiModel::withoutGlobalScopes()->where('model_id', $data['model_id'])->firstOrFail();
         $provider = AiProvider::withoutGlobalScopes()->findOrFail($model->provider_id);
 
+        if (DB::table('ai_model_roles')->where('ai_model_id', $model->id)->exists()) {
+            throw ValidationException::withMessages(['model_id' => __('admin.errors.model_restricted')]);
+        }
+
         if (!$model->active || !$provider->active || !DB::table('ai_model_usage_rules')->where('ai_model_id', $model->id)->where('usage_type', $data['usage_type'])->exists()) {
             throw ValidationException::withMessages(['model_id' => __('admin.errors.system_model')]);
         }

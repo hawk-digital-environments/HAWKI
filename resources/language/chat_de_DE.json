@@ -317,6 +317,9 @@
             "messageAccepted": "Deine Nachricht wurde gespeichert, aber die Antwort konnte nicht erstellt werden. Prüfe deine Auswahl, bevor du die Antwort neu erstellst.",
             "offline": "Ein ausgewähltes Werkzeug ist vorübergehend offline.",
             "offlineHelp": "Warte, bis es wieder online ist, oder entferne es, um deine Nachricht zu senden."
+        },
+        "models": {
+            "accessDenied": "Du hast keinen Zugriff mehr auf das gewählte Modell. Wähle ein anderes Modell."
         }
     }
 }
