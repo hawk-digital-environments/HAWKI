@@ -12,7 +12,7 @@
     import { useRouter } from '$lib/components/ui/routing/index.js';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import type { AdminProviderResource } from '../schemas/resources/admin-providers.schema.js';
-    import { type AdminColumn, useAdminRecordSet } from '../recordSet.svelte.js';
+    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
     import { QueuedActionSchema, ProviderDiscoverySchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
@@ -24,7 +24,7 @@
         { id: 'active', format: 'boolean' },
         { id: 'api_key_set', sortable: false }
     ];
-    const records = useAdminRecordSet(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-providers', { query, signal }),
         {

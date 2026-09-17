@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { RestApi } from '../../../../resources/js/kernel/api/RestApi.js';
     import AdminResultDialog from '../../../../resources/js/plugins/admin/components/AdminResultDialog.svelte';
-    import { useAdminRecordSet } from '../../../../resources/js/plugins/admin/recordSet.svelte.js';
+    import { useAdminWorkspace } from '../../../../resources/js/plugins/admin/workspace.svelte.js';
     import {
         McpDiscoverySchema,
         ProviderDiscoverySchema,
@@ -10,7 +10,7 @@
     } from '../../../../resources/js/plugins/admin/schemas/admin-actions.js';
 
     let { api, allowed = true }: { api: RestApi; allowed?: boolean } = $props();
-    const records = useAdminRecordSet(
+    const records = useAdminWorkspace(
         [{ id: 'name' }],
         (signal, query) => api.getResourceCollection('admin-providers', { signal, query }),
         {

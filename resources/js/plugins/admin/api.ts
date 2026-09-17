@@ -94,8 +94,8 @@ export interface RegisteredAdminWorkspace extends Omit<AdminWorkspaceDefinition,
 export { providesAdminWorkspaces } from './registry.js';
 
 // Building blocks for Workspace pages.
-export { useAdminRecordSet, AdminRecordSet } from './recordSet.svelte.js';
-export type { AdminColumn, AdminAction, AdminReader, AdminRecordSetOptions } from './recordSet.svelte.js';
+export { useAdminWorkspace, AdminWorkspace } from './workspace.svelte.js';
+export type { AdminColumn, AdminAction, AdminReader, AdminWorkspaceOptions } from './workspace.svelte.js';
 export type { AdminRow, AdminField } from './schemas/admin-content.js';
 export { default as AdminPage } from './components/AdminPage.svelte';
 export { default as AdminSearch } from './components/AdminSearch.svelte';
