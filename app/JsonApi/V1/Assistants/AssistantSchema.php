@@ -106,7 +106,7 @@ class AssistantSchema extends Schema
             WhereHas::make($this, 'assistant_category'),
             AssistantNameFilter::make(),
             AssistantFavoriteFilter::make(),
-            AssistantSharedWithMeFilter::make(),
+            AssistantSharedWithUserFilter::make(),
             WhereIn::make('release_stage')->delimiter(','),
             Where::make('handle')->singular(),
         ];

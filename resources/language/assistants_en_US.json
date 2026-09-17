@@ -99,7 +99,8 @@
             "empty_description": "No assistants match your current filters.",
             "loading": "Loading assistants…",
             "no_results": "No results were found",
-            "pagination_of": "of"
+            "pagination_of": "of",
+            "search": "Search"
         },
 
         "card": {

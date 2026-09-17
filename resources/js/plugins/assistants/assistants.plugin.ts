@@ -108,15 +108,6 @@ export default class AssistantsPlugin implements HawkiPlugin {
                     ctx.router.isRouteActive('assistants.dashboard.index')
             },
             {
-                id: 'dashboard.drafts',
-                level: 'dashboard',
-                group: 'my-assistants',
-                label: ctx.translate('assistants.sidebar.drafts'),
-                icon: FileEditIcon,
-                route: 'assistants.dashboard.drafts',
-                active: ctx.router.isRouteActive('assistants.dashboard.drafts')
-            },
-            {
                 id: 'dashboard.private',
                 level: 'dashboard',
                 group: 'my-assistants',
@@ -124,6 +115,15 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 icon: SquareLock02Icon,
                 route: 'assistants.dashboard.private',
                 active: ctx.router.isRouteActive('assistants.dashboard.private')
+            },
+            {
+                id: 'dashboard.drafts',
+                level: 'dashboard',
+                group: 'my-assistants',
+                label: ctx.translate('assistants.sidebar.drafts'),
+                icon: FileEditIcon,
+                route: 'assistants.dashboard.drafts',
+                active: ctx.router.isRouteActive('assistants.dashboard.drafts')
             },
             {
                 id: 'dashboard.favourites',

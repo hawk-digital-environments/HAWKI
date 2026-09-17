@@ -2,9 +2,10 @@
     "name": "@hawk-hhg/hawki-2",
     "private": true,
     "type": "module",
-    "scripts": {
-        "dev": "npm install && vite",
-        "build": "vite build",
+ "scripts": {
+ "dev": "npm install && vite",
+ "postinstall": "patch-package",
+ "build": "vite build",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
         "test": "npm run test:auth && npm run test:admin && npm run test:routing && npm run test:search && npm run test:tools",
         "test:auth": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/auth/*.test.ts tests/js/auth/*.test.svelte.ts",
@@ -42,6 +43,7 @@
         "markstream-svelte": "^0.0.3",
         "mermaid": "^11.16.0",
         "monaco-editor": "^0.55.0",
+        "patch-package": "^8.0.1",
         "pdfjs-dist": "^6.2.108",
         "postcss-custom-media": "^12.0.1",
         "prettier": "^3.9.6",
@@ -61,7 +63,7 @@
     },
     "dependencies": {
         "@formkit/auto-animate": "^0.10.0",
-        "smob": "^1.6.2",
-        "emoji-picker-element": "^1.29.1"
+        "emoji-picker-element": "^1.29.1",
+        "smob": "^1.6.2"
     }
 }

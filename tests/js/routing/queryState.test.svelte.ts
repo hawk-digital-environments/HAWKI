@@ -27,6 +27,11 @@ function fixture() {
 }
 
 async function settled(router: ReturnType<typeof fixture>['router']) {
+    // Yield once before polling: a `goTo()` starts its resolution in a later
+    // microtask (guards/`await` boundaries), while `state` still reads the
+    // previous publish's 'waiting' — without the yield the loop below can
+    // return before the new run has even begun.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     for (let i = 0; i < 50 && router.state === 'loading'; i++) {
         await new Promise((resolve) => setTimeout(resolve, 0));
     }

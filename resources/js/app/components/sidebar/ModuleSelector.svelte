@@ -35,7 +35,12 @@
 
     function selectModule(value: string) {
         const entry = entries.find(candidate => candidate.id === value);
-        entry?.onSelect({locale: app.localization.locale, translate, router});
+        entry?.onSelect({
+            locale: app.localization.locale,
+            translate,
+            router,
+            can: (permission: string) => app.can(permission)
+        });
     }
 
     const currentModuleItem = $derived(moduleItems.find(item => item.value === current));

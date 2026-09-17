@@ -18,42 +18,36 @@
     const list = useAssistantListContext();
 
     let {
-        searchQuery = $bindable(""),
-        activeFilters = $bindable(new Set<string>()),
+        searchQuery = "",
+        activeFilters = new Set<string>(),
+        onSearchChange,
+        onFilterChange,
         emptyTitle = __('assistants.browser.empty_title'),
         emptyDescription = __('assistants.browser.empty_description')
     } = $props<{
+        /** Current committed query — rendered by the search bar and mirrored to `?q=`. */
         searchQuery?: string;
+        /** Current category filter set — rendered by the category bar and mirrored to `?category=`. */
         activeFilters?: Set<string>;
+        /** Called with the query to search for (debounced typing, Enter, icon click). */
+        onSearchChange: (query: string) => void;
+        /** Called with the next filter set whenever a category is toggled or reset. */
+        onFilterChange: (filters: Set<string>) => void;
         emptyTitle?: string;
         emptyDescription?: string;
     }>();
 
     // --- URL sync -------------------------------------------------------
-    // Seed search/category from the query string on first load, so a shared,
-    // bookmarked, or reloaded link reproduces the same list — the same idea
-    // as a shopping site's filtered search URLs. This runs synchronously
-    // during component setup (not inside an `$effect`), so `searchQuery`/
-    // `activeFilters` already hold the right values by the time the owning
-    // page's own `$effect` turns them into `list.setFilter(...)` for the
-    // first time — no wasted "load everything, then reload filtered" request.
-    const initialParams = new URLSearchParams(window.location.search);
-    const initialQuery = initialParams.get('q');
-    if (initialQuery) searchQuery = initialQuery;
-    const initialCategory = initialParams.get('category');
-    if (initialCategory) activeFilters = new Set(initialCategory.split(','));
-    // The page number is intentionally not restored from the URL: `setFilter`
-    // always resets `list` back to page 1, and that reset is driven by the
-    // parent page's own `$effect` — racing a restore against it from here
-    // would depend on cross-component effect ordering this isn't worth
-    // depending on. The URL still reflects the current page once loaded
-    // (below), so paginated links are shareable going forward.
-
     // Keep the URL's query string in sync with the live search/category/page
-    // state. `replaceState`, not `pushState`: the search box has no debounce,
-    // so a `pushState` per keystroke would spam browser history. The router
-    // (`pathRoutingStrategy.svelte.ts`) only tracks `location.pathname`, so
-    // rewriting just the query string here never interferes with it.
+    // state, so filtered views are shareable/bookmarkable. The initial state
+    // itself is seeded from the URL by the owning page (see
+    // readBrowserUrlState) before the first request fires. `replaceState`,
+    // not `pushState`: the search box commits per debounced keystroke (plus
+    // Enter/icon-click), so a `pushState` per commit would spam browser
+    // history. The router (`pathRoutingStrategy.svelte.ts`) only tracks
+    // `location.pathname`, so rewriting just the query string here never
+    // interferes with it. The page number is not restored from the URL: the
+    // list always starts on page 1.
     $effect(() => {
         const params = new URLSearchParams();
         const trimmedQuery = searchQuery.trim();
@@ -69,8 +63,8 @@
     });
 </script>
 
-<Searchbar bind:value={searchQuery} loading={list.loading} loadingLabel={__('assistants.browser.loading')} />
-<CategoryBar bind:activeFilters />
+<Searchbar defaultValue={searchQuery} onChange={onSearchChange} loading={list.loading} loadingLabel={__('assistants.browser.loading')} />
+<CategoryBar {activeFilters} {onFilterChange} />
 
 <div class="wrapper">
     <div class="grid-responsive" use:autoAnimate>

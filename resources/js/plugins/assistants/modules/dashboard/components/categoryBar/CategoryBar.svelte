@@ -10,19 +10,22 @@
 
     let categories = $derived(assistantOptionsStore.categories);
     let {
-        activeFilters = $bindable(new Set<string>()),
+        activeFilters = new Set<string>(),
+        onFilterChange,
     } = $props<{
         activeFilters?: Set<string>;
+        /** Receives the next filter set whenever a category is toggled or reset. */
+        onFilterChange: (filters: Set<string>) => void;
     }>();
 
     function toggleFilter(category: string) {
         const next = new Set(activeFilters);
         next.has(category) ? next.delete(category) : next.add(category);
-        activeFilters = next;
+        onFilterChange(next);
     }
 
     function resetFilters() {
-        activeFilters = new Set();
+        onFilterChange(new Set());
     }
 </script>
 

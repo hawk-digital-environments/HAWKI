@@ -68,7 +68,7 @@ export type AssistantListFilter = {
     assistant_category?: string[];
     is_favorite?: boolean;
     release_stage?: string[];
-    shared_with_me?: boolean;
+    shared_with_user?: boolean;
 };
 
 /** Nested JSON:API filter values, e.g. `filter[assistant_category][text]=x`. */
@@ -210,8 +210,8 @@ export class AssistantListContext {
             out['release_stage'] = this.filter.release_stage.join(',');
         }
 
-        if (this.filter.shared_with_me !== undefined) {
-            out['shared_with_me'] = this.filter.shared_with_me;
+        if (this.filter.shared_with_user !== undefined) {
+            out['shared_with_user'] = this.filter.shared_with_user;
         }
 
         return Object.keys(out).length ? out : undefined;

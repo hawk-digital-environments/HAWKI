@@ -99,7 +99,8 @@
             "empty_description": "Keine Assistenten passen zu deinen aktuellen Filtern.",
             "loading": "Lade Assistenten…",
             "no_results": "Es wurden keine Ergebnisse gefunden",
-            "pagination_of": "von"
+            "pagination_of": "von",
+            "search": "Suchen"
         },
 
         "card": {

@@ -14,7 +14,7 @@ use LaravelJsonApi\Eloquent\Filters\Concerns\IsSingular;
  * Filters down to assistants shared with the current user via the
  * `sharedUsers` pivot, independent of their release stage.
  */
-class AssistantSharedWithMeFilter implements Filter
+class AssistantSharedWithUserFilter implements Filter
 {
     use DeserializesValue;
     use IsSingular;
@@ -26,7 +26,7 @@ class AssistantSharedWithMeFilter implements Filter
 
     public function key(): string
     {
-        return 'shared_with_me';
+        return 'shared_with_user';
     }
 
     public function apply($query, $value)
@@ -36,10 +36,6 @@ class AssistantSharedWithMeFilter implements Filter
         }
 
         $user = Auth::user();
-
-        if (null === $user) {
-            return $query;
-        }
 
         return app(AssistantRepository::class)->filterSharedWithUser($query, $user);
     }

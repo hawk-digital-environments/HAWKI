@@ -10,7 +10,7 @@ import { ReviewSchema } from './Review';
 import { RiskLevel } from './RiskLevel';
 import { AssistantTagSchema } from './AssistantTag';
 import { VersionSchema } from './Version';
-import {AiModelDescription} from "$plugins/core/schemas/resources/ai-model-descriptions";
+import {AiModelDescription} from '$plugins/core/schemas/resources/ai-model-descriptions.schema.js';
 
 /**
  * The single working shape of an assistant across the whole app — list, card,

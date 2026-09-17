@@ -3,26 +3,43 @@
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import Loading03Icon from '$lib/components/ui/icons/iconset/Loading03Icon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    const {__} = useTranslator();
     let {
-        value = $bindable(""),
+        defaultValue = "",
         loading = false,
         loadingLabel = "",
+        onChange,
     } = $props<{
-        value?: string;
-        /** Swaps the search icon for a spinning icon whose tooltip is {@link loadingLabel}. */
+        defaultValue?: string;
         loading?: boolean;
-        /** Tooltip/aria text shown while {@link loading} is true. */
         loadingLabel?: string;
+        onChange: (query: string) => void;
     }>();
 
+    const initialQuery = defaultValue;
+    let text = $state(initialQuery);
+    let emittedChange = initialQuery;
+
     let timer: ReturnType<typeof setTimeout>;
-    let inputEl: HTMLInputElement;
+
+    function emit(query: string) {
+        emittedChange = query;
+        onChange(query);
+    }
 
     function handleInput() {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            value = inputEl.value;
+            if (text !== emittedChange) emit(text);
         }, 300);
+    }
+
+    /** Manual trigger (Enter key or icon click): cancels a pending debounce and
+     *  emits unconditionally, so an unchanged query still re-searches. */
+    function submit() {
+        clearTimeout(timer);
+        emit(text);
     }
 </script>
 
@@ -42,16 +59,28 @@
                 {/snippet}
             </Tooltip>
         {:else}
-            <span class="icon"><Search01Icon size="1em" /></span>
+            <button
+                    type="button"
+                    class="icon icon--submit"
+                    onclick={submit}
+                    aria-label={__('assistants.browser.search')}
+            >
+                <Search01Icon size="1em" />
+            </button>
         {/if}
     </div>
-    <label for="searchbar">Search Input</label>
+    <label for="searchbar">{__('assistants.browser.search')}</label>
     <input
             id="searchbar"
             type="text"
-            bind:this={inputEl}
+            bind:value={text}
             oninput={handleInput}
-            value={value}
+            onkeydown={(event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submit();
+                }
+            }}
     />
 </div>
 
@@ -88,6 +117,18 @@
         justify-content: center;
         line-height: 0;
         font-size: var(--font-size-lg);
+    }
+    .icon--submit{
+        padding: 0;
+        border: none;
+        background: none;
+        color: inherit;
+        cursor: pointer;
+    }
+    .icon--submit:focus-visible{
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+        border-radius: var(--corner-sm);
     }
     .icon--loading{
         animation: searchbar-spin 700ms linear infinite;
