@@ -13,6 +13,8 @@ export const IDENTITY_KEYS: ReadonlySet<AssistantKey> = new Set<AssistantKey>([
     'updatedAt',
     'creator',
     'versions',
+    // Server-owned review state; only ever changed by a release or an admin.
+    'review',
     'actionPermissions',
     'isFavorite',
     // The remix back-reference: set once by the server when the draft is

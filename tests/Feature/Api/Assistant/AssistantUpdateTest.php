@@ -114,7 +114,7 @@ class AssistantUpdateTest extends TestCase
         $versions = $assistant->fresh()->assistantVersions;
         self::assertCount(1, $versions);
         self::assertEquals(['name'], $versions->first()->changed_keys);
-        self::assertSame('{"changes":["name"]}', $versions->first()->text);
+        self::assertSame('', $versions->first()->text);
     }
 
     public function testMultipleUpdatesWithinWindowMergeIntoOneVersion(): void
@@ -140,7 +140,7 @@ class AssistantUpdateTest extends TestCase
 
         self::assertCount(1, $versions);
         self::assertEquals(['description', 'name'], $versions[0]->changed_keys);
-        self::assertSame('{"changes":["description","name"]}', $versions[0]->text);
+        self::assertSame('', $versions[0]->text);
     }
 
     public function testChangeOutsideDebounceWindowCreatesNewVersion(): void

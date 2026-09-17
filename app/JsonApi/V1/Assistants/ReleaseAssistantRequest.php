@@ -46,6 +46,11 @@ class ReleaseAssistantRequest extends FormRequest
                     }
                 },
             ],
+            'data.attributes.note' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
         ];
     }
 
@@ -55,5 +60,22 @@ class ReleaseAssistantRequest extends FormRequest
         $value = $this->validated('data.attributes.release_stage');
 
         return AssistantReleaseStage::from($value);
+    }
+
+    /**
+     * The optional version note the creator attached to this release, shown in
+     * the assistant's version history. Null when omitted, blank, or whitespace.
+     */
+    public function note(): ?string
+    {
+        $value = $this->validated('data.attributes.note');
+
+        if (!\is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return '' === $trimmed ? null : $trimmed;
     }
 }

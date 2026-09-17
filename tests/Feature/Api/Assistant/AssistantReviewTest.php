@@ -482,6 +482,99 @@ class AssistantReviewTest extends TestCase
             ->assertJsonPath('errors.0.source.pointer', '/data/attributes/reason');
     }
 
+    public function testNeedsRevisionKeepsReviewAndAllowsResubmission(): void
+    {
+        $admin = $this->createAdmin();
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+        ]);
+        $review = AssistantReview::forceCreate([
+            'assistant_id' => $assistant->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+        ]);
+
+        $this->actingAsUser($admin);
+
+        $this->jsonApiRaw('patch', "/api/hawki/v1/assistant-reviews/{$review->id}", [
+            'data' => [
+                'type' => 'assistant-reviews',
+                'id' => (string) $review->id,
+                'attributes' => [
+                    'status' => AssistantReviewStatus::NEEDS_REVISION->value,
+                    'reason' => 'Please shorten the system prompt',
+                ],
+            ],
+        ])
+            ->assertOk();
+
+        // Like a denial, a revision request demotes the assistant to private…
+        $assistant->refresh();
+        self::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
+
+        // …but unlike a denial the review survives — including the demotion it
+        // just triggered — so the creator can see the reason and resubmit.
+        $this->assertDatabaseHas('assistant_reviews', [
+            'id' => $review->id,
+            'assistant_id' => $assistant->id,
+            'status' => AssistantReviewStatus::NEEDS_REVISION->value,
+            'reason' => 'Please shorten the system prompt',
+        ]);
+
+        // The creator resubmits: the review reopens as pending with the old
+        // denial reason cleared, and the requested stage is recorded again.
+        $this->actingAsUser($user);
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+                ],
+            ],
+        ])
+            ->assertOk();
+
+        $assistant->refresh();
+        self::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
+        self::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->requested_release_stage);
+
+        $this->assertDatabaseHas('assistant_reviews', [
+            'id' => $review->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+            'reason' => null,
+        ]);
+    }
+
+    public function testNeedsRevisionWithoutReasonReturnsValidationError(): void
+    {
+        $admin = $this->createAdmin();
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+        ]);
+        $review = AssistantReview::forceCreate([
+            'assistant_id' => $assistant->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+        ]);
+
+        $this->actingAsUser($admin);
+
+        $this->jsonApiRaw('patch', "/api/hawki/v1/assistant-reviews/{$review->id}", [
+            'data' => [
+                'type' => 'assistant-reviews',
+                'id' => (string) $review->id,
+                'attributes' => [
+                    'status' => AssistantReviewStatus::NEEDS_REVISION->value,
+                ],
+            ],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.0.source.pointer', '/data/attributes/reason');
+    }
+
     public function testNonAdminCannotUpdateReview(): void
     {
         $member = $this->createMember();

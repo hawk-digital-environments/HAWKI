@@ -136,7 +136,7 @@ class AssistantUpdatedVersionTest extends TestCase
         self::assertEquals(['name'], $versions->first()->changed_keys);
     }
 
-    public function testEncodesTextAsChangesJson(): void
+    public function testCreatesVersionsWithEmptyText(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
@@ -145,7 +145,27 @@ class AssistantUpdatedVersionTest extends TestCase
         $this->trigger($assistant, ['foo']);
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('{"changes":["foo"]}', $version->text);
+        // `text` carries only the creator's release note (written by the
+        // release action); content edits leave it empty.
+        self::assertSame('', $version->text);
+    }
+
+    public function testMergeKeepsExistingReleaseNote(): void
+    {
+        $assistant = Assistant::factory()->create([
+            'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+        ]);
+
+        // Simulate the release action having recorded a note on the latest row.
+        $assistant->assistantVersions()->latest('version')->first()->forceFill([
+            'text' => 'Tightened the system prompt',
+        ])->save();
+
+        $this->trigger($assistant, ['name']);
+
+        $version = $assistant->assistantVersions()->latest('version')->first();
+        self::assertSame('Tightened the system prompt', $version->text);
+        self::assertEquals(['name'], $version->changed_keys);
     }
 
     private function trigger(Assistant $assistant, array $changedKeys): void

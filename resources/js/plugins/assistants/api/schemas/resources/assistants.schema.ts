@@ -1,6 +1,6 @@
 import z from 'zod';
 import { BACKGROUNDS } from '$lib/plugins/assistants/presets/backgrounds';
-import { ReleaseMode, type Assistant, type AssistantAvatar, type AssistantKey } from '$plugins/assistants/types/assistant';
+import { ReleaseMode, ReviewStage, type Assistant, type AssistantAvatar, type AssistantKey } from '$plugins/assistants/types/assistant';
 import { AssistantCategorySchema } from '$plugins/assistants/types/assistant/AssistantCategory';
 import { AssistantTagSchema } from '$plugins/assistants/types/assistant/AssistantTag';
 import type { UploadFile } from '$plugins/assistants/types/UploadFile';
@@ -103,6 +103,13 @@ const WireFeedbackSchema = z.object({
     user: WireUserSchema.nullable().optional()
 });
 
+/** The included `assistant_review` relation (creator/org-admin tier only). */
+const WireReviewSchema = z.object({
+    id: z.string(),
+    status: z.enum(ReviewStage),
+    reason: z.string().nullable().optional()
+});
+
 /** Backend `assistant_setting_values[].setting.key` → the assistant field it fills. */
 const SETTING_KEY_TO_FIELD = {
     formality: 'formality',
@@ -154,6 +161,7 @@ export const AssistantResourceSchema = z.object({
     assistant_setting_values: z.array(WireSettingValueSchema).nullable().optional(),
     assistant_versions: z.array(WireVersionSchema).nullable().optional(),
     assistant_feedback: z.array(WireFeedbackSchema).nullable().optional(),
+    assistant_review: WireReviewSchema.nullable().optional(),
     assistant_attachments: z.array(WireAttachmentSchema).nullable().optional(),
     creator: WireUserSchema.nullable().optional(),
     remix_creator: WireUserSchema.nullable().optional(),
@@ -277,6 +285,13 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
         updatedAt: version.updated_at
     })) ?? [],
 
+    review: wire.assistant_review
+        ? {
+            status: wire.assistant_review.status,
+            reason: wire.assistant_review.reason ?? null
+        }
+        : null,
+
     remixCreator: wire.remix_creator
         ? {
             id: wire.remix_creator.id,
@@ -360,6 +375,7 @@ export function createEmptyAssistant(): Assistant {
         tags: [],
         creator: { id: '', displayName: '' },
         versions: [],
+        review: null,
         files: [],
         submissionNote: '',
         capabilities: [],

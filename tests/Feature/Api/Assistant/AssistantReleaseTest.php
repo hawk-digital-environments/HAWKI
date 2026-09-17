@@ -54,6 +54,58 @@ class AssistantReleaseTest extends TestCase
         Event::assertNotDispatched(AssistantReleaseStageChangedEvent::class);
     }
 
+    public function testReleaseRecordsVersionNoteOnLatestVersion(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE->value,
+        ]);
+
+        $this->actingAsUser($user);
+        Event::fake(AssistantReleaseStageChangedEvent::class);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+                    'note' => '  Reworked the system prompt  ',
+                ],
+            ],
+        ])
+            ->assertOk();
+
+        $version = $assistant->assistantVersions()->latest('version')->first();
+        self::assertSame('Reworked the system prompt', $version->text);
+    }
+
+    public function testReleaseRejectsTooLongNote(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE->value,
+        ]);
+
+        $this->actingAsUser($user);
+        Event::fake(AssistantReleaseStageChangedEvent::class);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+                    'note' => str_repeat('a', 2001),
+                ],
+            ],
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.0.source.pointer', '/data/attributes/note');
+    }
+
     public function testCanReleaseToPublicImmediatelyWhenApproved(): void
     {
         $user = User::factory()->create();

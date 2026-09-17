@@ -195,7 +195,7 @@ class AssistantAttachmentTest extends TestCase
         self::assertSame($initialVersionCount, $assistant->assistantVersions()->count());
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('{"changes":["attachments"]}', $version->text);
+        self::assertSame('', $version->text);
         self::assertEquals(['attachments'], $version->changed_keys);
     }
 
@@ -222,7 +222,7 @@ class AssistantAttachmentTest extends TestCase
         self::assertSame($initialVersionCount, $assistant->refresh()->assistantVersions()->count());
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('{"changes":[]}', $version->text);
+        self::assertSame('', $version->text);
     }
 
     public function testDeleteAttachmentRecordsVersionWhenOrganizational(): void
@@ -254,7 +254,7 @@ class AssistantAttachmentTest extends TestCase
         self::assertSame($initialVersionCount, $assistant->assistantVersions()->count());
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('{"changes":["attachments"]}', $version->text);
+        self::assertSame('', $version->text);
         self::assertEquals(['attachments'], $version->changed_keys);
     }
 
@@ -285,7 +285,7 @@ class AssistantAttachmentTest extends TestCase
         self::assertSame($initialVersionCount, $assistant->refresh()->assistantVersions()->count());
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('{"changes":[]}', $version->text);
+        self::assertSame('', $version->text);
     }
 
     public function testUploadAttachmentResponseReflectsFavoritedState(): void

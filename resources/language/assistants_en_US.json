@@ -134,6 +134,7 @@
             "trust_title": "Trust & risk",
             "history_title": "Change history",
             "changed_fields": "Fields:",
+            "version_note": "Note:",
             "creation": "Creation",
             "feedback_sent": "Feedback sent."
         },
@@ -284,7 +285,17 @@
                     "draft": "Draft",
                     "private": "Private",
                     "organizational": "In review",
-                    "federated": "In review"
+                    "federated": "In review",
+                    "denied": "Denied",
+                    "needs_revision": "Needs revision"
+                },
+                "denied": {
+                    "description": "Your assistant has been permanently denied. Please contact your system administrator.",
+                    "reason_label": "Reason:"
+                },
+                "needs_revision": {
+                    "title": "Revision required",
+                    "hint": "Your assistant needs revision. Address the reviewer's feedback and resubmit."
                 },
                 "risk": {
                     "title": "Risk overview",

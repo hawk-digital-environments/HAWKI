@@ -6,6 +6,7 @@ import { AssistantFeedbackSchema } from './AssistantFeedback';
 import { AssistantCategorySchema } from './AssistantCategory';
 import { CreatorSchema } from './Creator';
 import { ReleaseMode } from './ReleaseMode';
+import { ReviewSchema } from './Review';
 import { RiskLevel } from './RiskLevel';
 import { AssistantTagSchema } from './AssistantTag';
 import { VersionSchema } from './Version';
@@ -105,6 +106,13 @@ export const AssistantSchema = z.object({
     creator: CreatorSchema,
     versions: z.array(VersionSchema),
 
+    /**
+     * Current review state of the release request. Only included on the
+     * owner-only edit fetch (`include=assistant_review`, creator/org-admin
+     * tier); `null` when there is no review or it was not requested.
+     */
+    review: ReviewSchema.nullable().optional(),
+
     /** Author of the assistant this one was remixed from; `null` for originals. */
     remixCreator: CreatorSchema.nullable(),
     /**
@@ -119,7 +127,11 @@ export const AssistantSchema = z.object({
 
     /** Knowledge files attached to the assistant. Only included on the owner-only edit fetch (`include=assistant_attachments`). */
     files: z.array(UploadFileSchema).optional(),
-    /** Message the creator sends along with a release request, for the reviewer. */
+    /**
+     * Version note ("What has changed?") attached to a release. Client-only
+     * until `requestRelease` sends it with the release action; the backend
+     * then records it on the assistant's latest version row.
+     */
     submissionNote: z.string().optional(),
 
     aiTools: z.array(AiToolsSchema).optional(),

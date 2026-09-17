@@ -1,12 +1,14 @@
 <script lang="ts">
     import Badge from '$lib/components/ui/badge/Badge.svelte';
+    import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
 
     let{
         version,
         date,
         changedKeys,
-        isCreation
+        isCreation,
+        note
     } = $props <{
         version: string;
         date: string;
@@ -14,6 +16,8 @@
         changedKeys?: string[] | null;
         /** True for the oldest entry in the timeline (the initial creation). */
         isCreation?: boolean;
+        /** The creator's version note ("What has changed?") recorded on release. */
+        note?: string;
     }>();
 
     const {__} = useTranslator();
@@ -31,6 +35,14 @@
             <span>.</span>
             <span class="date">{date}</span>
         </div>
+        {#if note}
+            <div class="fields">
+                <span class="fields-label">{__('assistants.detail.version_note')}</span>
+                <Badge variant="secondary" style="max-width: 100%; min-width: 0;">
+                    <OverflowTooltip value={note}/>
+                </Badge>
+            </div>
+        {/if}
         {#if changedKeys && changedKeys.length > 0}
             <div class="fields">
                 <span class="fields-label">{__('assistants.detail.changed_fields')}</span>

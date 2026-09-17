@@ -1,14 +1,10 @@
-import { ModuleRegistrar } from "$lib/kernel/modules/moduleRegistrar";
-import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
-import {
-    HawkiPlugin,
-    HawkiPluginContext,
-    HawkiPluginContextWithConfig
-} from '$lib/kernel/plugins/types';
-import {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar';
-import {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar';
-import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
-import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
+import { ModuleRegistrar } from '$lib/kernel/modules/moduleRegistrar';
+import type { RouteRegistrar } from '$lib/components/ui/routing/index.js';
+import { HawkiPlugin, HawkiPluginContext, HawkiPluginContextWithConfig } from '$lib/kernel/plugins/types';
+import { ResourceSchemaRegistrar } from '$lib/kernel/resources/resourceSchemaRegistrar';
+import { StoreRegistrar } from '$lib/kernel/stores/storeRegistrar';
+import type { HookRegistrar } from '$lib/kernel/hooks/hookRegistrar.js';
+import { getModuleRouteGroupName } from '$lib/kernel/routing/routeInflection.js';
 import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
 import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
 import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
@@ -22,18 +18,17 @@ import TestTube01Icon from '$lib/components/ui/icons/iconset/TestTube01Icon.svel
 import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
 import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
 import CreateAssistantButton from '$plugins/assistants/components/CreateAssistantButton.svelte';
-import {DashboardModule} from "$plugins/assistants/modules/dashboard/DashboardModule";
-import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte";
-import {assistantHandlesStore} from "$plugins/assistants/stores/AssistantHandlesStore.svelte";
-import {assistantChatSend, assistantChatWelcome} from "$plugins/assistants/hooks/assistantChatHooks";
-import AssistantsSchema from "$plugins/assistants/api/schemas/resources/assistants.schema";
-import AssistantAvatarsSchema from "$plugins/assistants/api/schemas/resources/assistant-avatars.schema";
-import AssistantFeedbackSchema from "$plugins/assistants/api/schemas/resources/assistant-feedback.schema";
-import AssistantCategoriesSchema from "$plugins/assistants/api/schemas/resources/assistant-categories.schema";
-import AssistantTagsSchema from "$plugins/assistants/api/schemas/resources/assistant-tags.schema";
-import AssistantSettingsSchema from "$plugins/assistants/api/schemas/resources/assistant-settings.schema";
-import {BuilderModule} from "$plugins/assistants/modules/builder/BuilderModule";
-
+import { DashboardModule } from '$plugins/assistants/modules/dashboard/DashboardModule';
+import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
+import { assistantHandlesStore } from '$plugins/assistants/stores/AssistantHandlesStore.svelte';
+import { assistantChatSend, assistantChatWelcome } from '$plugins/assistants/hooks/assistantChatHooks';
+import AssistantsSchema from '$plugins/assistants/api/schemas/resources/assistants.schema';
+import AssistantAvatarsSchema from '$plugins/assistants/api/schemas/resources/assistant-avatars.schema';
+import AssistantFeedbackSchema from '$plugins/assistants/api/schemas/resources/assistant-feedback.schema';
+import AssistantCategoriesSchema from '$plugins/assistants/api/schemas/resources/assistant-categories.schema';
+import AssistantTagsSchema from '$plugins/assistants/api/schemas/resources/assistant-tags.schema';
+import AssistantSettingsSchema from '$plugins/assistants/api/schemas/resources/assistant-settings.schema';
+import { BuilderModule } from '$plugins/assistants/modules/builder/BuilderModule';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
@@ -42,7 +37,6 @@ declare module '$lib/kernel/extendableTypes.js' {
 }
 
 export default class AssistantsPlugin implements HawkiPlugin {
-
     readonly name = 'assistants';
 
     /**
@@ -56,17 +50,21 @@ export default class AssistantsPlugin implements HawkiPlugin {
         const dashboardGroup = getModuleRouteGroupName('assistants', 'dashboard');
         const builderGroup = getModuleRouteGroupName('assistants', 'builder');
 
-        registrar.add('moduleSelectorEntries', (entries, ctx) => [...entries, {
-            id: 'assistants:dashboard',
-            label: ctx.translate('assistants.assistants'),
-            icon: BotIcon,
-            onSelect: (selectCtx) => {
-                void selectCtx.router.goToRoute('assistants.dashboard.index');
-            },
-            active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
-        }]);
+        registrar.add('moduleSelectorEntries', (entries, ctx) => [
+            ...entries,
+            {
+                id: 'assistants:dashboard',
+                label: ctx.translate('assistants.assistants'),
+                icon: BotIcon,
+                onSelect: (selectCtx) => {
+                    void selectCtx.router.goToRoute('assistants.dashboard.index');
+                },
+                active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
+            }
+        ]);
 
-        registrar.add('sidebarSlots', (slots, ctx) => [...slots,
+        registrar.add('sidebarSlots', (slots, ctx) => [
+            ...slots,
             {
                 id: 'assistants:sidebar',
                 position: 'panel',
@@ -83,24 +81,30 @@ export default class AssistantsPlugin implements HawkiPlugin {
             }
         ]);
 
-        registrar.add('aiAssistants', (assistants, ctx) => [...assistants, ...assistantHandlesStore.menuAssistants(ctx.translate)], {order: 10});
+        registrar.add(
+            'aiAssistants',
+            (assistants, ctx) => [...assistants, ...assistantHandlesStore.menuAssistants(ctx.translate)],
+            { order: 10 }
+        );
 
         // Pins an assistant-addressed chat send to the assistant (binding,
         // model/tools/params, display author) and shows the assistant's
         // greeting/starter prompts in the chat welcome — see
         // hooks/assistantChatHooks.ts.
-        registrar.add('chatSend', assistantChatSend, {order: 10});
-        registrar.add('chatWelcome', assistantChatWelcome, {order: 10});
+        registrar.add('chatSend', assistantChatSend, { order: 10 });
+        registrar.add('chatWelcome', assistantChatWelcome, { order: 10 });
 
-        registrar.add('assistantMenuEntries', (menu, ctx) => [...menu,
+        registrar.add('assistantMenuEntries', (menu, ctx) => [
+            ...menu,
             {
                 id: 'dashboard.store',
                 level: 'dashboard',
                 label: ctx.translate('assistants.sidebar.store'),
                 icon: Store01Icon,
                 route: 'assistants.dashboard.store',
-                active: ctx.router.isRouteActive('assistants.dashboard.store')
-                    || ctx.router.isRouteActive('assistants.dashboard.index')
+                active:
+                    ctx.router.isRouteActive('assistants.dashboard.store') ||
+                    ctx.router.isRouteActive('assistants.dashboard.index')
             },
             {
                 id: 'dashboard.drafts',
@@ -135,6 +139,14 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 active: ctx.router.isRouteActive('assistants.builder.general')
             },
             {
+                id: 'builder.model',
+                level: 'builder',
+                label: ctx.translate('assistants.builder.sidebar.model'),
+                icon: ComputerIcon,
+                route: 'assistants.builder.model',
+                active: ctx.router.isRouteActive('assistants.builder.model')
+            },
+            {
                 id: 'builder.behaviour',
                 level: 'builder',
                 label: ctx.translate('assistants.builder.sidebar.behaviour'),
@@ -149,14 +161,6 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 icon: Database01Icon,
                 route: 'assistants.builder.knowledge',
                 active: ctx.router.isRouteActive('assistants.builder.knowledge')
-            },
-            {
-                id: 'builder.model',
-                level: 'builder',
-                label: ctx.translate('assistants.builder.sidebar.model'),
-                icon: ComputerIcon,
-                route: 'assistants.builder.model',
-                active: ctx.router.isRouteActive('assistants.builder.model')
             },
             {
                 id: 'builder.test',
@@ -177,18 +181,17 @@ export default class AssistantsPlugin implements HawkiPlugin {
         ]);
     }
 
-
     public resourceSchemas(registrar: ResourceSchemaRegistrar, context: HawkiPluginContext): void | Promise<void> {
         registrar.add('assistants', AssistantsSchema);
         registrar.add('assistant-avatars', AssistantAvatarsSchema);
-        registrar.add('assistant-feedback', AssistantFeedbackSchema)
-        registrar.add('assistant-categories', AssistantCategoriesSchema)
-        registrar.add('assistant-tags', AssistantTagsSchema)
-        registrar.add('assistant-settings', AssistantSettingsSchema)
+        registrar.add('assistant-feedback', AssistantFeedbackSchema);
+        registrar.add('assistant-categories', AssistantCategoriesSchema);
+        registrar.add('assistant-tags', AssistantTagsSchema);
+        registrar.add('assistant-settings', AssistantSettingsSchema);
     }
-    public modules({add}: ModuleRegistrar): void | Promise<void> {
+    public modules({ add }: ModuleRegistrar): void | Promise<void> {
         add(new DashboardModule());
-        add(new BuilderModule())
+        add(new BuilderModule());
     }
 
     /**
@@ -200,11 +203,9 @@ export default class AssistantsPlugin implements HawkiPlugin {
      * path here, landing exactly on the bare prefix the modules live below.
      */
     public routes(registrar: RouteRegistrar): void | Promise<void> {
-        registrar.lazyRoute(
-            '/assistants',
-            () => import('$plugins/assistants/pages/Index.svelte'),
-            {name: 'assistants.index'}
-        );
+        registrar.lazyRoute('/assistants', () => import('$plugins/assistants/pages/Index.svelte'), {
+            name: 'assistants.index'
+        });
     }
 
     public stores(registrar: StoreRegistrar, context: HawkiPluginContextWithConfig): void | Promise<void> {
@@ -221,5 +222,4 @@ export default class AssistantsPlugin implements HawkiPlugin {
     // ready(app){
     //     app.router.debug()
     // }
-
 }

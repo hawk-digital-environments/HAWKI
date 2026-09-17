@@ -189,7 +189,7 @@ class AssistantUserPromptsTest extends TestCase
 
         $version = $assistant->assistantVersions()->latest('version')->first();
         self::assertEquals(['assistant_user_prompts'], $version->changed_keys);
-        self::assertSame('{"changes":["assistant_user_prompts"]}', $version->text);
+        self::assertSame('', $version->text);
     }
 
     public function testCreateSkipsVersionWhenPrivate(): void
