@@ -108,6 +108,29 @@ return [
         ],
     ],
     [
+        'active' => env('MODELS_GWDG_GLM_5_3_FLASH_ACTIVE', true),
+        'id' => 'glm-5.3-flash',
+        'label' => 'GLM 5.3 Flash',
+        'input' => [
+            'text',
+            'image',
+        ],
+        'output' => [
+            'text',
+        ],
+        'tools' => [
+            'stream' => true,
+            'tool_calling' => true,
+            'file_upload' => env('MODELS_GWDG_GLM_5_3_FLASH_TOOLS_FILE_UPLOAD', true),
+            'vision' => env('MODELS_GWDG_GLM_5_3_FLASH_TOOLS_VISION', true),
+        ],
+        'default_params' => [
+            // GWDG recommended values: temp=1.0, top_p=0.95
+            'temp' => env('MODELS_GWDG_GLM_5_3_FLASH_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_GLM_5_3_FLASH_PARAMS_TOP_P', 0.95),
+        ],
+    ],
+    [
         'active' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_ACTIVE', true),
         'id' => 'meta-llama-3.1-8b-instruct',
         'label' => 'Meta Llama 3.1 8B Instruct',
@@ -286,7 +309,7 @@ return [
         ],
     ],
     [
-        'active' => env('MODELS_GWDG_QWEN_3.8_27B_ACTIVE', true),
+        'active' => env('MODELS_GWDG_QWEN38_27B_ACTIVE', true),
         'id' => 'qwen3.8-27b',
         'label' => 'Qwen 3.8 27B',
         'input' => [
@@ -299,16 +322,16 @@ return [
         'tools' => [
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN_3.8_27B_TOOLS_FILE_UPLOAD', true),
+            'file_upload' => env('MODELS_GWDG_QWEN38_27B_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_QWEN38_27B_TOOLS_VISION', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_QWEN_3.8_27B_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GWDG_QWEN_3.8_27B_PARAMS_TOP_P', 0.95),
+            'temp' => env('MODELS_GWDG_QWEN38_27B_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_QWEN38_27B_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
-        'active' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_ACTIVE', true),
+        'active' => env('MODELS_GWDG_QWEN36_35B_A3B_ACTIVE', true),
         'id' => 'qwen3.6-35b-a3b',
         'label' => 'Qwen 3.6 35B A3B',
         'input' => [
@@ -321,13 +344,13 @@ return [
         'tools' => [
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_TOOLS_VISION', true),
+            'file_upload' => env('MODELS_GWDG_QWEN36_35B_A3B_TOOLS_FILE_UPLOAD', true),
+            'vision' => env('MODELS_GWDG_QWEN36_35B_A3B_TOOLS_VISION', true),
         ],
         'default_params' => [
             // vLLM examples for Qwen 3 Omni use temp=0.6 and top_p=0.95
-            'temp' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_PARAMS_TOP_P', 0.95),
+            'temp' => env('MODELS_GWDG_QWEN36_35B_A3B_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_QWEN36_35B_A3B_PARAMS_TOP_P', 0.95),
         ],
     ],
 ];
