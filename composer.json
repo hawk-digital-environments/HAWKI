@@ -47,6 +47,7 @@
         "larastan/larastan": "^3.10",
         "laravel-json-api/testing": "^3.2",
         "laravel/sail": "^1.64.0",
+        "laravel/tinker": "^3.0",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9.5",
         "phpstan/phpstan": "^2.2.7",

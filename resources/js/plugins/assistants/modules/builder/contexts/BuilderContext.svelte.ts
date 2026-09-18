@@ -43,6 +43,7 @@
 import { createContext } from 'svelte';
 import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
 import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
+import { ReviewStage } from "$plugins/assistants/types/assistant/ReviewStage";
 import {
   assistantToApi,
   createEmptyAssistant,
@@ -553,6 +554,12 @@ export class BuilderContext {
         }
       }
 
+      // The release note never rides the autosave PATCH — it is sent by the
+      // release action (see `requestRelease`). Dropping it here keeps a
+      // note-only edit from firing an empty PATCH, while `isDirty` (which
+      // reads the unfiltered `changedKeys`) still flags it as unsent.
+      changedKeys.delete("submissionNote");
+
       if (changedKeys.size) {
         currentField = undefined;
         // Send only the tools the selected model can fulfil, and force the
@@ -630,15 +637,30 @@ export class BuilderContext {
 
   async requestRelease(){
     try {
+      // Land any edit still pending in the debounce pipeline first, so the
+      // release (and its note) describes what is actually on the server.
+      await this.flushSave();
       if (!(await requestAssistantRelease(this.draft))) {
         this.toast.error(this.translate("assistants.builder.publish.save_failed"));
         return;
       }
-      this.draft = { ...this.draft, requested_release_stage: this.draft.releaseStage };
+      this.draft = {
+        ...this.draft,
+        requested_release_stage: this.draft.releaseStage,
+        submissionNote: '', // Resets note for next publish
+        // Mirror the review outcome the server just recorded: submitting for
+        // a public stage (re)opens it as pending with any old denial reason
+        // cleared; dropping to draft/private tears it down entirely.
+        review: this.draft.releaseStage === ReleaseMode.ORGANIZATIONAL
+          || this.draft.releaseStage === ReleaseMode.FEDERATED
+          ? { status: ReviewStage.PENDING, reason: null }
+          : null,
+      };
+      this.commitKeys(['submissionNote']);
       this.committed = true;
       this.setToSession();
       // Draft and private are applied right away; the other stages go through
-      // review, so say which of the two actually happened.
+      // the admin review.
       this.toast.success(
         this.draft.releaseStage === ReleaseMode.DRAFT || this.draft.releaseStage === ReleaseMode.PRIVATE
           ? this.translate("assistants.builder.publish.saved")

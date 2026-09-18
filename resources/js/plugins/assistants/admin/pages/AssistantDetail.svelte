@@ -127,7 +127,7 @@
     }
 
     async function confirmAction(): Promise<void> {
-        if (!actionPending || !assistant?.review) return;
+        if (!actionPending || !assistant?.review?.id) return;
         actionSubmitting = true;
         try {
             await submitAssistantReview(assistant.review.id, actionPending, actionReason.trim() || undefined);
@@ -170,13 +170,13 @@
         decide?.(decision);
     }
 
-    /** Send: deny the pending review with the flagged feedback as the reason — same effect as the "Ask for edit" action. */
+    /** Send: mark the pending review as needing revision with the flagged feedback as the reason — same effect as the "Ask for edit" action. */
     async function sendFlagsToCreator(): Promise<ExitDecision> {
-        if (!assistant?.review) return 'stay';
+        if (!assistant?.review?.id) return 'stay';
         exitBusy = true;
         try {
             const reason = unresolvedFlags.map((flag) => `${flag.field}: ${flag.comment}`).join('\n');
-            await submitAssistantReview(assistant.review.id, 'denied', reason);
+            await submitAssistantReview(assistant.review.id, 'needs_revision', reason);
             return 'sent';
         } catch (err) {
             toast.error(__('admin.detail.exit_dialog_send_failed') + ' ' + ApiError.from(err).userMessage);
@@ -224,7 +224,11 @@
             if (!detailPath || from !== detailPath || to === detailPath) {
                 return true;
             }
-            if (assistant?.review?.status !== 'pending' || unresolvedFlags.length === 0) {
+            // A flag can be added to any assistant, not only one currently
+            // under review — the confirmation isn't restricted to a pending
+            // review (see sendFlagsToCreator()/canSend for what happens when
+            // there is no review record to send against).
+            if (unresolvedFlags.length === 0) {
                 return true;
             }
             const decision = await askExitUser();
@@ -496,8 +500,8 @@
                         <p class="flag-warning">{__('admin.detail.unresolved_flags_warning', { count: String(unresolvedFlags.length) })}</p>
                     {/if}
                     <div class="actions">
-                        <Button variant="stroke" onclick={() => startAction('denied')}>{__('admin.detail.ask_for_edit')}</Button>
-                        <Button variant="delete" onclick={() => startAction('blocked')}>{__('admin.detail.discard')}</Button>
+                        <Button variant="stroke" onclick={() => startAction('needs_revision')}>{__('admin.detail.ask_for_edit')}</Button>
+                        <Button variant="delete" onclick={() => startAction('denied')}>{__('admin.detail.discard')}</Button>
                         <Button variant="fill" disabled={unresolvedFlags.length > 0} onclick={() => startAction('approved')}>
                             {__('admin.detail.approve')}
                         </Button>
@@ -513,7 +517,7 @@
 <Dialog
     open={!!actionPending}
     onOpenChange={(open) => { if (!open) actionPending = null; }}
-    title={actionPending ? __('admin.detail.' + (actionPending === 'approved' ? 'approve' : actionPending === 'denied' ? 'ask_for_edit' : 'discard')) : ''}
+    title={actionPending ? __('admin.detail.' + (actionPending === 'approved' ? 'approve' : actionPending === 'needs_revision' ? 'ask_for_edit' : 'discard')) : ''}
 >
     {#snippet children()}
         <Textarea
@@ -532,6 +536,7 @@
     bind:open={exitDialogOpen}
     busy={exitBusy}
     flagCount={unresolvedFlags.length}
+    canSend={!!assistant?.review?.id}
     onSend={chooseSend}
     onDiscard={chooseDiscard}
     onDraft={chooseDraft}

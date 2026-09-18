@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
 
+/**
+ * @property bool $admin_managed
+ */
 #[UsePolicy(AiModelDescriptionPolicy::class)]
 class AiModelDescription extends Model
 {

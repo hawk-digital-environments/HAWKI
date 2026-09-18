@@ -64,6 +64,22 @@ class DeleteRagDocumentOnAssistantAttachmentDeletionTest extends TestCase
         $this->assertDatabaseMissing('assistant_attachments', ['id' => $attachment->id]);
     }
 
+    public function testItPassesTheStoredSourceHandleOfTextIngestions(): void
+    {
+        $sourceId = 'source_' . str_repeat('ab', 16);
+        $attachment = $this->createAttachment('ingested', 'rag-delete-text', $sourceId);
+
+        $this->mock(RagIngesterInterface::class)
+            ->shouldReceive('deleteDocument')
+            ->once()
+            ->with('assistant_' . $this->assistant->id, $sourceId)
+            ->andReturn(true);
+
+        $attachment->delete();
+
+        $this->assertDatabaseMissing('assistant_attachments', ['id' => $attachment->id]);
+    }
+
     public function testItOnlyLogsAWarningWhenDeIngestionFails(): void
     {
         $attachment = $this->createAttachment('ingested');

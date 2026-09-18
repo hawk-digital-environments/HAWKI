@@ -161,7 +161,7 @@ class AssistantController extends Controller
         StoreContract $store,
         Assistant $assistant,
     ): Responsable {
-        $assistant = $this->assistantService->release($assistant, $request->releaseStage());
+        $assistant = $this->assistantService->release($assistant, $request->releaseStage(), $request->note());
 
         return $this->refetchedResponse($route, $store, $assistant);
     }

@@ -131,7 +131,10 @@ class AssistantRemixTest extends TestCase
 
         self::assertEquals(1, $clone->assistantVersions()->count());
         $latestVersion = $clone->assistantVersions()->first();
-        self::assertEquals('Version 3', $latestVersion->text);
+        // The source's version number carries over for continuity, but not its
+        // release note: the note describes the original author's publish, and
+        // the remix's history starts with this copy.
+        self::assertEquals('', $latestVersion->text);
         self::assertEquals(3.0, (float) $latestVersion->version);
     }
 

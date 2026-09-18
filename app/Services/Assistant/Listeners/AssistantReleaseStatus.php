@@ -17,11 +17,12 @@ class AssistantReleaseStatus
     public function handle(AssistantReleaseStageChangedEvent $event): void
     {
         // Dropping back to a non-public stage tears down the review (unless it
-        // is denied or blocked, which an admin must clear explicitly).
+        // is in a denial state, which an admin must clear explicitly — and
+        // which must also survive the demotion a denial itself triggers).
         // Transitions into a public stage are approval-driven and must not
-        // touch the review here: the AssistantService records pending
-        // requests directly, and a real promotion only happens once the
-        // review is APPROVED.
+        // touch the review here: the AssistantService records pending requests
+        // directly, and a real promotion only happens once the review is
+        // APPROVED.
         if (AssistantReleaseStage::PRIVATE === $event->newStage || AssistantReleaseStage::DRAFT === $event->newStage) {
             $this->reviewRepository->deleteReviewForAssistantUnlessTerminal($event->assistant->id);
         }

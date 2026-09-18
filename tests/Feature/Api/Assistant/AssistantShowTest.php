@@ -148,7 +148,7 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $versionResource = $included->first(static fn ($item) => 'assistant-versions' === $item['type']);
-        self::assertEquals('{"changes":[]}', $versionResource['attributes']['text']);
+        self::assertEquals('', $versionResource['attributes']['text']);
         self::assertEquals('1.0', $versionResource['attributes']['version']);
     }
 

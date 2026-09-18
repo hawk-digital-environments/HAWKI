@@ -414,6 +414,7 @@
                             date={new Date(version.createdAt).toLocaleDateString('de-DE')}
                             changedKeys={version.changedKeys}
                             isCreation={index === assistant.versions.length - 1}
+                            note={version.text}
                         />
                     {/each}
                 </VersionTimeline>

@@ -18,11 +18,11 @@ use Psr\Log\LoggerInterface;
  * stored assistant attachments and collects them as document citations for
  * the streaming frontend.
  *
- * References come from the search hits' client metadata — `meta.attachment_uuid`
- * (direct-text ingestions, resolved as the attachment table's own uuids) and
+ * References come from the search hits' metadata — `metadata.external_document_id`
+ * (the caller-owned document id of direct-text ingestions; HAWKI uses the
+ * attachment uuid, so it resolves as the attachment table's own uuids) and
  * `metadata.document_id` (managed documents, resolved through the
- * ingestion-time `rag_document_id` mapping) — the generic data plane between
- * ingestion and search.
+ * ingestion-time `rag_document_id` mapping).
  *
  * Gated per MCP server through `tools.mcp_servers.<key>.map_document_to_attachment`
  * (default true), matched by the tool's server label: only servers whose
@@ -93,7 +93,7 @@ class CollectRagDocumentCitationsOnMcpToolCalled
 
     /**
      * The source references carried by the tool result, in result order.
-     * Derived from the search hits' client metadata — `meta.attachment_uuid`
+     * Derived from the search hits' metadata — `metadata.external_document_id`
      * (direct-text ingestions) and `metadata.document_id` (managed
      * documents) — the same convention the RAG tool uses for its
      * `documents` list, which serves as the fallback source.
@@ -125,7 +125,7 @@ class CollectRagDocumentCitationsOnMcpToolCalled
                 : null;
 
             $candidates = [
-                ['attachments', data_get($hit, 'meta.attachment_uuid')],
+                ['attachments', data_get($hit, 'metadata.external_document_id')],
                 ['documents', data_get($hit, 'metadata.document_id')],
             ];
 

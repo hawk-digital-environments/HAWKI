@@ -70,8 +70,8 @@ export async function deleteAssistantFieldFlag(id: string): Promise<void> {
 }
 
 /**
- * Approve / ask for edit (deny) / discard (block) the assistant's pending
- * review. `reason` is required by the backend for `denied` and `blocked`.
+ * Approve / ask for edit (needs revision) / deny the assistant's pending
+ * review. `reason` is required by the backend for `denied` and `needs_revision`.
  */
 export async function submitAssistantReview(
     reviewId: string,

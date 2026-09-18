@@ -1,8 +1,13 @@
 import z from 'zod';
 import { WireUserSchema } from '../wireFragments';
 
-/** Mirrors `App\Services\Assistant\Values\AssistantReviewStatus` on the backend. */
-export const AssistantReviewActionSchema = z.enum(['approved', 'denied', 'blocked']);
+/**
+ * The three terminal decisions a review log entry can record — mirrors
+ * `App\Services\Assistant\Values\AssistantReviewStatus` minus `pending`
+ * (never logged). `denied` permanently blocks resubmission; `needs_revision`
+ * lets the creator revise and resubmit.
+ */
+export const AssistantReviewActionSchema = z.enum(['approved', 'denied', 'needs_revision']);
 export type AssistantReviewAction = z.infer<typeof AssistantReviewActionSchema>;
 
 export interface AssistantReviewLog {

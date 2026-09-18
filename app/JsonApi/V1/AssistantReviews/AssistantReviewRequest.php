@@ -41,7 +41,7 @@ class AssistantReviewRequest extends ResourceRequest
                 },
             ],
             'reason' => [
-                'required_if:status,' . AssistantReviewStatus::DENIED->value . ',' . AssistantReviewStatus::BLOCKED->value,
+                'required_if:status,' . AssistantReviewStatus::DENIED->value . ',' . AssistantReviewStatus::NEEDS_REVISION->value,
                 'nullable',
                 'string',
             ],

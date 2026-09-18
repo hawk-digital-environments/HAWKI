@@ -8,6 +8,7 @@ use App\Services\Rag\Values\FileIngestionPayload;
 use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
 use App\Services\Rag\Values\TextIngestionPayload;
+use App\Services\Rag\Values\TextIngestionResult;
 
 /**
  * Backend-agnostic ingestion contract for RAG systems.
@@ -38,10 +39,11 @@ interface RagIngesterInterface
 
     /**
      * Pushes the extracted text of one attachment into its dataset and
-     * starts processing. Returns an opaque handle for completion polling
-     * ('' when the ingester cannot provide one).
+     * starts processing. Returns the polling handle plus the
+     * backend-assigned source id (either '' when the ingester cannot
+     * provide one).
      */
-    public function ingest(TextIngestionPayload $payload, string $idempotencyKey): string;
+    public function ingest(TextIngestionPayload $payload, string $idempotencyKey): TextIngestionResult;
 
     /**
      * Uploads the original file of one attachment into its dataset and
@@ -60,8 +62,11 @@ interface RagIngesterInterface
     public function checkIngestion(string $handle): RagIngestionCheck;
 
     /**
-     * Removes one document (by attachment uuid) from a dataset. Best-effort:
-     * failures return false and are only logged as warnings by the caller.
+     * Removes one document from a dataset, keyed by the stored backend
+     * handle (a managed document id for file ingestions, a source id for
+     * text ingestions; the attachment uuid only as a legacy fallback).
+     * Best-effort: failures return false and are only logged as warnings
+     * by the caller.
      */
     public function deleteDocument(string $datasetId, string $externalDocumentId): bool;
 }

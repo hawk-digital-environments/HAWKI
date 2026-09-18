@@ -10,6 +10,7 @@ import Button from "$lib/components/ui/button/Button.svelte";
 import FloppyDiskIcon from "$lib/components/ui/icons/iconset/FloppyDiskIcon.svelte";
 import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
 import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
+import { ReviewStage } from "$plugins/assistants/types/assistant/ReviewStage";
 import { ValidationState } from "$plugins/assistants/types/enums/ValidationState";
 import Shield01Icon from "$lib/components/ui/icons/iconset/Shield01Icon.svelte";
 import TaskEdit01Icon from "$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte";
@@ -38,6 +39,32 @@ const statusLabels: Record<ReleaseMode, string> = {
 };
 
 let statusLabel = $derived(statusLabels[assistant.releaseStage]);
+
+// Denial states from the creator's own review (include=assistant_review).
+// DENIED is permanent: choices, note and submit are hidden. NEEDS_REVISION is
+// a soft denial: the reason is shown, the submit controls remain.
+let review = $derived(assistant.review ?? null);
+let permanentlyDenied = $derived(review?.status === ReviewStage.DENIED);
+let needsRevision = $derived(review?.status === ReviewStage.NEEDS_REVISION);
+let denialReason = $derived(
+    (permanentlyDenied || needsRevision) ? (review?.reason ?? null) : null
+);
+
+let reviewStatusCard = $derived.by(() => {
+    if (permanentlyDenied) {
+        return {
+            label: __('assistants.builder.publish.status.denied'),
+            type: ValidationState.ERROR,
+        };
+    }
+    if (needsRevision) {
+        return {
+            label: __('assistants.builder.publish.status.needs_revision'),
+            type: ValidationState.WARNING,
+        };
+    }
+    return {label: statusLabel, type: ValidationState.INFO};
+});
 
 // The review triggers and the "start review" hint only apply to release paths
 // that actually kick off a review (organisational / federated).
@@ -71,10 +98,32 @@ let saveAsText = $derived.by(() => {
 
         <div class="page-header">
             <h3 class="page-title">{__('assistants.builder.publish.title')}</h3>
-            <p class="page-description">{__('assistants.builder.publish.description')}</p>
+            <p class="page-description">
+                {permanentlyDenied
+                    ? __('assistants.builder.publish.denied.description')
+                    : __('assistants.builder.publish.description')}
+            </p>
         </div>
 
-        <ReleaseStage/>
+        {#if needsRevision}
+            <Alert
+                icon={TaskEdit01Icon}
+                size="small"
+                title={__('assistants.builder.publish.needs_revision.title')}
+                description={__('assistants.builder.publish.needs_revision.hint')}
+            />
+        {/if}
+
+        {#if denialReason}
+            <div class="denial-reason">
+                <p class="u-label">{__('assistants.builder.publish.denied.reason_label')}</p>
+                <p class="reason-text">{denialReason}</p>
+            </div>
+        {/if}
+
+        {#if !permanentlyDenied}
+            <ReleaseStage/>
+        {/if}
 
         <!--  ------------------------------------   -->
 
@@ -90,8 +139,9 @@ let saveAsText = $derived.by(() => {
             >
                 <StatusCard
                         render="roundEdge"
-                        label={statusLabel}
+                        label={reviewStatusCard.label}
                         icon={TaskEdit01Icon}
+                        type={reviewStatusCard.type}
                 />
             </ReportCard>
 
@@ -155,22 +205,24 @@ let saveAsText = $derived.by(() => {
 
         <!--  ------------------------------------   -->
 
-        <BuilderInput
-            type="textarea"
-            label={__('assistants.builder.publish.input_version_note')}
-            name="versionshinweis"
-            placeholder={__('assistants.builder.publish.input_version_note_placeholder')}
-            assistantValueKey="submissionNote"
-            />
+        {#if !permanentlyDenied}
+            <BuilderInput
+                type="textarea"
+                label={__('assistants.builder.publish.input_version_note')}
+                name="versionshinweis"
+                placeholder={__('assistants.builder.publish.input_version_note_placeholder')}
+                assistantValueKey="submissionNote"
+                />
 
 
-        <Button
-            variant="fill"
-            size="md"
-            block
-            iconLeft={FloppyDiskIcon}
-            onclick={() => {builder.requestRelease()}}
-        >{saveAsText}</Button>
+            <Button
+                variant="fill"
+                size="md"
+                block
+                iconLeft={FloppyDiskIcon}
+                onclick={() => {builder.requestRelease()}}
+            >{saveAsText}</Button>
+        {/if}
 
     </div>
 </div>
@@ -183,5 +235,15 @@ let saveAsText = $derived.by(() => {
     }
     .group-heading {
         margin-bottom: var(--space-2);
+    }
+    .denial-reason {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+    .denial-reason .reason-text {
+        margin: 0;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
     }
 </style>

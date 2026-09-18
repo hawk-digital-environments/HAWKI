@@ -67,8 +67,10 @@ class AssistantRepository extends ResourceRepository
                 'updated_at' => $row->updated_at,
                 // An admin has started reviewing (added flags) but not yet
                 // acted on it — surfaced as a "draft" marker on the status
-                // column, distinct from the status itself.
-                'is_draft' => 'waiting_for_review' === $row->status && (bool) $row->has_unresolved_flags,
+                // column, distinct from the status itself. Not restricted to
+                // "waiting for review": an admin may flag an already-public
+                // or private assistant too.
+                'is_draft' => (bool) $row->has_unresolved_flags,
             ])->all();
 
         return [
@@ -107,9 +109,9 @@ class AssistantRepository extends ResourceRepository
                     SQL),
                 DB::raw(<<<'SQL'
                     (CASE
-                        WHEN assistant_reviews.status = 'blocked' THEN 'blocked'
+                        WHEN assistant_reviews.status = 'denied' THEN 'denied'
                         WHEN assistants.requested_release_stage IS NOT NULL THEN 'waiting_for_review'
-                        WHEN assistant_reviews.status = 'denied' THEN 'requires_revision'
+                        WHEN assistant_reviews.status = 'needs_revision' THEN 'requires_revision'
                         WHEN assistants.release_stage IN ('organizational', 'federated') THEN 'published'
                         ELSE 'private'
                     END) as status

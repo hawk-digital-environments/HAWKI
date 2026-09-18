@@ -51,7 +51,7 @@ class AssistantReviewLogAndFlagTest extends TestCase
         $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")->assertForbidden();
     }
 
-    public function testSiteAdminBlockWritesReviewLogAndRevokesRelease(): void
+    public function testSiteAdminDenyWritesReviewLogAndRevokesRelease(): void
     {
         $admin = $this->grantSiteAdmin();
         $creator = User::factory()->create();
@@ -71,7 +71,7 @@ class AssistantReviewLogAndFlagTest extends TestCase
                 'type' => 'assistant-reviews',
                 'id' => (string) $review->id,
                 'attributes' => [
-                    'status' => AssistantReviewStatus::BLOCKED->value,
+                    'status' => AssistantReviewStatus::DENIED->value,
                     'reason' => 'Contains disallowed content.',
                 ],
             ],
@@ -82,12 +82,12 @@ class AssistantReviewLogAndFlagTest extends TestCase
 
         $this->assertDatabaseHas('assistant_reviews', [
             'id' => $review->id,
-            'status' => AssistantReviewStatus::BLOCKED->value,
+            'status' => AssistantReviewStatus::DENIED->value,
         ]);
         $this->assertDatabaseHas('assistant_review_logs', [
             'assistant_id' => $assistant->id,
             'admin_user_id' => $admin->id,
-            'action' => AssistantReviewStatus::BLOCKED->value,
+            'action' => AssistantReviewStatus::DENIED->value,
             'reason' => 'Contains disallowed content.',
         ]);
     }

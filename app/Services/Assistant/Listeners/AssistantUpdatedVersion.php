@@ -41,8 +41,7 @@ class AssistantUpdatedVersion
 
         $this->db->transaction(function () use ($event, $seconds): void {
             // Lock the latest version row so two concurrent updates cannot
-            // both read the same max('version') and both insert duplicate rows
-            // (the unique index on (assistant_id, version) is the backstop).
+            // both read the same max('version') and both insert duplicate rows.
             $latest = $event->assistant
                 ->assistantVersions()
                 ->latest('version')
@@ -59,13 +58,14 @@ class AssistantUpdatedVersion
 
             // Sliding window: if the most recent version was touched within the
             // debounce window, merge this change into it. The update refreshes
-            // updated_at, which extends the window for the next change.
+            // updated_at, which extends the window for the next change. The
+            // human release note in `text` is deliberately left untouched — it
+            // was written by a deliberate release, not by these edits.
             if (null !== $latest && $now->subSeconds($seconds) <= $latest->updated_at) {
                 $keys = $this->mergeKeys($latest->changed_keys ?? [], $event->changedKeys);
 
                 $latest->forceFill([
                     'changed_keys' => $keys,
-                    'text' => $this->encodeText($keys),
                     'updated_at' => $now,
                 ])->save();
 
@@ -77,7 +77,9 @@ class AssistantUpdatedVersion
             // version is server-controlled and intentionally not mass-assignable.
             $event->assistant->assistantVersions()->save(
                 (new AssistantVersion())->forceFill([
-                    'text' => $this->encodeText($event->changedKeys),
+                    // `text` carries the creator's release note (written by the
+                    // release action); content edits leave it empty.
+                    'text' => '',
                     'version' => $lastVersion + 1.0,
                     'changed_keys' => $event->changedKeys,
                     'created_at' => $now,
@@ -103,13 +105,5 @@ class AssistantUpdatedVersion
         sort($merged);
 
         return $merged;
-    }
-
-    /**
-     * @param array<int, string> $keys
-     */
-    private function encodeText(array $keys): string
-    {
-        return json_encode(['changes' => $keys], \JSON_THROW_ON_ERROR);
     }
 }

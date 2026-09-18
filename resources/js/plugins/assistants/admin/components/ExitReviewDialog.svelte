@@ -7,13 +7,14 @@
 
   Three outcomes:
   - Send to creator — denies the pending review with the flagged feedback as
-    the reason (same effect as the "Ask for edit" action).
-  - Discard flags — deletes every unresolved flag; the review itself is left
-    untouched (still pending).
+    the reason (same effect as the "Ask for edit" action). Only offered when
+    the assistant actually has a review to act on — see `canSend`.
+  - Discard flags — deletes every unresolved flag; the assistant's
+    review/publish state is left untouched.
   - Save as draft — leaves everything exactly as it is (flags stay
-    unresolved, review stays pending) and simply lets the navigation proceed;
-    the Publishing Center table then shows this assistant as a draft in
-    progress so an admin can pick it back up later.
+    unresolved) and simply lets the navigation proceed; the Publishing Center
+    table then shows this assistant as a draft in progress so an admin can
+    pick it back up later.
 
   Escape and outside clicks dismiss the dialog (stay on the page), reported
   through onDismiss. The owner controls `open` entirely, same contract as
@@ -34,6 +35,8 @@
         busy?: boolean;
         /** Number of unresolved flags, interpolated into the description. */
         flagCount: number;
+        /** Whether the assistant has an actual review record to send the flags against (there is nothing to "send" for one that was never submitted for review). */
+        canSend?: boolean;
         onSend?: () => unknown | Promise<unknown>;
         onDiscard?: () => unknown | Promise<unknown>;
         onDraft?: () => unknown | Promise<unknown>;
@@ -45,6 +48,7 @@
         open = $bindable(false),
         busy = false,
         flagCount,
+        canSend = true,
         onSend,
         onDiscard,
         onDraft,
@@ -74,12 +78,14 @@
         <Button variant="delete" size="sm" disabled={busy} onclick={onDiscard}>
             {__('admin.detail.exit_dialog_discard')}
         </Button>
-        <Button variant="stroke" size="sm" disabled={busy} onclick={onDraft}>
+        <Button variant="stroke" size="sm" disabled={busy} autofocus={!canSend} onclick={onDraft}>
             {__('admin.detail.exit_dialog_draft')}
         </Button>
-        <Button variant="fill" size="sm" disabled={busy} autofocus onclick={onSend}>
-            {__('admin.detail.exit_dialog_send')}
-        </Button>
+        {#if canSend}
+            <Button variant="fill" size="sm" disabled={busy} autofocus onclick={onSend}>
+                {__('admin.detail.exit_dialog_send')}
+            </Button>
+        {/if}
     {/snippet}
 </Dialog>
 

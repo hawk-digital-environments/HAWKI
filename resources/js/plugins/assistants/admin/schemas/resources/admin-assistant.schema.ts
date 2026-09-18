@@ -2,16 +2,18 @@ import { z } from 'zod';
 
 /**
  * Derived publication status of an assistant, computed server-side by
- * `App\Services\Admin\Repositories\AssistantRepository`. Set by the review
- * actions on the assistant detail page (Approve → published/private, Ask for
- * edit → requires_revision, Discard → blocked).
+ * `App\Services\Admin\Repositories\AssistantRepository`. Mirrors
+ * `App\Services\Assistant\Values\AssistantReviewStatus`'s two denial
+ * variants: Ask for edit → requires_revision (`needs_revision`, the creator
+ * may revise and resubmit), Deny → denied (permanent, an admin must clear it
+ * before a resubmission is possible). Accept → published/private.
  */
 export const AdminAssistantStatusSchema = z.enum([
     'waiting_for_review',
     'published',
     'private',
     'requires_revision',
-    'blocked'
+    'denied'
 ]);
 export type AdminAssistantStatus = z.infer<typeof AdminAssistantStatusSchema>;
 

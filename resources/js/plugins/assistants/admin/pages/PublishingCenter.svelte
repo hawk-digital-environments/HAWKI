@@ -25,7 +25,7 @@
         published: 'safe',
         private: 'info',
         requires_revision: 'error',
-        blocked: 'error'
+        denied: 'error'
     };
 
     const app = useApp();

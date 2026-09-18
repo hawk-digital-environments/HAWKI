@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * @property bool $admin_managed
  * @property-read ProviderSettings $settings
  * @property array|null $icon SVG contents and source metadata, or legacy storage UUIDs.
  * @property-read string|null $icon_url

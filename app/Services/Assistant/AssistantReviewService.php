@@ -43,19 +43,22 @@ readonly class AssistantReviewService
             return;
         }
 
-        if (AssistantReviewStatus::DENIED === $newStatus && AssistantReviewStatus::DENIED !== $previous) {
+        // An org admin can reject an assistant in two ways:
+        // 1) DENIED permanently blocks resubmission,
+        // 2) NEEDS_REVISION lets the creator revise and submit again. 
+        // Both statuses are treated the same here: demote the assistant back to private.
+        if (self::isDenial($newStatus) && !self::isDenial($previous)) {
             if (null !== $reviewer) {
-                $this->deny($review, $reviewer, $review->reason);
-            }
-
-            return;
-        }
-
-        if (AssistantReviewStatus::BLOCKED === $newStatus && AssistantReviewStatus::BLOCKED !== $previous) {
-            if (null !== $reviewer) {
-                $this->block($review, $reviewer, $review->reason);
+                $this->deny($review, $reviewer, $review->reason, $newStatus);
             }
         }
+    }
+
+    /** Whether the status is one of the two denial variants. */
+    private static function isDenial(?AssistantReviewStatus $status): bool
+    {
+        return AssistantReviewStatus::DENIED === $status
+            || AssistantReviewStatus::NEEDS_REVISION === $status;
     }
 
     /**
@@ -103,49 +106,25 @@ readonly class AssistantReviewService
      * Mark the review denied with an optional reason, record who denied it and
      * when, then demote the assistant back to private.
      *
-     * @see approve() for the transition-detection contract with applyStatusTransition().
-     */
-    public function deny(AssistantReview $review, User $reviewer, ?string $reason = null): void
-    {
-        $this->db->transaction(function () use ($review, $reviewer, $reason): void {
-            $locked = AssistantReview::whereKey($review->id)->lockForUpdate()->first();
-
-            if ($locked === null) {
-                abort(422 ,"The requested review does not exist.");
-            }
-
-            $locked->status = AssistantReviewStatus::DENIED;
-            $locked->reason = $reason;
-            $locked->reviewer_id = $reviewer->id;
-            $locked->reviewed_at = Carbon::instance($this->clock->now());
-            $locked->save();
-
-            $review->setRawAttributes($locked->getAttributes());
-
-            $this->assistantService->revokeRelease($locked->assistant);
-            $this->log($locked, $reviewer);
-        });
-    }
-
-    /**
-     * Mark the review blocked with an optional reason, record who blocked it
-     * and when, then demote the assistant back to private. Like a denial,
-     * this leaves the assistant unable to be resubmitted until an admin acts
-     * again — {@see \App\JsonApi\V1\Assistants\ReleaseAssistantRequest} blocks
-     * publication requests while the review is denied *or* blocked.
+     * The denial variant is chosen by $status: DENIED permanently blocks any
+     * resubmission, NEEDS_REVISION lets the creator revise and submit again.
      *
      * @see approve() for the transition-detection contract with applyStatusTransition().
      */
-    public function block(AssistantReview $review, User $reviewer, ?string $reason = null): void
-    {
-        $this->db->transaction(function () use ($review, $reviewer, $reason): void {
+    public function deny(
+        AssistantReview $review,
+        User $reviewer,
+        ?string $reason = null,
+        AssistantReviewStatus $status = AssistantReviewStatus::DENIED,
+    ): void {
+        $this->db->transaction(function () use ($review, $reviewer, $reason, $status): void {
             $locked = AssistantReview::whereKey($review->id)->lockForUpdate()->first();
 
             if ($locked === null) {
                 abort(422 ,"The requested review does not exist.");
             }
 
-            $locked->status = AssistantReviewStatus::BLOCKED;
+            $locked->status = $status;
             $locked->reason = $reason;
             $locked->reviewer_id = $reviewer->id;
             $locked->reviewed_at = Carbon::instance($this->clock->now());

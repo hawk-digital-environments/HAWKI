@@ -51,12 +51,22 @@ class RagIngestionRequestException extends \RuntimeException implements RagExcep
         ));
     }
 
+    public static function forMissingSourceId(string $method, string $url): self
+    {
+        return new self(\sprintf(
+            'RAG server response for %s %s did not contain a source_id.',
+            $method,
+            $url,
+        ));
+    }
+
     /**
      * Server-side or infrastructure failures are worth retrying later;
-     * 4xx responses are permanent.
+     * 4xx responses are permanent — except throttling (429), which is a
+     * "try again later" answer, not a rejection.
      */
     public function isTransient(): bool
     {
-        return $this->statusCode >= 500 || 0 === $this->statusCode;
+        return $this->statusCode >= 500 || 429 === $this->statusCode || 0 === $this->statusCode;
     }
 }

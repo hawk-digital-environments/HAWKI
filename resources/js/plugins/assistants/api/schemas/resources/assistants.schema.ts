@@ -1,6 +1,6 @@
 import z from 'zod';
 import { BACKGROUNDS } from '$lib/plugins/assistants/presets/backgrounds';
-import { ReleaseMode, type Assistant, type AssistantAvatar, type AssistantKey } from '$plugins/assistants/types/assistant';
+import { ReleaseMode, ReviewStage, type Assistant, type AssistantAvatar, type AssistantKey } from '$plugins/assistants/types/assistant';
 import { AssistantCategorySchema } from '$plugins/assistants/types/assistant/AssistantCategory';
 import { AssistantTagSchema } from '$plugins/assistants/types/assistant/AssistantTag';
 import type { UploadFile } from '$plugins/assistants/types/UploadFile';
@@ -101,17 +101,18 @@ const WireAttachmentSchema = z.object({
     rag_error: z.string().nullable().optional()
 });
 
-const WireReviewSchema = z.object({
-    id: z.string(),
-    status: z.string(),
-    reason: z.string().nullable().optional()
-});
-
 const WireFeedbackSchema = z.object({
     id: z.string(),
     text: z.string(),
     created_at: z.string(),
     user: WireUserSchema.nullable().optional()
+});
+
+/** The included `assistant_review` relation (creator/org-admin tier only). */
+const WireReviewSchema = z.object({
+    id: z.string(),
+    status: z.enum(ReviewStage),
+    reason: z.string().nullable().optional()
 });
 
 /** Backend `assistant_setting_values[].setting.key` → the assistant field it fills. */
@@ -248,7 +249,11 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
     releaseStage: wire.release_stage ?? ReleaseMode.DRAFT,
     requested_release_stage: wire.requested_release_stage ?? null,
     review: wire.assistant_review
-        ? { id: wire.assistant_review.id, status: wire.assistant_review.status, reason: wire.assistant_review.reason ?? null }
+        ? {
+            id: wire.assistant_review.id,
+            status: wire.assistant_review.status,
+            reason: wire.assistant_review.reason ?? null
+        }
         : null,
 
     // Not served by the backend yet — see the field docs on `Assistant`.
