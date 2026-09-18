@@ -41,7 +41,7 @@ export function roleLabel(id: number, catalog: RoleCatalogEntry[], fields: Admin
     // The backend sets `title_label` for system roles; custom roles carry their stored name.
     if (role) return role.title_label ? __(role.title_label) : role.name;
     const option = fields
-        .find((field) => ['roles', 'role_id'].includes(field.key))
+        .find((field) => ['roles', 'role_id', 'allowed_roles'].includes(field.key))
         ?.options.find((item) => item.value === id);
     if (option) return option.label;
     return __('admin.role_unknown', { id: String(id) });

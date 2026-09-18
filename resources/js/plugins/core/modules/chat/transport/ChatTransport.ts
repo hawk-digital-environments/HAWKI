@@ -1,5 +1,5 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
-import type {ChatAssistantIdentity, ChatMessage, MessageStats} from '$plugins/core/modules/chat/types.js';
+import type {ChatMessage, MessageStats} from '$plugins/core/modules/chat/types.js';
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import {AiApiError, aiPacketText} from '$lib/kernel/ai/AiApi.js';
@@ -9,7 +9,6 @@ import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 import {ApiTransportError} from '$lib/kernel/api/errors.js';
 import {validatedToolSnapshot} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
-import type {ChatSendDescriptor} from '$plugins/core/modules/chat/hooks/chatSendHooks.js';
 
 /**
  * Lifecycle of one assistant reply as seen by the page that owns the
@@ -43,16 +42,6 @@ interface AssistantRequest {
     threadId: number;
     /** Id of the assistant message to replace in place; `null` for a fresh reply. */
     regenerateMessageId: string | null;
-    /**
-     * Assistant handle the run is bound to, resolved by the `chatSend` hook. Absent for a
-     * regenerate, which has no live composer to resolve hooks from — it keeps whichever
-     * identity the message being replaced already carries (see `streamAssistant`).
-     */
-    assistantHandle?: string | null;
-    /** Display author for the streamed assistant message; falls back to the default HAWKI author. */
-    author?: ChatMessage['author'] | null;
-    /** Display identity persisted on the AI message, so the log keeps showing who answered after reload. */
-    assistant?: ChatAssistantIdentity;
 }
 
 /** Write surface the streaming loop reports into. `SendMessageResponse` satisfies it for
@@ -146,7 +135,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 // seconds. Create the chat immediately with a useful fallback
                 // so it never blocks the user's actual message.
                 provisionalTitle = this.fallbackTitle(sentMessage);
-                targetSlug = (await this.store.create(provisionalTitle, context.systemPrompt, false, request.assistantHandle ?? null)).slug;
+                targetSlug = (await this.store.create(provisionalTitle, context.systemPrompt, false)).slug;
                 conversationCreated = true;
             }
 
@@ -160,18 +149,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 if (provisionalTitle !== null) void this.generateAndApplyTitle(targetSlug, sentMessage, provisionalTitle);
             }
 
-            // The persisted binding follows the assistant this send addresses (null = plain
-            // HAWKI chat). Awaited alongside the uploads so a failed rebind fails the send
-            // visibly instead of silently diverging from what the run used; a freshly created
-            // conversation already carries the binding from `create` above.
-            if (conversationCreated) {
-                await this.uploadAttachments(opt);
-            } else {
-                await Promise.all([
-                    this.uploadAttachments(opt),
-                    this.store.updateAssistantHandle(targetSlug, request.assistantHandle ?? null)
-                ]);
-            }
+            await this.uploadAttachments(opt);
             if (status.failed) {
                 this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
                 this.store.finishGeneration(targetSlug);
@@ -227,10 +205,6 @@ export class ChatTransport implements MessageSenderTransportInterface {
      * message's metadata. Unavailable tool selections abort regeneration for review.
      * `onNotice` reports model fallback. The conversation is
      * marked as generating for the duration. Rejects with the error message on failure.
-     *
-     * Bypasses the `chatSend` hook (there is no live composer to resolve it from): the message
-     * being replaced already carries whichever assistant identity it was sent with, and
-     * `streamAssistant` keeps that identity for a regenerate (see the `existing` branch there).
      */
     public async regenerateMessage(
         conversationSlug: string,
@@ -291,49 +265,19 @@ export class ChatTransport implements MessageSenderTransportInterface {
     /** Snapshot of the composer state that shapes the assistant reply for a regular send. */
     private requestFromContext(context: ComposerContext): AssistantRequest {
         const threadId = context.mode.isThread ? Number(context.mode.getState('thread').threadId) : 0;
-        // The resolved run description: the composer's own selection, possibly
-        // rewritten by a `chatSend` hook handler (e.g. pinning model/tools/
-        // params to the addressed assistant and binding the conversation).
-        const send = this.resolveSendDescriptor(context);
+        const requested = context.tools.active.map(tool => tool.toTransferString());
         if (context.tools.reconcile(context.model.current, false)) throw new Error('TOOL_ACCESS_DENIED');
-        const model = this.app.stores.get('ai-models').getOneById(send.model);
+        const model = this.app.stores.get('ai-models').getOneById(context.model.current);
         if (!model) throw new Error('TOOL_UNAVAILABLE');
         return {
             actorId: this.actorId(),
             modelId: model.model_id,
-            tools: validatedToolSnapshot(send.tools, this.app.stores.get('ai-tools'), model),
-            params: send.params,
+            tools: validatedToolSnapshot(requested, this.app.stores.get('ai-tools'), model),
+            params: context.modelParameters.requestParameters,
             systemPrompt: context.systemPrompt,
             threadId: Number.isFinite(threadId) ? threadId : 0,
-            regenerateMessageId: null,
-            assistantHandle: send.assistantHandle,
-            author: send.author,
-            assistant: send.assistant ?? undefined
+            regenerateMessageId: null
         };
-    }
-
-    /**
-     * Resolves the run description for one send: the composer's own selection threaded
-     * through the `chatSend` hook so plugins can bind the exchange to an addressed assistant
-     * and adapt the run to it (e.g. pinning model/tools/params and supplying its display
-     * identity). The result still passes through the same authorization revalidation as the
-     * composer's own selection — a hook may rewrite what gets sent, but never what is allowed.
-     */
-    private resolveSendDescriptor(context: ComposerContext): ChatSendDescriptor {
-        return this.app.hooks.apply('chatSend', {
-            assistantHandle: null,
-            assistant: null,
-            author: null,
-            model: context.model.current.model_id,
-            tools: context.tools.active.map(tool => tool.toTransferString()),
-            params: context.modelParameters.requestParameters
-        }, {
-            composer: context,
-            conversation: this.store.active,
-            // Regenerate no longer goes through the composer (see `regenerateMessage`), so a
-            // send can never originate from a regen; there is nothing to hand hooks here.
-            regenMessage: null
-        });
     }
 
     private optimisticUserMessage(opt: MessageSenderTransportOptions): ChatMessage {
@@ -412,7 +356,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             isStreaming: true,
             status: 'running'
         } : {
-            author: request.author ?? {username: 'HAWKI', name: 'HAWKI', avatar_url: ''},
+            author: {username: 'HAWKI', name: 'HAWKI', avatar_url: ''},
             threadId,
             completion: 0,
             content: {text: '', attachments: []},
@@ -424,7 +368,6 @@ export class ChatTransport implements MessageSenderTransportInterface {
             model: request.modelId,
             updated_at: new Date().toISOString(),
             citations: [],
-            assistant: request.assistant ?? undefined,
             isStreaming: true,
             status: 'running'
         };
@@ -462,15 +405,15 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 messages: this.messageHistory(conversationSlug, request.systemPrompt, threadId, regenerateMessageId ?? undefined),
                 tools: request.tools,
                 params: request.params,
-                assistantHandle: request.assistantHandle,
                 threadIndex: threadId,
                 isUpdate: regenerateMessageId !== null,
                 messageId: regenerateMessageId
             }, {signal: controller.signal})) {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
                 if (packet.type === 'error') {
-                    if (packet.code === 'TOOL_ACCESS_DENIED') void this.app.refreshConnection().catch(() => undefined);
-                    throw new Error(String(packet.code === 'TOOL_ACCESS_DENIED' || packet.code === 'TOOL_UNAVAILABLE'
+                    if (packet.code === 'TOOL_ACCESS_DENIED' || packet.code === 'MODEL_ACCESS_DENIED')
+                        void this.app.refreshConnection().catch(() => undefined);
+                    throw new Error(String(packet.code === 'TOOL_ACCESS_DENIED' || packet.code === 'MODEL_ACCESS_DENIED' || packet.code === 'TOOL_UNAVAILABLE'
                         ? packet.code : packet.content ?? this.app.translator.__('chat.page.requestFailed')));
                 }
                 if (packet.type === 'reasoning_start' || packet.type === 'reasoning_delta'
@@ -512,10 +455,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 content: {text: encrypted},
                 metadata: {
                     tools: request.tools,
-                    params: request.params,
-                    // The assistant's display identity, so the message log
-                    // keeps showing who answered after reload.
-                    ...(request.assistant ? {assistant: request.assistant} : {})
+                    params: request.params
                 },
                 model: request.modelId,
                 completion,
@@ -555,32 +495,8 @@ export class ChatTransport implements MessageSenderTransportInterface {
         return [
             {role: 'system', content: {text: systemPrompt}},
             ...selected
-                .filter(message => !message.isStreaming && !message.isPending && message.content.text.trim())
-                .map(message => {
-                    // Attachment uuids ride the message content so the model
-                    // receives uploaded files alongside the text (the backend
-                    // resolves them from private storage and inlines them).
-                    const attachments = message.content.attachments
-                        .map(attachment => attachment.fileData.uuid)
-                        .filter(uuid => !uuid.startsWith('pending-'));
-
-                    return {
-                        role: message.message_role,
-                        content: {
-                            text: message.content.text,
-                            ...(attachments.length > 0 ? {attachments} : {})
-                        },
-                        // Past-assistant attribution: lets the model
-                        // distinguish answers from different assistants when
-                        // the conversation switched mid-way. Default HAWKI
-                        // answers stay unattributed. Rides the HAWKI-specific
-                        // hawkiExtensions envelope, not the OpenAI-shaped
-                        // message fields.
-                        ...(message.message_role === 'assistant' && message.assistant?.handle
-                            ? {hawkiExtensions: {assistant_handle: message.assistant.handle}}
-                            : {})
-                    };
-                })
+                .filter(message => !message.isStreaming && message.content.text.trim())
+                .map(message => ({role: message.message_role, content: {text: message.content.text}}))
         ];
     }
 
@@ -645,6 +561,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
     private errorMessage(error: unknown): string {
         const code = error instanceof ApiTransportError || error instanceof AiApiError ? error.code : error instanceof Error ? error.message : null;
         if (code === 'TOOL_ACCESS_DENIED') return this.app.translator.__('chat.tools.accessDenied');
+        if (code === 'MODEL_ACCESS_DENIED') return this.app.translator.__('chat.models.accessDenied');
         if (code === 'TOOL_UNAVAILABLE') return this.app.translator.__('chat.tools.unavailable');
         if (code === 'TOOL_AUTHORIZATION_REFRESHING') return this.app.translator.__('chat.tools.authorizationRefreshing');
         return error instanceof Error ? error.message : this.app.translator.__('chat.page.sendError');

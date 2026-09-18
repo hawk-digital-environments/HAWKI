@@ -1,15 +1,12 @@
 <script lang="ts">
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useRouter } from '$lib/components/ui/routing/index.js';
-    import AdminSidebarGroup from './AdminSidebarGroup.svelte';
+    import AdminSidebarSection from './AdminSidebarSection.svelte';
     import Home01Icon from '$lib/components/ui/icons/iconset/Home01Icon.svelte';
-    import AiBrainIcon from '$lib/components/ui/icons/iconset/AiBrainIcon.svelte';
-    import UserGroupIcon from '$lib/components/ui/icons/iconset/UserGroupIcon.svelte';
-    import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
-    import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte'
-
+    const app = useApp();
     const router = useRouter();
     const { __ } = useTranslator();
 </script>
@@ -22,22 +19,9 @@
             active={router.isRouteActive('admin.index')}
             label={__('admin.overview')}
         />
-        <AdminSidebarGroup
-            group="ai"
-            icon={AiBrainIcon}
-        />
-        <AdminSidebarGroup
-            group="assistants"
-            icon={BotIcon}
-        />
-        <AdminSidebarGroup
-            group="people"
-            icon={UserGroupIcon}
-        />
-        <AdminSidebarGroup
-            group="system"
-            icon={Settings01Icon}
-        />
+        {#each app.admin.sections as section (section.name)}
+            <AdminSidebarSection {section} />
+        {/each}
     </SidebarItems>
 </nav>
 

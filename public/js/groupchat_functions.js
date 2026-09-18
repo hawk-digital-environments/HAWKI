@@ -192,7 +192,6 @@ async function onSendMessageToRoom(payload) {
                 'key': aiKeyBase64,
                 'stream': false,
                 'model': payload.model.model_id,
-                'assistantHandle': payload.assistantHandle ?? null,
                 'authorization': payload.authorization,
                 'metadata': {
                     'tools': payload.toolTransfers,

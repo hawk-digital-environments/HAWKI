@@ -79,6 +79,16 @@ export class ModelLookup {
         return providerId == null || providerId === '' ? null : String(providerId);
     }
 
+    /**
+     * Suggestions for the picker: an array from the moment the editor has a lookup, including while
+     * discovery runs and after it failed. Handing out `undefined` in those states would swap the
+     * picker for a plain text input and remount it, dropping the caret of whoever is typing a
+     * custom model id at that moment.
+     */
+    get pickerItems(): ModelSuggestion[] {
+        return this.suggestions ?? [];
+    }
+
     /** Translation key for the model id hint, following discovery and inspection progress. */
     get hint(): string {
         if (this.#providerKey() === null) return 'admin.model_id_provider_first';

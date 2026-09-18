@@ -48,11 +48,11 @@
 
 <div
     class="alert-card variant-{variant}"
-    style="--bg-color: var(--color-{surface}); --first-line-size: var(--font-size-{sizeMapping[size][title ? 0 : 1]})"
+    style="--bg-color: var(--color-{surface})"
     role={variant === 'destructive' ? 'alert' : 'status'}
 >
     {#if Icon}
-        <div class="alert-icon" aria-hidden="true">
+        <div aria-hidden="true">
             <Icon size={iconSizeMapping[size]} />
         </div>
     {/if}
@@ -77,18 +77,8 @@
         background-color: var(--bg-color);
     }
 
-    .alert-icon {
-        display: flex;
-        flex-shrink: 0;
-        align-items: center;
-        /* As tall as the first text line, so the icon centers on it. */
-        height: calc(var(--first-line-size) * var(--line-height-normal));
-    }
-
     .alert-content {
         display: flex;
-        flex-direction: column;
-        gap: var(--space-0_5, 0.125rem);
     }
 
     .variant-destructive {

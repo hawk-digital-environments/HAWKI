@@ -1,9 +1,9 @@
 <!--
   @component Shows the typed response of a dialog action (`{dialog: true}`) kept in
-  `workspace.results`. The action id determines the snippet response type.
+  `recordSet.results`. The action id determines the snippet response type.
 
   Usage:
-    <AdminResultDialog {workspace} action="discover">
+    <AdminResultDialog {recordSet} action="discover">
         {#snippet children(response, id)}...{/snippet}
     </AdminResultDialog>
 -->
@@ -19,18 +19,18 @@
 
     const { __ } = useTranslator();
     let {
-        workspace,
+        recordSet,
         action,
         title = __('admin.action_result'),
         children
     }: {
-        workspace: AdminWorkspace<Row, ColumnId, Results>;
+        recordSet: AdminWorkspace<Row, ColumnId, Results>;
         action: Id;
         /** Defaults to `__('admin.action_result')`. */
         title?: string;
         children: Snippet<[NoInfer<Results[Id]>, string | null]>;
     } = $props();
-    const result = $derived(workspace.results[action]);
+    const result = $derived(recordSet.results[action]);
     let trigger: HTMLElement | null = null;
     $effect(() => {
         if (result) trigger = result.trigger;
@@ -41,11 +41,11 @@
     open={!!result}
     {title}
     onOpenChange={(open) => {
-        if (!open) workspace.closeResult(action);
+        if (!open) recordSet.closeResult(action);
     }}
     contentProps={{
         onCloseAutoFocus: (event) => {
-            const target = workspace.restoreFocus(trigger);
+            const target = recordSet.restoreFocus(trigger);
             if (target) {
                 event.preventDefault();
                 target.focus({ preventScroll: true });

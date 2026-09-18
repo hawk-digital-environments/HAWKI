@@ -6,6 +6,7 @@ export const AdminToolSchema = z.object({
     id: z.string(),
     name: z.string(),
     kind: z.string(),
+    mcp_server_id: z.number().nullable(),
     active: z.boolean(),
     access_rule: AccessRuleNameSchema.default('unavailable'),
     mapped_capability: z.string().nullable(),

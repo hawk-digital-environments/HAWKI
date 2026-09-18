@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Admin\Repositories;
 
 use App\Models\Announcements\Announcement;
-use App\Services\Announcements\Repositories\PolicyAnnouncementRepository;
+use App\Services\Announcements\AnnouncementPublicationRules;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 /**
  * @extends ConfigurationRepository<Announcement>
@@ -16,6 +15,10 @@ use Illuminate\Validation\ValidationException;
 class AnnouncementRepository extends ConfigurationRepository
 {
     public const RESOURCE = 'announcements';
+
+    public function __construct(private readonly AnnouncementPublicationRules $publicationRules)
+    {
+    }
 
     protected function definition(): array
     {
@@ -43,18 +46,16 @@ class AnnouncementRepository extends ConfigurationRepository
 
     protected function prepare(Model $model, array &$data): void
     {
-        $this->validateAnnouncement($model, $data);
-
         if (!$model->exists) {
             $model->setAttribute('view', 'admin');
         }
+
+        $this->publicationRules->validate($model, $data);
     }
 
     protected function deleting(Model $model): void
     {
-        if ('policy' === $model->type && $model->is_published) {
-            throw ValidationException::withMessages(['type' => __('admin.errors.published_policy')]);
-        }
+        $this->publicationRules->validateDeletion($model);
     }
 
     protected function rowAttributes(array $row): array
@@ -73,38 +74,5 @@ class AnnouncementRepository extends ConfigurationRepository
         }
 
         return $result;
-    }
-
-    private function validateAnnouncement(Announcement $announcement, array $data): void
-    {
-        if ($data['is_published'] && !array_filter($data['content'], static fn ($text) => \is_string($text) && '' !== trim($text))) {
-            throw ValidationException::withMessages(['content' => __('admin.errors.content_required')]);
-        }
-
-        if ($announcement->exists && 'policy' === $announcement->type && $announcement->is_published && ('policy' !== $data['type'] || !$data['is_published'])) {
-            throw ValidationException::withMessages(['type' => __('admin.errors.published_policy')]);
-        }
-
-        if ('policy' !== $data['type']) {
-            return;
-        }
-
-        if (!$data['is_global'] || !empty($data['target_roles'])) {
-            throw ValidationException::withMessages(['is_global' => __('admin.errors.global_policy')]);
-        }
-
-        if (!$data['is_published']) {
-            return;
-        }
-
-        $overlaps = app(PolicyAnnouncementRepository::class)->findPoliciesOverlapping(
-            empty($data['starts_at']) ? null : \Carbon\CarbonImmutable::parse($data['starts_at']),
-            empty($data['expires_at']) ? null : \Carbon\CarbonImmutable::parse($data['expires_at']),
-            $announcement->id,
-        );
-
-        if ($overlaps->isNotEmpty()) {
-            throw ValidationException::withMessages(['starts_at' => __('admin.errors.policy_overlap')]);
-        }
     }
 }

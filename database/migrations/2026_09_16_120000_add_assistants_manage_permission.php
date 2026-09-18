@@ -21,11 +21,21 @@ return new class() extends Migration {
             return;
         }
 
-        // No role receives this grant. Administrators publish it explicitly.
         $now = now();
         DB::table('permissions')->insertOrIgnore([
             ['name' => self::PERMISSION, 'guard_name' => 'web', 'created_at' => $now, 'updated_at' => $now],
         ]);
+
+        // An administration-management permission, like `roles.manage` or `models.manage`:
+        // the built-in administrator role receives it automatically, same as those.
+        $permissionId = DB::table('permissions')->where('guard_name', 'web')->where('name', self::PERMISSION)->value('id');
+        $adminRoleId = DB::table('roles')->where('guard_name', 'web')->where('name', 'admin')->value('id');
+        if (null !== $permissionId && null !== $adminRoleId) {
+            DB::table('role_has_permissions')->insertOrIgnore([
+                ['permission_id' => $permissionId, 'role_id' => $adminRoleId],
+            ]);
+        }
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 

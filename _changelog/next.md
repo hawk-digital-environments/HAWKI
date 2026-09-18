@@ -11,6 +11,7 @@
 - Administration tables can be narrowed to a column value, e.g. the model table to one provider; the filter runs server-side (`filter[where][column]=value`). Reference columns such as provider, model or role now show names instead of ids.
 - Multilingual text fields in Administration (e.g. announcement content) have a **Translate into other languages** button that fills the other locales from the selected one via AI. It uses the new `translation` system model (`TRANSLATOR_MODEL` / `model_providers.system_models.translator`, assignable in the panel) and falls back to the default model.
 - Creating a model in Administration now asks for the provider first, then the model ID. Once a provider is chosen, the model ID field suggests the IDs from the provider's model list that are not configured yet (requires `providers.manage`); provider discovery applies the same filter. Picking a suggestion fills label, type, modalities, limits, pricing, flags and the other fields from the provider's metadata (`POST admin/providers/{id}/actions/inspect`) without overwriting values the admin already typed.
+- Models can be limited to selected roles. An empty selection keeps a model available to everyone; models used by system tasks cannot be restricted. The chat reports `MODEL_ACCESS_DENIED` and refreshes its model catalog.
 
 ### What's New
 

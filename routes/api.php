@@ -123,6 +123,7 @@ JsonApiRoute::server('v1')
                 ->only('index', 'store', 'update', 'destroy')
                 ->actions(function (ActionRegistrar $actions) {
                     $actions->withId()->post('actions/refresh', 'refresh');
+                    $actions->post('actions/check-status', 'checkStatus');
                 });
 
             $server->resource('admin-mcp', Admin\McpServerController::class)

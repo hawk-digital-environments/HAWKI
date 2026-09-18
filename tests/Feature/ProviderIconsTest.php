@@ -105,6 +105,56 @@ class ProviderIconsTest extends TestCase
         Http::assertSentCount(3);
     }
 
+    public function testItResolvesRemoteIconsBeforeOpeningTheMutationTransaction(): void
+    {
+        $this->actingAs($this->user(['admin.access', 'providers.manage']));
+        config(['cache.default' => 'array']);
+        $transactionLevel = DB::transactionLevel();
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>';
+        Http::fake(static function ($request) use ($transactionLevel, $svg) {
+            static::assertSame($transactionLevel, DB::transactionLevel(), 'Remote icon reads must not hold admin mutation locks.');
+
+            return Http::response(str_starts_with($request->url(), 'https://api.svgl.app')
+                ? [['id' => 987, 'title' => 'Lock test', 'route' => 'https://svgl.app/library/lock-test.svg']]
+                : $svg);
+        });
+        $values = ['name' => 'Lock test', 'provider_id' => 'icon-lock-test', 'adapter_key' => 'openai', 'active' => true,
+            'icon' => ['source' => 'svgl', 'svgl_id' => 987, 'title' => 'Lock test']];
+
+        $created = $this->postAdminResource(self::BASE, ['values' => $values])->assertCreated();
+        Http::assertSentCount(2);
+
+        $id = $created->json('data.id');
+        $version = $created->json('data.meta.version');
+        // Reusing the catalogue selection uses the cached SVG and catalogue.
+        $updated = $this->patchAdminResource(self::BASE . '/' . $id, ['values' => ['name' => 'Updated'] + $values, 'version' => $version])->assertOk();
+        Http::assertSentCount(2);
+
+        $this->patchAdminResource(self::BASE . '/' . $id, ['values' => ['name' => 'Stale'] + $values, 'version' => $version])->assertStatus(412);
+        self::assertSame('Updated', AiProvider::withoutGlobalScopes()->findOrFail($id)->name);
+        self::assertNotSame($version, $updated->json('data.meta.version'));
+    }
+
+    public function testRevocationDuringIconResolutionPreventsTheProviderWrite(): void
+    {
+        $actor = $this->user(['admin.access', 'providers.manage']);
+        $this->actingAs($actor);
+        config(['cache.default' => 'array']);
+        Http::fake(static function ($request) use ($actor) {
+            $actor->roles()->detach();
+
+            return Http::response(str_starts_with($request->url(), 'https://api.svgl.app')
+                ? [['id' => 988, 'title' => 'Revocation test', 'route' => 'https://svgl.app/library/revocation.svg']]
+                : '<svg xmlns="http://www.w3.org/2000/svg"/>');
+        });
+
+        $this->postAdminResource(self::BASE, ['values' => [
+            'name' => 'Revocation test', 'provider_id' => 'icon-revocation-test', 'adapter_key' => 'openai', 'active' => true,
+            'icon' => ['source' => 'svgl', 'svgl_id' => 988, 'title' => 'Revocation test'],
+        ]])->assertForbidden();
+        static::assertDatabaseMissing('ai_providers', ['provider_id' => 'icon-revocation-test']);
+    }
+
     private function user(array $permissions): User
     {
         $user = User::factory()->create();

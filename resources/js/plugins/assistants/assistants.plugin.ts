@@ -32,6 +32,7 @@ import AssistantReviewLogSchema from '$plugins/assistants/api/schemas/resources/
 import AssistantFieldFlagSchema from '$plugins/assistants/api/schemas/resources/assistant-field-flag.schema';
 import { AdminAssistantSchema } from '$plugins/assistants/admin/schemas/resources/admin-assistant.schema';
 import { BuilderModule } from '$plugins/assistants/modules/builder/BuilderModule';
+import { AssistantAdminModule } from '$plugins/assistants/modules/admin/AssistantAdminModule';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
@@ -198,6 +199,7 @@ export default class AssistantsPlugin implements HawkiPlugin {
     public modules({ add }: ModuleRegistrar): void | Promise<void> {
         add(new DashboardModule());
         add(new BuilderModule());
+        add(new AssistantAdminModule());
     }
 
     /**

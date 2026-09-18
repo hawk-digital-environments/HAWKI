@@ -1,8 +1,8 @@
 <!--
   @component App navigation sidebar. Composes the generic sidebar components
-  from components/ui/sidebar with HAWKI's brand and navigation entries. The
-  module-sidebar area and the header/footer chrome are extendible: plugins
-  contribute components via the `sidebarSlots` hook.
+  from components/ui/sidebar with HAWKI's brand and navigation entries.
+
+  @todo placeholder entries until the real navigation is wired up.
 -->
 <script lang="ts">
     import Sidebar from '$lib/components/ui/sidebar/Sidebar.svelte';
@@ -20,11 +20,12 @@
     import {onMount} from 'svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useConfig} from '$lib/app/hooks/useConfig.svelte.js';
-    import {useSidebarSlots} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
+    import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
+    import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 
     const app = useApp();
     const router = useRouter();
@@ -32,16 +33,24 @@
     const chatStore = useStore('chat');
     const config = useConfig();
     const {__} = useTranslator();
-
-    const sidebarSlots = useSidebarSlots();
-    const slots = $derived(sidebarSlots.entries);
-    const headerSlots = $derived(slots.filter(slot => slot.position === 'header' && slot.active));
-    const footerSlots = $derived(slots.filter(slot => slot.position === 'footer' && slot.active));
-    const actionSlots = $derived(slots.filter(slot => slot.position === 'action' && slot.active));
-    const panels = $derived(slots.filter(slot => slot.position === 'panel' && slot.active));
-
     // Only rendered when an operator configured one (ACCESSIBILITY_STATEMENT_URL).
     const accessibilityStatementUrl = $derived(config.accessibility?.statementUrl ?? null);
+    const activeModule = $derived.by(() => app.modules.all.find(module =>
+        router.isRouteActive(getModuleRouteGroupName(module.plugin.name, module.name))
+    ) ?? null);
+
+    // On routes that belong to no module (e.g. the announcements page) the
+    // module sidebar and the module selector stick to the last active module
+    // instead of vanishing, falling back to the first module for direct page loads.
+    let lastActiveModule = $state<HawkiModuleWithPlugin | null>(null);
+    $effect(() => {
+        if (activeModule) {
+            lastActiveModule = activeModule;
+        }
+    });
+    const visibleModules = $derived(app.modules.all.filter(module => module.visible?.(app) ?? true));
+    const sidebarModule = $derived([activeModule, lastActiveModule].find(module => module && visibleModules.includes(module)) ?? visibleModules[0] ?? null);
+    const ModuleSidebar = $derived(sidebarModule?.sidebar?.(app.localization.locale) ?? null);
 
     const chatPath = router.getPath('chat.index');
     let searchOpen = $state(false);
@@ -68,27 +77,14 @@
     <MobileNavCollapse />
     <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat} onSearch={() => searchOpen = true}>
         <HawkLogo label={__('ui.navigation.newChat')} />
-        {#each headerSlots as slot (slot.id)}
-            {@const HeaderExtra = slot.component}
-            <HeaderExtra />
-        {/each}
     </SidebarHeader>
     <nav class="module-selector" aria-label={__('ui.navigation.mainLabel')}>
-        <ModuleSelector />
+        <ModuleSelector module={sidebarModule} />
     </nav>
     <div class="module-sidebar">
-        {#each panels as panel (panel.id)}
-            {@const Panel = panel.component}
-            <Panel />
-        {/each}
-    </div>
-    <!-- The active module's primary action (e.g. "New Chat"), contributed
-         via `sidebarSlots` and pinned directly above the profile footer. -->
-    <div class="sidebar-actions">
-        {#each actionSlots as slot (slot.id)}
-            {@const Action = slot.component}
-            <Action />
-        {/each}
+        {#if ModuleSidebar}
+            <ModuleSidebar />
+        {/if}
     </div>
     <SidebarFooter>
         {#if accessibilityStatementUrl}
@@ -104,10 +100,6 @@
             />
         {/if}
         <ProfileButton onOpenSettings={() => openSettings()}/>
-        {#each footerSlots as slot (slot.id)}
-            {@const FooterExtra = slot.component}
-            <FooterExtra />
-        {/each}
     </SidebarFooter>
 </Sidebar>
 
@@ -126,11 +118,5 @@
         /* Its own group, so it takes the sidebar's group gap like every other
            boundary in the column. */
         margin-bottom: var(--nav-group-gap);
-    }
-
-    .sidebar-actions {
-        /* Pinned to the bottom of the column, directly above the profile
-           footer; the module-sidebar area above it takes the free space. */
-        margin-top: auto;
     }
 </style>

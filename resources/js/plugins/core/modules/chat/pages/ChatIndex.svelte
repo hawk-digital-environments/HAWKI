@@ -1,5 +1,5 @@
 <!--
-@component Page component for the chat module's `/` route (route name
+@component Page component for the chat module's `/` index route (route name
 `chat.index`, see `ChatModule.ts`) — the "new chat" screen. Shows the welcome
 hero and a fresh composer. Sending the first message makes the `ChatTransport`
 create the conversation and navigate to its `chat.conversation` route
@@ -100,7 +100,7 @@ from the store's in-flight cache.
                         </div>
                     </div>
                 {:else}
-                    <ChatWelcome composer={composer} />
+                    <ChatWelcome />
                 {/if}
             </div>
 
@@ -195,7 +195,6 @@ from the store's in-flight cache.
     }
 
     @media print {
-        :global(.app-sidebar) { display: none !important; }
         .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
     }
 </style>

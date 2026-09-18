@@ -58,10 +58,5 @@
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "^4.62.3"
-    },
-    "dependencies": {
-        "@formkit/auto-animate": "^0.10.0",
-        "smob": "^1.6.2",
-        "emoji-picker-element": "^1.29.1"
     }
 }

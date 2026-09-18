@@ -1,7 +1,12 @@
 import type {HawkiModule} from '$lib/kernel/modules/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
-import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
+import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
+import type {IconComponent} from '$lib/components/ui/icons/index.js';
+import type {Component} from 'svelte';
+import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
+import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
+import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
 import {
     chatActionSource,
     chatConversationSource
@@ -13,14 +18,13 @@ const loadConversationPage = async () => import('./pages/ChatConversation.svelte
 /**
  * The "chat" feature module of the `core` plugin.
  *
- * A `HawkiModule` bundles a feature's routes behind a single `name`. Modules
- * are handed to a plugin's `modules(registrar)` hook, where
- * `registrar.add(module)` (see `createModuleRegistrar` in
- * `kernel/modules/moduleRegistrar.ts`) registers them under the key
- * `${pluginName}:${module.name}` (here `core:chat`) and automatically
- * namespaces any routes the module declares under the plugin's route prefix.
- * The feature's sidebar presence is contributed by the owning plugin via the
- * sidebar collector events instead (see `CorePlugin.boot()`).
+ * A `HawkiModule` bundles everything one logical app feature needs (routes,
+ * title/description/icon, sidebar entry) behind a single `name`. Modules are
+ * handed to a plugin's `modules(registrar)` hook, where `registrar.add(module)`
+ * (see `createModuleRegistrar` in `kernel/modules/moduleRegistrar.ts`) registers
+ * them under the key `${pluginName}:${module.name}` (here `core:chat`) and
+ * automatically namespaces any routes the module declares under the plugin's
+ * route prefix.
  *
  * `/` resolves the module index at `/chat` (the "new chat" page), while
  * `/:slug` opens a concrete conversation. Each route lazy-loads its own page
@@ -38,11 +42,6 @@ export class ChatModule implements HawkiModule {
      * into the globally unique module key `core:chat`.
      */
     readonly name = 'chat';
-
-    /** Used e.g. as the search scope label; falls back to the raw module name without it. */
-    public title(translate: Translator['translate']): string {
-        return translate('chat.module.title');
-    }
 
     /**
      * Declares the module's routes. Called by the `ModuleRegistrar` while the
@@ -66,5 +65,17 @@ export class ChatModule implements HawkiModule {
 
         group('conversations', {kind: 'static', label: t => t('ui.search.conversations')})
             .add('conversation-titles', chatConversationSource);
+    }
+
+    public title(translate: Translator['translate'], _locale: Locale): string {
+        return translate('chat.module.title');
+    }
+
+    public icon(_locale: Locale): string | IconComponent | Component {
+        return Chat01Icon;
+    }
+
+    public sidebar(_locale: Locale): Component {
+        return ChatSidebar;
     }
 }

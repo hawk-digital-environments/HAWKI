@@ -52,7 +52,6 @@
             "requestFailed": "Die KI-Anfrage ist fehlgeschlagen.",
             "welcomeTitle": "Wie kann ich helfen?",
             "welcomeDescription": "Starte eine private, verschlüsselte Unterhaltung mit HAWKI.",
-            "starterPrompts": "Vorgeschlagene Einstiegsnachrichten",
             "disclaimer": "KI kann Fehler machen. Prüfe wichtige Informationen."
         },
         "actions": {
@@ -112,7 +111,6 @@
         "message": {
             "sources": "Quellen",
             "authorHeading": ":author hat geschrieben",
-            "document": "Dokument",
             "citationReference": {
                 "label": "Quelle :number: :domain",
                 "labelNoDomain": "Quelle :number",
@@ -145,6 +143,10 @@
                 "unsupported_file_type": "Dateien vom Typ „:type“ können nicht angehängt werden.",
                 "file_too_large": "Die Datei „:name“ ist zu groß. Maximal erlaubt sind :maxSize.",
                 "unknown_file": "Unbekannt"
+            },
+            "assistantButtonTooltip": {
+                "addHandle": "Mit HAWKI sprechen",
+                "removeHandle": "Nicht mehr mit HAWKI sprechen"
             },
             "systemPromptDialog": {
                 "title": "Systemprompt bearbeiten",
@@ -228,28 +230,7 @@
                     "webSearchDescription": "Dieses Tool ermöglicht es der KI, das Internet zu durchsuchen, um aktuelle Informationen zu finden. Es kann Suchanfragen stellen und relevante Ergebnisse liefern, die in die Antworten der KI einfließen.",
                     "knowledgeBase": "HAWKI-Wissen",
                     "knowledgeBaseDescription": "Dieses Tool ermöglicht es der KI, auf eine umfangreiche Wissensdatenbank zuzugreifen, die speziell für HAWKI entwickelt wurde. Die Daten werden von deiner Hochschule zur Verfügung gestellt und enthalten Informationen zu Kursen, Veranstaltungen, Richtlinien und vielem mehr."
-                },
-                "searchPlaceholder": "Werkzeuge suchen",
-                "noResults": "Keine passenden Werkzeuge"
-            },
-            "assistantMenu": {
-                "title": "Assistenz taggen",
-                "tagAssistant": "KI-Assistenz taggen (@)",
-                "backButton": "Assistenten",
-                "tagAssistantAction": "Assistenz taggen",
-                "untagAssistantAction": "Tag entfernen",
-                "infoDefault": "Weitere Informationen zur Assistenz anzeigen",
-                "hawkiLabel": "HAWKI",
-                "assistantsLabel": "Assistenten",
-                "assistants": {
-                    "hawki": "HAWKI",
-                    "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum"
-                },
-                "searchPlaceholder": "Assistenten suchen",
-                "noResults": "Keine passenden Assistenten"
-            },
-            "mentionChips": {
-                "removeAriaLabel": ":assistant aus der Nachricht entfernen"
+                }
             },
             "modelPicker": {
                 "switchModel": "Aktuelles Modell wechseln",
@@ -326,11 +307,6 @@
             "sending": {
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
                 "sendError": "Fehler beim Senden der Nachricht."
-            },
-            "pin": {
-                "pinnedLabel": "Angeheftet",
-                "pin": "Oben in diesem Menü anheften",
-                "unpin": "Nicht mehr anheften"
             }
         },
         "tools": {
@@ -341,6 +317,9 @@
             "messageAccepted": "Deine Nachricht wurde gespeichert, aber die Antwort konnte nicht erstellt werden. Prüfe deine Auswahl, bevor du die Antwort neu erstellst.",
             "offline": "Ein ausgewähltes Werkzeug ist vorübergehend offline.",
             "offlineHelp": "Warte, bis es wieder online ist, oder entferne es, um deine Nachricht zu senden."
+        },
+        "models": {
+            "accessDenied": "Du hast keinen Zugriff mehr auf das gewählte Modell. Wähle ein anderes Modell."
         }
     }
 }

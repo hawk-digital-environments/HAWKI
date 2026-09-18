@@ -11,17 +11,20 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { isModelVisible, toggleModelVisible } from '../capabilities.js';
+    import { roleLabel } from '../forms/authorization.js';
     import type { AdminModelResource } from '../schemas/resources/admin-models.schema.js';
     import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
 
-    import { ModelRefreshSchema } from '../schemas/admin-actions.js';
+    import { ModelRefreshSchema, ModelStatusCheckSchema } from '../schemas/admin-actions.js';
     const app = useApp();
     const { __ } = useTranslator();
     const columns: AdminColumn<AdminModelResource, 'visible'>[] = [
         { id: 'label' },
         { id: 'model_id' },
         { id: 'provider_id', filter: true },
+        { id: 'allowed_roles', sortable: false },
         { id: 'active', format: 'boolean' },
+        { id: 'status', format: 'enum' },
         { id: 'visible', sortable: false },
         { id: 'flags', sortable: false }
     ];
@@ -30,7 +33,7 @@
     const providerFilter = $derived<ColumnFiltersState>(
         providerId.current ? [{ id: 'provider_id', value: providerId.current }] : []
     );
-    const workspace = useAdminWorkspace(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-models', { query, signal }),
         {
@@ -68,11 +71,11 @@
     // Links and browser navigation update the filter without remounting the page.
     $effect(() => {
         const filters = providerFilter;
-        untrack(() => void workspace.applyColumnFilters(filters));
+        untrack(() => void records.applyColumnFilters(filters));
     });
     // Table selections update the URL. Assignments do not subscribe this effect to URL changes.
     $effect(() => {
-        const value = workspace.columnFilters.find((item) => item.id === 'provider_id')?.value;
+        const value = records.columnFilters.find((item) => item.id === 'provider_id')?.value;
         providerId.current = typeof value === 'string' && value ? value : null;
     });
 </script>
@@ -81,8 +84,8 @@
     <AdminRowSwitch
         checked={row.active}
         label={__('admin.fields.active')}
-        disabled={workspace.locked(row)}
-        onToggle={(enabled) => workspace.update(row, { active: enabled })}
+        disabled={records.locked(row)}
+        onToggle={(enabled) => records.update(row, { active: enabled })}
     />
 {/snippet}
 
@@ -90,27 +93,45 @@
     <AdminRowSwitch
         checked={isModelVisible(row)}
         label={__('admin.fields.visible')}
-        disabled={workspace.locked(row)}
-        onToggle={(enabled) => workspace.update(row, toggleModelVisible(row, enabled))}
+        disabled={records.locked(row)}
+        onToggle={(enabled) => records.update(row, toggleModelVisible(row, enabled))}
     />
+{/snippet}
+
+{#snippet allowed_roles(row: AdminModelResource)}
+    {row.allowed_roles.length ? row.allowed_roles.map((id) => roleLabel(id, records.content?.role_catalog ?? [], records.fields, __)).join(', ') : __('admin.allowed_roles_everyone')}
 {/snippet}
 
 {#snippet flags(row: AdminModelResource)}
     <AdminModelCapabilities
         {row}
-        disabled={workspace.locked(row)}
-        onChange={(changes) => workspace.update(row, changes)}
+        disabled={records.locked(row)}
+        onChange={(changes) => records.update(row, changes)}
     />
 {/snippet}
 
 <AdminPage
-    section="models"
-    {workspace}
+    workspace="models"
+    recordSet={records}
+    pageActions={app.can('models.manage') ?
+        [
+            {
+                id: 'check-status',
+                run: () =>
+                    app.restApi.postToResourceAction(
+                        'admin-models',
+                        `actions/check-status`,
+                        {},
+                        { schema: ModelStatusCheckSchema }
+                    )
+            }
+        ]
+    :   []}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.models')}
-        {workspace}
-        cells={{ active, visible, flags }}
+        recordSet={records}
+        cells={{ active, visible, flags, allowed_roles }}
     />
 </AdminPage>

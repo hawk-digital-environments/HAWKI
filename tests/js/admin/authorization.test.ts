@@ -82,12 +82,17 @@ test('admin contracts retain authorization metadata and fail closed for absent t
         id: '1',
         name: 'Search',
         kind: 'php',
+        mcp_server_id: null,
         active: true,
         mapped_capability: null,
         description: null,
         models: []
     };
     assert.equal(AdminToolSchema.parse(row).access_rule, 'unavailable');
+    const rowWithoutMcpServerId = { ...row };
+    delete rowWithoutMcpServerId.mcp_server_id;
+    assert.equal(AdminToolSchema.safeParse(rowWithoutMcpServerId).success, false);
+    assert.equal(AdminToolSchema.safeParse({ ...row, mcp_server_id: 1 }).success, true);
     assert.equal(AdminToolSchema.safeParse({ ...row, access_rule: 'everyone' }).success, false);
     assert.equal(
         AdminContentSchema.safeParse({ rows: [], permission_catalog: [{ ...catalog[0], grantable: 'yes' }] }).success,

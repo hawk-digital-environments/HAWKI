@@ -14,14 +14,14 @@
     };
 
     const reader: AdminReader<TestRow> = async () => [] as unknown as JsonApiCollection<TestRow>;
-    const workspace = useAdminWorkspace(
+    const records = useAdminWorkspace(
         [{ id: 'label' }, { id: 'active' }, { id: 'controls', sortable: false }] as const,
         reader
     );
 
-    const kind: 'a' | 'b' = workspace.rows[0].kind;
+    const kind: 'a' | 'b' = records.rows[0].kind;
     // @ts-expect-error Rows keep the resource shape; nothing is renamed.
-    workspace.rows[0].type;
+    records.rows[0].type;
 
     useAdminWorkspace(
         // @ts-expect-error A data column id must be a row key.
@@ -34,32 +34,32 @@
         reader
     );
 
-    function invalidRowProperty(row: (typeof workspace.rows)[number]): string {
+    function invalidRowProperty(row: (typeof records.rows)[number]): string {
         // @ts-expect-error Cell snippets receive the reader-derived row type.
         return row.missing;
     }
 </script>
 
-{#snippet label(row: (typeof workspace.rows)[number])}
+{#snippet label(row: (typeof records.rows)[number])}
     <span>{row.label}</span>
 {/snippet}
 
-{#snippet controls(row: (typeof workspace.rows)[number])}
+{#snippet controls(row: (typeof records.rows)[number])}
     <button type="button" aria-label={row.label}>Edit</button>
 {/snippet}
 
-{#snippet invalidRow(row: (typeof workspace.rows)[number])}
+{#snippet invalidRow(row: (typeof records.rows)[number])}
     <span>{invalidRowProperty(row)}</span>
 {/snippet}
 
 <AdminTable
-    {workspace}
+    recordSet={records}
     caption="Test rows"
     cells={{ label, controls }}
 />
 
 <AdminTable
-    {workspace}
+    recordSet={records}
     caption="Invalid cell"
     cells={{
         // @ts-expect-error Cell keys must be declared column ids.

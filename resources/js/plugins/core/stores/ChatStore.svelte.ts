@@ -3,7 +3,7 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValue, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
 import {decodeJsonApiResourceResponse} from '$lib/kernel/api/jsonApiEncoding.js';
 import AiConvMessageSchema, {type AiConvMessage} from '$plugins/core/schemas/resources/ai-conv-messages.schema.js';
-import type {ChatAssistantIdentity, ChatConversation, ChatMessage, ChatSummary, EncryptedText, MessageStats, ReasoningPart} from '$plugins/core/modules/chat/types.js';
+import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText, MessageStats, ReasoningPart} from '$plugins/core/modules/chat/types.js';
 import type {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
@@ -124,7 +124,6 @@ export class ChatStore implements DataStore {
                 name: source.name,
                 slug: source.slug,
                 system_prompt: source.system_prompt ? await this.decryptText(source.system_prompt, key) : '',
-                assistant_handle: source.hawkiExtensions?.assistant_handle ?? null,
                 messages: await Promise.all((source.messages ?? []).map(message => this.decryptMessage(message, key)))
             };
             if (requestId === this.activeLoad) {
@@ -145,18 +144,16 @@ export class ChatStore implements DataStore {
         }
     }
 
-    public async create(name: string, systemPrompt: string, activate = true, assistantHandle: string | null = null): Promise<ChatConversation> {
+    public async create(name: string, systemPrompt: string, activate = true): Promise<ChatConversation> {
         const encryptedPrompt = await this.encryptText(systemPrompt);
         const resource = await this.dependencies.restApi.createResource('ai-convs', {
             name,
-            system_prompt: JSON.stringify(encryptedPrompt),
-            ...(assistantHandle === null ? {} : {hawkiExtensions: {assistant_handle: assistantHandle}})
+            system_prompt: JSON.stringify(encryptedPrompt)
         });
         const conversation: ChatConversation = {
             name,
             slug: resource.slug,
             system_prompt: systemPrompt,
-            assistant_handle: assistantHandle,
             messages: []
         };
         if (activate) {
@@ -182,22 +179,6 @@ export class ChatStore implements DataStore {
         const summary = this.conversations.find(item => item.slug === slug);
         if (summary) summary.name = name;
         this.touch(slug, typeof updated?.updated_at === 'string' ? updated.updated_at : undefined);
-    }
-
-    /**
-     * Keeps the persisted conversation binding in sync with the assistant the
-     * latest send addressed: switching assistants mid-chat rebinds, sending
-     * without an assistant handle clears the binding (plain HAWKI chat).
-     * No-ops while the cached binding already matches.
-     */
-    public async updateAssistantHandle(slug: string, assistantHandle: string | null): Promise<void> {
-        if (this.getConversation(slug)?.assistant_handle === assistantHandle) {
-            return;
-        }
-
-        await this.dependencies.restApi.updateResource('ai-convs', slug, {hawkiExtensions: {assistant_handle: assistantHandle}});
-        const conversation = this.getConversation(slug);
-        if (conversation) conversation.assistant_handle = assistantHandle;
     }
 
     public conversationName(slug: string): string | null {
@@ -369,7 +350,7 @@ export class ChatStore implements DataStore {
         return {
             author: {
                 username: source.author.username,
-                name: source.author.display_name,
+                name: source.author.name,
                 avatar_url: source.author.avatar ? (this.dependencies.uriBuilder.storageFileUri(source.author.avatar) ?? '') : ''
             },
             completion: source.completion ? 1 : 0,
@@ -396,33 +377,8 @@ export class ChatStore implements DataStore {
             model: source.model,
             updated_at: source.updated_at ?? '',
             citations,
-            assistant: this.readAssistantIdentity(source.metadata?.assistant),
             ...(reasoning?.length ? {reasoning} : {}),
             ...(stats ? {stats} : {})
-        };
-    }
-
-    /**
-     * Validates the persisted `metadata.assistant` display identity. The
-     * metadata column is free-form, so malformed entries (older messages,
-     * foreign writers) degrade to the default model-label rendering instead
-     * of breaking the message log.
-     */
-    private readAssistantIdentity(raw: unknown): ChatAssistantIdentity | undefined {
-        if (!raw || typeof raw !== 'object') {
-            return undefined;
-        }
-
-        const candidate = raw as Record<string, unknown>;
-        if (typeof candidate.name !== 'string' || typeof candidate.icon !== 'string') {
-            return undefined;
-        }
-
-        return {
-            name: candidate.name,
-            icon: candidate.icon,
-            ...(typeof candidate.tint === 'string' ? {tint: candidate.tint} : {}),
-            ...(typeof candidate.handle === 'string' ? {handle: candidate.handle} : {})
         };
     }
 

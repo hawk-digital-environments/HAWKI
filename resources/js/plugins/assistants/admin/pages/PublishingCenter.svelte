@@ -43,7 +43,7 @@
         { id: 'updated_at' }
     ];
 
-    const workspace = useAdminWorkspace(
+    const recordSet = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-assistants', { query, signal })
     );
@@ -60,16 +60,16 @@
             ...(status ? [{ id: 'status', value: status }] : []),
             ...(origin ? [{ id: 'based_on', value: origin }] : [])
         ];
-        untrack(() => void workspace.applyColumnFilters(filters));
+        untrack(() => void recordSet.applyColumnFilters(filters));
     });
 </script>
 
 <AdminPage
-    section="assistants"
-    {workspace}
+    workspace="assistants"
+    {recordSet}
 >
     <div class="toolbar">
-        <AdminSearch {workspace} />
+        <AdminSearch {recordSet} />
         <div class="filter">
             <span id={`${uid}-status-label`}>{__('admin.fields.status')}</span>
             <SingleSelect
@@ -101,7 +101,7 @@
     </div>
     <AdminTable
         caption={__('admin.sections.assistants')}
-        {workspace}
+        {recordSet}
         cells={{ name: nameCell, status: statusCell }}
     />
 </AdminPage>

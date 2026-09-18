@@ -11,14 +11,14 @@
     import { controlFor, isFieldVisible, normalizeControlValue, type Control } from '../forms/controls.js';
     import { fieldHint } from '../forms/hints.js';
     import { issueMessage } from '../forms/validationMessages.js';
-    import { ModelLookup } from '../forms/modelLookup.svelte.js';
+    import { ModelLookup, type ModelSuggestion } from '../forms/modelLookup.svelte.js';
     import AdminPermissionInput from './inputs/AdminPermissionInput.svelte';
     import AdminAccessRuleInput from './inputs/AdminAccessRuleInput.svelte';
     import { roleLabel } from '../forms/authorization.js';
     import type { AdminContent } from '../schemas/admin-content.js';
     import AdminValueInput from './inputs/AdminValueInput.svelte';
     import type { AdminField, AdminRow } from '../schemas/admin-content.js';
-    import type { SectionId } from '../sections.js';
+    import type { EditorSection } from '../forms/schemas.js';
 
     let {
         section,
@@ -30,7 +30,7 @@
         onClose,
         restoreFocus
     }: {
-        section: SectionId;
+        section: EditorSection;
         fields: AdminField[];
         content: AdminContent | null;
         row: AdminRow | null;
@@ -85,7 +85,7 @@
     }));
     const formState = form.useSelector((state) => state);
     const visibleFields = $derived(fields.filter((field) => isFieldVisible(section, field, formState.current.values)));
-    const busy = $derived(formState.current.isSubmitting || fieldBusy || app.authorizationRefreshing);
+    const busy = $derived(formState.current.isSubmitting || fieldBusy);
     /** Changing a tool's access rule rewrites role grants, so it needs both permissions. */
     const accessRuleLocked = $derived(!app.can('mcp.manage') || !app.can('roles.manage'));
     /** JSON snapshots of values this editor filled in itself; only those may be replaced by later metadata. */
@@ -112,6 +112,10 @@
             adopted[field.key] = JSON.stringify(next ?? null);
             form.setFieldValue(field.key, next);
         }
+    }
+    /** Only the model id field is picked from the provider; see `ModelLookup.pickerItems`. */
+    function suggestionsFor(definition: AdminField): ModelSuggestion[] | undefined {
+        return lookup && definition.key === 'model_id' ? lookup.pickerItems : undefined;
     }
     function hintFor(definition: AdminField, control: Control): string | undefined {
         if (control.hint) return control.hint;
@@ -205,7 +209,11 @@
                 {lookup.status ? __(lookup.status) : ''}
             </p>{/if}
         {#if row?.mapped_roles && Array.isArray(row.mapped_roles) && row.mapped_roles.length}<p>
-                {__('admin.mapped_roles_hint', { roles: row.mapped_roles.map((id) => roleLabel(Number(id), content?.role_catalog ?? [], fields, __)).join(', ') })}
+                {__('admin.mapped_roles_hint', {
+                    roles: row.mapped_roles
+                        .map((id) => roleLabel(Number(id), content?.role_catalog ?? [], fields, __))
+                        .join(', ')
+                })}
             </p>{/if}
         <div class="fields">
             {#each visibleFields as definition (definition.key)}
@@ -242,38 +250,45 @@
                                 error={fieldError(definition.key)}
                             />
                         {:else}
-                        <AdminValueInput
-                            id={`${uid}-${definition.key}`}
-                            label={labelFor(definition)}
-                            control={{
-                                ...control,
-                                label: definition.key,
-                                options: ['roles', 'role_id'].includes(definition.key) ? control.options?.map((option) => ({
-                                    ...option,
-                                    label: roleLabel(Number(option.value), content?.role_catalog ?? [], fields, __)
-                                })) : control.options,
-                                suggestions: modelLookup?.suggestions ?? undefined,
-                                hint: hintFor(definition, control)
-                            }}
-                            value={field.state.value}
-                            onchange={(value) => {
-                                delete serverErrors[definition.key];
-                                field.handleChange(value);
-                                if (
-                                    section === 'system-models' &&
-                                    definition.key === 'model_type' &&
-                                    value === 'translation'
-                                )
-                                    form.setFieldValue('prompts', {});
-                                modelLookup?.adoptLabel(value);
-                            }}
-                            onselect={modelLookup ? (value) => void modelLookup.inspect(value) : undefined}
-                            onBusyChange={(pending) => (fieldBusy = pending)}
-                            onblur={field.handleBlur}
-                            disabled={busy || control.disabled || (!!row && !!definition.immutable)}
-                            error={fieldError(definition.key)}
-                            secret={definition.type === 'secret-json'}
-                        />
+                            <AdminValueInput
+                                id={`${uid}-${definition.key}`}
+                                label={labelFor(definition)}
+                                control={{
+                                    ...control,
+                                    label: definition.key,
+                                    options: ['roles', 'role_id', 'allowed_roles'].includes(definition.key) ?
+                                            control.options?.map((option) => ({
+                                                ...option,
+                                                label: roleLabel(
+                                                    Number(option.value),
+                                                    content?.role_catalog ?? [],
+                                                    fields,
+                                                    __
+                                                )
+                                            }))
+                                        :   control.options,
+                                    suggestions: suggestionsFor(definition),
+                                    hint: hintFor(definition, control)
+                                }}
+                                value={field.state.value}
+                                onchange={(value) => {
+                                    delete serverErrors[definition.key];
+                                    field.handleChange(value);
+                                    if (
+                                        section === 'system-models' &&
+                                        definition.key === 'model_type' &&
+                                        value === 'translation'
+                                    )
+                                        form.setFieldValue('prompts', {});
+                                    modelLookup?.adoptLabel(value);
+                                }}
+                                onselect={modelLookup ? (value) => void modelLookup.inspect(value) : undefined}
+                                onBusyChange={(pending) => (fieldBusy = pending)}
+                                onblur={field.handleBlur}
+                                disabled={busy || control.disabled || (!!row && !!definition.immutable)}
+                                error={fieldError(definition.key)}
+                                secret={definition.type === 'secret-json'}
+                            />
                         {/if}
                     {/snippet}
                 </form.Field>

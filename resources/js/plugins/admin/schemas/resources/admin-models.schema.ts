@@ -8,6 +8,7 @@ export const AdminModelSchema = z.object({
     model_id: z.string(),
     provider_id: z.number(),
     active: z.boolean(),
+    status: z.string(),
     descriptions: jsonObject(z.string()),
     model_type: z.string().nullable(),
     documentation_url: z.string().nullable(),
@@ -21,6 +22,7 @@ export const AdminModelSchema = z.object({
     pricing: jsonObject(z.unknown()).nullable(),
     flags: z.array(z.string()).nullable(),
     tools: z.array(z.number()),
+    allowed_roles: z.array(z.number()),
     usage_rules: z.array(z.enum(['main', 'external'])),
     /** Version for `If-Match` on writes; taken from the resource meta by `adminContent()`, not an attribute. */
     _version: z.string().optional()
