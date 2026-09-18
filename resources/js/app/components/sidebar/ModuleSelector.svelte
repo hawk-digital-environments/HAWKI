@@ -15,7 +15,7 @@
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
+    import type {HawkiCoreModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 
     interface Props {
         /** Module to show as selected; defaults to the first listed module. */
@@ -47,10 +47,17 @@
 
     const current = $derived(module ? `${module.plugin.name}:${module.name}` : moduleItems[0]?.value);
 
+    // NOTE: the forth argument "(module as HawkiCoreModule).pluginNameInRoutes" was added to the function
+    // assistant/dashboard was landing in /dashboard
     function selectModule(moduleId: string) {
         const module = modules.find(candidate => `${candidate.plugin.name}:${candidate.name}` === moduleId);
         if (!module) return;
-        const prefix = getModuleRoutePrefix(module.plugin.name, module.name, module.plugin.isCorePlugin);
+        const prefix = getModuleRoutePrefix(
+            module.plugin.name,
+            module.name,
+            module.plugin.isCorePlugin,
+            (module as HawkiCoreModule).pluginNameInRoutes
+        );
         void router.goTo(router.p(prefix));
     }
 

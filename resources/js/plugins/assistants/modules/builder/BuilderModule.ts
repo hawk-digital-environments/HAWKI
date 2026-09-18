@@ -1,9 +1,30 @@
 import {HawkiCoreModule, HawkiModule} from "$lib/kernel/modules/types";
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
+import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
+import type {Component} from 'svelte';
+import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
 
+/**
+ * The builder has no module-selector entry of its own — entering it (from
+ * the dashboard's "create"/"edit" actions) is a drill-down inside the same
+ * assistants sidebar that {@link DashboardModule} shows, not a module
+ * switch. `sidebar()` still returns that same component (rather than
+ * nothing) so the app sidebar renders correctly on a direct page load of a
+ * builder route, before any dashboard visit has set the fallback.
+ */
 export class BuilderModule implements HawkiCoreModule {
     public readonly name = 'builder';
     public readonly pluginNameInRoutes = true;
+
+    public visible(_app: HawkiApp): boolean {
+        return false;
+    }
+
+    public sidebar(_locale: Locale): Component {
+        return AssistantsSidebar;
+    }
+
     routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar.group('/advanced', (builder)=> {
             // The group root redirects to /general via its page's `loadData`

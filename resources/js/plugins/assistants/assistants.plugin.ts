@@ -61,7 +61,7 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 label: ctx.translate('assistants.assistants'),
                 icon: BotIcon,
                 onSelect: (selectCtx) => {
-                    void selectCtx.router.goToRoute('assistants.dashboard.index');
+                    void selectCtx.router.goToRoute('assistants.pages.index');
                 },
                 active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
             }

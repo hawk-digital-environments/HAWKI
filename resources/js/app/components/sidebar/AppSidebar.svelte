@@ -25,6 +25,7 @@
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
+    import {useSidebarSlots} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 
     const app = useApp();
@@ -39,18 +40,35 @@
         router.isRouteActive(getModuleRouteGroupName(module.plugin.name, module.name))
     ) ?? null);
 
+    const visibleModules = $derived(app.modules.all.filter(module => module.visible?.(app) ?? true));
+
     // On routes that belong to no module (e.g. the announcements page) the
     // module sidebar and the module selector stick to the last active module
     // instead of vanishing, falling back to the first module for direct page loads.
+    //
+    // Only a *visible* active module is remembered here. An invisible module
+    // that is nonetheless the active one (e.g. the assistants builder, whose
+    // routes belong to it but which hides itself from the selector — see
+    // `BuilderModule.visible()`) must not overwrite this: it would poison the
+    // fallback chain below, since neither `activeModule` nor `lastActiveModule`
+    // would then resolve to a visible module and the sidebar would fall through
+    // to `visibleModules[0]` instead of staying on the module the invisible one
+    // stands in for.
     let lastActiveModule = $state<HawkiModuleWithPlugin | null>(null);
     $effect(() => {
-        if (activeModule) {
+        if (activeModule && visibleModules.includes(activeModule)) {
             lastActiveModule = activeModule;
         }
     });
-    const visibleModules = $derived(app.modules.all.filter(module => module.visible?.(app) ?? true));
     const sidebarModule = $derived([activeModule, lastActiveModule].find(module => module && visibleModules.includes(module)) ?? visibleModules[0] ?? null);
     const ModuleSidebar = $derived(sidebarModule?.sidebar?.(app.localization.locale) ?? null);
+
+    // The active module's primary action (e.g. "Create assistant", "New
+    // chat") still goes through the `sidebarSlots` hook — modules don't have
+    // an `action()` counterpart to `sidebar()`, so this is the one place the
+    // old slot mechanism is still consulted.
+    const sidebarSlots = useSidebarSlots();
+    const actionSlots = $derived(sidebarSlots.entries.filter(slot => slot.position === 'action' && slot.active));
 
     const chatPath = router.getPath('chat.index');
     let searchOpen = $state(false);
@@ -86,6 +104,14 @@
             <ModuleSidebar />
         {/if}
     </div>
+    <!-- The active module's primary action, contributed via `sidebarSlots`
+         and pinned directly above the profile footer. -->
+    <div class="sidebar-actions">
+        {#each actionSlots as slot (slot.id)}
+            {@const Action = slot.component}
+            <Action />
+        {/each}
+    </div>
     <SidebarFooter>
         {#if accessibilityStatementUrl}
             {#snippet externalHint()}
@@ -118,5 +144,11 @@
         /* Its own group, so it takes the sidebar's group gap like every other
            boundary in the column. */
         margin-bottom: var(--nav-group-gap);
+    }
+
+    .sidebar-actions {
+        /* Pinned to the bottom of the column, directly above the profile
+           footer; the module-sidebar area above it takes the free space. */
+        margin-top: auto;
     }
 </style>
