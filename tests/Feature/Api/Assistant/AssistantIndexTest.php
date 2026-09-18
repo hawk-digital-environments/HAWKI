@@ -584,4 +584,94 @@ class AssistantIndexTest extends TestCase
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
+
+    public function testCanFilterAssistantsBySharedWithUser(): void
+    {
+        $owner = User::factory()->create();
+        $user = User::factory()->create();
+
+        $shared = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE,
+            'name' => 'Shared with me',
+        ]);
+        $shared->sharedUsers()->sync([$user->id]);
+
+        Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'name' => 'My own',
+        ]);
+
+        Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => AssistantReleaseStage::FEDERATED,
+            'name' => 'Public but not shared',
+        ]);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['shared_with_user' => 'true']]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', (string) $shared->id)
+            ->assertJsonPath('data.0.attributes.name', 'Shared with me');
+    }
+
+    public function testFilterBySharedWithUserReturnsEmptyWhenNothingShared(): void
+    {
+        $user = User::factory()->create();
+
+        Assistant::factory()->create(['creator_id' => $user->id]);
+        Assistant::factory()->create([
+            'creator_id' => User::factory()->create()->id,
+            'release_stage' => AssistantReleaseStage::FEDERATED,
+        ]);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['shared_with_user' => 'true']]))
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function testSharedWithUserFilterOnlyScopesToAuthenticatedUser(): void
+    {
+        $owner = User::factory()->create();
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE,
+        ]);
+        $assistant->sharedUsers()->sync([$userA->id]);
+
+        $this->actingAsUser($userB);
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['shared_with_user' => 'true']]))
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function testSharedWithUserFilterFalseIsNoOp(): void
+    {
+        $owner = User::factory()->create();
+        $user = User::factory()->create();
+
+        Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE,
+        ]);
+        Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => AssistantReleaseStage::FEDERATED,
+        ]);
+
+        $this->actingAsUser($user);
+
+        // `false` bypasses the filter: normal visibility rules apply.
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['shared_with_user' => 'false']]))
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+    }
 }

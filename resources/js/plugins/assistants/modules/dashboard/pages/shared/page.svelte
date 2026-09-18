@@ -1,6 +1,6 @@
 <script lang="ts">
     import AssistantBrowser from "$plugins/assistants/modules/dashboard/components/assistantBrowser/AssistantBrowser.svelte";
-    import {ReleaseMode} from "$plugins/assistants/types/assistant";
+    import {readBrowserUrlState} from "$plugins/assistants/modules/dashboard/components/assistantBrowser/browserUrlState.js";
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -25,27 +25,45 @@
     // when the page unmounts.
     const list = createAssistantListContext(useApp(), useToastContext());
 
-    let searchQuery = $state("");
-    let activeFilters = $state(new Set<string>());
+    // Search text and category filters are event-driven: the search bar and
+    // category bar report commits via callbacks, and each handler applies the
+    // (page-specific) filter to the list. Seeding from the URL happens before
+    // the single initial request below.
+    const initial = readBrowserUrlState();
+    let searchQuery = $state(initial.query);
+    let activeFilters = $state(initial.categories);
 
-    $effect(() => {
+    function applyFilter() {
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
-            is_favorite: false,
-            release_stage: ['']
+            shared_with_user: true
         });
-    });
+    }
+
+    function handleSearchChange(query: string) {
+        searchQuery = query;
+        applyFilter();
+    }
+
+    function handleFilterChange(filters: Set<string>) {
+        activeFilters = filters;
+        applyFilter();
+    }
+
+    applyFilter();
 </script>
 
 <Page title={__('assistants.shared.title')}>
     <div class="page-content">
 
         <AssistantBrowser
+                searchQuery={searchQuery}
+                activeFilters={activeFilters}
+                onSearchChange={handleSearchChange}
+                onFilterChange={handleFilterChange}
                 emptyTitle={__('assistants.shared.empty_title')}
                 emptyDescription={__('assistants.shared.empty_description')}
-                bind:searchQuery
-                bind:activeFilters
         />
     </div>
 </Page>

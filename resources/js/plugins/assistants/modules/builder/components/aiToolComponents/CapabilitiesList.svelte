@@ -145,6 +145,7 @@
                                 statusTool={capability}
                                 statusSupported={supportedForModel(m => capability.isAvailableFor(m))}
                                 info={__('assistants.builder.tools.capabilities.autoInfo')}
+                                infoLabel={__('assistants.builder.tools.capabilities.autoLabel')}
                             >
                                 {__('assistants.builder.tools.capabilities.autoLabel')}
                             </VariantCard>
@@ -157,6 +158,7 @@
                                     statusTool={capability}
                                     statusSupported={supportedForModel(m => capability.hasNativeCapabilityFor(m))}
                                     info={__('assistants.builder.tools.capabilities.nativeInfo')}
+                                    infoLabel={__('assistants.builder.tools.capabilities.nativeLabel')}
                                 >
                                     {__('assistants.builder.tools.capabilities.nativeLabel')}
                                 </VariantCard>
@@ -170,6 +172,7 @@
                                     statusTool={option}
                                     statusSupported={supportedForModel(m => option.isAvailableFor(m))}
                                     info={option.description}
+                                    infoLabel={option.displayName}
                                 >
                                     {option.displayName}
                                 </VariantCard>

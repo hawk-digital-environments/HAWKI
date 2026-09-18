@@ -49,7 +49,9 @@
         "sidebar": {
             "home": "Home",
             "store":"Store",
+            "my_assistants": "My assistants",
             "drafts": "Drafts",
+            "private": "Private",
             "favourites": "Favourites",
             "shared": "Shared",
             "create": "Create",
@@ -76,10 +78,15 @@
             "empty_title":  "No drafts yet",
             "empty_description": "You haven't saved any assistants as a draft yet."
         },
+        "private": {
+            "title": "My private assistants",
+            "empty_title":  "No private assistants yet",
+            "empty_description": "Assistants you save as private are only visible to you."
+        },
         "shared": {
             "title": "Shared assistants",
             "empty_title":  "No shared assistants",
-            "empty_description": ""
+            "empty_description": "Assistants that other users share with you appear here."
         },
         "favourites": {
             "title": "Favourites",
@@ -92,7 +99,8 @@
             "empty_description": "No assistants match your current filters.",
             "loading": "Loading assistants…",
             "no_results": "No results were found",
-            "pagination_of": "of"
+            "pagination_of": "of",
+            "search": "Search"
         },
 
         "card": {

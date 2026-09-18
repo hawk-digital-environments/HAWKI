@@ -68,6 +68,7 @@ export type AssistantListFilter = {
     assistant_category?: string[];
     is_favorite?: boolean;
     release_stage?: string[];
+    shared_with_user?: boolean;
 };
 
 /** Nested JSON:API filter values, e.g. `filter[assistant_category][text]=x`. */
@@ -199,7 +200,6 @@ export class AssistantListContext {
         if (this.filter.assistant_category?.length) {
             // Produces filter[assistant_category][text]=...
             out['assistant_category'] = {text: this.filter.assistant_category.join(',')};
-            console.log('out', out);
         }
 
         if (this.filter.is_favorite) {
@@ -208,6 +208,10 @@ export class AssistantListContext {
 
         if (this.filter.release_stage?.length) {
             out['release_stage'] = this.filter.release_stage.join(',');
+        }
+
+        if (this.filter.shared_with_user !== undefined) {
+            out['shared_with_user'] = this.filter.shared_with_user;
         }
 
         return Object.keys(out).length ? out : undefined;

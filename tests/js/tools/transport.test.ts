@@ -18,6 +18,9 @@ function fixture(requested = ['capability:web_search:search:{"limit":3}']) {
     const app: any = {
         connection: {isAuthenticated: true, userinfo: {id: 1, username: 'alice', name: 'Alice'}}, translator,
         uriBuilder: {storageFileUri: () => ''},
+        // No plugins are loaded here, so no hook handler may run: apply hands
+        // the initial value (e.g. the chatSend send descriptor) straight back.
+        hooks: {apply: (_name: string, value: any) => value},
         refreshConnection: async () => {refreshes++;},
         stores: {get: (name: string) => name === 'ai-tools' ? tools : name === 'ai-models'
             ? {getOneById: () => model, getModelByIdOrFallback: () => model, getSystemModelByType: () => model, models: [model]}
@@ -35,6 +38,9 @@ function fixture(requested = ['capability:web_search:search:{"limit":3}']) {
         },
         beginGeneration: () => {generations++;}, finishGeneration: () => {generations--;},
         appendMessage: (_slug: string, value: any) => messages.push(value),
+        // The conversation↔assistant binding persistence (see ChatStore) has
+        // no backing API in this fixture — the sends here address no assistant.
+        updateAssistantHandle: async () => {},
         patchMessage: () => {}, removeCachedMessage: () => {}, replaceMessage: () => {},
         messagesFor: () => messages,
         findMessage: () => null,

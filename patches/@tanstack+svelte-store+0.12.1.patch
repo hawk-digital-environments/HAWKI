@@ -1,0 +1,25 @@
+diff --git a/node_modules/@tanstack/svelte-store/dist/useSelector.svelte.js b/node_modules/@tanstack/svelte-store/dist/useSelector.svelte.js
+index 628a9cd..aa91008 100644
+--- a/node_modules/@tanstack/svelte-store/dist/useSelector.svelte.js
++++ b/node_modules/@tanstack/svelte-store/dist/useSelector.svelte.js
+@@ -20,7 +20,19 @@ function defaultCompare(a, b) {
+  */
+ export function useSelector(source, selector = (d) => d, options = {}) {
+     const compare = options.compare ?? defaultCompare;
+-    let slice = $state(selector(source.get()));
++    // Patched (see patches/@tanstack+svelte-store): the selected value is held
++    // in a raw `$state` variable — reassigned wholesale on change — instead of
++    // a proxied `$state` one. The store notifies with the raw objects it owns,
++    // so a proxied holder would make the equality compare a Svelte proxy
++    // against its unproxied original — the comparison the
++    // `state_proxy_equality_mismatch` dev warning is about, and one that is
++    // always false even when the store re-sent the very same object. The raw
++    // variable keeps both sides of `compare` unproxied (identical objects
++    // compare equal again) and hands callers the store's own object reference
++    // back through `.current`. (A raw `$state` object with in-place property
++    // writes would not work: mutations on it are untracked, only reassignment
++    // triggers.)
++    let slice = $state.raw(selector(source.get()));
+     $effect(() => {
+         const unsub = source.subscribe((s) => {
+             const data = selector(s);
