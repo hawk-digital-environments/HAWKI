@@ -2,8 +2,7 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
-import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
-import type {AiMessage} from '$lib/kernel/ai/types.js';
+import type {ChatExchangeMessage, OpenResponsesStreamEvent} from '$lib/kernel/ai/openResponses/types.js';
 import type {SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
@@ -27,15 +26,15 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const model = models.getSystemModelByType('prompt_improvement') ?? models.getSystemModelByType('default') ?? models.models[0];
         if (!model) throw new Error(this.app.translator.__('chat.page.noImprovementModel'));
 
-        const systemPrompt = `${prompts.getPromptByType('prompt_improvement').prompt}\n\n` +
+        const instructions = `${prompts.getPromptByType('prompt_improvement').prompt}\n\n` +
             'You are currently in a one-on-one chat. Improve the user message for an AI assistant.\n' +
             `You MUST answer in the language with code: ${this.app.localization.locale.lang}.\n` +
             'Return only the improved message. If it cannot be improved, start the response with [NOT_IMPROVED].';
-        const result = await this.app.aiApi.text({
+        const result = await this.app.chatApi.text({
             model: model.model_id,
+            instructions,
             messages: [
-                {role: 'system', content: {text: systemPrompt}},
-                {role: 'user', content: {text: message}}
+                {role: 'user', text: message}
             ]
         });
         return result.includes('[NOT_IMPROVED]') ? message : (result.trim() || message);
@@ -240,29 +239,28 @@ export class ChatTransport implements MessageSenderTransportInterface {
         let citations: UrlCitation[] = [];
         let completion = false;
         try {
-            for await (const packet of this.app.aiApi.stream({
+            for await (const event of this.app.chatApi.stream({
                 model: context.model.current.model_id,
-                messages: this.messageHistory(conversationSlug, context.systemPrompt, threadId, regenState?.messageId),
+                instructions: context.systemPrompt,
+                messages: this.messageHistory(conversationSlug, threadId, regenState?.messageId),
                 tools: context.tools.active.map(tool => tool.toTransferString()),
                 params: context.modelParameters.list,
-                threadIndex: Number.isFinite(threadId) ? threadId : 0,
-                isUpdate: Boolean(regenState),
-                messageId: regenState?.messageId ?? null
+                attachments: this.attachmentUuids(opt)
             }, {signal: controller.signal})) {
-                responseWriter.triggerBodyChunk(JSON.stringify(packet));
-                if (packet.type === 'error') throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
-                if (packet.type === 'status') {
-                    const status = typeof packet.status === 'string' ? packet.status : packet.status?.key;
-                    this.store.patchMessage(conversationSlug, temporaryId, {status: status ?? 'running'});
-                } else if (packet.type === 'message') {
-                    text += aiPacketText(packet.content);
-                    this.store.patchMessage(conversationSlug, temporaryId, {content: {...temporary.content, text}});
-                } else if (packet.type === 'citation' && packet.content) {
-                    citations = [...citations, packet.content as UrlCitation];
-                    this.store.patchMessage(conversationSlug, temporaryId, {citations});
-                } else if (packet.type === 'completion') {
-                    completion = Boolean(packet.isDone);
-                }
+                this.applyStreamEvent(event, conversationSlug, temporaryId, temporary, {
+                    onText: chunk => {
+                        text += chunk;
+                        this.store.patchMessage(conversationSlug, temporaryId, {content: {...temporary.content, text}});
+                    },
+                    onCitation: citation => {
+                        citations = [...citations, citation];
+                        this.store.patchMessage(conversationSlug, temporaryId, {citations});
+                    },
+                    onCompleted: () => {
+                        completion = true;
+                    }
+                });
+                responseWriter.triggerBodyChunk(JSON.stringify(event));
             }
 
             const finalText = text.trim() ? text : this.app.translator.__('chat.page.noResponse');
@@ -294,7 +292,68 @@ export class ChatTransport implements MessageSenderTransportInterface {
         }
     }
 
-    private messageHistory(conversationSlug: string, systemPrompt: string, threadId: number, beforeMessageId?: string): AiMessage[] {
+    /**
+     * Maps one Open Responses stream event onto the chat store: text deltas
+     * update the message body, reasoning/tool activity updates the status
+     * line, citation events append sources, and terminal/error events close
+     * or fail the exchange.
+     */
+    private applyStreamEvent(
+        event: OpenResponsesStreamEvent,
+        conversationSlug: string,
+        temporaryId: string,
+        temporary: ChatMessage,
+        hooks: {
+            onText: (chunk: string) => void;
+            onCitation: (citation: UrlCitation) => void;
+            onCompleted: () => void;
+        }
+    ): void {
+        switch (event.type) {
+            case 'response.output_text.delta':
+                hooks.onText(event.delta);
+                return;
+            case 'response.reasoning_summary_text.delta':
+                this.store.patchMessage(conversationSlug, temporaryId, {status: 'reasoning'});
+                return;
+            case 'response.output_item.added':
+                if (event.item.type === 'function_call') {
+                    this.store.patchMessage(conversationSlug, temporaryId, {status: 'tool_call'});
+                }
+                return;
+            case 'hawki:provider_tool_event':
+                this.store.patchMessage(conversationSlug, temporaryId, {status: 'provider_tool_call'});
+                return;
+            case 'hawki:citation':
+                hooks.onCitation({
+                    url: event.citation.url ?? '',
+                    title: event.citation.title ?? null,
+                    ranges: event.citation.start_index !== null && event.citation.start_index !== undefined
+                        && event.citation.end_index !== null && event.citation.end_index !== undefined
+                        ? [[event.citation.start_index, event.citation.end_index]]
+                        : [],
+                    startIndex: event.citation.start_index ?? undefined,
+                    endIndex: event.citation.end_index ?? undefined
+                });
+                return;
+            case 'response.completed':
+                hooks.onCompleted();
+                this.store.patchMessage(conversationSlug, temporaryId, {status: 'done'});
+                return;
+            case 'response.incomplete':
+                this.store.patchMessage(conversationSlug, temporaryId, {status: 'done'});
+                return;
+            case 'error':
+                throw new Error(event.error.message || this.app.translator.__('chat.page.requestFailed'));
+            case 'response.failed':
+                throw new Error(event.response.error?.message || this.app.translator.__('chat.page.requestFailed'));
+            default:
+                void temporary;
+                return;
+        }
+    }
+
+    private messageHistory(conversationSlug: string, threadId: number, beforeMessageId?: string): ChatExchangeMessage[] {
         const messages = this.store.messagesFor(conversationSlug);
         const cutoff = beforeMessageId ? messages.findIndex(message => message.message_id === beforeMessageId) : messages.length;
         const selected = messages
@@ -304,12 +363,9 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 return threadId === 0 ? decimal === 0 : whole === threadId;
             })
             .slice(-20);
-        return [
-            {role: 'system', content: {text: systemPrompt}},
-            ...selected
-                .filter(message => !message.isStreaming && message.content.text.trim())
-                .map(message => ({role: message.message_role, content: {text: message.content.text}}))
-        ];
+        return selected
+            .filter(message => !message.isStreaming && message.content.text.trim())
+            .map(message => ({role: message.message_role === 'assistant' ? 'assistant' : 'user', text: message.content.text}));
     }
 
     private threadIdForMessage(messageId: string): number {
@@ -325,11 +381,11 @@ export class ChatTransport implements MessageSenderTransportInterface {
         if (!model) return this.fallbackTitle(firstMessage);
 
         try {
-            const generatedTitle = await this.app.aiApi.text({
+            const generatedTitle = await this.app.chatApi.text({
                 model: model.model_id,
+                instructions: prompt,
                 messages: [
-                    {role: 'system', content: {text: prompt}},
-                    {role: 'user', content: {text: firstMessage}}
+                    {role: 'user', text: firstMessage}
                 ]
             });
             return generatedTitle.trim().replace(/^['"]|['"]$/g, '').slice(0, 255) || this.fallbackTitle(firstMessage);

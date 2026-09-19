@@ -8,6 +8,7 @@ import type {LinkPreviewApi} from '$lib/kernel/api/LinkPreviewApi.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
 import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
 import {AiApi} from '$lib/kernel/ai/AiApi.js';
+import {OpenResponsesApi} from '$lib/kernel/ai/openResponses/OpenResponsesApi.js';
 import {ConnectionHandle} from '$lib/kernel/client/connection/ConnectionHandle.svelte.js';
 import type {HawkiEvents} from '$lib/kernel/events/EventExtension.js';
 import {registerConnectionRefresher} from '$lib/kernel/client/connection/connectionRefresher.js';
@@ -17,6 +18,7 @@ declare module '$lib/kernel/extendableTypes.js' {
         readonly client: HawkiClient;
         readonly restApi: RestApi;
         readonly aiApi: AiApi;
+        readonly chatApi: OpenResponsesApi;
         readonly linkPreviewApi: LinkPreviewApi;
         readonly uriBuilder: UriBuilder;
         readonly connection: Connection;
@@ -68,6 +70,7 @@ export class ClientExtension implements HawkiAppExtension {
         this.client = {
             restApi: restApi,
             aiApi: new AiApi({transport}),
+            chatApi: new OpenResponsesApi({transport}),
             get connection() {
                 return getConnection();
             }
@@ -114,6 +117,9 @@ export class ClientExtension implements HawkiAppExtension {
             },
             get aiApi(): AiApi {
                 return extension.client.aiApi;
+            },
+            get chatApi(): OpenResponsesApi {
+                return extension.client.chatApi;
             },
             get uriBuilder(): UriBuilder {
                 return extension.uriBuilder;

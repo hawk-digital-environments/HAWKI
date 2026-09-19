@@ -2,6 +2,7 @@ import type {RestApi} from '$lib/kernel/api/RestApi.js';
 import {useApp} from '$lib/app/hooks/useApp.svelte.js';
 import type {LinkPreviewApi} from '$lib/kernel/api/LinkPreviewApi.js';
 import type {AiApi} from '$lib/kernel/ai/AiApi.js';
+import type {OpenResponsesApi} from '$lib/kernel/ai/openResponses/OpenResponsesApi.js';
 
 /**
  * Hook that gives components access to the app's low-level typed JSON:API
@@ -37,6 +38,11 @@ export function useRestApi(): RestApi {
 /** Returns the internal streaming AI client (`app.aiApi`). */
 export function useAiApi(): AiApi {
     return useApp().aiApi;
+}
+
+/** Returns the Open Responses chat proxy client (`app.chatApi`). */
+export function useChatApi(): OpenResponsesApi {
+    return useApp().chatApi;
 }
 
 /**

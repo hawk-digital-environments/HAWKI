@@ -1,6 +1,7 @@
 import {RestApi} from '$lib/kernel/api/RestApi.js';
 import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
 import type {AiApi} from '$lib/kernel/ai/AiApi.js';
+import type {OpenResponsesApi} from '$lib/kernel/ai/openResponses/OpenResponsesApi.js';
 
 /* ============================
  * DUMMY IMPLEMENTATION
@@ -23,5 +24,6 @@ import type {AiApi} from '$lib/kernel/ai/AiApi.js';
 export interface HawkiClient {
     restApi: RestApi;
     aiApi: AiApi;
+    chatApi: OpenResponsesApi;
     connection: Connection;
 }
