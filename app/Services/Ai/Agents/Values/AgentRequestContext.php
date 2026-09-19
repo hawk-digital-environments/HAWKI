@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Agents\Values;
-
 
 use App\Models\Ai\AiModel;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
@@ -16,12 +15,13 @@ use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 readonly class AgentRequestContext
 {
     public function __construct(
-        public AiProviderProxy   $provider,
-        public AiModel           $model,
+        public AiProviderProxy $provider,
+        public AiModel $model,
         public AiModelParameters $modelParameters,
-        public string            $usageType = WellKnownUsageTypes::MAIN_APP,
-    )
-    {
+        public string $usageType = WellKnownUsageTypes::MAIN_APP,
+        public ?string $formatKey = null,
+        public bool $usageRecordedViaListener = false,
+    ) {
     }
 
     public function getParameters(): AiModelParameters

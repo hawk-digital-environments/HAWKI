@@ -1,13 +1,14 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\Ai\Agents\Utils;
 
-
 use Illuminate\Contracts\Support\Arrayable;
+use Laravel\Ai\Messages\AssistantMessage;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Messages\MessageRole;
+use Laravel\Ai\Messages\ToolResultMessage;
 use Laravel\Ai\Messages\UserMessage;
 
 /**
@@ -41,7 +42,7 @@ use Laravel\Ai\Messages\UserMessage;
 class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
 {
     /**
-     * @var Message[]
+     * @var list<Message>
      */
     private array $messages = [];
 
@@ -52,8 +53,38 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
     {
         $this->messages[] = new Message(
             role: MessageRole::Assistant,
-            content: $content
+            content: $content,
         );
+
+        return $this;
+    }
+
+    /**
+     * Appends an assistant turn carrying tool calls (and optionally text) to the history.
+     *
+     * Note: when consecutive assistant turns are merged by {@see build()}, the tool calls
+     * of all but the last turn survive — merged assistant content is joined text-only.
+     *
+     * @param array<int, \Laravel\Ai\Responses\Data\ToolCall> $toolCalls
+     */
+    public function registerAiToolCallMessage(string $content, array $toolCalls): self
+    {
+        $this->messages[] = new AssistantMessage(
+            content: $content,
+            toolCalls: collect($toolCalls),
+        );
+
+        return $this;
+    }
+
+    /**
+     * Appends a tool-result turn to the history.
+     *
+     * @param array<int, \Laravel\Ai\Responses\Data\ToolResult> $toolResults
+     */
+    public function registerToolResultMessage(array $toolResults): self
+    {
+        $this->messages[] = new ToolResultMessage(toolResults: collect($toolResults));
 
         return $this;
     }
@@ -62,13 +93,12 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
      * Appends a user turn to the history and optionally applies file attachments and their
      * associated metadata blocks to the resulting {@see UserMessage}.
      */
-    public function registerUserMessage(string $content, UserMessageAttachments|null $attachments = null): self
+    public function registerUserMessage(string $content, ?UserMessageAttachments $attachments = null): self
     {
-        $message = new UserMessage(
-            content: $content
-        );
+        $message = new UserMessage(content: $content);
         $attachments?->apply($message);
         $this->messages[] = $message;
+
         return $this;
     }
 
@@ -88,6 +118,7 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
         $firstMessage = $this->messages[0];
         $messagesOfSameRole = [];
         $currentRole = $firstMessage->role;
+
         foreach ($this->messages as $message) {
             if ($message->role === $currentRole) {
                 $messagesOfSameRole[] = $message;
@@ -97,58 +128,12 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
                 $currentRole = $message->role;
             }
         }
+
         yield $this->mergeMessages($currentRole, $messagesOfSameRole);
     }
 
     /**
-     * @param MessageRole $role
-     * @param Message[] $messages
-     * @return Message
-     */
-    private function mergeMessages(MessageRole $role, array $messages): Message
-    {
-        if (count($messages) === 1) {
-            return $messages[0];
-        }
-
-        $contentBlocks = [];
-        $attachments = collect();
-
-        $separator = "[[MESSAGE BOUNDARY]]";
-
-        foreach ($messages as $message) {
-            $contentBlocks[] = $message->content;
-            if ($role === MessageRole::User && $message instanceof UserMessage) {
-                $attachments = $attachments->merge($message->attachments->all());
-            }
-        }
-
-        $content = implode("\n\n$separator\n\n", array_filter($contentBlocks, fn($block) => !empty(trim($block))));
-
-        if (empty($content)) {
-            $content = '&nbsp;';
-        } else {
-            $content = MessageMetaBlocks::createBlock(
-                    'Message Boundary',
-                    'Multiple messages have been merged into one. The messages are separated by the following boundary: ' . $separator
-                ) . "\n\n" . $content;
-        }
-
-        if ($role === MessageRole::User) {
-            return new UserMessage(
-                content: $content,
-                attachments: $attachments
-            );
-        }
-
-        return new Message(
-            role: $role,
-            content: $content
-        );
-    }
-
-    /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getIterator(): \Traversable
     {
@@ -156,10 +141,56 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function toArray(): array
     {
         return [...$this->build()];
+    }
+
+    /**
+     * @param list<Message> $messages
+     */
+    private function mergeMessages(MessageRole $role, array $messages): Message
+    {
+        if (\count($messages) === 1) {
+            return $messages[0];
+        }
+
+        $contentBlocks = [];
+        $attachments = collect();
+
+        $separator = '[[MESSAGE BOUNDARY]]';
+
+        foreach ($messages as $message) {
+            $contentBlocks[] = $message->content;
+
+            if (MessageRole::User === $role && $message instanceof UserMessage) {
+                $attachments = $attachments->merge($message->attachments->all());
+            }
+        }
+
+        $content = implode("\n\n{$separator}\n\n", array_filter($contentBlocks, static fn ($block) => !empty(trim($block))));
+
+        if (empty($content)) {
+            $content = '&nbsp;';
+        } else {
+            $content = MessageMetaBlocks::createBlock(
+                'Message Boundary',
+                'Multiple messages have been merged into one. The messages are separated by the following boundary: ' . $separator,
+            ) . "\n\n" . $content;
+        }
+
+        if (MessageRole::User === $role) {
+            return new UserMessage(
+                content: $content,
+                attachments: $attachments,
+            );
+        }
+
+        return new Message(
+            role: $role,
+            content: $content,
+        );
     }
 }

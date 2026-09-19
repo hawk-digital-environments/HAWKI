@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Models\Ai\McpServer;
 use App\Services\Ai\Agents\AgentRegistry;
 use App\Services\Ai\Agents\Contracts\AgentFactoryInterface;
 use App\Services\Ai\Agents\Implementations\AbstractAgentFactory;
-use App\Services\Ai\Agents\Implementations\Chat\ChatAgentForAssistantFactory;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
+use App\Services\Ai\Chat\Factories\AbstractChatAgentFactory;
+use App\Services\Ai\Chat\Factories\ChatAgentRegistry;
+use App\Services\Ai\Chat\Factories\Contracts\ChatAgentFactoryInterface;
+use App\Services\Ai\Chat\Factories\Implementations\ChatAgentFactory;
 use App\Services\Ai\Config\AiConfig;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\ConfigFileSync\Syncers\McpServerSyncer;
@@ -15,6 +20,9 @@ use App\Services\Ai\ConfigFileSync\Syncers\ModelAndProviderSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemPromptSyncer;
 use App\Services\Ai\Exceptions\InvalidProviderAdapterException;
+use App\Services\Ai\Formatters\Contracts\FormatterInterface;
+use App\Services\Ai\Formatters\FormatterRegistry;
+use App\Services\Ai\Formatters\Implementations\OpenResponses\OpenResponsesFormatter;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
 use App\Services\Ai\ModelInformation\Enrichment\AiModelInfoEnrichmentPipeline;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\LiteLlmDriverNameProviderNameMapping;
@@ -47,8 +55,6 @@ use App\Services\Ai\Providers\Adapters\Implementations\OpenRouterAdapter;
 use App\Services\Ai\Providers\Adapters\ProviderAdapterRegistry;
 use App\Services\Ai\Providers\Adapters\WellKnownAdapterKeys;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
-use App\Services\Ai\Streaming\AgentStreamer;
-use App\Services\Ai\Streaming\AgentStreamerInterface;
 use App\Services\Ai\Tools\AbstractTool;
 use App\Services\Ai\Tools\Contracts\ToolInterface;
 use App\Services\Ai\Tools\LaravelAi\LaravelToolResolver;
@@ -67,6 +73,8 @@ class AiServiceProvider extends ServiceProvider
     public const string PROVIDER_ADAPTER_LIST = 'ai.providerAdapter.list';
     public const string MCP_CLIENT_LIST = 'ai.mcpClient.list';
     public const string AGENT_FACTORY_LIST = 'ai.agentFactory.list';
+    public const string CHAT_AGENT_FACTORY_LIST = 'ai.chatAgentFactory.list';
+    public const string FORMATTER_LIST = 'ai.formatter.list';
 
     public function register(): void
     {
@@ -79,64 +87,64 @@ class AiServiceProvider extends ServiceProvider
 
         $this->app->tag(
             $this->app->get('config')->get('tools.available_tools'),
-            ToolInterface::class
+            ToolInterface::class,
         );
 
         $this->app->extend(
             PublicConfigRegistry::class,
-            function (PublicConfigRegistry $registry) {
+            static function (PublicConfigRegistry $registry) {
                 return $registry->declare(AiConfig::class);
-            }
+            },
         );
 
         $this->app->extend(
             AiModelSettingRegistry::class,
-            fn(AiModelSettingRegistry $registry) => $registry
+            static fn (AiModelSettingRegistry $registry) => $registry
                 ->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, 5)
                 ->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING, 3)
                 ->declare(WellKnownModelSettings::FILE_UPLOAD, false)
                 ->declare(WellKnownModelSettings::TOOL_CALLING, false)
-                ->declare(WellKnownModelSettings::NATIVE_CAPABILITIES, true)
+                ->declare(WellKnownModelSettings::NATIVE_CAPABILITIES, true),
         );
 
         $this->app->extend(
             AiModelLimitRegistry::class,
-            fn(AiModelLimitRegistry $registry) => $registry
-                ->declare(WellKnownModelTypes::CHAT, ChatAiModelLimits::class)
+            static fn (AiModelLimitRegistry $registry) => $registry
+                ->declare(WellKnownModelTypes::CHAT, ChatAiModelLimits::class),
         );
 
         $this->app->extend(
             AiModelPricingRegistry::class,
-            fn(AiModelPricingRegistry $registry) => $registry
-                ->declare(WellKnownModelTypes::CHAT, ChatAiModelPricing::class)
+            static fn (AiModelPricingRegistry $registry) => $registry
+                ->declare(WellKnownModelTypes::CHAT, ChatAiModelPricing::class),
         );
 
         $this->app->extend(
             AiModelCapabilityRegistry::class,
-            fn(AiModelCapabilityRegistry $registry) => $registry
+            static fn (AiModelCapabilityRegistry $registry) => $registry
                 ->declare(
                     key: WellKnownCapabilities::WEB_SEARCH,
                     titleTranslationLabel: 'chat.composer.toolMenu.tools.webSearch',
                     descriptionTranslationLabel: 'chat.composer.toolMenu.tools.webSearchDescription',
-                    iconPath: resource_path('icons/tools/web-search.svg')
+                    iconPath: resource_path('icons/tools/web-search.svg'),
                 )
                 ->declare(
                     key: WellKnownCapabilities::WEB_FETCH,
                     titleTranslationLabel: 'chat.composer.toolMenu.tools.webFetch',
                     descriptionTranslationLabel: 'chat.composer.toolMenu.tools.webFetchDescription',
-                    iconPath: resource_path('icons/tools/web-fetch.svg')
+                    iconPath: resource_path('icons/tools/web-fetch.svg'),
                 )
                 ->declare(
                     key: WellKnownCapabilities::KNOWLEDGE_BASE,
                     titleTranslationLabel: 'chat.composer.toolMenu.tools.knowledgeBase',
                     descriptionTranslationLabel: 'chat.composer.toolMenu.tools.knowledgeBaseDescription',
-                    iconPath: resource_path('icons/tools/knowledge-base.svg')
-                )
+                    iconPath: resource_path('icons/tools/knowledge-base.svg'),
+                ),
         );
 
         $this->app->extend(
             AiModelFlagRegistry::class,
-            fn(AiModelFlagRegistry $registry) => $registry
+            static fn (AiModelFlagRegistry $registry) => $registry
                 ->declare(
                     key: WellKnownModelFlags::OPEN_WEIGHTS,
                     titleTranslationLabel: 'ai.model.detail.flag.openWeights',
@@ -146,7 +154,7 @@ class AiServiceProvider extends ServiceProvider
                     key: WellKnownModelFlags::ECO_FRIENDLY,
                     titleTranslationLabel: 'ai.model.detail.flag.ecoFriendly',
                     descriptionTranslationLabel: 'ai.model.detail.flag.ecoFriendlyTooltip',
-                    colorCode: AiModelFlagRegistry::COLOR_SUCCESS
+                    colorCode: AiModelFlagRegistry::COLOR_SUCCESS,
                 )
                 ->declare(
                     key: WellKnownModelFlags::SELF_HOSTED,
@@ -182,12 +190,12 @@ class AiServiceProvider extends ServiceProvider
                     key: WellKnownModelFlags::FEATURE_REASONING,
                     titleTranslationLabel: 'ai.model.detail.flag.strengthReasoning',
                     descriptionTranslationLabel: 'ai.model.detail.flag.strengthReasoningTooltip',
-                )
+                ),
         );
 
         $this->app->extend(
             ProviderAdapterRegistry::class,
-            fn(ProviderAdapterRegistry $registry) => $registry
+            static fn (ProviderAdapterRegistry $registry) => $registry
                 ->declare(WellKnownAdapterKeys::ANTHROPIC, AnthropicAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPENAI, OpenAiAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPENAI_AZURE, AzureOpenAiAdapter::class)
@@ -198,61 +206,71 @@ class AiServiceProvider extends ServiceProvider
                 ->declare(WellKnownAdapterKeys::DEEPSEEK, DeepseekAdapter::class)
                 ->declare(WellKnownAdapterKeys::AWS_BEDROCK, AwsBedrockAdapter::class)
                 ->declare(WellKnownAdapterKeys::GWDG, GwdgAdapter::class)
-                ->declare(WellKnownAdapterKeys::OPEN_ROUTER, OpenRouterAdapter::class)
+                ->declare(WellKnownAdapterKeys::OPEN_ROUTER, OpenRouterAdapter::class),
         );
 
         $this->app->extend(
             LiteLlmDriverNameProviderNameMapping::class,
-            fn(LiteLlmDriverNameProviderNameMapping $mapping) => $mapping
+            static fn (LiteLlmDriverNameProviderNameMapping $mapping) => $mapping
                 ->declare(Lab::ElevenLabs->value, 'elevenlabs')
                 ->declare(Lab::Jina->value, 'jina-ai')
-                ->declare(Lab::VoyageAI->value, 'voyage')
+                ->declare(Lab::VoyageAI->value, 'voyage'),
         );
 
         $this->app->extend(
             AiModelInfoEnrichmentPipeline::class,
-            fn(AiModelInfoEnrichmentPipeline $pipeline) => $pipeline
-                ->register(
-                    $this->app->get(LiteLlmApiEnricher::class)
-                )
+            fn (AiModelInfoEnrichmentPipeline $pipeline) => $pipeline
+                ->register($this->app->get(LiteLlmApiEnricher::class))
                 ->register(
                     $this->app->get(StaticGwdgEnricher::class),
-                    after: [LiteLlmApiEnricher::class]
+                    after: [LiteLlmApiEnricher::class],
                 )
                 ->register(
                     $this->app->get(StaticDocumentationUrlEnricher::class),
-                    after: [LiteLlmApiEnricher::class, StaticGwdgEnricher::class]
-                )
+                    after: [LiteLlmApiEnricher::class, StaticGwdgEnricher::class],
+                ),
         );
 
         $this->app->extend(
             AgentRegistry::class,
-            fn(AgentRegistry $registry) => $registry
-                ->declare(ChatAgentFromLegacyRequestFactory::class)
+            static fn (AgentRegistry $registry) => $registry
+                ->declare(ChatAgentFromLegacyRequestFactory::class),
         );
 
-        $this->app->singleton(AgentStreamerInterface::class, AgentStreamer::class);
+        $this->app->extend(
+            ChatAgentRegistry::class,
+            static fn (ChatAgentRegistry $registry) => $registry
+                ->declare(ChatAgentFactory::class),
+        );
+
+        $this->app->extend(
+            FormatterRegistry::class,
+            static fn (FormatterRegistry $registry) => $registry
+                ->declare(OpenResponsesFormatter::KEY, OpenResponsesFormatter::class),
+        );
 
         $this->app->singleton(
             self::PROVIDER_ADAPTER_LIST,
             /**
              * @return LazySingletonList<array{0: string, 1:class-string<ProviderAdapterInterface>}, ProviderAdapterInterface>
              */
-            fn() => new LazySingletonList(
-                fn(array $args) => implode('_', $args),
+            fn () => new LazySingletonList(
+                static fn (array $args) => implode('_', $args),
                 function (array $args) {
                     [$adapterKey, $providerClass] = $args;
                     $provider = $this->app->get($providerClass);
+
                     if (!$provider instanceof ProviderAdapterInterface) {
                         throw InvalidProviderAdapterException::forClassNotImplementingInterface(
                             $adapterKey,
                             $providerClass,
-                            get_class($provider)
+                            $provider::class,
                         );
                     }
+
                     return $provider;
-                }
-            )
+                },
+            ),
         );
 
         $this->app->singleton(
@@ -260,10 +278,10 @@ class AiServiceProvider extends ServiceProvider
             /**
              * @return LazySingletonList<McpServer, HawkiMcpClient>
              */
-            fn() => new LazySingletonList(
-                fn(McpServer $server) => 'mcp_client_' . $server->id,
-                fn(McpServer $server) => $this->app->get(McpClientFactory::class)->createForServer($server)
-            )
+            fn () => new LazySingletonList(
+                static fn (McpServer $server) => 'mcp_client_' . $server->id,
+                fn (McpServer $server) => $this->app->get(McpClientFactory::class)->createForServer($server),
+            ),
         );
 
         $this->app->singleton(
@@ -271,36 +289,66 @@ class AiServiceProvider extends ServiceProvider
             /**
              * @return LazySingletonList<class-string<AgentFactoryInterface>, AgentFactoryInterface>
              */
-            fn() => new LazySingletonList(
-                fn(string $factoryClassName) => 'agent_factory_' . md5($factoryClassName),
-                fn(string $factoryClassName) => $this->app->get($factoryClassName)
-            )
+            fn () => new LazySingletonList(
+                static fn (string $factoryClassName) => 'agent_factory_' . md5($factoryClassName),
+                fn (string $factoryClassName) => $this->app->get($factoryClassName),
+            ),
+        );
+
+        $this->app->singleton(
+            self::CHAT_AGENT_FACTORY_LIST,
+            /**
+             * @return LazySingletonList<class-string<ChatAgentFactoryInterface>, ChatAgentFactoryInterface>
+             */
+            fn () => new LazySingletonList(
+                static fn (string $factoryClassName) => 'chat_agent_factory_' . md5($factoryClassName),
+                fn (string $factoryClassName) => $this->app->get($factoryClassName),
+            ),
+        );
+
+        $this->app->singleton(
+            self::FORMATTER_LIST,
+            /**
+             * @return LazySingletonList<class-string<FormatterInterface>, FormatterInterface>
+             */
+            fn () => new LazySingletonList(
+                static fn (string $formatterClassName) => 'formatter_' . md5($formatterClassName),
+                fn (string $formatterClassName) => $this->app->get($formatterClassName),
+            ),
         );
 
         $this->app->afterResolving(
             AbstractTool::class,
-            function (AbstractTool $tool) {
+            function (AbstractTool $tool): void {
                 $tool->setServiceLocator($this->app->make(ServiceLocator::class));
-            }
+            },
         );
 
         $this->app->afterResolving(
             AbstractAgentFactory::class,
-            function (AbstractAgentFactory $factory) {
+            function (AbstractAgentFactory $factory): void {
                 $factory->setToolResolver($this->app->make(LaravelToolResolver::class));
                 $factory->setProviderProxyResolver($this->app->make(AiProviderProxyResolver::class));
                 $factory->setUsageContext($this->app->make(UsageContext::class));
-            }
+            },
+        );
+
+        $this->app->afterResolving(
+            AbstractChatAgentFactory::class,
+            function (AbstractChatAgentFactory $factory): void {
+                $factory->setToolResolver($this->app->make(LaravelToolResolver::class));
+                $factory->setProviderProxyResolver($this->app->make(AiProviderProxyResolver::class));
+                $factory->setUsageContext($this->app->make(UsageContext::class));
+            },
         );
 
         // Laravel AI service overrides and modifications
         $this->app->extend(
             AiManager::class,
-            function (AiManager $manager) {
+            static function (AiManager $manager) {
                 return ExtendedAiManager::createDecoratedOf($manager);
-            }
+            },
         );
-
     }
 
     public function boot(): void

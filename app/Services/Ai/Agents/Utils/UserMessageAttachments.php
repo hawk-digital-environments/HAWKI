@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Agents\Utils;
-
 
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Storage\Interfaces\FileInterface;
@@ -17,37 +16,41 @@ use Laravel\Ai\Messages\UserMessage;
 class UserMessageAttachments
 {
     /**
-     * @var string[]
+     * @var list<string>
      */
     private array $inlinedAttachments = [];
+
     /**
-     * @var string[]
+     * @var list<string>
      */
     private array $skippedAttachmentMessages = [];
+
     /**
-     * @var File[]
+     * @var list<File>
      */
     private array $referencedAttachments = [];
+
     /**
-     * @var string[]
+     * @var list<string>
      */
     private array $errors = [];
+
     /**
-     * @var string[]
+     * @var list<string>
      */
     private array $extractReferences = [];
 
     public function __construct(
         private readonly AgentRequestContext $context,
-        private readonly MessageMetaBlocks   $meta = new MessageMetaBlocks()
-    )
-    {
+        private readonly MessageMetaBlocks $meta = new MessageMetaBlocks(),
+    ) {
     }
 
     public function register(FileInterface $file): self
     {
         if (!$this->context->model->settings->canHandleFiles()) {
             $this->addSkippedFileMessage($file, 'Attachments not allowed for this model');
+
             return $this;
         }
 
@@ -64,24 +67,53 @@ class UserMessageAttachments
         }
 
         $this->addSkippedFileMessage($file, 'Unsupported file type: ' . $file->getFileType()->value);
+
+        return $this;
+    }
+
+    /**
+     * Registers an already-built vendor {@see File} attachment directly, bypassing the
+     * HAWKI storage layer. Used for IR content parts (image/file URLs and inline data)
+     * that were supplied with the request itself.
+     */
+    public function registerVendorFile(File $file): self
+    {
+        $this->referencedAttachments[] = $file;
+
         return $this;
     }
 
     public function addError(string $errorMessage): self
     {
         $this->errors[] = $errorMessage;
+
         return $this;
+    }
+
+    public function apply(UserMessage $message): void
+    {
+        foreach ($this->referencedAttachments as $attachment) {
+            $message->attachments[] = $attachment;
+        }
+
+        $contextMarkdown = $this->generateContextMarkdown();
+
+        if (!empty($contextMarkdown)) {
+            $message->content = $contextMarkdown . "\n\n" . $message->content;
+        }
     }
 
     private function registerImageAttachment(FileInterface $file): self
     {
         if (!$this->context->model->input->hasImage()) {
             $this->addSkippedFileMessage($file, 'Model does not support image input');
+
             return $this;
         }
 
         if (!$this->context->provider->adapter->supportsFileAsAttachment($file)) {
             $this->addSkippedFileMessage($file, 'The HAWKI provider adapter does not support this file type as attachment');
+
             return $this;
         }
 
@@ -98,11 +130,13 @@ class UserMessageAttachments
         if (!$this->context->model->input->hasText()) {
             // This should never happen XD, otherwise, how is it reading this?
             $this->addSkippedFileMessage($file, 'Model does not support text input');
+
             return $this;
         }
 
         if (!$this->context->provider->adapter->supportsFileAsAttachment($file)) {
             $this->addInlinedAttachment($file);
+
             return $this;
         }
 
@@ -110,6 +144,7 @@ class UserMessageAttachments
             content: $file->getContent(),
             mimeType: $file->getMimeType(),
         )->as($file->getOriginalFilename());
+
         return $this;
     }
 
@@ -119,19 +154,8 @@ class UserMessageAttachments
             $this->extractReferences[] = 'The file: ' . $extractedFile->getOriginalFilename() . ' was automatically extracted from the original file: ' . $file->getOriginalFilename();
             $this->register($extractedFile);
         }
+
         return $this;
-    }
-
-    public function apply(UserMessage $message): void
-    {
-        foreach ($this->referencedAttachments as $attachment) {
-            $message->attachments[] = $attachment;
-        }
-
-        $contextMarkdown = $this->generateContextMarkdown();
-        if (!empty($contextMarkdown)) {
-            $message->content = $contextMarkdown . "\n\n" . $message->content;
-        }
     }
 
     private function generateContextMarkdown(): string
@@ -139,37 +163,37 @@ class UserMessageAttachments
         if (!empty($this->extractReferences)) {
             $this->meta->addSection('Extracted attachments', [
                 'The following attachments were automatically extracted from the original files:',
-                implode("\n", $this->extractReferences)
+                implode("\n", $this->extractReferences),
             ]);
         }
 
         if (!empty($this->inlinedAttachments)) {
             $this->meta->addSection('Inlined attachments', [
                 'The following attachments were inlined into the message content because they could not be sent as separate attachments:',
-                implode("\n", $this->inlinedAttachments)
+                implode("\n", $this->inlinedAttachments),
             ]);
         }
 
         if (!empty($this->skippedAttachmentMessages)) {
             $this->meta->addSection('Skipped attachments', [
                 'The following attachments were skipped and not sent to the model:',
-                implode("\n", $this->skippedAttachmentMessages)
+                implode("\n", $this->skippedAttachmentMessages),
             ]);
         }
 
         if (!empty($this->errors)) {
             $this->meta->addSection('Attachments with errors', [
                 'The following errors occurred while processing attachments:',
-                implode("\n", array_unique($this->errors))
+                implode("\n", array_unique($this->errors)),
             ]);
         }
 
-        return (string)$this->meta;
+        return (string) $this->meta;
     }
 
     private function addInlinedAttachment(FileInterface $file): void
     {
-        $escapeBackticksInText = static fn(string $text): string => str_replace('```', '\`\`\`', $text);
+        $escapeBackticksInText = static fn (string $text): string => str_replace('```', '\`\`\`', $text);
 
         $this->inlinedAttachments[] = <<<MARKDOWN
 - Inlined attachment: `{$file->getOriginalFilename()}` (MIME type: `{$file->getMimeType()}`, size: `{$file->getSize()} bytes`)
