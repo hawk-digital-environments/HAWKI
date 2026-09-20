@@ -21,6 +21,14 @@ readonly class AgentRequestContext
         public string $usageType = WellKnownUsageTypes::MAIN_APP,
         public ?string $formatKey = null,
         public bool $usageRecordedViaListener = false,
+        /**
+         * Entry-point channel ('chat', 'ui-chat', …) for usage attribution.
+         */
+        public string $channel = 'chat',
+        /**
+         * Room id for room-scoped invocations (group chat orchestration); null otherwise.
+         */
+        public ?int $roomId = null,
     ) {
     }
 

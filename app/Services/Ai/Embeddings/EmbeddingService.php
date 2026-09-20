@@ -13,6 +13,7 @@ use App\Services\Ai\Embeddings\Values\EmbeddingResponse;
 use App\Services\Ai\Embeddings\Values\EmbeddingUsageInfo;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Ai\Values\TokenUsage;
+use App\Services\Ai\Values\UsageRecordContext;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use App\Services\System\UsageTypes\UsageContext;
 use Illuminate\Container\Attributes\Singleton;
@@ -88,7 +89,13 @@ readonly class EmbeddingService
 
         $this->usageAnalyzer->submitUsageRecord(
             $tokenUsage,
-            WellKnownUsageTypes::EXTERNAL_APP === $this->usageContext->get() ? 'api' : 'private',
+            new UsageRecordContext(
+                type: WellKnownUsageTypes::EXTERNAL_APP === $this->usageContext->get() ? 'api' : 'private',
+                channel: 'embeddings',
+                userId: $this->request->user()?->id,
+                userAgent: $this->request->userAgent(),
+                formatKey: $request->formatKey,
+            ),
         );
 
         UsageRecordedEvent::dispatch(

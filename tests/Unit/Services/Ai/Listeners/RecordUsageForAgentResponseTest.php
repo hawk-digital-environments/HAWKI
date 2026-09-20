@@ -97,8 +97,71 @@ class RecordUsageForAgentResponseTest extends TestCase
         Event::assertNotDispatched(UsageRecordedEvent::class);
     }
 
-    private function buildContext(bool $usageRecordedViaListener): AgentRequestContext
+    public function testItRecordsRoomScopedUsageAsGroup(): void
     {
+        Event::fake([UsageRecordedEvent::class]);
+        $user = User::factory()->create();
+        $this->actingAsUser($user);
+        $room = \App\Models\Room::forceCreate([
+            'room_name' => 'Test room',
+            'slug' => 'test-room-' . uniqid(),
+        ]);
+
+        $context = $this->buildContext(usageRecordedViaListener: true, channel: 'ui-chat', roomId: $room->id);
+        $response = new AgentResponse('inv_1', 'Hi', new Usage(promptTokens: 7, completionTokens: 3), new Meta());
+
+        $this->sut->handle(new AgentResponseReceivedEvent(
+            agent: self::createStub(AgentInterface::class),
+            context: $context,
+            provider: $context->provider,
+            response: $response,
+            usage: $response->usage,
+        ));
+
+        $record = UsageRecord::query()->latest('id')->first();
+        self::assertNotNull($record);
+        self::assertSame('group', $record->type);
+        self::assertSame($room->id, $record->room_id);
+        self::assertSame('ui-chat', $record->channel);
+
+        Event::assertDispatched(UsageRecordedEvent::class, static function (UsageRecordedEvent $event) use ($room): bool {
+            return 'ui-chat' === $event->channel
+                && $room->id === $event->roomId
+                && 'group' !== $event->usageType; // usageType keeps the surface ('main'), type is the record's concern
+        });
+    }
+
+    public function testItRecordsExternalSurfaceUsageAsApi(): void
+    {
+        Event::fake([UsageRecordedEvent::class]);
+        $this->actingAsUser(User::factory()->create());
+
+        $context = $this->buildContext(
+            usageRecordedViaListener: true,
+            usageType: \App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes::EXTERNAL_APP,
+        );
+        $response = new AgentResponse('inv_1', 'Hi', new Usage(promptTokens: 5), new Meta());
+
+        $this->sut->handle(new AgentResponseReceivedEvent(
+            agent: self::createStub(AgentInterface::class),
+            context: $context,
+            provider: $context->provider,
+            response: $response,
+            usage: $response->usage,
+        ));
+
+        $record = UsageRecord::query()->latest('id')->first();
+        self::assertNotNull($record);
+        self::assertSame('api', $record->type);
+        self::assertNull($record->room_id);
+    }
+
+    private function buildContext(
+        bool $usageRecordedViaListener,
+        string $usageType = 'main',
+        string $channel = 'chat',
+        ?int $roomId = null,
+    ): AgentRequestContext {
         $model = new AiModel(['model_id' => 'gpt-4o']);
         $model->setRelation('parameters', collect());
 
@@ -110,9 +173,11 @@ class RecordUsageForAgentResponseTest extends TestCase
             ),
             model: $model,
             modelParameters: \App\Services\Ai\Models\Parameters\Values\AiModelParameters::fromArray([]),
-            usageType: 'main',
+            usageType: $usageType,
             formatKey: 'openResponses',
             usageRecordedViaListener: $usageRecordedViaListener,
+            channel: $channel,
+            roomId: $roomId,
         );
     }
 }

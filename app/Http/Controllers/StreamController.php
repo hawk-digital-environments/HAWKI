@@ -8,6 +8,7 @@ use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\AiService;
 use App\Services\Ai\UsageAnalyzerService;
+use App\Services\Ai\Values\UsageRecordContext;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
@@ -75,7 +76,10 @@ class StreamController extends Controller
         $response = $agent->send();
 
         // Record usage
-        $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'api');
+        $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), new UsageRecordContext(
+            type: 'api',
+            channel: 'legacy',
+        ));
 
         // Return response to client
         return response()->json([
@@ -318,7 +322,10 @@ class StreamController extends Controller
             return;
         }
 
-        $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
+        $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), new UsageRecordContext(
+            type: 'private',
+            channel: 'legacy',
+        ));
     }
 
     /**
@@ -345,7 +352,10 @@ class StreamController extends Controller
         // The "private" here is crap. Because this may not be a private request, but for example a group chat export.
         // However, I would have to pass a lot of additional data to resolve this properly.
         // For now this is fine and in the future we should generally clean up the token tracking.
-        $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
+        $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), new UsageRecordContext(
+            type: 'private',
+            channel: 'legacy',
+        ));
 
         try {
             return ['success' => true, 'content' => json_encode(['text' => $res->text], JSON_THROW_ON_ERROR)];
@@ -388,7 +398,12 @@ class StreamController extends Controller
 
             $res = $agent->send();
 
-            $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'group');
+            $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), new UsageRecordContext(
+            type: 'group',
+            channel: 'legacy',
+            userId: Auth::id(),
+            roomId: $room->id,
+        ));
 
             $text = $res->text;
 

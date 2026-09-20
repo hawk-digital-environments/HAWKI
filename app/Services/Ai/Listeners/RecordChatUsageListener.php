@@ -7,6 +7,7 @@ namespace App\Services\Ai\Listeners;
 use App\Services\Ai\Chat\Events\UsageRecordedEvent;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Ai\Values\TokenUsage;
+use App\Services\Ai\Values\UsageRecordContext;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use Illuminate\Http\Request;
 
@@ -38,16 +39,38 @@ abstract class RecordChatUsageListener
 
         $this->usageAnalyzer->submitUsageRecord(
             $tokenUsage,
-            WellKnownUsageTypes::EXTERNAL_APP === $context->usageType ? 'api' : 'private',
+            new UsageRecordContext(
+                type: $this->resolveType($context),
+                channel: $context->channel,
+                userId: $this->request->user()?->id,
+                roomId: $context->roomId,
+                userAgent: $this->request->userAgent(),
+                formatKey: $context->formatKey,
+            ),
         );
 
         UsageRecordedEvent::dispatch(
             tokenUsage: $tokenUsage,
             usageType: $context->usageType,
-            channel: 'chat',
+            channel: $context->channel,
             modelId: $context->model->model_id,
             formatKey: $context->formatKey,
             userAgent: $this->request->userAgent(),
+            roomId: $context->roomId,
         );
+    }
+
+    /**
+     * Room-scoped invocations (group chat orchestration) record as 'group' with the
+     * room attributed; everything else splits by surface: external token → 'api',
+     * main app → 'private'.
+     */
+    private function resolveType(\App\Services\Ai\Agents\Values\AgentRequestContext $context): string
+    {
+        if (null !== $context->roomId) {
+            return 'group';
+        }
+
+        return WellKnownUsageTypes::EXTERNAL_APP === $context->usageType ? 'api' : 'private';
     }
 }

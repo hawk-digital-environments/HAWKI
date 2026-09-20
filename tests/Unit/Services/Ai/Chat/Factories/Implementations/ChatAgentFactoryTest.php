@@ -193,6 +193,24 @@ class ChatAgentFactoryTest extends TestCase
     }
 
 
+    public function testItCarriesChannelAndRoomOntoTheRequestContext(): void
+    {
+        $request = new AiRequest(
+            model: 'gpt-4o',
+            messages: [\App\Services\Ai\Chat\Values\Messages\UserMessage::fromText('Hi')],
+            hawkiExtensions: [
+                AiRequest::HAWKI_EXTENSION_CHANNEL => 'ui-chat',
+                AiRequest::HAWKI_EXTENSION_ROOM_ID => 42,
+            ],
+        );
+
+        $agent = $this->sut->createAgent($request);
+        $context = $agent->getContext();
+
+        self::assertSame('ui-chat', $context->channel);
+        self::assertSame(42, $context->roomId);
+    }
+
     public function testItResolvesHawkiStorageFilePartsPerMessage(): void
     {
         $identifier = \App\Services\Storage\Values\StoredFileIdentifier::fromCategoryAndUuid(

@@ -34,6 +34,20 @@ readonly class AiRequest
     public const string HAWKI_EXTENSION_BROADCAST = 'broadcast';
 
     /**
+     * Numeric room id for room-scoped requests (group chat orchestration). Orchestration
+     * callers that already resolved the room set this; the agent factory copies it onto
+     * the {@see \App\Services\Ai\Agents\Values\AgentRequestContext} so usage recording
+     * can attribute the invocation to the room.
+     */
+    public const string HAWKI_EXTENSION_ROOM_ID = 'room_id';
+
+    /**
+     * Entry-point channel ('chat' / 'ui-chat' / …) for usage attribution; flows onto the
+     * usage record and {@see \App\Services\Ai\Chat\Events\UsageRecordedEvent}.
+     */
+    public const string HAWKI_EXTENSION_CHANNEL = 'channel';
+
+    /**
      * IR convention for HAWKI-stored files referenced from file parts: the file URL
      * carries this scheme plus the storage UUID, resolved by the agent factory through
      * HAWKI's file storage (per-request storage category).
@@ -97,6 +111,34 @@ readonly class AiRequest
     public function hawkiExtension(string $key): mixed
     {
         return $this->hawkiExtensions[$key] ?? null;
+    }
+
+    /**
+     * Returns a clone with the given hawki extension set. Used by orchestration callers
+     * (e.g. the group-chat orchestration) that attach server-side context — room id,
+     * channel — after the wire payload was parsed.
+     */
+    public function withHawkiExtension(string $key, mixed $value): self
+    {
+        $extensions = $this->hawkiExtensions ?? [];
+        $extensions[$key] = $value;
+
+        return new self(
+            model: $this->model,
+            messages: $this->messages,
+            systemInstruction: $this->systemInstruction,
+            tools: $this->tools,
+            toolChoice: $this->toolChoice,
+            toolConfig: $this->toolConfig,
+            generation: $this->generation,
+            responseFormat: $this->responseFormat,
+            stream: $this->stream,
+            reasoning: $this->reasoning,
+            cache: $this->cache,
+            providerExtensions: $this->providerExtensions,
+            hawkiExtensions: $extensions,
+            formatKey: $this->formatKey,
+        );
     }
 
     public function wantsStreaming(): bool

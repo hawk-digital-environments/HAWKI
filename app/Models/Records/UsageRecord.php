@@ -16,6 +16,10 @@ class UsageRecord extends Model
         'completion_tokens',
         'model',
         'type',
+        'channel',
+        'user_agent',
+        'format_key',
+        'assistant_handle',
     ];
 
     /**

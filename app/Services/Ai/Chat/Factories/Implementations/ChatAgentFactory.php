@@ -82,6 +82,12 @@ class ChatAgentFactory extends AbstractChatAgentFactory
             usageType: null,
             formatKey: $request->formatKey,
             usageRecordedViaListener: true,
+            channel: \is_string($request->hawkiExtension(AiRequest::HAWKI_EXTENSION_CHANNEL))
+                ? $request->hawkiExtension(AiRequest::HAWKI_EXTENSION_CHANNEL)
+                : 'chat',
+            roomId: \is_int($request->hawkiExtension(AiRequest::HAWKI_EXTENSION_ROOM_ID))
+                ? $request->hawkiExtension(AiRequest::HAWKI_EXTENSION_ROOM_ID)
+                : null,
         );
 
         $messages = $this->buildMessages($request, $context);

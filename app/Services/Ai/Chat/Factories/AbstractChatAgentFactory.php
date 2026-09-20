@@ -71,8 +71,8 @@ abstract class AbstractChatAgentFactory implements ChatAgentFactoryInterface
      * Assembles an {@see AgentRequestContext} from a model and optional overrides.
      *
      * When $parameters is omitted the model's own stored defaults are used. $usageType is
-     * normalised through {@see UsageContext::getForGiven()}; $formatKey and
-     * $usageRecordedViaListener carry the proxy-channel metadata used by the usage
+     * normalised through {@see UsageContext::getForGiven()}; $formatKey, $usageRecordedViaListener,
+     * $channel and $roomId carry the proxy-channel metadata used by the usage
      * recording listener.
      */
     protected function createRequestContext(
@@ -82,6 +82,8 @@ abstract class AbstractChatAgentFactory implements ChatAgentFactoryInterface
         ?string $usageType = null,
         ?string $formatKey = null,
         bool $usageRecordedViaListener = false,
+        string $channel = 'chat',
+        ?int $roomId = null,
     ): AgentRequestContext {
         $parameters ??= AiModelParameters::fromArray($model->parameters->toArray());
         $providerProxy = null === $provider
@@ -95,6 +97,8 @@ abstract class AbstractChatAgentFactory implements ChatAgentFactoryInterface
             usageType: $this->getUsageContext()->getForGiven($usageType),
             formatKey: $formatKey,
             usageRecordedViaListener: $usageRecordedViaListener,
+            channel: $channel,
+            roomId: $roomId,
         );
     }
 }

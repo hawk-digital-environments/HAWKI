@@ -21,7 +21,7 @@ class CreateUsageRecordsTable extends Migration
             $table->unsignedBigInteger('prompt_tokens')->default(0);
             $table->unsignedBigInteger('completion_tokens')->default(0);
 
-            $table->enum('type', ['private', 'group']);
+            $table->enum('type', ['private', 'group', 'api']);
 
             $table->string('model');
             $table->timestamps();
