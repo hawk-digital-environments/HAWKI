@@ -7,8 +7,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Services\Ai\Chat\ChatService;
 use App\Services\Ai\Exceptions\ModelIdNotAvailableException;
-use App\Services\Ai\Formatters\Exceptions\FormatterNotFoundException;
 use App\Services\Ai\Formatters\Exceptions\FormatterRequestException;
+use App\Services\Ai\Formatters\Exceptions\UnknownFormatException;
 use App\Services\Ai\Formatters\Exceptions\UnknownModelException;
 use App\Services\Ai\Formatters\Exceptions\UnknownToolCallException;
 use App\Services\Ai\Formatters\FormatterRegistry;
@@ -24,6 +24,10 @@ use Symfony\Component\HttpFoundation\Response;
  * {@see ChatService}, and rendering back to the formatter. Formatter-level request
  * errors are rendered in the formatter's own error shape so wire-format clients
  * receive spec-compliant error payloads.
+ *
+ * An explicit-but-unknown `{format}` segment errors with 400 `unknown_format` (D10
+ * resolution): with multiple formats shipped, the silent default fallback would serve
+ * the wrong response shape. Only an omitted segment falls back to the default format.
  */
 class ChatController extends Controller
 {
@@ -35,11 +39,11 @@ class ChatController extends Controller
 
     public function __invoke(Request $request, ?string $format = null): Response
     {
-        try {
-            $formatter = $this->formatters->resolve($format);
-        } catch (FormatterNotFoundException) {
-            $formatter = $this->formatters->resolve();
+        if (null !== $format && !$this->formatters->has($format)) {
+            return $this->formatters->resolve()->formatError(UnknownFormatException::forKey($format));
         }
+
+        $formatter = $this->formatters->resolve($format);
 
         try {
             $aiRequest = $formatter->parseRequest($request);

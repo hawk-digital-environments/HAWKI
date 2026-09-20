@@ -261,20 +261,15 @@ class ChatEndpointTest extends TestCase
         self::assertSame('previous_response_not_found', $response->json('error.code'));
     }
 
-    public function testItFallsBackToTheDefaultFormatterForUnknownFormats(): void
+    public function testItRejectsUnknownFormatsWith400(): void
     {
         $this->actingAsUser(User::factory()->create());
-        $this->mockAgent([], new AgentResponse(
-            invocationId: 'inv_1',
-            text: 'Hello!',
-            usage: new Usage(),
-            meta: new Meta(provider: 'openai', model: 'gpt-4o'),
-        ));
 
         $response = $this->postJson(self::ENDPOINT . '/definitely-not-a-format', $this->payload());
 
-        $response->assertStatus(200);
-        self::assertSame('response', $response->json('object'));
+        $response->assertStatus(400)
+            ->assertJsonPath('error.code', 'unknown_format')
+            ->assertJsonPath('error.param', 'format');
     }
 
     public function testItAcceptsTheExplicitOpenResponsesFormatSegment(): void

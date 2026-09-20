@@ -38,6 +38,36 @@ trait ParsesSseStreams
     }
 
     /**
+     * Parses a bare-`data:` SSE stream (no `event:` lines, e.g. the OpenAI Chat
+     * Completions chunk format) into decoded frames with a `[DONE]` marker.
+     *
+     * @return array<int, array{data: null|array<string, mixed>|string, done: bool}>
+     */
+    private function parseDataFrames(string $body): array
+    {
+        $frames = [];
+
+        foreach (explode("\n", $body) as $line) {
+            if (!str_starts_with($line, 'data: ')) {
+                continue;
+            }
+
+            $payload = mb_substr($line, 6);
+
+            if ('[DONE]' === $payload) {
+                $frames[] = ['data' => '[DONE]', 'done' => true];
+
+                continue;
+            }
+
+            $decoded = json_decode($payload, true);
+            $frames[] = ['data' => \is_array($decoded) ? $decoded : $payload, 'done' => false];
+        }
+
+        return $frames;
+    }
+
+    /**
      * @param array<int, array{event: string, data: mixed}> $events
      */
     private function firstEvent(array $events, string $name): array

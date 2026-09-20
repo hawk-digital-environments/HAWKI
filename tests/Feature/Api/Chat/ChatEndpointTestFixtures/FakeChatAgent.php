@@ -59,6 +59,7 @@ class FakeChatAgent implements AgentInterface
                     }
                 }
             },
+            meta: new Meta(provider: 'openai', model: 'gpt-4o'),
         );
     }
 }

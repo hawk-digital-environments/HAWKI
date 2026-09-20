@@ -55,8 +55,11 @@ class OpenResponsesStreamContext
     private ?UsageInfo $pendingUsage = null;
     private ?FinishReason $pendingFinish = null;
 
-    public function __construct(?string $responseId = null, ?int $createdAt = null)
-    {
+    public function __construct(
+        ?string $responseId = null,
+        ?int $createdAt = null,
+        private readonly bool $emitCustomEvents = true,
+    ) {
         $this->responseId = $responseId ?? 'resp_' . Str::uuid()->toString();
         $this->createdAt = $createdAt ?? time();
     }
@@ -307,6 +310,10 @@ class OpenResponsesStreamContext
      */
     private function handleCitation(CitationData $citation): array
     {
+        if (!$this->emitCustomEvents) {
+            return [];
+        }
+
         return [$this->frame('hawki:citation', [
             'citation' => [
                 'url' => $citation->url,
@@ -322,6 +329,10 @@ class OpenResponsesStreamContext
      */
     private function handleProviderToolEvent(HawkiProviderToolEvent $event): array
     {
+        if (!$this->emitCustomEvents) {
+            return [];
+        }
+
         return [$this->frame('hawki:provider_tool_event', [
             'item_id' => $event->itemId,
             'event_type' => $event->type,

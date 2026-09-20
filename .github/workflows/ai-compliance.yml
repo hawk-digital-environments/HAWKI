@@ -7,6 +7,7 @@ on:
       - 'app/Http/Controllers/Api/V1/**'
       - 'routes/api.php'
       - 'tests/Feature/Api/Compliance/**'
+      - 'tests/Feature/Api/Chat/**'
       - 'research/openresponses/**'
       - '.github/workflows/ai-compliance.yml'
   workflow_dispatch:
@@ -17,7 +18,7 @@ concurrency:
 
 jobs:
   open-responses-compliance:
-    name: Open Responses compliance suite
+    name: Live compliance + wire-format suites
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,10 +33,11 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      # The suite self-skips (green) when OPENRESPONSES_COMPLIANCE_TOKEN is empty;
-      # with a populated repository secret it verifies the proxy against the real
-      # provider using gpt-4.1-nano.
-      - name: Run compliance suite
+      # Both suites self-skip (green) when OPENRESPONSES_COMPLIANCE_TOKEN is empty;
+      # with a populated repository secret they verify the proxy against the real
+      # provider (gpt-4.1-nano): the Open Responses acceptance tests and the Chat
+      # Completions live verification (chunk grammar, client-tool loop, params).
+      - name: Run live suites
         env:
           OPENRESPONSES_COMPLIANCE_TOKEN: ${{ secrets.OPENRESPONSES_COMPLIANCE_TOKEN }}
-        run: php vendor/bin/phpunit --testsuite feature --no-coverage --testdox --filter OpenResponsesComplianceTest
+        run: php vendor/bin/phpunit --testsuite feature --no-coverage --testdox --filter 'OpenResponsesComplianceTest|ChatCompletionsLiveTest'

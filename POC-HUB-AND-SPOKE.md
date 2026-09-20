@@ -529,6 +529,19 @@ One documented fixture deviation: the official 32×32 image PNG is rejected by O
 current image validation for every model, so the port sends a 128×128 PNG with identical
 intent (byte-identical forwarding verified).
 
+The same CI workflow also runs the Chat Completions live suite
+(`tests/Feature/Api/Chat/ChatCompletionsLiveTest.php`, same token gate): chunk grammar,
+client-tool loop, and generation-param wiring against gpt-4.1-nano.
+
+### Custom (non-standard) events
+
+Wherever a wire format has no native slot for HAWKI data (citations, provider-tool
+events), the formatters emit non-standard `hawki:` frames/items. This emission is
+globally switchable: `AI_PROXY_EMIT_CUSTOM_EVENTS=false` (default `true`, config
+`hawki.aiProxy.emit_custom_events`) suppresses every custom emission in every format —
+stream events and non-streaming output items alike — for strict-spec clients. The IR
+keeps the data either way; the switch only acts at the formatter boundary.
+
 ---
 
 ## 12. References

@@ -158,15 +158,16 @@ decisions inside them.
 - **Why:** no consumer. The custom slot becomes interesting with the round-trip corpus
   (D4), which needs ids to survive parse→format cycles.
 
-### D10 — unknown `{format}` segments fall back to the default formatter
+### D10 — ~~unknown `{format}` segments fall back to the default formatter~~ (CLOSED)
 
 - **Proposal:** unspecified — §6.1 only defines the omitted-segment default.
-- **Built:** `POST /chat/garbage` resolves the default formatter instead of erroring
-  (`ChatController` catches `FormatterNotFoundException` and retries with `null`).
-- **Why:** lenient-by-default; a typo'd format still serves the request.
-- **Risk:** a client asking for `openai` (not yet implemented) silently gets Open
-  Responses instead of a clear "unsupported format" signal. This should be revisited as
-  soon as a second formatter ships — see §7.
+- **Built (was):** `POST /chat/garbage` resolved the default formatter instead of
+  erroring (`ChatController` caught `FormatterNotFoundException` and retried with
+  `null`).
+- **Closed with the second formatter:** an explicit-but-unknown `{format}` now returns
+  400 `unknown_format` (param `format`) via `UnknownFormatException`; only an omitted
+  segment falls back to the default — the same rule the embeddings endpoint applied
+  from day one.
 
 ### D11 — the usage-record DB rework is deferred
 
@@ -241,6 +242,17 @@ none of the deferred phases are prerequisites for stateless private chat. Group 
 remains on `StreamController` exactly as the proposal requires (it needs the Phase 5
 `/ui-chat` orchestration). Consequence: the Phase-7 gate is already half-met.
 
+### A6 — the custom-events switch (`AI_PROXY_EMIT_CUSTOM_EVENTS`)
+
+Not in the proposal. HAWKI augments the standard wire formats with non-standard
+`hawki:` frames/items (streamed citations, provider-tool events) wherever the format
+has no native slot. `config('hawki.aiProxy.emit_custom_events')` (env
+`AI_PROXY_EMIT_CUSTOM_EVENTS`, default **true**) turns this emission off globally for
+**all** formats — openResponses (stream events + citation output items) and openai
+(stream frames) — so strict-spec clients get spec-shaped output only. The switch acts
+at the formatter boundary; the IR keeps the data either way. Added while shipping the
+Chat Completions formatter; to be re-evaluated after real-client testing.
+
 ### A5 — the controller maps infrastructure exceptions
 
 The proposal's controller (§6.2) lets exceptions bubble to the global JSON:API renderer.
@@ -256,7 +268,7 @@ wire-format clients receive spec-shaped errors. Streaming failures degrade to SS
 | Phase (proposal §11) | Status |
 |---|---|
 | Phase 2 — legacy compatibility *design* (route forwarding, `usageType` propagation) | Not started |
-| Phase 3 — `openai` + `legacy` formatters, private/ai-req route forwarding | Not started (both are top next-step candidates, §6) |
+| Phase 3 — `openai` + `legacy` formatters, private/ai-req route forwarding | 🟡 `openai` done (N1: formatter + stream context + live suite, D10 closed); `legacy` NDJSON formatter and route forwarding remain (N3) |
 | Phase 4 — `AssistantAgentFactory` (assistant routing) | Not started; gated on the Assistants feature branch; the `hawkiExtensions` seam is ready for it |
 | Phase 5 — `StreamController` refactor + `/ui-chat` endpoint | Not started; D1 and D11 resolve here |
 | Phase 6 — `/models/{format?}` endpoint | Not started; smallest of all endpoints (no agent, pure transform) |
@@ -272,7 +284,18 @@ Ordered by value-to-effort. "Rosetta port" items map the reference implementatio
 (`research/llm-rosetta/src/llm_rosetta/`) onto the HAWKI spokes — the IR was derived
 from Rosetta's, so porting is mostly translation-table work.
 
-### N1 — `openaiChatCompletions` formatter *(proposal Phase 3; best first spoke)*
+### N1 — ~~`openaiChatCompletions` formatter~~ *(DONE — shipped as format key `openai`)*
+
+Delivered together with the D10 flip and a live verification suite
+(`tests/Feature/Api/Chat/ChatCompletionsLiveTest.php`, gated on
+`OPENRESPONSES_COMPLIANCE_TOKEN`, wired into `.github/workflows/ai-compliance.yml`):
+basic response, streaming chunk grammar with usage, the two-turn client-tool loop, and
+generation-param wiring, all green against live gpt-4.1-nano. Known deviations: the
+streaming usage chunk is always emitted (the format-agnostic stream interface cannot
+see per-request `stream_options`; matches the IR's include-usage default), and `n`
+remains parked in `providerExtensions` (single-choice by design).
+
+### N1 (original) — `openaiChatCompletions` formatter *(proposal Phase 3; best first spoke)*
 
 The most-requested external format (everything LiteLLM-compatible speaks it). Rosetta's
 `converters/openai_chat/` is the blueprint:
@@ -359,9 +382,11 @@ on the assistants branch). Blocked on the Assistants feature merge, not on archi
 
 | Decision | Context | Trigger to revisit |
 |---|---|---|
-| Unknown `{format}` falls back to default (D10) | Lenient, but silently serves the wrong shape once multiple formats exist | Second formatter ships (N1) |
+| ~~Unknown `{format}` falls back to default (D10)~~ | Resolved with N1: explicit unknown formats 400 | — |
 | Synthetic ack turn for continuations (A2) | One small extra user turn per tool-loop iteration | If a provider driver gains native no-prompt continuation, or fidelity complaints from harness clients |
 | `MAX_TOOL_CALLING_STEPS` non-configurable (A3) | SDK dynamic default (1.5 × tools) behind a visible constant | Long mixed tool loops hit the budget; then wire `MAX_TOOL_CALLING_ROUNDS` per model |
+| Always emit the streaming usage chunk in `openai` | Per-request `stream_options` is invisible to the format-agnostic stream path | Formatter interface gains request context (e.g. with N6) |
+| `AI_PROXY_EMIT_CUSTOM_EVENTS` default true (A6) | HAWKI feature parity vs strict-spec output | After real-client testing of custom frames |
 | Client tool schema degradation to string params (A2) | Properties outside the `illuminate/json-schema` subset lose precision | Upstream raw-schema support, or real-world reports of degraded coding-agent tools |
 
 ---

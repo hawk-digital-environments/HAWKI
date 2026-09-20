@@ -19,15 +19,16 @@ use App\Services\Ai\ConfigFileSync\Syncers\McpServerSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\ModelAndProviderSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemPromptSyncer;
-use App\Services\Ai\Exceptions\InvalidProviderAdapterException;
 use App\Services\Ai\Embeddings\Factories\Contracts\VectorizerFactoryInterface;
 use App\Services\Ai\Embeddings\Factories\Implementations\DefaultVectorizerFactory;
 use App\Services\Ai\Embeddings\Factories\VectorizerRegistry;
+use App\Services\Ai\Exceptions\InvalidProviderAdapterException;
 use App\Services\Ai\Formatters\Contracts\FormatterInterface;
 use App\Services\Ai\Formatters\Embeddings\Contracts\EmbeddingFormatterInterface;
 use App\Services\Ai\Formatters\Embeddings\EmbeddingFormatterRegistry;
 use App\Services\Ai\Formatters\Embeddings\Implementations\OpenAi\OpenAiEmbeddingsFormatter;
 use App\Services\Ai\Formatters\FormatterRegistry;
+use App\Services\Ai\Formatters\Implementations\OpenAiChatCompletions\OpenAiChatCompletionsFormatter;
 use App\Services\Ai\Formatters\Implementations\OpenResponses\OpenResponsesFormatter;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
 use App\Services\Ai\ModelInformation\Enrichment\AiModelInfoEnrichmentPipeline;
@@ -254,7 +255,8 @@ class AiServiceProvider extends ServiceProvider
         $this->app->extend(
             FormatterRegistry::class,
             static fn (FormatterRegistry $registry) => $registry
-                ->declare(OpenResponsesFormatter::KEY, OpenResponsesFormatter::class),
+                ->declare(OpenResponsesFormatter::KEY, OpenResponsesFormatter::class)
+                ->declare(OpenAiChatCompletionsFormatter::KEY, OpenAiChatCompletionsFormatter::class),
         );
 
         $this->app->extend(

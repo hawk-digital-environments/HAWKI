@@ -1,5 +1,11 @@
 # Chat Completions Formatter — Implementation Handoff
 
+> **Status: IMPLEMENTED** (see N1/D10 in
+> [`001-generic-llm-backend-implementation.md` §6](./001-generic-llm-backend-implementation.md#6-recommended-next-steps)).
+> The handoff below is kept as the original specification record; deviations made
+> during implementation (always-emitted usage chunk, `chatcmpl-` prefix, custom-frames
+> switch) are noted in the implementation record.
+>
 > Purpose: pick-up-and-go specification for the `openaiChatCompletions` wire format
 > (next step **N1** in
 > [`001-generic-llm-backend-implementation.md` §6](./001-generic-llm-backend-implementation.md#6-recommended-next-steps)).

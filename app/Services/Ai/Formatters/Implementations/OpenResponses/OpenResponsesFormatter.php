@@ -31,6 +31,7 @@ use App\Services\Ai\Chat\Values\Tools\ToolCallConfig;
 use App\Services\Ai\Chat\Values\Tools\ToolChoice;
 use App\Services\Ai\Chat\Values\Tools\ToolChoiceMode;
 use App\Services\Ai\Chat\Values\Tools\ToolDefinition;
+use App\Services\Ai\Formatters\Concerns\ParsesHawkiExtensions;
 use App\Services\Ai\Formatters\Contracts\FormatterInterface;
 use App\Services\Ai\Formatters\Exceptions\FormatterRequestException;
 use App\Services\Ai\Formatters\Exceptions\InvalidInputItemException;
@@ -58,6 +59,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 readonly class OpenResponsesFormatter implements FormatterInterface
 {
+    use ParsesHawkiExtensions;
     public const string KEY = 'openResponses';
 
     public function getKey(): string
@@ -132,7 +134,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
             stream: new StreamConfig(enabled: true === ($body['stream'] ?? false)),
             reasoning: $this->parseReasoningConfig($body),
             providerExtensions: [] !== $providerExtensions ? $providerExtensions : null,
-            hawkiExtensions: $this->parseHawkiExtensions($body),
+            hawkiExtensions: self::parseHawkiExtensions($body),
             formatKey: self::KEY,
         );
     }
@@ -164,7 +166,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
 
     public function formatStream(iterable $events): StreamedResponse
     {
-        $context = new OpenResponsesStreamContext();
+        $context = new OpenResponsesStreamContext(emitCustomEvents: (bool) config('hawki.aiProxy.emit_custom_events', true));
 
         return response()->stream(
             static function () use ($events, $context): void {
@@ -395,44 +397,6 @@ readonly class OpenResponsesFormatter implements FormatterInterface
         }
 
         return [] !== $parts ? $parts : [TextPart::from('')];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function parseHawkiExtensions(array $body): ?array
-    {
-        $hawki = $body['hawki'] ?? null;
-
-        if (!\is_array($hawki)) {
-            return null;
-        }
-
-        $extensions = [];
-
-        if (\is_array($hawki['tools'] ?? null)) {
-            $extensions[AiRequest::HAWKI_EXTENSION_TOOLS] = array_values(array_filter(
-                $hawki['tools'],
-                static fn (mixed $tool): bool => \is_string($tool),
-            ));
-        }
-
-        if (\is_array($hawki['attachments'] ?? null)) {
-            $extensions[AiRequest::HAWKI_EXTENSION_ATTACHMENTS] = array_values(array_filter(
-                $hawki['attachments'],
-                static fn (mixed $uuid): bool => \is_string($uuid),
-            ));
-        }
-
-        if (\is_array($hawki['params'] ?? null)) {
-            $extensions[AiRequest::HAWKI_EXTENSION_PARAMS] = $hawki['params'];
-        }
-
-        if (true === ($hawki['broadcast'] ?? null)) {
-            $extensions[AiRequest::HAWKI_EXTENSION_BROADCAST] = true;
-        }
-
-        return [] !== $extensions ? $extensions : null;
     }
 
     /**
@@ -682,7 +646,9 @@ readonly class OpenResponsesFormatter implements FormatterInterface
             }
 
             if ($part instanceof \App\Services\Ai\Chat\Values\Parts\CitationPart) {
-                $items[] = $this->buildCitationItem($part);
+                if ((bool) config('hawki.aiProxy.emit_custom_events', true)) {
+                    $items[] = $this->buildCitationItem($part);
+                }
 
                 continue;
             }
