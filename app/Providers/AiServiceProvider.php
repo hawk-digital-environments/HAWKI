@@ -28,6 +28,10 @@ use App\Services\Ai\Formatters\Embeddings\Contracts\EmbeddingFormatterInterface;
 use App\Services\Ai\Formatters\Embeddings\EmbeddingFormatterRegistry;
 use App\Services\Ai\Formatters\Embeddings\Implementations\OpenAi\OpenAiEmbeddingsFormatter;
 use App\Services\Ai\Formatters\FormatterRegistry;
+use App\Services\Ai\Formatters\Models\Contracts\ModelsFormatterInterface;
+use App\Services\Ai\Formatters\Models\ModelsFormatterRegistry;
+use App\Services\Ai\Formatters\Models\Implementations\OpenAi\OpenAiModelsFormatter;
+use App\Services\Ai\Formatters\Models\Implementations\OpenResponses\OpenResponsesModelsFormatter;
 use App\Services\Ai\Formatters\Implementations\OpenAiChatCompletions\OpenAiChatCompletionsFormatter;
 use App\Services\Ai\Formatters\Implementations\OpenResponses\OpenResponsesFormatter;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
@@ -84,6 +88,7 @@ class AiServiceProvider extends ServiceProvider
     public const string FORMATTER_LIST = 'ai.formatter.list';
     public const string EMBEDDING_VECTORIZER_FACTORY_LIST = 'ai.embeddingVectorizerFactory.list';
     public const string EMBEDDING_FORMATTER_LIST = 'ai.embeddingFormatter.list';
+    public const string MODEL_FORMATTER_LIST = 'ai.modelFormatter.list';
 
     public function register(): void
     {
@@ -271,6 +276,13 @@ class AiServiceProvider extends ServiceProvider
                 ->declare(OpenAiEmbeddingsFormatter::KEY, OpenAiEmbeddingsFormatter::class),
         );
 
+        $this->app->extend(
+            ModelsFormatterRegistry::class,
+            static fn (ModelsFormatterRegistry $registry) => $registry
+                ->declare(OpenAiModelsFormatter::KEY, OpenAiModelsFormatter::class)
+                ->declare(OpenResponsesModelsFormatter::KEY, OpenResponsesModelsFormatter::class),
+        );
+
         $this->app->singleton(
             self::PROVIDER_ADAPTER_LIST,
             /**
@@ -357,6 +369,17 @@ class AiServiceProvider extends ServiceProvider
              */
             fn () => new LazySingletonList(
                 static fn (string $formatterClassName) => 'embedding_formatter_' . md5($formatterClassName),
+                fn (string $formatterClassName) => $this->app->get($formatterClassName),
+            ),
+        );
+
+        $this->app->singleton(
+            self::MODEL_FORMATTER_LIST,
+            /**
+             * @return LazySingletonList<class-string<ModelsFormatterInterface>, ModelsFormatterInterface>
+             */
+            fn () => new LazySingletonList(
+                static fn (string $formatterClassName) => 'model_formatter_' . md5($formatterClassName),
                 fn (string $formatterClassName) => $this->app->get($formatterClassName),
             ),
         );

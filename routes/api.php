@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\AiProviderController;
 use App\Http\Controllers\Api\V1\AiToolController;
 use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\EmbeddingsController;
+use App\Http\Controllers\Api\V1\ModelsController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
@@ -81,6 +82,9 @@ Route::middleware([
 
         Route::post('/embeddings/{format?}', EmbeddingsController::class)
             ->name('api.hawki.embeddings');
+
+        Route::get('/models/{format?}', ModelsController::class)
+            ->name('api.hawki.models');
     });
 });
 

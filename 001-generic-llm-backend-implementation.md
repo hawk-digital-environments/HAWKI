@@ -17,7 +17,7 @@
 
 ## 0. Current state (living section — update with every delivery)
 
-Snapshot: **2026-09-20**, after N5 (round-trip corpus; D4 closed). Read this first;
+Snapshot: **2026-09-20**, after N2 (`/models/{format?}`; Phase 6 done). Read this first;
 §3/§5/§6 keep their original per-item detail.
 
 ### Shipped
@@ -37,6 +37,7 @@ Snapshot: **2026-09-20**, after N5 (round-trip corpus; D4 closed). Read this fir
 | **N6 reasoning replay** (D6 closed): reasoning item ids captured, merged into tool-call turns both wire layouts, replayable reasoning items returned non-streaming — live-verified with o4-mini | `ChatAgentFactory`, `StructuredChatAgent`, normalizer, both formatters |
 | **N6 structured output** (D7 closed): `json_schema` via `StructuredChatAgent` (HasStructuredOutput, cross-driver), `json_object` via instruction suffix, `stream`+`json_schema` → 400, non-object roots → 400 — live-verified with gpt-4.1-nano | `StructuredChatAgent`, both formatters |
 | **N5 round-trip corpus** (D4 closed): 63 fixture-driven cases — parse/response fidelity per formatter, emit-replay cycle, cross-format IR equivalence; caught and fixed two CC parse bugs (file-part filename nesting, phantom empty TextPart on null content) | `tests/Unit/Services/Ai/Formatters/Corpus/` |
+| **N2 `/models/{format?}`** (Phase 6 done): OpenAI list shape (default) + invented openResponses dialect (`created_at`); contextual-scope visibility, deterministic order, unknown format 400; endpoint testing exposed and fixed a core scope-machinery bug (see A7) | `ModelsController`, `Formatters/Models/` |
 
 ### Gap analysis verdicts (researched against the published Open Responses OpenAPI +
 LLM-Rosetta; full report in the session that produced it)
@@ -68,13 +69,12 @@ LLM-Rosetta; full report in the session that produced it)
 
 ### Recommended next steps (ordered)
 
-1. **N2 — `/models/{format?}`** (trivial, pure transform).
-2. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
+1. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
    budget Phase-2 design time for route forwarding).
-3. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
+2. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
    D1/D11/D13) — unlocks dropping `hawki.params`/`broadcast`/`attachments`.
-4. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
-5. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
+3. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
+4. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
 
 ---
 
@@ -357,6 +357,19 @@ Superseded in part for citations: openResponses now carries them **spec-natively
 switch governs only the remaining custom emissions (the `openai` citation frame and
 `hawki:provider_tool_event`).
 
+### A7 — contextual-scope boot survives Laravel's model-state reset (fixed)
+
+The `/models` endpoint's scope-dependent feature test exposed a core bug in
+`HasContextualScopesTrait`: its `$hcst_booted` static guard outlives Laravel's
+between-test `Model::clearBootedModels()` registry wipe, so any model booted in an
+earlier test silently queried **unscoped** in later tests of the same process
+(active/usage-type filters simply absent). The boot hook now re-registers when the
+Eloquent registry no longer contains the wrappers and refreshes the captured
+locator/scope-context from the current container (stale captures made guard closures
+resolve against defunct bindings — `Target [auth] does not exist`). Harmless in
+production (single process, registry never wiped); every scope-dependent test since
+relied on the accident of running first in its process.
+
 ### A5 — the controller maps infrastructure exceptions
 
 The proposal's controller (§6.2) lets exceptions bubble to the global JSON:API renderer.
@@ -375,7 +388,7 @@ wire-format clients receive spec-shaped errors. Streaming failures degrade to SS
 | Phase 3 — `openai` + `legacy` formatters, private/ai-req route forwarding | 🟡 `openai` done (N1: formatter + stream context + live suite, D10 closed); `legacy` NDJSON formatter and route forwarding remain (N3) |
 | Phase 4 — `AssistantAgentFactory` (assistant routing) | Not started; gated on the Assistants feature branch; the `hawkiExtensions` seam is ready for it |
 | Phase 5 — `StreamController` refactor + `/ui-chat` endpoint | Not started; D1 and D11 resolve here |
-| Phase 6 — `/models/{format?}` endpoint | Not started; smallest of all endpoints (no agent, pure transform) |
+| Phase 6 — `/models/{format?}` endpoint | ✅ done — `openai` (default, spec fields + `label`/`model_type` extras) and an invented `openResponses` dialect variant (`created_at` naming; the published spec has no `/models` endpoint); repository contextual scopes (active + usage-type rules) provide visibility; deterministic order |
 | Phase 7 — remove `StreamController` | Frontend private-chat half of the gate already met (A4); group chat still requires Phase 5 |
 | Phase 8 — `/embeddings/{format?}` | ✅ done — [`EMBEDDING-API-IMPLEMENTATION-HANDOFF.md`](./EMBEDDING-API-IMPLEMENTATION-HANDOFF.md) executed: `EmbeddingService` + vectorizer registry, `openai` formatter, `POST /api/hawki/v1/embeddings/{format?}`; usage recorded from day one (`UsageRecordedEvent` reused with `channel: 'embeddings'`, not relocated); unknown explicit `{format}` → 400 from the start (D10 lesson); live-verified against OpenAI (`text-embedding-3-small`, input-ordered vectors, dimensions passthrough, usage row) |
 | Phase 9 / 10 — images, audio, transcription | Not started |

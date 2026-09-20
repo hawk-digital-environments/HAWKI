@@ -8,6 +8,7 @@ namespace App\Services\System\Database\Eloquent\ContextualScopes;
 use App\Services\System\Container\ServiceLocator;
 use App\Services\System\Database\Eloquent\ContextualScopes\Contexts\ModelScopeContext;
 use App\Services\System\Database\Eloquent\ContextualScopes\Contexts\ScopeContext;
+use Illuminate\Database\Eloquent\Scope;
 
 /**
  * Enables per-request contextual scope management on an Eloquent model.
@@ -84,17 +85,31 @@ trait HasContextualScopesTrait
      * Laravel boot hook — called automatically by Eloquent on the first model instantiation.
      * Resolves dependencies (or uses injected ones), calls {@see registerScopes()}, and
      * registers one {@see ContextualScopeWrapper} per scope as an Eloquent global scope.
-     * Guarded by a static flag so it runs at most once per model class per process.
+     * Guarded by a static flag so it runs at most once per model class per process —
+     * re-registering when Laravel has wiped the Eloquent global-scope registry in the
+     * meantime (e.g. `Model::clearBootedModels()` between tests), which the guard alone
+     * would survive and silently leave the model unscoped.
      */
     public static function bootHasContextualScopesTrait(): void
     {
-        if (static::$hcst_booted) {
+        $wrappersPresent = [] !== array_filter(
+            static::getAllGlobalScopes()[static::class] ?? [],
+            static fn (Scope $scope): bool => $scope instanceof ContextualScopeWrapper,
+        );
+
+        if (static::$hcst_booted && $wrappersPresent) {
             return;
         }
+
+        // Booting again while the flag is set means the Eloquent registry was wiped
+        // underneath us (application rebuild, e.g. between tests): the previously
+        // captured dependencies belong to a stale application and must be refreshed,
+        // or guard closures resolve against defunct bindings.
+        $reRegistering = static::$hcst_booted;
         static::$hcst_booted = true;
 
         // If the dependencies were not injected manually, we resolve them from the container.
-        if (!isset(static::$hcst_serviceLocator, static::$hcst_scopeContext)) {
+        if (!isset(static::$hcst_serviceLocator, static::$hcst_scopeContext) || $reRegistering) {
             static::$hcst_serviceLocator = app(ServiceLocator::class);
             static::$hcst_scopeContext = app(ScopeContext::class);
         }
