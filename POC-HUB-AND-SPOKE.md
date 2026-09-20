@@ -533,6 +533,16 @@ The same CI workflow also runs the Chat Completions live suite
 (`tests/Feature/Api/Chat/ChatCompletionsLiveTest.php`, same token gate): chunk grammar,
 client-tool loop, and generation-param wiring against gpt-4.1-nano.
 
+### The `/ui-chat` endpoint and the group orchestration
+
+`POST /api/hawki/v1/ui-chat` (session-authenticated) is the HAWKI UI entry point:
+private requests stream in the native `openResponses` format; `POST …/{slug}` group
+requests (roomEditor-authorized) dispatch the `GenerateRoomAiResponse` queue job and
+answer `{success:true}` — generation, encryption with the room key, persistence and
+Reverb broadcast run in `RoomAiResponseService`, the same core the legacy route
+(`/req/room/streamAI/{slug}`) uses. Usage records carry channel `ui-chat` and, for
+group requests, the room (type `group`) via the request-context extensions.
+
 ### The `legacy` format
 
 A third chat formatter (format key `legacy`, registered like the others) renders the

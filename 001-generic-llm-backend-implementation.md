@@ -17,8 +17,8 @@
 
 ## 0. Current state (living section — update with every delivery)
 
-Snapshot: **2026-09-20**, after N3 (`legacy` formatter + route forwarding; Phases 2–3 fully
-closed). Read this first; §3/§5/§6 keep their original per-item detail.
+Snapshot: **2026-09-20**, after N9 (`/ui-chat` + orchestration extraction; Phase 5 done,
+D1/D2/D11 closed). Read this first; §3/§5/§6 keep their original per-item detail.
 
 ### Shipped
 
@@ -70,10 +70,13 @@ LLM-Rosetta; full report in the session that produced it)
 
 ### Recommended next steps (ordered)
 
-1. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
-   D1/D11/D13) — unlocks dropping `hawki.params`/`broadcast`/`attachments` and removing
-   `StreamController` + the legacy factory (Phase 7).
-2. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
+1. **N8 — `anthropicMessages` formatter** now that the formatter conventions have
+   hardened across three formats + the corpus harness.
+2. **Phase 7 (gated on the Svelte group-chat UI)**: cut the legacy JS group flow over to
+   `/api/hawki/v1/ui-chat/{slug}` — then remove `StreamController`, the `/req/streamAI`
+   + `/req/room/streamAI` forwardings and (if the frontend speaks openResponses natively)
+   the `legacy` formatter. The `hawki.params`/`broadcast`/`attachments` extensions can
+   drop once no legacy client sends them.
 3. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
 
 ---
@@ -117,18 +120,17 @@ Each entry states what the proposal says, what the code does, why, and how the g
 closes eventually. None of these change the layer boundaries — they are contained
 decisions inside them.
 
-### D1 — `AiService::getAgent()` is not deprecated yet
+### ~~D1 — `AiService::getAgent()` is not deprecated yet~~ *(RESOLVED with N9)*
 
 - **Proposal (§2.3):** Phase 1 deprecates `AiService::getAgent()`/`tryToGetAgent()` and
   makes them delegate to `ChatService` internally.
-- **Built:** `AiService` is untouched. The legacy chain (`AgentRegistry` →
-  `ChatAgentFromLegacyRequestFactory`) and the new chain (`ChatAgentRegistry` →
-  `ChatAgentFactory`) coexist, exactly as the proposal's own Phase 3–5 coexistence
-  requires.
-- **Why:** `StreamController` was to remain byte-identical in this iteration; touching
-  `AiService` would have pulled every internal caller (title/summary/prompt generation)
-  into the change for no functional gain.
-- **Reconciliation:** Phase 5 — deprecate, migrate internal callers, remove.
+- **Built (then):** `AiService` was untouched; the legacy chain (`AgentRegistry` →
+  `ChatAgentFromLegacyRequestFactory`) and the new chain coexisted per the proposal's
+  Phase 3–5 coexistence requirement.
+- **Resolution:** the group path moved to `ChatService` via `RoomAiResponseService`;
+  `getAgent()`/`tryToGetAgent()`, `AgentRegistry`, `AgentFactoryInterface`,
+  `AbstractAgentFactory` and `ChatAgentFromLegacyRequestFactory` are removed. `AiService`
+  keeps its repository accessors only.
 
 ### D2 — `AbstractChatAgentFactory` duplicates instead of extends
 
@@ -139,7 +141,8 @@ decisions inside them.
 - **Why:** PHP forbids the sharing base — the legacy interface declares
   `createAgent(mixed $request)`, the typed one `createAgent(AiRequest $request)`, and a
   class cannot satisfy both signatures.
-- **Reconciliation:** the duplicate dies with `AbstractAgentFactory` in Phase 5.
+- **Resolution (N9):** `AbstractAgentFactory` is removed; `AbstractChatAgentFactory` is
+  the only agent-factory base.
 
 ### D3 — default format key is a constant, not a method
 
@@ -270,16 +273,18 @@ decisions inside them.
   segment falls back to the default — the same rule the embeddings endpoint applied
   from day one.
 
-### D11 — the usage-record DB rework is deferred
+### ~~D11 — the usage-record DB rework is deferred~~ *(RESOLVED with N9)*
 
 - **Proposal (§12.4):** rework `usage_records` with channel, user agent, room, assistant
   handle, format key; `UsageRecordedEvent` carries all of it.
-- **Built:** the event carries `usageType`, `channel`, `modelId`, `formatKey`,
-  `userAgent` (no `roomId`/`assistantHandle` — those originate from `hawkiExtensions`
-  that do not exist yet). The database record is unchanged (user, room, tokens, model,
-  legacy type).
-- **Reconciliation:** N10 in §6 — do the rework together with `/ui-chat` (Phase 5),
-  which is the first producer of room-scoped usage through the new path.
+- **Resolution:** `submitUsageRecord` takes a `UsageRecordContext` value object; the
+  table gains nullable `channel`/`user_agent`/`format_key`/`assistant_handle` columns;
+  the event carries `roomId` + `assistantHandle`. The chat usage listener derives the
+  record type from room scoping (`roomId` → `group`, external surface → `api`, else
+  `private`) and attributes the room. Room scoping rides the IR as hawki extensions
+  (`HAWKI_EXTENSION_ROOM_ID`/`HAWKI_EXTENSION_CHANNEL`), copied by `ChatAgentFactory`
+  onto `AgentRequestContext`. First room-scoped producer: the group orchestration
+  (both the legacy route and `/ui-chat/{slug}`).
 
 ### D12 — citations fire no domain event
 
@@ -340,8 +345,12 @@ registry (§2.3) is the natural home once per-model configuration is wanted.
 The proposal gates frontend migration on Phase 7. The Svelte frontend (private chat,
 title generation, prompt improvement) was moved to the new endpoint immediately, since
 none of the deferred phases are prerequisites for stateless private chat. Group chat
-remains on `StreamController` exactly as the proposal requires (it needs the Phase 5
-`/ui-chat` orchestration). Consequence: the Phase-7 gate is already half-met.
+remains on the legacy route (`/req/room/streamAI`, now itself a thin front over the
+shared orchestration) until a Svelte group-chat UI is built on
+`/api/hawki/v1/ui-chat/{slug}` — that cutover is the remaining Phase-7 gate. (Note:
+the Svelte `AiApi` kernel client still speaks the legacy NDJSON format against the
+forwarded `/req/streamAI` for one-shot internal AI tasks; it can move to `/ui-chat`
+or `/chat` whenever convenient.)
 
 ### A6 — the custom-events switch (`AI_PROXY_EMIT_CUSTOM_EVENTS`)
 
@@ -387,7 +396,7 @@ wire-format clients receive spec-shaped errors. Streaming failures degrade to SS
 | Phase 2 — legacy compatibility *design* (route forwarding, `usageType` propagation) | ✅ resolved with N3 — `usageType` needs no plumbing (UsageContext per-route middleware already drives the listeners: web session → `private`, external token → `api`); route/middleware mapping shipped with the forwarding; group-chat orchestration home decided: stays in `StreamController` until Phase 5 |
 | Phase 3 — `openai` + `legacy` formatters, private/ai-req route forwarding | ✅ done — `openai` (N1) and `legacy` (N3: NDJSON formatter, wire-compatible with the legacy frontend incl. header/status/citation/completion frames) + `/req/streamAI` and `api/ai-req` forwarded to `ChatController` with `format=legacy` (middleware untouched); group route stays on `StreamController` until Phase 5 |
 | Phase 4 — `AssistantAgentFactory` (assistant routing) | Not started; gated on the Assistants feature branch; the `hawkiExtensions` seam is ready for it |
-| Phase 5 — `StreamController` refactor + `/ui-chat` endpoint | Not started; D1 and D11 resolve here |
+| Phase 5 — `StreamController` refactor + `/ui-chat` endpoint | ✅ done — `RoomAiResponseService` owns the group orchestration (ChatService send, citation extraction in the legacy wire shape, encryption, `GroupMessageHandler` persist, `SendMessage` broadcast); `GenerateRoomAiResponse` queue job replaces the `register_shutdown_function` hack (single attempt, 300s timeout, scalar payload); `StreamController` shrinks to the legacy route front half; `POST /api/hawki/v1/ui-chat` (private, openResponses streaming) + `/{slug}` (group, roomEditor) session-authenticated; D1/D2/D11 closed |
 | Phase 6 — `/models/{format?}` endpoint | ✅ done — `openai` (default, spec fields + `label`/`model_type` extras) and an invented `openResponses` dialect variant (`created_at` naming; the published spec has no `/models` endpoint); repository contextual scopes (active + usage-type rules) provide visibility; deterministic order |
 | Phase 7 — remove `StreamController` | Frontend private-chat half of the gate already met (A4); group chat still requires Phase 5 |
 | Phase 8 — `/embeddings/{format?}` | ✅ done — [`EMBEDDING-API-IMPLEMENTATION-HANDOFF.md`](./EMBEDDING-API-IMPLEMENTATION-HANDOFF.md) executed: `EmbeddingService` + vectorizer registry, `openai` formatter, `POST /api/hawki/v1/embeddings/{format?}`; usage recorded from day one (`UsageRecordedEvent` reused with `channel: 'embeddings'`, not relocated); unknown explicit `{format}` → 400 from the start (D10 lesson); live-verified against OpenAI (`text-embedding-3-small`, input-ordered vectors, dimensions passthrough, usage row) |
@@ -488,11 +497,19 @@ models everything needed (top-level system param, content blocks, tool_use/tool_
 `ReasoningPart.signature`). Port from Rosetta's `converters/anthropic/`. Hardest of the
 formatters listed here — do it after N1 has hardened the formatter conventions.
 
-### N9 — Phase 2 design + Phase 5 refactor + `/ui-chat`
+### N9 — ~~Phase 2 design + Phase 5 refactor + `/ui-chat`~~ *(DONE)*
 
-The orchestration track: design the `StreamController` refactor, introduce `/ui-chat`
-with room-scoped usage (resolves D1, D11, D13), then remove the legacy chain. Sequence
-and constraints are fully specified in proposal §11 and §4.5.
+Delivered in three commits: (1) the D11 usage rework (`UsageRecordContext`, enriched
+`usage_records`/`UsageRecordedEvent`, room-scoped listener mapping via IR hawki
+extensions); (2) `RoomAiResponseService` + `GenerateRoomAiResponse` queue job replacing
+the `register_shutdown_function` construct, `StreamController` shrunk to the legacy
+route front half, and the legacy agent chain removed (D1/D2); (3) the
+`/api/hawki/v1/ui-chat[/{slug}]` endpoint — private openResponses streaming + group
+queued orchestration, session-authenticated, `roomEditor` on the slug variant. Design
+deviation from the proposal: D13 left as-is (listeners stay in `Ai\Listeners` for
+auto-discovery). A queued generation also means job-context auth is absent — acceptable
+because AI messages are HAWKI-authored and `GroupMessageHandler` authorization only
+guards non-HAWKI messages.
 
 ### N10 — `AssistantAgentFactory` *(proposal Phase 4, gated)*
 
