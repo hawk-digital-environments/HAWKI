@@ -23,6 +23,7 @@ use Laravel\Ai\Streaming\Events\TextEnd;
 use Laravel\Ai\Streaming\Events\TextStart;
 use Laravel\Ai\Streaming\Events\ToolCall;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\Concerns\ParsesSseStreams;
 use Tests\Feature\Api\Chat\ChatEndpointTestFixtures\FakeChatAgent;
 use Tests\TestCase;
 
@@ -34,6 +35,7 @@ use Tests\TestCase;
 #[CoversClass(ChatController::class)]
 class ChatEndpointTest extends TestCase
 {
+    use ParsesSseStreams;
     use RefreshDatabase;
     private const string ENDPOINT = '/api/hawki/v1/chat';
 
@@ -353,41 +355,4 @@ class ChatEndpointTest extends TestCase
     /**
      * @return array<int, array{event: string, data: null|array<string, mixed>}>
      */
-    private function parseSseEvents(string $body): array
-    {
-        $events = [];
-        $currentEvent = null;
-
-        foreach (explode("\n", $body) as $line) {
-            if (str_starts_with($line, 'event: ')) {
-                $currentEvent = ['event' => mb_substr($line, 7), 'data' => null];
-            } elseif (str_starts_with($line, 'data: ') && null !== $currentEvent) {
-                $decoded = json_decode(mb_substr($line, 6), true);
-                $currentEvent['data'] = \is_array($decoded) ? $decoded : mb_substr($line, 6);
-            } elseif ('' === $line && null !== $currentEvent) {
-                $events[] = $currentEvent;
-                $currentEvent = null;
-            }
-        }
-
-        if (null !== $currentEvent) {
-            $events[] = $currentEvent;
-        }
-
-        return $events;
-    }
-
-    /**
-     * @param array<int, array{event: string, data: null|array<string, mixed>}> $events
-     */
-    private function firstEvent(array $events, string $name): array
-    {
-        foreach ($events as $event) {
-            if ($event['event'] === $name) {
-                return $event;
-            }
-        }
-
-        self::fail("Expected at least one '{$name}' event.");
-    }
 }

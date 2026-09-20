@@ -42,7 +42,7 @@ The proposal's Phase-1 bullet list (§11), item by item:
 | `ChatAgentFactory` (replaces legacy factory) | ✅ done | Coexists with `ChatAgentFromLegacyRequestFactory` per the phase plan (removal is Phase 5). |
 | `ChatController` + `POST /api/hawki/v1/chat/{format?}` | ✅ done | Route, middleware stack, and thin controller exactly as §6.1–6.2. |
 | Round-trip tests for the formatter | 🟡 partial | Structural parse/format and stream-event tests exist; the full wire→IR→wire structural-equality corpus (§9.1) does not (D4). |
-| Open Responses compliance tests | 🟡 partial | Verified live (streaming, non-streaming, multi-turn, client tool loop) but not through the official compliance runner (D5). |
+| Open Responses compliance tests | ✅ done | Ported to PHPUnit as `tests/Feature/Api/Compliance/OpenResponsesComplianceTest.php` — all 8 stateless-compatible tests green against the live provider, skip-gated by `OPENRESPONSES_COMPLIANCE_TOKEN` (D5, closed). |
 | **Deliverable**: full tool calling and reasoning output | ✅ / 🟡 | Output side complete (tool calls, reasoning deltas stream through); reasoning *input* round-trip is not wired (D6). |
 
 ---
@@ -95,17 +95,26 @@ decisions inside them.
 - **Reconciliation:** N5 in §6. Mechanical test work; the fixtures largely already exist
   as inline test payloads.
 
-### D5 — the official compliance suite is not wired in
+### D5 — ~~the official compliance suite is not wired in~~ (CLOSED)
 
 - **Proposal (§9.4):** implement the stateless-compatible subset of the Open Responses
-  acceptance tests (7 browser-runnable tests).
-- **Built:** equivalent scenarios verified manually and live (non-streaming, streaming,
-  multi-turn, system prompt, tool calling, stateless rejections) — but
-  `research/openresponses/bin/compliance-test.ts` has never been pointed at the proxy,
-  and nothing runs it in CI.
-- **Reconciliation:** N4 in §6. The runner expects `{baseUrl}/responses` with a
-  configurable auth header; the proxy route is `/api/hawki/v1/chat` — running the suite
-  needs either a thin route alias for the runner or a small adapter in the runner config.
+  acceptance tests.
+- **Built (now):** the suite is ported to PHPUnit as
+  `tests/Feature/Api/Compliance/OpenResponsesComplianceTest.php` instead of driving the
+  TypeScript runner — in-process HTTP against the real client-facing route, spec-schema
+  validation against `research/openresponses/public/openapi/openapi.json` via
+  `opis/json-schema` (the PHP counterpart of the runner's Zod schemas), plus the
+  streaming ordering rules. Skip-gated by `OPENRESPONSES_COMPLIANCE_TOKEN` (empty ⇒
+  skipped ⇒ green); wired into CI via `.github/workflows/ai-compliance.yml`.
+- **Findings the suite produced:** `text.verbosity` and the sampling fields
+  (`temperature`, `top_p`, `presence_penalty`, `frequency_penalty`, `top_logprobs`) and
+  `service_tier` are *not nullable* in the published spec (the formatter now emits
+  defaults); `reasoning_summary_part.added/done` require a `part` field (added); the
+  official image fixture (32×32 PNG) is rejected by OpenAI's current image validation
+  for every model, so the port sends a 128×128 PNG with identical intent.
+- **Verified along the way:** the official `multi-turn` test sends full history with no
+  `previous_response_id` — the proposal §9.4 open question about test #8 is resolved:
+  it is in scope and passes.
 
 ### D6 — reasoning items do not round-trip into the provider request
 
@@ -292,12 +301,12 @@ the frame shapes (`header`/`message`/`status`/`completion`/`citation`) into a fo
 Straightforward, but carries the proposal's Phase-2 design questions (route forwarding,
 `usageType` derivation), so budget design time alongside the code.
 
-### N4 — compliance runner integration *(closes D5)*
+### N4 — ~~compliance runner integration~~ *(DONE — see D5)*
 
-Point `research/openresponses/bin/compliance-test.ts` at the proxy (needs a `/responses`
-route alias or runner-config adaptation) and wire the 7 stateless-compatible tests into
-CI. Bonus: the suite validates the exact `ResponseResource` schema via generated Zod —
-a stronger guarantee than the current assertions.
+Delivered as the PHPUnit port described in D5 rather than the TypeScript runner: same
+test definitions, same published schema, no served app or bun dependency. The original
+runner (`research/openresponses/bin/compliance-test.ts`) remains usable against a
+manually served instance.
 
 ### N5 — round-trip corpus *(closes D4, unblocks D9)*
 

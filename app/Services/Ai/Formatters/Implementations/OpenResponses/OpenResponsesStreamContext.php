@@ -418,6 +418,7 @@ class OpenResponsesStreamContext
                 'item_id' => $itemId,
                 'output_index' => $outputIndex,
                 'summary_index' => 0,
+                'part' => ['type' => 'summary_text', 'text' => ''],
             ]),
         ];
     }
@@ -515,6 +516,7 @@ class OpenResponsesStreamContext
                 'item_id' => $item['itemId'],
                 'output_index' => $outputIndex,
                 'summary_index' => 0,
+                'part' => ['type' => 'summary_text', 'text' => $item['text']],
             ]);
 
             $frames[] = $this->frame('response.output_item.done', [

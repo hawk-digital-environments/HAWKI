@@ -1,0 +1,41 @@
+name: AI Compliance
+
+on:
+  pull_request:
+    paths:
+      - 'app/Services/Ai/**'
+      - 'app/Http/Controllers/Api/V1/**'
+      - 'routes/api.php'
+      - 'tests/Feature/Api/Compliance/**'
+      - 'research/openresponses/**'
+      - '.github/workflows/ai-compliance.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ai-compliance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  open-responses-compliance:
+    name: Open Responses compliance suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, intl, iconv, gd
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      # The suite self-skips (green) when OPENRESPONSES_COMPLIANCE_TOKEN is empty;
+      # with a populated repository secret it verifies the proxy against the real
+      # provider using gpt-4.1-nano.
+      - name: Run compliance suite
+        env:
+          OPENRESPONSES_COMPLIANCE_TOKEN: ${{ secrets.OPENRESPONSES_COMPLIANCE_TOKEN }}
+        run: php vendor/bin/phpunit --testsuite feature --no-coverage --testdox --filter OpenResponsesComplianceTest

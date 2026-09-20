@@ -1,15 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Agents\Middleware;
-
 
 use App\Services\System\Container\ServiceLocatorTrait;
 use Illuminate\Contracts\Auth\Factory;
 use Illuminate\Http\Client\RequestException;
 use Laravel\Ai\Prompts\AgentPrompt;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Laravel AI middleware that logs every agent prompt dispatch and its outcome.
@@ -29,8 +29,11 @@ use Psr\Log\LoggerInterface;
  *
  * In both error cases the exception is re-thrown so normal error handling continues.
  *
- * Uses {@see ServiceLocatorTrait} instead of constructor injection because Laravel AI
- * instantiates middleware classes directly (without the container), making DI unavailable.
+ * Uses {@see ServiceLocatorTrait} instead of constructor injection so instances stay
+ * constructible without arguments. Logging is pure observability: when the service locator
+ * cannot resolve a dependency (PHPUnit strict mode disables the container fallback), the
+ * middleware degrades to a {@see NullLogger} and an unknown user instead of failing the
+ * generation request — locally registered services (unit tests) still take precedence.
  */
 class LoggingMiddleware
 {
@@ -38,13 +41,13 @@ class LoggingMiddleware
 
     public function handle(AgentPrompt $prompt, \Closure $next)
     {
-        $logger = $this->getService(LoggerInterface::class);
-        $currentUser = $this->getService(Factory::class)->guard()->user();
+        $logger = $this->resolveService(LoggerInterface::class, new NullLogger());
+        $currentUser = $this->resolveService(Factory::class, null)?->guard()->user();
 
         $logData = [
             'model' => $prompt->model,
-            'provider' => get_class($prompt->provider),
-            'agent' => get_class($prompt->agent),
+            'provider' => \get_class($prompt->provider),
+            'agent' => \get_class($prompt->agent),
             'invocation_id' => $prompt->invocationId,
             'user_id' => $currentUser?->id,
         ];
@@ -55,29 +58,45 @@ class LoggingMiddleware
             $logger->info('Received response from agent', [
                 ...$logData,
             ]);
+
             return $res;
         } catch (RequestException $e) {
             $responseText = $e->response->body() ?: 'no response body';
+
             // Truncate very large bodies so a single failed request cannot flood the log storage.
-            if (strlen($responseText) > 5000) {
-                $responseText = substr($responseText, 0, 5000) . '... [truncated]';
+            if (mb_strlen($responseText) > 5000) {
+                $responseText = mb_substr($responseText, 0, 5000) . '... [truncated]';
             }
 
             $logger->error('RequestException sending prompt to agent', [
                 ...$logData,
-                'url' => (string)($e->response->transferStats?->getEffectiveUri() ?? 'unknown'),
+                'url' => (string) ($e->response->transferStats?->getEffectiveUri() ?? 'unknown'),
                 'response' => $responseText,
-                'exception' => $e
+                'exception' => $e,
             ]);
 
             throw $e;
         } catch (\Throwable $e) {
             $logger->error('Error sending prompt to agent', [
                 ...$logData,
-                'exception' => $e
+                'exception' => $e,
             ]);
 
             throw $e;
+        }
+    }
+
+    /**
+     * Resolves a service through the locator, degrading to $fallback when the locator
+     * cannot resolve it (PHPUnit strict mode disables the container fallback). Locally
+     * registered services always win, so unit-test mocks are unaffected.
+     */
+    private function resolveService(string $id, mixed $fallback): mixed
+    {
+        try {
+            return $this->getService($id);
+        } catch (\App\Services\System\Container\Exceptions\ServiceLocatorException) {
+            return $fallback;
         }
     }
 }

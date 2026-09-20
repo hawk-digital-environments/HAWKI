@@ -499,8 +499,41 @@ These are load-bearing. Change them only with the design doc in hand:
 
 ---
 
-## 11. References
+## 11. Compliance suite
 
+The Open Responses acceptance tests run as a PHPUnit feature suite:
+`tests/Feature/Api/Compliance/OpenResponsesComplianceTest.php` — a port of the official
+test definitions (`research/openresponses/src/lib/compliance-tests.ts`), validating every
+response and SSE event against the published spec
+(`research/openresponses/public/openapi/openapi.json`) via `opis/json-schema`, plus the
+streaming ordering rules (item/part lifecycle, monotonic `sequence_number`, `[DONE]`).
+
+- **In scope (8):** basic-response, assistant-phase, response-output-phase-schema,
+  streaming-response, system-prompt, tool-calling, image-input, multi-turn. The
+  multi-turn test sends full history — the stateless reading — and passes.
+- **Excluded:** the `websocket-*` and `compact-*` tests (stateful protocol features the
+  proxy deliberately rejects).
+- **Gating:** the suite talks to a real provider (gpt-4.1-nano) and is **skipped by
+  default**; it runs only when `OPENRESPONSES_COMPLIANCE_TOKEN` is non-empty:
+
+  ```bash
+  OPENRESPONSES_COMPLIANCE_TOKEN=sk-… bin/env php vendor/bin/phpunit \
+      --testsuite feature --filter OpenResponsesComplianceTest
+  ```
+
+- **CI:** `.github/workflows/ai-compliance.yml` runs it on PRs touching the AI surface;
+  an empty `OPENRESPONSES_COMPLIANCE_TOKEN` secret keeps the job green (skipped), a
+  populated one verifies against the real provider.
+
+One documented fixture deviation: the official 32×32 image PNG is rejected by OpenAI's
+current image validation for every model, so the port sends a 128×128 PNG with identical
+intent (byte-identical forwarding verified).
+
+---
+
+## 12. References
+
+- Implementation record (deviations, next steps): [`001-generic-llm-backend-implementation.md`](./001-generic-llm-backend-implementation.md)
 - Proposal and phase plan: [`001-generic-llm-backend.md`](./001-generic-llm-backend.md)
 - IR heritage: [LLM-Rosetta](https://arxiv.org/html/2604.09360v1) (paper; working copy in
   `research/llm-rosetta/`) — hub-and-spoke IR, ops composition, stream contexts,
