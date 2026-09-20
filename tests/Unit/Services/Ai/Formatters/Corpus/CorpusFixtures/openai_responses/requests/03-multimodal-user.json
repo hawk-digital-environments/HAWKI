@@ -1,0 +1,56 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "What is in these?"
+                    },
+                    {
+                        "type": "input_image",
+                        "image_url": "https://example.com/cat.png",
+                        "detail": "low"
+                    },
+                    {
+                        "type": "input_file",
+                        "file_id": "file-abc",
+                        "filename": "notes.txt"
+                    }
+                ]
+            }
+        ]
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "What is in these?"
+                    },
+                    {
+                        "type": "image",
+                        "imageUrl": "https://example.com/cat.png",
+                        "detail": "low"
+                    },
+                    {
+                        "type": "file",
+                        "fileUrl": "file-abc",
+                        "fileName": "notes.txt"
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

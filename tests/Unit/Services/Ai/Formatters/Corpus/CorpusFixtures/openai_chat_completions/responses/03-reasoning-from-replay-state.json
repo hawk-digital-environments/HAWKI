@@ -1,0 +1,59 @@
+{
+    "irResponse": {
+        "id": "inv_3",
+        "model": "deepseek-reasoner",
+        "created": 1700000000,
+        "finishReason": "tool_calls",
+        "message": {
+            "parts": [
+                {
+                    "type": "tool_call",
+                    "toolCallId": "call_7",
+                    "toolName": "get_weather",
+                    "toolInput": {
+                        "city": "Berlin"
+                    },
+                    "providerMetadata": {
+                        "reasoning_id": "rs_1",
+                        "reasoning_summary": "checking weather",
+                        "reasoning_encrypted_content": "enc-1"
+                    }
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "chatcmpl-inv_3",
+        "object": "chat.completion",
+        "created": 1700000000,
+        "model": "deepseek-reasoner",
+        "system_fingerprint": null,
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": null,
+                    "reasoning_content": "checking weather",
+                    "tool_calls": [
+                        {
+                            "id": "call_7",
+                            "type": "function",
+                            "function": {
+                                "name": "get_weather",
+                                "arguments": "{\"city\":\"Berlin\"}"
+                            }
+                        }
+                    ],
+                    "refusal": null
+                },
+                "finish_reason": "tool_calls"
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0
+        }
+    }
+}

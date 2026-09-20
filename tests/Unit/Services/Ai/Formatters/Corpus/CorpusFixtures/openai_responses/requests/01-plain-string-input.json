@@ -1,0 +1,25 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": "Hello"
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hello"
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

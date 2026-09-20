@@ -1,0 +1,90 @@
+{
+    "irResponse": {
+        "id": "inv_6",
+        "model": "gpt-4.1-nano",
+        "created": 1700000000,
+        "finishReason": "content_filter",
+        "message": {
+            "parts": [
+                {
+                    "type": "text",
+                    "text": "Sorry."
+                },
+                {
+                    "type": "refusal",
+                    "refusal": "cannot help with that"
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "resp_inv_6",
+        "object": "response",
+        "created_at": 1700000000,
+        "completed_at": 1700000000,
+        "status": "incomplete",
+        "incomplete_details": {
+            "reason": "content_filter"
+        },
+        "error": null,
+        "model": "gpt-4.1-nano",
+        "previous_response_id": null,
+        "instructions": null,
+        "output": [
+            {
+                "id": "msg_d60ffa9a-75d3-4470-9e4d-c141502c679f",
+                "type": "message",
+                "role": "assistant",
+                "status": "completed",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": "Sorry.",
+                        "annotations": []
+                    },
+                    {
+                        "type": "refusal",
+                        "refusal": "cannot help with that"
+                    }
+                ]
+            }
+        ],
+        "tools": [],
+        "tool_choice": "auto",
+        "truncation": "disabled",
+        "parallel_tool_calls": true,
+        "text": {
+            "format": {
+                "type": "text"
+            }
+        },
+        "temperature": 1,
+        "top_p": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "top_logprobs": 0,
+        "reasoning": {
+            "effort": null,
+            "summary": null
+        },
+        "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "input_tokens_details": {
+                "cached_tokens": 0
+            },
+            "output_tokens_details": {
+                "reasoning_tokens": 0
+            }
+        },
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "store": false,
+        "background": false,
+        "service_tier": "auto",
+        "metadata": [],
+        "safety_identifier": null,
+        "prompt_cache_key": null
+    }
+}

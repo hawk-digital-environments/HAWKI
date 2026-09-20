@@ -1,0 +1,45 @@
+{
+    "irResponse": {
+        "id": "inv_6",
+        "model": "gpt-4.1-nano",
+        "created": 1700000000,
+        "finishReason": "length",
+        "usage": {
+            "promptTokens": 2,
+            "completionTokens": 5
+        },
+        "message": {
+            "parts": [
+                {
+                    "type": "text",
+                    "text": "Once upon a"
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "chatcmpl-inv_6",
+        "object": "chat.completion",
+        "created": 1700000000,
+        "model": "gpt-4.1-nano",
+        "system_fingerprint": null,
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "Once upon a",
+                    "reasoning_content": null,
+                    "tool_calls": null,
+                    "refusal": null
+                },
+                "finish_reason": "length"
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 2,
+            "completion_tokens": 5,
+            "total_tokens": 7
+        }
+    }
+}

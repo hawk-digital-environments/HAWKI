@@ -1,6 +1,11 @@
 # N5 Round-Trip Corpus — Implementation Handoff
 
-> **Status: OPEN** — pick-up-and-go specification for next step **N5** in
+> **Status: IMPLEMENTED** (see D4 in
+> [`001-generic-llm-backend-implementation.md` §3](./001-generic-llm-backend-implementation.md#3-deviations-from-the-proposal)).
+> The specification below is kept as the original record; deviations made during
+> implementation are noted in the implementation record (D4 findings).
+>
+> Pick-up-and-go specification for next step **N5** in
 > [`001-generic-llm-backend-implementation.md` §0/§6](./001-generic-llm-backend-implementation.md#0-current-state-living-section--update-with-every-delivery).
 > Executing this closes deviation **D4** and unblocks (not closes) **D9**.
 >

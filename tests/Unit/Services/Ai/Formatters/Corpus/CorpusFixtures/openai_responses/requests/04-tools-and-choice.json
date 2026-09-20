@@ -1,0 +1,72 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": "Search for cats.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "web_search",
+                "description": "Search the web.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "query"
+                    ]
+                },
+                "strict": true
+            }
+        ],
+        "tool_choice": {
+            "type": "function",
+            "name": "web_search"
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Search for cats."
+                    }
+                ]
+            }
+        ],
+        "tools": [
+            {
+                "name": "web_search",
+                "description": "Search the web.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "query"
+                    ]
+                },
+                "metadata": {
+                    "strict": true
+                }
+            }
+        ],
+        "toolChoice": {
+            "mode": "tool",
+            "toolName": "web_search"
+        },
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

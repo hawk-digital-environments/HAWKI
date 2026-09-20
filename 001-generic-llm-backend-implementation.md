@@ -17,8 +17,8 @@
 
 ## 0. Current state (living section — update with every delivery)
 
-Snapshot: **2026-09-20**, after N6 (reasoning replay + structured output; D6/D7/D8
-closed). Read this first; §3/§5/§6 keep their original per-item detail.
+Snapshot: **2026-09-20**, after N5 (round-trip corpus; D4 closed). Read this first;
+§3/§5/§6 keep their original per-item detail.
 
 ### Shipped
 
@@ -36,6 +36,7 @@ closed). Read this first; §3/§5/§6 keep their original per-item detail.
 | Spec-alignment bundle: refusal delta/done events + refusal content parts (openResponses); `tools[].strict`, `top_logprobs`, `allowed_tools` parked (openResponses parse); CC `reasoning_effort` / `reasoning:{effort,summary}` → `ReasoningConfig`; CC `store:true` → 400 | both formatters |
 | **N6 reasoning replay** (D6 closed): reasoning item ids captured, merged into tool-call turns both wire layouts, replayable reasoning items returned non-streaming — live-verified with o4-mini | `ChatAgentFactory`, `StructuredChatAgent`, normalizer, both formatters |
 | **N6 structured output** (D7 closed): `json_schema` via `StructuredChatAgent` (HasStructuredOutput, cross-driver), `json_object` via instruction suffix, `stream`+`json_schema` → 400, non-object roots → 400 — live-verified with gpt-4.1-nano | `StructuredChatAgent`, both formatters |
+| **N5 round-trip corpus** (D4 closed): 63 fixture-driven cases — parse/response fidelity per formatter, emit-replay cycle, cross-format IR equivalence; caught and fixed two CC parse bugs (file-part filename nesting, phantom empty TextPart on null content) | `tests/Unit/Services/Ai/Formatters/Corpus/` |
 
 ### Gap analysis verdicts (researched against the published Open Responses OpenAPI +
 LLM-Rosetta; full report in the session that produced it)
@@ -67,16 +68,13 @@ LLM-Rosetta; full report in the session that produced it)
 
 ### Recommended next steps (ordered)
 
-1. **N5 — round-trip corpus** (closes D4, unblocks D9): four-track fixture corpus per
-   chat formatter — specification ready in
-   [`N5-Handoff.md`](./N5-Handoff.md) (pick-up-and-go for any agent/session).
-2. **N2 — `/models/{format?}`** (trivial, pure transform).
-3. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
+1. **N2 — `/models/{format?}`** (trivial, pure transform).
+2. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
    budget Phase-2 design time for route forwarding).
-4. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
+3. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
    D1/D11/D13) — unlocks dropping `hawki.params`/`broadcast`/`attachments`.
-5. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
-6. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
+4. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
+5. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
 
 ---
 
@@ -150,16 +148,27 @@ decisions inside them.
 - **Why:** less API surface, same behaviour. Cosmetic; can be aligned whenever the
   registry grows format metadata.
 
-### D4 — the round-trip corpus is not a wire→IR→wire equality suite yet
+### D4 — ~~the round-trip corpus is not a wire→IR→wire equality suite yet~~ (CLOSED)
 
-- **Proposal (§9.1):** fixtures per formatter, structural equality over
-  `parse → format → parse`.
-- **Built:** structural assertions on parse results and formatted outputs
-  (`OpenResponsesFormatterTest`), exact SSE-sequence tests
-  (`OpenResponsesStreamContextTest`), end-to-end feature tests with a faked agent stream
-  (`ChatEndpointTest`). The reflective round-trip harness does not exist.
-- **Reconciliation:** N5 in §6. Mechanical test work; the fixtures largely already exist
-  as inline test payloads.
+- **Built (N5):** the four-track corpus under
+  `tests/Unit/Services/Ai/Formatters/Corpus/` (63 cases, JSON fixtures in
+  `CorpusFixtures/`): parse-fidelity and response-fidelity snapshots per formatter,
+  the emit-replay cycle (openResponses formatted output re-parsed as input — the
+  client-tool-loop guarantee), and cross-format IR equivalence (same logical
+  conversation in both dialects → equal IR, modulo documented dialect differences).
+  Proposal §9.1 as written was unimplementable (it assumes a `formatRequest` that
+  deliberately does not exist) — the reinterpretation is specified in
+  [`N5-Handoff.md`](./N5-Handoff.md) §2.
+- **Findings (bugs the corpus caught immediately):** CC `file` content parts read the
+  filename from the wrong nesting level (`part.filename` instead of
+  `part.file.filename`); CC assistant messages with `content: null` produced a
+  phantom empty `TextPart` (`?? ''` fallback), diverging the IR between dialects.
+  Both fixed.
+- **Documented dialect modulos (cross-format comparator):** `formatKey`,
+  `providerExtensions`, `stream.includeUsage`, message partitioning (openResponses
+  separates a reasoning item from its function_call; CC merges them into one message —
+  the comparator coalesces, mirroring the factory), and reasoning replay state
+  (encryptedContent/item ids are expressible only in openResponses).
 
 ### D5 — ~~the official compliance suite is not wired in~~ (CLOSED)
 
@@ -245,6 +254,10 @@ decisions inside them.
   formatter fills it; item ids from client input are dropped.
 - **Why:** no consumer. The custom slot becomes interesting with the round-trip corpus
   (D4), which needs ids to survive parse→format cycles.
+- **Post-N5 note:** the corpus (D4, closed) shows loop-relevant ids already survive
+  where they matter — reasoning item ids via `providerMetadata` (N6), tool call ids
+  natively — so `MessageMetadata` remains without a consumer; stays open on merit,
+  not necessity.
 
 ### D10 — ~~unknown `{format}` segments fall back to the default formatter~~ (CLOSED)
 
@@ -422,19 +435,16 @@ test definitions, same published schema, no served app or bun dependency. The or
 runner (`research/openresponses/bin/compliance-test.ts`) remains usable against a
 manually served instance.
 
-### N5 — round-trip corpus *(closes D4, unblocks D9)*
+### N5 — ~~round-trip corpus~~ *(DONE — closes D4)*
 
 A reflective harness: fixture → `parseRequest` → assert IR → `formatResponse` →
 `parseRequest` again → structural equality. Start from the payloads already inline in
 the formatter tests; grow per formatter. `MessageMetadata` (D9) becomes worth populating
 once equality checks need stable ids.
 
-> **Handoff ready:** [`N5-Handoff.md`](./N5-Handoff.md) specifies the implementable
-> interpretation of proposal §9.1 (which, as written, assumes a `formatRequest` that
-> deliberately does not exist): parse-fidelity and response-fidelity snapshot tracks,
-> the emit-replay cycle (formatted output re-parsed as input — the client-loop
-> guarantee), and cross-format IR equivalence — JSON fixtures under
-> `tests/Unit/Services/Ai/Formatters/CorpusFixtures/`.
+**DONE** — executed per [`N5-Handoff.md`](./N5-Handoff.md) (status there: IMPLEMENTED):
+four tracks, 63 cases, two formatter bugs caught and fixed on first contact
+(see D4 above).
 
 ### N6 — ~~reasoning replay + structured output~~ *(DONE — D6/D7/D8 closed)*
 

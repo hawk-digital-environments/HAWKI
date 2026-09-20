@@ -1,0 +1,45 @@
+{
+    "irResponse": {
+        "id": "inv_1",
+        "model": "gpt-4.1-nano",
+        "created": 1700000000,
+        "finishReason": "stop",
+        "usage": {
+            "promptTokens": 3,
+            "completionTokens": 4
+        },
+        "message": {
+            "parts": [
+                {
+                    "type": "text",
+                    "text": "Hello!"
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "chatcmpl-inv_1",
+        "object": "chat.completion",
+        "created": 1700000000,
+        "model": "gpt-4.1-nano",
+        "system_fingerprint": null,
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "Hello!",
+                    "reasoning_content": null,
+                    "tool_calls": null,
+                    "refusal": null
+                },
+                "finish_reason": "stop"
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 3,
+            "completion_tokens": 4,
+            "total_tokens": 7
+        }
+    }
+}

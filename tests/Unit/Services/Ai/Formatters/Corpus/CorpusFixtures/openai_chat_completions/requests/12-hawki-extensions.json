@@ -1,0 +1,46 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Search."
+            }
+        ],
+        "hawki": {
+            "tools": [
+                "capability:web_search:auto"
+            ],
+            "attachments": [
+                "0199d0e0-0000-7000-8000-000000000001"
+            ]
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openai",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Search."
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": false
+        },
+        "hawkiExtensions": {
+            "tools": [
+                "capability:web_search:auto"
+            ],
+            "attachments": [
+                "0199d0e0-0000-7000-8000-000000000001"
+            ]
+        }
+    }
+}

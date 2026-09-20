@@ -1,0 +1,18 @@
+{
+    "openResponses": {
+        "model": "gpt-4.1-nano",
+        "input": [
+            {"type": "message", "role": "user", "content": "Read the config."},
+            {"type": "function_call", "call_id": "call_1", "name": "read_file", "arguments": "{\"path\":\"\/config.json\"}"},
+            {"type": "function_call_output", "call_id": "call_1", "output": "{\"ok\":true}"}
+        ]
+    },
+    "openai": {
+        "model": "gpt-4.1-nano",
+        "messages": [
+            {"role": "user", "content": "Read the config."},
+            {"role": "assistant", "content": null, "tool_calls": [{"id": "call_1", "type": "function", "function": {"name": "read_file", "arguments": "{\"path\":\"\/config.json\"}"}}]},
+            {"role": "tool", "tool_call_id": "call_1", "content": "{\"ok\":true}"}
+        ]
+    }
+}

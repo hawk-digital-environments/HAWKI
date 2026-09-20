@@ -1,0 +1,19 @@
+{
+    "openResponses": {
+        "model": "o4-mini",
+        "input": [
+            {"type": "message", "role": "user", "content": "Weather in Berlin?"},
+            {"type": "reasoning", "id": "rs_1", "encrypted_content": "enc-1", "summary": [{"type": "summary_text", "text": "I will check."}]},
+            {"type": "function_call", "call_id": "call_9", "name": "get_weather", "arguments": "{\"city\":\"Berlin\"}"},
+            {"type": "function_call_output", "call_id": "call_9", "output": "21"}
+        ]
+    },
+    "openai": {
+        "model": "o4-mini",
+        "messages": [
+            {"role": "user", "content": "Weather in Berlin?"},
+            {"role": "assistant", "content": null, "reasoning_content": "I will check.", "tool_calls": [{"id": "call_9", "type": "function", "function": {"name": "get_weather", "arguments": "{\"city\":\"Berlin\"}"}}]},
+            {"role": "tool", "tool_call_id": "call_9", "content": "21"}
+        ]
+    }
+}

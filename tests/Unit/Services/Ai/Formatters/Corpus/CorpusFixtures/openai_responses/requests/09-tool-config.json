@@ -1,0 +1,31 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": "Do the things.",
+        "parallel_tool_calls": false,
+        "max_tool_calls": 3
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Do the things."
+                    }
+                ]
+            }
+        ],
+        "toolConfig": {
+            "disableParallel": true,
+            "maxCalls": 3
+        },
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

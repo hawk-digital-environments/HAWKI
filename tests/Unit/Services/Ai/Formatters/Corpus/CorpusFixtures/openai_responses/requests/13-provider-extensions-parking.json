@@ -1,0 +1,47 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": "Hello",
+        "include": [
+            "reasoning.encrypted_content"
+        ],
+        "metadata": {
+            "trace_id": "t-1"
+        },
+        "service_tier": "auto",
+        "background": false,
+        "prompt_cache_key": "cache-1",
+        "safety_identifier": "user-1"
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hello"
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        },
+        "providerExtensions": {
+            "include": [
+                "reasoning.encrypted_content"
+            ],
+            "metadata": {
+                "trace_id": "t-1"
+            },
+            "service_tier": "auto",
+            "background": false,
+            "prompt_cache_key": "cache-1",
+            "safety_identifier": "user-1"
+        }
+    }
+}

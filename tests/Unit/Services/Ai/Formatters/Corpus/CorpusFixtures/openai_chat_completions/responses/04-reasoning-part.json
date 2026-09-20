@@ -1,0 +1,45 @@
+{
+    "irResponse": {
+        "id": "inv_4",
+        "model": "deepseek-reasoner",
+        "created": 1700000000,
+        "finishReason": "stop",
+        "message": {
+            "parts": [
+                {
+                    "type": "reasoning",
+                    "reasoning": "thinking it through"
+                },
+                {
+                    "type": "text",
+                    "text": "The answer is 4."
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "chatcmpl-inv_4",
+        "object": "chat.completion",
+        "created": 1700000000,
+        "model": "deepseek-reasoner",
+        "system_fingerprint": null,
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "The answer is 4.",
+                    "reasoning_content": "thinking it through",
+                    "tool_calls": null,
+                    "refusal": null
+                },
+                "finish_reason": "stop"
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0
+        }
+    }
+}

@@ -1,0 +1,95 @@
+{
+    "irResponse": {
+        "id": "inv_5",
+        "model": "gpt-4.1-nano",
+        "created": 1700000000,
+        "finishReason": "stop",
+        "message": {
+            "parts": [
+                {
+                    "type": "text",
+                    "text": "See example."
+                },
+                {
+                    "type": "citation",
+                    "url": "https://example.com/track?utm=1",
+                    "title": "Example",
+                    "startIndex": 0,
+                    "endIndex": 3
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "resp_inv_5",
+        "object": "response",
+        "created_at": 1700000000,
+        "completed_at": 1700000000,
+        "status": "completed",
+        "incomplete_details": null,
+        "error": null,
+        "model": "gpt-4.1-nano",
+        "previous_response_id": null,
+        "instructions": null,
+        "output": [
+            {
+                "id": "msg_b6c3092e-ac3a-4ca9-acc1-f3c58068b60d",
+                "type": "message",
+                "role": "assistant",
+                "status": "completed",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": "See example.",
+                        "annotations": [
+                            {
+                                "type": "url_citation",
+                                "url": "https://example.com/track?utm=1",
+                                "title": "Example",
+                                "start_index": 0,
+                                "end_index": 3
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "tools": [],
+        "tool_choice": "auto",
+        "truncation": "disabled",
+        "parallel_tool_calls": true,
+        "text": {
+            "format": {
+                "type": "text"
+            }
+        },
+        "temperature": 1,
+        "top_p": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "top_logprobs": 0,
+        "reasoning": {
+            "effort": null,
+            "summary": null
+        },
+        "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "input_tokens_details": {
+                "cached_tokens": 0
+            },
+            "output_tokens_details": {
+                "reasoning_tokens": 0
+            }
+        },
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "store": false,
+        "background": false,
+        "service_tier": "auto",
+        "metadata": [],
+        "safety_identifier": null,
+        "prompt_cache_key": null
+    }
+}

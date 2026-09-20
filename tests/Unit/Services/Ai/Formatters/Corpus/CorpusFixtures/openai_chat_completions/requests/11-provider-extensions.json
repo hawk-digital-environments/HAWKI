@@ -1,0 +1,47 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Hi"
+            }
+        ],
+        "n": 2,
+        "user": "user-1",
+        "logit_bias": {
+            "50256": -100
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openai",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hi"
+                    }
+                ]
+            }
+        ],
+        "generation": {
+            "logitBias": {
+                "50256": -100
+            }
+        },
+        "stream": {
+            "enabled": false,
+            "includeUsage": false
+        },
+        "providerExtensions": {
+            "n": 2,
+            "logit_bias": {
+                "50256": -100
+            },
+            "user": "user-1"
+        }
+    }
+}

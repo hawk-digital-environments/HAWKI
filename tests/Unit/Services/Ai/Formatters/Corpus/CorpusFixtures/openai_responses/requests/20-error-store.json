@@ -1,0 +1,4 @@
+{
+    "wireRequest": {"model": "gpt-4.1-nano", "input": "Hi", "store": true},
+    "expectedError": {"code": "store_not_supported"}
+}

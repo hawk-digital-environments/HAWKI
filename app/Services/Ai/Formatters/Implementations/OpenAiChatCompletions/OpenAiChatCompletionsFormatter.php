@@ -280,7 +280,9 @@ readonly class OpenAiChatCompletionsFormatter implements FormatterInterface
         if ('assistant' === $role) {
             $parts = [];
 
-            foreach ($this->parseContentParts($item['content'] ?? '') as $part) {
+            // Null content (tool-call-only assistant turns) must not produce an empty
+            // text part — the cross-format corpus pins this.
+            foreach ($this->parseContentParts($item['content'] ?? null) as $part) {
                 if ($part instanceof TextPart) {
                     $parts[] = $part;
                 }
@@ -371,7 +373,7 @@ readonly class OpenAiChatCompletionsFormatter implements FormatterInterface
             if ('file' === $partType && \is_array($part['file'] ?? null)) {
                 $parts[] = new FilePart(
                     fileUrl: isset($part['file']['file_id']) ? (string) $part['file']['file_id'] : null,
-                    fileName: isset($part['file']['filename']) ? (string) $part['filename'] : null,
+                    fileName: isset($part['file']['filename']) ? (string) $part['file']['filename'] : null,
                 );
             }
         }

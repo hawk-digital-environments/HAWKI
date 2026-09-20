@@ -1,0 +1,91 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "messages": [
+            {
+                "role": "system",
+                "content": "Be terse."
+            },
+            {
+                "role": "developer",
+                "content": "Prefer bullet points."
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "What is in these?"
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "data:image/png;base64,abc",
+                            "detail": "low"
+                        }
+                    },
+                    {
+                        "type": "input_audio",
+                        "input_audio": {
+                            "data": "base64audio",
+                            "format": "wav"
+                        }
+                    },
+                    {
+                        "type": "file",
+                        "file": {
+                            "file_id": "file-abc",
+                            "filename": "notes.txt"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openai",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "What is in these?"
+                    },
+                    {
+                        "type": "image",
+                        "imageUrl": "data:image/png;base64,abc",
+                        "detail": "low"
+                    },
+                    {
+                        "type": "audio",
+                        "audioData": {
+                            "data": "base64audio",
+                            "mediaType": "audio/wav"
+                        }
+                    },
+                    {
+                        "type": "file",
+                        "fileUrl": "file-abc",
+                        "fileName": "notes.txt"
+                    }
+                ]
+            }
+        ],
+        "systemInstruction": [
+            {
+                "type": "text",
+                "text": "Be terse."
+            },
+            {
+                "type": "text",
+                "text": "Prefer bullet points."
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": false
+        }
+    }
+}

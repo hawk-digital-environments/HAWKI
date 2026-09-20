@@ -1,0 +1,20 @@
+{
+    "openResponses": {
+        "model": "gpt-4.1-nano",
+        "instructions": "Be terse.",
+        "input": [
+            {"type": "message", "role": "user", "content": "Hello"},
+            {"type": "message", "role": "assistant", "content": "Hi!"},
+            {"type": "message", "role": "user", "content": "What is 2+2?"}
+        ]
+    },
+    "openai": {
+        "model": "gpt-4.1-nano",
+        "messages": [
+            {"role": "system", "content": "Be terse."},
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hi!"},
+            {"role": "user", "content": "What is 2+2?"}
+        ]
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "openResponses": {
+        "model": "gpt-4.1-nano",
+        "input": "Search for cats.",
+        "tools": [
+            {"type": "function", "name": "web_search", "description": "Search the web.", "parameters": {"type": "object", "properties": {"query": {"type": "string"}}}, "strict": true}
+        ],
+        "tool_choice": {"type": "function", "name": "web_search"}
+    },
+    "openai": {
+        "model": "gpt-4.1-nano",
+        "messages": [{"role": "user", "content": "Search for cats."}],
+        "tools": [
+            {"type": "function", "function": {"name": "web_search", "description": "Search the web.", "parameters": {"type": "object", "properties": {"query": {"type": "string"}}}, "strict": true}}
+        ],
+        "tool_choice": {"type": "function", "function": {"name": "web_search"}}
+    }
+}

@@ -1,0 +1,95 @@
+{
+    "irResponse": {
+        "id": "inv_3",
+        "model": "o4-mini",
+        "created": 1700000000,
+        "finishReason": "tool_calls",
+        "message": {
+            "parts": [
+                {
+                    "type": "tool_call",
+                    "toolCallId": "call_7",
+                    "toolName": "get_weather",
+                    "toolInput": {
+                        "city": "Berlin"
+                    },
+                    "providerMetadata": {
+                        "reasoning_id": "rs_1",
+                        "reasoning_summary": "I will check the weather.",
+                        "reasoning_encrypted_content": "enc-1"
+                    }
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "resp_inv_3",
+        "object": "response",
+        "created_at": 1700000000,
+        "completed_at": 1700000000,
+        "status": "completed",
+        "incomplete_details": null,
+        "error": null,
+        "model": "o4-mini",
+        "previous_response_id": null,
+        "instructions": null,
+        "output": [
+            {
+                "id": "rs_1",
+                "type": "reasoning",
+                "summary": [
+                    {
+                        "type": "summary_text",
+                        "text": "I will check the weather."
+                    }
+                ],
+                "encrypted_content": "enc-1"
+            },
+            {
+                "id": "fc_a426f3c7-0fad-43ee-a0dc-f5fb3868ff4d",
+                "type": "function_call",
+                "call_id": "call_7",
+                "name": "get_weather",
+                "arguments": "{\"city\":\"Berlin\"}",
+                "status": "completed"
+            }
+        ],
+        "tools": [],
+        "tool_choice": "auto",
+        "truncation": "disabled",
+        "parallel_tool_calls": true,
+        "text": {
+            "format": {
+                "type": "text"
+            }
+        },
+        "temperature": 1,
+        "top_p": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "top_logprobs": 0,
+        "reasoning": {
+            "effort": null,
+            "summary": null
+        },
+        "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "input_tokens_details": {
+                "cached_tokens": 0
+            },
+            "output_tokens_details": {
+                "reasoning_tokens": 0
+            }
+        },
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "store": false,
+        "background": false,
+        "service_tier": "auto",
+        "metadata": [],
+        "safety_identifier": null,
+        "prompt_cache_key": null
+    }
+}

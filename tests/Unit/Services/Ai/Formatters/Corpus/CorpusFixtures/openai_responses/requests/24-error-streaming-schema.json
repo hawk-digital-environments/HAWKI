@@ -1,0 +1,9 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": "List things.",
+        "stream": true,
+        "text": {"format": {"type": "json_schema", "name": "x", "schema": {"type": "object", "properties": {"a": {"type": "string"}}}}}
+    },
+    "expectedError": {"code": "unsupported_response_format", "param": "stream"}
+}

@@ -1,0 +1,73 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": "Compare the files.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "read_file",
+                "description": "Reads a file.",
+                "parameters": {
+                    "type": "object"
+                }
+            },
+            {
+                "type": "function",
+                "name": "write_file",
+                "description": "Writes a file.",
+                "parameters": {
+                    "type": "object"
+                }
+            }
+        ],
+        "tool_choice": {
+            "type": "allowed_tools",
+            "tools": [
+                "read_file"
+            ]
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Compare the files."
+                    }
+                ]
+            }
+        ],
+        "tools": [
+            {
+                "name": "read_file",
+                "description": "Reads a file.",
+                "parameters": {
+                    "type": "object"
+                }
+            },
+            {
+                "name": "write_file",
+                "description": "Writes a file.",
+                "parameters": {
+                    "type": "object"
+                }
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        },
+        "providerExtensions": {
+            "tool_choice": {
+                "type": "allowed_tools",
+                "tools": [
+                    "read_file"
+                ]
+            }
+        }
+    }
+}

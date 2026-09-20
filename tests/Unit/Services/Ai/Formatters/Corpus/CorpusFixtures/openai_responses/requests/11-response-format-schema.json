@@ -1,0 +1,65 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": "Describe Alice.",
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "person",
+                "strict": true,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "age": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ]
+                }
+            }
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Describe Alice."
+                    }
+                ]
+            }
+        ],
+        "responseFormat": {
+            "type": "json_schema",
+            "name": "person",
+            "strict": true,
+            "jsonSchema": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "age": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "name"
+                ]
+            }
+        },
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

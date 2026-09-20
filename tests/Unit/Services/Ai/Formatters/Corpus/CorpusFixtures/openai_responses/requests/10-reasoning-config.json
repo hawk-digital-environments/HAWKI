@@ -1,0 +1,33 @@
+{
+    "wireRequest": {
+        "model": "o4-mini",
+        "input": "Think hard.",
+        "reasoning": {
+            "effort": "high",
+            "summary": "detailed"
+        }
+    },
+    "expectedIr": {
+        "model": "o4-mini",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Think hard."
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        },
+        "reasoning": {
+            "effort": "high",
+            "summary": "detailed"
+        }
+    }
+}

@@ -1,0 +1,86 @@
+{
+    "irResponse": {
+        "id": "inv_7",
+        "model": "gpt-4.1-nano",
+        "created": 1700000000,
+        "finishReason": "length",
+        "usage": {
+            "promptTokens": 2,
+            "completionTokens": 5
+        },
+        "message": {
+            "parts": [
+                {
+                    "type": "text",
+                    "text": "Once upon a"
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "resp_inv_7",
+        "object": "response",
+        "created_at": 1700000000,
+        "completed_at": 1700000000,
+        "status": "incomplete",
+        "incomplete_details": {
+            "reason": "max_output_tokens"
+        },
+        "error": null,
+        "model": "gpt-4.1-nano",
+        "previous_response_id": null,
+        "instructions": null,
+        "output": [
+            {
+                "id": "msg_bca2842d-2e75-40e3-9a20-e637ba3c32c9",
+                "type": "message",
+                "role": "assistant",
+                "status": "completed",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": "Once upon a",
+                        "annotations": []
+                    }
+                ]
+            }
+        ],
+        "tools": [],
+        "tool_choice": "auto",
+        "truncation": "disabled",
+        "parallel_tool_calls": true,
+        "text": {
+            "format": {
+                "type": "text"
+            }
+        },
+        "temperature": 1,
+        "top_p": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "top_logprobs": 0,
+        "reasoning": {
+            "effort": null,
+            "summary": null
+        },
+        "usage": {
+            "input_tokens": 2,
+            "output_tokens": 5,
+            "total_tokens": 7,
+            "input_tokens_details": {
+                "cached_tokens": 0
+            },
+            "output_tokens_details": {
+                "reasoning_tokens": 0
+            }
+        },
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "store": false,
+        "background": false,
+        "service_tier": "auto",
+        "metadata": [],
+        "safety_identifier": null,
+        "prompt_cache_key": null
+    }
+}

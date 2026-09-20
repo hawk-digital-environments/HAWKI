@@ -1,0 +1,45 @@
+{
+    "irResponse": {
+        "id": "inv_5",
+        "model": "gpt-4.1-nano",
+        "created": 1700000000,
+        "finishReason": "refusal",
+        "message": {
+            "parts": [
+                {
+                    "type": "refusal",
+                    "refusal": "cannot help with that"
+                },
+                {
+                    "type": "text",
+                    "text": "Sorry."
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "chatcmpl-inv_5",
+        "object": "chat.completion",
+        "created": 1700000000,
+        "model": "gpt-4.1-nano",
+        "system_fingerprint": null,
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "Sorry.",
+                    "reasoning_content": null,
+                    "tool_calls": null,
+                    "refusal": "cannot help with that"
+                },
+                "finish_reason": "content_filter"
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0
+        }
+    }
+}

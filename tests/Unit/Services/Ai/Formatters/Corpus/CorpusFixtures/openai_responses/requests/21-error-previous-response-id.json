@@ -1,0 +1,4 @@
+{
+    "wireRequest": {"model": "gpt-4.1-nano", "input": "Hi", "previous_response_id": "resp_1"},
+    "expectedError": {"code": "previous_response_not_found", "httpStatus": 404}
+}

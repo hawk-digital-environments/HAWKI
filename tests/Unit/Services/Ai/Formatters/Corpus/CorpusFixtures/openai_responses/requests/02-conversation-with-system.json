@@ -1,0 +1,75 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "instructions": "Be terse.",
+        "input": [
+            {
+                "type": "message",
+                "role": "system",
+                "content": "Extra system text."
+            },
+            {
+                "type": "message",
+                "role": "user",
+                "content": "Hello"
+            },
+            {
+                "type": "message",
+                "role": "assistant",
+                "content": "Hi!"
+            },
+            {
+                "type": "message",
+                "role": "user",
+                "content": "What is 2+2?"
+            }
+        ]
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hello"
+                    }
+                ]
+            },
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hi!"
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "What is 2+2?"
+                    }
+                ]
+            }
+        ],
+        "systemInstruction": [
+            {
+                "type": "text",
+                "text": "Extra system text."
+            },
+            {
+                "type": "text",
+                "text": "Be terse."
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

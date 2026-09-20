@@ -1,0 +1,89 @@
+{
+    "wireRequest": {
+        "model": "o4-mini",
+        "input": [
+            {
+                "type": "message",
+                "role": "user",
+                "content": "Weather in Berlin?"
+            },
+            {
+                "type": "reasoning",
+                "id": "rs_keep",
+                "encrypted_content": "enc-state-1",
+                "summary": [
+                    {
+                        "type": "summary_text",
+                        "text": "I will check the weather."
+                    }
+                ]
+            },
+            {
+                "type": "function_call",
+                "call_id": "call_9",
+                "name": "get_weather",
+                "arguments": "{\"city\":\"Berlin\"}"
+            },
+            {
+                "type": "function_call_output",
+                "call_id": "call_9",
+                "output": "{\"temperature_c\":21}"
+            }
+        ]
+    },
+    "expectedIr": {
+        "model": "o4-mini",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Weather in Berlin?"
+                    }
+                ]
+            },
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "reasoning",
+                        "reasoning": "I will check the weather.",
+                        "encryptedContent": "enc-state-1",
+                        "providerMetadata": {
+                            "item_id": "rs_keep"
+                        }
+                    }
+                ]
+            },
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "tool_call",
+                        "toolCallId": "call_9",
+                        "toolName": "get_weather",
+                        "toolInput": {
+                            "city": "Berlin"
+                        }
+                    }
+                ]
+            },
+            {
+                "role": "tool",
+                "parts": [
+                    {
+                        "type": "tool_result",
+                        "toolCallId": "call_9",
+                        "result": "{\"temperature_c\":21}"
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

@@ -1,0 +1,77 @@
+{
+    "wireRequest": {
+        "model": "deepseek-reasoner",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Weather in Berlin?"
+            },
+            {
+                "role": "assistant",
+                "content": null,
+                "reasoning_content": "thinking about the weather",
+                "tool_calls": [
+                    {
+                        "id": "call_9",
+                        "type": "function",
+                        "function": {
+                            "name": "get_weather",
+                            "arguments": "{\"city\":\"Berlin\"}"
+                        }
+                    }
+                ]
+            },
+            {
+                "role": "tool",
+                "tool_call_id": "call_9",
+                "content": "{\"temperature_c\":21}"
+            }
+        ]
+    },
+    "expectedIr": {
+        "model": "deepseek-reasoner",
+        "formatKey": "openai",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Weather in Berlin?"
+                    }
+                ]
+            },
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "reasoning",
+                        "reasoning": "thinking about the weather"
+                    },
+                    {
+                        "type": "tool_call",
+                        "toolCallId": "call_9",
+                        "toolName": "get_weather",
+                        "toolInput": {
+                            "city": "Berlin"
+                        }
+                    }
+                ]
+            },
+            {
+                "role": "tool",
+                "parts": [
+                    {
+                        "type": "tool_result",
+                        "toolCallId": "call_9",
+                        "result": "{\"temperature_c\":21}"
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": false
+        }
+    }
+}

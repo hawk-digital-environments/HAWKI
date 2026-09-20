@@ -1,0 +1,79 @@
+{
+    "irResponse": {
+        "id": "inv_4",
+        "model": "o4-mini",
+        "created": 1700000000,
+        "finishReason": "stop",
+        "message": {
+            "parts": [
+                {
+                    "type": "reasoning",
+                    "reasoning": "pondering",
+                    "encryptedContent": "enc-2"
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "resp_inv_4",
+        "object": "response",
+        "created_at": 1700000000,
+        "completed_at": 1700000000,
+        "status": "completed",
+        "incomplete_details": null,
+        "error": null,
+        "model": "o4-mini",
+        "previous_response_id": null,
+        "instructions": null,
+        "output": [
+            {
+                "id": "rs_dae1794a-2c5b-4936-99bf-55c77a80c727",
+                "type": "reasoning",
+                "summary": [
+                    {
+                        "type": "summary_text",
+                        "text": "pondering"
+                    }
+                ],
+                "encrypted_content": "enc-2"
+            }
+        ],
+        "tools": [],
+        "tool_choice": "auto",
+        "truncation": "disabled",
+        "parallel_tool_calls": true,
+        "text": {
+            "format": {
+                "type": "text"
+            }
+        },
+        "temperature": 1,
+        "top_p": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "top_logprobs": 0,
+        "reasoning": {
+            "effort": null,
+            "summary": null
+        },
+        "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "input_tokens_details": {
+                "cached_tokens": 0
+            },
+            "output_tokens_details": {
+                "reasoning_tokens": 0
+            }
+        },
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "store": false,
+        "background": false,
+        "service_tier": "auto",
+        "metadata": [],
+        "safety_identifier": null,
+        "prompt_cache_key": null
+    }
+}

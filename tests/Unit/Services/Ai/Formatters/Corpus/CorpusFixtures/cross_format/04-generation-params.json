@@ -1,0 +1,20 @@
+{
+    "openResponses": {
+        "model": "gpt-4.1-nano",
+        "input": "Write a poem.",
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "max_output_tokens": 512,
+        "frequency_penalty": 0.5,
+        "presence_penalty": -0.5
+    },
+    "openai": {
+        "model": "gpt-4.1-nano",
+        "messages": [{"role": "user", "content": "Write a poem."}],
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "max_completion_tokens": 512,
+        "frequency_penalty": 0.5,
+        "presence_penalty": -0.5
+    }
+}

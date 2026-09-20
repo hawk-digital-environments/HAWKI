@@ -1,0 +1,84 @@
+{
+    "irResponse": {
+        "id": "inv_1",
+        "model": "gpt-4.1-nano",
+        "created": 1700000000,
+        "finishReason": "stop",
+        "usage": {
+            "promptTokens": 3,
+            "completionTokens": 4
+        },
+        "message": {
+            "parts": [
+                {
+                    "type": "text",
+                    "text": "Hello!"
+                }
+            ]
+        }
+    },
+    "expectedWireResponse": {
+        "id": "resp_inv_1",
+        "object": "response",
+        "created_at": 1700000000,
+        "completed_at": 1700000000,
+        "status": "completed",
+        "incomplete_details": null,
+        "error": null,
+        "model": "gpt-4.1-nano",
+        "previous_response_id": null,
+        "instructions": null,
+        "output": [
+            {
+                "id": "msg_96b32492-1a5f-4a5c-9d31-56295cb0510e",
+                "type": "message",
+                "role": "assistant",
+                "status": "completed",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": "Hello!",
+                        "annotations": []
+                    }
+                ]
+            }
+        ],
+        "tools": [],
+        "tool_choice": "auto",
+        "truncation": "disabled",
+        "parallel_tool_calls": true,
+        "text": {
+            "format": {
+                "type": "text"
+            }
+        },
+        "temperature": 1,
+        "top_p": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "top_logprobs": 0,
+        "reasoning": {
+            "effort": null,
+            "summary": null
+        },
+        "usage": {
+            "input_tokens": 3,
+            "output_tokens": 4,
+            "total_tokens": 7,
+            "input_tokens_details": {
+                "cached_tokens": 0
+            },
+            "output_tokens_details": {
+                "reasoning_tokens": 0
+            }
+        },
+        "max_output_tokens": null,
+        "max_tool_calls": null,
+        "store": false,
+        "background": false,
+        "service_tier": "auto",
+        "metadata": [],
+        "safety_identifier": null,
+        "prompt_cache_key": null
+    }
+}

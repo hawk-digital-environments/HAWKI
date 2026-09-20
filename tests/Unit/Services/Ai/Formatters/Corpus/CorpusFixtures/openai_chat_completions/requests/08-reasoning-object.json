@@ -1,0 +1,38 @@
+{
+    "wireRequest": {
+        "model": "o4-mini",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Think."
+            }
+        ],
+        "reasoning": {
+            "effort": "low",
+            "summary": "concise"
+        }
+    },
+    "expectedIr": {
+        "model": "o4-mini",
+        "formatKey": "openai",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Think."
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": false
+        },
+        "reasoning": {
+            "effort": "low",
+            "summary": "concise"
+        }
+    }
+}

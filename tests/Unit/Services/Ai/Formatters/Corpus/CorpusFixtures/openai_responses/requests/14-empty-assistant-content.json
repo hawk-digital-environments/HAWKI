@@ -1,0 +1,59 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "input": [
+            {
+                "type": "message",
+                "role": "user",
+                "content": "Hi"
+            },
+            {
+                "type": "message",
+                "role": "assistant",
+                "content": ""
+            },
+            {
+                "type": "message",
+                "role": "user",
+                "content": "Hello again"
+            }
+        ]
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openResponses",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hi"
+                    }
+                ]
+            },
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": ""
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hello again"
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

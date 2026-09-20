@@ -1,0 +1,53 @@
+{
+    "wireRequest": {
+        "model": "gpt-4.1-nano",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Write a poem."
+            }
+        ],
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "max_tokens": 256,
+        "max_completion_tokens": 512,
+        "frequency_penalty": 0.5,
+        "presence_penalty": -0.5,
+        "stop": "END",
+        "seed": 42,
+        "logprobs": true,
+        "top_logprobs": 3
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "openai",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Write a poem."
+                    }
+                ]
+            }
+        ],
+        "generation": {
+            "temperature": 0.5,
+            "topP": 0.9,
+            "maxTokens": 512,
+            "frequencyPenalty": 0.5,
+            "presencePenalty": -0.5,
+            "stopSequences": [
+                "END"
+            ],
+            "seed": 42,
+            "logprobs": true,
+            "topLogprobs": 3
+        },
+        "stream": {
+            "enabled": false,
+            "includeUsage": false
+        }
+    }
+}
