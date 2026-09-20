@@ -151,7 +151,7 @@ class AiStreamNormalizer
 
         foreach ($response->toolCalls as $toolCall) {
             $parts[] = new ToolCallPart(
-                toolCallId: $toolCall->id,
+                toolCallId: self::wireCallId($toolCall),
                 toolName: $toolCall->name,
                 toolInput: $toolCall->arguments,
             );
@@ -187,17 +187,18 @@ class AiStreamNormalizer
     {
         $toolCallIndex = $this->nextToolCallIndex++;
         $blockIndex = $this->nextBlockIndex++;
+        $wireCallId = self::wireCallId($toolCall);
 
         return [
             new ToolCallStartEvent(
-                toolCallId: $toolCall->id,
+                toolCallId: $wireCallId,
                 toolName: $toolCall->name,
                 toolCallIndex: $toolCallIndex,
                 blockIndex: $blockIndex,
             ),
             new ToolCallDeltaEvent(
-                toolCallId: $toolCall->id,
-                argumentsDelta: (string) json_encode($toolCall->arguments, \JSON_UNESCAPED_UNICODE),
+                toolCallId: $wireCallId,
+                argumentsDelta: (string) json_encode($toolCall->arguments, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES),
                 toolCallIndex: $toolCallIndex,
                 blockIndex: $blockIndex,
             ),
@@ -243,6 +244,15 @@ class AiStreamNormalizer
             VendorFinishReason::ContentFilter => FinishReasonType::CONTENT_FILTER,
             VendorFinishReason::Error => FinishReasonType::ERROR,
         });
+    }
+
+    /**
+     * The call id clients must echo back in `function_call_output`. The vendor DTO
+     * carries it in `resultId` (the OpenAI `call_id`); the item `id` is only a fallback.
+     */
+    private static function wireCallId(VendorToolCall $toolCall): string
+    {
+        return $toolCall->resultId ?? $toolCall->id;
     }
 
     private function allocateBlockIndex(string $vendorId): int

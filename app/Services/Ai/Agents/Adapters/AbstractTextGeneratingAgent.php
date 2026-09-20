@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Agents\Adapters;
-
 
 use App\Services\Ai\Agents\Exceptions\InvalidAgentConfigurationException;
 use App\Services\Ai\Agents\Middleware\LoggingMiddleware;
@@ -17,7 +16,6 @@ use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Messages\MessageRole;
 use Laravel\Ai\Messages\UserMessage;
-use Stringable;
 
 /**
  * Ready-to-use base class for HAWKI chat-style agents that generate text responses.
@@ -49,33 +47,50 @@ use Stringable;
  * );
  * ```
  */
-abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implements Conversational, HasTools, HasProviderOptions, HasMiddleware
+abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implements Conversational, HasMiddleware, HasProviderOptions, HasTools
 {
+    /**
+     * Step budget for the SDK's tool-calling loop. `null` delegates to the SDK default
+     * (1.5 × tool count when tools are given, else 5 — see
+     * `TextGenerationLoop::resolveMaxSteps()`), which this constant intentionally
+     * mirrors today so the seam is explicit rather than implicit.
+     *
+     * @todo Connect this to the per-model settings {@see \App\Services\Ai\Models\Settings\Values\WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS}
+     *       (and its streaming variant) once per-model configuration of the tool loop
+     *       is desired. Keep it non-configurable until then — changing this constant
+     *       for selected models only is worse than the SDK's dynamic default.
+     */
+    public const int|null MAX_TOOL_CALLING_STEPS = null;
+
     public function __construct(
         protected AgentRequestContext $context,
-        protected string              $instructions,
-        protected array               $messages = [],
-        protected iterable|null       $tools = null,
-        protected string|null         $promptString = null,
-        protected array|null          $attachments = null,
-    )
-    {
+        protected string $instructions,
+        protected array $messages = [],
+        protected ?iterable $tools = null,
+        protected ?string $promptString = null,
+        protected ?array $attachments = null,
+    ) {
         if (empty($this->promptString)) {
             if (empty($this->messages)) {
                 throw InvalidAgentConfigurationException::forMissingPromptOrMessages();
             }
 
             $lastMessage = array_pop($this->messages);
+
             if (!$lastMessage instanceof Message) {
                 throw InvalidAgentConfigurationException::forLastMessageNotAMessageInstance();
             }
-            if ($lastMessage->role !== MessageRole::User) {
+
+            if (MessageRole::User !== $lastMessage->role) {
                 throw InvalidAgentConfigurationException::forLastMessageNotUserRole();
             }
+
             if (empty($lastMessage->content)) {
                 throw InvalidAgentConfigurationException::forLastMessageEmptyContent();
             }
+
             $this->promptString = $lastMessage->content;
+
             // Carry attachments from the popped user message only when the caller did not supply them explicitly.
             if (empty($this->attachments) && $lastMessage instanceof UserMessage) {
                 $this->attachments = $lastMessage->attachments->all();
@@ -87,17 +102,115 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
      * Returns the system instructions wrapped in the HKI_META preamble so the model
      * understands how to handle metadata blocks embedded in user messages.
      *
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function instructions(): Stringable|string
+    final public function instructions(): string
     {
         // @todo we should probably make this a registry, to provide system wide instructions for all agents.
         return MessageMetaBlocks::wrapInstructions($this->instructions);
     }
 
-    public function getContext(): AgentRequestContext
+    final public function getContext(): AgentRequestContext
     {
         return $this->context;
+    }
+
+    /**
+     * Returns the maximum output token limit, or null when the model does not support
+     * sampling parameters (letting the provider apply its own default).
+     */
+    final public function maxTokens(): ?int
+    {
+        if ($this->context->model->flags->hasFeatureSamplingParameters()) {
+            return $this->context->modelParameters->getMaxTokens();
+        }
+
+        return null;
+    }
+
+    /**
+     * Exposes {@see MAX_TOOL_CALLING_STEPS} to the SDK's generation loop
+     * (honored via `TextGenerationOptions::forAgent()`).
+     */
+    final public function maxSteps(): ?int
+    {
+        /** @var int|null $steps */
+        $steps = self::MAX_TOOL_CALLING_STEPS;
+
+        return $steps;
+    }
+
+    /**
+     * Returns the sampling temperature, or null when the model does not support
+     * sampling parameters.
+     */
+    final public function temperature(): ?float
+    {
+        if ($this->context->model->flags->hasFeatureSamplingParameters()) {
+            return $this->context->modelParameters->getTemperature();
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the top-p (nucleus sampling) value, or null when the model does not support
+     * sampling parameters.
+     */
+    final public function topP(): ?float
+    {
+        if ($this->context->model->flags->hasFeatureSamplingParameters()) {
+            return $this->context->modelParameters->getTopP();
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the prior conversation turns (all messages except the current user prompt).
+     *
+     * {@inheritDoc}
+     */
+    final public function messages(): iterable
+    {
+        return $this->messages;
+    }
+
+    /**
+     * Returns the tools available to this agent, or an empty iterable when none were supplied.
+     *
+     * {@inheritDoc}
+     */
+    final public function tools(): iterable
+    {
+        return $this->tools ?? [];
+    }
+
+    /**
+     * Registers {@see LoggingMiddleware} so every outbound request is logged with model,
+     * provider, agent class, and the authenticated user's ID.
+     *
+     * {@inheritDoc}
+     */
+    final public function middleware(): array
+    {
+        return [
+            new LoggingMiddleware(),
+        ];
+    }
+
+    /**
+     * Delegates to the provider adapter so driver-specific options (e.g. extended thinking,
+     * custom headers) can be injected without coupling the agent to a particular gateway.
+     *
+     * {@inheritDoc}
+     */
+    final public function providerOptions(Lab|string $provider): array
+    {
+        return $this->context->provider->adapter->getAdditionalDriverOptions(
+            $this,
+            $this->context,
+        );
     }
 
     protected function getPromptString(): string
@@ -108,88 +221,5 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
     protected function getAttachments(): array
     {
         return $this->attachments ?? [];
-    }
-
-    /**
-     * Returns the maximum output token limit, or null when the model does not support
-     * sampling parameters (letting the provider apply its own default).
-     */
-    public function maxTokens(): int|null
-    {
-        if ($this->context->model->flags->hasFeatureSamplingParameters()) {
-            return $this->context->modelParameters->getMaxTokens();
-        }
-        return null;
-    }
-
-    /**
-     * Returns the sampling temperature, or null when the model does not support
-     * sampling parameters.
-     */
-    public function temperature(): float|null
-    {
-        if ($this->context->model->flags->hasFeatureSamplingParameters()) {
-            return $this->context->modelParameters->getTemperature();
-        }
-        return null;
-    }
-
-    /**
-     * Returns the top-p (nucleus sampling) value, or null when the model does not support
-     * sampling parameters.
-     */
-    public function topP(): float|null
-    {
-        if ($this->context->model->flags->hasFeatureSamplingParameters()) {
-            return $this->context->modelParameters->getTopP();
-        }
-        return null;
-    }
-
-    /**
-     * Returns the prior conversation turns (all messages except the current user prompt).
-     *
-     * @inheritDoc
-     */
-    public function messages(): iterable
-    {
-        return $this->messages;
-    }
-
-    /**
-     * Returns the tools available to this agent, or an empty iterable when none were supplied.
-     *
-     * @inheritDoc
-     */
-    public function tools(): iterable
-    {
-        return $this->tools ?? [];
-    }
-
-    /**
-     * Registers {@see LoggingMiddleware} so every outbound request is logged with model,
-     * provider, agent class, and the authenticated user's ID.
-     *
-     * @inheritDoc
-     */
-    public function middleware(): array
-    {
-        return [
-            new LoggingMiddleware()
-        ];
-    }
-
-    /**
-     * Delegates to the provider adapter so driver-specific options (e.g. extended thinking,
-     * custom headers) can be injected without coupling the agent to a particular gateway.
-     *
-     * @inheritDoc
-     */
-    public function providerOptions(Lab|string $provider): array
-    {
-        return $this->context->provider->adapter->getAdditionalDriverOptions(
-            $this,
-            $this->context
-        );
     }
 }

@@ -9,10 +9,12 @@ use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgent;
 use App\Services\Ai\Agents\Implementations\Chat\ChatToolResolver;
 use App\Services\Ai\Agents\Utils\AlternatingMessageHistory;
+use App\Services\Ai\Agents\Utils\MessageMetaBlocks;
 use App\Services\Ai\Agents\Utils\UserMessageAttachments;
 use App\Services\Ai\AiService;
 use App\Services\Ai\Chat\Exceptions\ChatAgentNotResolvedException;
 use App\Services\Ai\Chat\Factories\AbstractChatAgentFactory;
+use App\Services\Ai\Chat\Tools\ClientTool;
 use App\Services\Ai\Chat\Values\AiRequest;
 use App\Services\Ai\Chat\Values\Configs\ReasoningMode;
 use App\Services\Ai\Chat\Values\Messages\AssistantMessage;
@@ -35,6 +37,7 @@ use Laravel\Ai\Files\File;
 use Laravel\Ai\Files\Image;
 use Laravel\Ai\Responses\Data\ToolCall;
 use Laravel\Ai\Responses\Data\ToolResult;
+use Laravel\Ai\Tools\ToolNameResolver;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -84,6 +87,37 @@ class ChatAgentFactory extends AbstractChatAgentFactory
             instructions: $this->buildInstructions($request),
             messages: $messages,
             tools: $this->buildTools($request, $context),
+            promptString: $this->continuationPromptString($request),
+        );
+    }
+
+    /**
+     * Client-driven tool loops continue with an input whose last item is a
+     * `function_call_output`: the tool results stay in the conversation history and the
+     * prompt becomes a small synthetic acknowledgement turn (the vendor SDK always
+     * appends the prompt as a final user message). Returns null for ordinary turns.
+     */
+    /**
+     * Derives a provider-safe item id for replayed tool calls. The OpenAI Responses API
+     * requires function_call item ids to carry the `fc_` prefix; other drivers ignore
+     * the item id and link via the call id ({@see ToolCall::$resultId}) anyway.
+     */
+    private static function providerItemId(string $toolCallId): string
+    {
+        return str_starts_with($toolCallId, 'fc_') ? $toolCallId : 'fc_' . $toolCallId;
+    }
+
+    private function continuationPromptString(AiRequest $request): ?string
+    {
+        $lastMessage = $request->messages[array_key_last($request->messages)] ?? null;
+
+        if (!$lastMessage instanceof ToolMessage) {
+            return null;
+        }
+
+        return MessageMetaBlocks::createBlock(
+            'Tool Results Delivered',
+            'The tool results in the previous turn were executed by the client and are final. Continue the task based on them.',
         );
     }
 
@@ -221,9 +255,10 @@ class ChatAgentFactory extends AbstractChatAgentFactory
                 foreach ($message->toolCalls() as $part) {
                     $toolNameByCallId[$part->toolCallId] = $part->toolName;
                     $toolCalls[] = new ToolCall(
-                        id: $part->toolCallId,
+                        id: self::providerItemId($part->toolCallId),
                         name: $part->toolName,
                         arguments: $part->toolInput,
+                        resultId: $part->toolCallId,
                     );
                 }
 
@@ -243,10 +278,11 @@ class ChatAgentFactory extends AbstractChatAgentFactory
 
                 foreach ($message->parts as $part) {
                     $toolResults[] = new ToolResult(
-                        id: $part->toolCallId,
+                        id: self::providerItemId($part->toolCallId),
                         name: $toolNameByCallId[$part->toolCallId] ?? 'unknown_tool',
                         arguments: [],
                         result: $part->result,
+                        resultId: $part->toolCallId,
                     );
                 }
 
@@ -361,24 +397,44 @@ class ChatAgentFactory extends AbstractChatAgentFactory
         }
 
         $tools = [];
+        $serverToolNames = [];
 
         $transferStrings = $request->hawkiExtension(AiRequest::HAWKI_EXTENSION_TOOLS);
 
         if (\is_array($transferStrings)) {
             foreach ($this->chatToolResolver->findTools($transferStrings, $context) as $tool) {
                 $tools[] = $tool;
+                $serverToolNames[] = ToolNameResolver::resolve($tool);
             }
         }
 
         foreach ($request->tools ?? [] as $definition) {
-            $settings = $definition->metadata['settings'] ?? [];
-            $tools[] = $this->getToolResolver()->resolveToolByName(
-                $definition->name,
-                $context,
-                \is_array($settings) ? $settings : [],
-            );
+            if (\in_array($definition->name, $serverToolNames, true)) {
+                continue;
+            }
+
+            // Intercept: a server-side HAWKI tool with this name executes in the HAWKI runtime.
+            if ($this->hasServerTool($definition->name, $context)) {
+                $serverTool = $this->getToolResolver()->resolveToolByName($definition->name, $context);
+                $tools[] = $serverTool;
+                $serverToolNames[] = $definition->name;
+
+                continue;
+            }
+
+            // Hand off: everything the server cannot map is passed through to the client.
+            $tools[] = new ClientTool($definition, $this->logger);
         }
 
         return $tools;
+    }
+
+    /**
+     * Probes the server-side tool registry of the resolved model without throwing.
+     */
+    private function hasServerTool(string $toolName, \App\Services\Ai\Agents\Values\AgentRequestContext $context): bool
+    {
+        return $context->model->tools
+            ->first(static fn (\App\Models\Ai\AiTool $tool): bool => $tool->name === $toolName) !== null;
     }
 }

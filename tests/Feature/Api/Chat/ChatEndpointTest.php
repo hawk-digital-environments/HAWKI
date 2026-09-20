@@ -123,6 +123,62 @@ class ChatEndpointTest extends TestCase
         self::assertSame('{"q":"cats"}', $argsDone['data']['arguments']);
     }
 
+    public function testItHandsClientToolCallsThroughToTheClient(): void
+    {
+        $this->actingAsUser(User::factory()->create());
+        $this->mockAgent([
+            new StreamStart('s1', 'openai', 'gpt-4o', 1000),
+            new ToolCall('e1', new VendorToolCall(id: 'fc_123', name: 'read_file', arguments: ['path' => '/tmp/x'], resultId: 'call_XYZ'), 1001),
+            new \Laravel\Ai\Streaming\Events\ToolApprovalRequest('e2', collect([
+                new \Laravel\Ai\Approvals\PendingApproval('fc_123', 'read_file', ['path' => '/tmp/x'], 'client tool'),
+            ]), 1002),
+            new StreamEnd('e3', 'tool_calls', new Usage(promptTokens: 4, completionTokens: 6), 1003),
+        ]);
+
+        [, $body] = $this->performStreamingRequest($this->payload(stream: true));
+        $events = $this->parseSseEvents($body);
+
+        $added = $this->firstEvent($events, 'response.output_item.added');
+        self::assertSame('function_call', $added['data']['item']['type']);
+        self::assertSame('call_XYZ', $added['data']['item']['call_id']);
+        self::assertSame('read_file', $added['data']['item']['name']);
+
+        $argsDone = $this->firstEvent($events, 'response.function_call_arguments.done');
+        self::assertSame('{"path":"/tmp/x"}', $argsDone['data']['arguments']);
+
+        $approval = $this->firstEvent($events, 'hawki:provider_tool_event');
+        self::assertSame('approval_request', $approval['data']['event_type']);
+        self::assertSame('read_file', $approval['data']['data'][0]['tool']);
+
+        $completed = $this->firstEvent($events, 'response.completed');
+        self::assertSame('completed', $completed['data']['response']['status']);
+        self::assertSame('call_XYZ', $completed['data']['response']['output'][0]['call_id']);
+        self::assertStringEndsWith("data: [DONE]\n\n", $body);
+    }
+
+    public function testItAcceptsContinuationTurnsEndingWithFunctionCallOutput(): void
+    {
+        $this->actingAsUser(User::factory()->create());
+        $this->mockAgent([], new AgentResponse(
+            invocationId: 'inv_2',
+            text: 'The directory contains file-a.',
+            usage: new Usage(promptTokens: 9, completionTokens: 5),
+            meta: new Meta(provider: 'openai', model: 'gpt-4o'),
+        ));
+
+        $response = $this->postJson(self::ENDPOINT, [
+            'model' => 'gpt-4o',
+            'input' => [
+                ['type' => 'message', 'role' => 'user', 'content' => 'List the files in /tmp'],
+                ['type' => 'function_call', 'call_id' => 'call_XYZ', 'name' => 'read_file', 'arguments' => '{"path":"/tmp"}'],
+                ['type' => 'function_call_output', 'call_id' => 'call_XYZ', 'output' => 'file-a'],
+            ],
+        ]);
+
+        $response->assertStatus(200);
+        self::assertSame('The directory contains file-a.', $response->json('output.0.content.0.text'));
+    }
+
     public function testItEmitsCleanedCitationsAsHawkiExtensionEvents(): void
     {
         $cleaner = $this->createMock(\App\Services\ExternalContent\CitationUrlCleaner::class);

@@ -10,8 +10,10 @@ use App\Services\Ai\Exceptions\ModelIdNotAvailableException;
 use App\Services\Ai\Formatters\Exceptions\FormatterNotFoundException;
 use App\Services\Ai\Formatters\Exceptions\FormatterRequestException;
 use App\Services\Ai\Formatters\Exceptions\UnknownModelException;
+use App\Services\Ai\Formatters\Exceptions\UnknownToolCallException;
 use App\Services\Ai\Formatters\FormatterRegistry;
 use Illuminate\Http\Request;
+use Laravel\Ai\Exceptions\NoSuchToolException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -59,6 +61,8 @@ class ChatController extends Controller
             return $formatter->formatError($exception);
         } catch (ModelIdNotAvailableException $exception) {
             return $formatter->formatError(UnknownModelException::fromModelException($exception));
+        } catch (NoSuchToolException $exception) {
+            return $formatter->formatError(UnknownToolCallException::fromVendorException($exception));
         }
     }
 }

@@ -100,9 +100,9 @@ readonly class OpenResponsesFormatter implements FormatterInterface
             throw InvalidRequestBodyException::forMissingInput();
         }
 
-        $lastMessage = $messages[array_key_last($messages)] ?? null;
+        $lastMessage = $this->lastContinuableMessage($messages);
 
-        if (!$lastMessage instanceof UserMessage) {
+        if (!$lastMessage instanceof UserMessage && !$lastMessage instanceof ToolMessage) {
             throw InvalidInputItemException::forMissingTrailingUserMessage();
         }
 
@@ -288,6 +288,39 @@ readonly class OpenResponsesFormatter implements FormatterInterface
 
                 throw InvalidInputItemException::forUnknownType(\is_string($type) ? $type : 'unknown');
         }
+    }
+
+    /**
+     * The last message that can legally conclude the input: a user turn, or the
+     * tool-result turn of a client-driven tool loop. Trailing reasoning-only assistant
+     * items are ignored for this check.
+     *
+     * @param array<int, Message> $messages
+     */
+    private function lastContinuableMessage(array $messages): ?Message
+    {
+        for ($key = array_key_last($messages); null !== $key; --$key) {
+            $message = $messages[$key];
+
+            if ($message instanceof AssistantMessage && $message->text() === '' && $this->hasOnlyReasoningParts($message)) {
+                continue;
+            }
+
+            return $message;
+        }
+
+        return null;
+    }
+
+    private function hasOnlyReasoningParts(AssistantMessage $message): bool
+    {
+        foreach ($message->parts as $part) {
+            if (!$part instanceof ReasoningPart) {
+                return false;
+            }
+        }
+
+        return [] !== $message->parts;
     }
 
     /**

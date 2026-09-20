@@ -30,7 +30,7 @@ class InvalidInputItemException extends FormatterRequestException
     public static function forMissingTrailingUserMessage(): self
     {
         return new self(
-            'The input must end with a user message. HAWKI executes tools server-side; a client-driven tool loop with a trailing function_call_output is not supported.',
+            'The input must end with a user message or a function_call_output (the continuation turn of a client-driven tool loop); a trailing bare function_call or assistant message cannot be continued.',
             errorCode: 'missing_user_turn',
             param: 'input',
         );

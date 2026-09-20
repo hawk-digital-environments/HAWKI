@@ -163,17 +163,47 @@ class OpenResponsesFormatterTest extends TestCase
         ]));
     }
 
-    public function testItRejectsNonUserTrailingItem(): void
+    public function testItRejectsNonContinuableTrailingItem(): void
     {
         $this->expectException(InvalidInputItemException::class);
-        $this->expectExceptionMessage('must end with a user message');
+        $this->expectExceptionMessage('must end with a user message or a function_call_output');
 
         $this->sut->parseRequest($this->request([
             'input' => [
                 ['type' => 'message', 'role' => 'user', 'content' => 'Hi'],
-                ['type' => 'function_call_output', 'call_id' => 'call_1', 'output' => 'x'],
+                ['type' => 'function_call', 'call_id' => 'call_1', 'name' => 'read_file', 'arguments' => '{}'],
             ],
         ]));
+    }
+
+    public function testItAcceptsTrailingFunctionCallOutputAsContinuationTurn(): void
+    {
+        $result = $this->sut->parseRequest($this->request([
+            'input' => [
+                ['type' => 'message', 'role' => 'user', 'content' => 'List the files'],
+                ['type' => 'function_call', 'call_id' => 'call_1', 'name' => 'read_file', 'arguments' => '{"path":"/tmp"}'],
+                ['type' => 'function_call_output', 'call_id' => 'call_1', 'output' => 'file-a\nfile-b'],
+            ],
+        ]));
+
+        static::assertCount(3, $result->messages);
+        static::assertInstanceOf(ToolMessage::class, $result->messages[2]);
+        static::assertSame('call_1', $result->messages[2]->parts[0]->toolCallId);
+        static::assertSame('file-a\nfile-b', $result->messages[2]->parts[0]->result);
+    }
+
+    public function testItIgnoresTrailingReasoningItemsForTheContinuationCheck(): void
+    {
+        $result = $this->sut->parseRequest($this->request([
+            'input' => [
+                ['type' => 'message', 'role' => 'user', 'content' => 'Hi'],
+                ['type' => 'function_call', 'call_id' => 'call_1', 'name' => 'read_file', 'arguments' => '{}'],
+                ['type' => 'function_call_output', 'call_id' => 'call_1', 'output' => 'ok'],
+                ['type' => 'reasoning', 'summary' => [['type' => 'summary_text', 'text' => 'hm']]],
+            ],
+        ]));
+
+        static::assertCount(4, $result->messages);
     }
 
     public function testItParsesToolsToolChoiceAndHawkiExtensions(): void
