@@ -32,6 +32,12 @@
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
     const isAssistant = $derived(message.message_role === 'assistant');
+    const streamStatusLabels: Record<string, string> = {
+        reasoning: 'chat.page.reasoning',
+        tool_call: 'chat.page.usingTools',
+        provider_tool_call: 'chat.page.usingProviderTools'
+    };
+    const streamStatusLabel = $derived(streamStatusLabels[message.status ?? ''] ?? __('chat.page.thinking'));
     const authorName = $derived(
         isAssistant
             ? aiModelStore.getOneById(message.model ?? '')?.label ?? message.model ?? 'HAWKI'
@@ -87,7 +93,7 @@
             {/if}
 
             {#if message.isStreaming && !message.content.text}
-                <span class="stream-status">{message.status ?? __('chat.page.thinking')}</span>
+                <span class="stream-status">{streamStatusLabel}</span>
             {/if}
         </div>
 
