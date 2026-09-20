@@ -35,4 +35,25 @@ class InvalidInputItemException extends FormatterRequestException
             param: 'input',
         );
     }
+
+    public static function forUnsupportedSchemaRoot(mixed $rootType): self
+    {
+        return new self(
+            \sprintf(
+                'The json_schema response format must be rooted at an object (got type "%s"); only object-rooted schemas are supported.',
+                \is_string($rootType) ? $rootType : get_debug_type($rootType),
+            ),
+            errorCode: 'unsupported_response_format',
+            param: 'text.format',
+        );
+    }
+
+    public static function forStreamingWithStructuredOutput(): self
+    {
+        return new self(
+            'Streaming structured output (json_schema) is not supported; request a non-streaming response or use json_object.',
+            errorCode: 'unsupported_response_format',
+            param: 'stream',
+        );
+    }
 }

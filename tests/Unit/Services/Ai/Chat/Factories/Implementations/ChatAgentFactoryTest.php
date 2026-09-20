@@ -190,6 +190,152 @@ class ChatAgentFactoryTest extends TestCase
         self::assertSame('call_1', $assistantWithCall->toolCalls->first()->resultId);
     }
 
+
+    public function testItMergesPrecedingReasoningIntoToolCallReplay(): void
+    {
+        $request = new AiRequest(
+            model: 'gpt-4o',
+            messages: [
+                \App\Services\Ai\Chat\Values\Messages\UserMessage::fromText('Read the file'),
+                new \App\Services\Ai\Chat\Values\Messages\AssistantMessage(parts: [
+                    new \App\Services\Ai\Chat\Values\Parts\ReasoningPart(
+                        reasoning: 'I should read the file.',
+                        encryptedContent: 'enc-state-1',
+                        providerMetadata: ['item_id' => 'rs_abc'],
+                    ),
+                ]),
+                new \App\Services\Ai\Chat\Values\Messages\AssistantMessage(parts: [
+                    new \App\Services\Ai\Chat\Values\Parts\ToolCallPart(
+                        toolCallId: 'call_1',
+                        toolName: 'read_file',
+                        toolInput: ['path' => '/tmp'],
+                    ),
+                ]),
+                new ToolMessage(parts: [
+                    new \App\Services\Ai\Chat\Values\Parts\ToolResultPart(toolCallId: 'call_1', result: 'file-a'),
+                ]),
+                \App\Services\Ai\Chat\Values\Messages\UserMessage::fromText('Thanks'),
+            ],
+        );
+
+        $messages = iterator_to_array($this->sut->createAgent($request)->messages());
+
+        // The reasoning-only turn must not surface as a placeholder assistant message.
+        $assistantMessages = array_values(array_filter(
+            $messages,
+            static fn (mixed $message): bool => $message instanceof \Laravel\Ai\Messages\AssistantMessage,
+        ));
+        self::assertCount(1, $assistantMessages);
+
+        $toolCall = $assistantMessages[0]->toolCalls->first();
+        self::assertSame('rs_abc', $toolCall->reasoningId);
+        self::assertSame('enc-state-1', $toolCall->reasoningEncryptedContent);
+        self::assertSame([['type' => 'summary_text', 'text' => 'I should read the file.']], $toolCall->reasoningSummary);
+    }
+
+    public function testItMergesSameMessageReasoningIntoToolCalls(): void
+    {
+        $request = new AiRequest(
+            model: 'deepseek-chat',
+            messages: [
+                \App\Services\Ai\Chat\Values\Messages\UserMessage::fromText('Read the file'),
+                new \App\Services\Ai\Chat\Values\Messages\AssistantMessage(parts: [
+                    new \App\Services\Ai\Chat\Values\Parts\ReasoningPart(reasoning: 'Thinking...', encryptedContent: 'enc-2'),
+                    new \App\Services\Ai\Chat\Values\Parts\ToolCallPart(
+                        toolCallId: 'call_2',
+                        toolName: 'read_file',
+                        toolInput: [],
+                    ),
+                ]),
+                new ToolMessage(parts: [
+                    new \App\Services\Ai\Chat\Values\Parts\ToolResultPart(toolCallId: 'call_2', result: 'ok'),
+                ]),
+            ],
+        );
+
+        $messages = iterator_to_array($this->sut->createAgent($request)->messages());
+
+        $assistantMessages = array_values(array_filter(
+            $messages,
+            static fn (mixed $message): bool => $message instanceof \Laravel\Ai\Messages\AssistantMessage,
+        ));
+        self::assertCount(1, $assistantMessages);
+
+        $toolCall = $assistantMessages[0]->toolCalls->first();
+        self::assertSame('enc-2', $toolCall->reasoningEncryptedContent);
+        self::assertMatchesRegularExpression('/^rs_/', (string) $toolCall->reasoningId);
+    }
+
+    public function testItDropsReasoningOnlyTurnsWithoutToolCalls(): void
+    {
+        $request = new AiRequest(
+            model: 'gpt-4o',
+            messages: [
+                \App\Services\Ai\Chat\Values\Messages\UserMessage::fromText('Hi'),
+                new \App\Services\Ai\Chat\Values\Messages\AssistantMessage(parts: [
+                    new \App\Services\Ai\Chat\Values\Parts\ReasoningPart(reasoning: 'pondering'),
+                ]),
+                new \App\Services\Ai\Chat\Values\Messages\AssistantMessage(parts: [
+                    \App\Services\Ai\Chat\Values\Parts\TextPart::from('Hello'),
+                ]),
+                \App\Services\Ai\Chat\Values\Messages\UserMessage::fromText('And now?'),
+            ],
+        );
+
+        $messages = iterator_to_array($this->sut->createAgent($request)->messages());
+
+        // Text assistant turns surface as plain role-typed messages, not AssistantMessage.
+        $assistantMessages = array_values(array_filter(
+            $messages,
+            static fn (mixed $message): bool => $message instanceof \Laravel\Ai\Messages\Message
+                && \Laravel\Ai\Messages\MessageRole::Assistant === $message->role,
+        ));
+        self::assertCount(1, $assistantMessages);
+        self::assertSame('Hello', $assistantMessages[0]->content);
+    }
+
+    public function testItPassesJsonSchemaResponseFormatsToTheAgent(): void
+    {
+        $request = $this->request();
+        $request = new AiRequest(
+            model: 'gpt-4o',
+            messages: [\App\Services\Ai\Chat\Values\Messages\UserMessage::fromText('Hi')],
+            responseFormat: new \App\Services\Ai\Chat\Values\Configs\ResponseFormatConfig(
+                type: \App\Services\Ai\Chat\Values\Configs\ResponseFormatType::JSON_SCHEMA,
+                jsonSchema: [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string'],
+                        'age' => ['type' => 'integer'],
+                    ],
+                    'required' => ['name'],
+                ],
+            ),
+        );
+
+        $agent = $this->sut->createAgent($request);
+
+        self::assertInstanceOf(\App\Services\Ai\Agents\Implementations\Chat\StructuredChatAgent::class, $agent);
+        self::assertInstanceOf(\Laravel\Ai\Contracts\HasStructuredOutput::class, $agent);
+        self::assertSame(['name', 'age'], array_keys($agent->schema(new \Illuminate\JsonSchema\JsonSchemaTypeFactory())));
+    }
+
+    public function testItEmitsAJsonObjectInstructionSuffix(): void
+    {
+        $request = new AiRequest(
+            model: 'gpt-4o',
+            messages: [\App\Services\Ai\Chat\Values\Messages\UserMessage::fromText('Hi')],
+            responseFormat: new \App\Services\Ai\Chat\Values\Configs\ResponseFormatConfig(
+                type: \App\Services\Ai\Chat\Values\Configs\ResponseFormatType::JSON_OBJECT,
+            ),
+        );
+
+        $agent = $this->sut->createAgent($request);
+
+        self::assertNotInstanceOf(\Laravel\Ai\Contracts\HasStructuredOutput::class, $agent);
+        self::assertStringContainsString('single JSON object', $agent->instructions());
+    }
+
     /**
      * @param array<int, \App\Services\Ai\Chat\Values\Tools\ToolDefinition> $tools
      */

@@ -154,6 +154,7 @@ class AiStreamNormalizer
                 toolCallId: self::wireCallId($toolCall),
                 toolName: $toolCall->name,
                 toolInput: $toolCall->arguments,
+                providerMetadata: $this->reasoningMetadata($toolCall),
             );
         }
 
@@ -235,9 +236,36 @@ class AiStreamNormalizer
         ];
     }
 
-    private function mapFinishReason(VendorFinishReason $reason): FinishReason
+    /**
+     * Replayable reasoning state the SDK attached to a parsed tool call — surfaced as
+     * provider metadata so formatters can emit reasoning items alongside function calls.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function reasoningMetadata(\Laravel\Ai\Responses\Data\ToolCall $toolCall): ?array
     {
-        return new FinishReason(match ($reason) {
+        if (null === $toolCall->reasoningId && null === $toolCall->reasoningEncryptedContent && null === $toolCall->reasoningSummary) {
+            return null;
+        }
+
+        $summaryText = null;
+
+        if (\is_array($toolCall->reasoningSummary)) {
+            $summaryText = collect($toolCall->reasoningSummary)
+                ->filter(static fn (mixed $part): bool => \is_array($part) && 'summary_text' === ($part['type'] ?? null))
+                ->map(static fn (array $part): string => (string) ($part['text'] ?? ''))
+                ->implode('');
+        }
+
+        return array_filter([
+            'reasoning_id' => $toolCall->reasoningId,
+            'reasoning_summary' => '' !== $summaryText ? $summaryText : null,
+            'reasoning_encrypted_content' => $toolCall->reasoningEncryptedContent,
+        ], static fn (mixed $value): bool => null !== $value);
+    }
+
+    private function mapFinishReason(VendorFinishReason $reason): FinishReason
+    {        return new FinishReason(match ($reason) {
             VendorFinishReason::Stop, VendorFinishReason::Unknown => FinishReasonType::STOP,
             VendorFinishReason::ToolCalls, VendorFinishReason::Continue => FinishReasonType::TOOL_CALLS,
             VendorFinishReason::Length => FinishReasonType::LENGTH,

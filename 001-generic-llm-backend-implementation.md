@@ -17,8 +17,8 @@
 
 ## 0. Current state (living section — update with every delivery)
 
-Snapshot: **2026-09-20**, after the spec-parity work on both chat formatters. Read this
-first; §3/§5/§6 keep their original per-item detail.
+Snapshot: **2026-09-20**, after N6 (reasoning replay + structured output; D6/D7/D8
+closed). Read this first; §3/§5/§6 keep their original per-item detail.
 
 ### Shipped
 
@@ -34,6 +34,8 @@ first; §3/§5/§6 keep their original per-item detail.
 | Strict unknown-format errors (D10 closed): explicit `{format}` 400s on chat + embeddings | `UnknownFormatException` |
 | Custom-events switch `AI_PROXY_EMIT_CUSTOM_EVENTS` (default true) — suppresses every non-standard `hawki:` emission in every format | `config/hawki.php` `aiProxy.emit_custom_events` |
 | Spec-alignment bundle: refusal delta/done events + refusal content parts (openResponses); `tools[].strict`, `top_logprobs`, `allowed_tools` parked (openResponses parse); CC `reasoning_effort` / `reasoning:{effort,summary}` → `ReasoningConfig`; CC `store:true` → 400 | both formatters |
+| **N6 reasoning replay** (D6 closed): reasoning item ids captured, merged into tool-call turns both wire layouts, replayable reasoning items returned non-streaming — live-verified with o4-mini | `ChatAgentFactory`, `StructuredChatAgent`, normalizer, both formatters |
+| **N6 structured output** (D7 closed): `json_schema` via `StructuredChatAgent` (HasStructuredOutput, cross-driver), `json_object` via instruction suffix, `stream`+`json_schema` → 400, non-object roots → 400 — live-verified with gpt-4.1-nano | `StructuredChatAgent`, both formatters |
 
 ### Gap analysis verdicts (researched against the published Open Responses OpenAPI +
 LLM-Rosetta; full report in the session that produced it)
@@ -62,22 +64,18 @@ LLM-Rosetta; full report in the session that produced it)
 - The `openai` streaming usage chunk is always emitted (the format-agnostic stream path
   cannot see per-request `stream_options`; matches the IR include-usage default).
 - `n` and neighbours are parked in `providerExtensions` (single-choice by design).
-- `response_format` is parsed but not wired downstream (D7 — closes with N6).
 
 ### Recommended next steps (ordered)
 
-1. **N6 — reasoning replay + structured output** (closes D6/D7/D8): `ReasoningPart` →
-   vendor replay state (`providerContentBlocks`/`reasoningEncryptedContent`, verify
-   per-driver), `ResponseFormatConfig` → SDK structured output (`ObjectSchema`).
-2. **N5 — round-trip corpus** (closes D4, unblocks D9): fixture → parse → format → parse
+1. **N5 — round-trip corpus** (closes D4, unblocks D9): fixture → parse → format → parse
    structural equality, per formatter.
-3. **N2 — `/models/{format?}`** (trivial, pure transform).
-4. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
+2. **N2 — `/models/{format?}`** (trivial, pure transform).
+3. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
    budget Phase-2 design time for route forwarding).
-5. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
+4. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
    D1/D11/D13) — unlocks dropping `hawki.params`/`broadcast`/`attachments`.
-6. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
-7. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
+5. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
+6. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
 
 ---
 
@@ -110,7 +108,7 @@ The proposal's Phase-1 bullet list (§11), item by item:
 | `ChatController` + `POST /api/hawki/v1/chat/{format?}` | ✅ done | Route, middleware stack, and thin controller exactly as §6.1–6.2. |
 | Round-trip tests for the formatter | 🟡 partial | Structural parse/format and stream-event tests exist; the full wire→IR→wire structural-equality corpus (§9.1) does not (D4). |
 | Open Responses compliance tests | ✅ done | Ported to PHPUnit as `tests/Feature/Api/Compliance/OpenResponsesComplianceTest.php` — all 8 stateless-compatible tests green against the live provider, skip-gated by `OPENRESPONSES_COMPLIANCE_TOKEN` (D5, closed). |
-| **Deliverable**: full tool calling and reasoning output | ✅ / 🟡 | Output side complete (tool calls, reasoning deltas stream through); reasoning *input* round-trip is not wired (D6). |
+| **Deliverable**: full tool calling and reasoning output | ✅ | Output side complete (tool calls, reasoning deltas stream through); reasoning input round-trip closed with N6/D6 (live-verified with o4-mini). |
 
 ---
 
@@ -183,40 +181,62 @@ decisions inside them.
   `previous_response_id` — the proposal §9.4 open question about test #8 is resolved:
   it is in scope and passes.
 
-### D6 — reasoning items do not round-trip into the provider request
+### D6 — ~~reasoning items do not round-trip into the provider request~~ (CLOSED)
 
-- **Proposal (§8.2):** `ReasoningPart.signature`/`encryptedContent` are round-tripped so
-  the next turn replays the reasoning state; the formatter includes `reasoning` items in
-  `input` when `include: ["reasoning.encrypted_content"]` is set.
-- **Built:** the formatter parses `reasoning` input items into `ReasoningPart`
-  (lossless at the IR level), but `ChatAgentFactory` has no mapping from `ReasoningPart`
-  onto the vendor message model — a reasoning-only assistant turn degrades to an empty
-  placeholder message. `include` is parked in `providerExtensions` and unused.
-- **Why:** correct replay needs the SDK's provider replay state
-  (`AssistantMessage::$providerContentBlocks`, `ToolCall::$reasoningEncryptedContent`),
-  whose per-driver semantics were not verified in this iteration.
-- **Reconciliation:** N6 in §6. This is the single biggest fidelity gap for
-  reasoning-model clients (harnesses that resend reasoning items).
+- **Built (now):** reasoning replay works end-to-end. Parse captures the reasoning
+  item `id` (into `ReasoningPart->providerMetadata['item_id']`); `ChatAgentFactory`
+  merges reasoning state into the tool-call turn (both wire layouts: a preceding
+  reasoning-only message in openResponses, or `reasoning_content` on the same
+  message in Chat Completions) and attaches it to the vendor `ToolCall`
+  (`reasoningId`/`reasoningSummary`/`reasoningEncryptedContent`), which is exactly
+  the replay state the SDK's OpenAI and Anthropic drivers forward. Non-streaming
+  responses surface replayable reasoning items ahead of their function calls
+  (normalizer copies the SDK-parsed state into `ToolCallPart->providerMetadata`,
+  the openResponses formatter emits the reasoning item, CC derives
+  `message.reasoning_content`).
+- **Verified live (o4-mini):** tool-call turn returns a reasoning item with
+  `encrypted_content`; resending the exact items (reasoning + function_call +
+  output) completes the loop and the final answer reflects the tool result.
+- **Findings:** the SDK adds `include: ["reasoning.encrypted_content"]` itself for
+  stateless reasoning models (no proxy action needed); reasoning-only turns without
+  a following tool call are **not replayed** — the SDK has no channel for them and
+  OpenAI only requires replay around tool calls (previously they degraded to an
+  `&nbsp;` placeholder message; now they are dropped); streaming responses carry
+  reasoning as summary events only (the spec has no encrypted field there), so
+  streaming clients obtain replay state only when a tool call follows.
 
-### D7 — structured output (`text.format`) is parsed but not wired
+### D7 — ~~structured output (`text.format`) is parsed but not wired~~ (CLOSED)
 
-- **Built:** `ResponseFormatConfig` (text / json_object / json_schema) is part of the
-  IR; `ChatAgentFactory` never reads it. A client requesting a JSON schema gets a plain
-  text response.
-- **Reconciliation:** N6 in §6 — map `ResponseFormatConfig` onto the SDK's structured
-  output (`ObjectSchema`, `#[Strict]`) in the factory.
+- **Built (now):** `json_schema` requests instantiate `StructuredChatAgent`
+  (`implements HasStructuredOutput`), forwarding each root property through the SDK's
+  raw-schema pipeline (`JsonSchema::fromArray(SchemaNormalizer::normalize(...))` — the
+  same one MCP tool inputs use). Every driver family maps it natively: OpenAI Responses
+  `text.format`, OpenAI-compatible `response_format`, Anthropic `output_config`.
+  `json_object` (Chat Completions dialect only — the Open Responses wire format has no
+  such type) is emulated with an instruction suffix, because the SDK channel always
+  wraps an object schema and an empty one would constrain the output to a literal
+  empty object. Verified live against gpt-4.1-nano (schema-constrained JSON,
+  non-streaming and per-dialect).
+- **Findings / accepted transformations:** the SDK **cannot stream structured output**
+  (`StreamsText` throws) and rejects streaming for *any* `HasStructuredOutput` agent —
+  hence the dedicated agent subclass and a parse-time 400 (`unsupported_response_format`)
+  for `stream: true` + `json_schema` in both formatters. Top-level `required` is not
+  forwarded (the contract passes a property map), `additionalProperties: false` is
+  forced recursively by `ObjectSchema`, and `strict` stays false (the SDK reads it from
+  a compile-time attribute). Non-object-rooted schemas are rejected with 400 at parse
+  time. If raw-schema fidelity matters later, the per-request providerOptions channel
+  is the escape hatch.
 
-### D8 — `n` and neighbours are not "accepted for format alignment"
+### D8 — ~~`n` and neighbours are not "accepted for format alignment"~~ (CLOSED)
 
-- **Proposal (§3.3):** `n` is accepted and passed through; only the first choice is used.
-- **Built:** `n` (and `seed`, `logprobs`, `top_logprobs`) are not parsed at all — they
-  are silently ignored fields on the wire.
-- **Why:** there is no passthrough channel for them (the underlying SDK is
-  single-response with no logprobs surface). Silent ignoring is arguably worse than the
-  proposal's own "warnings, not exceptions" principle would want; at minimum the
-  formatter should record them in `providerExtensions`.
-- **Reconciliation:** trivial parser addition when a consumer exists; revisit together
-  with D7.
+- **Closed:** both formatters now parse or park every standard parameter — Chat
+  Completions parks `n`/`logit_bias`/`user` in `providerExtensions` and parses
+  `seed`/`logprobs`/`top_logprobs` into `GenerationConfig`; openResponses parses
+  `top_logprobs` and parks `include`/`metadata`/`service_tier`/`background`/
+  `stream_options`/`prompt_cache_key`/`safety_identifier` and structured
+  non-function `tool_choice` forms. `n` stays single-choice by design (the SDK is
+  single-response); executing it would require an upstream passthrough that does not
+  exist.
 
 ### D9 — `MessageMetadata` is never populated
 
@@ -408,12 +428,15 @@ A reflective harness: fixture → `parseRequest` → assert IR → `formatRespon
 the formatter tests; grow per formatter. `MessageMetadata` (D9) becomes worth populating
 once equality checks need stable ids.
 
-### N6 — reasoning replay + structured output *(closes D6/D7/D8)*
+### N6 — ~~reasoning replay + structured output~~ *(DONE — D6/D7/D8 closed)*
 
-Two factory mappings: `ReasoningPart` → vendor replay state
-(`providerContentBlocks`/`reasoningEncryptedContent` — verify per-driver behaviour
-first), and `ResponseFormatConfig` → the SDK's structured-output schema. Fold D8
-(accepted-but-ignored params → `providerExtensions`) into the same change.
+Delivered with live verification
+(`tests/Feature/Api/Chat/StructuredOutputAndReasoningLiveTest.php`, gated on
+`OPENRESPONSES_COMPLIANCE_TOKEN`, wired into the CI workflow): json_schema responses
+(gpt-4.1-nano, both dialects + streaming-rejection), json_object emulation, and the
+o4-mini reasoning-replay loop. Findings recorded under D6/D7 above; the notable
+SDK constraints surfaced live: no streaming for structured output, auto-`include`
+of encrypted reasoning for reasoning models, replay state rides on tool calls only.
 
 ### N7 — embeddings *(proposal Phase 8; second domain)*
 

@@ -521,9 +521,23 @@ readonly class OpenAiChatCompletionsFormatter implements FormatterInterface
         if ('json_schema' === $type && \is_array($format['json_schema'] ?? null)) {
             $schema = $format['json_schema'];
 
+            $jsonSchema = \is_array($schema['schema'] ?? null) ? $schema['schema'] : null;
+
+            $rootType = $jsonSchema['type'] ?? null;
+            $isObjectRooted = \is_string($rootType) && 'object' === $rootType
+                || \is_array($rootType) && \in_array('object', $rootType, true);
+
+            if (!$isObjectRooted) {
+                throw InvalidInputItemException::forUnsupportedSchemaRoot($rootType);
+            }
+
+            if (true === ($body['stream'] ?? false)) {
+                throw InvalidInputItemException::forStreamingWithStructuredOutput();
+            }
+
             return new ResponseFormatConfig(
                 type: ResponseFormatType::JSON_SCHEMA,
-                jsonSchema: \is_array($schema['schema'] ?? null) ? $schema['schema'] : null,
+                jsonSchema: $jsonSchema,
                 name: isset($schema['name']) ? (string) $schema['name'] : null,
                 strict: isset($schema['strict']) ? (bool) $schema['strict'] : null,
             );
@@ -612,6 +626,16 @@ readonly class OpenAiChatCompletionsFormatter implements FormatterInterface
         foreach ($message->parts as $part) {
             if ($part instanceof ReasoningPart && null !== $part->reasoning) {
                 $reasoning .= $part->reasoning;
+            }
+        }
+
+        // Non-streaming responses carry replayable reasoning state on the tool calls
+        // (provider metadata) rather than as a dedicated part.
+        foreach ($message->toolCalls() as $part) {
+            $summary = $part->providerMetadata['reasoning_summary'] ?? null;
+
+            if (\is_string($summary) && '' !== $summary) {
+                $reasoning .= $summary;
             }
         }
 

@@ -35,9 +35,10 @@ jobs:
 
       # Both suites self-skip (green) when OPENRESPONSES_COMPLIANCE_TOKEN is empty;
       # with a populated repository secret they verify the proxy against the real
-      # provider (gpt-4.1-nano): the Open Responses acceptance tests and the Chat
-      # Completions live verification (chunk grammar, client-tool loop, params).
+      # provider (gpt-4.1-nano / o4-mini): the Open Responses acceptance tests, the
+      # Chat Completions live verification (chunk grammar, client-tool loop, params),
+      # and the structured-output/reasoning-replay verification (N6).
       - name: Run live suites
         env:
           OPENRESPONSES_COMPLIANCE_TOKEN: ${{ secrets.OPENRESPONSES_COMPLIANCE_TOKEN }}
-        run: php vendor/bin/phpunit --testsuite feature --no-coverage --testdox --filter 'OpenResponsesComplianceTest|ChatCompletionsLiveTest'
+        run: php vendor/bin/phpunit --testsuite feature --no-coverage --testdox --filter 'OpenResponsesComplianceTest|ChatCompletionsLiveTest|StructuredOutputAndReasoningLiveTest'

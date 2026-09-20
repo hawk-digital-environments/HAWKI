@@ -382,6 +382,70 @@ class OpenResponsesFormatterTest extends TestCase
         self::assertSame('max_output_tokens', $data['incomplete_details']['reason']);
     }
 
+    public function testItCapturesReasoningItemIdsForReplay(): void
+    {
+        $result = $this->sut->parseRequest($this->request([
+            'input' => [
+                ['type' => 'message', 'role' => 'user', 'content' => 'Hi'],
+                ['type' => 'reasoning', 'id' => 'rs_keep', 'encrypted_content' => 'enc', 'summary' => [['type' => 'summary_text', 'text' => 'thought']]],
+                ['type' => 'function_call', 'call_id' => 'c1', 'name' => 'f', 'arguments' => '{}'],
+                ['type' => 'function_call_output', 'call_id' => 'c1', 'output' => 'ok'],
+            ],
+        ]));
+
+        $reasoning = $result->messages[1];
+        self::assertInstanceOf(\App\Services\Ai\Chat\Values\Messages\AssistantMessage::class, $reasoning);
+        $part = $reasoning->parts[0];
+        self::assertInstanceOf(\App\Services\Ai\Chat\Values\Parts\ReasoningPart::class, $part);
+        self::assertSame('rs_keep', $part->providerMetadata['item_id'] ?? null);
+        self::assertSame('enc', $part->encryptedContent);
+    }
+
+    public function testItRejectsNonObjectRootedJsonSchemas(): void
+    {
+        try {
+            $this->sut->parseRequest($this->request([
+                'input' => 'Hi',
+                'text' => ['format' => ['type' => 'json_schema', 'name' => 'out', 'schema' => ['type' => 'array', 'items' => ['type' => 'string']]]],
+            ]));
+            self::fail('Expected InvalidInputItemException.');
+        } catch (InvalidInputItemException $exception) {
+            self::assertSame('unsupported_response_format', $exception->errorCode());
+            self::assertSame('text.format', $exception->param());
+        }
+    }
+
+    public function testItEmitsReplayableReasoningItemsBeforeFunctionCalls(): void
+    {
+        $response = new \App\Services\Ai\Chat\Values\AiResponse(
+            id: 'inv_9',
+            model: 'm',
+            created: 1,
+            message: new \App\Services\Ai\Chat\Values\Messages\AssistantMessage(parts: [
+                new \App\Services\Ai\Chat\Values\Parts\ToolCallPart(
+                    toolCallId: 'call_1',
+                    toolName: 'read_file',
+                    toolInput: [],
+                    providerMetadata: [
+                        'reasoning_id' => 'rs_1',
+                        'reasoning_summary' => 'I will read it.',
+                        'reasoning_encrypted_content' => 'enc-1',
+                    ],
+                ),
+            ]),
+            finishReason: \App\Services\Ai\Chat\Values\FinishReason::stop(),
+        );
+
+        $data = $this->sut->formatResponse($response)->getData(true);
+        $output = $data['output'];
+
+        self::assertSame('reasoning', $output[0]['type']);
+        self::assertSame('rs_1', $output[0]['id']);
+        self::assertSame('enc-1', $output[0]['encrypted_content']);
+        self::assertSame([['type' => 'summary_text', 'text' => 'I will read it.']], $output[0]['summary']);
+        self::assertSame('function_call', $output[1]['type']);
+    }
+
     public function testItFormatsErrorsInTheOpenResponsesErrorShape(): void
     {
         $exception = UnsupportedStatefulParameterException::forStore();

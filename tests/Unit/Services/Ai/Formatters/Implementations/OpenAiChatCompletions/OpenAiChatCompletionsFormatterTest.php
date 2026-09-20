@@ -410,6 +410,47 @@ class OpenAiChatCompletionsFormatterTest extends TestCase
         }
     }
 
+    public function testItRejectsNonObjectRootedJsonSchemas(): void
+    {
+        try {
+            $this->sut->parseRequest($this->request([
+                'model' => 'm',
+                'messages' => [['role' => 'user', 'content' => 'Hi']],
+                'response_format' => ['type' => 'json_schema', 'json_schema' => ['name' => 'x', 'schema' => ['type' => 'string']]],
+            ]));
+            self::fail('Expected InvalidInputItemException.');
+        } catch (InvalidInputItemException $exception) {
+            self::assertSame('unsupported_response_format', $exception->errorCode());
+            self::assertSame('text.format', $exception->param());
+        }
+    }
+
+    public function testItDerivesReasoningContentFromToolCallReplayState(): void
+    {
+        $response = new \App\Services\Ai\Chat\Values\AiResponse(
+            id: 'inv_4',
+            model: 'm',
+            created: 1,
+            message: new \App\Services\Ai\Chat\Values\Messages\AssistantMessage(parts: [
+                new \App\Services\Ai\Chat\Values\Parts\ToolCallPart(
+                    toolCallId: 'call_1',
+                    toolName: 'read_file',
+                    toolInput: [],
+                    providerMetadata: [
+                        'reasoning_id' => 'rs_1',
+                        'reasoning_summary' => 'pondering the file',
+                        'reasoning_encrypted_content' => 'enc',
+                    ],
+                ),
+            ]),
+            finishReason: new \App\Services\Ai\Chat\Values\FinishReason(\App\Services\Ai\Chat\Values\FinishReasonType::TOOL_CALLS),
+        );
+
+        $message = $this->sut->formatResponse($response)->getData(true)['choices'][0]['message'];
+
+        self::assertSame('pondering the file', $message['reasoning_content']);
+    }
+
     /**
      * @param array<string, mixed> $body
      */

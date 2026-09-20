@@ -284,6 +284,9 @@ readonly class OpenResponsesFormatter implements FormatterInterface
                 $messages[] = new AssistantMessage(parts: [new ReasoningPart(
                     reasoning: '' !== $summaryText ? $summaryText : null,
                     encryptedContent: isset($item['encrypted_content']) ? (string) $item['encrypted_content'] : null,
+                    // The item id is required for faithful replay (the provider links
+                    // reasoning state to function calls by it).
+                    providerMetadata: \is_string($item['id'] ?? null) ? ['item_id' => $item['id']] : null,
                 )]);
 
                 return;
@@ -539,12 +542,43 @@ readonly class OpenResponsesFormatter implements FormatterInterface
         $format = $text['format'];
         $type = (string) ($format['type'] ?? 'text');
 
+        $jsonSchema = \is_array($format['schema'] ?? null) ? $format['schema'] : null;
+
+        if ('json_schema' === $type) {
+            self::assertObjectRootedSchema($jsonSchema);
+
+            if (true === ($body['stream'] ?? false)) {
+                throw InvalidInputItemException::forStreamingWithStructuredOutput();
+            }
+        }
+
         return new ResponseFormatConfig(
             type: ResponseFormatType::tryFrom($type) ?? ResponseFormatType::TEXT,
-            jsonSchema: \is_array($format['schema'] ?? null) ? $format['schema'] : null,
+            jsonSchema: $jsonSchema,
             name: isset($format['name']) ? (string) $format['name'] : null,
             strict: isset($format['strict']) ? (bool) $format['strict'] : null,
         );
+    }
+
+    /**
+     * The structured-output channel forwards the root object's property map, so only
+     * object-rooted schemas can be honoured — anything else fails fast at parse time.
+     *
+     * @param array<string, mixed>|null $jsonSchema
+     */
+    private static function assertObjectRootedSchema(?array $jsonSchema): void
+    {
+        $rootType = $jsonSchema['type'] ?? null;
+
+        if (\is_string($rootType) && 'object' === $rootType) {
+            return;
+        }
+
+        if (\is_array($rootType) && \in_array('object', $rootType, true)) {
+            return;
+        }
+
+        throw InvalidInputItemException::forUnsupportedSchemaRoot($rootType);
     }
 
     /**
@@ -620,6 +654,19 @@ readonly class OpenResponsesFormatter implements FormatterInterface
         return '';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildReasoningItem(?string $summary, ?string $encryptedContent, ?string $itemId = null): array
+    {
+        return array_filter([
+            'id' => $itemId ?? 'rs_' . Str::uuid()->toString(),
+            'type' => 'reasoning',
+            'summary' => null !== $summary && '' !== $summary ? [['type' => 'summary_text', 'text' => $summary]] : [],
+            'encrypted_content' => $encryptedContent,
+        ], static fn (mixed $value): bool => null !== $value);
+    }
+
     private function refusalText(AiResponse $response): ?string
     {
         $refusal = '';
@@ -644,21 +691,28 @@ readonly class OpenResponsesFormatter implements FormatterInterface
 
         foreach ($response->message->parts as $part) {
             if ($part instanceof ReasoningPart) {
-                $summary = null !== $part->reasoning && '' !== $part->reasoning
-                    ? [['type' => 'summary_text', 'text' => $part->reasoning]]
-                    : [];
-
-                $items[] = array_filter([
-                    'id' => 'rs_' . Str::uuid()->toString(),
-                    'type' => 'reasoning',
-                    'summary' => $summary,
-                    'encrypted_content' => $part->encryptedContent,
-                ], static fn (mixed $value): bool => null !== $value);
+                $items[] = $this->buildReasoningItem($part->reasoning, $part->encryptedContent);
 
                 continue;
             }
 
             if ($part instanceof ToolCallPart) {
+                // Replayable reasoning state the provider attached to this call rides
+                // ahead of it as a reasoning item, mirroring the input layout clients
+                // resend (reasoning item + function_call item).
+                $metadata = $part->providerMetadata ?? [];
+                $reasoningId = $metadata['reasoning_id'] ?? null;
+                $reasoningSummary = $metadata['reasoning_summary'] ?? null;
+                $reasoningEncrypted = $metadata['reasoning_encrypted_content'] ?? null;
+
+                if (\is_string($reasoningId) || \is_string($reasoningSummary) || \is_string($reasoningEncrypted)) {
+                    $items[] = $this->buildReasoningItem(
+                        \is_string($reasoningSummary) ? $reasoningSummary : null,
+                        \is_string($reasoningEncrypted) ? $reasoningEncrypted : null,
+                        \is_string($reasoningId) ? $reasoningId : null,
+                    );
+                }
+
                 $items[] = [
                     'id' => 'fc_' . Str::uuid()->toString(),
                     'type' => 'function_call',

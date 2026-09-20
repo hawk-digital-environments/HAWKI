@@ -7,6 +7,7 @@ namespace App\Services\Ai\Chat\Factories\Implementations;
 use App\Models\Ai\AiModel;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgent;
+use App\Services\Ai\Agents\Implementations\Chat\StructuredChatAgent;
 use App\Services\Ai\Agents\Implementations\Chat\ChatToolResolver;
 use App\Services\Ai\Agents\Utils\AlternatingMessageHistory;
 use App\Services\Ai\Agents\Utils\MessageMetaBlocks;
@@ -17,6 +18,7 @@ use App\Services\Ai\Chat\Factories\AbstractChatAgentFactory;
 use App\Services\Ai\Chat\Tools\ClientTool;
 use App\Services\Ai\Chat\Values\AiRequest;
 use App\Services\Ai\Chat\Values\Configs\ReasoningMode;
+use App\Services\Ai\Chat\Values\Configs\ResponseFormatType;
 use App\Services\Ai\Chat\Values\Messages\AssistantMessage;
 use App\Services\Ai\Chat\Values\Messages\Message;
 use App\Services\Ai\Chat\Values\Messages\SystemMessage;
@@ -24,6 +26,7 @@ use App\Services\Ai\Chat\Values\Messages\ToolMessage;
 use App\Services\Ai\Chat\Values\Messages\UserMessage;
 use App\Services\Ai\Chat\Values\Parts\FilePart;
 use App\Services\Ai\Chat\Values\Parts\ImagePart;
+use App\Services\Ai\Chat\Values\Parts\ReasoningPart;
 use App\Services\Ai\Chat\Values\Tools\ToolChoiceMode;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
@@ -32,6 +35,7 @@ use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Support\Str;
 use Laravel\Ai\Files\Document;
 use Laravel\Ai\Files\File;
 use Laravel\Ai\Files\Image;
@@ -82,13 +86,22 @@ class ChatAgentFactory extends AbstractChatAgentFactory
 
         $messages = $this->buildMessages($request, $context);
 
-        return new ChatAgent(
-            context: $context,
-            instructions: $this->buildInstructions($request),
-            messages: $messages,
-            tools: $this->buildTools($request, $context),
-            promptString: $this->continuationPromptString($request),
-        );
+        $arguments = [
+            'context' => $context,
+            'instructions' => $this->buildInstructions($request),
+            'messages' => $messages,
+            'tools' => $this->buildTools($request, $context),
+            'promptString' => $this->continuationPromptString($request),
+        ];
+
+        // json_schema requests carry the schema through the structured agent; the SDK
+        // rejects streaming for HasStructuredOutput agents, which the formatters
+        // pre-empt with a 400 on stream + json_schema.
+        if (null !== $request->responseFormat && ResponseFormatType::JSON_SCHEMA === $request->responseFormat->type) {
+            return new StructuredChatAgent(...$arguments, responseFormat: $request->responseFormat);
+        }
+
+        return new ChatAgent(...$arguments);
     }
 
     /**
@@ -216,6 +229,13 @@ class ChatAgentFactory extends AbstractChatAgentFactory
             }
         }
 
+        // json_object emulation (Chat Completions dialect only — the Open Responses
+        // wire format has no such format type): the SDK's schema channel always wraps
+        // an object schema, so the soft format rides the instructions instead.
+        if (null !== $request->responseFormat && ResponseFormatType::JSON_OBJECT === $request->responseFormat->type) {
+            $instructions[] = 'Respond with a single JSON object and no other text.';
+        }
+
         return implode("\n\n", $instructions);
     }
 
@@ -237,10 +257,14 @@ class ChatAgentFactory extends AbstractChatAgentFactory
         /** @var array<string, string> $toolNameByCallId */
         $toolNameByCallId = [];
 
+        /** @var array{itemId: string, summary: ?string, encryptedContent: ?string}|null $pendingReasoning */
+        $pendingReasoning = null;
+
         foreach ($messages as $key => $message) {
             $isLast = $key === $lastKey;
 
             if ($message instanceof UserMessage) {
+                $pendingReasoning = null;
                 $history->registerUserMessage(
                     $message->text() !== '' ? $message->text() : '&nbsp;',
                     $this->buildAttachments($message, $isLast, $context, $request, $storageCategory),
@@ -250,6 +274,7 @@ class ChatAgentFactory extends AbstractChatAgentFactory
             }
 
             if ($message instanceof AssistantMessage) {
+                $ownReasoning = $this->reasoningStateOf($message);
                 $toolCalls = [];
 
                 foreach ($message->toolCalls() as $part) {
@@ -263,11 +288,31 @@ class ChatAgentFactory extends AbstractChatAgentFactory
                 }
 
                 if ([] !== $toolCalls) {
+                    // Replay state attaches to the tool calls: same-message reasoning
+                    // (Chat Completions layout) or the reasoning-only message directly
+                    // preceding this turn (Open Responses layout).
+                    $reasoning = $ownReasoning ?? $pendingReasoning;
+                    $pendingReasoning = null;
+
+                    if (null !== $reasoning) {
+                        $toolCalls = $this->attachReasoningState($toolCalls, $reasoning);
+                    }
+
                     $history->registerAiToolCallMessage($message->text(), $toolCalls);
 
                     continue;
                 }
 
+                if (null !== $ownReasoning) {
+                    // Reasoning-only assistant turn: hold for the following tool-call
+                    // turn; dropped entirely when none follows (providers only require
+                    // replay around tool calls).
+                    $pendingReasoning = $ownReasoning;
+
+                    continue;
+                }
+
+                $pendingReasoning = null;
                 $history->registerAiMessage($message->text() !== '' ? $message->text() : '&nbsp;');
 
                 continue;
@@ -293,6 +338,59 @@ class ChatAgentFactory extends AbstractChatAgentFactory
         }
 
         return [...$history->build()];
+    }
+
+    /**
+     * @return array{itemId: string, summary: ?string, encryptedContent: ?string}|null the
+     *         replayable reasoning state of the message, or null when it carries none
+     */
+    private function reasoningStateOf(AssistantMessage $message): ?array
+    {
+        foreach ($message->parts as $part) {
+            if (!$part instanceof ReasoningPart) {
+                continue;
+            }
+
+            $itemId = $part->providerMetadata['item_id'] ?? null;
+
+            if (null === $part->encryptedContent && !\is_string($itemId) && (null === $part->reasoning || '' === $part->reasoning)) {
+                continue;
+            }
+
+            return [
+                'itemId' => \is_string($itemId) && '' !== $itemId ? $itemId : 'rs_' . Str::uuid()->toString(),
+                'summary' => null !== $part->reasoning && '' !== $part->reasoning ? $part->reasoning : null,
+                'encryptedContent' => $part->encryptedContent,
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<int, ToolCall>                                            $toolCalls
+     * @param array{itemId: string, summary: ?string, encryptedContent: ?string} $reasoning
+     *
+     * @return array<int, ToolCall>
+     */
+    private function attachReasoningState(array $toolCalls, array $reasoning): array
+    {
+        $summary = null !== $reasoning['summary']
+            ? [['type' => 'summary_text', 'text' => $reasoning['summary']]]
+            : null;
+
+        return array_map(
+            static fn (ToolCall $toolCall): ToolCall => new ToolCall(
+                id: $toolCall->id,
+                name: $toolCall->name,
+                arguments: $toolCall->arguments,
+                resultId: $toolCall->resultId,
+                reasoningId: $reasoning['itemId'],
+                reasoningSummary: $summary,
+                reasoningEncryptedContent: $reasoning['encryptedContent'],
+            ),
+            $toolCalls,
+        );
     }
 
     private function buildAttachments(

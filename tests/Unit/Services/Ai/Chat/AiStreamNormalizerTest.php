@@ -215,6 +215,34 @@ class AiStreamNormalizerTest extends TestCase
         self::assertSame('Hello', $result->message->text());
     }
 
+    public function testItSurfacesToolCallReasoningStateAsProviderMetadata(): void
+    {
+        $response = new AgentResponse(
+            invocationId: 'inv_2',
+            text: '',
+            usage: new Usage(),
+            meta: new Meta(provider: 'openai', model: 'o4-mini'),
+        );
+        $response->toolCalls = collect([
+            new VendorToolCall(
+                id: 'fc_1',
+                name: 'read_file',
+                arguments: [],
+                resultId: 'call_1',
+                reasoningId: 'rs_1',
+                reasoningSummary: [['type' => 'summary_text', 'text' => 'pondering']],
+                reasoningEncryptedContent: 'enc-1',
+            ),
+        ]);
+
+        $result = $this->sut->normalizeResponse($response);
+
+        $metadata = $result->message->toolCalls()[0]->providerMetadata;
+        self::assertSame('rs_1', $metadata['reasoning_id'] ?? null);
+        self::assertSame('pondering', $metadata['reasoning_summary'] ?? null);
+        self::assertSame('enc-1', $metadata['reasoning_encrypted_content'] ?? null);
+    }
+
     /**
      * @param array<int, object> $events
      *
