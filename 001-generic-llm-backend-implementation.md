@@ -67,8 +67,9 @@ LLM-Rosetta; full report in the session that produced it)
 
 ### Recommended next steps (ordered)
 
-1. **N5 — round-trip corpus** (closes D4, unblocks D9): fixture → parse → format → parse
-   structural equality, per formatter.
+1. **N5 — round-trip corpus** (closes D4, unblocks D9): four-track fixture corpus per
+   chat formatter — specification ready in
+   [`N5-Handoff.md`](./N5-Handoff.md) (pick-up-and-go for any agent/session).
 2. **N2 — `/models/{format?}`** (trivial, pure transform).
 3. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
    budget Phase-2 design time for route forwarding).
@@ -427,6 +428,13 @@ A reflective harness: fixture → `parseRequest` → assert IR → `formatRespon
 `parseRequest` again → structural equality. Start from the payloads already inline in
 the formatter tests; grow per formatter. `MessageMetadata` (D9) becomes worth populating
 once equality checks need stable ids.
+
+> **Handoff ready:** [`N5-Handoff.md`](./N5-Handoff.md) specifies the implementable
+> interpretation of proposal §9.1 (which, as written, assumes a `formatRequest` that
+> deliberately does not exist): parse-fidelity and response-fidelity snapshot tracks,
+> the emit-replay cycle (formatted output re-parsed as input — the client-loop
+> guarantee), and cross-format IR equivalence — JSON fixtures under
+> `tests/Unit/Services/Ai/Formatters/CorpusFixtures/`.
 
 ### N6 — ~~reasoning replay + structured output~~ *(DONE — D6/D7/D8 closed)*
 
