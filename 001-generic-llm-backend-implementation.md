@@ -261,7 +261,7 @@ wire-format clients receive spec-shaped errors. Streaming failures degrade to SS
 | Phase 5 — `StreamController` refactor + `/ui-chat` endpoint | Not started; D1 and D11 resolve here |
 | Phase 6 — `/models/{format?}` endpoint | Not started; smallest of all endpoints (no agent, pure transform) |
 | Phase 7 — remove `StreamController` | Frontend private-chat half of the gate already met (A4); group chat still requires Phase 5 |
-| Phase 8 — `/embeddings/{format?}` | Not started; pattern fully specified in proposal §6.4 |
+| Phase 8 — `/embeddings/{format?}` | ✅ done — [`EMBEDDING-API-IMPLEMENTATION-HANDOFF.md`](./EMBEDDING-API-IMPLEMENTATION-HANDOFF.md) executed: `EmbeddingService` + vectorizer registry, `openai` formatter, `POST /api/hawki/v1/embeddings/{format?}`; usage recorded from day one (`UsageRecordedEvent` reused with `channel: 'embeddings'`, not relocated); unknown explicit `{format}` → 400 from the start (D10 lesson); live-verified against OpenAI (`text-embedding-3-small`, input-ordered vectors, dimensions passthrough, usage row) |
 | Phase 9 / 10 — images, audio, transcription | Not started |
 
 ---

@@ -12,6 +12,10 @@ interface WellKnownModelTypes
      */
     public const string CHAT = 'chat';
     /**
+     * The model type for embedding models. This is the model type when you want to convert text into vector representations.
+     */
+    public const string EMBEDDING = 'embedding';
+    /**
      * The model type for generating images. This is the model type when you want to generate images from text prompts.
      */
     public const string IMAGE_GENERATION = 'image_generation';

@@ -20,7 +20,13 @@ use App\Services\Ai\ConfigFileSync\Syncers\ModelAndProviderSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemPromptSyncer;
 use App\Services\Ai\Exceptions\InvalidProviderAdapterException;
+use App\Services\Ai\Embeddings\Factories\Contracts\VectorizerFactoryInterface;
+use App\Services\Ai\Embeddings\Factories\Implementations\DefaultVectorizerFactory;
+use App\Services\Ai\Embeddings\Factories\VectorizerRegistry;
 use App\Services\Ai\Formatters\Contracts\FormatterInterface;
+use App\Services\Ai\Formatters\Embeddings\Contracts\EmbeddingFormatterInterface;
+use App\Services\Ai\Formatters\Embeddings\EmbeddingFormatterRegistry;
+use App\Services\Ai\Formatters\Embeddings\Implementations\OpenAi\OpenAiEmbeddingsFormatter;
 use App\Services\Ai\Formatters\FormatterRegistry;
 use App\Services\Ai\Formatters\Implementations\OpenResponses\OpenResponsesFormatter;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
@@ -75,6 +81,8 @@ class AiServiceProvider extends ServiceProvider
     public const string AGENT_FACTORY_LIST = 'ai.agentFactory.list';
     public const string CHAT_AGENT_FACTORY_LIST = 'ai.chatAgentFactory.list';
     public const string FORMATTER_LIST = 'ai.formatter.list';
+    public const string EMBEDDING_VECTORIZER_FACTORY_LIST = 'ai.embeddingVectorizerFactory.list';
+    public const string EMBEDDING_FORMATTER_LIST = 'ai.embeddingFormatter.list';
 
     public function register(): void
     {
@@ -249,6 +257,18 @@ class AiServiceProvider extends ServiceProvider
                 ->declare(OpenResponsesFormatter::KEY, OpenResponsesFormatter::class),
         );
 
+        $this->app->extend(
+            VectorizerRegistry::class,
+            static fn (VectorizerRegistry $registry) => $registry
+                ->declare(DefaultVectorizerFactory::class),
+        );
+
+        $this->app->extend(
+            EmbeddingFormatterRegistry::class,
+            static fn (EmbeddingFormatterRegistry $registry) => $registry
+                ->declare(OpenAiEmbeddingsFormatter::KEY, OpenAiEmbeddingsFormatter::class),
+        );
+
         $this->app->singleton(
             self::PROVIDER_ADAPTER_LIST,
             /**
@@ -313,6 +333,28 @@ class AiServiceProvider extends ServiceProvider
              */
             fn () => new LazySingletonList(
                 static fn (string $formatterClassName) => 'formatter_' . md5($formatterClassName),
+                fn (string $formatterClassName) => $this->app->get($formatterClassName),
+            ),
+        );
+
+        $this->app->singleton(
+            self::EMBEDDING_VECTORIZER_FACTORY_LIST,
+            /**
+             * @return LazySingletonList<class-string<VectorizerFactoryInterface>, VectorizerFactoryInterface>
+             */
+            fn () => new LazySingletonList(
+                static fn (string $factoryClassName) => 'embedding_vectorizer_factory_' . md5($factoryClassName),
+                fn (string $factoryClassName) => $this->app->get($factoryClassName),
+            ),
+        );
+
+        $this->app->singleton(
+            self::EMBEDDING_FORMATTER_LIST,
+            /**
+             * @return LazySingletonList<class-string<EmbeddingFormatterInterface>, EmbeddingFormatterInterface>
+             */
+            fn () => new LazySingletonList(
+                static fn (string $formatterClassName) => 'embedding_formatter_' . md5($formatterClassName),
                 fn (string $formatterClassName) => $this->app->get($formatterClassName),
             ),
         );

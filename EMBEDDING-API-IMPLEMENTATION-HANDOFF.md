@@ -1,5 +1,10 @@
 # Embeddings API — Implementation Handoff
 
+> **Status: IMPLEMENTED** (see Phase 8 in
+> [`001-generic-llm-backend-implementation.md` §5](./001-generic-llm-backend-implementation.md#5-deferred-phases--status)).
+> The handoff below is kept as the original specification record; deviations from it
+> during implementation are noted in the implementation record.
+>
 > Purpose: pick-up-and-go specification for `POST /api/hawki/v1/embeddings/{format?}`
 > (next step **N7** in
 > [`001-generic-llm-backend-implementation.md` §6](./001-generic-llm-backend-implementation.md#6-recommended-next-steps)).
