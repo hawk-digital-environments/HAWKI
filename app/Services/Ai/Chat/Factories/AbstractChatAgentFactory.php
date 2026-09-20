@@ -16,7 +16,7 @@ use App\Services\System\UsageTypes\UsageContext;
 /**
  * Shared base for all chat agent factories working on the {@see \App\Services\Ai\Chat\Values\AiRequest} IR.
  *
- * Mirrors {@see \App\Services\Ai\Agents\Implementations\AbstractAgentFactory}: the three
+ * Mirrors the former legacy agent factory base: the three
  * cross-cutting services (tool resolution, provider-proxy resolution, usage-type
  * determination) are injected via public setters by the container's `afterResolving`
  * callback registered in {@see \App\Providers\AiServiceProvider}, with an `app()` fallback

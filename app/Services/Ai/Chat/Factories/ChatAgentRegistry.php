@@ -16,7 +16,7 @@ use Illuminate\Container\Attributes\Singleton;
 
 /**
  * Central registry that maps an {@see AiRequest} to the {@see AgentInterface} capable of
- * handling it — the AiRequest-typed successor of {@see \App\Services\Ai\Agents\AgentRegistry}.
+ * handling it — the AiRequest-typed agent resolver of the chat domain.
  *
  * Factories are registered via {@see declare()} and iterated in topological order —
  * earlier factories take precedence. The first factory that returns a non-null agent

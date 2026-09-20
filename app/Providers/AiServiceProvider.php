@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\Ai\McpServer;
-use App\Services\Ai\Agents\AgentRegistry;
-use App\Services\Ai\Agents\Contracts\AgentFactoryInterface;
-use App\Services\Ai\Agents\Implementations\AbstractAgentFactory;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
 use App\Services\Ai\Chat\Factories\AbstractChatAgentFactory;
 use App\Services\Ai\Chat\Factories\ChatAgentRegistry;
@@ -84,7 +81,6 @@ class AiServiceProvider extends ServiceProvider
 {
     public const string PROVIDER_ADAPTER_LIST = 'ai.providerAdapter.list';
     public const string MCP_CLIENT_LIST = 'ai.mcpClient.list';
-    public const string AGENT_FACTORY_LIST = 'ai.agentFactory.list';
     public const string CHAT_AGENT_FACTORY_LIST = 'ai.chatAgentFactory.list';
     public const string FORMATTER_LIST = 'ai.formatter.list';
     public const string EMBEDDING_VECTORIZER_FACTORY_LIST = 'ai.embeddingVectorizerFactory.list';
@@ -247,12 +243,6 @@ class AiServiceProvider extends ServiceProvider
         );
 
         $this->app->extend(
-            AgentRegistry::class,
-            static fn (AgentRegistry $registry) => $registry
-                ->declare(ChatAgentFromLegacyRequestFactory::class),
-        );
-
-        $this->app->extend(
             ChatAgentRegistry::class,
             static fn (ChatAgentRegistry $registry) => $registry
                 ->declare(ChatAgentFactory::class),
@@ -321,17 +311,6 @@ class AiServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
-            self::AGENT_FACTORY_LIST,
-            /**
-             * @return LazySingletonList<class-string<AgentFactoryInterface>, AgentFactoryInterface>
-             */
-            fn () => new LazySingletonList(
-                static fn (string $factoryClassName) => 'agent_factory_' . md5($factoryClassName),
-                fn (string $factoryClassName) => $this->app->get($factoryClassName),
-            ),
-        );
-
-        $this->app->singleton(
             self::CHAT_AGENT_FACTORY_LIST,
             /**
              * @return LazySingletonList<class-string<ChatAgentFactoryInterface>, ChatAgentFactoryInterface>
@@ -390,15 +369,6 @@ class AiServiceProvider extends ServiceProvider
             AbstractTool::class,
             function (AbstractTool $tool): void {
                 $tool->setServiceLocator($this->app->make(ServiceLocator::class));
-            },
-        );
-
-        $this->app->afterResolving(
-            AbstractAgentFactory::class,
-            function (AbstractAgentFactory $factory): void {
-                $factory->setToolResolver($this->app->make(LaravelToolResolver::class));
-                $factory->setProviderProxyResolver($this->app->make(AiProviderProxyResolver::class));
-                $factory->setUsageContext($this->app->make(UsageContext::class));
             },
         );
 

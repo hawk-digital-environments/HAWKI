@@ -57,6 +57,20 @@ readonly class LegacyFormatter implements FormatterInterface
             throw InvalidRequestBodyException::forUnparseableBody();
         }
 
+        return $this->parsePayload($body);
+    }
+
+    /**
+     * Parses an already-decoded legacy wire body (the full request array, including the
+     * top-level `broadcast`/`slug` fields). Used by the group-chat orchestration, which
+     * receives the payload as a validated array rather than an HTTP request.
+     */
+    public function parsePayload(array $body): AiRequest
+    {
+        if ([] === $body || !\is_array($body['payload'] ?? null)) {
+            throw InvalidRequestBodyException::forUnparseableBody();
+        }
+
         $payload = $body['payload'];
         $messagesInput = $payload['messages'] ?? null;
 

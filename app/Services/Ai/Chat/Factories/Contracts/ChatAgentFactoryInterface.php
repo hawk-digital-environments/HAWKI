@@ -10,7 +10,7 @@ use App\Services\Ai\Chat\Values\AiRequest;
 /**
  * Creates an {@see AgentInterface} for an {@see AiRequest}.
  *
- * Unlike the legacy {@see \App\Services\Ai\Agents\Contracts\AgentFactoryInterface}, the
+ * Unlike a generic mixed-request factory, the
  * request is already the typed IR — factories inspect it (including its hawki
  * extensions) to accept or decline.
  */

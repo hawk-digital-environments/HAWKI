@@ -25,12 +25,14 @@ readonly class UsageRecordedEvent
          */
         public string $usageType,
         /**
-         * Entry point channel ('chat').
+         * Entry point channel ('chat', 'ui-chat', 'embeddings', …).
          */
         public string $channel,
         public string $modelId,
         public ?string $formatKey = null,
         public ?string $userAgent = null,
+        public ?int $roomId = null,
+        public ?string $assistantHandle = null,
     ) {
     }
 }

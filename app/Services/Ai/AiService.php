@@ -7,8 +7,6 @@ namespace App\Services\Ai;
 
 use App\Models\Ai\McpServer;
 use App\Providers\AiServiceProvider;
-use App\Services\Ai\Agents\AgentRegistry;
-use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\SystemModels\SystemModelRepository;
 use App\Services\Ai\SystemPrompts\SystemPromptRepository;
@@ -30,10 +28,6 @@ use Illuminate\Container\Attributes\Singleton;
  *
  * Example:
  * ```php
- * // Resolve an agent for the current HTTP request and stream its response
- * $agent  = $this->aiService->getAgent($request->validated());
- * $stream = $agent->sendStreaming();
- *
  * // Look up a model by its string identifier
  * $model = $this->aiService->getModels()->findOneOrFail('gpt-4o');
  *
@@ -52,7 +46,6 @@ readonly class AiService
          */
         #[Give(AiServiceProvider::MCP_CLIENT_LIST)]
         private LazySingletonList      $mcpClientList,
-        private AgentRegistry          $agentRegistry,
         private AiModelRepository      $aiModelRepository,
         private SystemModelRepository  $systemModelRepository,
         private SystemPromptRepository $systemPromptRepository,
@@ -96,24 +89,4 @@ readonly class AiService
         return $this->mcpClientList->get($server);
     }
 
-    /**
-     * Resolves and returns an agent capable of handling the given request.
-     *
-     * Iterates the registered {@see AgentRegistry} factories in priority order and
-     * returns the first agent that accepts the request.
-     *
-     * @throws \App\Services\Ai\Agents\Exceptions\AgentNotResolvedException when no factory produces an agent.
-     */
-    public function getAgent(mixed $request): AgentInterface
-    {
-        return $this->agentRegistry->getAgent($request);
-    }
-
-    /**
-     * Like {@see getAgent()}, but returns null instead of throwing when no agent matches.
-     */
-    public function tryToGetAgent(mixed $request): AgentInterface|null
-    {
-        return $this->agentRegistry->tryToGetAgent($request);
-    }
 }
