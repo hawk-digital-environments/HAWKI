@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Events\RoomMessageEvent;
 use App\Jobs\GenerateRoomAiResponse;
 use App\Models\Room;
+use App\Services\Ai\Formatters\Exceptions\FormatterRequestException;
+use App\Services\Ai\Formatters\Implementations\Legacy\LegacyFormatter;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class StreamController extends Controller
 {
     public function __construct(
         private readonly AiModelRepository $modelRepository,
+        private readonly LegacyFormatter $legacyFormatter,
     )
     {
     }
@@ -77,6 +80,16 @@ class StreamController extends Controller
             return response()->json(['error' => 'The requested model is not available.'], 400);
         }
 
+        try {
+            $aiRequest = $this->legacyFormatter->parsePayload($validatedData);
+        } catch (FormatterRequestException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => ['payload' => [$e->getMessage()]],
+            ], 422);
+        }
+
         RoomAiWritingStartedEvent::dispatch($room, $model);
 
         // Broadcast initial generation status immediately
@@ -91,7 +104,12 @@ class StreamController extends Controller
 
         // The generation runs on the queue: the client already received its response,
         // the AI message is delivered to every room member through Reverb.
-        GenerateRoomAiResponse::dispatch($room->id, $model->id, $validatedData);
+        GenerateRoomAiResponse::dispatch($room->id, $model->id, $aiRequest, [
+            'threadIndex' => $validatedData['threadIndex'] ?? 0,
+            'messageId' => $validatedData['messageId'] ?? null,
+            'isUpdate' => (bool)($validatedData['isUpdate'] ?? false),
+            'key' => $validatedData['key'] ?? null,
+        ]);
 
         return response()->json(['success' => true]);
     }

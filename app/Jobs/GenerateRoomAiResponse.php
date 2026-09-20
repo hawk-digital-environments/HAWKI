@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Ai\AiModel;
 use App\Models\Room;
+use App\Services\Ai\Chat\Values\AiRequest;
 use App\Services\Chat\RoomAiResponseService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,7 +35,12 @@ class GenerateRoomAiResponse implements ShouldQueue
     public function __construct(
         public int $roomId,
         public int $modelId,
-        public array $validatedPayload,
+        public AiRequest $aiRequest,
+        /**
+         * Orchestration fields: threadIndex, messageId, isUpdate, key (base64 room
+         * encryption key). Scalars only — the payload stays queue-serializable.
+         */
+        public array $groupContext,
     ) {
     }
 
@@ -45,6 +51,6 @@ class GenerateRoomAiResponse implements ShouldQueue
         $room = Room::query()->withoutGlobalScopes()->findOrFail($this->roomId);
         $model = AiModel::query()->withoutGlobalScopes()->findOrFail($this->modelId);
 
-        $service->generate($room, $model, $this->validatedPayload);
+        $service->generate($room, $model, $this->aiRequest, $this->groupContext);
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AiConvController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AuthenticationController;
+use App\Http\Controllers\Api\V1\UiChatController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
@@ -118,6 +119,15 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
             // LINK PREVIEW
             Route::post('/api/link-preview', [LinkPreviewController::class, 'getPreview'])
                 ->middleware('deprecated:/api/hawki/v1/link-preview/metadata');
+
+            // HAWKI UI CHAT (session-authenticated; proposal Phase 5)
+            Route::post('/api/hawki/v1/ui-chat', [UiChatController::class, 'private'])
+                ->name('web.uiChat.private');
+
+            Route::middleware('roomEditor')->group(function () {
+                Route::post('/api/hawki/v1/ui-chat/{slug}', [UiChatController::class, 'group'])
+                    ->name('web.uiChat.group');
+            });
 
             // GROUPCHAT ROUTES
             Route::get('/groupchat/{slug?}', [HomeController::class, 'index']);

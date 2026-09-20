@@ -71,7 +71,8 @@ class LegacyRoomStreamEndpointTest extends TestCase
             GenerateRoomAiResponse::class,
             fn (GenerateRoomAiResponse $job): bool => $job->roomId === $this->room->id
                 && $job->modelId === $model->id
-                && 'gpt-4.1-nano' === $job->validatedPayload['payload']['model'],
+                && 'gpt-4.1-nano' === $job->aiRequest->model
+                && $job->aiRequest->hawkiExtension(\App\Services\Ai\Chat\Values\AiRequest::HAWKI_EXTENSION_BROADCAST) === true,
         );
 
         Event::assertDispatched(RoomAiWritingStartedEvent::class);

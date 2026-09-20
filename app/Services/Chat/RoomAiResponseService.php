@@ -12,7 +12,6 @@ use App\Models\Message;
 use App\Services\Ai\Chat\ChatService;
 use App\Services\Ai\Chat\Values\AiRequest;
 use App\Services\Ai\Chat\Values\Parts\CitationPart;
-use App\Services\Ai\Formatters\Implementations\Legacy\LegacyFormatter;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
 use App\Services\Users\Repositories\UserRepository;
@@ -36,7 +35,6 @@ readonly class RoomAiResponseService
 {
     public function __construct(
         private ChatService $chatService,
-        private LegacyFormatter $legacyFormatter,
         private GroupMessageHandler $groupMessageHandler,
         private UserRepository $userRepository,
         private LoggerInterface $logger,
@@ -44,20 +42,20 @@ readonly class RoomAiResponseService
     }
 
     /**
-     * @param array $validatedPayload the validated legacy wire payload (top-level
-     *                                `broadcast`/`threadIndex`/`messageId`/`isUpdate`/`key`
-     *                                fields plus the `payload` object)
+     * @param AiRequest $aiRequest      the parsed chat request (any wire format); room
+     *                                  and channel extensions are attached here
+     * @param array $groupContext      orchestration fields: threadIndex, messageId,
+     *                                 isUpdate, key (base64 room encryption key)
      */
-    public function generate(Room $room, AiModel $model, array $validatedPayload): void
+    public function generate(Room $room, AiModel $model, AiRequest $aiRequest, array $groupContext): void
     {
-        $this->broadcastGenerationStatus($room, $validatedPayload['payload']['model'], true);
+        $aiRequest = $aiRequest
+            ->withHawkiExtension(AiRequest::HAWKI_EXTENSION_CHANNEL, 'ui-chat')
+            ->withHawkiExtension(AiRequest::HAWKI_EXTENSION_ROOM_ID, $room->id);
+
+        $this->broadcastGenerationStatus($room, $model->model_id, true);
 
         try {
-            $aiRequest = $this->legacyFormatter
-                ->parsePayload($validatedPayload)
-                ->withHawkiExtension(AiRequest::HAWKI_EXTENSION_CHANNEL, 'ui-chat')
-                ->withHawkiExtension(AiRequest::HAWKI_EXTENSION_ROOM_ID, $room->id);
-
             $response = $this->chatService->send($aiRequest);
 
             $content = [
@@ -71,10 +69,10 @@ readonly class RoomAiResponseService
 
             $encrypted = (new SymmetricCrypto())->encrypt(
                 json_encode($content, JSON_THROW_ON_ERROR),
-                base64_decode((string)($validatedPayload['key'] ?? '')),
+                base64_decode((string)($groupContext['key'] ?? '')),
             );
 
-            $message = $this->persistAiMessage($room, $validatedPayload, $encrypted);
+            $message = $this->persistAiMessage($room, $aiRequest, $groupContext, $encrypted);
         } catch (\Throwable $e) {
             $this->logger->error('Error handling group chat request', [
                 'exception' => $e,
@@ -83,7 +81,7 @@ readonly class RoomAiResponseService
 
             $this->broadcastGenerationStatus(
                 $room,
-                $validatedPayload['payload']['model'],
+                $model->model_id,
                 false,
                 'Failed to generate response. Please try again later.',
             );
@@ -95,10 +93,10 @@ readonly class RoomAiResponseService
         SendMessage::dispatch([
             'slug' => $room->slug,
             'message_id' => $message->message_id,
-        ], (bool)($validatedPayload['isUpdate'] ?? false))->onQueue('message_broadcast');
+        ], (bool)($groupContext['isUpdate'] ?? false))->onQueue('message_broadcast');
 
         RoomAiWritingEndedEvent::dispatch($room, $model);
-        $this->broadcastGenerationStatus($room, $validatedPayload['payload']['model'], false);
+        $this->broadcastGenerationStatus($room, $model->model_id, false);
     }
 
     /**
@@ -131,7 +129,7 @@ readonly class RoomAiResponseService
      * Persists the encrypted AI response as a HAWKI-authored room message — either as a
      * new message or as an in-place update of the regenerated one.
      */
-    private function persistAiMessage(Room $room, array $validatedPayload, SymmetricCryptoValue $encrypted): Message
+    private function persistAiMessage(Room $room, AiRequest $aiRequest, array $groupContext, SymmetricCryptoValue $encrypted): Message
     {
         $hawki = $this->userRepository->findHawki();
         $content = [
@@ -142,14 +140,14 @@ readonly class RoomAiResponseService
             ],
         ];
         $metadata = [
-            'tools' => $validatedPayload['payload']['tools'] ?? null,
-            'params' => $validatedPayload['payload']['params'] ?? null,
+            'tools' => $aiRequest->hawkiExtension(AiRequest::HAWKI_EXTENSION_TOOLS),
+            'params' => $aiRequest->hawkiExtension(AiRequest::HAWKI_EXTENSION_PARAMS),
         ];
 
-        if ($validatedPayload['isUpdate'] ?? false) {
+        if ($groupContext['isUpdate'] ?? false) {
             return $this->groupMessageHandler->update($room, [
-                'message_id' => $validatedPayload['messageId'],
-                'model' => $validatedPayload['payload']['model'],
+                'message_id' => $groupContext['messageId'],
+                'model' => $aiRequest->model,
                 'content' => $content,
                 'metadata' => $metadata,
             ]);
@@ -160,10 +158,10 @@ readonly class RoomAiResponseService
         return $this->groupMessageHandler->create(
             $room,
             [
-                'threadId' => $validatedPayload['threadIndex'] ?? null,
+                'threadId' => $groupContext['threadIndex'] ?? 0,
                 'member' => $member,
                 'message_role' => 'assistant',
-                'model' => $validatedPayload['payload']['model'],
+                'model' => $aiRequest->model,
                 'content' => $content,
                 'metadata' => $metadata,
             ],

@@ -11,6 +11,7 @@ use App\Models\Room;
 use App\Models\User;
 use App\Services\Ai\Chat\ChatService;
 use App\Events\RoomMessageEvent;
+use App\Services\Ai\Chat\Values\AiRequest;
 use App\Services\Ai\Chat\Values\AiResponse;
 use App\Services\Ai\Chat\Values\FinishReason;
 use App\Services\Ai\Chat\Values\Messages\AssistantMessage;
@@ -19,6 +20,7 @@ use App\Services\Ai\Chat\Values\Parts\TextPart;
 use App\Services\Ai\Chat\Values\Parts\UrlCitation;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
+use App\Services\Ai\Formatters\Implementations\Legacy\LegacyFormatter;
 use App\Services\Chat\RoomAiResponseService;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Support\Facades\Event;
@@ -86,7 +88,7 @@ class RoomAiResponseServiceTest extends TestCase
             finishReason: FinishReason::stop(),
         ));
 
-        $this->sut()->generate($this->room, $this->aiModel(), $this->payload());
+        $this->generate($this->payload());
 
         $message = Message::query()->where('room_id', $this->room->id)->first();
         self::assertNotNull($message);
@@ -136,7 +138,7 @@ class RoomAiResponseServiceTest extends TestCase
         ]);
         $this->swapChatServiceWithResponse($this->textResponse('Regenerated!'));
 
-        $this->sut()->generate($this->room, $this->aiModel(), $this->payload(isUpdate: true, messageId: '1.001'));
+        $this->generate($this->payload(isUpdate: true, messageId: '1.001'));
 
         self::assertSame(1, Message::query()->where('room_id', $this->room->id)->count());
         $message = Message::query()->where('room_id', $this->room->id)->first();
@@ -152,7 +154,7 @@ class RoomAiResponseServiceTest extends TestCase
         Event::fake([RoomMessageEvent::class, RoomAiWritingStartedEvent::class, RoomAiWritingEndedEvent::class]);
         $this->swapChatService(fn () => throw new \RuntimeException('provider down'));
 
-        $this->sut()->generate($this->room, $this->aiModel(), $this->payload());
+        $this->generate($this->payload());
 
         self::assertSame(0, Message::query()->where('room_id', $this->room->id)->count());
         Queue::assertNotPushed(SendMessage::class);
@@ -164,6 +166,21 @@ class RoomAiResponseServiceTest extends TestCase
     private function sut(): RoomAiResponseService
     {
         return $this->app->make(RoomAiResponseService::class);
+    }
+
+    private function generate(array $payload): void
+    {
+        $this->sut()->generate(
+            $this->room,
+            $this->aiModel(),
+            $this->app->make(LegacyFormatter::class)->parsePayload($payload),
+            [
+                'threadIndex' => $payload['threadIndex'] ?? 0,
+                'messageId' => $payload['messageId'] ?? null,
+                'isUpdate' => (bool)($payload['isUpdate'] ?? false),
+                'key' => $payload['key'] ?? null,
+            ],
+        );
     }
 
     private function aiModel(): \App\Models\Ai\AiModel
