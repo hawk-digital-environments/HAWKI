@@ -615,6 +615,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
     private function buildOutputItems(AiResponse $response): array
     {
         $items = [];
+        $annotations = $this->citationAnnotations($response);
 
         foreach ($response->message->parts as $part) {
             if ($part instanceof ReasoningPart) {
@@ -646,10 +647,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
             }
 
             if ($part instanceof \App\Services\Ai\Chat\Values\Parts\CitationPart) {
-                if ((bool) config('hawki.aiProxy.emit_custom_events', true)) {
-                    $items[] = $this->buildCitationItem($part);
-                }
-
+                // Rendered as native url_citation annotations on the message item.
                 continue;
             }
 
@@ -659,7 +657,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
                     'type' => 'message',
                     'role' => 'assistant',
                     'status' => 'completed',
-                    'content' => [['type' => 'output_text', 'text' => $part->text, 'annotations' => []]],
+                    'content' => [['type' => 'output_text', 'text' => $part->text, 'annotations' => $annotations]],
                 ];
             }
         }
@@ -668,22 +666,31 @@ readonly class OpenResponsesFormatter implements FormatterInterface
     }
 
     /**
-     * @return array<string, mixed>
+     * URL citations as spec-native url_citation annotations, attached to the message
+     * item's output_text part (single-text responses: all citations on the one part).
+     *
+     * @return array<int, array<string, mixed>>
      */
-    private function buildCitationItem(\App\Services\Ai\Chat\Values\Parts\CitationPart $part): array
+    private function citationAnnotations(AiResponse $response): array
     {
-        $urlCitation = $part->urlCitation ?? new UrlCitation();
+        $annotations = [];
 
-        return [
-            'id' => 'cit_' . Str::uuid()->toString(),
-            'type' => 'hawki:citation',
-            'status' => 'completed',
-            'citation' => [
+        foreach ($response->message->parts as $part) {
+            if (!$part instanceof \App\Services\Ai\Chat\Values\Parts\CitationPart) {
+                continue;
+            }
+
+            $urlCitation = $part->urlCitation ?? new UrlCitation();
+
+            $annotations[] = [
+                'type' => 'url_citation',
                 'url' => $urlCitation->url,
                 'title' => $urlCitation->title,
                 'start_index' => $urlCitation->startIndex,
                 'end_index' => $urlCitation->endIndex,
-            ],
-        ];
+            ];
+        }
+
+        return $annotations;
     }
 }

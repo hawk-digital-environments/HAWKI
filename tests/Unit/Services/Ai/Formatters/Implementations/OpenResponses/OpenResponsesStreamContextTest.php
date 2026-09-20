@@ -127,13 +127,44 @@ class OpenResponsesStreamContextTest extends TestCase
         self::assertSame('web_search', $frames[0]['data']['item']['name']);
     }
 
-    public function testItEmitsHawkiCitationExtensionEvents(): void
+    public function testItEmitsCitationsAsNativeAnnotationEvents(): void
     {
+        $this->sut->transform(new StreamStartEvent('s1', 'gpt-4o'));
+        $this->sut->transform(new TextDeltaEvent('Some claim'));
+
         $frames = $this->sut->transform(new HawkiCitationEvent(new \App\Services\Ai\Chat\Values\CitationData(url: 'https://example.com', title: 'Example', startIndex: 0, endIndex: 4)));
 
-        self::assertSame('hawki:citation', $frames[0]['event']);
-        self::assertSame('hawki:citation', $frames[0]['data']['type']);
-        self::assertSame('https://example.com', $frames[0]['data']['citation']['url']);
+        self::assertCount(1, $frames);
+        self::assertSame('response.output_text.annotation.added', $frames[0]['event']);
+        self::assertSame('response.output_text.annotation.added', $frames[0]['data']['type']);
+        self::assertSame('url_citation', $frames[0]['data']['annotation']['type']);
+        self::assertSame('https://example.com', $frames[0]['data']['annotation']['url']);
+        self::assertSame(0, $frames[0]['data']['annotation_index']);
+
+        // The annotation rides the item lifecycle into the final resource.
+        $this->sut->transform(new StreamEndEvent());
+        $completed = $this->sut->end();
+        $resource = null;
+
+        foreach ($completed as $frame) {
+            if ('response.completed' === $frame['event']) {
+                $resource = $frame['data']['response'];
+            }
+        }
+
+        self::assertSame(
+            'https://example.com',
+            $resource['output'][0]['content'][0]['annotations'][0]['url'],
+        );
+    }
+
+    public function testItDropsCitationsWithoutAnyMessageItem(): void
+    {
+        $this->sut->transform(new StreamStartEvent('s1', 'gpt-4o'));
+
+        $frames = $this->sut->transform(new HawkiCitationEvent(new \App\Services\Ai\Chat\Values\CitationData(url: 'https://example.com')));
+
+        self::assertSame([], $frames);
     }
 
     public function testItMergesUsageAndFinishIntoSingleTerminalEvent(): void

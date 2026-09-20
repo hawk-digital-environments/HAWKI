@@ -49,7 +49,7 @@ class OpenResponsesStreamContext
     private array $outputItems = [];
 
     /**
-     * @var array<int, array{kind: string, itemId: string, outputIndex: int, text: string, callId: string, name: string, arguments: string}>
+     * @var array<int, array{kind: string, itemId: string, outputIndex: int, text: string, annotations: list<array<string, mixed>>, callId: string, name: string, arguments: string}>
      */
     private array $openItems = [];
     private ?UsageInfo $pendingUsage = null;
@@ -306,22 +306,90 @@ class OpenResponsesStreamContext
     }
 
     /**
+     * Emits the spec-native annotation event (`response.output_text.annotation.added`)
+     * for a citation, attaching the url_citation to the current message item so the
+     * part/item lifecycle frames and the final resource carry populated annotations.
+     *
      * @return array<int, array{event: string, data: array<string, mixed>}>
      */
     private function handleCitation(CitationData $citation): array
     {
-        if (!$this->emitCustomEvents) {
-            return [];
+        $annotation = [
+            'type' => 'url_citation',
+            'url' => $citation->url,
+            'title' => $citation->title,
+            'start_index' => $citation->startIndex,
+            'end_index' => $citation->endIndex,
+        ];
+
+        $index = $this->openMessageIndex();
+
+        if (null === $index) {
+            // No open message item: attach to the last settled one so the completed
+            // resource still carries the annotation (event references that item).
+            $settledKey = null;
+
+            foreach ($this->outputItems as $key => $item) {
+                if ('message' === ($item['type'] ?? '')) {
+                    $settledKey = $key;
+                }
+            }
+
+            if (null === $settledKey) {
+                return [];
+            }
+
+            $annotationIndex = $this->appendSettledAnnotation($settledKey, $annotation);
+
+            return [$this->frame('response.output_text.annotation.added', [
+                'item_id' => $this->outputItems[$settledKey]['id'],
+                'output_index' => $settledKey,
+                'content_index' => 0,
+                'annotation_index' => $annotationIndex,
+                'annotation' => $annotation,
+            ])];
         }
 
-        return [$this->frame('hawki:citation', [
-            'citation' => [
-                'url' => $citation->url,
-                'title' => $citation->title,
-                'start_index' => $citation->startIndex,
-                'end_index' => $citation->endIndex,
-            ],
+        $item = $this->openItems[$index];
+        $item['annotations'][] = $annotation;
+        $this->openItems[$index] = $item;
+
+        return [$this->frame('response.output_text.annotation.added', [
+            'item_id' => $item['itemId'],
+            'output_index' => $item['outputIndex'],
+            'content_index' => 0,
+            'annotation_index' => \count($item['annotations']) - 1,
+            'annotation' => $annotation,
         ])];
+    }
+
+    /**
+     * Appends an annotation to a settled message item's output_text part.
+     *
+     * @param array<string, mixed> $annotation
+     */
+    private function appendSettledAnnotation(int $settledKey, array $annotation): int
+    {
+        $entry = $this->outputItems[$settledKey];
+        $entry['content'][0]['annotations'][] = $annotation;
+        $this->outputItems[$settledKey] = $entry;
+
+        return \count($entry['content'][0]['annotations']) - 1;
+    }
+
+    /**
+     * The index of the open message item citations attach to: the most recently
+     * opened message-kind item, or null when none is open.
+     */
+    private function openMessageIndex(): ?int
+    {
+        for ($key = array_key_last($this->openItems); null !== $key; --$key) {
+            if ('message' === $this->openItems[$key]['kind']) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -374,6 +442,7 @@ class OpenResponsesStreamContext
             'itemId' => $itemId,
             'outputIndex' => $outputIndex,
             'text' => '',
+            'annotations' => [],
             'callId' => '',
             'name' => '',
             'arguments' => '',
@@ -412,6 +481,7 @@ class OpenResponsesStreamContext
             'itemId' => $itemId,
             'outputIndex' => $outputIndex,
             'text' => '',
+            'annotations' => [],
             'callId' => '',
             'name' => '',
             'arguments' => '',
@@ -447,6 +517,7 @@ class OpenResponsesStreamContext
             'itemId' => $itemId,
             'outputIndex' => $outputIndex,
             'text' => '',
+            'annotations' => [],
             'callId' => $callId,
             'name' => $name,
             'arguments' => '',
@@ -479,6 +550,8 @@ class OpenResponsesStreamContext
         $outputIndex = $item['outputIndex'];
 
         if ('message' === $item['kind']) {
+            $annotations = $item['annotations'];
+
             $frames[] = $this->frame('response.output_text.done', [
                 'item_id' => $item['itemId'],
                 'output_index' => $outputIndex,
@@ -490,7 +563,7 @@ class OpenResponsesStreamContext
                 'item_id' => $item['itemId'],
                 'output_index' => $outputIndex,
                 'content_index' => 0,
-                'part' => ['type' => 'output_text', 'text' => $item['text'], 'annotations' => []],
+                'part' => ['type' => 'output_text', 'text' => $item['text'], 'annotations' => $annotations],
             ]);
 
             $frames[] = $this->frame('response.output_item.done', [
@@ -500,7 +573,7 @@ class OpenResponsesStreamContext
                     'type' => 'message',
                     'role' => 'assistant',
                     'status' => 'completed',
-                    'content' => [['type' => 'output_text', 'text' => $item['text'], 'annotations' => []]],
+                    'content' => [['type' => 'output_text', 'text' => $item['text'], 'annotations' => $annotations]],
                 ],
             ]);
 
@@ -509,7 +582,7 @@ class OpenResponsesStreamContext
                 'type' => 'message',
                 'role' => 'assistant',
                 'status' => 'completed',
-                'content' => [['type' => 'output_text', 'text' => $item['text'], 'annotations' => []]],
+                'content' => [['type' => 'output_text', 'text' => $item['text'], 'annotations' => $annotations]],
             ];
 
             return $frames;

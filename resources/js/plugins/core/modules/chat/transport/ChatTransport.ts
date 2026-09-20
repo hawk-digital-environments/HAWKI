@@ -324,16 +324,16 @@ export class ChatTransport implements MessageSenderTransportInterface {
             case 'hawki:provider_tool_event':
                 this.store.patchMessage(conversationSlug, temporaryId, {status: 'provider_tool_call'});
                 return;
-            case 'hawki:citation':
+            case 'response.output_text.annotation.added':
                 hooks.onCitation({
-                    url: event.citation.url ?? '',
-                    title: event.citation.title ?? null,
-                    ranges: event.citation.start_index !== null && event.citation.start_index !== undefined
-                        && event.citation.end_index !== null && event.citation.end_index !== undefined
-                        ? [[event.citation.start_index, event.citation.end_index]]
+                    url: event.annotation.url ?? '',
+                    title: event.annotation.title ?? null,
+                    ranges: event.annotation.start_index !== null && event.annotation.start_index !== undefined
+                        && event.annotation.end_index !== null && event.annotation.end_index !== undefined
+                        ? [[event.annotation.start_index, event.annotation.end_index]]
                         : [],
-                    startIndex: event.citation.start_index ?? undefined,
-                    endIndex: event.citation.end_index ?? undefined
+                    startIndex: event.annotation.start_index ?? undefined,
+                    endIndex: event.annotation.end_index ?? undefined
                 });
                 return;
             case 'response.completed':

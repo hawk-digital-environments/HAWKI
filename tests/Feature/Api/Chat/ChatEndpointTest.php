@@ -181,7 +181,7 @@ class ChatEndpointTest extends TestCase
         self::assertSame('The directory contains file-a.', $response->json('output.0.content.0.text'));
     }
 
-    public function testItEmitsCleanedCitationsAsHawkiExtensionEvents(): void
+    public function testItEmitsCleanedCitationsAsNativeAnnotationEvents(): void
     {
         $cleaner = $this->createMock(\App\Services\ExternalContent\CitationUrlCleaner::class);
         $cleaner->method('clean')->willReturnCallback(static fn (\Laravel\Ai\Responses\Data\Citation $citation): \Laravel\Ai\Responses\Data\Citation => $citation);
@@ -189,6 +189,8 @@ class ChatEndpointTest extends TestCase
 
         $this->actingAsUser(User::factory()->create());
         $this->mockAgent([
+            new StreamStart('s1', 'openai', 'gpt-4o', 1000),
+            new TextDelta('e0', 'm1', 'Some claim', 1000),
             new Citation('e1', 'm1', new UrlCitation('https://example.com/track?utm=1', 'Example'), 1000),
             new StreamEnd('e2', 'stop', new Usage(), 1001),
         ]);
@@ -196,8 +198,18 @@ class ChatEndpointTest extends TestCase
         [, $body] = $this->performStreamingRequest($this->payload(stream: true));
         $events = $this->parseSseEvents($body);
 
-        $citation = $this->firstEvent($events, 'hawki:citation');
-        self::assertSame('https://example.com/track?utm=1', $citation['data']['citation']['url']);
+        self::assertNotContains('hawki:citation', array_map(static fn (array $event): string => $event['event'], $events));
+
+        $annotation = $this->firstEvent($events, 'response.output_text.annotation.added');
+        self::assertSame('url_citation', $annotation['data']['annotation']['type']);
+        self::assertSame('https://example.com/track?utm=1', $annotation['data']['annotation']['url']);
+        self::assertSame(0, $annotation['data']['annotation_index']);
+
+        $completed = $this->firstEvent($events, 'response.completed')['data']['response'];
+        self::assertSame(
+            'https://example.com/track?utm=1',
+            $completed['output'][0]['content'][0]['annotations'][0]['url'],
+        );
     }
 
     public function testItEmitsErrorAndFailedEventsOnUpstreamErrors(): void

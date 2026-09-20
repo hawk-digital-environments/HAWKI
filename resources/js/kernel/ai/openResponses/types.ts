@@ -82,9 +82,14 @@ interface ReasoningSummaryDeltaEvent extends OpenResponsesEventBase {
     delta: string;
 }
 
-interface CitationEvent extends OpenResponsesEventBase {
-    type: 'hawki:citation';
-    citation: {
+interface AnnotationAddedEvent extends OpenResponsesEventBase {
+    type: 'response.output_text.annotation.added';
+    item_id: string;
+    output_index: number;
+    content_index: number;
+    annotation_index: number;
+    annotation: {
+        type: 'url_citation';
         url?: string | null;
         title?: string | null;
         start_index?: number | null;
@@ -118,7 +123,7 @@ export type OpenResponsesStreamEvent =
     | OutputItemAddedEvent
     | TextDeltaEvent
     | ReasoningSummaryDeltaEvent
-    | CitationEvent
+    | AnnotationAddedEvent
     | ProviderToolEvent
     | TerminalEvent
     | StreamErrorEvent

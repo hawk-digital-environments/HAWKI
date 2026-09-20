@@ -85,12 +85,12 @@ export class OpenResponsesApi {
             }
             if (event.type === 'response.output_text.delta') {
                 streamedText += event.delta;
-            } else if (event.type === 'hawki:citation') {
+            } else if (event.type === 'response.output_text.annotation.added') {
                 citations.push({
-                    url: event.citation.url ?? null,
-                    title: event.citation.title ?? null,
-                    startIndex: event.citation.start_index ?? null,
-                    endIndex: event.citation.end_index ?? null
+                    url: event.annotation.url ?? null,
+                    title: event.annotation.title ?? null,
+                    startIndex: event.annotation.start_index ?? null,
+                    endIndex: event.annotation.end_index ?? null
                 });
             } else if (
                 event.type === 'response.completed' ||

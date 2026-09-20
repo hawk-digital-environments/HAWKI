@@ -533,14 +533,23 @@ The same CI workflow also runs the Chat Completions live suite
 (`tests/Feature/Api/Chat/ChatCompletionsLiveTest.php`, same token gate): chunk grammar,
 client-tool loop, and generation-param wiring against gpt-4.1-nano.
 
+### Citations
+
+Citations are **spec-native in openResponses**: streamed as
+`response.output_text.annotation.added` events (url_citation annotations) and carried on
+the message item's `output_text.annotations[]` in part/item lifecycle frames and the
+final resource — no custom frames. (The earlier `hawki:citation` extension was removed
+in favor of this native mapping.) The `openai` format has no native citation slot, so
+its formatter emits a custom `hawki:citation` data frame, guarded by the switch below.
+
 ### Custom (non-standard) events
 
-Wherever a wire format has no native slot for HAWKI data (citations, provider-tool
-events), the formatters emit non-standard `hawki:` frames/items. This emission is
-globally switchable: `AI_PROXY_EMIT_CUSTOM_EVENTS=false` (default `true`, config
-`hawki.aiProxy.emit_custom_events`) suppresses every custom emission in every format —
-stream events and non-streaming output items alike — for strict-spec clients. The IR
-keeps the data either way; the switch only acts at the formatter boundary.
+Where a wire format has no native slot for HAWKI data (citations in `openai`,
+provider-tool events), the formatters emit non-standard `hawki:` frames. This emission
+is globally switchable: `AI_PROXY_EMIT_CUSTOM_EVENTS=false` (default `true`, config
+`hawki.aiProxy.emit_custom_events`) suppresses every custom emission in every format for
+strict-spec clients. The IR keeps the data either way; the switch only acts at the
+formatter boundary.
 
 ---
 
