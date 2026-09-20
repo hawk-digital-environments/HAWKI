@@ -127,6 +127,36 @@ class OpenResponsesStreamContextTest extends TestCase
         self::assertSame('web_search', $frames[0]['data']['item']['name']);
     }
 
+    public function testItStreamsRefusalsAsNativeRefusalEvents(): void
+    {
+        $this->sut->transform(new StreamStartEvent('s1', 'gpt-4o'));
+
+        $first = $this->sut->transform(new \App\Services\Ai\Chat\Values\Stream\RefusalDeltaEvent('cannot'));
+        $delta = $first[array_key_last($first)];
+        self::assertSame('response.refusal.delta', $delta['event']);
+        self::assertSame('cannot', $delta['data']['delta']);
+        self::assertSame(1, $delta['data']['content_index']);
+
+        $this->sut->transform(new \App\Services\Ai\Chat\Values\Stream\RefusalDeltaEvent(' help'));
+
+        // StreamEndEvent drives the terminal lifecycle in this context.
+        $completed = $this->sut->transform(new StreamEndEvent());
+        $eventNames = array_map(static fn (array $frame): string => $frame['event'], $completed);
+        self::assertContains('response.refusal.done', $eventNames);
+
+        $resource = null;
+
+        foreach ($completed as $frame) {
+            if ('response.completed' === $frame['event']) {
+                $resource = $frame['data']['response'];
+            }
+        }
+
+        $content = $resource['output'][0]['content'];
+        self::assertSame('refusal', $content[1]['type']);
+        self::assertSame('cannot help', $content[1]['refusal']);
+    }
+
     public function testItEmitsCitationsAsNativeAnnotationEvents(): void
     {
         $this->sut->transform(new StreamStartEvent('s1', 'gpt-4o'));
@@ -142,8 +172,7 @@ class OpenResponsesStreamContextTest extends TestCase
         self::assertSame(0, $frames[0]['data']['annotation_index']);
 
         // The annotation rides the item lifecycle into the final resource.
-        $this->sut->transform(new StreamEndEvent());
-        $completed = $this->sut->end();
+        $completed = $this->sut->transform(new StreamEndEvent());
         $resource = null;
 
         foreach ($completed as $frame) {

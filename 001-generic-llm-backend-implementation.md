@@ -2,7 +2,8 @@
 
 > Status: **As built** — traceability companion to [`001-generic-llm-backend.md`](./001-generic-llm-backend.md)
 > (the proposal). Covers the implemented state at commits `47644632` (Phase 1 backend),
-> `8094cfe0` (frontend cutover), `aeed3561` (client tool handoff).
+> `8094cfe0` (frontend cutover), `aeed3561` (client tool handoff), and the follow-up
+> deliveries listed in §0.
 >
 > Three documents together describe the system:
 >
@@ -11,6 +12,72 @@
 > | [`001-generic-llm-backend.md`](./001-generic-llm-backend.md) | The proposal — what was planned and why, including the phase plan (§11). |
 > | [`POC-HUB-AND-SPOKE.md`](./POC-HUB-AND-SPOKE.md) | The as-built architecture — how the code is structured today and how to extend it. |
 > | **This document** | The delta — where the implementation deviates from, adds to, or defers parts of the proposal, and what to build next. |
+
+---
+
+## 0. Current state (living section — update with every delivery)
+
+Snapshot: **2026-09-20**, after the spec-parity work on both chat formatters. Read this
+first; §3/§5/§6 keep their original per-item detail.
+
+### Shipped
+
+| Capability | Where |
+|---|---|
+| Phase 1 chat proxy (`openResponses` format) + Svelte frontend cutover | `POST /api/hawki/v1/chat`, live-verified |
+| Client-side tool execution (handoff loop, call-id conventions) | `ClientTool` + both formatters |
+| **Spec-native citations in openResponses** — `response.output_text.annotation.added` + `url_citation` annotations on the message output_text part; `hawki:citation` removed (frontend consumes the native event) | `OpenResponsesStreamContext` / `OpenResponsesFormatter` |
+| `openai` Chat Completions format (N1) — full parse/format, chunk grammar, tool calling incl. two-turn client-tool loop live-verified | `POST /api/hawki/v1/chat/openai` |
+| Embeddings endpoint (N7, Phase 8) — `openai` format, usage from day one, live-verified | `POST /api/hawki/v1/embeddings` |
+| Open Responses compliance suite (D5/N4) — 8/8 green live, skip-gated by `OPENRESPONSES_COMPLIANCE_TOKEN`, runs in CI | `tests/Feature/Api/Compliance/` + `.github/workflows/ai-compliance.yml` |
+| Chat Completions live suite — chunk grammar, client-tool loop, params wiring, same gate + CI | `tests/Feature/Api/Chat/ChatCompletionsLiveTest.php` |
+| Strict unknown-format errors (D10 closed): explicit `{format}` 400s on chat + embeddings | `UnknownFormatException` |
+| Custom-events switch `AI_PROXY_EMIT_CUSTOM_EVENTS` (default true) — suppresses every non-standard `hawki:` emission in every format | `config/hawki.php` `aiProxy.emit_custom_events` |
+| Spec-alignment bundle: refusal delta/done events + refusal content parts (openResponses); `tools[].strict`, `top_logprobs`, `allowed_tools` parked (openResponses parse); CC `reasoning_effort` / `reasoning:{effort,summary}` → `ReasoningConfig`; CC `store:true` → 400 | both formatters |
+
+### Gap analysis verdicts (researched against the published Open Responses OpenAPI +
+LLM-Rosetta; full report in the session that produced it)
+
+- **Reasoning stream mapping is Rosetta-parity**: IR reasoning deltas render as
+  `response.reasoning_summary_text.*` (summary) events; the spec's raw
+  `response.reasoning.delta/done` are unused by the reference converter too — no change.
+- **Logprobs output is SDK-blocked**: request params parse/park, but `laravel/ai` has no
+  logprobs surface on responses; revisit if the SDK grows one.
+- **`AiResponse::$logprobs`, `ProviderPassthroughEvent`** (proposal §3.3/3.4) not built —
+  no consumer; acceptable deviations, recorded here.
+
+### `hawki` extension verdicts (what may eventually drop in favor of spec-native features)
+
+| Extension | Verdict |
+|---|---|
+| `hawki:citation` | **Dropped** — native annotations shipped |
+| `hawki.attachments` | Drop candidate at Phase 5: spec `input_file.file_id` can carry storage UUIDs natively (needs ownership-checked resolution in `ChatAgentFactory` + composer change) |
+| `hawki.params` | Drop candidate at Phase 5: legacy composer overrides; standard sampling params cover the API surface |
+| `hawki.broadcast` | Drop candidate at Phase 5: group-storage semantics belong behind `/ui-chat` |
+| `hawki.tools` (transfer strings) | **Keep** — the spec tool union is function-only; no native way to request HAWKI hosted capabilities |
+| `hawki:provider_tool_event` | **Keep** (env-switched) — approval/handoff UX has no spec equivalent |
+
+### Known behavioral deviations (accepted)
+
+- The `openai` streaming usage chunk is always emitted (the format-agnostic stream path
+  cannot see per-request `stream_options`; matches the IR include-usage default).
+- `n` and neighbours are parked in `providerExtensions` (single-choice by design).
+- `response_format` is parsed but not wired downstream (D7 — closes with N6).
+
+### Recommended next steps (ordered)
+
+1. **N6 — reasoning replay + structured output** (closes D6/D7/D8): `ReasoningPart` →
+   vendor replay state (`providerContentBlocks`/`reasoningEncryptedContent`, verify
+   per-driver), `ResponseFormatConfig` → SDK structured output (`ObjectSchema`).
+2. **N5 — round-trip corpus** (closes D4, unblocks D9): fixture → parse → format → parse
+   structural equality, per formatter.
+3. **N2 — `/models/{format?}`** (trivial, pure transform).
+4. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
+   budget Phase-2 design time for route forwarding).
+5. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
+   D1/D11/D13) — unlocks dropping `hawki.params`/`broadcast`/`attachments`.
+6. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
+7. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
 
 ---
 
@@ -245,13 +312,16 @@ remains on `StreamController` exactly as the proposal requires (it needs the Pha
 ### A6 — the custom-events switch (`AI_PROXY_EMIT_CUSTOM_EVENTS`)
 
 Not in the proposal. HAWKI augments the standard wire formats with non-standard
-`hawki:` frames/items (streamed citations, provider-tool events) wherever the format
-has no native slot. `config('hawki.aiProxy.emit_custom_events')` (env
-`AI_PROXY_EMIT_CUSTOM_EVENTS`, default **true**) turns this emission off globally for
-**all** formats — openResponses (stream events + citation output items) and openai
-(stream frames) — so strict-spec clients get spec-shaped output only. The switch acts
+`hawki:` frames wherever the format has no native slot. `config('hawki.aiProxy.emit_custom_events')`
+(env `AI_PROXY_EMIT_CUSTOM_EVENTS`, default **true**) turns this emission off globally
+for **all** formats so strict-spec clients get spec-shaped output only. The switch acts
 at the formatter boundary; the IR keeps the data either way. Added while shipping the
 Chat Completions formatter; to be re-evaluated after real-client testing.
+
+Superseded in part for citations: openResponses now carries them **spec-natively**
+(`response.output_text.annotation.added` + `url_citation` annotations — see §0), so the
+switch governs only the remaining custom emissions (the `openai` citation frame and
+`hawki:provider_tool_event`).
 
 ### A5 — the controller maps infrastructure exceptions
 

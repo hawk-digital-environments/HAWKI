@@ -116,6 +116,14 @@ readonly class OpenResponsesFormatter implements FormatterInterface
 
         $providerExtensions = [];
 
+        // Structured tool_choice forms without an IR counterpart (e.g. allowed_tools)
+        // are parked rather than silently ignored.
+        $toolChoice = $body['tool_choice'] ?? null;
+
+        if (\is_array($toolChoice) && 'function' !== ($toolChoice['type'] ?? null)) {
+            $providerExtensions['tool_choice'] = $toolChoice;
+        }
+
         foreach (['include', 'metadata', 'service_tier', 'background', 'stream_options', 'prompt_cache_key', 'safety_identifier'] as $passthrough) {
             if (\array_key_exists($passthrough, $body)) {
                 $providerExtensions[$passthrough] = $body[$passthrough];
@@ -419,6 +427,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
                 name: (string) ($tool['name'] ?? ''),
                 description: (string) ($tool['description'] ?? ''),
                 parameters: \is_array($tool['parameters'] ?? null) ? $tool['parameters'] : [],
+                metadata: \array_key_exists('strict', $tool) ? ['strict' => (bool) $tool['strict']] : null,
             );
         }
 
@@ -479,6 +488,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
             frequencyPenalty: isset($body['frequency_penalty']) && is_numeric($body['frequency_penalty']) ? (float) $body['frequency_penalty'] : null,
             presencePenalty: isset($body['presence_penalty']) && is_numeric($body['presence_penalty']) ? (float) $body['presence_penalty'] : null,
             truncation: isset($body['truncation']) ? (string) $body['truncation'] : null,
+            topLogprobs: isset($body['top_logprobs']) && is_numeric($body['top_logprobs']) ? (int) $body['top_logprobs'] : null,
         );
 
         return null !== $config->temperature
@@ -487,6 +497,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
         || null !== $config->frequencyPenalty
         || null !== $config->presencePenalty
         || null !== $config->truncation
+        || null !== $config->topLogprobs
             ? $config
             : null;
     }
@@ -609,6 +620,19 @@ readonly class OpenResponsesFormatter implements FormatterInterface
         return '';
     }
 
+    private function refusalText(AiResponse $response): ?string
+    {
+        $refusal = '';
+
+        foreach ($response->message->parts as $part) {
+            if ($part instanceof \App\Services\Ai\Chat\Values\Parts\RefusalPart) {
+                $refusal .= $part->refusal;
+            }
+        }
+
+        return '' !== $refusal ? $refusal : null;
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -616,6 +640,7 @@ readonly class OpenResponsesFormatter implements FormatterInterface
     {
         $items = [];
         $annotations = $this->citationAnnotations($response);
+        $refusal = $this->refusalText($response);
 
         foreach ($response->message->parts as $part) {
             if ($part instanceof ReasoningPart) {
@@ -652,12 +677,18 @@ readonly class OpenResponsesFormatter implements FormatterInterface
             }
 
             if ($part instanceof \App\Services\Ai\Chat\Values\Parts\TextPart) {
+                $content = [['type' => 'output_text', 'text' => $part->text, 'annotations' => $annotations]];
+
+                if (null !== $refusal) {
+                    $content[] = ['type' => 'refusal', 'refusal' => $refusal];
+                }
+
                 $items[] = [
                     'id' => 'msg_' . Str::uuid()->toString(),
                     'type' => 'message',
                     'role' => 'assistant',
                     'status' => 'completed',
-                    'content' => [['type' => 'output_text', 'text' => $part->text, 'annotations' => $annotations]],
+                    'content' => $content,
                 ];
             }
         }

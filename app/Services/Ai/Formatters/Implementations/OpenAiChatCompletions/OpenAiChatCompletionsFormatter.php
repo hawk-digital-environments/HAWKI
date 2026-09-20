@@ -7,6 +7,10 @@ namespace App\Services\Ai\Formatters\Implementations\OpenAiChatCompletions;
 use App\Services\Ai\Chat\Values\AiRequest;
 use App\Services\Ai\Chat\Values\AiResponse;
 use App\Services\Ai\Chat\Values\Configs\GenerationConfig;
+use App\Services\Ai\Chat\Values\Configs\ReasoningConfig;
+use App\Services\Ai\Chat\Values\Configs\ReasoningEffort;
+use App\Services\Ai\Chat\Values\Configs\ReasoningMode;
+use App\Services\Ai\Chat\Values\Configs\ReasoningSummary;
 use App\Services\Ai\Chat\Values\Configs\ResponseFormatConfig;
 use App\Services\Ai\Chat\Values\Configs\ResponseFormatType;
 use App\Services\Ai\Chat\Values\Configs\StreamConfig;
@@ -32,6 +36,7 @@ use App\Services\Ai\Formatters\Contracts\FormatterInterface;
 use App\Services\Ai\Formatters\Exceptions\FormatterRequestException;
 use App\Services\Ai\Formatters\Exceptions\InvalidInputItemException;
 use App\Services\Ai\Formatters\Exceptions\InvalidRequestBodyException;
+use App\Services\Ai\Formatters\Exceptions\UnsupportedStatefulParameterException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -71,6 +76,10 @@ readonly class OpenAiChatCompletionsFormatter implements FormatterInterface
             throw InvalidRequestBodyException::forMissingInput();
         }
 
+        if (true === ($body['store'] ?? false)) {
+            throw UnsupportedStatefulParameterException::forStore();
+        }
+
         $messages = [];
         $systemParts = [];
 
@@ -101,6 +110,7 @@ readonly class OpenAiChatCompletionsFormatter implements FormatterInterface
                 enabled: true === ($body['stream'] ?? false),
                 includeUsage: true === (($body['stream_options'] ?? [])['include_usage'] ?? false),
             ),
+            reasoning: $this->parseReasoningConfig($body),
             providerExtensions: $this->parseProviderExtensions($body),
             hawkiExtensions: self::parseHawkiExtensions($body),
             formatKey: self::KEY,
@@ -520,6 +530,42 @@ readonly class OpenAiChatCompletionsFormatter implements FormatterInterface
         }
 
         return new ResponseFormatConfig(type: ResponseFormatType::tryFrom($type) ?? ResponseFormatType::TEXT);
+    }
+
+    /**
+     * Chat Completions reasoning parameters → IR: the top-level `reasoning_effort`
+     * (o-series) and the newer `reasoning: {effort, summary}` object (Rosetta parity).
+     */
+    private function parseReasoningConfig(array $body): ?ReasoningConfig
+    {
+        $effort = null;
+        $summary = null;
+        $mode = null;
+
+        $reasoningEffort = $body['reasoning_effort'] ?? null;
+
+        if (\is_string($reasoningEffort)) {
+            if ('none' === $reasoningEffort) {
+                $mode = ReasoningMode::DISABLED;
+            } else {
+                $effort = ReasoningEffort::tryFrom($reasoningEffort);
+            }
+        }
+
+        $reasoning = $body['reasoning'] ?? null;
+
+        if (\is_array($reasoning)) {
+            $effort = \is_string($reasoning['effort'] ?? null)
+                ? ReasoningEffort::tryFrom($reasoning['effort']) ?? $effort
+                : $effort;
+            $summary = \is_string($reasoning['summary'] ?? null)
+                ? ReasoningSummary::tryFrom($reasoning['summary'])
+                : null;
+        }
+
+        return null !== $mode || null !== $effort || null !== $summary
+            ? new ReasoningConfig(mode: $mode, effort: $effort, summary: $summary)
+            : null;
     }
 
     /**

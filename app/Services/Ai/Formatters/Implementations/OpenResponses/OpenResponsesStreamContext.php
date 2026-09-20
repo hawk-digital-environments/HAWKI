@@ -49,7 +49,7 @@ class OpenResponsesStreamContext
     private array $outputItems = [];
 
     /**
-     * @var array<int, array{kind: string, itemId: string, outputIndex: int, text: string, annotations: list<array<string, mixed>>, callId: string, name: string, arguments: string}>
+     * @var array<int, array{kind: string, itemId: string, outputIndex: int, text: string, annotations: list<array<string, mixed>>, refusal: string, callId: string, name: string, arguments: string}>
      */
     private array $openItems = [];
     private ?UsageInfo $pendingUsage = null;
@@ -76,7 +76,7 @@ class OpenResponsesStreamContext
             $event instanceof ContentBlockStartEvent => $this->handleContentBlockStart($event),
             $event instanceof TextDeltaEvent => $this->handleTextDelta($event),
             $event instanceof ReasoningDeltaEvent => $this->handleReasoningDelta($event),
-            $event instanceof RefusalDeltaEvent => [],
+            $event instanceof RefusalDeltaEvent => $this->handleRefusalDelta($event),
             $event instanceof ContentBlockEndEvent => $this->handleContentBlockEnd($event),
             $event instanceof ToolCallStartEvent => $this->handleToolCallStart($event),
             $event instanceof ToolCallDeltaEvent => $this->handleToolCallDelta($event),
@@ -254,6 +254,34 @@ class OpenResponsesStreamContext
             'output_index' => $item['outputIndex'],
             'summary_index' => 0,
             'delta' => $event->reasoning,
+        ]);
+
+        return $frames;
+    }
+
+    /**
+     * Streams refusal text as spec-native refusal events against the open message
+     * item (refusal is a content part beside the output_text part).
+     *
+     * @return array<int, array{event: string, data: array<string, mixed>}>
+     */
+    private function handleRefusalDelta(RefusalDeltaEvent $event): array
+    {
+        $index = $event->blockIndex ?? 0;
+
+        $frames = isset($this->openItems[$index])
+            ? []
+            : $this->openMessageItem($index);
+
+        $item = $this->openItems[$index];
+        $item['refusal'] .= $event->refusal;
+        $this->openItems[$index] = $item;
+
+        $frames[] = $this->frame('response.refusal.delta', [
+            'item_id' => $item['itemId'],
+            'output_index' => $item['outputIndex'],
+            'content_index' => 1,
+            'delta' => $event->refusal,
         ]);
 
         return $frames;
@@ -443,6 +471,7 @@ class OpenResponsesStreamContext
             'outputIndex' => $outputIndex,
             'text' => '',
             'annotations' => [],
+            'refusal' => '',
             'callId' => '',
             'name' => '',
             'arguments' => '',
@@ -482,6 +511,7 @@ class OpenResponsesStreamContext
             'outputIndex' => $outputIndex,
             'text' => '',
             'annotations' => [],
+            'refusal' => '',
             'callId' => '',
             'name' => '',
             'arguments' => '',
@@ -518,6 +548,7 @@ class OpenResponsesStreamContext
             'outputIndex' => $outputIndex,
             'text' => '',
             'annotations' => [],
+            'refusal' => '',
             'callId' => $callId,
             'name' => $name,
             'arguments' => '',
@@ -551,6 +582,7 @@ class OpenResponsesStreamContext
 
         if ('message' === $item['kind']) {
             $annotations = $item['annotations'];
+            $content = [['type' => 'output_text', 'text' => $item['text'], 'annotations' => $annotations]];
 
             $frames[] = $this->frame('response.output_text.done', [
                 'item_id' => $item['itemId'],
@@ -563,8 +595,19 @@ class OpenResponsesStreamContext
                 'item_id' => $item['itemId'],
                 'output_index' => $outputIndex,
                 'content_index' => 0,
-                'part' => ['type' => 'output_text', 'text' => $item['text'], 'annotations' => $annotations],
+                'part' => $content[0],
             ]);
+
+            if ('' !== $item['refusal']) {
+                $content[] = ['type' => 'refusal', 'refusal' => $item['refusal']];
+
+                $frames[] = $this->frame('response.refusal.done', [
+                    'item_id' => $item['itemId'],
+                    'output_index' => $outputIndex,
+                    'content_index' => 1,
+                    'refusal' => $item['refusal'],
+                ]);
+            }
 
             $frames[] = $this->frame('response.output_item.done', [
                 'output_index' => $outputIndex,
@@ -573,7 +616,7 @@ class OpenResponsesStreamContext
                     'type' => 'message',
                     'role' => 'assistant',
                     'status' => 'completed',
-                    'content' => [['type' => 'output_text', 'text' => $item['text'], 'annotations' => $annotations]],
+                    'content' => $content,
                 ],
             ]);
 
@@ -582,7 +625,7 @@ class OpenResponsesStreamContext
                 'type' => 'message',
                 'role' => 'assistant',
                 'status' => 'completed',
-                'content' => [['type' => 'output_text', 'text' => $item['text'], 'annotations' => $annotations]],
+                'content' => $content,
             ];
 
             return $frames;

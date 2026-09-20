@@ -372,6 +372,44 @@ class OpenAiChatCompletionsFormatterTest extends TestCase
         self::assertSame('cannot help', $message['refusal']);
     }
 
+    public function testItParsesReasoningEffortAndReasoningObject(): void
+    {
+        $base = ['model' => 'm', 'messages' => [['role' => 'user', 'content' => 'Hi']]];
+
+        $topLevel = $this->sut->parseRequest($this->request([...$base, 'reasoning_effort' => 'high']));
+        self::assertSame(\App\Services\Ai\Chat\Values\Configs\ReasoningEffort::HIGH, $topLevel->reasoning?->effort);
+        self::assertNull($topLevel->reasoning?->mode);
+
+        $disabled = $this->sut->parseRequest($this->request([...$base, 'reasoning_effort' => 'none']));
+        self::assertSame(\App\Services\Ai\Chat\Values\Configs\ReasoningMode::DISABLED, $disabled->reasoning?->mode);
+        self::assertNull($disabled->reasoning?->effort);
+
+        $structured = $this->sut->parseRequest($this->request([
+            ...$base,
+            'reasoning' => ['effort' => 'low', 'summary' => 'concise'],
+        ]));
+        self::assertSame(\App\Services\Ai\Chat\Values\Configs\ReasoningEffort::LOW, $structured->reasoning?->effort);
+        self::assertSame(\App\Services\Ai\Chat\Values\Configs\ReasoningSummary::CONCISE, $structured->reasoning?->summary);
+
+        $none = $this->sut->parseRequest($this->request($base));
+        self::assertNull($none->reasoning);
+    }
+
+    public function testItRejectsStoreTrue(): void
+    {
+        try {
+            $this->sut->parseRequest($this->request([
+                'model' => 'm',
+                'messages' => [['role' => 'user', 'content' => 'Hi']],
+                'store' => true,
+            ]));
+            self::fail('Expected UnsupportedStatefulParameterException.');
+        } catch (\App\Services\Ai\Formatters\Exceptions\UnsupportedStatefulParameterException $exception) {
+            self::assertSame('store_not_supported', $exception->errorCode());
+            self::assertSame(400, $exception->httpStatus());
+        }
+    }
+
     /**
      * @param array<string, mixed> $body
      */

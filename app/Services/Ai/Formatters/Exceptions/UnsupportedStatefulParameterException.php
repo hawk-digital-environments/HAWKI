@@ -12,7 +12,7 @@ class UnsupportedStatefulParameterException extends FormatterRequestException
     public static function forStore(): self
     {
         return new self(
-            'HAWKI is a stateless proxy; store is not supported. Send store: false and the full conversation history in input.',
+            'HAWKI is a stateless proxy; store is not supported. Send store: false and the full conversation history with each request.',
             errorCode: 'store_not_supported',
         );
     }

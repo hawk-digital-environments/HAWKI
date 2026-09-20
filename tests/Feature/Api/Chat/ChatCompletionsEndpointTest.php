@@ -191,6 +191,15 @@ class ChatCompletionsEndpointTest extends TestCase
             ->assertJsonPath('error.code', 'missing_user_turn');
     }
 
+    public function testItRejectsStoreTrue(): void
+    {
+        $this->actingAsUser(User::factory()->create());
+
+        $this->postJson(self::ENDPOINT, $this->payload(overrides: ['store' => true]))
+            ->assertStatus(400)
+            ->assertJsonPath('error.code', 'store_not_supported');
+    }
+
     public function testItStreamsCitationsAsCustomFrames(): void
     {
         $this->actingAsUser(User::factory()->create());

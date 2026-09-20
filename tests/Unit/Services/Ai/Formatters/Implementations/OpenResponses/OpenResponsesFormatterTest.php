@@ -245,6 +245,57 @@ class OpenResponsesFormatterTest extends TestCase
         self::assertSame('openResponses', $result->formatKey);
     }
 
+    public function testItParsesToolStrictFlagIntoMetadata(): void
+    {
+        $request = $this->request([
+            'input' => 'Hi',
+            'tools' => [
+                ['type' => 'function', 'name' => 'web_search', 'description' => 'Search', 'parameters' => ['type' => 'object'], 'strict' => true],
+                ['type' => 'function', 'name' => 'other', 'description' => 'Other', 'parameters' => ['type' => 'object']],
+            ],
+        ]);
+
+        $result = $this->sut->parseRequest($request);
+
+        self::assertSame(['strict' => true], $result->tools[0]->metadata);
+        self::assertNull($result->tools[1]->metadata);
+    }
+
+    public function testItParsesTopLogprobs(): void
+    {
+        $result = $this->sut->parseRequest($this->request([
+            'input' => 'Hi',
+            'top_logprobs' => 3,
+        ]));
+
+        self::assertSame(3, $result->generation?->topLogprobs);
+    }
+
+    public function testItParksStructuredNonFunctionToolChoiceInProviderExtensions(): void
+    {
+        $result = $this->sut->parseRequest($this->request([
+            'input' => 'Hi',
+            'tool_choice' => ['type' => 'allowed_tools', 'tools' => ['web_search', 'read_file']],
+        ]));
+
+        self::assertNull($result->toolChoice);
+        self::assertSame(
+            ['type' => 'allowed_tools', 'tools' => ['web_search', 'read_file']],
+            $result->providerExtensions['tool_choice'] ?? null,
+        );
+    }
+
+    public function testItDoesNotParkNamedFunctionToolChoice(): void
+    {
+        $result = $this->sut->parseRequest($this->request([
+            'input' => 'Hi',
+            'tool_choice' => ['type' => 'function', 'name' => 'web_search'],
+        ]));
+
+        self::assertSame(ToolChoiceMode::TOOL, $result->toolChoice?->mode);
+        self::assertArrayNotHasKey('tool_choice', $result->providerExtensions ?? []);
+    }
+
     public function testItRoundTripsAParsedRequestThroughFormatResponse(): void
     {
         $result = $this->sut->parseRequest($this->request([
