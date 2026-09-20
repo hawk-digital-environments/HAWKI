@@ -533,6 +533,18 @@ The same CI workflow also runs the Chat Completions live suite
 (`tests/Feature/Api/Chat/ChatCompletionsLiveTest.php`, same token gate): chunk grammar,
 client-tool loop, and generation-param wiring against gpt-4.1-nano.
 
+### The `legacy` format
+
+A third chat formatter (format key `legacy`, registered like the others) renders the
+NDJSON dialect the legacy frontend speaks: `header`/`message`/`status`/`citation`/
+`completion`/`error` frames, non-streaming `{success, content}` responses, and the
+legacy error shape. The private (`POST /req/streamAI`) and external (`POST api/ai-req`)
+routes are forwarded to `ChatController` with `format=legacy` — middleware unchanged;
+the group-chat route keeps `StreamController` until the Phase-5 refactor. Per-message
+attachment UUIDs ride the IR as `hawki-storage://` file parts
+({@see AiRequest::HAWKI_STORAGE_SCHEME}), resolved by the agent factory through HAWKI's
+file storage with the request's storage category.
+
 ### Citations
 
 Citations are **spec-native in openResponses**: streamed as

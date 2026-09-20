@@ -17,8 +17,8 @@
 
 ## 0. Current state (living section — update with every delivery)
 
-Snapshot: **2026-09-20**, after N2 (`/models/{format?}`; Phase 6 done). Read this first;
-§3/§5/§6 keep their original per-item detail.
+Snapshot: **2026-09-20**, after N3 (`legacy` formatter + route forwarding; Phases 2–3 fully
+closed). Read this first; §3/§5/§6 keep their original per-item detail.
 
 ### Shipped
 
@@ -38,6 +38,7 @@ Snapshot: **2026-09-20**, after N2 (`/models/{format?}`; Phase 6 done). Read thi
 | **N6 structured output** (D7 closed): `json_schema` via `StructuredChatAgent` (HasStructuredOutput, cross-driver), `json_object` via instruction suffix, `stream`+`json_schema` → 400, non-object roots → 400 — live-verified with gpt-4.1-nano | `StructuredChatAgent`, both formatters |
 | **N5 round-trip corpus** (D4 closed): 63 fixture-driven cases — parse/response fidelity per formatter, emit-replay cycle, cross-format IR equivalence; caught and fixed two CC parse bugs (file-part filename nesting, phantom empty TextPart on null content) | `tests/Unit/Services/Ai/Formatters/Corpus/` |
 | **N2 `/models/{format?}`** (Phase 6 done): OpenAI list shape (default) + invented openResponses dialect (`created_at`); contextual-scope visibility, deterministic order, unknown format 400; endpoint testing exposed and fixed a core scope-machinery bug (see A7) | `ModelsController`, `Formatters/Models/` |
+| **N3 `legacy` formatter + route forwarding** (Phases 2–3 done): NDJSON wire-compatible frames (header/status/citations-batched/completion), legacy non-streaming + error shapes; `/req/streamAI` + `api/ai-req` → `ChatController` with `format=legacy` (middleware byte-identical, group route untouched); per-message attachment UUIDs ride the IR as `hawki-storage://` file parts (factory-resolved — the native seam for the future `hawki.attachments` drop) | `Formatters/Implementations/Legacy/`, `ChatAgentFactory`, routes |
 
 ### Gap analysis verdicts (researched against the published Open Responses OpenAPI +
 LLM-Rosetta; full report in the session that produced it)
@@ -69,12 +70,11 @@ LLM-Rosetta; full report in the session that produced it)
 
 ### Recommended next steps (ordered)
 
-1. **N3 — `legacy` NDJSON formatter + private/ai-req route forwarding** (Phase 3 remainder;
-   budget Phase-2 design time for route forwarding).
-2. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
-   D1/D11/D13) — unlocks dropping `hawki.params`/`broadcast`/`attachments`.
-3. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
-4. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
+1. **N9 — Phase 5 orchestration**: `/ui-chat` + `StreamController` refactor (closes
+   D1/D11/D13) — unlocks dropping `hawki.params`/`broadcast`/`attachments` and removing
+   `StreamController` + the legacy factory (Phase 7).
+2. **N8 — `anthropicMessages` formatter** after the formatter conventions have hardened.
+3. Phases 9/10 (images/audio) whenever prioritized; the embeddings domain is the template.
 
 ---
 
@@ -384,8 +384,8 @@ wire-format clients receive spec-shaped errors. Streaming failures degrade to SS
 
 | Phase (proposal §11) | Status |
 |---|---|
-| Phase 2 — legacy compatibility *design* (route forwarding, `usageType` propagation) | Not started |
-| Phase 3 — `openai` + `legacy` formatters, private/ai-req route forwarding | 🟡 `openai` done (N1: formatter + stream context + live suite, D10 closed); `legacy` NDJSON formatter and route forwarding remain (N3) |
+| Phase 2 — legacy compatibility *design* (route forwarding, `usageType` propagation) | ✅ resolved with N3 — `usageType` needs no plumbing (UsageContext per-route middleware already drives the listeners: web session → `private`, external token → `api`); route/middleware mapping shipped with the forwarding; group-chat orchestration home decided: stays in `StreamController` until Phase 5 |
+| Phase 3 — `openai` + `legacy` formatters, private/ai-req route forwarding | ✅ done — `openai` (N1) and `legacy` (N3: NDJSON formatter, wire-compatible with the legacy frontend incl. header/status/citation/completion frames) + `/req/streamAI` and `api/ai-req` forwarded to `ChatController` with `format=legacy` (middleware untouched); group route stays on `StreamController` until Phase 5 |
 | Phase 4 — `AssistantAgentFactory` (assistant routing) | Not started; gated on the Assistants feature branch; the `hawkiExtensions` seam is ready for it |
 | Phase 5 — `StreamController` refactor + `/ui-chat` endpoint | Not started; D1 and D11 resolve here |
 | Phase 6 — `/models/{format?}` endpoint | ✅ done — `openai` (default, spec fields + `label`/`model_type` extras) and an invented `openResponses` dialect variant (`created_at` naming; the published spec has no `/models` endpoint); repository contextual scopes (active + usage-type rules) provide visibility; deterministic order |

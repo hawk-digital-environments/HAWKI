@@ -1,0 +1,48 @@
+{
+    "wireRequest": {
+        "broadcast": false,
+        "payload": {
+            "model": "gpt-4.1-nano",
+            "stream": false,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": {
+                        "text": "Be terse."
+                    }
+                },
+                {
+                    "role": "user",
+                    "content": {
+                        "text": "Hello"
+                    }
+                }
+            ]
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "legacy",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hello"
+                    }
+                ]
+            }
+        ],
+        "systemInstruction": [
+            {
+                "type": "text",
+                "text": "Be terse."
+            }
+        ],
+        "stream": {
+            "enabled": false,
+            "includeUsage": true
+        }
+    }
+}

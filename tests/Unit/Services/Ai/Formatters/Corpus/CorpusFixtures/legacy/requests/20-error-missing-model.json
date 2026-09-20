@@ -1,0 +1,10 @@
+{
+    "wireRequest": {
+        "broadcast": false,
+        "payload": {
+            "stream": false,
+            "messages": [{"role": "user", "content": {"text": "Hi"}}]
+        }
+    },
+    "expectedError": {"code": "missing_model", "param": "payload.model"}
+}

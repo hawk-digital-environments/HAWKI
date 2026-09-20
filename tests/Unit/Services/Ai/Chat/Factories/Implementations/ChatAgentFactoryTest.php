@@ -35,6 +35,7 @@ class ChatAgentFactoryTest extends TestCase
     private ChatToolResolver&MockObject $chatToolResolver;
     private LaravelToolResolver&MockObject $laravelToolResolver;
     private AiProviderProxyResolver&MockObject $providerProxyResolver;
+    private FileStorageService&MockObject $fileStorageService;
     private LoggerInterface&Stub $logger;
     private ChatAgentFactory $sut;
     private AiModel $model;
@@ -47,6 +48,7 @@ class ChatAgentFactoryTest extends TestCase
         $this->chatToolResolver = $this->createMock(ChatToolResolver::class);
         $this->laravelToolResolver = $this->createMock(LaravelToolResolver::class);
         $this->providerProxyResolver = $this->createMock(AiProviderProxyResolver::class);
+        $this->fileStorageService = $this->createMock(FileStorageService::class);
         $this->logger = self::createStub(LoggerInterface::class);
 
         $this->model = new AiModel(['model_id' => 'gpt-4o']);
@@ -60,7 +62,7 @@ class ChatAgentFactoryTest extends TestCase
         ));
 
         $this->sut = new ChatAgentFactory(
-            fileStorageService: self::createStub(FileStorageService::class),
+            fileStorageService: $this->fileStorageService,
             modelRepository: $this->modelRepository,
             aiService: self::createStub(AiService::class),
             chatToolResolver: $this->chatToolResolver,
@@ -190,6 +192,37 @@ class ChatAgentFactoryTest extends TestCase
         self::assertSame('call_1', $assistantWithCall->toolCalls->first()->resultId);
     }
 
+
+    public function testItResolvesHawkiStorageFilePartsPerMessage(): void
+    {
+        $identifier = \App\Services\Storage\Values\StoredFileIdentifier::fromCategoryAndUuid(
+            \App\Services\Storage\Values\StoredFileCategory::PRIVATE,
+            'uuid-1',
+        );
+
+        // StoredFile has a private constructor (built via fromMetaJson); returning
+        // null exercises the missing-file branch while the mock expectation pins the
+        // resolution contract: the scheme UUID under the request's storage category.
+        $this->fileStorageService
+            ->expects($this->once())
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn(null);
+
+        $request = new AiRequest(
+            model: 'gpt-4o',
+            messages: [
+                new \App\Services\Ai\Chat\Values\Messages\UserMessage(parts: [
+                    \App\Services\Ai\Chat\Values\Parts\TextPart::from('Now with the file'),
+                    new \App\Services\Ai\Chat\Values\Parts\FilePart(
+                        fileUrl: AiRequest::HAWKI_STORAGE_SCHEME . 'uuid-1'
+                    ),
+                ]),
+            ],
+        );
+
+        $this->sut->createAgent($request);
+    }
 
     public function testItMergesPrecedingReasoningIntoToolCallReplay(): void
     {

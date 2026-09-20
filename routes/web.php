@@ -12,6 +12,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StorageProxyController;
+use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\StreamController;
 use App\Http\Middleware\ExtApp\ExtAppUserOrTokenForbiddenMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -111,7 +112,8 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
             Route::get('/req/conv/attachment/getLink/{uuid}', [AiConvController::class, 'getAttachmentUrl']);
 
             Route::delete('/req/conv/attachment/delete', [AiConvController::class, 'deleteAttachment']);
-            Route::post('/req/streamAI', [StreamController::class, 'handleAiConnectionRequest']);
+            Route::post('/req/streamAI', ChatController::class)
+                ->defaults('format', 'legacy');
 
             // LINK PREVIEW
             Route::post('/api/link-preview', [LinkPreviewController::class, 'getPreview'])

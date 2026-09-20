@@ -26,7 +26,6 @@ use App\Http\Controllers\Api\V1\UserKeychainValueController;
 use App\Http\Controllers\Api\V1\UsersController;
 use App\Http\Controllers\LinkPreviewController;
 use App\Http\Controllers\StorageProxyController;
-use App\Http\Controllers\StreamController;
 use App\Http\Middleware\Api\ApiDataScopeContextSettingMiddleware;
 use App\Http\Middleware\Api\BlockExtAppsIfNotAllowedMiddleware;
 use App\Http\Middleware\ExtApp\AppTokenForbiddenMiddleware;
@@ -51,7 +50,8 @@ Route::middleware([
     BlockExtAppsIfNotAllowedMiddleware::class,
     AppTokenForbiddenMiddleware::class,
 ])->group(static function (): void {
-    Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
+    Route::post('ai-req', ChatController::class)
+        ->defaults('format', 'legacy');
 });
 
 Route::middleware([

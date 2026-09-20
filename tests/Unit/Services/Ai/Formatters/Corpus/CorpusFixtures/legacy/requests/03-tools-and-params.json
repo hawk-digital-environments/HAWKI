@@ -1,0 +1,64 @@
+{
+    "wireRequest": {
+        "broadcast": false,
+        "payload": {
+            "model": "gpt-4.1-nano",
+            "stream": true,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": {
+                        "text": "Sys."
+                    }
+                },
+                {
+                    "role": "user",
+                    "content": {
+                        "text": "Search"
+                    }
+                }
+            ],
+            "tools": [
+                "capability:web_search:auto"
+            ],
+            "params": {
+                "temp": 0.1,
+                "top_p": 0.9
+            }
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "legacy",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Search"
+                    }
+                ]
+            }
+        ],
+        "systemInstruction": [
+            {
+                "type": "text",
+                "text": "Sys."
+            }
+        ],
+        "stream": {
+            "enabled": true,
+            "includeUsage": true
+        },
+        "hawkiExtensions": {
+            "tools": [
+                "capability:web_search:auto"
+            ],
+            "params": {
+                "temp": 0.1,
+                "top_p": 0.9
+            }
+        }
+    }
+}

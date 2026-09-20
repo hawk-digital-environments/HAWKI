@@ -33,6 +33,13 @@ readonly class AiRequest
     public const string HAWKI_EXTENSION_PARAMS = 'params';
     public const string HAWKI_EXTENSION_BROADCAST = 'broadcast';
 
+    /**
+     * IR convention for HAWKI-stored files referenced from file parts: the file URL
+     * carries this scheme plus the storage UUID, resolved by the agent factory through
+     * HAWKI's file storage (per-request storage category).
+     */
+    public const string HAWKI_STORAGE_SCHEME = 'hawki-storage://';
+
     public function __construct(
         /**
          * Model slug as requested by the client; null resolves to the system default chat model.

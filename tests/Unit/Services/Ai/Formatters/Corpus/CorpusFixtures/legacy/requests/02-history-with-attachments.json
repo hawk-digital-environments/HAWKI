@@ -1,0 +1,97 @@
+{
+    "wireRequest": {
+        "broadcast": false,
+        "payload": {
+            "model": "gpt-4.1-nano",
+            "stream": true,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": {
+                        "text": "Be terse."
+                    }
+                },
+                {
+                    "role": "user",
+                    "content": {
+                        "text": "Read this",
+                        "attachments": [
+                            "uuid-1"
+                        ]
+                    }
+                },
+                {
+                    "role": "assistant",
+                    "content": {
+                        "text": "Done."
+                    }
+                },
+                {
+                    "role": "user",
+                    "content": {
+                        "text": "Thanks",
+                        "attachments": [
+                            "uuid-2",
+                            "uuid-3"
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "legacy",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Read this"
+                    },
+                    {
+                        "type": "file",
+                        "fileUrl": "hawki-storage://uuid-1"
+                    }
+                ]
+            },
+            {
+                "role": "assistant",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Done."
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Thanks"
+                    },
+                    {
+                        "type": "file",
+                        "fileUrl": "hawki-storage://uuid-2"
+                    },
+                    {
+                        "type": "file",
+                        "fileUrl": "hawki-storage://uuid-3"
+                    }
+                ]
+            }
+        ],
+        "systemInstruction": [
+            {
+                "type": "text",
+                "text": "Be terse."
+            }
+        ],
+        "stream": {
+            "enabled": true,
+            "includeUsage": true
+        }
+    }
+}

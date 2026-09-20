@@ -33,6 +33,7 @@ use App\Services\Ai\Formatters\Models\ModelsFormatterRegistry;
 use App\Services\Ai\Formatters\Models\Implementations\OpenAi\OpenAiModelsFormatter;
 use App\Services\Ai\Formatters\Models\Implementations\OpenResponses\OpenResponsesModelsFormatter;
 use App\Services\Ai\Formatters\Implementations\OpenAiChatCompletions\OpenAiChatCompletionsFormatter;
+use App\Services\Ai\Formatters\Implementations\Legacy\LegacyFormatter;
 use App\Services\Ai\Formatters\Implementations\OpenResponses\OpenResponsesFormatter;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
 use App\Services\Ai\ModelInformation\Enrichment\AiModelInfoEnrichmentPipeline;
@@ -261,7 +262,8 @@ class AiServiceProvider extends ServiceProvider
             FormatterRegistry::class,
             static fn (FormatterRegistry $registry) => $registry
                 ->declare(OpenResponsesFormatter::KEY, OpenResponsesFormatter::class)
-                ->declare(OpenAiChatCompletionsFormatter::KEY, OpenAiChatCompletionsFormatter::class),
+                ->declare(OpenAiChatCompletionsFormatter::KEY, OpenAiChatCompletionsFormatter::class)
+                ->declare(LegacyFormatter::KEY, LegacyFormatter::class),
         );
 
         $this->app->extend(

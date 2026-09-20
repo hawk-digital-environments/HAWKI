@@ -1,0 +1,14 @@
+{
+    "wireRequest": {
+        "broadcast": false,
+        "payload": {
+            "model": "gpt-4.1-nano",
+            "stream": false,
+            "messages": [
+                {"role": "user", "content": {"text": "Hi"}},
+                {"role": "assistant", "content": {"text": "Hello"}}
+            ]
+        }
+    },
+    "expectedError": {"code": "missing_user_turn", "param": "input"}
+}

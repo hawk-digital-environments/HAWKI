@@ -406,6 +406,10 @@ class ChatAgentFactory extends AbstractChatAgentFactory
             $attachments->registerVendorFile($file);
         }
 
+        foreach ($this->storedFilesFromParts($message, $storageCategory, $attachments) as $file) {
+            $attachments->register($file);
+        }
+
         if ($isLast && \is_array($request->hawkiExtension(AiRequest::HAWKI_EXTENSION_ATTACHMENTS))) {
             foreach ($request->hawkiExtension(AiRequest::HAWKI_EXTENSION_ATTACHMENTS) as $uuid) {
                 if (!\is_string($uuid)) {
@@ -435,6 +439,9 @@ class ChatAgentFactory extends AbstractChatAgentFactory
     /**
      * Maps IR image and file parts of a user message onto vendor file attachments.
      *
+     * `hawki-storage://` file parts are excluded here — they resolve to HAWKI-stored
+     * files via {@see storedFilesFromParts()} instead.
+     *
      * @return array<int, File>
      */
     private function filesFromParts(UserMessage $message): array
@@ -457,6 +464,10 @@ class ChatAgentFactory extends AbstractChatAgentFactory
             }
 
             if ($part instanceof FilePart) {
+                if (null !== $part->fileUrl && str_starts_with($part->fileUrl, AiRequest::HAWKI_STORAGE_SCHEME)) {
+                    continue;
+                }
+
                 $dataUrl = null !== $part->fileUrl ? $this->parseDataUrl($part->fileUrl) : null;
 
                 if (null !== $dataUrl) {
@@ -467,6 +478,45 @@ class ChatAgentFactory extends AbstractChatAgentFactory
                     $files[] = Document::fromBase64(base64: $part->fileData->data, mimeType: $part->fileData->mediaType);
                 }
             }
+        }
+
+        return $files;
+    }
+
+    /**
+     * Resolves `hawki-storage://<uuid>` file parts of a user message onto HAWKI-stored
+     * files in the request's storage category (private vs. group). Missing files are
+     * reported as attachment errors rather than aborting the request — the same
+     * semantics as the {@see AiRequest::HAWKI_EXTENSION_ATTACHMENTS} path.
+     *
+     * @return array<int, \App\Services\Storage\Interfaces\FileInterface>
+     */
+    private function storedFilesFromParts(UserMessage $message, StoredFileCategory $storageCategory, UserMessageAttachments $attachments): array
+    {
+        $files = [];
+
+        foreach ($message->parts as $part) {
+            if (!$part instanceof FilePart
+                || null === $part->fileUrl
+                || !str_starts_with($part->fileUrl, AiRequest::HAWKI_STORAGE_SCHEME)) {
+                continue;
+            }
+
+            $uuid = substr($part->fileUrl, \strlen(AiRequest::HAWKI_STORAGE_SCHEME));
+            $file = $this->fileStorageService->retrieve(StoredFileIdentifier::fromCategoryAndUuid($storageCategory, $uuid));
+
+            if (null === $file) {
+                $attachments->addError('One or more attachment were not found in storage.');
+                $this->logger->warning(\sprintf(
+                    'Attachment with UUID "%s" not found in storage category "%s".',
+                    $uuid,
+                    $storageCategory->value,
+                ));
+
+                continue;
+            }
+
+            $files[] = $file;
         }
 
         return $files;

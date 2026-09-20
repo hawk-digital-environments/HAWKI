@@ -1,0 +1,39 @@
+{
+    "wireRequest": {
+        "broadcast": true,
+        "payload": {
+            "model": "gpt-4.1-nano",
+            "stream": true,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": {
+                        "text": "Hi"
+                    }
+                }
+            ]
+        }
+    },
+    "expectedIr": {
+        "model": "gpt-4.1-nano",
+        "formatKey": "legacy",
+        "messages": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "type": "text",
+                        "text": "Hi"
+                    }
+                ]
+            }
+        ],
+        "stream": {
+            "enabled": true,
+            "includeUsage": true
+        },
+        "hawkiExtensions": {
+            "broadcast": true
+        }
+    }
+}
