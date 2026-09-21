@@ -168,6 +168,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                         {:else}
                                             <ModelPicker/>
                                         {/if}
+                                        <ContextWindowUsage/>
                                     </div>
 
                                     <!-- Right: settings -->
@@ -200,7 +201,6 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                 <div class="chat-bottom-left">
                                     <FilePicker/>
                                     <ToolMenu bind:open={toolPickerOpen}/>
-                                    <ContextWindowUsage/>
                                     <div class="chat-tool-chip-lane">
                                         <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
                                     </div>
