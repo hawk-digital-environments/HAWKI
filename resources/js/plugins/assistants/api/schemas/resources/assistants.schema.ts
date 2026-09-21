@@ -103,8 +103,13 @@ const WireFeedbackSchema = z.object({
     user: WireUserSchema.nullable().optional()
 });
 
-/** The included `assistant_review` relation (creator/org-admin tier only). */
-const WireReviewSchema = z.object({
+/**
+ * The `assistant-reviews` wire shape (creator/org-admin tier only): arrives
+ * as the included `assistant_review` relation on an assistant fetch, or as
+ * the resource itself on the related endpoint
+ * (`GET /assistants/{id}/assistant-review`, see `getAssistantReview`).
+ */
+export const AssistantReviewWireSchema = z.object({
     id: z.string(),
     status: z.enum(ReviewStage),
     reason: z.string().nullable().optional()
@@ -161,7 +166,7 @@ export const AssistantResourceSchema = z.object({
     assistant_setting_values: z.array(WireSettingValueSchema).nullable().optional(),
     assistant_versions: z.array(WireVersionSchema).nullable().optional(),
     assistant_feedback: z.array(WireFeedbackSchema).nullable().optional(),
-    assistant_review: WireReviewSchema.nullable().optional(),
+    assistant_review: AssistantReviewWireSchema.nullable().optional(),
     assistant_attachments: z.array(WireAttachmentSchema).nullable().optional(),
     creator: WireUserSchema.nullable().optional(),
     remix_creator: WireUserSchema.nullable().optional(),

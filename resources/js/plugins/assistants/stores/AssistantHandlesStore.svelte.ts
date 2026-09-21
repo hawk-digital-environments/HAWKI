@@ -1,7 +1,7 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
-import type {Assistant} from '$plugins/assistants/types/assistant';
+import {ReleaseMode, type Assistant} from '$plugins/assistants/types/assistant';
 import {assistantRowAppearance} from '$plugins/assistants/utils/assistantRowAppearance';
 import {
     ASSISTANT_LIST_INCLUDES,
@@ -20,13 +20,16 @@ const PAGE_SIZE = 50;
  *  cannot turn the lazy menu load into an endless fetch. */
 const MAX_PAGES = 10;
 
-/** `Assistant` narrowed to the rows the `@` menu can actually offer: drafts
- *  have no `handle` until they are released, and an untaggable row has no
- *  place in a menu whose whole purpose is addressing. */
+/** `Assistant` narrowed to the rows the `@` menu can actually offer: a row
+ *  needs an `id` and a `handle` to be addressable (the builder's handle
+ *  input writes handles on drafts too), and a draft is not a runnable chat
+ *  participant — only released stages are taggable. */
 type TaggableAssistant = Assistant & {id: string; handle: string};
 
 function isTaggable(assistant: Assistant): assistant is TaggableAssistant {
-    return assistant.id !== null && assistant.handle !== null;
+    return assistant.id !== null
+        && assistant.handle !== null
+        && assistant.releaseStage !== ReleaseMode.DRAFT;
 }
 
 /**
@@ -71,6 +74,14 @@ class AssistantHandlesStore implements DataStore {
             for (let page = 1; page <= MAX_PAGES; page++) {
                 const result = await listAssistants({
                     include: [...ASSISTANT_LIST_INCLUDES],
+                    filter: {
+                        // Note: Drafts are excluded from the menu
+                        release_stage: [
+                            ReleaseMode.PRIVATE,
+                            ReleaseMode.ORGANIZATIONAL,
+                            ReleaseMode.FEDERATED,
+                        ].join(','),
+                    },
                     page: {number: page, size: PAGE_SIZE}
                 });
                 collected.push(...result.assistants);

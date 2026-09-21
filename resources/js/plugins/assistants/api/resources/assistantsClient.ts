@@ -1,11 +1,12 @@
 import { useApp } from "$lib/app/hooks/useApp.svelte.js";
 import type { FetchCollectionQuery, FetchResourceQuery } from "$lib/kernel/api/buildQueryString.js";
-import type { JsonApiPagination } from "$lib/kernel/api/jsonApiEncoding.js";
+import { decodeJsonApiResourceResponse, type JsonApiPagination } from "$lib/kernel/api/jsonApiEncoding.js";
 import { logApiError } from "$plugins/assistants/api/errors";
-import type { Assistant } from "$plugins/assistants/types/assistant";
+import type { Assistant, Review } from "$plugins/assistants/types/assistant";
 import {
   assistantToApi,
   AssistantResourceSchema,
+  AssistantReviewWireSchema,
   ASSISTANT_SETTING_KEY_MAP,
 } from "$plugins/assistants/api/schemas/resources/assistants.schema.js";
 import type { JsonApiResourceBody } from "$plugins/assistants/api/schemas/wireFragments.js";
@@ -237,6 +238,31 @@ export async function requestAssistantRelease(assistant: Assistant): Promise<boo
   } catch (err) {
     throw logApiError("requestAssistantRelease", err, { id: assistant.id });
   }
+}
+
+/**
+ * Fetches the assistant's review state from its JSON:API related endpoint
+ * (`GET /assistants/{id}/assistant-review`) — the server-truth answer after
+ * a release action, or whenever a session-held snapshot may have gone stale.
+ *
+ * A draft/private release tears the review down server-side, and the spec
+ * renders an empty to-one relation as `{data: null}` — which
+ * {@link decodeJsonApiResourceResponse} would reject (its "missing data
+ * field" throw) — so the decoder runs behind a null-safe wrapper and the
+ * schema is nullable: `data: null` resolves to `null` here. Transport-level
+ * failures (401/404/5xx) still throw for the caller to handle.
+ */
+export async function getAssistantReview(id: string | null): Promise<Review | null> {
+  if (!id) return null;
+  const raw = await useApp().restApi.getFromResourceAction(ASSISTANTS, `${id}/assistant-review`, {
+    beforeSchema: (response) => response?.data
+      ? decodeJsonApiResourceResponse(response)
+      : null,
+    schema: AssistantReviewWireSchema.nullable(),
+  });
+  return raw
+    ? {status: raw.status, reason: raw.reason ?? null}
+    : null;
 }
 
 /**
