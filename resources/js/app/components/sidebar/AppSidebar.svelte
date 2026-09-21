@@ -67,8 +67,9 @@
     }
 
     .module-selector {
-        /* Its own group, so it takes the sidebar's group gap like every other
-           boundary in the column. */
-        margin-bottom: var(--nav-group-gap);
+        /* A step beyond the sidebar's group gap: the switcher changes what the
+           whole list below shows, so it gets clear separation from that list
+           rather than reading as its first row. */
+        margin-bottom: var(--space-4);
     }
 </style>
