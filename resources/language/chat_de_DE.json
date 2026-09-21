@@ -210,6 +210,10 @@
                     "offlineLabel": "Nicht verfügbar (offline)"
                 }
             },
+            "contextUsage": {
+                "tooltip": "Kontextfenster: :used von :max Tokens belegt (:percent %)",
+                "ariaLabel": "Auslastung des Kontextfensters: :percent %"
+            },
             "toolMenu": {
                 "backButton": "Tools",
                 "deactivateTool": "Tool deaktivieren",
