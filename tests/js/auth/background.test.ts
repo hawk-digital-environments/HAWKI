@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
-import {pickLoginBackground} from '../../../resources/js/plugins/auth/pages/loginBackground.js';
+import {isLoginVideoEnabled, pickLoginBackground, setLoginVideoEnabled} from '../../../resources/js/plugins/auth/pages/loginBackground.js';
 
 function storage() {
     const values = new Map<string, string>();
@@ -31,4 +31,29 @@ test('missing, malformed and unsafe indexes fall back without throwing', async (
 test('unavailable browser storage does not prevent a valid background', async () => {
     const unavailable = {getItem: () => {throw new Error('blocked');}, setItem: () => {}, removeItem: () => {}};
     assert.equal((await pickLoginBackground('', 'light', {load: async () => ({lightmode: [entry('a.mp4')]}), storage: unavailable}))?.creator, 'Artist');
+});
+
+test('login video is enabled by default and only stored zero disables it', () => {
+    const saved = storage();
+    assert.equal(isLoginVideoEnabled(saved), true);
+    saved.setItem('hawki.auth.backgroundVideo', '0');
+    assert.equal(isLoginVideoEnabled(saved), false);
+    for (const value of ['1', 'garbage']) {saved.setItem('hawki.auth.backgroundVideo', value); assert.equal(isLoginVideoEnabled(saved), true);}
+});
+
+test('login video preference stores disabled and removes enabled', () => {
+    const saved = storage();
+    setLoginVideoEnabled(saved, false);
+    assert.equal(saved.getItem('hawki.auth.backgroundVideo'), '0');
+    assert.equal(isLoginVideoEnabled(saved), false);
+    setLoginVideoEnabled(saved, true);
+    assert.equal(saved.getItem('hawki.auth.backgroundVideo'), null);
+    assert.equal(isLoginVideoEnabled(saved), true);
+});
+
+test('login video preference tolerates unavailable storage', () => {
+    const unavailable = {getItem: () => {throw new Error('blocked');}, setItem: () => {throw new Error('blocked');}, removeItem: () => {throw new Error('blocked');}};
+    assert.equal(isLoginVideoEnabled(unavailable), true);
+    assert.doesNotThrow(() => setLoginVideoEnabled(unavailable, false));
+    assert.doesNotThrow(() => setLoginVideoEnabled(unavailable, true));
 });
