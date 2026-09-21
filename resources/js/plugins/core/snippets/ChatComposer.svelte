@@ -32,6 +32,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import FileChips from '$plugins/core/modules/chat/components/composer/FileChips.svelte';
     import FilePicker from '$plugins/core/modules/chat/components/composer/FilePicker.svelte';
     import ToolMenu from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
+    import ContextWindowUsage from '$plugins/core/modules/chat/components/composer/ContextWindowUsage.svelte';
     import ToolChips from '$plugins/core/modules/chat/components/composer/ToolChips.svelte';
     import ComposerActionButtons from '$plugins/core/modules/chat/components/composer/ComposerActionButtons.svelte';
 
@@ -199,6 +200,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                 <div class="chat-bottom-left">
                                     <FilePicker/>
                                     <ToolMenu bind:open={toolPickerOpen}/>
+                                    <ContextWindowUsage/>
                                     <div class="chat-tool-chip-lane">
                                         <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
                                     </div>
