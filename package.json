@@ -4,14 +4,17 @@
     "type": "module",
     "scripts": {
         "dev": "npm install && vite",
-        "build": "vite build",
+        "build": "vite build && npm run build:pwa",
+        "build:pwa": "npm run check:pwa && esbuild resources/js/kernel/pwa/service-worker.ts --bundle --format=iife --target=es2022 --outfile=public/sw.js",
+        "check:pwa": "tsc -p tsconfig.pwa.json",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
-        "test": "npm run test:search",
+        "test": "npm run test:search && npm run test:pwa",
         "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test \"tests/js/**/*.test.ts\" \"tests/js/**/*.test.svelte.ts\"",
+        "test:pwa": "npm run build:pwa && node --conditions=browser --import ./tests/js/register.mjs --test tests/js/pwa/*.test.mjs tests/js/pwa/*.test.ts",
         "test:admin:types": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tests/js/admin/tsconfig.json --config ./svelte.config.js",
         "tsc": "tsc -p ./tsconfig.json",
         "check:tests": "tsc -p ./tsconfig.test.json",
-        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json && tsc -p ./tsconfig.test.json"
+        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json && tsc -p ./tsconfig.test.json && npm run check:pwa"
     },
     "devDependencies": {
         "@antv/infographic": "^0.2.19",

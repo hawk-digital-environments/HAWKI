@@ -49,6 +49,7 @@ import {ShellExtension} from '$lib/kernel/shell/ShellExtension.svelte.js';
 import {StorageExtension} from '$lib/kernel/storage/StorageExtension.js';
 import {passkeySessionExtension} from '$lib/kernel/keychain/PasskeySessionExtension.svelte.js';
 import {EventExtension} from '$lib/kernel/events/EventExtension.js';
+import {PwaExtension} from '$lib/kernel/pwa/PwaExtension.js';
 
 declare global {
     interface Window {
@@ -85,6 +86,7 @@ provideLegacyGlobals();
             new StorageExtension(),
             new StoreExtension(),
             new SearchExtension(),
+            new PwaExtension(),
             new ShellExtension(),
             new SnippetExtension(),
             new LegacyToastExtension()
