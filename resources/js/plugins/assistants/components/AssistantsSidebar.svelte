@@ -100,10 +100,10 @@
 
     /**
      * Drill back out of the builder, to the page it was opened from — the
-     * assistant's detail page, the drafts list, wherever the user hit "Edit"
-     * or "Remix". Entering via "Erstellen" remembers no origin (there is no
-     * assistant to go back to), so that falls back to the drafts list, where
-     * the freshly created assistant now lives.
+     * assistant's detail page, the drafts list, wherever the user hit "Edit",
+     * "Remix" or "Erstellen". Entering the builder without an origin (a
+     * direct URL, say) falls back to the drafts list, where a freshly
+     * created assistant now lives.
      *
      * The exit confirmation runs on top of this as a router navigation guard
      * (see `ConfirmBuilderExit`), which can still cancel the navigation.

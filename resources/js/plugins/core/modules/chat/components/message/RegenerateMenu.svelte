@@ -14,6 +14,12 @@
   while the reply streams, so the menu would hand focus back to a removed
   element. Pass `returnFocusTo` (the message element) to move focus there instead.
 
+  An author that fixes its model (an assistant with `modelSelect: false`
+  capabilities, contributed via the `aiAssistants` hook) reduces the menu to
+  the single quick action: the run can only ever use that assistant's model
+  — the backend enforces it (`AssistantChatAgentFactory::resolveModelId`)
+  — so offering other picks would lie.
+
   ## Usage
   Rendered in `ChatMessage.svelte`'s action bar for assistant messages when the
   page provides an `onRegenerate` handler:
@@ -45,6 +51,7 @@
     const {message, onRegenerate, returnFocusTo = null}: Props = $props();
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
+    const handleStore = useStore('ai-handle');
 
     let open = $state(false);
 
@@ -55,6 +62,21 @@
     // without a model or when the model has been removed since. The quick action then
     // hands `null` on and lets the transport pick the fallback.
     const usedModel = $derived(message.model ? aiModelStore.getOneById(message.model) : null);
+
+    // The participant that authored the message, from its persisted identity
+    // (`message.assistant.handle`) — the same source `chatSend`'s regen
+    // pinning uses. Null for plain model messages, or when the assistant
+    // was deleted since (the menu then stays unrestricted).
+    const author = $derived.by(() => {
+        const handle = message.assistant?.handle;
+        return handle
+            ? handleStore.assistants.find(entry => entry.chatBinding === handle) ?? null
+            : null;
+    });
+
+    // An author that fixes its model (see `AiAssistant.capabilities`): the
+    // only legal pick is the quick action's — the assistant's model.
+    const modelFixed = $derived(author?.capabilities?.modelSelect === false);
 
     let regenerated = false;
 
@@ -89,18 +111,20 @@
             {usedModel ? usedModel.label : __('chat.actions.regenerate')}
         </span>
     </DropdownMenuItem>
-    <DropdownMenuSeparator/>
-    {#each groups.entries() as [provider, models] (provider)}
-        <DropdownMenuSub label={provider}>
-            {#each models as model (model.model_id)}
-                {@const offline = model.status === 'offline'}
-                {@const used = model.model_id === usedModel?.model_id}
-                <DropdownMenuItem class="regen-menu-item" disabled={offline} onSelect={() => regenerate(model)}>
-                    <span class="regen-menu-label" class:regen-menu-label--used={used}>{model.label}</span>
-                </DropdownMenuItem>
-            {/each}
-        </DropdownMenuSub>
-    {/each}
+    {#if !modelFixed}
+        <DropdownMenuSeparator/>
+        {#each groups.entries() as [provider, models] (provider)}
+            <DropdownMenuSub label={provider}>
+                {#each models as model (model.model_id)}
+                    {@const offline = model.status === 'offline'}
+                    {@const used = model.model_id === usedModel?.model_id}
+                    <DropdownMenuItem class="regen-menu-item" disabled={offline} onSelect={() => regenerate(model)}>
+                        <span class="regen-menu-label" class:regen-menu-label--used={used}>{model.label}</span>
+                    </DropdownMenuItem>
+                {/each}
+            </DropdownMenuSub>
+        {/each}
+    {/if}
 </DropdownMenu>
 
 <style>

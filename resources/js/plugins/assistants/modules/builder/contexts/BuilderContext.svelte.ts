@@ -42,6 +42,7 @@
  */
 import { createContext } from 'svelte';
 import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
+import type { Review } from "$plugins/assistants/types/assistant/Review";
 import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
 import { ReviewStage } from "$plugins/assistants/types/assistant/ReviewStage";
 import {
@@ -55,6 +56,7 @@ import {
   updateAssistant,
   deleteAssistant,
   requestAssistantRelease,
+  getAssistantReview,
   updateAssistantSetting,
   createAssistantPrompts,
   removeAssistantPrompts,
@@ -235,11 +237,12 @@ export class BuilderContext {
       }
     }
 
-    const restored = this.restoreFromSession();
-    // const restored = false;
-    console.log('restored', restored);
-    if (!restored) {
-      console.log("could not retrieve from session");
+    if (this.restoreFromSession()) {
+      // Refresh review state from server
+      if (this.draft.id) {
+        void this.refreshReviewState();
+      }
+    } else {
       await this.startNew();
     }
   }
@@ -644,18 +647,25 @@ export class BuilderContext {
         this.toast.error(this.translate("assistants.builder.publish.save_failed"));
         return;
       }
+      // Fetch the servers review state for the assistant.
+      let review: Review | null;
+      try {
+        review = await getAssistantReview(this.draft.id);
+      } catch {
+        review = this.draft.releaseStage === ReleaseMode.ORGANIZATIONAL
+          || this.draft.releaseStage === ReleaseMode.FEDERATED
+          ? { status: ReviewStage.PENDING, reason: null }
+          : null;
+      }
       this.draft = {
         ...this.draft,
         requested_release_stage: this.draft.releaseStage,
         submissionNote: '', // Resets note for next publish
-        // Mirror the review outcome the server just recorded: submitting for
-        // a public stage (re)opens it as pending with any old denial reason
-        // cleared; dropping to draft/private tears it down entirely.
-        review: this.draft.releaseStage === ReleaseMode.ORGANIZATIONAL
-          || this.draft.releaseStage === ReleaseMode.FEDERATED
-          ? { status: ReviewStage.PENDING, reason: null }
-          : null,
+        review,
       };
+      // The publish is this session's new starting point: snapshot it so
+      // `hasSessionChanges` stops reporting the release itself as an edit.
+      this.sessionOrigin = clone(this.draft);
       this.commitKeys(['submissionNote']);
       this.committed = true;
       this.setToSession();
@@ -760,6 +770,34 @@ export class BuilderContext {
     } catch {
       console.error("Failed to retrieve assistant in session");
       return false;
+    }
+  }
+
+  /**
+   * Refreshes the server-truth review state onto a restored draft.
+   *
+   * A restored session resumes from the sessionStorage snapshot, review
+   * state included — which may be stale: an admin can approve, deny or flag
+   * the assistant while the session sits in storage, and the publish page's
+   * status card would keep showing the snapshot's verdict. `review` is an
+   * identity key (see `IDENTITY_KEYS`), so writing it neither dirties the
+   * draft nor touches change-tracking; the refreshed state is persisted
+   * back into the snapshot.
+   *
+   * Best-effort by design: a failed fetch keeps the snapshot's state rather
+   * than breaking `init()`, and a session discarded while the request was
+   * in flight is left alone.
+   */
+  private async refreshReviewState(): Promise<void> {
+    try {
+      const review = await getAssistantReview(this.draft.id);
+      if (this.discarded) {
+        return;
+      }
+      this.draft = { ...this.draft, review };
+      this.setToSession();
+    } catch {
+      // Keep the snapshot's review state.
     }
   }
 
