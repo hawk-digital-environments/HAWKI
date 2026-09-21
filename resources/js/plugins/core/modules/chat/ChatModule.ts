@@ -4,7 +4,7 @@ import type {Translator} from '$lib/kernel/localization/translator.js';
 import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
 import type {Component} from 'svelte';
-import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
+import MessageCircleIcon from '$lib/components/ui/icons/iconset/MessageCircleIcon.svelte';
 import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
 
 const loadIndexPage = async () => import('./pages/ChatIndex.svelte');
@@ -58,7 +58,7 @@ export class ChatModule implements HawkiModule {
     }
 
     public icon(_locale: Locale): string | IconComponent | Component {
-        return Chat01Icon;
+        return MessageCircleIcon;
     }
 
     public sidebar(_locale: Locale): Component {
