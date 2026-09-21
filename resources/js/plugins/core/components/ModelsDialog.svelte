@@ -1,17 +1,21 @@
 <!--
-  @component Page component for the `/models` route (route name `models.index`)
-  — the model showcase, analogous to the announcements ("Aktuelles") page.
-  Renders every available AI model as a bordered `ModelCard`, grouped by
-  provider. Reached via the profile dropdown (`ProfileButton.svelte`) and the
-  "all models" footer link in `ModelPickerV2`.
+  @component Model showcase as a modal. Renders every available AI model as a
+  bordered `ModelCard`, grouped by provider. Mounted by `AppSidebar`, opened
+  via `modelsRequested` from the profile dropdown and the "all models" footer
+  link in `ModelPickerV2`.
 -->
 <script lang="ts">
+    import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import ModelCard from '$plugins/core/components/ModelCard.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import type {RouteProps} from '$lib/components/ui/routing/index.js';
 
-    const {}: RouteProps = $props();
+    interface Props {
+        /** Whether the dialog is open. Supports bind:open. */
+        open?: boolean;
+    }
+
+    let {open = $bindable(false)}: Props = $props();
 
     const aiModelStore = useStore('ai-models');
     const {__} = useTranslator();
@@ -33,10 +37,14 @@
     });
 </script>
 
-<div class="models-scroll">
-    <div class="models-page">
-        <h1>{__('ai.model.page.title')}</h1>
-
+<Dialog
+    {open}
+    onOpenChange={isOpen => open = isOpen}
+    title={__('ai.model.page.title')}
+    contentProps={{class: 'models-dialog-content'}}
+    headerProps={{class: 'models-dialog-header'}}
+>
+    <div class="models-body">
         {#if groups.length === 0}
             <p class="models-empty">{__('ai.model.page.empty')}</p>
         {:else}
@@ -52,25 +60,44 @@
             {/each}
         {/if}
     </div>
-</div>
+</Dialog>
 
 <style>
-    /* `main.content` is a fixed-height, `overflow: hidden` grid cell, so the
-       page has to bring its own scroll region (same as the chat pages). */
-    .models-scroll {
-        height: 100%;
-        overflow-y: auto;
+    :global(.models-dialog-content.models-dialog-content) {
+        width: min(70rem, calc(100vw - 2 * var(--space-4)));
+        max-width: 70rem;
+        max-height: calc(100dvh - 2 * var(--space-4));
+        grid-template-rows: auto minmax(0, 1fr);
+        overflow: hidden;
+        padding: 0;
+        gap: 0;
     }
 
-    .models-page {
-        width: min(70rem, 100%);
-        margin-inline: auto;
-        padding: var(--space-8) var(--space-4);
+    :global(.models-dialog-header.models-dialog-header) {
+        padding: var(--space-5) var(--space-6) var(--space-4);
+        border-bottom: var(--divider);
+    }
 
-        h1 {
-            margin-bottom: var(--space-6);
-            font-size: var(--font-size-xl);
-            font-weight: var(--font-weight-bold);
+    .models-body {
+        min-height: 0;
+        overflow-y: auto;
+        padding: var(--space-6);
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    /* Tighter insets on phones so the cards get the width; the header follows
+       so its title stays aligned with the provider headings. */
+    @media (--bp-xs) {
+        .models-body {
+            padding: var(--space-4) var(--space-3);
+        }
+
+        :global(.models-dialog-header.models-dialog-header) {
+            padding-inline: var(--space-3);
         }
     }
 
@@ -81,6 +108,10 @@
 
     .models-group {
         margin-bottom: var(--space-8);
+
+        &:last-child {
+            margin-bottom: 0;
+        }
 
         h2 {
             margin-bottom: var(--space-4);
@@ -94,9 +125,5 @@
         grid-template-columns: repeat(auto-fill, minmax(min(30rem, 100%), 1fr));
         gap: var(--space-4);
         align-items: start;
-    }
-
-    @media print {
-        .models-scroll { height: auto; overflow: visible; }
     }
 </style>

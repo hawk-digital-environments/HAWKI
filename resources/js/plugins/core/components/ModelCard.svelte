@@ -49,7 +49,7 @@
     interface Props {
         /** The model to describe. */
         model: AiModel;
-        /** Renders the card with its own border/background (e.g. on the models page). */
+        /** Renders the card with its own border/background (e.g. in the models dialog). */
         bordered?: boolean;
         /** Space-saving variant for the mobile sheet: header, chips and a single meta line — no description, no facts panel. */
         compact?: boolean;
