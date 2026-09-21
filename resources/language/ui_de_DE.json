@@ -571,10 +571,10 @@
         "models_added": "Modelle hinzugefügt. Öffnen Sie Modelle, um sie zu konfigurieren und zu aktivieren.",
         "add_models": "Ausgewählte Modelle hinzufügen",
         "view_models": "Modelle anzeigen",
+        "show_all_servers": "Alle Server anzeigen",
         "view_tools": "Werkzeuge anzeigen",
         "tools": "Werkzeuge",
         "tools_of": "Werkzeuge von :server",
-        "show_all_tools": "Alle Werkzeuge anzeigen",
         "discovery_search": "Modelle durchsuchen",
         "discovery_count": ":shown von :total Modellen",
         "discovery_no_matches": "Keine Modelle passen zur Suche.",
@@ -616,7 +616,7 @@
             "providers": "Konfigurieren Sie KI-Anbieter und ihre Zugangsdaten.",
             "models": "Aktivieren Sie Modelle und bearbeiten Sie Beschreibungen, Fähigkeiten, Parameter, Limits und Werkzeugzuordnungen.",
             "system-models": "Wählen Sie Modelle für neue Chats, Titel, Zusammenfassungen und Promptverbesserungen und bearbeiten Sie die zugehörigen Systemprompts.",
-            "mcp": "Konfigurieren Sie Serververbindungen, prüfen Sie die Verfügbarkeit und ermitteln Sie Werkzeuge. Wählen Sie einen Server, um seine Werkzeuge zu sehen; in HAWKI integrierte Werkzeuge werden ebenfalls aufgeführt. Verwalten Sie Aktivierung, Fähigkeiten und Modellzuordnungen je Werkzeug.",
+            "mcp": "Konfigurieren Sie Serververbindungen, prüfen Sie die Verfügbarkeit und ermitteln Sie Werkzeuge. Klappen Sie einen Server auf, um seine Werkzeuge zu sehen und zu verwalten; in HAWKI integrierte Werkzeuge stehen unterhalb der Server. Verwalten Sie Aktivierung, Fähigkeiten und Modellzuordnungen je Werkzeug.",
             "users": "Legen Sie lokale Konten an, suchen Sie Benutzer und verwalten Sie den Kontozugriff.",
             "announcements": "Verfassen, planen und veröffentlichen Sie Ankündigungen für alle oder ausgewählte Zielgruppen.",
             "usage": "Untersuchen Sie Anfragen und Tokenverbrauch im Zeitverlauf.",
@@ -754,7 +754,10 @@
             "next": "Weiter",
             "filter": "Filter: :name",
             "filter_active": "Filter: :name (:value)",
-            "filter_all": "Alle"
+            "filter_all": "Alle",
+            "details": "Details",
+            "expand": "Details zu :name anzeigen",
+            "collapse": "Details zu :name ausblenden"
         },
         "groups": {
             "ai": "KI-Dienste",

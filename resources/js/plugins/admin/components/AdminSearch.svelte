@@ -12,7 +12,10 @@
     import type { AdminRow } from '../schemas/admin-content.js';
     import type { AdminWorkspace } from '../workspace.svelte.js';
 
-    const { recordSet }: { recordSet: AdminWorkspace<Row, ColumnId, Results> } = $props();
+    const { recordSet, beforeSubmit }: {
+        recordSet: AdminWorkspace<Row, ColumnId, Results>;
+        beforeSubmit?: () => void;
+    } = $props();
     const { __ } = useTranslator();
 </script>
 
@@ -20,6 +23,7 @@
     class="search"
     onsubmit={(event) => {
         event.preventDefault();
+        beforeSubmit?.();
         void recordSet.submitSearch();
     }}
 >

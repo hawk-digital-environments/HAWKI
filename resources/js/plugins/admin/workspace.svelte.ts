@@ -115,6 +115,11 @@ export interface AdminActionResult<Result> {
 
 type Translate = (label: string, replacements?: Record<string, string>) => string;
 
+/** Comparable form of a value filter state, used to tell one selection from another. */
+function filterKey(filters: ColumnFiltersState): string {
+    return JSON.stringify(filters.map((item) => [item.id, item.value]));
+}
+
 /**
  * Everything one admin Workspace page works with: the columns the page
  * declared, the content of the last read, the table state that shapes each
@@ -161,6 +166,14 @@ export class AdminWorkspace<
     focusFallback: () => HTMLElement | null = () => null;
 
     readonly rows = $derived<Row[]>(this.content?.rows ?? []);
+    /**
+     * The published content was read with other value filters than the current ones, so it belongs to
+     * another selection: it stays locked, and a page that renders one selection at a time (a server's
+     * tools inside its row) must not render it until the read for the current filters arrives.
+     */
+    readonly stale = $derived.by(
+        () => this.contentFilters !== null && this.contentFilters !== filterKey(this.columnFilters)
+    );
     readonly fields = $derived<AdminField[]>(this.content?.fields ?? []);
     /** Row count on the server; `undefined` when the section returns everything at once. */
     readonly total = $derived(this.content?.total);
@@ -176,6 +189,8 @@ export class AdminWorkspace<
     private request?: AbortController;
     private suspended = $state(false);
     private generation = 0;
+    /** Value filters the published `content` was read with; `null` while no read has been published. */
+    private contentFilters = $state<string | null>(null);
 
     /** Stop publishing reads while changed or unverified authorization is handled. */
     suspend(): void {
@@ -189,6 +204,7 @@ export class AdminWorkspace<
     invalidate(): void {
         this.suspend();
         this.content = null;
+        this.contentFilters = null;
         this.editor = null;
         this.confirmation = null;
         this.results = {};
@@ -211,7 +227,10 @@ export class AdminWorkspace<
         this.suspended = false;
         const loaded = await this.loadContent();
         if (generation !== this.generation) return false;
-        if (!loaded) this.content = null;
+        if (!loaded) {
+            this.content = null;
+            this.contentFilters = null;
+        }
         if (this.reconcileEditor(previous, editor, loaded)) closed = true;
         return closed;
     }
@@ -279,10 +298,13 @@ export class AdminWorkspace<
         this.request = controller;
         if (!options.silent || !this.content) this.loading = true;
         this.error = '';
+        // The published content is only valid for the filters of its own request; a later read may narrow them.
+        const filters = filterKey(this.columnFilters);
         try {
             const content = await this.read(controller.signal, this.query);
             if (!controller.signal.aborted) {
                 this.content = adminContent(content) as AdminContent<Row>;
+                this.contentFilters = filters;
                 return true;
             }
         } catch (failure) {
@@ -331,7 +353,7 @@ export class AdminWorkspace<
 
     /** Replaces the value filters and reads from the first page; a no-op when they already apply. */
     applyColumnFilters(filters: ColumnFiltersState): Promise<void> {
-        if (JSON.stringify(filters) === JSON.stringify(this.columnFilters)) return Promise.resolve();
+        if (filterKey(filters) === filterKey(this.columnFilters)) return Promise.resolve();
         this.columnFilters = filters;
         this.pagination = { ...this.pagination, pageIndex: 0 };
         return this.load();
@@ -342,9 +364,12 @@ export class AdminWorkspace<
         this.invalidate();
     }
 
-    /** `row` must not be changed right now: the page is busy or the row itself is being saved. */
+    /**
+     * `row` must not be changed right now: the page is busy, the row itself is being saved, or it was
+     * read for value filters that no longer apply and is about to be replaced.
+     */
     locked(row: Row): boolean {
-        return this.suspended || this.busy || this.updating.includes(row.id);
+        return this.suspended || this.busy || this.stale || this.updating.includes(row.id);
     }
 
     /** Opens the editor for `row`, or for a new row when `null`. */

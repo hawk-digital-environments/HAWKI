@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\JsonApi\V1\Admin\Record;
+use App\Services\Admin\AdminAudit;
 use App\Services\Admin\ProviderIconService;
 use App\Services\Admin\Repositories\ProviderRepository;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +20,9 @@ class ProviderController extends ResourceController
     public function __construct(
         private ProviderRepository $resource,
         private ProviderIconService $providerIcons,
+        AdminAudit $audit,
     ) {
+        parent::__construct($audit);
     }
 
     public function test(Request $request, Record $record): JsonResponse

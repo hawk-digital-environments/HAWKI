@@ -571,10 +571,10 @@
         "models_added": "Models added. Open Models to configure and enable them.",
         "add_models": "Add selected models",
         "view_models": "View models",
+        "show_all_servers": "Show all servers",
         "view_tools": "View tools",
         "tools": "Tools",
         "tools_of": "Tools of :server",
-        "show_all_tools": "Show all tools",
         "discovery_search": "Search models",
         "discovery_count": ":shown of :total models",
         "discovery_no_matches": "No models match your search.",
@@ -616,7 +616,7 @@
             "providers": "Configure AI providers and their credentials.",
             "models": "Enable models and edit descriptions, capabilities, parameters, limits and tool assignments.",
             "system-models": "Choose the models used for default chats, titles, summaries and prompt improvements, and edit their system prompts.",
-            "mcp": "Configure server connections, test availability and discover tools. Select a server to see its tools; built-in HAWKI tools are listed too. Manage activation, capability mapping and model assignments per tool.",
+            "mcp": "Configure server connections, test availability and discover tools. Expand a server to see and manage its tools; built-in HAWKI tools are listed below the servers. Manage activation, capability mapping and model assignments per tool.",
             "users": "Create local accounts, find users and manage account access.",
             "announcements": "Write, schedule and publish announcements for everyone or selected audiences.",
             "usage": "Explore request and token usage over time.",
@@ -754,7 +754,10 @@
             "next": "Next",
             "filter": "Filter: :name",
             "filter_active": "Filter: :name (:value)",
-            "filter_all": "All"
+            "filter_all": "All",
+            "details": "Details",
+            "expand": "Show details of :name",
+            "collapse": "Hide details of :name"
         },
         "groups": {
             "ai": "AI services",

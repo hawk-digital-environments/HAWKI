@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services\Admin;
@@ -10,10 +11,6 @@ use Illuminate\Validation\Rule;
 
 class SystemSettings
 {
-    public function __construct(private readonly EnvironmentConfigProxy $proxy)
-    {
-        $this->proxy->capture([...array_column(self::DEFINITIONS, 0), 'locale.default_language']);
-    }
     public const DEFINITIONS = [
         'APP_NAME' => ['app.name', 'string', 'required|string|max:255'],
         'APP_URL' => ['app.url', 'string', 'required|url:http,https|max:2000'],
@@ -43,15 +40,28 @@ class SystemSettings
         'CHECK_TOOL_STATUS' => ['tools.check_tool_status', 'boolean', 'required|boolean'],
     ];
 
+    public function __construct(private readonly EnvironmentConfigProxy $proxy)
+    {
+        $this->proxy->capture([...array_column(self::DEFINITIONS, 0), 'locale.default_language']);
+    }
+
     public function apply(): void
     {
         $overrides = [];
+
         foreach (DB::table('admin_settings')->get() as $setting) {
-            if (!isset(self::DEFINITIONS[$setting->key])) continue;
-            $value = $this->normalize($setting->key, json_decode($setting->value, true, flags: JSON_THROW_ON_ERROR));
-            $overrides[self::DEFINITIONS[$setting->key][0]] = $setting->key === 'AI_MENTION_HANDLE' ? '@' . $value : $value;
-            if ($setting->key === 'APP_LOCALE') $overrides['locale.default_language'] = $value;
+            if (!isset(self::DEFINITIONS[$setting->key])) {
+                continue;
+            }
+
+            $value = $this->normalize($setting->key, json_decode($setting->value, true, flags: \JSON_THROW_ON_ERROR));
+            $overrides[self::DEFINITIONS[$setting->key][0]] = 'AI_MENTION_HANDLE' === $setting->key ? '@' . $value : $value;
+
+            if ('APP_LOCALE' === $setting->key) {
+                $overrides['locale.default_language'] = $value;
+            }
         }
+
         $this->proxy->apply($overrides);
         // These values are also captured by Laravel before providers boot.
         app()->instance('env', config('app.env'));
@@ -60,31 +70,58 @@ class SystemSettings
 
     public function rows(): array
     {
-        $overrides = DB::table('admin_settings')->pluck('value', 'key');
+        $overrides = DB::table('admin_settings')->get()->keyBy('key');
         $rows = [];
-        foreach (self::DEFINITIONS as $key => [$path, $type]) {
-            $default = $this->default($key);
-            $value = $overrides->has($key) ? $this->normalize($key, json_decode($overrides[$key], true, flags: JSON_THROW_ON_ERROR)) : $default;
-            $rows[] = ['id' => $key, 'key' => $key, 'value' => $value, 'default' => $default, 'type' => $type, 'options' => $this->options($key), 'source' => $overrides->has($key) ? 'database' : 'environment'];
+
+        foreach (array_keys(self::DEFINITIONS) as $key) {
+            $rows[] = $this->rowFromOverride($key, $overrides->get($key));
         }
+
         return $rows;
+    }
+
+    /**
+     * Returns one effective setting. A mutation can lock its persisted override before checking
+     * the version, while settings that use deployment defaults remain valid synthetic rows.
+     */
+    public function row(string $key, bool $lock = false): array
+    {
+        abort_unless(isset(self::DEFINITIONS[$key]), 404);
+        $query = DB::table('admin_settings')->where('key', $key);
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $this->rowFromOverride($key, $query->first());
     }
 
     public function save(string $key, mixed $value, int $userId): void
     {
         abort_unless(isset(self::DEFINITIONS[$key]), 404);
         $rules = ['value' => self::DEFINITIONS[$key][2]];
-        if ($key === 'APP_LOCALE') $rules['value'] = ['required', Rule::in(array_column($this->options($key), 'value'))];
-        if (str_starts_with($key, 'ALLOWED_')) $rules['value.*'] = ['string', 'max:100', 'regex:~^[a-z0-9.+-]+/[a-z0-9.+*-]+$~'];
+
+        if ('APP_LOCALE' === $key) {
+            $rules['value'] = ['required', Rule::in(array_column($this->options($key), 'value'))];
+        }
+
+        if (str_starts_with($key, 'ALLOWED_')) {
+            $rules['value.*'] = ['string', 'max:100', 'regex:~^[a-z0-9.+-]+/[a-z0-9.+*-]+$~'];
+        }
+
         $value = Validator::make(['value' => $value], $rules)->validate()['value'];
         $value = $this->normalize($key, $value);
-        if ($value === $this->default($key)) {
+
+        if ($this->default($key) === $value) {
             $this->reset($key);
+
             return;
         }
+
         DB::table('admin_settings')->upsert(
-            [['key' => $key, 'value' => json_encode($value, JSON_THROW_ON_ERROR), 'updated_by' => $userId, 'updated_at' => now(), 'created_at' => now()]],
-            ['key'], ['value', 'updated_by', 'updated_at']
+            [['key' => $key, 'value' => json_encode($value, \JSON_THROW_ON_ERROR), 'updated_by' => $userId, 'updated_at' => now(), 'created_at' => now()]],
+            ['key'],
+            ['value', 'updated_by', 'updated_at'],
         );
         $this->apply();
     }
@@ -99,13 +136,16 @@ class SystemSettings
     public function environment(): array
     {
         $rows = $this->rows();
+
         foreach (['APP_DEBUG' => 'app.debug', 'DB_CONNECTION' => 'database.default', 'QUEUE_CONNECTION' => 'queue.default', 'CACHE_STORE' => 'cache.default', 'SESSION_DRIVER' => 'session.driver', 'MAIL_MAILER' => 'mail.default'] as $key => $path) {
             $rows[] = ['id' => $key, 'key' => $key, 'value' => config($path), 'source' => 'deployment'];
         }
+
         // Never send secret values, even to users who can view deployment diagnostics.
         foreach (['APP_KEY' => 'app.key', 'DB_PASSWORD' => 'database.connections.' . config('database.default') . '.password', 'MAIL_PASSWORD' => 'mail.mailers.smtp.password'] as $key => $path) {
             $rows[] = ['id' => $key, 'key' => $key, 'value' => filled(config($path)) ? '[set]' : '[not set]', 'source' => 'deployment'];
         }
+
         return $rows;
     }
 
@@ -114,28 +154,53 @@ class SystemSettings
         return $this->normalize($key, $this->proxy->default(self::DEFINITIONS[$key][0]));
     }
 
+    private function rowFromOverride(string $key, ?object $override): array
+    {
+        [, $type] = self::DEFINITIONS[$key];
+        $default = $this->default($key);
+        $source = null === $override ? 'environment' : 'database';
+        $value = null === $override
+            ? $default
+            : $this->normalize($key, json_decode($override->value, true, flags: \JSON_THROW_ON_ERROR));
+
+        return [
+            'id' => $key,
+            'key' => $key,
+            'value' => $value,
+            'default' => $default,
+            'type' => $type,
+            'options' => $this->options($key),
+            'source' => $source,
+        ];
+    }
+
     private function normalize(string $key, mixed $value): mixed
     {
-        if ($key === 'AI_MENTION_HANDLE') return ltrim((string)$value, '@');
+        if ('AI_MENTION_HANDLE' === $key) {
+            return ltrim((string) $value, '@');
+        }
+
         return match (self::DEFINITIONS[$key][1]) {
-            'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
-            'number' => (int)$value,
-            'string' => $value === '' ? null : $value,
+            'boolean' => filter_var($value, \FILTER_VALIDATE_BOOLEAN),
+            'number' => (int) $value,
+            'string' => '' === $value ? null : $value,
             default => $value,
         };
     }
 
     private function options(string $key): array
     {
-        if ($key === 'APP_LOCALE') {
-            return collect(config('locale.langs'))->filter(fn($locale) => $locale['active'])
-                ->map(fn($locale) => ['value' => $locale['id'], 'label' => $locale['name']])->values()->all();
+        if ('APP_LOCALE' === $key) {
+            return collect(config('locale.langs'))->filter(static fn ($locale) => $locale['active'])
+                ->map(static fn ($locale) => ['value' => $locale['id'], 'label' => $locale['name']])->values()->all();
         }
+
         $values = match ($key) {
             'AUTHENTICATION_METHOD' => ['LDAP', 'OIDC', 'Shibboleth'],
             'APP_TIMEZONE' => \DateTimeZone::listIdentifiers(\DateTimeZone::ALL_WITH_BC),
             default => [],
         };
-        return array_map(fn($value) => ['value' => $value, 'label' => $value], $values);
+
+        return array_map(static fn ($value) => ['value' => $value, 'label' => $value], $values);
     }
 }

@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\DB;
 
 abstract class ResourceController extends Controller
 {
+    public function __construct(private readonly AdminAudit $audit)
+    {
+    }
+
     final public function index(Request $request): JsonResponse
     {
         $repository = $this->repository();
@@ -101,8 +105,11 @@ abstract class ResourceController extends Controller
         $repository = $this->repository();
         $repository->authorize($request->user());
         $request->validate(['section' => 'prohibited', 'id' => 'prohibited', 'values' => 'prohibited', 'version' => 'prohibited']);
+        $audit = $this->audit;
+        $actorId = (int) $request->user()->getKey();
+        $ip = $request->ip();
 
-        return DB::transaction(static function () use ($request, $repository, $action, $id, $operation, $checkVersion, $values) {
+        return DB::transaction(static function () use ($request, $repository, $audit, $action, $id, $operation, $checkVersion, $values, $actorId, $ip) {
             // Serialize configuration and policy publication changes, including creates.
             DB::table('users')->where('employeetype', 'admin')->orderBy('id')->lockForUpdate()->get();
             $repository->authorize($request->user());
@@ -114,7 +121,7 @@ abstract class ResourceController extends Controller
             }
 
             $result = $operation();
-            app(AdminAudit::class)->record($action, $repository::RESOURCE, $id ?? $result, $values);
+            $audit->record($action, $repository::RESOURCE, $id ?? $result, $actorId, $ip, $values);
 
             return $result;
         }, 3);
@@ -125,8 +132,10 @@ abstract class ResourceController extends Controller
         $repository = $this->repository();
         $repository->authorize($request->user());
         $request->validate(['section' => 'prohibited', 'action' => 'prohibited', 'id' => 'prohibited']);
+        $actorId = (int) $request->user()->getKey();
+        $ip = $request->ip();
         $result = $operation();
-        app(AdminAudit::class)->record($action, $repository::RESOURCE, $id);
+        $this->audit->record($action, $repository::RESOURCE, $id, $actorId, $ip);
 
         return response()->json($result);
     }

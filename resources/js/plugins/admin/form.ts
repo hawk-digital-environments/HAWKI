@@ -85,5 +85,5 @@ export function serverFieldErrors(error: unknown): Record<string, string> {
 
 /** Display name of a row for dialogs and menu labels. */
 export function rowName(row: AdminRow): string {
-    return String(row.name ?? row.title ?? row.label ?? row.key ?? row.id);
+    return String(row.name ?? row.title ?? row.label ?? row.server_label ?? row.key ?? row.id);
 }

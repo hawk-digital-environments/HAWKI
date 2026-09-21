@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\JsonApi\V1\Admin\Record;
+use App\Services\Admin\AdminAudit;
 use App\Services\Admin\Repositories\McpServerRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,8 +16,9 @@ class McpServerController extends ResourceController
     use UpdatesResources;
     use DeletesResources;
 
-    public function __construct(private McpServerRepository $resource)
+    public function __construct(private McpServerRepository $resource, AdminAudit $audit)
     {
+        parent::__construct($audit);
     }
 
     public function test(Request $request, Record $record): JsonResponse
