@@ -32,9 +32,14 @@
             ],
             save: async (values, row) => {
                 if (!row) throw new Error(__('admin.errors.save'));
-                return app.restApi.updateResource('admin-settings', row.id, values);
+                return app.restApi.updateResource('admin-settings', row.id, values, {
+                    headers: { 'If-Match': `"${row._version}"` }
+                });
             },
-            remove: (row) => app.restApi.deleteResource('admin-settings', row.id)
+            remove: (row) =>
+                app.restApi.deleteResource('admin-settings', row.id, {
+                    headers: { 'If-Match': `"${row._version}"` }
+                })
         }
     );
     const uid = $props.id();

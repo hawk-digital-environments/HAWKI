@@ -1,56 +1,81 @@
 <script lang="ts">
-    import { tick, untrack } from 'svelte';
+    import { untrack } from 'svelte';
     import { type RouteProps, useQueryState } from '$lib/components/ui/routing/index.js';
     import type { ColumnFiltersState } from '$lib/components/ui/data-table/types.js';
     const {}: RouteProps = $props();
     import Button from '$lib/components/ui/button/Button.svelte';
-    import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import AdminPage from '../components/AdminPage.svelte';
     import AdminResultDialog from '../components/AdminResultDialog.svelte';
+    import AdminRowSwitch from '../components/AdminRowSwitch.svelte';
     import AdminSearch from '../components/AdminSearch.svelte';
     import AdminTable from '../components/AdminTable.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
+    import type { AdminField } from '../schemas/admin-content.js';
+    import { revealServerId } from '../mcp.js';
     import type { AdminMcpServerResource } from '../schemas/resources/admin-mcp.schema.js';
     import type { AdminToolResource } from '../schemas/resources/admin-tools.schema.js';
-    import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { type AdminColumn, type AdminReader, useAdminWorkspace } from '../workspace.svelte.js';
     import { McpTestSchema, McpDiscoverySchema } from '../schemas/admin-actions.js';
 
     const app = useApp();
     const { __ } = useTranslator();
 
-    const toolColumns: AdminColumn<AdminToolResource>[] = [
-        { id: 'name' },
-        { id: 'mcp_server_id', filter: true },
-        { id: 'kind', format: 'enum' },
-        { id: 'active', format: 'boolean' },
-        { id: 'mapped_capability' }
-    ];
-    // Share MCP server filters through links and keep them after reloads.
+    /** Both tool Workspaces read the same section; a server's tools come from its value filter. */
+    const readTools: AdminReader<AdminToolResource> = (signal, query) =>
+        app.restApi.getResourceCollection('admin-tools', { query, signal });
+    /** The server of a tool is decided by the expanded row, not by the editor. */
+    const toolFields = (_row: AdminToolResource, fields: AdminField[]) =>
+        fields.filter((field) => field.key !== 'mcp_server_id');
+    const saveTool = async (values: Record<string, unknown>, row: AdminToolResource | null) => {
+        if (!row) throw new Error(__('admin.errors.save'));
+        return app.restApi.updateResource('admin-tools', row.id, values, {
+            headers: { 'If-Match': `"${row._version}"` }
+        });
+    };
+
+    // The expanded server row is shared through links and kept after reloads.
     const mcpServerId = useQueryState('mcp_server_id');
     const mcpServerFilter = $derived<ColumnFiltersState>(
         mcpServerId.current ? [{ id: 'mcp_server_id', value: mcpServerId.current }] : []
     );
-    const tools = useAdminWorkspace(
-        toolColumns,
-        (signal, query) => app.restApi.getResourceCollection('admin-tools', { query, signal }),
-        {
-            editFields: (row, fields) =>
-                fields.filter(
-                    (field) =>
-                        field.key !== 'mcp_server_id' &&
-                        true
-                ),
-            columnFilters: untrack(() => mcpServerFilter),
-            save: async (values, row) => {
-                if (!row) throw new Error(__('admin.errors.save'));
-                return app.restApi.updateResource('admin-tools', row.id, values, {
-                    headers: { 'If-Match': `"${row._version}"` }
-                });
-            },
-            refresh: () => app.refreshConnection()
-        }
-    );
+
+    const toolColumns: AdminColumn<AdminToolResource>[] = [
+        { id: 'name' },
+        { id: 'kind', format: 'enum' },
+        { id: 'active', sortable: false },
+        { id: 'mapped_capability' }
+    ];
+    const tools = useAdminWorkspace(toolColumns, readTools, {
+        editFields: toolFields,
+        columnFilters: untrack(() => mcpServerFilter),
+        save: saveTool,
+        refresh: () => app.refreshConnection()
+    });
+    // The tools of a server usually fit on one page of the nested table; 100 is the largest page the API
+    // serves, so a server with more tools pages through them in the nested table.
+    tools.pagination = { pageIndex: 0, pageSize: 100 };
+    /** The nested table may only show rows the API returned for the expanded server. */
+    function showsToolsOf(id: string): boolean {
+        return (
+            !tools.stale &&
+            tools.columnFilters.some((item) => item.id === 'mcp_server_id' && String(item.value) === id)
+        );
+    }
+
+    const builtinToolColumns: AdminColumn<AdminToolResource>[] = [
+        { id: 'name' },
+        { id: 'active', sortable: false },
+        { id: 'mapped_capability' }
+    ];
+    /** Built-in HAWKI tools have no server; the API filters them by their `function` type. */
+    const builtinTools = useAdminWorkspace(builtinToolColumns, readTools, {
+        editFields: toolFields,
+        columnFilters: [{ id: 'kind', value: 'function' }],
+        save: saveTool,
+        refresh: () => app.refreshConnection()
+    });
+    builtinTools.pagination = { pageIndex: 0, pageSize: 100 };
 
     const serverColumns: AdminColumn<AdminMcpServerResource>[] = [
         { id: 'server_label' },
@@ -102,42 +127,47 @@
                     if (app.stores.has(name)) await app.stores.get(name).loadData?.(app);
                 }
                 await tools.load();
+                await builtinTools.load();
             }
         }
     );
-    let toolsHeading = $state<HTMLHeadingElement>();
-    const selectedServer = $derived(
-        tools.fields
-            .find((field) => field.key === 'mcp_server_id' && field.type === 'select')
-            ?.options.find((option) => String(option.value) === mcpServerId.current)?.label ?? mcpServerId.current
-    );
-    async function showTools(id: string) {
+    function showTools(id: string) {
         mcpServerId.current = id;
-        await tick();
-        toolsHeading?.focus();
     }
-    // Links and browser navigation update the filter without remounting the page.
+    // Links and browser navigation expand the server without remounting the page.
     $effect(() => {
         const filters = mcpServerFilter;
         untrack(() => void tools.applyColumnFilters(filters));
     });
-    // Table selections update the URL. Assignments do not subscribe this effect to URL changes.
+    // Expanding a row updates the URL. Assignments do not subscribe this effect to URL changes.
     $effect(() => {
         const value = tools.columnFilters.find((item) => item.id === 'mcp_server_id')?.value;
         mcpServerId.current = typeof value === 'string' && value ? value : null;
     });
+    /** A missing selection is looked up once, including when it no longer exists. */
+    let revealed = $state<string | null>(null);
+    // Resolve links outside the loaded page independently of labels and existing filters.
+    $effect(() => {
+        const id = revealServerId({
+            selected: mcpServerId.current,
+            rows: servers.rows,
+            loading: servers.loading,
+            attempted: revealed
+        });
+        if (id === null) return;
+        revealed = mcpServerId.current;
+        untrack(() => {
+            // Nothing may hide the row the link points at: neither a page, a search nor a value filter.
+            servers.search = '';
+            void servers.applyColumnFilters([{ id: 'id', value: id }]);
+        });
+    });
+    function clearServerSelection() {
+        mcpServerId.current = null;
+        revealed = null;
+        servers.columnFilters = servers.columnFilters.filter((filter) => filter.id !== 'id');
+    }
 </script>
-
-{#snippet mcpServer(row: AdminToolResource)}
-    {#if row.mcp_server_id === null}
-        {__('admin.tool_sources.builtin')}
-    {:else}
-        {@const server = tools.fields
-            .find((field) => field.key === 'mcp_server_id' && field.type === 'select')
-            ?.options.find((option) => String(option.value) === String(row.mcp_server_id))}
-        {server?.label ?? row.mcp_server_id}
-    {/if}
-{/snippet}
 
 {#snippet mappedCapability(row: AdminToolResource)}
     {#if row.mapped_capability}
@@ -147,22 +177,68 @@
     {/if}
 {/snippet}
 
+{#snippet toolActive(row: AdminToolResource)}
+    <AdminRowSwitch
+        checked={row.active}
+        label={__('admin.fields.active')}
+        disabled={tools.locked(row)}
+        onToggle={(enabled) => tools.update(row, { active: enabled })}
+    />
+{/snippet}
+
+{#snippet builtinActive(row: AdminToolResource)}
+    <AdminRowSwitch
+        checked={row.active}
+        label={__('admin.fields.active')}
+        disabled={builtinTools.locked(row)}
+        onToggle={(enabled) => builtinTools.update(row, { active: enabled })}
+    />
+{/snippet}
+
+{#snippet serverTools(row: AdminMcpServerResource)}
+    {#if showsToolsOf(row.id)}
+        <AdminTable
+            embedded
+            caption={__('admin.tools_of', { server: row.server_label })}
+            recordSet={tools}
+            cells={{ active: toolActive, mapped_capability: mappedCapability }}
+        />
+    {:else}
+        <p
+            class="tools-status"
+            role="status"
+        >
+            {tools.error && !tools.loading ? tools.error : __('ui.loading')}
+        </p>
+    {/if}
+{/snippet}
+
 <AdminPage
     workspace="mcp"
     recordSet={servers}
-    related={[{ recordSet: tools, editor: 'tools', title: __('admin.tools') }]}
+    related={[
+        { recordSet: tools, editor: 'tools', title: __('admin.tools') },
+        { recordSet: builtinTools, editor: 'tools', title: __('admin.tools') }
+    ]}
 >
-    <AdminSearch recordSet={servers} />
+    <AdminSearch recordSet={servers} beforeSubmit={clearServerSelection} />
+    {#if servers.columnFilters.some((filter) => filter.id === 'id')}
+        <Button
+            variant="stroke"
+            onclick={() => {
+                clearServerSelection();
+                servers.search = '';
+                void servers.submitSearch();
+            }}
+        >
+            {__('admin.show_all_servers')}
+        </Button>
+    {/if}
     <AdminTable
         caption={__('admin.sections.mcp')}
         recordSet={servers}
-        rowMenuItems={(row) => [
-            {
-                label: __('admin.view_tools'),
-                icon: Search01Icon,
-                run: () => showTools(row.id)
-            }
-        ]}
+        details={serverTools}
+        bind:expanded={mcpServerId.current}
     />
     <AdminResultDialog
         recordSet={servers}
@@ -179,7 +255,7 @@
                     variant="stroke"
                     onclick={() => {
                         servers.closeResult('discover');
-                        void showTools(id);
+                        showTools(id);
                     }}
                 >
                     {__('admin.view_tools')}
@@ -187,40 +263,30 @@
             {/if}
         {/snippet}
     </AdminResultDialog>
-    <section class="tools">
-        <div class="tools-heading">
-            <h2 tabindex="-1" bind:this={toolsHeading}>
-                {mcpServerId.current ? __('admin.tools_of', { server: String(selectedServer) }) : __('admin.tools')}
-            </h2>
-            {#if mcpServerId.current}
-                <Button variant="stroke" onclick={() => (mcpServerId.current = null)}>
-                    {__('admin.show_all_tools')}
-                </Button>
-            {/if}
-        </div>
-        <AdminSearch recordSet={tools} />
+    <section class="builtin">
+        <h2>{__('admin.tool_sources.builtin')}</h2>
         <AdminTable
-            caption={__('admin.tools')}
-            recordSet={tools}
-            cells={{ mcp_server_id: mcpServer, mapped_capability: mappedCapability }}
+            caption={__('admin.tool_sources.builtin')}
+            recordSet={builtinTools}
+            cells={{ active: builtinActive, mapped_capability: mappedCapability }}
         />
     </section>
 </AdminPage>
 
 <style>
-    .tools {
+    .builtin {
         margin-top: var(--space-8);
-    }
-    .tools-heading {
-        display: flex;
-        gap: var(--space-3);
-        flex-wrap: wrap;
-        align-items: center;
-        margin-bottom: var(--space-3);
     }
     h2 {
         font-size: var(--font-size-lg);
         font-weight: 600;
+        margin-bottom: var(--space-3);
+    }
+    .tools-status {
+        margin: 0;
+        padding: var(--space-3) var(--space-4);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
     }
     .capability {
         display: inline-flex;
