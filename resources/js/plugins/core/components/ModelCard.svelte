@@ -49,7 +49,7 @@
     interface Props {
         /** The model to describe. */
         model: AiModel;
-        /** Renders the card with its own border/background (e.g. on the models page). */
+        /** Renders the card with its own border/background (e.g. in the models dialog). */
         bordered?: boolean;
         /** Space-saving variant for the mobile sheet: header, chips and a single meta line — no description, no facts panel. */
         compact?: boolean;
@@ -326,7 +326,7 @@
 
         h3 {
             font-size: var(--font-size-lg);
-            font-weight: var(--font-weight-bold, 700);
+            font-weight: var(--font-weight-medium, 500);
             line-height: var(--line-height-tight);
             letter-spacing: -0.01em;
             overflow: hidden;
@@ -447,7 +447,7 @@
         dd {
             margin: 0;
             font-size: var(--font-size-base);
-            font-weight: var(--font-weight-bold, 700);
+            font-weight: var(--font-weight-medium, 500);
             line-height: var(--line-height-tight);
             color: var(--color-text);
         }
@@ -466,7 +466,7 @@
         gap: var(--space-1);
         margin-top: auto;
         font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-semibold, 600);
+        font-weight: var(--font-weight-medium, 500);
         color: var(--color-accent-text);
         text-decoration: none;
 

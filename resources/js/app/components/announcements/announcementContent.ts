@@ -47,3 +47,20 @@ export function announcementDisplayTitle(announcement: { title: string; content:
 export function stripLeadingHeading(body: string): string {
     return body.replace(/^\s*#{1,6}\s+.+(\r?\n|$)/, '').trim();
 }
+
+/**
+ * Plain-text teaser of an announcement for list previews: the body without its
+ * leading heading and with markdown syntax reduced to its text. Truncating it
+ * to a few lines is left to CSS (`line-clamp`).
+ */
+export function announcementExcerpt(content: string): string {
+    return stripLeadingHeading(parseAnnouncementContent(content).body)
+        .replace(/^\s*(```|~~~).*$/gm, '')            // code fences
+        .replace(/!\[[^\]]*]\([^)]*\)/g, '')          // images
+        .replace(/\[([^\]]*)]\([^)]*\)/g, '$1')       // links -> label
+        .replace(/<[^>]+>/g, '')                      // inline HTML
+        .replace(/^\s*(#{1,6}|>|[-*+]|\d+[.)])\s+/gm, '') // headings, quotes, list markers
+        .replace(/(\*\*|__|~~|\*|_|`)(.+?)\1/g, '$2') // emphasis, inline code
+        .replace(/\s+/g, ' ')
+        .trim();
+}
