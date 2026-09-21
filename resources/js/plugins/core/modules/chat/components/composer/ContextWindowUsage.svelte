@@ -1,5 +1,5 @@
 <!--
-  @component Small ring indicator next to the composer's tool button showing how full the
+  @component Small ring indicator next to the composer's model selector showing how full the
   selected model's context window already is. The ring fills with the estimated share of the
   input limit the next request will carry (see `contextWindowUsage.ts`); a tooltip spells out
   the exact token counts. The color escalates from muted over `--color-warning` to
@@ -12,9 +12,10 @@
   context.
 
   ## Usage
-  Placed in the composer's bottom-left control row, right after the tool menu:
+  Placed in the composer's top row, right after the model picker, so the limit sits next to the
+  model it belongs to:
   ```svelte
-  <ToolMenu bind:open={toolPickerOpen}/>
+  <ModelPicker/>
   <ContextWindowUsage/>
   ```
 -->
