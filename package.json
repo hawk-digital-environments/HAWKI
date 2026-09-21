@@ -4,9 +4,12 @@
     "type": "module",
     "scripts": {
         "dev": "npm install && vite",
-        "build": "vite build",
+        "build": "vite build && npm run build:pwa",
+        "build:pwa": "npm run check:pwa && esbuild resources/js/kernel/pwa/service-worker.ts --bundle --format=iife --target=es2022 --outfile=public/sw.js",
+        "check:pwa": "tsc -p tsconfig.pwa.json",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
-        "test": "npm run test:auth && npm run test:admin && npm run test:routing && npm run test:search && npm run test:chat",
+        "test": "npm run test:auth && npm run test:admin && npm run test:routing && npm run test:search && npm run test:chat && npm run test:pwa",
+        "test:pwa": "npm run build:pwa && node --conditions=browser --import ./tests/js/register.mjs --test tests/js/pwa/*.test.mjs tests/js/pwa/*.test.ts",
         "test:auth": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/auth/*.test.ts tests/js/auth/*.test.svelte.ts",
         "test:chat": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/chat/*.test.ts",
         "test:admin": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/admin/*.test.ts tests/js/admin/*.test.svelte.ts",
@@ -14,7 +17,7 @@
         "test:routing": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/routing/*.test.ts tests/js/routing/*.test.svelte.ts",
         "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/search/*.test.ts tests/js/search/*.test.svelte.ts",
         "tsc": "tsc -p ./tsconfig.json",
-        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json"
+        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json && npm run check:pwa"
     },
     "devDependencies": {
         "@antv/infographic": "^0.2.19",

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+icons_dir="$project_root/public/pwa/icons"
+
+generate_icon() {
+    local source="$1"
+    local size="$2"
+    local output="$3"
+
+    magick -background none "$source" -resize "${size}x${size}" "$output"
+}
+
+generate_icon "$icons_dir/icon.svg" 192 "$icons_dir/icon-192.png"
+generate_icon "$icons_dir/icon.svg" 512 "$icons_dir/icon-512.png"
+generate_icon "$icons_dir/icon-maskable.svg" 512 "$icons_dir/icon-maskable-512.png"
+generate_icon "$icons_dir/icon.svg" 180 "$icons_dir/apple-touch-icon.png"

@@ -80,6 +80,7 @@ RUN composer remove --no-cache --no-progress --no-interaction --verbose --no-scr
 # Add the app sources
 COPY --chown=www-data:www-data . .
 COPY --from=node_builder --chown=www-data:www-data /var/www/html/public/build /var/www/html/public/build
+COPY --from=node_builder --chown=www-data:www-data /var/www/html/public/sw.js /var/www/html/public/sw.js
 
 # Dump the autoload file and run the matching scripts, after all the project files are in the image
 # Laravel commands require some directories to be writeable by the web server user, so we need to create them and set the permissions before running the composer scripts
