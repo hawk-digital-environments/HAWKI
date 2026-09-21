@@ -105,6 +105,8 @@
             "claim": "Deine Gespräche sind verschlüsselt. Der Schlüssel bleibt bei dir.",
             "signedInAs": "Angemeldet als :name",
             "videoCredit": "Video von :name",
+            "videoToggle": "Video",
+            "videoToggleHint": "Hintergrundvideo ausschalten, um auf schwachen Geräten Energie zu sparen.",
             "preferences": {
                 "switchToDark": "Dunkles Design verwenden",
                 "switchToLight": "Helles Design verwenden"
