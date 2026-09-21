@@ -17,6 +17,36 @@ const IndexEntrySchema = z.object({creator: z.string(), file: z.string().min(1),
 const VideoIndexSchema = z.object({lightmode: z.array(IndexEntrySchema).optional(), darkmode: z.array(IndexEntrySchema).optional()});
 
 const STORAGE_KEY = 'hawki.auth.background';
+const VIDEO_PREFERENCE_KEY = 'hawki.auth.backgroundVideo';
+
+/**
+ * Whether the login canvas may load the background video.
+ *
+ * Playing a video costs energy, so low-power devices can switch it off; the
+ * choice is remembered across visits. Enabled unless the stored value is `'0'`,
+ * and enabled when the storage cannot be read.
+ */
+export function isLoginVideoEnabled(storage: ClientStorage): boolean {
+    try {
+        return storage.getItem(VIDEO_PREFERENCE_KEY) !== '0';
+    } catch {
+        // Storage may be unavailable (private mode, quota); showing the video is fine.
+        return true;
+    }
+}
+
+/** Remembers the choice: stores `'0'` when disabled, drops the key when enabled. */
+export function setLoginVideoEnabled(storage: ClientStorage, enabled: boolean): void {
+    try {
+        if (enabled) {
+            storage.removeItem(VIDEO_PREFERENCE_KEY);
+        } else {
+            storage.setItem(VIDEO_PREFERENCE_KEY, '0');
+        }
+    } catch {
+        // Storage may be unavailable (private mode, quota); the choice then lasts for this visit only.
+    }
+}
 
 /**
  * Picks the background video for the login canvas.
