@@ -33,7 +33,7 @@
     }
 
     .mark {
-        height: 0.9375rem;
+        height: 0.85rem;
         width: auto;
         color: var(--color-accent-text, #2f2abf);
     }
