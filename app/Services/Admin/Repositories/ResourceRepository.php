@@ -22,11 +22,7 @@ abstract class ResourceRepository
 
     final public function checkVersion(string $id, ?string $version): void
     {
-        $definition = $this->definition();
-        $table = $definition['table'] ?? (new $definition['model']())->getTable();
-        $row = DB::table($table)->where('id', $id)->lockForUpdate()->first();
-        abort_unless(null !== $row, 404);
-        abort_unless($version && hash_equals($this->version((array) $row), $version), 412, __('admin.errors.conflict'));
+        abort_unless($version && hash_equals($this->version($this->lockVersionedRow($id)), $version), 412, __('admin.errors.conflict'));
     }
 
     final public function read(User $user, array $filters): array
@@ -37,8 +33,12 @@ abstract class ResourceRepository
     /**
      * Serialize a saved record using the same redaction rules as the collection.
      */
-    public function readOne(User $user, string $id): array
+    final public function readOne(User $user, string $id): array
     {
+        if (null !== ($row = $this->readOneContent($user, $id))) {
+            return $row;
+        }
+
         $definition = $this->definition();
         $table = $definition['table'] ?? (new $definition['model']())->getTable();
         $row = DB::table($table)->where('id', $id)->first();
@@ -49,6 +49,8 @@ abstract class ResourceRepository
 
     final public function version(array $row): string
     {
+        $row = $this->versionableRow($row);
+
         foreach (static::VERSION_RELATIONS as [$table, $key, $sort]) {
             $query = DB::table($table)->where($key, $row['id'])->orderBy($sort);
 
@@ -96,7 +98,7 @@ abstract class ResourceRepository
         $stored = array_diff($columns, ['api_key_set', 'seen_count', 'accepted_count']);
 
         foreach (array_filter($filters['where'] ?? [], static fn ($value) => null !== $value && '' !== $value) as $column => $value) {
-            abort_unless(\in_array($column, $stored, true), 422);
+            abort_unless('id' === $column || \in_array($column, $stored, true), 422);
             $query->where($columnMap[$column] ?? $column, $value);
         }
 
@@ -135,7 +137,16 @@ abstract class ResourceRepository
 
         unset($field);
         $create = $this->canCreate($user);
+
         return ['rows' => $rows, 'columns' => $columns, 'fields' => $fields, 'total' => $total, 'page' => $page, 'size' => $size, 'create' => $create, 'delete' => $definition['delete'] ?? true];
+    }
+
+    /**
+     * Reads a row that does not have a backing table managed by this base repository.
+     */
+    protected function readOneContent(User $user, string $id): ?array
+    {
+        return null;
     }
 
     protected function rowAttributes(array $row): array
@@ -146,6 +157,27 @@ abstract class ResourceRepository
     protected function versionAttributes(array $row): array
     {
         return [];
+    }
+
+    /**
+     * Locks and returns the current row used to check a write precondition.
+     */
+    protected function lockVersionedRow(string $id): array
+    {
+        $definition = $this->definition();
+        $table = $definition['table'] ?? (new $definition['model']())->getTable();
+        $row = DB::table($table)->where('id', $id)->lockForUpdate()->first();
+        abort_unless(null !== $row, 404);
+
+        return (array) $row;
+    }
+
+    /**
+     * Selects the stable data that participates in a resource version.
+     */
+    protected function versionableRow(array $row): array
+    {
+        return $row;
     }
 
     protected function validateFilters(array $filters): array

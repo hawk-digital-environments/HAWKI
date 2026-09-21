@@ -2,7 +2,8 @@
   @component Table of an admin section. Renders the columns the page declared
   in its record set with the rows it read, binds the record set's table state
   (pagination, sorting, value filters) and offers edit, delete/reset and the
-  record set's row actions in a row menu.
+  record set's row actions in a row menu. With `details`, every row gets a
+  toggle that expands the snippet in a full-width row below it.
 -->
 <script
     lang="ts"
@@ -22,6 +23,9 @@
         recordSet,
         caption,
         cells,
+        details,
+        expanded = $bindable(null),
+        embedded = false,
         rowMenuItems,
         editSystemRows = false
     }: {
@@ -29,6 +33,12 @@
         caption: string;
         /** Replaces the cells of the given column ids with a snippet. */
         cells?: { [Id in ColumnId]?: Snippet<[Row]> };
+        /** Renders the tools/details of the row whose id is `expanded` in a full-width row below it. */
+        details?: Snippet<[Row]>;
+        /** Id of the currently expanded row; bind it to keep it in page state. */
+        expanded?: string | null;
+        /** Continues the parent table's rows inside its details row, with pagination when needed. */
+        embedded?: boolean;
         /** Extra row menu entries between "edit" and the row actions. */
         rowMenuItems?: (row: Row) => AdminMenuItem[];
         /** Offer "edit" for rows flagged `is_system` too. */
@@ -143,6 +153,10 @@
     }}
     actions={hasRowMenu ? renderRowMenu : undefined}
     {cells}
+    {details}
+    bind:expanded
+    rowLabel={rowName}
+    {embedded}
 />
 
 {#snippet renderRowMenu(row: Row)}
