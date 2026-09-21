@@ -57,8 +57,8 @@
         height: 100%;
         /* A little more breathing room at the bottom edge than on the sides, so
            the footer row doesn't sit on the edge. At the top the header brings
-           its own inset, so the padding here is trimmed to leave the same gap
-           above the header as the header leaves below itself. */
+           its own inset, so the padding here is trimmed by that inset to leave
+           a group gap above the header. */
         padding: calc(var(--nav-group-gap) - var(--space-1)) var(--space-2) var(--space-3);
         border-right: var(--divider);
     }

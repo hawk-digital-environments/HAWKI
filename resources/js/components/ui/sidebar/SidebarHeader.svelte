@@ -114,10 +114,10 @@
         /* Named because the absolutely-positioned brand has to inset itself by
            the same amounts — see below. */
         --header-pad-top: var(--space-1);
-        /* The brand row is a group like any other in the column, so it leaves
-           the sidebar's group gap below itself — the same gap the switcher
-           leaves above the items. */
-        --header-pad-bottom: var(--nav-group-gap);
+        /* Tighter than the sidebar's group gap: the brand row reads as the
+           panel's cap rather than as another group, so it sits closer to the
+           switcher below it. */
+        --header-pad-bottom: var(--space-2);
         /* Horizontal room the actions occupy, for the brand's max-width. The
            actions are `--nav-row-h` squares: at rail width a row is square, so
            matching the row height gives them the same hit area, hover surface
@@ -153,7 +153,7 @@
        reserve that line's height itself — it is absolutely positioned and would
        otherwise overlap the first nav item. */
     .sidebar-header:has(.search):not(.open) {
-        --header-pad-bottom: calc(var(--nav-group-gap) + var(--nav-row-h) + var(--space-1));
+        --header-pad-bottom: calc(var(--space-2) + var(--nav-row-h) + var(--space-1));
     }
 
     /* The brand is positioned out of the flex line on purpose. In the flow it
