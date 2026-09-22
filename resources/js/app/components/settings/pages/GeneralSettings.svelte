@@ -1,12 +1,19 @@
 <!--
   @component General settings: interface language (persisted server-side),
-  theme, and the danger area (delete all data).
+  theme, and the danger zone (delete all data).
 -->
 <script lang="ts">
     import z from 'zod';
     import Button from '$lib/components/ui/button/Button.svelte';
-    import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
+    import DropdownMenuRadioGroup from '$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte';
+    import DropdownMenuRadioItem from '$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte';
+    import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
+    import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
+    import SettingsPage from '$lib/app/components/settings/SettingsPage.svelte';
+    import SettingsGroup from '$lib/app/components/settings/SettingsGroup.svelte';
+    import SettingsRow from '$lib/app/components/settings/SettingsRow.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useConfig} from '$lib/app/hooks/useConfig.svelte.js';
     import {useRestApi} from '$lib/app/hooks/useApi.js';
@@ -26,6 +33,9 @@
     const toast = useToastContext();
     const {__} = useTranslator();
 
+    const uid = $props.id();
+    const localeValueId = `${uid}-locale`;
+
     const localeItems = config.locale.available.map((locale) => ({
         value: locale.lang,
         label: locale.nameInLanguage
@@ -33,6 +43,7 @@
 
     let localeValue = $state(app.localization.locale.lang);
     let localeSaving = $state(false);
+    const localeLabel = $derived(localeItems.find((item) => item.value === localeValue)?.label ?? localeValue);
 
     async function changeLocale(lang: string): Promise<void> {
         if (!lang || lang === app.localization.locale.lang) return;
@@ -54,8 +65,8 @@
 
     // $derived so the labels follow runtime locale switches.
     const themeItems = $derived([
-        {value: 'light', label: __('ui.settings.general.themeLight')},
-        {value: 'dark', label: __('ui.settings.general.themeDark')}
+        {key: 'light', label: __('ui.settings.general.themeLight')},
+        {key: 'dark', label: __('ui.settings.general.themeDark')}
     ]);
 
     let confirmDeleteOpen = $state(false);
@@ -78,49 +89,69 @@
     }
 </script>
 
-<section class="settings-section">
-    <header>
-        <h2>{__('ui.settings.general.title')}</h2>
-        <p>{__('ui.settings.general.description')}</p>
-    </header>
+<SettingsPage title={__('ui.settings.general.title')}>
+    <SettingsGroup>
+        <SettingsRow
+            label={__('ui.settings.general.languageLabel')}
+            description={__('ui.settings.general.languageHint')}
+        >
+            {#snippet control({labelId})}
+                <DropdownMenu title={__('ui.settings.general.languageLabel')} align="end" disabled={localeSaving}>
+                    {#snippet trigger({props})}
+                        <Button
+                            {...props}
+                            variant="stroke"
+                            size="xs"
+                            iconRight={UnfoldMoreIcon}
+                            disabled={localeSaving}
+                            aria-labelledby="{labelId} {localeValueId}"
+                        >
+                            <span id={localeValueId}>{localeLabel}</span>
+                        </Button>
+                    {/snippet}
 
-    <div class="field">
-        <span class="field-label" id="settings-language-label">{__('ui.settings.general.languageLabel')}</span>
-        <SingleSelect
-            bind:value={localeValue}
-            items={localeItems}
-            disabled={localeSaving}
-            onValueChange={changeLocale}
-            triggerProps={{'aria-labelledby': 'settings-language-label'}}
-        />
-    </div>
+                    <DropdownMenuRadioGroup bind:value={localeValue} onValueChange={changeLocale}>
+                        {#each localeItems as item (item.value)}
+                            <DropdownMenuRadioItem value={item.value} indicator="check">
+                                {item.label}
+                            </DropdownMenuRadioItem>
+                        {/each}
+                    </DropdownMenuRadioGroup>
+                </DropdownMenu>
+            {/snippet}
+        </SettingsRow>
 
-    <div class="field">
-        <span class="field-label" id="settings-theme-label">{__('ui.settings.general.themeLabel')}</span>
-        <SingleSelect
-            bind:value={
-                () => themeStore.theme,
-                (value) => (themeStore.theme = value as AppTheme)
-            }
-            items={themeItems}
-            triggerProps={{'aria-labelledby': 'settings-theme-label'}}
-        />
-    </div>
+        <SettingsRow
+            label={__('ui.settings.general.themeLabel')}
+            description={__('ui.settings.general.themeHint')}
+        >
+            {#snippet control()}
+                <div class="theme-switch">
+                    <Tabs
+                        items={themeItems}
+                        value={themeStore.theme}
+                        onChange={(key) => (themeStore.theme = key as AppTheme)}
+                        aria-label={__('ui.settings.general.themeLabel')}
+                    />
+                </div>
+            {/snippet}
+        </SettingsRow>
+    </SettingsGroup>
 
-    <div class="danger-area">
-        <h3>{__('ui.settings.general.dangerTitle')}</h3>
-
-        <div class="danger-row">
-            <span>
-                <strong>{__('ui.settings.general.deleteData')}</strong>
-                <small>{__('ui.settings.general.deleteDataHint')}</small>
-            </span>
-            <Button size="sm" variant="delete" onclick={() => (confirmDeleteOpen = true)}>
-                {__('ui.settings.general.deleteDataButton')}
-            </Button>
-        </div>
-    </div>
-</section>
+    <SettingsGroup>
+        <SettingsRow
+            tone="danger"
+            label={__('ui.settings.general.deleteData')}
+            description={__('ui.settings.general.deleteDataHint')}
+        >
+            {#snippet control()}
+                <Button size="xs" variant="delete" onclick={() => (confirmDeleteOpen = true)}>
+                    {__('ui.settings.general.deleteDataButton')}
+                </Button>
+            {/snippet}
+        </SettingsRow>
+    </SettingsGroup>
+</SettingsPage>
 
 <ConfirmDialog
     bind:open={confirmDeleteOpen}
@@ -134,78 +165,8 @@
 />
 
 <style>
-    .settings-section,
-    header,
-    .field,
-    .danger-row > span {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .settings-section {
-        gap: var(--space-5);
-        max-width: 28rem;
-    }
-
-    header {
-        gap: var(--space-1);
-    }
-
-    h2,
-    h3,
-    p {
-        margin: 0;
-    }
-
-    h2 {
-        font-size: var(--font-size-md);
-    }
-
-    p,
-    small {
-        color: var(--color-text-muted);
-        font-size: var(--font-size-xs);
-    }
-
-    .field {
-        gap: var(--space-1_5);
-    }
-
-    .field-label {
-        font-size: var(--font-size-xs);
-        font-weight: var(--font-weight-medium);
-    }
-
-    .danger-area {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-        padding: var(--space-3);
-        border: 1px solid color-mix(in oklch, var(--color-error) 45%, transparent);
-        border-radius: var(--corner-md);
-    }
-
-    h3 {
-        color: var(--color-error);
-        font-size: var(--font-size-xs);
-        font-weight: var(--font-weight-medium);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .danger-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-4);
-    }
-
-    .danger-row > span {
-        min-width: 0;
-        flex: 1;
-        gap: var(--space-0_5);
-    }
-
-    .danger-row strong {
-        font-size: var(--font-size-xs);
+    /* A definite width lets the two segments split it evenly. */
+    .theme-switch {
+        width: 10rem;
     }
 </style>
