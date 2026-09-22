@@ -116,7 +116,7 @@
         h2 {
             margin-bottom: var(--space-4);
             font-size: var(--font-size-lg);
-            font-weight: var(--font-weight-bold);
+            font-weight: var(--font-weight-medium);
         }
     }
 

@@ -249,7 +249,7 @@
         flex: 1;
         min-width: 0;
         font-size: inherit;
-        font-weight: var(--font-weight-semibold);
+        font-weight: var(--font-weight-medium);
         line-height: inherit;
     }
 
