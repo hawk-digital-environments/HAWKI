@@ -52,10 +52,7 @@ jobs:
     needs: build-and-push
     steps:
       - name: Trigger Dokploy webhook
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: ${{ secrets.DOKPLOY_DEPLOYMENT_WEBHOOK_PROD }}
-          method: 'GET'
+        run: curl -fsSL "${{ secrets.DOKPLOY_DEPLOYMENT_WEBHOOK_PROD }}"
 
   remove-old-images:
     permissions:
