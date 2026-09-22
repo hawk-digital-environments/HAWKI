@@ -45,6 +45,7 @@
                 "policyTitle": "Nutzungsbedingungen",
                 "acceptPolicy": "Ich habe diese Bedingungen gelesen und akzeptiere sie.",
                 "policyRequired": "Akzeptiere die Bedingungen, bevor du fortfährst.",
+                "policyScrollHint": "Scrolle bis zum Ende der Bedingungen, um sie zu akzeptieren.",
                 "passkey": "Passwort",
                 "repeatPasskey": "Passwort wiederholen",
                 "passkeyHint": "Verwende mindestens 8 Zeichen. Bewahre dieses Passwort sicher auf; es schützt deine verschlüsselten Daten.",

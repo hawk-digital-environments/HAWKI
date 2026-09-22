@@ -43,23 +43,22 @@
     title={__('ai.model.page.title')}
     contentProps={{class: 'models-dialog-content'}}
     headerProps={{class: 'models-dialog-header'}}
+    bodyProps={{class: 'models-body'}}
 >
-    <div class="models-body">
-        {#if groups.length === 0}
-            <p class="models-empty">{__('ai.model.page.empty')}</p>
-        {:else}
-            {#each groups as [providerId, group] (providerId)}
-                <section class="models-group">
-                    <h2>{group.label}</h2>
-                    <div class="models-grid">
-                        {#each group.models as model (model.model_id)}
-                            <ModelCard {model} bordered/>
-                        {/each}
-                    </div>
-                </section>
-            {/each}
-        {/if}
-    </div>
+    {#if groups.length === 0}
+        <p class="models-empty">{__('ai.model.page.empty')}</p>
+    {:else}
+        {#each groups as [providerId, group] (providerId)}
+            <section class="models-group">
+                <h2>{group.label}</h2>
+                <div class="models-grid">
+                    {#each group.models as model (model.model_id)}
+                        <ModelCard {model} bordered/>
+                    {/each}
+                </div>
+            </section>
+        {/each}
+    {/if}
 </Dialog>
 
 <style>
@@ -67,7 +66,6 @@
         width: min(70rem, calc(100vw - 2 * var(--space-4)));
         max-width: 70rem;
         max-height: calc(100dvh - 2 * var(--space-4));
-        grid-template-rows: auto minmax(0, 1fr);
         overflow: hidden;
         padding: 0;
         gap: 0;
@@ -78,21 +76,19 @@
         border-bottom: var(--divider);
     }
 
-    .models-body {
-        min-height: 0;
-        overflow-y: auto;
+    :global(.models-dialog-content .models-body) {
         padding: var(--space-6);
         scrollbar-width: none;
+    }
 
-        &::-webkit-scrollbar {
-            display: none;
-        }
+    :global(.models-dialog-content .models-body::-webkit-scrollbar) {
+        display: none;
     }
 
     /* Tighter insets on phones so the cards get the width; the header follows
        so its title stays aligned with the provider headings. */
     @media (--bp-xs) {
-        .models-body {
+        :global(.models-dialog-content .models-body) {
             padding: var(--space-4) var(--space-3);
         }
 

@@ -38,6 +38,7 @@
     import BookOpen01Icon from '$lib/components/ui/icons/iconset/BookOpen01Icon.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
+    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import Markdown from '$lib/components/util/markdown/Markdown.svelte';
     import { deriveKey, exportCryptoKeyToString, generatePasskey } from '$lib/kernel/encryption/utils.js';
     import { encryptSymmetric } from '$lib/kernel/encryption/symmetric.js';
@@ -74,6 +75,37 @@
     let policyOpen = $state(false);
     let policyConsent = $state(false);
     let consentInput = $state<HTMLInputElement | null>(null);
+    // Consent requires evidence the policy was read: the dialog's body region
+    // (`.registration-policy-body`, see bodyProps) must be scrolled to its end —
+    // or fit without scrolling — before the checkbox unlocks.
+    let scrolledToEnd = $state(false);
+    function checkPolicyScroll(el: HTMLElement) {
+        scrolledToEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
+    }
+    $effect(() => {
+        if (!policyOpen) return;
+        // bits-ui mounts the portalled content after `open` flips; wait a tick
+        // before looking for the scroll region.
+        let disposed = false;
+        let detach = () => {};
+        void tick().then(() => {
+            if (disposed) return;
+            const el = document.querySelector<HTMLElement>('.registration-policy-body');
+            if (!el) return;
+            const onScroll = () => checkPolicyScroll(el);
+            // A reopened reading session starts fresh: the policy must be
+            // re-scrolled and re-confirmed.
+            scrolledToEnd = false;
+            policyConsent = false;
+            checkPolicyScroll(el);
+            el.addEventListener('scroll', onScroll, {passive: true});
+            detach = () => el.removeEventListener('scroll', onScroll);
+        });
+        return () => {
+            disposed = true;
+            detach();
+        };
+    });
     let passkey = $state('');
     let repeated = $state('');
     // Starts with the onboarding (see `welcome/RegistrationWelcome.svelte`); the setup itself begins at 'form'.
@@ -332,18 +364,23 @@
             class: 'registration-policy-dialog',
             onCloseAutoFocus: (event) => { event.preventDefault(); title?.focus({preventScroll: true}); }
         }}
-        footerProps={{class: 'registration-policy-footer'}}
-    >
+    footerProps={{class: 'registration-policy-footer'}}
+    bodyProps={{class: 'registration-policy-body'}}
+>
         <!-- svelte-ignore a11y_no_noninteractive_tabindex (The scrollable policy must be reachable by keyboard.) -->
         <div class="policy-document" lang={policy.locale.replace('_', '-')} role="region" aria-label={__('ui.auth.register.policyTitle')} tabindex="0">
             <Markdown message={policy.text} headingBaseLevel={3}/>
         </div>
         {#snippet footer()}
             <form class="policy-confirmation" onsubmit={(event) => { event.preventDefault(); acceptPolicy(); }}>
-                <label class="consent">
-                    <input type="checkbox" bind:this={consentInput} bind:checked={policyConsent} onchange={() => { if (!policyConsent) accepted = false; }} aria-invalid={invalidField === 'policy'} aria-describedby={invalidField === 'policy' ? 'policy-error' : undefined}/>
-                    <span>{__('ui.auth.register.acceptPolicy')}</span>
-                </label>
+                <Tooltip tooltip={scrolledToEnd ? '' : __('ui.auth.register.policyScrollHint')} disabled={scrolledToEnd} focusable={false} delayDuration={500}>
+                    {#snippet children({props})}
+                        <label class="consent" class:locked={!scrolledToEnd} {...props}>
+                            <input type="checkbox" bind:this={consentInput} bind:checked={policyConsent} disabled={!scrolledToEnd} onchange={() => { if (!policyConsent) accepted = false; }} aria-invalid={invalidField === 'policy'} aria-describedby={invalidField === 'policy' ? 'policy-error' : undefined}/>
+                            <span>{__('ui.auth.register.acceptPolicy')}</span>
+                        </label>
+                    {/snippet}
+                </Tooltip>
                 {#if invalidField === 'policy'}<p id="policy-error" class="auth-error" role="alert">{error}</p>{/if}
                 <div class="policy-actions">
                     <Button type="button" variant="stroke" onclick={declinePolicy}>{__('ui.auth.register.declinePolicy')}</Button>
@@ -369,7 +406,6 @@
         width: calc(100% - 2rem);
         max-width: 48rem;
         max-height: calc(100dvh - 3rem);
-        grid-template-rows: auto minmax(0, 1fr) auto;
         gap: var(--space-5);
         overflow: hidden;
     }
@@ -386,10 +422,6 @@
         line-height: 1.5;
     }
     .policy-document {
-        min-height: 0;
-        overflow: auto;
-        overscroll-behavior: contain;
-        scrollbar-gutter: stable;
         padding-right: var(--space-4);
         color: var(--color-text);
     }
@@ -455,6 +487,17 @@
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;
     }
+    .consent.locked {
+        color: var(--color-text-disabled);
+        cursor: not-allowed;
+    }
+    .consent.locked input {
+        appearance: none;
+        cursor: not-allowed;
+        background-color: var(--color-disabled-bg);
+        border: 1px solid var(--color-text-disabled);
+        
+    }
     @media (--bp-xs) {
         :global(.registration-policy-dialog.registration-policy-dialog) {
             max-height: calc(100dvh - 1rem);
@@ -462,7 +505,10 @@
             padding: var(--space-4);
             gap: var(--space-4);
         }
-        .policy-document {
+    :global(.registration-policy-body) {
+        scrollbar-gutter: stable;
+    }
+    .policy-document {
             padding-right: var(--space-2);
         }
         .policy-actions {
