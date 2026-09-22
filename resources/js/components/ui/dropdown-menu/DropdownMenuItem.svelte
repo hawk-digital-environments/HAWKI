@@ -83,7 +83,7 @@
     .dropdown-item {
         position: relative;
         display: flex;
-        cursor: default;
+        cursor: pointer;
         align-items: center;
         gap: var(--space-2, calc(0.25rem * 1.5));
         border-radius: var(--corner-sm);
@@ -103,6 +103,11 @@
     .dropdown-item[data-highlighted] {
         background-color: var(--color-hover);
         color: var(--color-text);
+    }
+
+    .dropdown-item.variant--destructive[data-highlighted] {
+        background-color: color-mix(in oklch, var(--color-error) 10%, transparent);
+        color: var(--color-error);
     }
 
     .dropdown-item[data-disabled] {

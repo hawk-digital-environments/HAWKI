@@ -204,7 +204,6 @@
         },
         "settings": {
             "title": "Einstellungen",
-            "description": "Verwalte dein Konto und deine Präferenzen.",
             "navLabel": "Einstellungsbereiche",
             "nav": {
                 "general": "Allgemein",
@@ -218,13 +217,13 @@
             },
             "general": {
                 "title": "Allgemein",
-                "description": "Sprache, Erscheinungsbild und kontoweite Aktionen.",
                 "languageLabel": "Sprache",
+                "languageHint": "Gilt für Menüs, Schaltflächen und Meldungen.",
                 "languageError": "Die Sprache konnte nicht geändert werden. Bitte versuche es erneut.",
                 "themeLabel": "Design",
+                "themeHint": "Wähle, wie die Oberfläche auf diesem Gerät aussieht.",
                 "themeLight": "Hell",
                 "themeDark": "Dunkel",
-                "dangerTitle": "Gefahrenbereich",
                 "deleteData": "Alle Daten löschen",
                 "deleteDataHint": "Entfernt alle deine Unterhaltungen, Räume, Schlüssel und Tokens vom Server.",
                 "deleteDataButton": "Löschen",
@@ -235,9 +234,7 @@
             },
             "profile": {
                 "title": "Profil",
-                "description": "Bearbeite die Angaben, die andere bei der Zusammenarbeit sehen.",
-                "avatarHint": "Bilder werden automatisch quadratisch zugeschnitten.",
-                "changeAvatar": "Ändern",
+                "changeAvatar": "Avatar ändern",
                 "avatarUploading": "Wird hochgeladen…",
                 "avatarSaved": "Avatar aktualisiert.",
                 "avatarError": "Der Avatar konnte nicht hochgeladen werden.",
@@ -249,7 +246,6 @@
             },
             "experiments": {
                 "title": "Experimente",
-                "description": "Probiere unfertige Funktionen der neuen Oberfläche aus.",
                 "emptyTitle": "Keine Experimente verfügbar",
                 "emptyHint": "Aktuell gibt es nichts auszuprobieren. Neue Experimente erscheinen hier.",
                 "flags": {

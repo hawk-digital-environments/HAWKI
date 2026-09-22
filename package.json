@@ -20,7 +20,7 @@
     "devDependencies": {
         "@antv/infographic": "^0.2.19",
         "@csstools/postcss-global-data": "^4.0.0",
-        "@hugeicons/core-free-icons": "^4.2.3",
+        "@hugeicons/core-free-icons": "^4.3.4",
         "@hugeicons/svelte": "^1.1.4",
         "@sveltejs/vite-plugin-svelte": "^7.2.0",
         "@tanstack/charts": "0.18.0",

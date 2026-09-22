@@ -22,7 +22,7 @@ import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
 import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
-import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
+import MessageCircleIcon from '$lib/components/ui/icons/iconset/MessageCircleIcon.svelte';
 import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
 import NewChatButton from '$plugins/core/modules/chat/components/NewChatButton.svelte';
 import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
@@ -72,7 +72,7 @@ export default class CorePlugin implements HawkiCorePlugin {
         registrar.add('moduleSelectorEntries', (entries, ctx) => [...entries, {
             id: 'core:chat',
             label: ctx.translate('chat.module.title'),
-            icon: Chat01Icon,
+            icon: MessageCircleIcon,
             onSelect: (selectCtx) => {
                 void selectCtx.router.goToRoute('chat.index');
             },

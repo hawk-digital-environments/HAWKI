@@ -31,7 +31,7 @@
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
-    import BubbleChatSparkIcon from '$lib/components/ui/icons/iconset/BubbleChatSparkIcon.svelte';
+    import GoogleGeminiIcon from '$lib/components/ui/icons/iconset/GoogleGeminiIcon.svelte';
     import SquareIcon from '$lib/components/ui/icons/iconset/SquareIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -149,7 +149,7 @@
             tooltip={__('chat.composer.actions.improveTooltip')}
             size="xs"
             variant="ghost"
-            iconRight={BubbleChatSparkIcon}
+            iconRight={GoogleGeminiIcon}
             onclick={handleImprovement}
             disabled={!composerContext.guard.canSend || composerContext.guard.disablesFeature('suggestions')}
         />

@@ -10,7 +10,7 @@ section describing the currently addressed participant — e.g. the assistants
 plugin shows the addressed assistant's name, greeting and starter prompts.
 -->
 <script lang="ts">
-    import AiChat01Icon from '$lib/components/ui/icons/iconset/AiChat01Icon.svelte';
+    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
@@ -62,7 +62,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
             {#if section.icon}
                 <span class="welcome-glyph">{section.icon}</span>
             {:else}
-                <AiChat01Icon size={28} />
+                <BubbleChatAddIcon size={28} />
             {/if}
         </span>
         <svelte:element this={`h${headingLevel}`} class="title">{section.title}</svelte:element>
@@ -81,7 +81,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     </div>
 {:else}
     <div class="welcome">
-        <span class="welcome-icon" aria-hidden="true"><AiChat01Icon size={28} /></span>
+        <span class="welcome-icon" aria-hidden="true"><BubbleChatAddIcon size={28} /></span>
         <svelte:element this={`h${headingLevel}`} class="title">{__('chat.page.welcomeTitle')}</svelte:element>
         <p>{__('chat.page.welcomeDescription')}</p>
     </div>
