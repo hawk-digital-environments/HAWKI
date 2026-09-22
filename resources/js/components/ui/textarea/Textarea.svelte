@@ -37,7 +37,8 @@
         display: flex;
         min-height: 60px;
         width: 100%;
-        border-radius: var(--corner-md);
+        /* A container can set --textarea-radius to nest the field in its own frames. */
+        border-radius: var(--textarea-radius, var(--corner-md));
         border: var(--border);
         border-color: var(--textarea-border);
         background-color: var(--textarea-bg);
