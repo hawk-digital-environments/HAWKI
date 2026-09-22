@@ -133,7 +133,7 @@ test('restoring a composer checkpoint preserves its draft and parameters while d
     let restoredParameters: unknown;
     const parameters: any = {createCheckpoint: () => ({temperature: 0.3}), restoreCheckpoint: (value: unknown) => {restoredParameters = value;}};
     const context = new ComposerContext('aiConv', checkpointPart, checkpointPart, parameters, checkpointPart, slice,
-        {} as any, {} as any, checkpointer, {} as any, 'System', () => {}, async value => value, function* () {});
+        {} as any, {} as any, checkpointer, {} as any, 'System', () => {}, async value => value, function* () {}, () => []);
     try {
         flushSync();
         context.message = 'Saved draft';

@@ -65,7 +65,18 @@
         return moduleItems.find(item => item.value === value);
     }
 
-    const currentModuleItem = $derived(findModuleItem(current));
+    // The `module` prop can be one that has no row of its own in the list
+    // (e.g. the assistants builder, hidden from the selector — see
+    // `BuilderModule.visible()`): it is still the active module, just not
+    // one you can *pick*. The trigger button must still show its own
+    // label/icon in that case, computed the same way `moduleItems` computes
+    // everyone else's — falling back to `current`'s raw value only if the
+    // module defines neither.
+    const currentModuleItem = $derived(findModuleItem(current) ?? (module ? {
+        label: module.title?.(translate, locale) ?? module.name,
+        value: current,
+        icon: (icon => typeof icon === 'string' ? undefined : icon as IconComponent | undefined)(module.icon?.(locale))
+    } : undefined));
 </script>
 
 <CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule} shortcut={false}>

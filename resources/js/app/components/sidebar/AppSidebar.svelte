@@ -41,25 +41,37 @@
 
     const visibleModules = $derived(app.modules.all.filter(module => module.visible?.(app) ?? true));
 
-    // On routes that belong to no module (e.g. the announcements page) the
-    // module sidebar and the module selector stick to the last active module
-    // instead of vanishing, falling back to the first module for direct page loads.
+    // On routes that belong to no module at all (e.g. the announcements page,
+    // where `activeModule` is null) the module sidebar and the module
+    // selector stick to the last active module instead of vanishing, falling
+    // back to the first module for direct page loads.
     //
-    // Only a *visible* active module is remembered here. An invisible module
-    // that is nonetheless the active one (e.g. the assistants builder, whose
-    // routes belong to it but which hides itself from the selector — see
-    // `BuilderModule.visible()`) must not overwrite this: it would poison the
-    // fallback chain below, since neither `activeModule` nor `lastActiveModule`
-    // would then resolve to a visible module and the sidebar would fall through
-    // to `visibleModules[0]` instead of staying on the module the invisible one
-    // stands in for.
+    // Only a *visible* active module is remembered here, so this fallback
+    // chain never lands on a module hidden from the selector (e.g. the
+    // assistants builder — see `BuilderModule.visible()`); an active-but-
+    // invisible module is instead handled directly by `sidebarModule` below,
+    // without ever consulting this fallback.
     let lastActiveModule = $state<HawkiModuleWithPlugin | null>(null);
     $effect(() => {
         if (activeModule && visibleModules.includes(activeModule)) {
             lastActiveModule = activeModule;
         }
     });
-    const sidebarModule = $derived([activeModule, lastActiveModule].find(module => module && visibleModules.includes(module)) ?? visibleModules[0] ?? null);
+
+    // The active module always wins, whether or not it is visible in the
+    // selector (an invisible-but-active module, like the builder, still owns
+    // its own sidebar — see `BuilderModule.sidebar()` — and must render it
+    // directly rather than falling through to some other module, which is
+    // what made this regress on a cold/direct page load into the builder:
+    // `lastActiveModule` starts out `null`, so the old fallback chain landed
+    // on `visibleModules[0]` instead). The fallback chain below therefore
+    // only ever runs for a route that belongs to no module at all.
+    const sidebarModule = $derived(
+        activeModule
+        ?? [lastActiveModule].find(module => module && visibleModules.includes(module))
+        ?? visibleModules[0]
+        ?? null
+    );
     const ModuleSidebar = $derived(sidebarModule?.sidebar?.(app.localization.locale) ?? null);
 
     const chatPath = router.getPath('chat.index');

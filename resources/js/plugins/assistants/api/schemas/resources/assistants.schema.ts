@@ -305,12 +305,12 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
         updatedAt: version.updated_at
     })) ?? [],
 
-    review: wire.assistant_review
-        ? {
-            status: wire.assistant_review.status,
-            reason: wire.assistant_review.reason ?? null
-        }
-        : null,
+    // review: wire.assistant_review
+    //     ? {
+    //         status: wire.assistant_review.status,
+    //         reason: wire.assistant_review.reason ?? null
+    //     }
+    //     : null,
 
     remixCreator: wire.remix_creator
         ? {
@@ -396,7 +396,6 @@ export function createEmptyAssistant(): Assistant {
         tags: [],
         creator: { id: '', displayName: '' },
         versions: [],
-        review: null,
         files: [],
         submissionNote: '',
         capabilities: [],

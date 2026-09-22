@@ -149,7 +149,9 @@
         "feedback": {
             "feedback_to": "Feedback an",
             "visible_to_creator": "Nur für den Ersteller sichtbar",
-            "send_feedback": "Feedback senden"
+            "send_feedback": "Feedback senden",
+            "received_feedbacks": "Erhaltenes Feedback",
+            "empty_feedbacks": "Noch kein Feedback erhalten."
         },
         "remix": {
             "remix_from": "Remix von",

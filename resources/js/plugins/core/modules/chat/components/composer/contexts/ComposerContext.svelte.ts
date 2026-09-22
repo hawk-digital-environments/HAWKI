@@ -95,6 +95,7 @@ import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte';
 import type {MessageSenderTransportInterface} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
+import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 
 /** The kinds of chat a composer can be mounted into. Validated at runtime by {@link createComposerContext}. */
 const allowedContextTypes = ['aiConv', 'room'] as const;
@@ -197,7 +198,12 @@ export class ComposerContext {
          * so the context stays independent from the store layer.
          * @example getHandlesInText('@hawki hi there') yields '@hawki'
          */
-        private readonly getHandlesInText: (text: string) => Generator<string>
+        private readonly getHandlesInText: (text: string) => Generator<string>,
+        /**
+         * Reads the taggable assistant entries (also backed by the `ai-handle`
+         * store) so derived state can react to which participant is addressed.
+         */
+        private readonly getAssistants: () => AiAssistant[]
     ) {
         this._systemPrompt = $state(initialSystemPrompt);
 
@@ -262,11 +268,45 @@ export class ComposerContext {
     });
 
     /** All agent `@handle` tokens found in the current message (e.g. `['@hawki']`).
-     *  In room mode, the presence of a handle determines whether AI UI elements are shown. */
+     *  In room mode, the presence of a handle determines whether AI UI elements are shown.
+     *  Only one assistant can be addressed at a time (see {@link addHandleToMessage}), so
+     *  this normally holds at most one entry — it stays a list because a hand-typed message
+     *  can still contain several. */
     public readonly handlesInMessage = $derived.by(() => [...this.getHandlesInText(this.message)]);
 
     /** `true` when at least one `@hawki` is present in the message. */
     public readonly containsAiHandle = $derived.by(() => this.handlesInMessage.length > 0);
+
+    /** The taggable-assistant entries addressed by the current message. */
+    public readonly addressedAssistants = $derived.by(() => {
+        const handles = new Set(this.handlesInMessage);
+        return this.getAssistants().filter(assistant => handles.has(assistant.handle));
+    });
+
+    /** `true` while an addressed participant fixes the model: the model
+     *  picker and sampling settings lock for the run (see `GuardSlice`). */
+    public readonly restrictsModelSelection = $derived.by(() =>
+        this.addressedAssistants.some(assistant => assistant.capabilities?.modelSelect === false)
+    );
+
+    /** `true` while an addressed participant fixes the toolset: the tool
+     *  menu locks for the run (see `GuardSlice`). */
+    public readonly restrictsToolSelection = $derived.by(() =>
+        this.addressedAssistants.some(assistant => assistant.capabilities?.toolSelect === false)
+    );
+
+    /** Assistant handle (without `@`) the addressed participant binds the
+     *  exchange to, or null when no assistant-backed participant is
+     *  addressed. Travels as `payload.hawkiExtensions.assistant_handle`. */
+    public readonly addressedAssistantHandle = $derived.by(() => {
+        for (const assistant of this.addressedAssistants) {
+            if (assistant.chatBinding) {
+                return assistant.chatBinding;
+            }
+        }
+
+        return null;
+    });
 
     /** The active send operation, or `null` when the composer is idle. */
     public readonly sendStatus = $derived.by(() => this._sendStatus);
@@ -334,11 +374,27 @@ export class ComposerContext {
         return status;
     }
 
-    /** Prepends `handle` to the message if it isn't already present, then focuses the input. */
+    /**
+     * Makes `handle` the message's assistant handle, then focuses the input.
+     *
+     * At most one assistant can be addressed at a time, so this *replaces* any handle
+     * already in the message rather than adding to it — tagging a second assistant swaps
+     * the first one out.
+     */
     public addHandleToMessage(handle: string): void {
-        if (!this.handlesInMessage.includes(handle)) {
-            this.message = `${handle} ${this.message.trim()}`;
+        const current = this.handlesInMessage;
+        if (current.length !== 1 || current[0] !== handle) {
+            this.message = `${handle} ${this.messageWithoutHandles}`;
         }
+        this.focusInput();
+    }
+
+    /** Removes a single `@handle` token from the message, leaving the rest of the text
+     *  untouched, then focuses the input. The counterpart of {@link addHandleToMessage};
+     *  use {@link messageWithoutHandles} to strip all of them at once. */
+    public removeHandleFromMessage(handle: string): void {
+        const handleToken = new RegExp(`(^|\\s)${handle}(?=\\s|$)`, 'g');
+        this.message = this.message.replace(handleToken, '$1').trim();
         this.focusInput();
     }
 
@@ -548,7 +604,8 @@ export function createComposerContext(
         initialSystemPrompt,
         onSetSystemPrompt,
         options.onImproveMessage ?? ((message, systemPrompt) => oldUiBridge.triggerImproveMessage(message, systemPrompt)),
-        (message) => aiHandleStore.getHandlesIn(message)
+        (message) => aiHandleStore.getHandlesIn(message),
+        () => aiHandleStore.assistants
     );
 
     $effect(() => {
