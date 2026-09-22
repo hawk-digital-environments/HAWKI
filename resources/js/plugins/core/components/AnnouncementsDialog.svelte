@@ -95,7 +95,7 @@
                 <div class="announcements-view">
                     <article class="announcement announcement--detail">
                         <ButtonWithTooltip
-                            variant="iconGhost"
+                            variant="ghost"
                             iconLeft={ArrowLeft01Icon}
                             tooltip={__('ui.announcements.back')}
                             bind:ref={backEl}
@@ -193,15 +193,17 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) 1rem;
         align-items: center;
-        gap: var(--space-1) var(--space-3);
+        gap: var(--space-2) var(--space-3);
         padding: var(--space-3);
         font-size: var(--font-size-sm);
         line-height: var(--line-height-normal);
 
-        /* The back button is wider than its slot; let its hover area overhang. */
+        /* The back button (2rem, with the composer's hover background) is
+           larger than its 1rem slot; let it overhang on all sides so it
+           neither widens the column nor makes the heading line taller. */
         > :global(.btn) {
             --btn-icon-size: 1rem;
-            margin-inline: calc(-1 * var(--space-1));
+            margin: calc(-1 * var(--space-2));
         }
     }
 
