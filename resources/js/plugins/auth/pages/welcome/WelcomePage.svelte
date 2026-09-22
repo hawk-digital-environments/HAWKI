@@ -143,6 +143,50 @@
         from { opacity: 0; transform: translateY(0.25rem); }
         to { opacity: 1; transform: none; }
     }
+    /* On phones the onboarding fills the frame's main area, so the buttons sit at
+       the bottom within thumb reach (above the frame footer). The measured height
+       box steps aside here; the full-height layout doesn't need it. */
+    @media (--bp-xs) {
+        :global(.auth-main:has(.welcome)) {
+            align-content: stretch;
+        }
+        /* The router's loader wraps the page in `.loader-host > .loader-content`; stretch those too. */
+        :global(.auth-body:has(.welcome)),
+        :global(.loader-host:has(.welcome)),
+        :global(.loader-content:has(.welcome)) {
+            display: flex;
+            flex-direction: column;
+        }
+        :global(.loader-host:has(.welcome)),
+        :global(.loader-content:has(.welcome)) {
+            flex: 1;
+        }
+        .welcome-size {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: auto !important;
+        }
+        .welcome {
+            flex: 1;
+        }
+        /* Back and the primary action sit at opposite edges, neither wrapping; alone, the action spans the row. */
+        .welcome-actions {
+            flex-wrap: nowrap;
+            justify-content: space-between;
+        }
+        .welcome-actions > :global(*) {
+            white-space: nowrap;
+        }
+        /* Tighter ghost (Back) button so its text lines up closer to the content edge. */
+        .welcome .welcome-actions > :global(.btn.btn--ghost) {
+            min-width: 0;
+            padding-inline: var(--space-2);
+        }
+        .welcome-actions > :global(:only-child) {
+            flex: 1;
+        }
+    }
     @media (prefers-reduced-motion: reduce) {
         .welcome-slide,
         .welcome-dot {

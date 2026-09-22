@@ -35,6 +35,7 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import Button from '$lib/components/ui/button/Button.svelte';
+    import BookOpen01Icon from '$lib/components/ui/icons/iconset/BookOpen01Icon.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import Markdown from '$lib/components/util/markdown/Markdown.svelte';
@@ -298,12 +299,12 @@
             {/if}
             {#if pending}<p role="status" class="auth-hint">{__('ui.auth.register.preparing')}</p>{/if}
             {#if policy && !autoGenerate}
-                <Button type="button" variant="ghost" aria-disabled={pending} aria-busy={pending} onclick={() => { if (!pending) policyOpen = true; }}>{__('ui.auth.register.readPolicy')}</Button>
+                <Button type="button" variant="ghost" iconLeft={BookOpen01Icon} aria-disabled={pending} aria-busy={pending} onclick={() => { if (!pending) policyOpen = true; }}>{__('ui.auth.register.readPolicy')}</Button>
             {/if}
-            <Button type="submit" variant="accent" disabled={continueDisabled} aria-disabled={pending} aria-busy={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
+            <Button type="submit" variant="accent" iconLeft={!accepted && autoGenerate ? BookOpen01Icon : undefined} disabled={continueDisabled} aria-disabled={pending} aria-busy={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
         </form>
     {:else if stage === 'policy'}
-        <Button onclick={() => { if (!pending) policyOpen = true; }} variant="accent" block>{__('ui.auth.register.readPolicy')}</Button>
+        <Button onclick={() => { if (!pending) policyOpen = true; }} variant="accent" iconLeft={BookOpen01Icon} block>{__('ui.auth.register.readPolicy')}</Button>
     {:else}
         <output class="backup-code" aria-label={__('ui.auth.register.backupCode')}>{backupCode}</output>
         <div class="auth-actions">
