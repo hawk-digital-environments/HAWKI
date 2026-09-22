@@ -203,6 +203,7 @@
                 bind:value={bio}
                 maxlength={BIO_MAX_LENGTH}
                 rows={4}
+                style="resize: none"
                 aria-describedby={bioCountId}
             />
             <small class="counter" id={bioCountId}>{bio.length}/{BIO_MAX_LENGTH}</small>
