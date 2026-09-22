@@ -1,11 +1,14 @@
 <!--
   @component Account settings surface. The dialog owns a hash router so each
   settings section has browser-history-aware navigation without leaving the
-  current application page. On wide screens the sections sit in a sidebar
-  beside the page; below `md` they fold into a segmented control above it.
+  current application page. On wide screens it is a dialog with the sections
+  in a sidebar beside the page; below `md` it is a bottom sheet with the
+  sections as a segmented control above the page.
 -->
 <script lang="ts">
+    import type {Attachment} from 'svelte/attachments';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
+    import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
     import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
@@ -57,26 +60,73 @@
         void settingsRouter.handle.goTo(path);
     }
 
+    // The panel follows its content's measured height so a section switch
+    // resizes the dialog (or sheet) smoothly; an `auto` height can't transition.
+    let contentHeight = $state<number | null>(null);
+    // While the height animates, the panel's own scrollbar would flash.
+    let resizing = $state(false);
+
+    const measureContent: Attachment<HTMLElement> = (element) => {
+        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+        const observer = new ResizeObserver(() => {
+            const height = element.offsetHeight;
+            // The first measurement lands instantly (auto → px doesn't animate).
+            if (contentHeight !== null && height !== contentHeight && !reducedMotion.matches) {
+                resizing = true;
+            }
+            contentHeight = height;
+        });
+        observer.observe(element);
+        return () => {
+            observer.disconnect();
+            contentHeight = null;
+            resizing = false;
+        };
+    };
+
+    function endResize(event: TransitionEvent): void {
+        if (event.target === event.currentTarget) resizing = false;
+    }
+
     function handleOpenChange(isOpen: boolean): void {
         open = isOpen;
         onOpenChange?.(isOpen);
     }
 </script>
 
-<Dialog
-    {open}
-    onOpenChange={handleOpenChange}
-    contentProps={{class: 'settings-dialog-content'}}
-    headerProps={{class: 'settings-dialog-header'}}
->
-    {#snippet title()}
-        <span class="settings-title">{__('ui.settings.title')}</span>
-    {/snippet}
+{#snippet panel()}
+    <div
+        class="settings-panel"
+        class:resizing
+        style:--settings-content-height={contentHeight === null ? undefined : `${contentHeight}px`}
+        ontransitionend={endResize}
+        ontransitioncancel={endResize}
+    >
+        <div {@attach measureContent}>
+            <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
+        </div>
+    </div>
+{/snippet}
 
-    <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
-        {#if compact}
+{#if compact}
+    <BottomSheet {open} onOpenChange={handleOpenChange} title={__('ui.settings.title')}>
+        <div class="settings-sheet">
             <Tabs items={tabItems} value={activePath} onChange={goTo} aria-label={__('ui.settings.navLabel')}/>
-        {:else}
+            {@render panel()}
+        </div>
+    </BottomSheet>
+{:else}
+    <Dialog
+        {open}
+        onOpenChange={handleOpenChange}
+        contentProps={{class: 'settings-dialog-content'}}
+        headerProps={{class: 'settings-dialog-header'}}
+    >
+        {#snippet title()}
+            <span class="settings-title">{__('ui.settings.title')}</span>
+        {/snippet}
+
+        <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
             <MenuList>
                 {#each navItems as item (item.path)}
                     {@const Icon = item.icon}
@@ -97,13 +147,11 @@
                     </MenuListItem>
                 {/each}
             </MenuList>
-        {/if}
-    </nav>
+        </nav>
 
-    <div class="settings-panel">
-        <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
-    </div>
-</Dialog>
+        {@render panel()}
+    </Dialog>
+{/if}
 
 <style>
     /* One grid on a single surface: the nav on the left, the page scrolling on
@@ -186,34 +234,37 @@
     .settings-panel {
         min-width: 0;
         min-height: 0;
+        max-height: 100%;
         overflow-y: auto;
         /* A little more air towards the nav than on the outer edges. */
         padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
+        /* Until the first measurement the property is unset, which makes this
+           declaration invalid and leaves the height at auto. */
+        height: calc(var(--settings-content-height) + 2 * var(--space-4));
+        transition: height var(--duration-extra-fast) var(--easing-default);
     }
 
-    /* Single column: header, segmented section nav, page. */
-    @media (--bp-smaller-than-md) {
-        :global(.settings-dialog-content.settings-dialog-content) {
-            top: var(--space-2);
-            width: calc(100vw - 2 * var(--space-2));
-            height: calc(100dvh - 2 * var(--space-2));
-            max-height: none;
-            grid-template-columns: minmax(0, 1fr);
-            grid-template-rows: auto auto minmax(0, 1fr);
-        }
+    .settings-panel.resizing {
+        overflow-y: hidden;
+    }
 
-        /* No nav icons to line up with here, so the title takes the plain inset. */
-        :global(.settings-dialog-header.settings-dialog-header) {
-            padding-left: var(--space-4);
-        }
-
-        .settings-nav {
-            padding: var(--space-4);
-            border-bottom: var(--divider);
-        }
-
+    @media (prefers-reduced-motion: reduce) {
         .settings-panel {
-            padding-left: var(--space-4);
+            transition: none;
         }
+    }
+
+    /* Sheet: segmented section nav above the page; the sheet body scrolls. */
+    .settings-sheet {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+
+    .settings-sheet .settings-panel {
+        max-height: none;
+        overflow: hidden;
+        padding: 0;
+        height: var(--settings-content-height);
     }
 </style>
