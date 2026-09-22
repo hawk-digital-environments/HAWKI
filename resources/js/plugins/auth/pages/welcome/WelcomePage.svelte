@@ -85,7 +85,8 @@
     }
     .welcome {
         display: grid;
-        grid-template-rows: auto 1fr auto;
+        grid-template: 'slide slide' 1fr 'progress actions' auto / auto 1fr;
+        align-items: center;
         gap: var(--space-6);
         min-height: 18rem;
     }
@@ -93,8 +94,9 @@
     .welcome :global(.auth-intro) {
         align-content: start;
     }
-    /* Steps as pills: done ones fill in, the current one stretches with a springy overshoot. */
+    /* Steps as pills, bottom left on the button row: done ones fill in, the current one stretches with a springy overshoot. */
     .welcome-progress {
+        grid-area: progress;
         display: flex;
         gap: var(--space-2);
         margin: 0;
@@ -150,9 +152,12 @@
         to { scale: 1; opacity: 1; }
     }
     .welcome-slide {
+        grid-area: slide;
+        align-self: stretch;
         animation: welcome-fade var(--duration-medium) var(--easing-out) both;
     }
     .welcome-actions {
+        grid-area: actions;
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-end;
@@ -188,6 +193,23 @@
         }
         .welcome {
             flex: 1;
+        }
+        /* Progress sits centered at the bottom, just above the buttons. */
+        .welcome {
+            grid-template: 'slide' 1fr 'progress' auto 'actions' auto / 1fr;
+        }
+        .welcome-progress {
+            justify-self: center;
+        }
+        /* Center the step content in the free space between progress and buttons, with a larger emoji, instead of leaving a gap below the text. */
+        .welcome :global(.auth-intro) {
+            align-content: center;
+        }
+        .welcome-emoji {
+            width: 5.5rem;
+            height: 5.5rem;
+            margin-bottom: var(--space-4);
+            font-size: 2.75rem;
         }
         /* Back and the primary action sit at opposite edges, neither wrapping; alone, the action spans the row. */
         .welcome-actions {
