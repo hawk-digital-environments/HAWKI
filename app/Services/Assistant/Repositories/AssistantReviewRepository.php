@@ -56,6 +56,9 @@ class AssistantReviewRepository extends AbstractRepository
      */
     public function deleteReviewForAssistantUnlessTerminal(int $assistantId): void
     {
+        // Both denial variants stick: a denied review must survive the demotion
+        // to private that the denial itself triggers (see AssistantReleaseStatus),
+        // and a needs_revision review must survive so the creator can resubmit.
         $this->getQuery()
             ->where('assistant_id', $assistantId)
             ->whereNotIn('status', [

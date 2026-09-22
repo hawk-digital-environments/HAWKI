@@ -22,11 +22,20 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
 }
 
+/** The collapsible groups of the assistants sidebar's dashboard level. */
+export type AssistantMenuGroupId = 'my-assistants';
+
 /** One nav row in the assistants sidebar. */
 export interface AssistantMenuEntry {
     id: string;
     /** The sidebar's two drill levels; the active route decides which shows. */
     level: 'dashboard' | 'builder';
+    /**
+     * Renders the entry inside that dashboard-level collapsible group (see
+     * `SidebarGroup`) instead of the top level. Custom `component` rows are
+     * top-level only.
+     */
+    group?: AssistantMenuGroupId;
     label: string;
     icon?: IconComponent | Component;
     /** Named route to navigate to (alternative to `onSelect`). */

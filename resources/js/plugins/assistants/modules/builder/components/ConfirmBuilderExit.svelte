@@ -39,6 +39,7 @@
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {ReleaseMode} from '$plugins/assistants/types/assistant/ReleaseMode';
     import {ApiError} from '$plugins/assistants/api/errors';
     import ExitDraftDialog from '$plugins/assistants/modules/builder/components/ExitDraftDialog.svelte';
 
@@ -61,6 +62,11 @@
         // Nothing left to decide: the record is already gone, or the user
         // committed this session's outcome from the Publish tab.
         if (builder.isDiscarded || builder.isCommitted) {
+            return false;
+        }
+        // A published assistant — private or up, but nof draft —
+        // has nothing left to decide on exit
+        if (builder.sessionOrigin.releaseStage !== ReleaseMode.DRAFT) {
             return false;
         }
         // Not a session still initializing.
@@ -192,11 +198,7 @@
                     return false;
                 }
             }
-            // The session is over: the origin it remembered belongs to it and
-            // must not be inherited by the next one. Whoever started this
-            // navigation already resolved where it goes (the sidebar's
-            // "Zurück" row reads the origin itself), so the guard just lets
-            // it through rather than redirecting somewhere of its own.
+            // The session is over. Just return to the page the builder was opened from.
             clearBuilderReturnPath();
             return true;
         });

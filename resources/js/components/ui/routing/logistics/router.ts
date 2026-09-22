@@ -164,6 +164,14 @@ export interface RouterHandle {
     /** Resolves `routeName`/`params` via {@link getPath} and navigates to the result. */
     goToRoute: (routeName: string, params?: UrlParams, options?: { replace?: boolean }) => Promise<void>;
     /**
+     * The path of the page currently published — the path alone, without query
+     * or fragment (those live on {@link query}). Reactive: a read inside a
+     * `$derived`, an `$effect` or a template re-runs when a navigation
+     * publishes. While a resolution is still in flight this is the previous
+     * page's path.
+     */
+    readonly path: string;
+    /**
      * The query string of the current location, parsed. Reactive: a read
      * inside a `$derived`, an `$effect` or a template re-runs when the
      * location changes. Every read returns a fresh instance, so mutating it
@@ -725,6 +733,9 @@ export function createRouterFromRegistrar(
         goTo,
         goToRoute,
         registerNavigationGuard,
+        get path() {
+            return state.currentPath ?? '';
+        },
         get query() {
             return getQuery();
         },

@@ -49,7 +49,9 @@
         "sidebar": {
             "home": "Startseite",
             "store":"Store",
+            "my_assistants": "Meine Assistenten",
             "drafts": "Entwürfe",
+            "private": "Privat",
             "favourites": "Favoriten",
             "shared": "Freigegeben",
             "create": "Erstellen",
@@ -76,10 +78,15 @@
             "empty_title":  "Keine Entwürfe vorhanden",
             "empty_description": "Du hast noch keine Assistenten als Entwurf gespeichert."
         },
+        "private": {
+            "title": "Meine privaten Assistenten",
+            "empty_title":  "Keine privaten Assistenten vorhanden",
+            "empty_description": "Assistenten, die du als privat speicherst, sind nur für dich sichtbar."
+        },
         "shared": {
             "title": "Freigegebene Assistenten",
             "empty_title":  "Keine freigegebene Assistant",
-            "empty_description": ""
+            "empty_description": "Hier erscheinen Assistenten, die andere Benutzer für dich freigegeben haben."
         },
         "favourites": {
             "title": "Favoriten",
@@ -92,7 +99,8 @@
             "empty_description": "Keine Assistenten passen zu deinen aktuellen Filtern.",
             "loading": "Lade Assistenten…",
             "no_results": "Es wurden keine Ergebnisse gefunden",
-            "pagination_of": "von"
+            "pagination_of": "von",
+            "search": "Suchen"
         },
 
         "card": {

@@ -1,6 +1,7 @@
 <!--
   @component Assistants module sidebar with two drill levels. On dashboard
-  routes it lists the dashboard sections (Store/Entwürfe/…); while a builder
+  routes it lists the dashboard sections (Store plus the "My assistants"
+  collapsible with the personal sections); while a builder
   route is active the list is swapped for the builder's sections plus a
   "Zurück" row — a drill-down, not an inline submenu, mirroring the mobile
   nav-stack pattern of DropdownMenuDetailView. The level is derived from the
@@ -16,7 +17,10 @@
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
+    import SidebarGroup from '$lib/components/ui/sidebar/SidebarGroup.svelte';
+    import type {SidebarGroupItem} from '$lib/components/ui/sidebar/SidebarGroup.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import UserAiIcon from '$lib/components/ui/icons/iconset/UserAiIcon.svelte';
     import CreateAssistantButton from '$plugins/assistants/components/CreateAssistantButton.svelte';
     import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte.js';
     import {builderReturnPath} from '$plugins/assistants/modules/builder/contexts/builderReturn.js';
@@ -44,8 +48,27 @@
     // composer mounting on chat routes — refetches.
     $effect(() => () => assistantHandlesStore.invalidate());
 
-    /** The sidebar's main level: the dashboard sections. */
-    const dashboardItems = $derived(menuEntries.filter(entry => entry.level === 'dashboard'));
+    /**
+     * The sidebar's main level: the dashboard sections that stay top-level
+     * (Store, plus any ungrouped third-party rows). Grouped entries render in
+     * the "My assistants" collapsible below them.
+     */
+    const dashboardItems = $derived(
+        menuEntries.filter(entry => entry.level === 'dashboard' && !entry.group)
+    );
+
+    /** The entries collected under the "My assistants" collapsible group. */
+    const myAssistantItems = $derived.by<SidebarGroupItem[]>(() =>
+        menuEntries
+            .filter(entry => entry.level === 'dashboard' && entry.group === 'my-assistants')
+            .map(entry => ({
+                id: entry.id,
+                label: entry.label,
+                icon: entry.icon,
+                active: entry.active ?? (entry.route ? router.isRouteActive(entry.route) : false),
+                onclick: () => openEntry(entry)
+            }))
+    );
 
     /** The drill-down level: the builder's sections, in builder tab order. */
     const builderSections = $derived(menuEntries.filter(entry => entry.level === 'builder'));
@@ -80,10 +103,10 @@
 
     /**
      * Drill back out of the builder, to the page it was opened from — the
-     * assistant's detail page, the drafts list, wherever the user hit "Edit"
-     * or "Remix". Entering via "Erstellen" remembers no origin (there is no
-     * assistant to go back to), so that falls back to the drafts list, where
-     * the freshly created assistant now lives.
+     * assistant's detail page, the drafts list, wherever the user hit "Edit",
+     * "Remix" or "Erstellen". Entering the builder without an origin (a
+     * direct URL, say) falls back to the drafts list, where a freshly
+     * created assistant now lives.
      *
      * The exit confirmation runs on top of this as a router navigation guard
      * (see `ConfirmBuilderExit`), which can still cancel the navigation.
@@ -150,6 +173,13 @@
                             />
                         {/if}
                     {/each}
+                    {#if myAssistantItems.length}
+                        <SidebarGroup
+                            label={__('assistants.sidebar.my_assistants')}
+                            icon={UserAiIcon}
+                            items={myAssistantItems}
+                        />
+                    {/if}
                 </div>
             {/if}
         </div>

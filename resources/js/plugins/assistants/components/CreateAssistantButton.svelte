@@ -7,7 +7,8 @@
 
   Drills into a fresh builder session: stashes a create intent (the builder
   layout picks it up and mints a new assistant — an explicit create, so any
-  restored session draft is discarded) and navigates to the builder's first
+  restored session draft is discarded) plus the current page as the return
+  origin (see `builderReturn.ts`), and navigates to the builder's first
   section.
 -->
 <script lang="ts">
@@ -24,7 +25,7 @@
 
     function startCreate() {
         if (sidebar.mobile) sidebar.navOpen = false;
-        requestBuilderIntent({type: 'create'});
+        requestBuilderIntent({type: 'create'}, router.path);
         router.goToRoute('assistants.builder.general');
     }
 </script>

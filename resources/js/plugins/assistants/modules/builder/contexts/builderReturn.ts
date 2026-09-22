@@ -17,8 +17,8 @@ const RETURN_STORAGE_KEY = 'assistant_builder_return';
 
 /**
  * Records the page the builder is being opened from. Passing `null` clears
- * the stored path — an entry point with no origin to return to (the sidebar's
- * "Erstellen") must not inherit the one a previous session left behind.
+ * the stored path — an entry point with no origin to return to (a direct
+ * URL, say) must not inherit the one a previous session left behind.
  */
 export function rememberBuilderReturnPath(path: string | null): void {
     if (path) {

@@ -4,16 +4,21 @@ import { HawkiPlugin, HawkiPluginContext, HawkiPluginContextWithConfig } from '$
 import { ResourceSchemaRegistrar } from '$lib/kernel/resources/resourceSchemaRegistrar';
 import { StoreRegistrar } from '$lib/kernel/stores/storeRegistrar';
 import type { HookRegistrar } from '$lib/kernel/hooks/hookRegistrar.js';
+import { getModuleRouteGroupName } from '$lib/kernel/routing/routeInflection.js';
+import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
 import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
 import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
 import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
 import Share02Icon from '$lib/components/ui/icons/iconset/Share02Icon.svelte';
+import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
 import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
 import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
 import ComputerIcon from '$lib/components/ui/icons/iconset/ComputerIcon.svelte';
 import TestTube01Icon from '$lib/components/ui/icons/iconset/TestTube01Icon.svelte';
 import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
+import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
+import CreateAssistantButton from '$plugins/assistants/components/CreateAssistantButton.svelte';
 import { DashboardModule } from '$plugins/assistants/modules/dashboard/DashboardModule';
 import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
 import { assistantHandlesStore } from '$plugins/assistants/stores/AssistantHandlesStore.svelte';
@@ -48,6 +53,40 @@ export default class AssistantsPlugin implements HawkiPlugin {
      * and the chat-integration hooks below.
      */
     public hooks(registrar: HookRegistrar): void {
+        const dashboardGroup = getModuleRouteGroupName('assistants', 'dashboard');
+        const builderGroup = getModuleRouteGroupName('assistants', 'builder');
+
+        registrar.add('moduleSelectorEntries', (entries, ctx) => [
+            ...entries,
+            {
+                id: 'assistants:dashboard',
+                label: ctx.translate('assistants.assistants'),
+                icon: BotIcon,
+                onSelect: (selectCtx) => {
+                    void selectCtx.router.goToRoute('assistants.dashboard.index');
+                },
+                active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
+            }
+        ]);
+
+        registrar.add('sidebarSlots', (slots, ctx) => [
+            ...slots,
+            {
+                id: 'assistants:sidebar',
+                position: 'panel',
+                component: AssistantsSidebar,
+                active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
+            },
+            {
+                // Dashboard routes only — inside the builder the primary
+                // action would compete with the level's own chrome.
+                id: 'assistants:create',
+                position: 'action',
+                component: CreateAssistantButton,
+                active: ctx.router.isRouteActive(dashboardGroup)
+            }
+        ]);
+
         registrar.add(
             'aiAssistants',
             (assistants, ctx) => [...assistants, ...assistantHandlesStore.menuAssistants(ctx.translate)],
@@ -74,8 +113,18 @@ export default class AssistantsPlugin implements HawkiPlugin {
                     ctx.router.isRouteActive('assistants.dashboard.index')
             },
             {
+                id: 'dashboard.private',
+                level: 'dashboard',
+                group: 'my-assistants',
+                label: ctx.translate('assistants.sidebar.private'),
+                icon: SquareLock02Icon,
+                route: 'assistants.dashboard.private',
+                active: ctx.router.isRouteActive('assistants.dashboard.private')
+            },
+            {
                 id: 'dashboard.drafts',
                 level: 'dashboard',
+                group: 'my-assistants',
                 label: ctx.translate('assistants.sidebar.drafts'),
                 icon: FileEditIcon,
                 route: 'assistants.dashboard.drafts',
@@ -84,6 +133,7 @@ export default class AssistantsPlugin implements HawkiPlugin {
             {
                 id: 'dashboard.favourites',
                 level: 'dashboard',
+                group: 'my-assistants',
                 label: ctx.translate('assistants.sidebar.favourites'),
                 icon: StarIcon,
                 route: 'assistants.dashboard.favourites',
@@ -92,6 +142,7 @@ export default class AssistantsPlugin implements HawkiPlugin {
             {
                 id: 'dashboard.shared',
                 level: 'dashboard',
+                group: 'my-assistants',
                 label: ctx.translate('assistants.sidebar.shared'),
                 icon: Share02Icon,
                 route: 'assistants.dashboard.shared',

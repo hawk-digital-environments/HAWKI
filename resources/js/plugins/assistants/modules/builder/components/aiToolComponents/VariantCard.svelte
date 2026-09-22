@@ -39,6 +39,7 @@
         statusTool,
         statusSupported,
         info = undefined,
+        infoLabel = undefined,
         children,
     } = $props<{
         /** The variant's value within the group (e.g. 'auto', 'native', a tool name). */
@@ -55,6 +56,11 @@
         statusSupported: boolean;
         /** Optional info-popover text describing the variant. */
         info?: string | undefined;
+        /**
+         * Name of the variant for the info popover's accessible trigger
+         * button; falls back to `value` so the button is always named.
+         */
+        infoLabel?: string | undefined;
         /** The variant's label. */
         children: Snippet;
     }>();
@@ -65,7 +71,7 @@
     <span class="variant-meta">
         <ToolStatusDot tool={statusTool} supported={statusSupported} {model} focusable={false}/>
         {#if info}
-            <InfoPopover info={info}/>
+            <InfoPopover label={infoLabel ?? value} info={info}/>
         {/if}
     </span>
 </RadioCard>

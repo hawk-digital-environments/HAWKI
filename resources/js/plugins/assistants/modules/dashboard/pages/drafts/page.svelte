@@ -1,5 +1,6 @@
 <script lang="ts">
     import AssistantBrowser from "$plugins/assistants/modules/dashboard/components/assistantBrowser/AssistantBrowser.svelte";
+    import {readBrowserUrlState} from "$plugins/assistants/modules/dashboard/components/assistantBrowser/browserUrlState.js";
     import {ReleaseMode} from "$plugins/assistants/types/assistant";
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -25,28 +26,46 @@
     // when the page unmounts.
     const list = createAssistantListContext(useApp(), useToastContext());
 
-    let searchQuery = $state("");
-    let activeFilters = $state(new Set<string>());
+    // Search text and category filters are event-driven: the search bar and
+    // category bar report commits via callbacks, and each handler applies the
+    // (page-specific) filter to the list. Seeding from the URL happens before
+    // the single initial request below.
+    const initial = readBrowserUrlState();
+    let searchQuery = $state(initial.query);
+    let activeFilters = $state(initial.categories);
 
-    $effect(() => {
+    function applyFilter() {
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
             release_stage: [
-                ReleaseMode.DRAFT,
-                ReleaseMode.PRIVATE
+                ReleaseMode.DRAFT
             ]
         });
-    });
+    }
+
+    function handleSearchChange(query: string) {
+        searchQuery = query;
+        applyFilter();
+    }
+
+    function handleFilterChange(filters: Set<string>) {
+        activeFilters = filters;
+        applyFilter();
+    }
+
+    applyFilter();
 </script>
 <Page title={__('assistants.drafts.title')}>
     <div class="page-content">
 
         <AssistantBrowser
+                searchQuery={searchQuery}
+                activeFilters={activeFilters}
+                onSearchChange={handleSearchChange}
+                onFilterChange={handleFilterChange}
                 emptyTitle={__('assistants.drafts.empty_title')}
                 emptyDescription={__('assistants.drafts.empty_description')}
-                bind:searchQuery
-                bind:activeFilters
         />
     </div>
 </Page>
