@@ -53,7 +53,7 @@
 </script>
 
 <!-- Reserves the height of the longest step so the buttons stay in place while the text changes.
-     Keyed on the step so each step re-enters with its fade, even though the component instance stays. -->
+     The step content is keyed on the step so it re-enters with its fade, even though the component instance stays. -->
 <!-- Wrapped in a box that animates to the measured content height, so a step with more text grows smoothly. -->
 <div class="welcome-size" style:height={contentHeight === undefined ? undefined : `${contentHeight}px`}>
 <div class="welcome" bind:offsetHeight={contentHeight}>
@@ -68,20 +68,21 @@
             <h1 id="auth-title" tabindex="-1" bind:this={heading}>{texts.title}</h1>
             <p class="auth-copy">{texts.body}</p>
         </div>
-        <div class="welcome-actions">
-            {#if meta.previous}
-                <Button type="button" variant="ghost" iconLeft={ArrowLeft01Icon} onclick={() => go(meta.previous!)}>{__('ui.auth.register.welcome.back')}</Button>
-            {/if}
-            <Button type="button" variant="accent" onclick={() => meta.next ? go(meta.next) : flow.finish()}>{texts.action}</Button>
-        </div>
     {/key}
+    <!-- Outside the key, so the buttons stay put instead of flashing on every step. -->
+    <div class="welcome-actions">
+        {#if meta.previous}
+            <Button type="button" variant="ghost" iconLeft={ArrowLeft01Icon} onclick={() => go(meta.previous!)}>{__('ui.auth.register.welcome.back')}</Button>
+        {/if}
+        <Button type="button" variant="accent" onclick={() => meta.next ? go(meta.next) : flow.finish()}>{texts.action}</Button>
+    </div>
 </div>
 </div>
 
 <style>
     .welcome-size {
-        overflow: hidden;
-        transition: height var(--duration-fast) var(--easing-out);
+        overflow: visible;
+        transition: height var(--duration-medium) var(--easing-out);
     }
     .welcome {
         display: grid;
@@ -154,7 +155,16 @@
     .welcome-slide {
         grid-area: slide;
         align-self: stretch;
+    }
+    /* Emoji, heading and body rise in one after another for a softer step change. */
+    .welcome-slide > :global(*:not(.welcome-emoji)) {
         animation: welcome-fade var(--duration-medium) var(--easing-out) both;
+    }
+    .welcome-slide > :global(h1) {
+        animation-delay: 60ms;
+    }
+    .welcome-slide > :global(p) {
+        animation-delay: 120ms;
     }
     .welcome-actions {
         grid-area: actions;
@@ -229,7 +239,7 @@
         }
     }
     @media (prefers-reduced-motion: reduce) {
-        .welcome-slide,
+        .welcome-slide > :global(*),
         .welcome-emoji,
         .welcome-dot {
             animation: none;

@@ -35,6 +35,10 @@
                 "readPolicy": "Read usage policy",
                 "policyDescription": "Please read and accept the usage policy before setting up your keychain.",
                 "confirmPolicy": "Accept and continue",
+                "continueBlocked": {
+                    "policy": "Accept the terms of use to continue.",
+                    "passkey": "Enter and repeat your password to continue."
+                },
                 "declinePolicy": "Decline and log out",
                 "policyTitle": "Usage policy",
                 "acceptPolicy": "I have read and accept this policy.",

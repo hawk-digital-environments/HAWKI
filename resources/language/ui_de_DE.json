@@ -35,6 +35,10 @@
                 "readPolicy": "Nutzungsbedingungen lesen",
                 "policyDescription": "Bitte lies und akzeptiere die Nutzungsbedingungen, bevor du deinen Schlüsselbund einrichtest.",
                 "confirmPolicy": "Akzeptieren und weiter",
+                "continueBlocked": {
+                    "policy": "Akzeptiere die Nutzungsbedingungen, um fortzufahren.",
+                    "passkey": "Gib dein Passwort ein und wiederhole es, um fortzufahren."
+                },
                 "declinePolicy": "Ablehnen und abmelden",
                 "policyTitle": "Nutzungsbedingungen",
                 "acceptPolicy": "Ich habe diese Bedingungen gelesen und akzeptiere sie.",
