@@ -246,6 +246,11 @@
         }
         error = __(authErrorKey(failure));
     }
+    /** Declining the usage policy ends the registration: the user is logged out. */
+    function declinePolicy() {
+        policyOpen = false;
+        void app.logout().catch(() => { /* The root layout shows the retry action. */ });
+    }
     function acceptPolicy() {
         if (!policyConsent) {
             invalidField = 'policy';
@@ -331,7 +336,7 @@
                 </label>
                 {#if invalidField === 'policy'}<p id="policy-error" class="auth-error" role="alert">{error}</p>{/if}
                 <div class="policy-actions">
-                    <Button type="button" variant="stroke" onclick={() => policyOpen = false}>{__('ui.dialog.cancelLabel')}</Button>
+                    <Button type="button" variant="stroke" onclick={declinePolicy}>{__('ui.auth.register.declinePolicy')}</Button>
                     <Button type="submit" variant="accent">{__('ui.auth.register.confirmPolicy')}</Button>
                 </div>
             </form>
