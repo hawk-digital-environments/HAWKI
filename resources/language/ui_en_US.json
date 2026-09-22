@@ -43,6 +43,7 @@
                 "policyTitle": "Usage policy",
                 "acceptPolicy": "I have read and accept this policy.",
                 "policyRequired": "Accept the policy before continuing.",
+                "policyScrollHint": "Scroll to the end of the policy to accept it.",
                 "passkey": "Passkey",
                 "repeatPasskey": "Repeat passkey",
                 "passkeyHint": "Use at least 8 characters. Keep this passkey safe; it protects your encrypted data.",
