@@ -17,6 +17,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {WelcomeStepMeta} from './welcomeRoutes.js';
     import {useWelcomeFlow} from './welcomeFlow.js';
+    import {welcomeStepEmoji} from './welcomeSteps.js';
 
     const {meta}: RouteProps<void, void, WelcomeStepMeta> = $props();
     const router = useRouter();
@@ -63,6 +64,7 @@
     </ol>
     {#key meta.step}
         <div class="auth-intro welcome-slide">
+            <span class="welcome-emoji" aria-hidden="true">{welcomeStepEmoji[meta.step]}</span>
             <h1 id="auth-title" tabindex="-1" bind:this={heading}>{texts.title}</h1>
             <p class="auth-copy">{texts.body}</p>
         </div>
@@ -130,6 +132,23 @@
     @keyframes welcome-pop {
         50% { scale: 1.4; }
     }
+    /* Emoji on a soft accent ellipse; pops in with a spring whenever the step changes. */
+    .welcome-emoji {
+        display: grid;
+        place-items: center;
+        width: 4rem;
+        height: 4rem;
+        margin-bottom: var(--space-2);
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--color-accent-fill) 12%, transparent);
+        font-size: 2rem;
+        line-height: 1;
+        animation: welcome-emoji-pop var(--duration-medium) var(--easing-spring) both;
+    }
+    @keyframes welcome-emoji-pop {
+        from { scale: 0.6; opacity: 0; }
+        to { scale: 1; opacity: 1; }
+    }
     .welcome-slide {
         animation: welcome-fade var(--duration-medium) var(--easing-out) both;
     }
@@ -189,6 +208,7 @@
     }
     @media (prefers-reduced-motion: reduce) {
         .welcome-slide,
+        .welcome-emoji,
         .welcome-dot {
             animation: none;
         }
