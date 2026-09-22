@@ -54,6 +54,8 @@
     const DISMISS_DISTANCE = 110;
     /** Downward flick speed (px/ms) that dismisses regardless of distance. */
     const DISMISS_VELOCITY = 0.55;
+    /** How long (ms) a freshly opened sheet ignores pointer input. */
+    const TAP_THROUGH_GUARD_MS = 350;
 
     let dragOffset = $state(0);
     let dragging = $state(false);
@@ -113,6 +115,20 @@
         }
     });
 
+    // Touch triggers open their menu on pointerup (bits-ui), and some browsers
+    // synthesizes the tap's compatibility mouse events afterwards, which e.g. causes 
+    // a tap on the openening overlay ()
+    let guarded = $state(false);
+    let guardTimer: ReturnType<typeof setTimeout> | undefined;
+
+    $effect(() => {
+        if (open) {
+            guarded = true;
+            clearTimeout(guardTimer);
+            guardTimer = setTimeout(() => (guarded = false), TAP_THROUGH_GUARD_MS);
+        }
+    });
+
     // Only ever emit an inline transition while snapping back — a permanent one
     // would stall the dialog's keyframe-based exit-animation detection.
     const panelStyle = $derived.by(() => {
@@ -131,9 +147,9 @@
 
 <DialogPrimitive.Root bind:open {onOpenChange}>
     <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay {...mergeProps({class: 'sheet-overlay'})}/>
+        <DialogPrimitive.Overlay {...mergeProps({inert: guarded || undefined, class: 'sheet-overlay'})}/>
         <DialogPrimitive.Content
-            {...mergeProps({class: 'sheet-content', style: panelStyle}, contentProps) as DialogContentProps}
+            {...mergeProps({inert: guarded || undefined, class: 'sheet-content', style: panelStyle}, contentProps) as DialogContentProps}
         >
             <div
                 role="dialog"
