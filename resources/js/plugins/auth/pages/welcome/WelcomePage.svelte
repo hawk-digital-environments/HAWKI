@@ -23,6 +23,8 @@
     const flow = useWelcomeFlow();
     const {__, getTranslations} = useTranslator();
     let heading = $state<HTMLHeadingElement | null>(null);
+    /** Measured height of the content; the outer box follows it so step changes resize smoothly. */
+    let contentHeight = $state<number | undefined>(undefined);
 
     interface StepTexts {
         title: string;
@@ -51,7 +53,14 @@
 
 <!-- Reserves the height of the longest step so the buttons stay in place while the text changes.
      Keyed on the step so each step re-enters with its fade, even though the component instance stays. -->
-<div class="welcome">
+<!-- Wrapped in a box that animates to the measured content height, so a step with more text grows smoothly. -->
+<div class="welcome-size" style:height={contentHeight === undefined ? undefined : `${contentHeight}px`}>
+<div class="welcome" bind:offsetHeight={contentHeight}>
+    <ol class="welcome-progress" aria-label={__('ui.auth.register.welcome.progress', {current: String(meta.index + 1), total: String(meta.total)})}>
+        {#each {length: meta.total}, i (i)}
+            <li class="welcome-dot" class:done={i < meta.index} class:active={i === meta.index} aria-current={i === meta.index ? 'step' : undefined}></li>
+        {/each}
+    </ol>
     {#key meta.step}
         <div class="auth-intro welcome-slide">
             <h1 id="auth-title" tabindex="-1" bind:this={heading}>{texts.title}</h1>
@@ -65,17 +74,61 @@
         </div>
     {/key}
 </div>
+</div>
 
 <style>
+    .welcome-size {
+        overflow: hidden;
+        transition: height var(--duration-fast) var(--easing-out);
+    }
     .welcome {
         display: grid;
-        grid-template-rows: 1fr auto;
+        grid-template-rows: auto 1fr auto;
         gap: var(--space-6);
         min-height: 18rem;
     }
     /* The intro fills the reserved row; keep heading and body together at its top. */
     .welcome :global(.auth-intro) {
         align-content: start;
+    }
+    /* Steps as pills: done ones fill in, the current one stretches with a springy overshoot. */
+    .welcome-progress {
+        display: flex;
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .welcome-dot {
+        position: relative;
+        overflow: hidden;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 999px;
+        background: var(--color-border);
+        transition: width var(--duration-fast) var(--easing-spring);
+    }
+    .welcome-dot::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: var(--color-accent-fill);
+        transform: translateX(-100%);
+        transition: transform var(--duration-extra-fast) var(--easing-out);
+    }
+    .welcome-dot.active {
+        width: 1.75rem;
+    }
+    .welcome-dot.done::after,
+    .welcome-dot.active::after {
+        transform: none;
+    }
+    .welcome-dot.done {
+        animation: welcome-pop var(--duration-extra-fast) var(--easing-spring);
+    }
+    @keyframes welcome-pop {
+        50% { scale: 1.4; }
     }
     .welcome-slide {
         animation: welcome-fade var(--duration-medium) var(--easing-out) both;
@@ -91,8 +144,14 @@
         to { opacity: 1; transform: none; }
     }
     @media (prefers-reduced-motion: reduce) {
-        .welcome-slide {
+        .welcome-slide,
+        .welcome-dot {
             animation: none;
+        }
+        .welcome-size,
+        .welcome-dot,
+        .welcome-dot::after {
+            transition: none;
         }
     }
 </style>

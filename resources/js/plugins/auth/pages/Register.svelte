@@ -100,6 +100,10 @@
     function validPasskey() {
         return passkey.length >= 8 && (!restricted || /^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(passkey));
     }
+    // Continue stays disabled until the policy is accepted and both passkey fields are
+    // filled; length and match are still checked on submit so their errors can show.
+    // With auto-generated passkeys the button opens the policy instead, so it stays enabled.
+    const continueDisabled = $derived(!autoGenerate && (!accepted || !passkey || !repeated));
     function createBackupCode() {
         const bytes = crypto.getRandomValues(new Uint8Array(8));
         const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -291,7 +295,7 @@
             {#if policy && !autoGenerate}
                 <Button type="button" variant="ghost" aria-disabled={pending} aria-busy={pending} onclick={() => { if (!pending) policyOpen = true; }}>{__('ui.auth.register.readPolicy')}</Button>
             {/if}
-            <Button type="submit" variant="accent" aria-disabled={pending} aria-busy={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
+            <Button type="submit" variant="accent" disabled={continueDisabled} aria-disabled={pending} aria-busy={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
         </form>
     {:else if stage === 'policy'}
         <Button onclick={() => { if (!pending) policyOpen = true; }} variant="accent" block>{__('ui.auth.register.readPolicy')}</Button>

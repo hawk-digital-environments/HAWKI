@@ -53,6 +53,7 @@
                 "backupTitle": "Save your backup code",
                 "welcome": {
                     "back": "Back",
+                    "progress": "Step :current of :total",
                     "encryption": {
                         "title": "Welcome to HAWKI",
                         "body": "From now on your chats are saved, so you can return to them at any time and from any device. Everything you write is encrypted before it leaves your browser. Nobody, not even your university, can read your conversations.",

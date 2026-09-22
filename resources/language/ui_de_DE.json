@@ -53,6 +53,7 @@
                 "backupTitle": "Sicherungscode aufbewahren",
                 "welcome": {
                     "back": "Zurück",
+                    "progress": "Schritt :current von :total",
                     "encryption": {
                         "title": "Willkommen bei HAWKI",
                         "body": "Ab jetzt werden deine Chats gespeichert, damit du jederzeit und von jedem Gerät darauf zurückkommen kannst. Alles, was du schreibst, wird verschlüsselt, bevor es deinen Browser verlässt. Niemand, auch nicht deine Hochschule, kann deine Gespräche lesen.",
