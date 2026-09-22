@@ -197,12 +197,12 @@
         border: var(--border);
 
         &:not(:disabled):hover {
-            --btn-bg: var(--color-hover);
+            --btn-bg: var(--color-highlight);
             --btn-color: var(--color-text);
         }
 
         &:not(:disabled):active {
-            --btn-bg: var(--color-hover);
+            --btn-bg: var(--color-highlight);
             --btn-color: var(--color-text);
         }
     }
