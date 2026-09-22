@@ -8,13 +8,16 @@
   what swaps it. The rows themselves are collected via the
   `assistantMenuEntries` hook (see `hooks/assistantMenuHooks.svelte.ts`) —
   the assistants plugin pushes the standard sections, other plugins may add
-  their own. The module's "Erstellen" action lives in the app sidebar's
-  action area now (see `CreateAssistantButton.svelte`).
+  their own. The module's "Erstellen" action (`CreateAssistantButton.svelte`)
+  is pinned to the bottom of this same panel, dashboard level only — mirroring
+  how the chat module's own sidebar pins its "New chat" button, since the app
+  sidebar shell itself has no separate action area anymore.
 -->
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import CreateAssistantButton from '$plugins/assistants/components/CreateAssistantButton.svelte';
     import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte.js';
     import {builderReturnPath} from '$plugins/assistants/modules/builder/contexts/builderReturn.js';
     import {useSidebarContext} from '$lib/app/ui/useSidebarHooks.svelte.js';
@@ -151,6 +154,15 @@
             {/if}
         </div>
     </SidebarItems>
+    {#if !inBuilder}
+        <!-- Pinned to the bottom of the column, directly above the profile
+             footer; the nav above it takes the free space. Dashboard level
+             only — inside the builder the primary action would compete with
+             the level's own chrome. -->
+        <div class="create-action">
+            <CreateAssistantButton />
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -160,6 +172,10 @@
         flex: 1;
         flex-direction: column;
         gap: var(--nav-group-gap);
+    }
+
+    .create-action {
+        margin-top: auto;
     }
 
     .nav-stack {

@@ -25,7 +25,6 @@
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
-    import {useSidebarSlots} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 
     const app = useApp();
@@ -63,13 +62,6 @@
     const sidebarModule = $derived([activeModule, lastActiveModule].find(module => module && visibleModules.includes(module)) ?? visibleModules[0] ?? null);
     const ModuleSidebar = $derived(sidebarModule?.sidebar?.(app.localization.locale) ?? null);
 
-    // The active module's primary action (e.g. "Create assistant", "New
-    // chat") still goes through the `sidebarSlots` hook — modules don't have
-    // an `action()` counterpart to `sidebar()`, so this is the one place the
-    // old slot mechanism is still consulted.
-    const sidebarSlots = useSidebarSlots();
-    const actionSlots = $derived(sidebarSlots.entries.filter(slot => slot.position === 'action' && slot.active));
-
     const chatPath = router.getPath('chat.index');
     let searchOpen = $state(false);
     let settingsOpen = $state(false);
@@ -104,14 +96,6 @@
             <ModuleSidebar />
         {/if}
     </div>
-    <!-- The active module's primary action, contributed via `sidebarSlots`
-         and pinned directly above the profile footer. -->
-    <div class="sidebar-actions">
-        {#each actionSlots as slot (slot.id)}
-            {@const Action = slot.component}
-            <Action />
-        {/each}
-    </div>
     <SidebarFooter>
         {#if accessibilityStatementUrl}
             {#snippet externalHint()}
@@ -144,11 +128,5 @@
         /* Its own group, so it takes the sidebar's group gap like every other
            boundary in the column. */
         margin-bottom: var(--nav-group-gap);
-    }
-
-    .sidebar-actions {
-        /* Pinned to the bottom of the column, directly above the profile
-           footer; the module-sidebar area above it takes the free space. */
-        margin-top: auto;
     }
 </style>

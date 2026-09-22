@@ -4,8 +4,6 @@ import { HawkiPlugin, HawkiPluginContext, HawkiPluginContextWithConfig } from '$
 import { ResourceSchemaRegistrar } from '$lib/kernel/resources/resourceSchemaRegistrar';
 import { StoreRegistrar } from '$lib/kernel/stores/storeRegistrar';
 import type { HookRegistrar } from '$lib/kernel/hooks/hookRegistrar.js';
-import { getModuleRouteGroupName } from '$lib/kernel/routing/routeInflection.js';
-import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
 import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
 import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
 import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
@@ -16,8 +14,6 @@ import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svel
 import ComputerIcon from '$lib/components/ui/icons/iconset/ComputerIcon.svelte';
 import TestTube01Icon from '$lib/components/ui/icons/iconset/TestTube01Icon.svelte';
 import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
-import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
-import CreateAssistantButton from '$plugins/assistants/components/CreateAssistantButton.svelte';
 import { DashboardModule } from '$plugins/assistants/modules/dashboard/DashboardModule';
 import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
 import { assistantHandlesStore } from '$plugins/assistants/stores/AssistantHandlesStore.svelte';
@@ -44,47 +40,14 @@ export default class AssistantsPlugin implements HawkiPlugin {
     readonly name = 'assistants';
 
     /**
-     * Contributes the assistants feature's sidebar UI via the sidebar hooks:
-     * one module selector entry and one sidebar panel (both active while
-     * dashboard *or* builder routes are shown — the builder has no selector
-     * entry of its own), plus the assistants sidebar's standard nav rows
-     * (see `hooks/assistantMenuHooks.svelte.ts`).
+     * The module-selector entry, sidebar panel and pinned "create" action are
+     * now contributed directly by {@link DashboardModule}/{@link BuilderModule}
+     * (`title()`/`icon()`/`sidebar()`/`visible()`) rather than through hooks —
+     * see `AssistantsSidebar.svelte`. This hook only wires the assistants
+     * sidebar's standard nav rows (see `hooks/assistantMenuHooks.svelte.ts`)
+     * and the chat-integration hooks below.
      */
     public hooks(registrar: HookRegistrar): void {
-        const dashboardGroup = getModuleRouteGroupName('assistants', 'dashboard');
-        const builderGroup = getModuleRouteGroupName('assistants', 'builder');
-
-        registrar.add('moduleSelectorEntries', (entries, ctx) => [
-            ...entries,
-            {
-                id: 'assistants:dashboard',
-                label: ctx.translate('assistants.assistants'),
-                icon: BotIcon,
-                onSelect: (selectCtx) => {
-                    void selectCtx.router.goToRoute('assistants.pages.index');
-                },
-                active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
-            }
-        ]);
-
-        registrar.add('sidebarSlots', (slots, ctx) => [
-            ...slots,
-            {
-                id: 'assistants:sidebar',
-                position: 'panel',
-                component: AssistantsSidebar,
-                active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
-            },
-            {
-                // Dashboard routes only — inside the builder the primary
-                // action would compete with the level's own chrome.
-                id: 'assistants:create',
-                position: 'action',
-                component: CreateAssistantButton,
-                active: ctx.router.isRouteActive(dashboardGroup)
-            }
-        ]);
-
         registrar.add(
             'aiAssistants',
             (assistants, ctx) => [...assistants, ...assistantHandlesStore.menuAssistants(ctx.translate)],
