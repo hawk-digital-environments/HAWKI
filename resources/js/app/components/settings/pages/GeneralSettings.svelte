@@ -96,7 +96,7 @@
             description={__('ui.settings.general.languageHint')}
         >
             {#snippet control({labelId})}
-                <DropdownMenu title={__('ui.settings.general.languageLabel')} align="end" disabled={localeSaving}>
+                <DropdownMenu align="end" disabled={localeSaving}>
                     {#snippet trigger({props})}
                         <Button
                             {...props}
