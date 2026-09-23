@@ -10,6 +10,10 @@
   Offline models are disabled. Below the `md` breakpoint the menu renders as a
   bottom sheet (handled by `DropdownMenu`).
 
+  Picking a model hides the message's action bar (and with it this trigger)
+  while the reply streams, so the menu would hand focus back to a removed
+  element. Pass `returnFocusTo` (the message element) to move focus there instead.
+
   ## Usage
   Rendered in `ChatMessage.svelte`'s action bar for assistant messages when the
   page provides an `onRegenerate` handler:
@@ -34,9 +38,11 @@
         message: ChatMessage;
         /** Called with the picked model; `null` means "the model that produced the message". */
         onRegenerate: (message: ChatMessage, model: AiModel | null) => void;
+        /** Receives focus when the menu closes after a regeneration was picked. */
+        returnFocusTo?: HTMLElement | null;
     }
 
-    const {message, onRegenerate}: Props = $props();
+    const {message, onRegenerate, returnFocusTo = null}: Props = $props();
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
 
@@ -50,12 +56,23 @@
     // hands `null` on and lets the transport pick the fallback.
     const usedModel = $derived(message.model ? aiModelStore.getOneById(message.model) : null);
 
+    let regenerated = false;
+
     function regenerate(model: AiModel | null): void {
+        regenerated = true;
         onRegenerate(message, model);
+    }
+
+    function handleCloseAutoFocus(event: Event): void {
+        if (!regenerated) return;
+        regenerated = false;
+        if (!returnFocusTo) return;
+        event.preventDefault();
+        returnFocusTo.focus({preventScroll: true});
     }
 </script>
 
-<DropdownMenu bind:open align="start">
+<DropdownMenu bind:open align="start" contentProps={{onCloseAutoFocus: handleCloseAutoFocus}}>
     {#snippet trigger({props})}
         <ButtonWithTooltip
             {...props}

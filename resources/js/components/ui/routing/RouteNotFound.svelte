@@ -4,9 +4,14 @@
   `notFoundComponent` prop to replace it.
 -->
 <script lang="ts">
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
     interface Props {
     }
 
     const {}: Props = $props();
+    const {__} = useTranslator();
 </script>
-Route not found - 404 🥹
+
+<h1>{__('ui.routing.notFoundTitle')}</h1>
+<p>{__('ui.routing.notFoundDescription')}</p>

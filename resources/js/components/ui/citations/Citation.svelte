@@ -1,15 +1,16 @@
 <!--
   @component A single source tile for a chat message citation, shown inside a
   `CitationList` grid below the message. Displays the source number, favicon,
-  domain and title, and links to the source in a new tab.
+  the page title (falling back to the domain) with the domain as a secondary
+  line, and links to the source in a new tab.
 
   Must be rendered inside a `CitationRoot` — it calls `useCitationContext()`
   directly (no try/catch), so it throws if no ancestor `CitationRoot` created
   one. On mount it registers a listener on that shared context for its own
   `citation.identifier`: when a matching `CitationReference` chip (rendered
-  inline in the message markdown) is clicked, this tile scrolls itself into
-  view and toggles the `citation-flash` class to play a short highlight
-  animation.
+  inline in the message markdown) is clicked, this tile takes keyboard focus,
+  scrolls itself into view and toggles the `citation-flash` class to play a
+  short highlight animation. The tile carries the DOM id the chip's href points to.
 
   Usage (see `MessageBody.svelte`):
 
@@ -29,9 +30,12 @@
     import Link from '$lib/components/util/link/Link.svelte';
     import UrlPreviewTooltip from '$lib/components/ui/tooltip/UrlPreviewTooltip.svelte';
     import {useCitationContext} from '$lib/components/ui/citations/CitationContext.js';
+    import {citationElementId} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
     import {onMount} from 'svelte';
+    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const citationContext = useCitationContext();
+    const reducedMotion = useReducedMotion();
 
     interface Props {
         /** The citation to display. */
@@ -51,10 +55,14 @@
             return citation.url;
         }
     });
+    const title = $derived(citation.title?.trim() || null);
 
     onMount(() => {
         return citationContext.onFocusCitation(citation.identifier, () => {
-            container?.scrollIntoView({behavior: 'smooth', block: 'center'});
+            container?.focus({preventScroll: true});
+            container?.scrollIntoView({behavior: reducedMotion.current ? 'auto' : 'smooth', block: 'center'});
+            if (reducedMotion.current) return;
+
             // Restart the flash animation if it is already running
             container?.classList.remove('citation-flash');
             void container?.offsetWidth;
@@ -68,7 +76,14 @@
     });
 </script>
 
-<div bind:this={container} class="citation-tile">
+<div
+    bind:this={container}
+    class="citation-tile"
+    id={citationElementId(citation.identifier)}
+    role="group"
+    aria-labelledby={`${citationElementId(citation.identifier)}-label`}
+    tabindex="-1"
+>
     <UrlPreviewTooltip url={citation.url}>
         {#snippet children({props})}
             <Link {...props} href={citation.url} target="_blank" title={citation.url}>
@@ -76,8 +91,11 @@
                     <span class="citation-tile__header">
                         <span class="citation-tile__number">{number}</span>
                         {@render favicon()}
-                        <span class="citation-tile__domain">{domain}</span>
+                        <span class="citation-tile__title" id={`${citationElementId(citation.identifier)}-label`}>{title ?? domain}</span>
                     </span>
+                    {#if title}
+                        <span class="citation-tile__domain">{domain}</span>
+                    {/if}
                 {/snippet}
             </Link>
         {/snippet}
@@ -95,6 +113,12 @@
     .citation-tile:hover,
     .citation-tile:focus-within {
         --citation-tile-bg: var(--color-hover);
+    }
+
+    /* Inline citation chips move focus to this named source tile. */
+    .citation-tile:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
     }
 
     .citation-tile:global(.citation-flash) {
@@ -137,11 +161,20 @@
         color: var(--color-text-muted);
     }
 
-    .citation-tile__domain {
+    .citation-tile__title {
         flex: 1;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        color: var(--citation-tile-title);
+    }
+
+    .citation-tile__domain {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
     }
 
     .citation-tile__number {

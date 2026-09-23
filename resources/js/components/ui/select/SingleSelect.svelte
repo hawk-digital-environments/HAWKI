@@ -162,14 +162,16 @@
     <SelectPrimitive.Viewport class="select-viewport">
         {#if hasGroups}
             {#each groupedItems as {groupLabel, items} (groupLabel)}
-                <div class="select-group" data-group={groupLabel}>
-                    <div class="select-group-label">
+                <!-- bits-ui's Group/GroupHeading expose the group as role="group"
+                     labelled by its heading, so the listbox only contains valid children. -->
+                <SelectPrimitive.Group class="select-group" data-group={groupLabel}>
+                    <SelectPrimitive.GroupHeading class="select-group-label">
                         <SnippetOrString value={groupLabel ?? ''}/>
-                    </div>
+                    </SelectPrimitive.GroupHeading>
                     {#each items as item (item.value)}
                         {@render itemWrap(item)}
                     {/each}
-                </div>
+                </SelectPrimitive.Group>
             {/each}
         {:else}
             {#each items as item (item.value)}

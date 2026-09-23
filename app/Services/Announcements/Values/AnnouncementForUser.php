@@ -23,6 +23,8 @@ class AnnouncementForUser
         public int              $id,
         public string           $title,
         public string           $type,
+        /** Whether this announcement applies to every user rather than a targeted audience. */
+        public bool             $isGlobal,
         public bool             $isForced,
         public ?string          $anchor,
         public ?CarbonInterface $startsAt,

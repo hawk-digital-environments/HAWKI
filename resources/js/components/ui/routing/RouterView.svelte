@@ -10,6 +10,16 @@
   One `RouterView` is expected per `Router` instance — it calls
   `router.bind()` on init, which wires the router up to its routing strategy
   (path/hash/transient) for the lifetime of this component.
+
+  The *outermost* view (the one with no `RouterView` above it) also owns the
+  document: after every resolution it sets `document.title` to
+  `<page title> – <app name>` and, for navigations after the initial load,
+  moves focus to the main landmark (`#main-content`, falling back to the
+  first `<main>`) and announces the new title through a polite live region —
+  a screen-reader user otherwise gets no feedback that the page changed. The
+  page title comes from `route.meta.title` (a translation key or literal), or
+  from `ui.pageTitles.<route name>` when the route declares none. Nested views
+  (a dialog with its own router) leave the document alone.
 -->
 <script lang="ts">
     import type {Component} from 'svelte';
@@ -17,7 +27,9 @@
     import RouteError from '$lib/components/ui/routing/RouteError.svelte';
     import Loader from '$lib/components/ui/loader/Loader.svelte';
     import type {Router} from '$lib/components/ui/routing/logistics/router.js';
-    import {provideRouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {provideRouterScope, useRouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {tick, untrack} from 'svelte';
 
     interface Props {
         /** The router instance to render (from `createRouter`/`createRouterFromRegistrar`, or `app.router`). */
@@ -52,6 +64,18 @@
     // One object for the whole chain, not one per node — see `Router.meta`.
     const meta = $derived(router.meta ?? {});
 
+    // Only the outermost view manages title, focus and announcements — a
+    // nested router (e.g. the settings dialog's) switching panels must not
+    // retitle the document or pull focus out of the dialog.
+    const isNestedView = (() => {
+        try {
+            useRouterScope();
+            return true;
+        } catch {
+            return false;
+        }
+    })();
+
     // Makes this router the one a bare `useRouter()` below resolves to, and
     // every router above it still reachable by name. A nested `RouterView`
     // shadows the outer one for its own subtree, which is the whole point — a
@@ -65,6 +89,70 @@
     function handleError(error: unknown) {
         console.error('Error while rendering route component', error);
     }
+
+    const {__, hasLabel} = useTranslator();
+
+    /** The server-rendered title (the app name) — every page title is suffixed with it. */
+    const baseTitle = typeof document === 'undefined' ? '' : document.title;
+
+    /** Human-readable title of what is currently shown, or `null` while loading / for untitled routes. */
+    const pageTitle = $derived.by((): string | null => {
+        if (isNotFound) return __('ui.routing.notFoundTitle');
+        if (hasRoutingError) return __('ui.routing.errorTitle');
+        if (routerState !== 'waiting') return null;
+        const metaTitle = meta.title;
+        if (typeof metaTitle === 'string' && metaTitle) {
+            return hasLabel(metaTitle) ? __(metaTitle) : metaTitle;
+        }
+        const name = route?.name;
+        if (name && hasLabel(`ui.pageTitles.${name}`)) {
+            return __(`ui.pageTitles.${name}`);
+        }
+        return null;
+    });
+
+    /** Text of the polite live region; re-set on every navigation so the same title is announced again. */
+    let announcement = $state('');
+    let announcedPath: string | null = null;
+    let announceTimer: ReturnType<typeof setTimeout> | undefined;
+
+    /**
+     * Moves focus to the main landmark unless the user's focus already lives
+     * inside it and survived the navigation (the chat composer keeps focus
+     * while its conversation route changes underneath it — yanking it to the
+     * landmark mid-typing would be worse than no focus move at all).
+     */
+    function focusMainContent() {
+        const main = document.getElementById('main-content') ?? document.querySelector('main');
+        if (!main) return;
+        const active = document.activeElement;
+        if (active && active !== document.body && main.contains(active)) return;
+        main.focus();
+    }
+
+    $effect(() => {
+        if (isNestedView || isLoading) return;
+        const path = router.path;
+        const title = pageTitle;
+        untrack(() => {
+            document.title = title ? `${title} – ${baseTitle}` : baseTitle;
+            if (announcedPath === null) {
+                // Initial load: the browser already announced the document and
+                // placed focus at the top; only track where we are.
+                announcedPath = path;
+                return;
+            }
+            if (announcedPath === path) return;
+            announcedPath = path;
+            // Clear first so an unchanged title (chat → chat) still counts as new content.
+            announcement = '';
+            clearTimeout(announceTimer);
+            announceTimer = setTimeout(() => (announcement = title ?? baseTitle), 50);
+            void tick().then(focusMainContent);
+        });
+    });
+
+    $effect(() => () => clearTimeout(announceTimer));
 </script>
 
 <!--
@@ -106,6 +194,10 @@
         <RouteComponent data={nodeData[layouts.length] ?? {}} params={nodeParams[layouts.length] ?? {}} {meta} {route}/>
     {/if}
 {/snippet}
+
+{#if !isNestedView}
+    <div class="u-sr-only" role="status" aria-live="polite">{announcement}</div>
+{/if}
 
 <svelte:boundary onerror={handleError}>
     <Loader active={isLoading} overlay label={loadingLabel}>

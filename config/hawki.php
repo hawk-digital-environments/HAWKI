@@ -24,6 +24,11 @@ return [
 
     'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
 
+    'accessibility' => [
+        // Public URL of the accessibility statement (Barrierefreiheitserklärung). Empty = no link in the UI.
+        'statement_url' => env('ACCESSIBILITY_STATEMENT_URL'),
+    ],
+
     'security' => [
         'passkey' => [
             'allow_paste' => filter_var(env('APP_SECURITY_PASSKEY_ALLOW_PASTE', true), FILTER_VALIDATE_BOOLEAN),

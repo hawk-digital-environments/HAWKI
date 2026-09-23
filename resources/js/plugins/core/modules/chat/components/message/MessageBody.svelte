@@ -33,12 +33,19 @@
         citations?: Array<MessageCitationType>;
         /** When true the body is treated as a live stream: no citation injection, no citation list. */
         isStreaming?: boolean;
+        /**
+         * Heading level below the message's own heading: markdown headings in
+         * the body start here and the "Sources" heading uses it. Defaults to 4
+         * (page h1, message history h2, message author h3).
+         */
+        headingLevel?: number;
     }
 
     const {
         message: givenMessage,
         citations: givenCitations = [],
-        isStreaming = false
+        isStreaming = false,
+        headingLevel = 4
     }: Props = $props();
 
     const componentId = $props.id();
@@ -75,10 +82,11 @@
     <Markdown
         message={message}
         isStreaming={isStreaming}
+        headingBaseLevel={headingLevel}
     />
 
     {#if citations.length > 0}
-        <CitationList>
+        <CitationList {headingLevel}>
             {#each citations as citation, index (citation.identifier)}
                 <Citation citation={citation} number={index + 1}/>
             {/each}
