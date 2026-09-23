@@ -334,7 +334,7 @@ announces streaming errors.
                     </div>
                 {:else if !hasMessages}
                     <!-- h2: the header already carries the conversation name as h1. -->
-                    <ChatWelcome headingLevel={2} />
+                    <ChatWelcome headingLevel={2} {composer} conversation={store.active} />
                 {:else}
                     <!-- Not live: the status region above announces replies once they are complete. -->
                     <div
