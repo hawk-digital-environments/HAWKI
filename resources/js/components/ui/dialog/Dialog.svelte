@@ -11,6 +11,7 @@
   scroll region itself (scrollbar gutter, hidden scrollbars) can pass
   `bodyProps`; consumers that manage their own internal scrollers keep the
   content shrinkable (`min-height: 0`) so the body never double-scrolls.
+  `bind:bodyRef` gives access to the scroll region element itself.
 
   The dialog is fully controlled: bits-ui never flips the open state on its
   own. Every close request (Escape, outside click, the X button) is reported
@@ -82,6 +83,8 @@
         headerProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
         /** Additional props to apply to the body region that wraps the main content. */
         bodyProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
+        /** The body region (the scroll container). Supports bind:bodyRef; null while the dialog is closed. */
+        bodyRef?: HTMLDivElement | null;
         /** An optional footer to display at the bottom of the dialog. Can be either a string or a snippet. */
         footer?: Snippet | string;
         /** Additional props to apply to the footer container. */
@@ -100,7 +103,7 @@
         role?: 'dialog' | 'alertdialog';
     }
 
-    const {
+    let {
         open = $bindable(false),
         closable = true,
         onOpenChange,
@@ -111,6 +114,7 @@
         descriptionProps,
         headerProps,
         bodyProps,
+        bodyRef = $bindable(null),
         footer,
         footerProps,
         children,
@@ -161,7 +165,7 @@
                         </div>
                     {/if}
 
-                    <div {...mergeProps({class: 'dialog-body'}, bodyProps)}>
+                    <div {...mergeProps({class: 'dialog-body'}, bodyProps)} bind:this={bodyRef}>
                         {@render children?.()}
                     </div>
 

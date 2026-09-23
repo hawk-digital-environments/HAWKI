@@ -164,7 +164,7 @@
             {:else}
                 <ul class="announcements-list">
                     {#each items as announcement (announcement.id)}
-                        {@const excerpt = announcementExcerpt(announcement.content)}
+                        {@const excerpt = announcement.excerpt ?? announcementExcerpt(announcement.content)}
                         {@const rowId = `${uid}-${announcement.id}`}
                         <li>
                             <!-- Name the row by its title and date only; the

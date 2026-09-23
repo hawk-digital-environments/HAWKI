@@ -19,6 +19,7 @@ trait RegistrationSchema
             '2026_09_09_120300_add_registration_fingerprint_to_users.php',
             '2025_01_16_121103_create_passkey_backups.php',
             '2025_08_21_175642_create_announcements.php',
+            '2026_09_23_120000_add_excerpt_to_announcements.php',
             '2025_08_21_175841_create_announcement_user.php',
         ] as $migration) {
             (require database_path('migrations/' . $migration))->up();

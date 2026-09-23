@@ -28,6 +28,8 @@ const AnnouncementsSchema = z.object({
     is_active: z.boolean(),
     /** Localized markdown body. May contain `[CONFIRM](label)` / `[DECLINE](label)` button tags — see `parseAnnouncementContent`. */
     content: z.string(),
+    /** Hand-written plain-text teaser for list previews in the current locale, or null to derive one from `content` (see `announcementExcerpt`). */
+    excerpt: z.string().nullable(),
     /** When the current user first saw the announcement, or null. */
     seen_at: z.string().nullable(),
     /** When the current user accepted the announcement, or null. */

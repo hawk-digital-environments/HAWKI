@@ -76,35 +76,20 @@
     let policyConsent = $state(false);
     let consentInput = $state<HTMLInputElement | null>(null);
     // Consent requires evidence the policy was read: the dialog's body region
-    // (`.registration-policy-body`, see bodyProps) must be scrolled to its end —
+    // (the scroll container, bound as `policyBody`) must be scrolled to its end —
     // or fit without scrolling — before the checkbox unlocks.
     let scrolledToEnd = $state(false);
+    let policyBody = $state<HTMLDivElement | null>(null);
     function checkPolicyScroll(el: HTMLElement) {
         scrolledToEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
     }
+    // The body mounts with each opening; a reopened reading session starts
+    // fresh: the policy must be re-scrolled and re-confirmed.
     $effect(() => {
-        if (!policyOpen) return;
-        // bits-ui mounts the portalled content after `open` flips; wait a tick
-        // before looking for the scroll region.
-        let disposed = false;
-        let detach = () => {};
-        void tick().then(() => {
-            if (disposed) return;
-            const el = document.querySelector<HTMLElement>('.registration-policy-body');
-            if (!el) return;
-            const onScroll = () => checkPolicyScroll(el);
-            // A reopened reading session starts fresh: the policy must be
-            // re-scrolled and re-confirmed.
-            scrolledToEnd = false;
-            policyConsent = false;
-            checkPolicyScroll(el);
-            el.addEventListener('scroll', onScroll, {passive: true});
-            detach = () => el.removeEventListener('scroll', onScroll);
-        });
-        return () => {
-            disposed = true;
-            detach();
-        };
+        if (!policyOpen || !policyBody) return;
+        scrolledToEnd = false;
+        policyConsent = false;
+        checkPolicyScroll(policyBody);
     });
     let passkey = $state('');
     let repeated = $state('');
@@ -365,7 +350,8 @@
             onCloseAutoFocus: (event) => { event.preventDefault(); title?.focus({preventScroll: true}); }
         }}
     footerProps={{class: 'registration-policy-footer'}}
-    bodyProps={{class: 'registration-policy-body'}}
+    bodyProps={{class: 'registration-policy-body', onscroll: (event) => checkPolicyScroll(event.currentTarget)}}
+    bind:bodyRef={policyBody}
 >
         <!-- svelte-ignore a11y_no_noninteractive_tabindex (The scrollable policy must be reachable by keyboard.) -->
         <div class="policy-document" lang={policy.locale.replace('_', '-')} role="region" aria-label={__('ui.auth.register.policyTitle')} tabindex="0">

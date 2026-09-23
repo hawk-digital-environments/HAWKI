@@ -146,6 +146,7 @@ readonly class UserAnnouncementRepository
             $announcement->expires_at,
             $started && !$expired,
             $this->resolveContent($announcement),
+            $this->contentResolver->resolveExcerpt($announcement),
             $pivot?->seen_at,
             $pivot?->accepted_at,
             $seenCount

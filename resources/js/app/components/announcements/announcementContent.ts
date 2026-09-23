@@ -49,7 +49,8 @@ export function stripLeadingHeading(body: string): string {
 }
 
 /**
- * Plain-text teaser of an announcement for list previews: the body without its
+ * Plain-text teaser of an announcement for list previews, used when it has no
+ * hand-written `excerpt`: the body without its
  * leading heading and with markdown syntax reduced to its text. Truncating it
  * to a few lines is left to CSS (`line-clamp`).
  */
