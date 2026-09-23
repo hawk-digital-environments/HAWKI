@@ -109,20 +109,25 @@
     );
 
     let selectValue = $derived(
-        isCategory ? (selectedCategory ? __(selectedCategory.text) : undefined) :
+        isCategory ? (selectedCategory ? __(selectedCategory.text) : '') :
             activeSetting ? (activeOptionLabel ? __(activeOptionLabel) : undefined) :
                 currentValue
     );
 
     // Relationship fields override any options passed in with the server lists.
+    // The category list is headed by an explicit "not set" entry (value ''),
+    // TODO: Unify not set behaviour <pb: 23.09.26>
     let effectiveOptions = $derived(
-        isCategory ? assistantOptionsStore.categories.map(c => __(c.text)) :
+        isCategory ? [
+                {value: '', label: __('assistants.builder.general.input_category_not_set')},
+                ...assistantOptionsStore.categories.map(c => __(c.text)),
+            ] :
             activeSetting ? (activeSetting.options?.map(o => __(o.label ?? '')) ?? []) :
                 options
     );
 
-    // Coerce to the plain string[] the Select primitive expects.
-    let selectOptions = $derived((effectiveOptions ?? []).filter((o): o is string => o != null));
+    // Coerce to the entry list the Select primitive expects.
+    let selectOptions = $derived((effectiveOptions ?? []).filter(o => o != null));
 
     // write to store, translating back into the field's stored shape
     function update(value: any) {

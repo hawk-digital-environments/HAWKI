@@ -188,6 +188,7 @@
                 "input_description": "Kurzbeschreibung",
                 "input_short_description": "Ausführliche Beschreibung",
                 "input_category": "Kategorie",
+                "input_category_not_set": "Nicht festgelegt",
                 "input_allow_remix": "Remixen erlauben",
                 "input_allow_remix_description": "Andere können eine eigene Version erstellen.",
                 "avatar_title": "Erscheinungsbild",
