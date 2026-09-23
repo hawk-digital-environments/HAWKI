@@ -22,7 +22,7 @@ import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
 import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
-import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
+import MessageCircleIcon from '$lib/components/ui/icons/iconset/MessageCircleIcon.svelte';
 import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
 import NewChatButton from '$plugins/core/modules/chat/components/NewChatButton.svelte';
 import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
@@ -48,6 +48,13 @@ declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
         core: CorePlugin;
     }
+
+    interface HawkiSyncEvents {
+        /** Opens the announcements dialog owned by `AppSidebar`. */
+        announcementsRequested: void;
+        /** Opens the models dialog owned by `AppSidebar`. */
+        modelsRequested: void;
+    }
 }
 
 export default class CorePlugin implements HawkiCorePlugin {
@@ -65,7 +72,7 @@ export default class CorePlugin implements HawkiCorePlugin {
         registrar.add('moduleSelectorEntries', (entries, ctx) => [...entries, {
             id: 'core:chat',
             label: ctx.translate('chat.module.title'),
-            icon: Chat01Icon,
+            icon: MessageCircleIcon,
             onSelect: (selectCtx) => {
                 void selectCtx.router.goToRoute('chat.index');
             },
@@ -105,8 +112,6 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar.lazyRoute('/', async () => import('$plugins/core/pages/Index.svelte'));
-        registrar.lazyRoute('/announcements', async () => import('$plugins/core/pages/Announcements.svelte'), {name: 'announcements.index'});
-        registrar.lazyRoute('/models', async () => import('$plugins/core/pages/Models.svelte'), {name: 'models.index'});
     }
 
     public stores({add}: StoreRegistrar): void | Promise<void> {

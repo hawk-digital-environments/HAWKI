@@ -120,7 +120,13 @@ padding so the composer stays aligned with the centred message column).
         text-align: center;
     }
 
+    /* Mobile scrollbars overlay the content, so the mirrored gutter is
+       dropped — reserving space for a scrollbar that takes no layout width
+       just shifts the composer left. */
     @media (--bp-sm-and-smaller) {
+        .composer-dock { padding-right: 0; }
+        .composer-dock::before { right: 0; }
+
         .composer-row { padding-inline: var(--space-1); }
     }
 </style>

@@ -191,4 +191,17 @@
             scale: 0.97;
         }
     }
+
+    /* ── Mobile bottom-sheet rows ─────────────────────────────────────── */
+
+    /* Below `md` the menu is a BottomSheet, so every row gets a touch-sized
+       target (≥ 44px, like SingleSelect's sheet). Submenu panels are included:
+       DropdownMenuSub floats them over the sheet at this size. */
+    @media (--bp-smaller-than-md) {
+        :global(.dropdown-content:is(.dropdown-content--sheet, .dropdown-sub-content)) {
+            :global(:is(.dropdown-item, .dropdown-checkbox-item, .dropdown-radio-item, .dropdown-sub-trigger)) {
+                min-height: 2.75rem;
+            }
+        }
+    }
 </style>

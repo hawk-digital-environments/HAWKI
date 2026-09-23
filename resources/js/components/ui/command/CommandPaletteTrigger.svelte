@@ -85,13 +85,16 @@
         /* The shared row height, so the trigger sits in the same rhythm as the
            rows below it. */
         min-height: var(--nav-row-h);
-        /* Left padding lands the icon on the shared rail column; the border is
-           part of that offset, so it comes out of the padding. Deliberately
+        /* Left padding lands the icon on the shared rail column. The stroke is
+           an outline inset by its full width, so it sits just inside the box
+           edge and takes no layout space and the full padding applies. Deliberately
            unchanged in the rail: the icon keeps the exact same offset from the
            panel edge in both states, so it never drifts sideways while the
            column animates. */
-        padding: 0 var(--space-2) 0 calc(var(--nav-item-pad-x) - var(--divider-width));
-        border: var(--divider);
+        padding: 0 var(--space-2) 0 var(--nav-item-pad-x);
+        border: none;
+        outline: var(--divider);
+        outline-offset: calc(var(--divider-width) * -1);
         background: transparent;
         color: var(--color-text);
         font-size: var(--font-size-xs);
@@ -101,13 +104,13 @@
         border-radius: var(--corner-sm);
         transition:
             background var(--duration-fast),
-            border-color var(--duration-fast),
+            outline-color var(--duration-fast),
             color var(--duration-fast);
     }
 
     /* Hover swaps the outline for the neutral wash — one emphasis at a time. */
     .section-trigger:hover {
-        border-color: transparent;
+        outline-color: transparent;
         background: var(--color-hover);
     }
 
@@ -115,7 +118,7 @@
        its active row, so an open palette reads as "you are here" in the nav's
        own language. The outline drops out — the fill is the emphasis. */
     .section-trigger[data-state='open'] {
-        border-color: transparent;
+        outline-color: transparent;
         background: var(--color-active-surface);
         color: var(--color-active-text);
     }

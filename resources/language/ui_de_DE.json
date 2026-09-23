@@ -37,9 +37,15 @@
                 "readPolicy": "Nutzungsbedingungen lesen",
                 "policyDescription": "Bitte lies und akzeptiere die Nutzungsbedingungen, bevor du deinen Schlüsselbund einrichtest.",
                 "confirmPolicy": "Akzeptieren und weiter",
+                "continueBlocked": {
+                    "policy": "Akzeptiere die Nutzungsbedingungen, um fortzufahren.",
+                    "passkey": "Gib dein Passwort ein und wiederhole es, um fortzufahren."
+                },
+                "declinePolicy": "Ablehnen und abmelden",
                 "policyTitle": "Nutzungsbedingungen",
                 "acceptPolicy": "Ich habe diese Bedingungen gelesen und akzeptiere sie.",
                 "policyRequired": "Akzeptiere die Bedingungen, bevor du fortfährst.",
+                "policyScrollHint": "Scrolle bis zum Ende der Bedingungen, um sie zu akzeptieren.",
                 "passkey": "Passwort",
                 "repeatPasskey": "Passwort wiederholen",
                 "passkeyHint": "Verwende mindestens 8 Zeichen. Bewahre dieses Passwort sicher auf; es schützt deine verschlüsselten Daten.",
@@ -55,6 +61,7 @@
                 "backupTitle": "Sicherungscode aufbewahren",
                 "welcome": {
                     "back": "Zurück",
+                    "progress": "Schritt :current von :total",
                     "encryption": {
                         "title": "Willkommen bei HAWKI",
                         "body": "Ab jetzt werden deine Chats gespeichert, damit du jederzeit und von jedem Gerät darauf zurückkommen kannst. Alles, was du schreibst, wird verschlüsselt, bevor es deinen Browser verlässt. Niemand, auch nicht deine Hochschule, kann deine Gespräche lesen.",
@@ -163,12 +170,6 @@
             "chat": {
                 "index": "Chat",
                 "conversation": "Chat"
-            },
-            "models": {
-                "index": "Modelle"
-            },
-            "announcements": {
-                "index": "Ankündigungen"
             }
         },
         "statusDot": {
@@ -199,13 +200,10 @@
             "logoutWarningDescription": "Um HAWKI weiter zu nutzen, musst du diese Ankündigung akzeptieren. Wenn du ablehnst, wirst du abgemeldet.",
             "pageTitle": "Aktuelles",
             "empty": "Es gibt noch keine Ankündigungen für dich.",
-            "publishedForAll": "Veröffentlicht für alle",
-            "publishedForYou": "Veröffentlicht für dich",
-            "readBy": "gelesen von :count"
+            "back": "Zurück"
         },
         "settings": {
             "title": "Einstellungen",
-            "description": "Verwalte dein Konto und deine Präferenzen.",
             "navLabel": "Einstellungsbereiche",
             "nav": {
                 "general": "Allgemein",
@@ -219,13 +217,13 @@
             },
             "general": {
                 "title": "Allgemein",
-                "description": "Sprache, Erscheinungsbild und kontoweite Aktionen.",
                 "languageLabel": "Sprache",
+                "languageHint": "Gilt für Menüs, Schaltflächen und Meldungen.",
                 "languageError": "Die Sprache konnte nicht geändert werden. Bitte versuche es erneut.",
                 "themeLabel": "Design",
+                "themeHint": "Wähle, wie die Oberfläche auf diesem Gerät aussieht.",
                 "themeLight": "Hell",
                 "themeDark": "Dunkel",
-                "dangerTitle": "Gefahrenbereich",
                 "deleteData": "Alle Daten löschen",
                 "deleteDataHint": "Entfernt alle deine Unterhaltungen, Räume, Schlüssel und Tokens vom Server.",
                 "deleteDataButton": "Löschen",
@@ -236,9 +234,7 @@
             },
             "profile": {
                 "title": "Profil",
-                "description": "Bearbeite die Angaben, die andere bei der Zusammenarbeit sehen.",
-                "avatarHint": "Bilder werden automatisch quadratisch zugeschnitten.",
-                "changeAvatar": "Ändern",
+                "changeAvatar": "Avatar ändern",
                 "avatarUploading": "Wird hochgeladen…",
                 "avatarSaved": "Avatar aktualisiert.",
                 "avatarError": "Der Avatar konnte nicht hochgeladen werden.",
@@ -250,7 +246,6 @@
             },
             "experiments": {
                 "title": "Experimente",
-                "description": "Probiere unfertige Funktionen der neuen Oberfläche aus.",
                 "emptyTitle": "Keine Experimente verfügbar",
                 "emptyHint": "Aktuell gibt es nichts auszuprobieren. Neue Experimente erscheinen hier.",
                 "flags": {
