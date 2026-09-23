@@ -10,7 +10,7 @@ export function createPathRoutingStrategy(): RoutingStrategy {
     let currentPath = $state(loadPath());
 
     function loadPath() {
-        return window.location.pathname;
+        return window.location.pathname + window.location.search + window.location.hash;
     }
 
     return {
@@ -21,7 +21,7 @@ export function createPathRoutingStrategy(): RoutingStrategy {
             if (currentPath === path) {
                 return false;
             }
-            if (window.location.pathname !== path) {
+            if (loadPath() !== path) {
                 if (options?.replace) {
                     window.history.replaceState({}, '', path);
                 } else {

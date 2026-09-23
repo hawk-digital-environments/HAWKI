@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\Announcements\Announcement;
 use App\Models\User;
+use App\Services\Translation\LocaleService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
@@ -37,6 +38,33 @@ class AnnouncementsApiTest extends TestCase
         self::assertNotNull($item['attributes']['seen_at']);
         self::assertNull($item['attributes']['accepted_at']);
         self::assertSame(1, $item['attributes']['seen_count']);
+    }
+
+    public function testItDeliversTheExcerptForTheCurrentLocale(): void
+    {
+        $user = User::factory()->create();
+        $this->app->make(LocaleService::class)->setCurrentLocale('en_US');
+        $withExcerpt = $this->createAnnouncement([
+            'type' => 'news',
+            'excerpt' => ['en_US' => 'Two new models', 'de_DE' => 'Zwei neue Modelle'],
+        ]);
+        $withoutExcerpt = $this->createAnnouncement(['type' => 'news']);
+        // Blank entries count as unset, and a teaser in an unrelated language never leaks through.
+        $otherLocaleOnly = $this->createAnnouncement([
+            'type' => 'news',
+            'excerpt' => ['en_US' => '  ', 'fr_FR' => 'Seulement en français'],
+        ]);
+
+        $items = collect(
+            $this->actingAs($user)
+                ->getJson('/api/hawki/v1/announcements', $this->jsonApiHeaders())
+                ->assertOk()
+                ->json('data')
+        )->keyBy('id');
+
+        self::assertSame('Two new models', $items[(string)$withExcerpt->id]['attributes']['excerpt']);
+        self::assertNull($items[(string)$withoutExcerpt->id]['attributes']['excerpt']);
+        self::assertNull($items[(string)$otherLocaleOnly->id]['attributes']['excerpt']);
     }
 
     public function testItHidesAnnouncementsTargetedAtOtherUsersAndNotYetStartedOnes(): void

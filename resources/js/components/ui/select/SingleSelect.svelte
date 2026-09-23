@@ -59,6 +59,7 @@
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
+    import CheckIcon from '$lib/components/ui/icons/iconset/CheckIcon.svelte';
 
 
     type Props = Omit<WithoutChildren<SelectPrimitive.RootProps>, 'type' | 'items'> & Partial<{
@@ -149,10 +150,12 @@
             {#if itemSnippet}
                 {@render itemSnippet({item, selected})}
             {:else}
-                {item.label}
-                {#if selected}
-                    (x)
-                {/if}
+                <span class="select-item-indicator" aria-hidden="true">
+                    {#if selected}
+                        <CheckIcon size={16}/>
+                    {/if}
+                </span>
+                <span class="select-item-label">{item.label}</span>
             {/if}
         {/snippet}
     </SelectPrimitive.Item>
@@ -304,6 +307,9 @@
 
         z-index: var(--layer-overlay);
         position: relative;
+        width: max-content;
+        min-width: min(8rem, var(--bits-floating-available-width, 8rem));
+        max-width: var(--bits-floating-available-width);
         max-height: calc(var(--bits-floating-available-height, 999px) - var(--space-4));
         overflow: hidden;
         border-radius: var(--corner-md);
@@ -336,11 +342,23 @@
         color: var(--color-text-muted);
     }
 
+    .select-item-indicator {
+        display: inline-flex;
+        width: 16px;
+        flex: 0 0 16px;
+        margin-inline-end: var(--space-1);
+    }
+
+    .select-item-label {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
     :global(.select-item) {
         display: flex;
         align-items: center;
         border-radius: var(--corner-sm);
-        padding: var(--space-1);
+        padding: var(--space-2);
         font-size: var(--font-size-xs);
         outline: none;
         cursor: pointer;

@@ -20,7 +20,6 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
-    import {useRouter} from '$lib/components/ui/routing/index.js';
     import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
 
     interface Props {
@@ -31,7 +30,6 @@
     let {onOpenSettings}: Props = $props();
 
     const app = useApp();
-    const router = useRouter();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
     const connection = useConnection();
@@ -58,16 +56,16 @@
 
     function openAnnouncements(): void {
         menuOpen = false;
-        void router.goToRoute('announcements.index');
+        app.events.sync.triggerVoid('announcementsRequested');
     }
 
     function openModels(): void {
         menuOpen = false;
-        void router.goToRoute('models.index');
+        app.events.sync.triggerVoid('modelsRequested');
     }
 
     function logout(): void {
-        app.logout();
+        void app.logout().catch(() => { /* The root layout shows the retry action. */ });
     }
 </script>
 

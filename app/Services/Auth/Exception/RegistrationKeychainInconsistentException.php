@@ -1,0 +1,10 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Services\Auth\Exception;
+
+use RuntimeException;
+
+class RegistrationKeychainInconsistentException extends RuntimeException
+{
+}

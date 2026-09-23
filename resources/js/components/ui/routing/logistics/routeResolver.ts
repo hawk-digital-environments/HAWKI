@@ -48,7 +48,7 @@ export async function resolveRoute(
         // ride along into every middleware's context — `options.context` is
         // built once per *router* and so cannot carry them.
         const routeResult = await state.innerRouter.resolve({
-            pathname: path,
+            pathname: path.split(/[?#]/, 1)[0],
             ownerRouter: getHandle(),
             onCleanup
         });

@@ -87,6 +87,11 @@
 <style>
     .page {
         display: grid;
+        /* Explicit zero-min column: the implicit `auto` track would grow to the
+           content's min-content width, so a wide horizontal scroller (e.g. the
+           composer's model-conflict cards) widened the page past the panel and
+           pushed the centred content off to the side. */
+        grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(0, 1fr);
         grid-template-areas: 'body';
         height: 100%;

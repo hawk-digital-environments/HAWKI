@@ -45,14 +45,14 @@
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useRouter} from '$lib/components/ui/routing/index.js';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
-    const router = useRouter();
+    const app = useApp();
     const {__} = useTranslator();
 
     const ALL_TAB = '__all__';
@@ -68,11 +68,17 @@
     let highlightedId = $state<string | null>(null);
     let searchInputEl = $state<HTMLInputElement | null>(null);
     let triggerEl = $state<HTMLButtonElement | null>(null);
+    let interactedOutside = false;
 
     // The desktop popover spans the whole composer card instead of hugging the
     // small trigger button: anchor it to the nearest composer card (see
     // `ChatComposer.svelte`), falling back to the trigger when rendered elsewhere.
-    const popoverAnchor = $derived(triggerEl?.closest<HTMLElement>('.chat-composer-card') ?? null);
+    const popoverAnchor = $derived.by(() => {
+        const card = triggerEl?.closest<HTMLElement>('.chat-composer-card');
+        // Use the card's bounds without making its inputs part of the popover's
+        // outside-click exclusion, as an HTMLElement anchor would do.
+        return card ? {contextElement: card, getBoundingClientRect: () => card.getBoundingClientRect()} : null;
+    });
 
     const disabled = $derived(composerContext.guard.disablesFeature('models'));
     const current = $derived(composerContext.model.current);
@@ -162,9 +168,9 @@
         open = false;
     }
 
-    function openModelsPage(): void {
+    function openModelsDialog(): void {
         open = false;
-        void router.goToRoute('models.index');
+        app.events.sync.triggerVoid('modelsRequested');
     }
 
     function toggleFavorite(e: Event, model: AiModel): void {
@@ -219,10 +225,19 @@
     }
 
     function handleOpenAutoFocus(e: Event): void {
+        interactedOutside = false;
         // bits-ui would focus the first rail tab; land on the search input instead.
         // Double rAF so the focus lands after bits-ui's own focus management settled.
         e.preventDefault();
         requestAnimationFrame(() => requestAnimationFrame(() => searchInputEl?.focus()));
+    }
+
+    function handleCloseAutoFocus(e: Event): void {
+        // Outside clicks keep focus on their target. Keyboard dismissal and
+        // model selection still return focus to the trigger.
+        if (interactedOutside) {
+            e.preventDefault();
+        }
     }
 
     function providerInitials(name: string): string {
@@ -427,7 +442,7 @@
 {/snippet}
 
 {#snippet allModelsLink()}
-    <button type="button" class="mp2-all-models" onclick={openModelsPage}>
+    <button type="button" class="mp2-all-models" onclick={openModelsDialog}>
         {__('chat.composer.modelPicker.allModelsLink')}
     </button>
 {/snippet}
@@ -457,7 +472,15 @@
                 bind:open
                 side="top"
                 align="start"
-                contentProps={{class: 'mp2-content', customAnchor: popoverAnchor, onOpenAutoFocus: handleOpenAutoFocus, onkeydown: onPanelKeydown}}
+                contentProps={{
+                    class: 'mp2-content',
+                    customAnchor: popoverAnchor,
+                    trapFocus: false,
+                    onInteractOutside: () => { interactedOutside = true; },
+                    onOpenAutoFocus: handleOpenAutoFocus,
+                    onCloseAutoFocus: handleCloseAutoFocus,
+                    onkeydown: onPanelKeydown
+                }}
             >
                 {#snippet children({props})}
                     <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>

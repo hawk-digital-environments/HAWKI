@@ -1,7 +1,7 @@
 /**
  * The `core` plugin — HAWKI's first-party feature bundle.
  *
- * This is the only plugin shipped with HAWKI by default and it wires together the
+ * This built-in plugin wires together the
  * foundational, always-on features of the frontend:
  *   - **Stores**: registers the core reactive stores ({@link KeychainStore},
  *     {@link AiHandleStore}, {@link AiModelStore}, {@link AiToolStore},
@@ -42,6 +42,13 @@ declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
         core: CorePlugin;
     }
+
+    interface HawkiSyncEvents {
+        /** Opens the announcements dialog owned by `AppSidebar`. */
+        announcementsRequested: void;
+        /** Opens the models dialog owned by `AppSidebar`. */
+        modelsRequested: void;
+    }
 }
 
 export default class CorePlugin implements HawkiCorePlugin {
@@ -64,8 +71,6 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar.lazyRoute('/', async () => import('$plugins/core/pages/Index.svelte'));
-        registrar.lazyRoute('/announcements', async () => import('$plugins/core/pages/Announcements.svelte'), {name: 'announcements.index'});
-        registrar.lazyRoute('/models', async () => import('$plugins/core/pages/Models.svelte'), {name: 'models.index'});
     }
 
     public stores({add}: StoreRegistrar): void | Promise<void> {
