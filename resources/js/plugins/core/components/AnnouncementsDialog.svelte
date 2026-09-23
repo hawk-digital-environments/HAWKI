@@ -32,6 +32,8 @@
     }
 
     let {open = $bindable(false)}: Props = $props();
+    // Prefix for the row ids that name and describe each list button.
+    const uid = $props.id();
 
     // Policies and system notices (e.g. upload conditions) are acknowledgement
     // flows, not news — they don't belong in the feed.
@@ -163,21 +165,26 @@
                 <ul class="announcements-list">
                     {#each items as announcement (announcement.id)}
                         {@const excerpt = announcementExcerpt(announcement.content)}
+                        {@const rowId = `${uid}-${announcement.id}`}
                         <li>
+                            <!-- Name the row by its title and date only; the
+                                 excerpt is announced separately as its description. -->
                             <button
                                 type="button"
                                 class="announcement announcement-row"
+                                aria-labelledby={announcement.starts_at ? `${rowId}-title ${rowId}-date` : `${rowId}-title`}
+                                aria-describedby={excerpt ? `${rowId}-excerpt` : undefined}
                                 bind:this={rowEls[announcement.id]}
                                 onclick={() => openDetail(announcement.id)}
                             >
                                 <span class="announcement__heading">
-                                    <span class="announcement__title announcement__title--truncate">{announcementDisplayTitle(announcement)}</span>
+                                    <span id="{rowId}-title" class="announcement__title announcement__title--truncate">{announcementDisplayTitle(announcement)}</span>
                                     {#if announcement.starts_at}
-                                        <time datetime={announcement.starts_at}>{dateFormat.format(new Date(announcement.starts_at))}</time>
+                                        <time id="{rowId}-date" datetime={announcement.starts_at}>{dateFormat.format(new Date(announcement.starts_at))}</time>
                                     {/if}
                                 </span>
                                 {#if excerpt}
-                                    <span class="announcement__body announcement__body--excerpt">{excerpt}</span>
+                                    <span id="{rowId}-excerpt" class="announcement__body announcement__body--excerpt">{excerpt}</span>
                                 {/if}
                                 <span class="announcement__trail"><ArrowRight01Icon size={16}/></span>
                             </button>
