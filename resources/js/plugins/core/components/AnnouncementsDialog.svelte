@@ -1,12 +1,12 @@
 <!--
-  @component "Aktuelles" news feed as a modal. Lists every non-system,
+  @component "Ankündigungen" announcements feed as a modal. Lists every non-system,
   non-policy announcement addressed to the current user as a truncated preview
   (title, publish date and a plain-text excerpt); picking one drills down to
   the full announcement in place of the list. Escape or the back arrow return
   to the list. Mounted by `AppSidebar`, opened from the profile dropdown via
   `announcementsRequested`.
 
-  In the detail, the dialog header swaps "News" for the back arrow and the
+  In the detail, the dialog header swaps "Announcements" for the back arrow and the
   announcement's title, with its publish date as the header description.
 
   The switch uses the same two-panel `DropdownMenuDetailView` as the composer's
@@ -48,7 +48,33 @@
     const detail = $derived(detailId ? items.find(announcement => announcement.id === detailId) ?? null : null);
 
     let backEl = $state<HTMLButtonElement | null>(null);
+    let viewportEl = $state<HTMLDivElement | null>(null);
     const rowEls: Record<string, HTMLButtonElement> = {};
+    // The list and the detail share one scroller; the list's position is
+    // restored when coming back so the opened row is where it was.
+    let listScrollTop = 0;
+
+    // Space left for the list/detail under the dialog's height cap and the
+    // header, so the height animation stays within what's visible instead of
+    // running through the (clipped) natural height of long lists.
+    let viewportMaxHeight = $state(Infinity);
+
+    function measureViewportMaxHeight(): void {
+        const content = viewportEl?.closest<HTMLElement>('.announcements-dialog-content');
+        const header = content?.querySelector<HTMLElement>('.announcements-dialog-header');
+        if (!content || !header) return;
+        const style = getComputedStyle(content);
+        viewportMaxHeight = parseFloat(style.maxHeight)
+            - parseFloat(style.borderTopWidth)
+            - parseFloat(style.borderBottomWidth)
+            - header.offsetHeight;
+    }
+
+    // Re-measure when the header changes (the date only shows in the detail).
+    $effect(() => {
+        void detail;
+        measureViewportMaxHeight();
+    });
 
     const dateFormat = $derived(new Intl.DateTimeFormat(
         app.localization.locale.lang.replace('_', '-'),
@@ -56,8 +82,10 @@
     ));
 
     async function openDetail(id: string): Promise<void> {
+        listScrollTop = viewportEl?.scrollTop ?? 0;
         detailId = id;
         await tick();
+        viewportEl?.scrollTo({top: 0});
         backEl?.focus();
     }
 
@@ -65,8 +93,9 @@
         const id = detailId;
         detailId = null;
         await tick();
+        viewportEl?.scrollTo({top: listScrollTop});
         // Return focus to the row that opened the detail.
-        if (id) rowEls[id]?.focus();
+        if (id) rowEls[id]?.focus({preventScroll: true});
     }
 
     // Escape backs out of the detail first; only on the list does it close the dialog.
@@ -91,6 +120,7 @@
     description={detail?.starts_at ? dateDescription : undefined}
     contentProps={{class: 'announcements-dialog-content', onEscapeKeydown: handleEscape}}
     headerProps={{class: 'announcements-dialog-header'}}
+    bodyProps={{class: 'announcements-dialog-body'}}
 >
     {#snippet title()}
         {#if detail}
@@ -113,7 +143,7 @@
         {/if}
     {/snippet}
 
-    <DropdownMenuDetailView open={!!detail}>
+    <DropdownMenuDetailView open={!!detail} maxHeight={viewportMaxHeight} bind:ref={viewportEl}>
         {#snippet details()}
             {#if detail}
                 <div class="announcements-view">
@@ -159,6 +189,8 @@
     </DropdownMenuDetailView>
 </Dialog>
 
+<svelte:window onresize={measureViewportMaxHeight}/>
+
 <style>
     /* Flex column so the detail view's viewport can shrink below its natural
        height and becomes the scroll region under the fixed header. */
@@ -167,7 +199,7 @@
         flex-direction: column;
         width: min(40rem, calc(100vw - 2 * var(--space-4)));
         max-width: 40rem;
-        max-height: calc(100dvh - 2 * var(--space-4));
+        max-height: min(36rem, calc(100dvh - 2 * var(--space-4)));
         overflow: hidden;
         padding: 0;
         gap: 0;
@@ -200,6 +232,15 @@
         min-width: 0;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    /* The body only frames the detail view, whose viewport is the scroller:
+       a second scroll container around it would swallow wheel and trackpad
+       scrolling (the viewport contains overscroll). */
+    :global(.announcements-dialog-body.announcements-dialog-body) {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     .announcements-view {

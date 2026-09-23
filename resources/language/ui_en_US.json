@@ -194,7 +194,7 @@
             "decline": "Decline",
             "logoutWarningTitle": "Decline and log out?",
             "logoutWarningDescription": "You need to accept this announcement to keep using HAWKI. If you decline, you will be logged out.",
-            "pageTitle": "News",
+            "pageTitle": "Announcements",
             "empty": "There are no announcements for you yet.",
             "back": "Back"
         },
