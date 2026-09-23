@@ -7,6 +7,8 @@
   `injectCitationsIntoMarkdown` and renders a `CitationList` of source tiles
   below the body. Each citation URL is mapped to a stable per-component
   identifier so the inline marker and its tile stay in sync across re-renders.
+  Citations pointing at the same URL are deduplicated into one tile, with
+  their ranges merged so every cited segment keeps its inline marker.
 
   Use this for assistant messages that may carry URL citations; pass the raw
   markdown plus the server-provided citation list and let it handle the wiring.
@@ -50,23 +52,36 @@
 
     const componentId = $props.id();
 
-    const urlHashMap = new Map<string, string>();
-
     const citations: Array<EnrichedUrlCitation> = $derived.by(() => {
         if (isStreaming || !Array.isArray(givenCitations)) {
             return [];
         }
 
-        return givenCitations.map(citation => {
-            if (!urlHashMap.has(citation.url)) {
-                urlHashMap.set(citation.url, componentId + '-' + crypto.randomUUID());
+        // Providers may report the same URL more than once (one entry per
+        // cited text segment). One identifier per URL keeps chip and tile in
+        // sync, so duplicate entries would collide as `#each` keys — and
+        // would render duplicate tiles. Dedupe by URL, merging the ranges so
+        // every cited segment still gets its inline marker.
+        const byUrl = new Map<string, EnrichedUrlCitation>();
+
+        for (const citation of givenCitations) {
+            const existing = byUrl.get(citation.url);
+
+            if (!existing) {
+                byUrl.set(citation.url, {
+                    ...citation,
+                    identifier: componentId + '-' + crypto.randomUUID()
+                });
+                continue;
             }
 
-            return {
-                ...citation,
-                identifier: urlHashMap.get(citation.url)!
-            };
-        });
+            existing.ranges = [...(existing.ranges ?? []), ...(citation.ranges ?? [])];
+            if (!existing.title && citation.title) {
+                existing.title = citation.title;
+            }
+        }
+
+        return [...byUrl.values()];
     });
 
     const message = $derived.by(() => {
