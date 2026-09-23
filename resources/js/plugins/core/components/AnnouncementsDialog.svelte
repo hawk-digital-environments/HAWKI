@@ -269,7 +269,7 @@
         grid-template-columns: minmax(0, 1fr) 1rem;
         align-items: center;
         gap: var(--space-2) var(--space-3);
-        padding: var(--space-3);
+        padding: var(--space-2) var(--space-3);
         font-size: var(--font-size-sm);
         line-height: var(--line-height-normal);
     }
