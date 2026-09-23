@@ -23,4 +23,8 @@ enum StoredFileCategory: string
      * Files shared in one-on-one chats (ai-conv)
      */
     case PRIVATE = 'private';
+    /**
+     * Logos of AI providers, shown next to their models
+     */
+    case PROVIDER_ICON = 'provider_icons';
 }

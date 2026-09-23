@@ -33,9 +33,7 @@ class HasContextualScopesTraitTest extends TestCase
 
     private function resetModelState(): void
     {
-        $prop = new \ReflectionProperty(TestModelForHasContextualScopes::class, 'hcst_booted');
-        $prop->setAccessible(true);
-        $prop->setValue(null, false);
+        // Dropping the global scopes is enough: the trait re-registers them on the next boot.
         Model::clearBootedModels();
     }
 
@@ -82,7 +80,7 @@ class HasContextualScopesTraitTest extends TestCase
     {
         $this->bootModel();
 
-        // Second call should be a no-op (guarded by $hcst_booted)
+        // Second call should be a no-op (the wrappers are already registered)
         TestModelForHasContextualScopes::bootHasContextualScopesTrait();
 
         // Still exactly one scope registered — not doubled

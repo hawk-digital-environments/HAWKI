@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>HAWKI is offline</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --background: oklch(100% 0 0);
+            --surface: oklch(96% 0.01 265);
+            --text: oklch(20% 0 0);
+            --muted: oklch(48% 0 0);
+            --accent: oklch(45% 0.24 265);
+            --focus: oklch(45% 0.24 265);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background: oklch(18% 0 0);
+                --surface: oklch(24% 0 0);
+                --text: oklch(93% 0 0);
+                --muted: oklch(86% 0 0);
+                --accent: oklch(80% 0.11 240);
+                --focus: oklch(78% 0.07 240);
+            }
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-block-size: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 1.5rem;
+            background: var(--background);
+            color: var(--text);
+            font-family: system-ui, sans-serif;
+            line-height: 1.5;
+        }
+
+        main {
+            inline-size: min(100%, 42rem);
+            padding: clamp(1.5rem, 5vw, 3rem);
+            background: var(--surface);
+            border-radius: 1rem;
+        }
+
+        h1 { margin-block: 0 1rem; font-size: clamp(1.7rem, 5vw, 2.4rem); }
+        section + section { margin-block-start: 1.75rem; padding-block-start: 1.5rem; border-block-start: 1px solid var(--muted); }
+        h2 { margin: 0; font-size: 1.1rem; }
+        p { margin-block: .5rem 0; }
+        .muted { color: var(--muted); }
+        a { color: var(--accent); font-weight: 700; }
+        a:focus-visible { outline: 3px solid var(--focus); outline-offset: .25rem; border-radius: .2rem; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>HAWKI is offline</h1>
+        <section lang="en">
+            <h2>Connection unavailable</h2>
+            <p>HAWKI needs a network connection for sign-in, chats, and files.</p>
+            <p><a href="">Try again</a></p>
+        </section>
+        <section lang="de">
+            <h2>Keine Verbindung</h2>
+            <p>HAWKI benötigt eine Netzwerkverbindung für Anmeldung, Chats und Dateien.</p>
+            <p><a href="">Erneut versuchen</a></p>
+        </section>
+        <p class="muted">Your current page will reload when you try again.</p>
+    </main>
+</body>
+</html>

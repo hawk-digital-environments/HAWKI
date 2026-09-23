@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Auth;
-
 
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
@@ -72,6 +70,13 @@ readonly class LoginHandler
         return $this->authService instanceof AuthServiceWithCredentialsInterface;
     }
 
+    public function supportsRedirect(): bool
+    {
+        return !$this->authService instanceof AuthServiceWithCredentialsInterface
+            || ($this->authService instanceof ChainedAuthService
+                && $this->authService->supportsRedirectAuthentication());
+    }
+
     /**
      * Performs the login attempt.
      *
@@ -105,6 +110,8 @@ readonly class LoginHandler
         );
 
         if ($user) {
+            abort_if($user->admin_disabled, 403, __('admin.account_disabled'));
+            $user->forceFill(['employeetype' => $authenticateResult->employeeType, 'last_login_at' => now()])->save();
             $this->auth->login($user);
 
             if ($this->authService instanceof AuthServiceWithPostProcessingInterface) {
@@ -143,8 +150,12 @@ readonly class LoginHandler
             return $this->authService->authenticate($request);
         }
 
-        if ($credentials === null) {
+        if ($credentials === null && !$this->supportsRedirect()) {
             throw new AuthFailedException('Username and password are required for login.', 400);
+        }
+
+        if ($credentials === null) {
+            return $this->authService->authenticate($request);
         }
 
         try {

@@ -65,16 +65,20 @@
         }
     }
     function beginRedirect() {
-        if (data.auth.mode === 'redirect') window.location.assign(redirectUrl(data.auth.start_url));
+        if (data.auth.mode !== 'credentials') window.location.assign(redirectUrl(data.auth.start_url));
     }
 </script>
 <AuthFrame canvas>
     <div class="auth-intro">
         <h1 id="auth-title">{__('ui.auth.login.title')}</h1>
-        <p class="auth-copy">{data.auth.mode === 'credentials' ? __('ui.auth.login.description') : __('ui.auth.login.redirectDescription')}</p>
+        <p class="auth-copy">{
+            data.auth.mode === 'credentials' ? __('ui.auth.login.description')
+            : data.auth.mode === 'mixed' ? __('ui.auth.login.mixedDescription')
+            : __('ui.auth.login.redirectDescription')
+        }</p>
     </div>
     {#if error}<p class="auth-error" role="alert" tabindex="-1" bind:this={errorElement}>{error}</p>{/if}
-    {#if data.auth.mode === 'credentials'}
+    {#if data.auth.mode !== 'redirect'}
         <form class="auth-form" onsubmit={(e) => { e.preventDefault(); void submit(); }}>
             <div class="auth-field">
                 <label for="auth-account">{__('ui.auth.login.account')}</label>
@@ -86,7 +90,29 @@
             </div>
             <Button type="submit" variant="accent" aria-disabled={pending} aria-busy={pending} block>{pending ? __('ui.auth.login.signingIn') : __('ui.auth.login.submit')}</Button>
         </form>
-    {:else}
-        <Button onclick={beginRedirect} variant="accent" block>{__('ui.auth.login.redirect')}</Button>
+    {/if}
+    {#if data.auth.mode === 'mixed'}
+        <p class="auth-separator">{__('ui.auth.login.or')}</p>
+    {/if}
+    {#if data.auth.mode !== 'credentials'}
+        <Button onclick={beginRedirect} variant="accent" disabled={pending} aria-busy={pending} block>{__('ui.auth.login.redirect')}</Button>
     {/if}
 </AuthFrame>
+
+<style>
+    .auth-separator {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin: calc(-1 * var(--space-2)) 0;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+        text-align: center;
+    }
+    .auth-separator::before,
+    .auth-separator::after {
+        content: '';
+        flex: 1;
+        border-top: 1px solid var(--color-border);
+    }
+</style>

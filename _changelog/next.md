@@ -1,5 +1,17 @@
 # v%%VERSION%%
 
+### Administration
+
+- Added a separate `admin` plugin at `/new/admin`, with administrator navigation and a shared TanStack DataTable. Includes providers/models, MCP/tools, users, announcements, usage, health and runtime settings.
+- Added write-only credentials, mutation auditing, edit conflict detection, account disabling and token revocation. Access uses the existing `admin` employee type.
+- Administrators can create local accounts with hashed passwords and reset those passwords from the user section. Local sign-in remains available alongside LDAP, OIDC or Shibboleth.
+- **Upgrade:** migrate before serving the new frontend. Users with employee type `admin` can access all panel sections.
+- **Configuration:** migrations no longer import AI files. Run `bin/env artisan ai:config:import` explicitly on fresh installs. File imports preserve records edited in Administration. Runtime settings override deployment values in the database and can be reset from the panel.
+- Announcement text can be stored in the database with existing Markdown files as fallback. Usage retention now persists daily totals before deleting raw records older than three full months.
+- Administration tables can be narrowed to a column value, e.g. the model table to one provider; the filter runs server-side (`filter[where][column]=value`). Reference columns such as provider or model now show names instead of ids.
+- Multilingual text fields in Administration (e.g. announcement content) have a **Translate into other languages** button that fills the other locales from the selected one via AI. It uses the new `translation` system model (`TRANSLATOR_MODEL` / `model_providers.system_models.translator`, assignable in the panel) and falls back to the default model.
+- Creating a model in Administration now asks for the provider first, then the model ID. Once a provider is chosen, the model ID field suggests the IDs from the provider's model list that are not configured yet; provider discovery applies the same filter. Picking a suggestion fills label, type, modalities, limits, pricing, flags and the other fields from the provider's metadata (`POST admin/providers/{id}/actions/inspect`) without overwriting values the admin already typed.
+
 ### What's New
 
 [//]: # (- The main new features and changes in this version.)

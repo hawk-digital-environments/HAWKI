@@ -50,6 +50,7 @@ announces streaming errors.
 
     let composer = $state<ComposerContext | null>(null);
     let messageToDelete = $state<ChatMessageType | null>(null);
+    let branching = $state(false);
     let scrollRegion = $state<HTMLDivElement | null>(null);
     let messagesElement = $state<HTMLDivElement | null>(null);
     let composerDockHeight = $state(0);
@@ -107,7 +108,34 @@ announces streaming errors.
         const messageAdded = !conversationOpened && count > previousMessageCount;
         const lastMessage = store.active?.messages[count - 1] ?? null;
 
-        if (conversationOpened) {
+        // Aligns the trunk turn that started the running generation with the
+        // top of the region. `new-turn` reserves a screen of space below it,
+        // so the streaming response renders into that space — there is no
+        // follow-up or sticky scrolling while it generates.
+        const alignNewTurn = (turnStartedByUser: boolean) => {
+            pinToBottom = false;
+            newTurnActive = true;
+            requestAnimationFrame(() => {
+                if (store.active?.slug !== conversationSlug || scrollRegion !== region) return;
+                const last = messages.lastElementChild;
+                // Once the reply is the last turn, the user's message is the one before it.
+                const turn = turnStartedByUser ? last : last?.previousElementSibling;
+                if (!(turn instanceof HTMLElement)) return;
+                // Leave room for the header fade that overhangs the scroll
+                // region so the sent message is not covered by it.
+                const offset = parseFloat(getComputedStyle(messages).getPropertyValue('--new-turn-scroll-offset')) || 0;
+                const top = turn.getBoundingClientRect().top - region.getBoundingClientRect().top + region.scrollTop - offset;
+                region.scrollTo({top, behavior: 'smooth'});
+            });
+        };
+
+        if (conversationOpened && store.isGenerating(conversationSlug)) {
+            // The conversation was opened mid-generation: the first message of
+            // a chat created on ChatIndex, or a chat that keeps streaming in the
+            // background. Treat it like a sent message instead of pinning to
+            // the bottom, which would otherwise follow the growing reply.
+            alignNewTurn(lastMessage?.message_role === 'user');
+        } else if (conversationOpened) {
             newTurnActive = false;
             pinToBottom = true;
             requestAnimationFrame(() => {
@@ -119,22 +147,8 @@ announces streaming errors.
             // Thread replies are excluded: they render inside their trunk
             // message's thread, which is already in view — scrolling the last
             // trunk turn to the top would jump away from it.
-            pinToBottom = false;
-            // A freshly sent message starts a new turn: `new-turn` reserves a
-            // screen of space below it, and this single scroll aligns it with
-            // the top of the region. The streaming response then renders into
-            // the reserved space — there is no follow-up or sticky scrolling.
-            newTurnActive = true;
-            requestAnimationFrame(() => {
-                if (store.active?.slug !== conversationSlug || scrollRegion !== region) return;
-                const turn = messages.lastElementChild;
-                if (!(turn instanceof HTMLElement)) return;
-                // Leave room for the header fade that overhangs the scroll
-                // region so the sent message is not covered by it.
-                const offset = parseFloat(getComputedStyle(messages).getPropertyValue('--new-turn-scroll-offset')) || 0;
-                const top = turn.getBoundingClientRect().top - region.getBoundingClientRect().top + region.scrollTop - offset;
-                region.scrollTo({top, behavior: 'smooth'});
-            });
+            // A freshly sent message starts a new turn.
+            alignNewTurn(true);
         }
 
         previousConversationSlug = conversationSlug;
@@ -263,6 +277,20 @@ announces streaming errors.
             toast.error(error instanceof Error ? error.message : String(error));
         }
     }
+
+    async function branchFromMessage(message: ChatMessageType) {
+        if (!store.active || branching) return;
+        branching = true;
+        try {
+            const branch = await store.branch(store.active.slug, message.message_id);
+            void router.goToRoute('chat.conversation', {slug: branch.slug});
+        } catch (error) {
+            console.error(error);
+            toast.error(__('chat.actions.branchError'));
+        } finally {
+            branching = false;
+        }
+    }
 </script>
 
 <Page>
@@ -334,7 +362,7 @@ announces streaming errors.
                     >
                         <h2 id={historyHeadingId} class="u-sr-only">{__('chat.page.messageHistory')}</h2>
                         {#each threadGroups as group (group.message.clientKey ?? group.message.message_id)}
-                            <ChatMessage message={group.message} replies={group.replies} {composer} onRegenerate={regenerateMessage} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
+                            <ChatMessage message={group.message} replies={group.replies} {composer} onRegenerate={regenerateMessage} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} onBranch={branchFromMessage} {branching} />
                         {/each}
                     </div>
                 {/if}

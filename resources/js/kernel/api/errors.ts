@@ -15,6 +15,9 @@ export class ApiTransportError extends Error {
     }
 
     public get code(): string | undefined {
-        return this.errors[0]?.code;
+        const code = this.errors[0]?.code;
+        if (code) return code;
+        return this.body && typeof this.body === 'object' && 'code' in this.body && typeof this.body.code === 'string'
+            ? this.body.code : undefined;
     }
 }

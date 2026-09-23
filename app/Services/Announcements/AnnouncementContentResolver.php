@@ -38,6 +38,8 @@ readonly class AnnouncementContentResolver
     public function resolve(Announcement $announcement, ?string $requestedLocale = null): ?AnnouncementContent
     {
         foreach ($this->candidateLocales($requestedLocale) as $locale) {
+            $content = $announcement->content[$locale] ?? null;
+            if (is_string($content) && trim($content) !== '') return new AnnouncementContent($locale, $content);
             $file = $this->application->resourcePath("announcements/$announcement->view/$locale.md");
 
             if (is_file($file)) {

@@ -62,7 +62,17 @@ class ProviderAdapterRegistry
      */
     public function has(string $key): bool
     {
-        return $this->instances->has($this->resolveInstancesKey($key)) || isset($this->adapterClasses[$key]);
+        return isset($this->adapterClasses[$key]);
+    }
+
+    /**
+     * All adapter keys declared so far, built-in and custom alike, in declaration order.
+     *
+     * @return list<string>
+     */
+    public function keys(): array
+    {
+        return array_keys($this->adapterClasses);
     }
 
     /**
@@ -138,8 +148,8 @@ class ProviderAdapterRegistry
     /**
      * Builds the composite key used by the {@see LazySingletonList} for a given adapter key.
      *
-     * Returns null when the key is not declared, which causes {@see LazySingletonList::has()}
-     * to return false rather than throwing.
+     * Returns null when the key is not declared. Callers must check for this before
+     * passing the result to the instance cache.
      *
      * @return array{0: string, 1: class-string<ProviderAdapterInterface>}|null
      */
@@ -159,7 +169,11 @@ class ProviderAdapterRegistry
      */
     public function remove(string $key): void
     {
-        $this->instances->remove($this->resolveInstancesKey($key));
+        $instancesKey = $this->resolveInstancesKey($key);
+        if ($instancesKey === null) {
+            return;
+        }
+        $this->instances->remove($instancesKey);
         unset($this->adapterClasses[$key]);
     }
 

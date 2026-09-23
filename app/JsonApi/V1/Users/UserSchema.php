@@ -35,13 +35,13 @@ class UserSchema extends Schema
                 return $displayName;
             }),
             Str::make('username')->readOnly(),
-            Str::make('email')->hidden(UserCondition::isNonAdmin(...))->readOnly(),
+            Str::make('email')->hidden(fn($request) => UserCondition::isNonAdmin($request))->readOnly(),
             Str::make('bio'),
             Str::make('avatar')->extractUsing(function (User $user) {
                 $identifier = StoredFileIdentifier::tryFromUserAvatar($user);
                 return $identifier;
             })->readOnly(),
-            Str::make('employee_type')->hidden(UserCondition::isNonAdmin(...))->readOnly(),
+            Str::make('employee_type')->hidden(fn($request) => UserCondition::isNonAdmin($request))->readOnly(),
             Str::make('created_at')->readOnly(),
             Str::make('updated_at')->readOnly(),
         ];

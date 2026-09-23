@@ -42,6 +42,7 @@ _docker_production_test
 
 # Assets and local storage
 /public/build
+/public/sw.js
 /public/hot
 /public/storage
 /storage/*.key

@@ -1,6 +1,6 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\Ai\Tools\Repositories;
 
@@ -38,13 +38,12 @@ class AiToolRepository extends AbstractRepositoryWithContextualScopes
      * @return Collection<int, AiTool>
      */
     public function findAllOfType(
-        ToolType|null   $type,
-        ?ScopeOverrides $scopeOverrides = null
-    ): Collection
-    {
+        ?ToolType $type,
+        ?ScopeOverrides $scopeOverrides = null,
+    ): Collection {
         $query = $this->getQuery($scopeOverrides);
 
-        if ($type !== null) {
+        if (null !== $type) {
             $query->where('type', $type->value);
         }
 
@@ -52,13 +51,12 @@ class AiToolRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Removes all MCP tools associated with the given server, except for those with IDs in the provided list
+     * Removes all MCP tools associated with the given server, except for those with IDs in the provided list.
      */
     public function removeAllMcpToolsOf(
-        McpServer  $server,
-        array|null $exceptIds = null
-    ): void
-    {
+        McpServer $server,
+        ?array $exceptIds = null,
+    ): void {
         $query = $this->getQueryWithoutContextualScopes()
             ->where('type', ToolType::MCP)
             ->where('mcp_server_id', $server->id);
@@ -76,54 +74,84 @@ class AiToolRepository extends AbstractRepositoryWithContextualScopes
      * The row is matched by `class_name`, so renaming the class will create a new row rather
      * than updating the existing one — delete the orphaned row manually after a rename.
      *
-     * @param bool $addedByFile True when called from a config-file sync or DI-tag sweep
-     *                          (as opposed to a manual UI/CLI registration).
+     * @param bool $addedByFile true when called from a config-file sync or DI-tag sweep
+     *                          (as opposed to a manual UI/CLI registration)
      */
     public function upsertFunction(ToolInterface $tool, bool $addedByFile = false): AiTool
     {
-        return $this->getQueryWithoutContextualScopes()->updateOrCreate(
-            ['class_name' => get_class($tool)],
-            [
-                'name' => $tool->name(),
-                'description' => $tool->description(),
-                'capability' => $tool->capability(),
-                'type' => ToolType::FUNCTION,
-                'active' => true,
-                'added_by_file' => $addedByFile
-            ]
-        );
+        $attributes = [
+            'name' => $tool->name(),
+            'description' => $tool->description(),
+            'capability' => $tool->capability(),
+            'type' => ToolType::FUNCTION,
+            'active' => true,
+            'added_by_file' => $addedByFile,
+        ];
+
+        return $this->saveDiscoveredTool(['class_name' => $tool::class], $attributes);
     }
 
     /**
      * Creates or updates the `ai_tools` row for a tool discovered on an MCP server.
      *
-     * The row is matched by a slug built from the server label, tool name, and server ID.
-     * Including the server ID guards against label collisions when two servers share the same
-     * label — the slug would still be unique. The `mcp_config` column stores the full raw tool
-     * definition so that {@see LaravelMcpTool} can reconstruct the schema without re-querying
-     * the MCP server.
+     * The row is matched by its server ID and MCP tool name. Its display name includes the server
+     * label, so it can change without creating a second row when an administrator renames the
+     * server. The `mcp_config` column stores the full raw tool definition so that
+     * {@see LaravelMcpTool} can reconstruct the schema without re-querying the MCP server.
      */
     public function upsertMcp(McpToolDefinition $definition, McpServer $server): AiTool
     {
         // "server_label" has no uniqueness requirement, so we include the server ID to be safe.
-        $name = Str::slug(sprintf('%s-%s-%s',
+        $name = Str::slug(\sprintf(
+            '%s-%s-%s',
             empty($server->server_label) ? 'mcp-server' : $server->server_label,
             $definition->name,
-            $server->id
+            $server->id,
         ));
 
-        return $this->getQueryWithoutContextualScopes()->updateOrCreate(
-            ['name' => $name],
-            [
-                'description' => $definition->description,
-                'capability' => $definition->capability,
-                'type' => ToolType::MCP,
-                'active' => true,
-                'mcp_server_id' => $server->id,
-                'mcp_name' => $definition->name,
-                'mcp_config' => $definition->config,
-                'added_by_file' => false
-            ]
-        );
+        $attributes = [
+            'name' => $name,
+            'description' => $definition->description,
+            'capability' => $definition->capability,
+            'type' => ToolType::MCP,
+            'active' => true,
+            'mcp_server_id' => $server->id,
+            'mcp_name' => $definition->name,
+            'mcp_config' => $definition->config,
+            'added_by_file' => false,
+        ];
+
+        return $this->saveDiscoveredTool([
+            'mcp_server_id' => $server->id,
+            'mcp_name' => $definition->name,
+        ], $attributes);
+    }
+
+    /**
+     * Writes a discovered tool after reading its current state under a database lock. The
+     * create-or-first step retains the unique-key retry used by the former updateOrCreate path.
+     *
+     * @param array<string, mixed> $identity
+     * @param array<string, mixed> $attributes
+     */
+    private function saveDiscoveredTool(array $identity, array $attributes): AiTool
+    {
+        return $this->getQueryWithoutContextualScopes()->getModel()->getConnection()->transaction(function () use ($identity, $attributes): AiTool {
+            $tool = $this->getQueryWithoutContextualScopes()->where($identity)->lockForUpdate()->first();
+
+            if (null === $tool) {
+                $created = $this->getQueryWithoutContextualScopes()->createOrFirst($identity, $attributes);
+                $tool = $this->getQueryWithoutContextualScopes()->whereKey($created->getKey())->lockForUpdate()->firstOrFail();
+            }
+
+            if ($tool->admin_managed) {
+                unset($attributes['description'], $attributes['active']);
+            }
+
+            $tool->fill($attributes);
+            $tool->save();
+
+            return $tool;
+        }, 3);
     }
 }
