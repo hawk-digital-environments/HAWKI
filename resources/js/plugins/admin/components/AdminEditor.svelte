@@ -325,11 +325,8 @@
         width: min(56rem, calc(100vw - 2rem));
         max-width: 56rem;
         max-height: calc(100dvh - 2rem);
-        grid-template-rows: auto minmax(0, 1fr) auto;
     }
     form {
-        overflow-y: auto;
-        min-height: 0;
         padding: var(--space-1);
     }
     .fields {

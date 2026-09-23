@@ -20,8 +20,8 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
-    import {useRouter} from '$lib/components/ui/routing/index.js';
     import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
 
     interface Props {
         /** Called when the user picks "Settings" from the menu. */
@@ -31,10 +31,15 @@
     let {onOpenSettings}: Props = $props();
 
     const app = useApp();
-    const router = useRouter();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
     const connection = useConnection();
+    // The sidebar bumps its rows up a notch on small screens; the avatar and the
+    // settings glyph follow the same step so the footer row stays proportional.
+    const breakpoint = useBreakpoint();
+    const compact = $derived(breakpoint.is('bpMdAndSmaller'));
+    const triggerAvatarSize = $derived(compact ? 24 : 22);
+    const triggerIconSize = $derived(compact ? 18 : 16);
     const userinfo = $derived(connection.hasUserInfo ? connection.userinfo : null);
     const userName = $derived(userinfo?.name || __('ui.profile.fallbackName'));
     const userEmail = $derived(userinfo?.email ?? '');
@@ -58,12 +63,12 @@
 
     function openAnnouncements(): void {
         menuOpen = false;
-        void router.goToRoute('announcements.index');
+        app.events.sync.triggerVoid('announcementsRequested');
     }
 
     function openModels(): void {
         menuOpen = false;
-        void router.goToRoute('models.index');
+        app.events.sync.triggerVoid('modelsRequested');
     }
 
     function logout(): void {
@@ -80,12 +85,17 @@
     contentProps={{class: 'profile-menu-content'}}
 >
     {#snippet trigger({props})}
-        <SidebarItem label={userName} active={menuOpen} {...props}>
+        <SidebarItem
+            label={userName}
+            active={menuOpen}
+            style={`--nav-media-size: ${triggerAvatarSize}px`}
+            {...props}
+        >
             {#snippet media()}
-                <Avatar src={avatarUrl} name={userName} label={userName} size={22}/>
+                <Avatar src={avatarUrl} name={userName} label={userName} size={triggerAvatarSize}/>
             {/snippet}
             {#snippet trailing()}
-                <UnfoldMoreIcon size={16} strokeWidth={2}/>
+                <UnfoldMoreIcon size={triggerIconSize} strokeWidth={2}/>
             {/snippet}
         </SidebarItem>
     {/snippet}
@@ -119,7 +129,7 @@
 </DropdownMenu>
 
 <style>
-    :global(.profile-menu-content.profile-menu-content) {
+    :global(.profile-menu-content.dropdown-content--dropdown) {
         width: min(15rem, calc(100vw - 2 * var(--space-4)));
     }
 

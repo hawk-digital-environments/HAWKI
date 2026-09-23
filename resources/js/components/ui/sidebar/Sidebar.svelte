@@ -60,7 +60,11 @@
         flex-direction: column;
         width: var(--nav-track);
         height: 100%;
-        padding: var(--space-3) var(--space-2);
+        /* A little more breathing room at the bottom edge than on the sides, so
+           the footer row doesn't sit on the edge. At the top the header brings
+           its own inset, so the padding here is trimmed by that inset to leave
+           a group gap above the header. */
+        padding: calc(var(--nav-group-gap) - var(--space-1)) var(--space-2) var(--space-3);
         border-right: var(--divider);
     }
 
@@ -70,7 +74,7 @@
             top: 0;
             left: 0;
             bottom: 0;
-            width: min(18rem, 80vw);
+            width: 100%;
             /* Off-canvas drawer: above the page content it slides over. */
             --app-sidebar-z: 20;
             z-index: var(--app-sidebar-z);

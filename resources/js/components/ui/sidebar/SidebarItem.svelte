@@ -313,13 +313,19 @@
 
     /* Pinned to the icon column rather than shrink-wrapped, so leading visuals
        that are not glyph-sized — an avatar, say — still centre on the same
-       column as every icon, in the rail as well as the open panel. */
+       column as every icon, in the rail as well as the open panel. Media wider
+       than the column spills symmetrically; --nav-media-size declares the
+       media's actual extent (an avatar's diameter, say) so the right-hand
+       spill can be handed back and the gap before the label stays even with
+       the icon rows. */
     .icon-wrap {
+        --wrap-media-size: var(--nav-media-size, var(--nav-icon-size));
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: var(--nav-icon-size);
         height: var(--nav-icon-size);
+        margin-right: calc((var(--wrap-media-size) - var(--nav-icon-size)) / 2);
         flex-shrink: 0;
     }
 
@@ -370,6 +376,13 @@
     @media (--bp-md-and-smaller) {
         .sidebar-item {
             font-size: var(--font-size-sm);
+        }
+
+        /* Glyph rows grow their svg below while the column stays pinned, so
+           the bumped glyph — not the column — is the extent whose spill the
+           margin returns. */
+        .icon-wrap:has(:global(svg)) {
+            --wrap-media-size: max(var(--nav-media-size, var(--nav-icon-size)), var(--space-5));
         }
 
         .icon-wrap :global(svg) {

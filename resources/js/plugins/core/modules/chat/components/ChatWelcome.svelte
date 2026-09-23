@@ -6,7 +6,8 @@ the floating composer via the inherited `--composer-dock-height` property set
 on the page element.
 -->
 <script lang="ts">
-    import AiChat01Icon from '$lib/components/ui/icons/iconset/AiChat01Icon.svelte';
+    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
@@ -18,11 +19,36 @@ on the page element.
     const {__} = useTranslator();
 </script>
 
-<div class="welcome">
-    <span class="welcome-icon" aria-hidden="true"><AiChat01Icon size={28} /></span>
-    <svelte:element this={`h${headingLevel}`} class="title">{__('chat.page.welcomeTitle')}</svelte:element>
-    <p>{__('chat.page.welcomeDescription')}</p>
-</div>
+{#if section}
+    <div class="welcome">
+        <span class="welcome-icon" class:personalized={section.icon} style:--assistant-tint={section.tint} aria-hidden="true">
+            {#if section.icon}
+                <span class="welcome-glyph">{section.icon}</span>
+            {:else}
+                <BubbleChatAddIcon size={28} />
+            {/if}
+        </span>
+        <svelte:element this={`h${headingLevel}`} class="title">{section.title}</svelte:element>
+        {#if section.description}
+            <p>{section.description}</p>
+        {/if}
+        {#if section.starterPrompts.length > 0}
+            <ul class="starter-prompts" aria-label={__('chat.page.starterPrompts')}>
+                {#each section.starterPrompts as prompt}
+                    <li>
+                        <button type="button" class="starter-prompt" onclick={() => selectPrompt(prompt)}>{prompt}</button>
+                    </li>
+                {/each}
+            </ul>
+        {/if}
+    </div>
+{:else}
+    <div class="welcome">
+        <span class="welcome-icon" aria-hidden="true"><BubbleChatAddIcon size={28} /></span>
+        <svelte:element this={`h${headingLevel}`} class="title">{__('chat.page.welcomeTitle')}</svelte:element>
+        <p>{__('chat.page.welcomeDescription')}</p>
+    </div>
+{/if}
 
 <style>
     .welcome {

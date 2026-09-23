@@ -4,6 +4,14 @@
   Use ConfirmDialog or InfoDialog for pre-built variants; use this directly
   for dialogs that need custom body content or a non-standard layout.
 
+  The content is a flex column: pinned header and footer (flex: none) around
+  a `.dialog-body` region that grows with the content and becomes the scroll
+  container once the dialog hits its max-height (`flex: 1 1 auto` with
+  `min-height: 0` and `overflow-y: auto`). Consumers that need to style the
+  scroll region itself (scrollbar gutter, hidden scrollbars) can pass
+  `bodyProps`; consumers that manage their own internal scrollers keep the
+  content shrinkable (`min-height: 0`) so the body never double-scrolls.
+
   The dialog is fully controlled: bits-ui never flips the open state on its
   own. Every close request (Escape, outside click, the X button) is reported
   via `onOpenChange(false)` and the dialog only closes once the parent sets
@@ -72,6 +80,8 @@
         descriptionProps?: Omit<DialogDescriptionProps, 'children'>;
         /** Additional props to apply to the header container. */
         headerProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
+        /** Additional props to apply to the body region that wraps the main content. */
+        bodyProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
         /** An optional footer to display at the bottom of the dialog. Can be either a string or a snippet. */
         footer?: Snippet | string;
         /** Additional props to apply to the footer container. */
@@ -100,6 +110,7 @@
         description,
         descriptionProps,
         headerProps,
+        bodyProps,
         footer,
         footerProps,
         children,
@@ -154,7 +165,9 @@
                         </div>
                     {/if}
 
-                    {@render children?.()}
+                    <div {...mergeProps({class: 'dialog-body'}, bodyProps)}>
+                        {@render children?.()}
+                    </div>
 
                     {#if footer}
                         <div {...mergeProps({class: 'dialog-footer'}, footerProps)}>
@@ -172,6 +185,14 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
+        flex: none;
+    }
+
+    :global(.dialog-body) {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
     }
 
     :global(.dialog-title) {
@@ -195,7 +216,8 @@
         top: 50%;
         left: 50%;
         z-index: var(--layer-overlay);
-        display: grid;
+        display: flex;
+        flex-direction: column;
         width: 100%;
         max-width: 32rem;
         translate: -50% -50%;
@@ -216,7 +238,9 @@
         }
     }
 
-    :global(.dialog-close) {
+    /* Doubled class to out-specify ActionIcon's scoped `button.svelte-… { position: relative }`
+       (both live in the `components` cascade layer, so specificity decides). */
+    :global(.dialog-close.dialog-close) {
         position: absolute;
         top: var(--space-4);
         right: var(--space-4);
@@ -288,6 +312,7 @@
         flex-direction: row;
         justify-content: flex-end;
         gap: var(--space-2, calc(0.25rem * 2));
+        flex: none;
     }
 
     @keyframes dialog-fade-in {

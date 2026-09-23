@@ -65,7 +65,7 @@
     .mobile-navigation-trigger {
         position: absolute;
         top: var(--space-2_5);
-        left: var(--space-3);
+        left: var(--space-2_5);
         /* Floats over the page content it opens the drawer for. */
         --mobile-navigation-trigger-z: 10;
         z-index: var(--mobile-navigation-trigger-z);

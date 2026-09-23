@@ -304,4 +304,18 @@
             scale: 0.97;
         }
     }
+
+    /* Roomier rows on touch. */
+    @media (--bp-md-and-smaller) {
+        /* The sidebar is a full-width drawer here, so the palette spans its
+           trigger edge to edge — one connected control with the button above. */
+        :global(.command-palette) {
+            width: var(--bits-floating-anchor-width);
+        }
+
+        :global(.command-palette .command-item) {
+            min-height: 2.75rem;
+            font-size: var(--font-size-sm);
+        }
+    }
 </style>

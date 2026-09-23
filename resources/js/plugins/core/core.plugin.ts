@@ -21,6 +21,11 @@
 import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
+import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
+import MessageCircleIcon from '$lib/components/ui/icons/iconset/MessageCircleIcon.svelte';
+import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
+import NewChatButton from '$plugins/core/modules/chat/components/NewChatButton.svelte';
+import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
 import {AiHandleStore} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {AnnouncementStore} from '$plugins/core/stores/AnnouncementStore.svelte.js';
 import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
@@ -43,16 +48,52 @@ declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
         core: CorePlugin;
     }
+
+    interface HawkiSyncEvents {
+        /** Opens the announcements dialog owned by `AppSidebar`. */
+        announcementsRequested: void;
+        /** Opens the models dialog owned by `AppSidebar`. */
+        modelsRequested: void;
+    }
 }
 
 export default class CorePlugin implements HawkiCorePlugin {
     readonly name = 'core';
 
-    // The chat module-selector entry, sidebar panel and "New chat" action are
-    // contributed directly by `ChatModule` (`title()`/`icon()`/`sidebar()`) —
-    // `sidebar()` returns `ChatSidebar`, which pins its own "New chat" button
-    // to the bottom of the panel itself, so there is nothing left to wire up
-    // here.
+    /**
+     * Contributes the chat feature's sidebar UI via the sidebar hooks: one
+     * module selector entry and one sidebar panel, both active while a chat
+     * route is shown. Handlers are pure filters over the collected entries
+     * (see `app/ui/sidebarHooks.ts`).
+     */
+    public hooks(registrar: HookRegistrar): void {
+        const chatGroup = getModuleRouteGroupName('core', 'chat');
+
+        registrar.add('moduleSelectorEntries', (entries, ctx) => [...entries, {
+            id: 'core:chat',
+            label: ctx.translate('chat.module.title'),
+            icon: MessageCircleIcon,
+            onSelect: (selectCtx) => {
+                void selectCtx.router.goToRoute('chat.index');
+            },
+            active: ctx.router.isRouteActive(chatGroup)
+        }]);
+
+        registrar.add('sidebarSlots', (slots, ctx) => [...slots,
+            {
+                id: 'core:chat-sidebar',
+                position: 'panel',
+                component: ChatSidebar,
+                active: ctx.router.isRouteActive(chatGroup)
+            },
+            {
+                id: 'core:new-chat',
+                position: 'action',
+                component: NewChatButton,
+                active: ctx.router.isRouteActive(chatGroup)
+            }
+        ]);
+    }
 
     public resourceSchemas(registrar: ResourceSchemaRegistrar): void {
         registrar.addFromModules(
@@ -71,8 +112,6 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar.lazyRoute('/', async () => import('$plugins/core/pages/Index.svelte'));
-        registrar.lazyRoute('/announcements', async () => import('$plugins/core/pages/Announcements.svelte'), {name: 'announcements.index'});
-        registrar.lazyRoute('/models', async () => import('$plugins/core/pages/Models.svelte'), {name: 'models.index'});
     }
 
     public stores({add}: StoreRegistrar): void | Promise<void> {

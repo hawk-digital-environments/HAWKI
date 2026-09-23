@@ -4,6 +4,10 @@ import type {WelcomeStep} from './welcomeSteps.js';
 /** Meta every onboarding route carries, so the page knows which step it shows and where its neighbours are. */
 export interface WelcomeStepMeta extends RouteMeta {
     step: WelcomeStep;
+    /** Zero-based position of the step, for the progress indicator. */
+    index: number;
+    /** Number of steps in the onboarding. */
+    total: number;
     /** Route name of the previous step; absent on the first step. */
     previous?: string;
     /** Route name of the next step; absent on the last step, whose action finishes the onboarding. */
@@ -24,6 +28,8 @@ export function registerWelcomeRoutes(registrar: RouteRegistrar, steps: WelcomeS
     steps.forEach((step, index) => {
         const meta: WelcomeStepMeta = {
             step,
+            index,
+            total: steps.length,
             ...(index > 0 ? {previous: welcomeRouteName(steps[index - 1])} : {}),
             ...(index < steps.length - 1 ? {next: welcomeRouteName(steps[index + 1])} : {})
         };

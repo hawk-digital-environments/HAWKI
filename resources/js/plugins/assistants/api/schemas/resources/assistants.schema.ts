@@ -448,15 +448,18 @@ export function assistantToApi(
             ...(include('topP') && { top_p: assistant.topP }),
         },
         relationships: {
-            ...(include('category') &&
-                assistant.category && {
-                    assistant_category: {
+            // A missing category is sent as an explicit null (`data: null`)
+            // to unset category
+            ...(include('category') && {
+                assistant_category: assistant.category
+                    ? {
                         data: {
                             type: 'assistant-categories',
                             id: assistant.category.id,
                         },
-                    },
-                }),
+                    }
+                    : {data: null},
+            }),
 
             ...(include('tags') &&
                 assistant.tags && {
