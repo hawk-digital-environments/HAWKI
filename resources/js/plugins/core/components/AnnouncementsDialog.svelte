@@ -333,6 +333,33 @@
         grid-column: 1 / -1;
     }
 
+    /* The markdown defaults are sized for a full-width chat reply; scale them
+       to the dialog so headings stay a step above the body text, not a page
+       title, and the spacing matches the dialog's rhythm. */
+    article .announcement__body :global(.markstream-svelte) {
+        line-height: var(--line-height-normal);
+
+        :global(.heading-node) {
+            margin: var(--space-5) 0 var(--space-2);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            line-height: var(--line-height-tight);
+            letter-spacing: normal;
+        }
+
+        :global(.heading-node.heading-1) {
+            font-size: var(--font-size-lg);
+        }
+
+        :global(:is(p, ul, ol, blockquote, pre, table, details, dl)) {
+            margin: 0 0 var(--space-3);
+        }
+
+        :global(li + li) {
+            margin-top: var(--space-1);
+        }
+    }
+
     .announcement__body--excerpt {
         display: -webkit-box;
         overflow: hidden;
