@@ -11,3 +11,11 @@ export type WelcomeStep = 'encryption' | 'groups' | 'passkey' | 'automaticPasske
 export function welcomeSteps(passkeyAutoGenerate: boolean): WelcomeStep[] {
     return ['encryption', 'groups', passkeyAutoGenerate ? 'automaticPasskey' : 'passkey'];
 }
+
+/** Emoji shown in a tinted circle above each step's heading. Decorative, so not translated. */
+export const welcomeStepEmoji: Record<WelcomeStep, string> = {
+    encryption: '🔒',
+    groups: '🙌',
+    passkey: '🔑',
+    automaticPasskey: '✨'
+};

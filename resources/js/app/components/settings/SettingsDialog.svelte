@@ -127,7 +127,6 @@
         width: min(46rem, calc(100vw - 2 * var(--space-4)));
         max-width: 46rem;
         height: min(36rem, calc(100dvh - 2 * var(--space-4)));
-        grid-template-rows: auto minmax(0, 1fr);
         overflow: hidden;
         padding: 0;
         gap: 0;
@@ -140,6 +139,7 @@
 
     .settings-layout {
         display: grid;
+        height: 100%;
         min-height: 0;
         grid-template-columns: 11.5rem minmax(0, 1fr);
     }

@@ -33,6 +33,8 @@ class AnnouncementForUser
         public bool             $isActive,
         /** Localized markdown body, resolved from `resources/announcements/{view}/{lang}.md`. */
         public string           $content,
+        /** Hand-written list teaser for the current locale, or null to derive one from `$content`. */
+        public ?string          $excerpt,
         public ?CarbonInterface $seenAt,
         public ?CarbonInterface $acceptedAt,
         /** How many users have seen this announcement, across all users. */

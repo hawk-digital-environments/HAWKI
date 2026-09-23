@@ -17,7 +17,8 @@ class AnnouncementPublish extends Command
                             {--users=* : Target user IDs (if not global)}
                             {--anchor= : Anchor Announcement to an special Frontend Event}
                             {--start= : Start datetime (Y-m-d H:i:s)}
-                            {--expire= : Expire datetime (Y-m-d H:i:s)}';
+                            {--expire= : Expire datetime (Y-m-d H:i:s)}
+                            {--excerpt=* : List teaser per locale as "locale:text" (e.g. --excerpt="en_US:Two new models"); derived from the content when omitted}';
 
     protected $description = 'Create a new announcement entry referencing a Blade view';
 
@@ -51,6 +52,16 @@ class AnnouncementPublish extends Command
         $start = $this->option('start') ?: $this->ask('Enter start datetime (Y-m-d H:i:s)', now()->toDateTimeString());
         $expire = $this->option('expire') ?: $this->ask('Enter expire datetime (Y-m-d H:i:s)', null);
 
+        $excerpt = [];
+        foreach ($this->option('excerpt') as $entry) {
+            [$locale, $text] = array_pad(explode(':', $entry, 2), 2, '');
+            if (trim($locale) === '' || trim($text) === '') {
+                $this->error("Invalid --excerpt \"$entry\", expected \"locale:text\".");
+                return self::FAILURE;
+            }
+            $excerpt[trim($locale)] = trim($text);
+        }
+
         // Call service
         $announcement = $service->createAnnouncement(
             $title,
@@ -61,7 +72,8 @@ class AnnouncementPublish extends Command
             $users,
             $anchor,
             $start,
-            $expire
+            $expire,
+            $excerpt
         );
 
         $this->info("✅ Announcement [{$announcement->view}] created with ID {$announcement->id}");

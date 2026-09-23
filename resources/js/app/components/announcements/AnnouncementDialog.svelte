@@ -118,6 +118,10 @@
         max-width: 40rem;
     }
 
+    :global(.announcement-dialog-content .dialog-title) {
+        font-weight: var(--font-weight-medium);
+    }
+
     .announcement-dialog-body {
         overflow-y: auto;
         max-height: min(60vh, 32rem);

@@ -35,8 +35,10 @@
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import Button from '$lib/components/ui/button/Button.svelte';
+    import BookOpen01Icon from '$lib/components/ui/icons/iconset/BookOpen01Icon.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
+    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import Markdown from '$lib/components/util/markdown/Markdown.svelte';
     import { deriveKey, exportCryptoKeyToString, generatePasskey } from '$lib/kernel/encryption/utils.js';
     import { encryptSymmetric } from '$lib/kernel/encryption/symmetric.js';
@@ -73,6 +75,22 @@
     let policyOpen = $state(false);
     let policyConsent = $state(false);
     let consentInput = $state<HTMLInputElement | null>(null);
+    // Consent requires evidence the policy was read: the dialog's body region
+    // (the scroll container, bound as `policyBody`) must be scrolled to its end —
+    // or fit without scrolling — before the checkbox unlocks.
+    let scrolledToEnd = $state(false);
+    let policyBody = $state<HTMLDivElement | null>(null);
+    function checkPolicyScroll(el: HTMLElement) {
+        scrolledToEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
+    }
+    // The body mounts with each opening; a reopened reading session starts
+    // fresh: the policy must be re-scrolled and re-confirmed.
+    $effect(() => {
+        if (!policyOpen || !policyBody) return;
+        scrolledToEnd = false;
+        policyConsent = false;
+        checkPolicyScroll(policyBody);
+    });
     let passkey = $state('');
     let repeated = $state('');
     // Starts with the onboarding (see `welcome/RegistrationWelcome.svelte`); the setup itself begins at 'form'.
@@ -100,6 +118,16 @@
     function validPasskey() {
         return passkey.length >= 8 && (!restricted || /^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(passkey));
     }
+    // Continue stays disabled until the policy is accepted and both passkey fields are
+    // filled; length and match are still checked on submit so their errors can show.
+    // With auto-generated passkeys the button opens the policy instead, so it stays enabled.
+    const continueDisabled = $derived(!autoGenerate && (!accepted || !passkey || !repeated));
+    /** Why Continue is disabled, shown under the button; the first missing piece wins. */
+    const continueBlockedReason = $derived(
+        !continueDisabled ? null
+            : !accepted ? __('ui.auth.register.continueBlocked.policy')
+            : __('ui.auth.register.continueBlocked.passkey')
+    );
     function createBackupCode() {
         const bytes = crypto.getRandomValues(new Uint8Array(8));
         const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -242,6 +270,13 @@
         }
         error = __(authErrorKey(failure));
     }
+    /** Declining the usage policy ends the registration: the user is logged out. */
+    function declinePolicy() {
+        policyOpen = false;
+        void app.logout().catch(() => { /* The root layout shows the retry action. */ });
+    }
+    // Unchecking the consent box revokes an earlier acceptance (see the checkbox's
+    // onchange), so Continue is blocked again until the terms are re-accepted.
     function acceptPolicy() {
         if (!policyConsent) {
             invalidField = 'policy';
@@ -289,17 +324,18 @@
             {/if}
             {#if pending}<p role="status" class="auth-hint">{__('ui.auth.register.preparing')}</p>{/if}
             {#if policy && !autoGenerate}
-                <Button type="button" variant="ghost" aria-disabled={pending} aria-busy={pending} onclick={() => { if (!pending) policyOpen = true; }}>{__('ui.auth.register.readPolicy')}</Button>
+                <Button type="button" variant="ghost" iconLeft={BookOpen01Icon} aria-disabled={pending} aria-busy={pending} onclick={() => { if (!pending) policyOpen = true; }}>{__('ui.auth.register.readPolicy')}</Button>
             {/if}
-            <Button type="submit" variant="accent" aria-disabled={pending} aria-busy={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
+            <Button type="submit" variant="accent" iconLeft={!accepted && autoGenerate ? BookOpen01Icon : undefined} disabled={continueDisabled} aria-disabled={pending} aria-describedby={continueBlockedReason ? 'continue-blocked' : undefined} aria-busy={pending} block>{!accepted && autoGenerate ? __('ui.auth.register.readPolicy') : __('ui.auth.register.continue')}</Button>
+            {#if continueBlockedReason}<small id="continue-blocked" class="auth-hint continue-blocked">{continueBlockedReason}</small>{/if}
         </form>
     {:else if stage === 'policy'}
-        <Button onclick={() => { if (!pending) policyOpen = true; }} variant="accent" block>{__('ui.auth.register.readPolicy')}</Button>
+        <Button onclick={() => { if (!pending) policyOpen = true; }} variant="accent" iconLeft={BookOpen01Icon} block>{__('ui.auth.register.readPolicy')}</Button>
     {:else}
         <output class="backup-code" aria-label={__('ui.auth.register.backupCode')}>{backupCode}</output>
         <div class="auth-actions">
             <Button onclick={downloadBackup} variant="stroke">{__('ui.auth.register.downloadBackup')}</Button>
-            <Button onclick={() => void complete()} variant="accent" aria-disabled={pending} aria-busy={pending}>{pending ? __('ui.auth.register.saving') : __('ui.auth.register.finish')}</Button>
+            <Button onclick={() => void complete()} variant="accent" aria-disabled={pending} aria-busy={pending}><span class="finish-label">{pending ? __('ui.auth.register.saving') : __('ui.auth.register.finish')}</span></Button>
         </div>
     {/if}
 </AuthFrame>
@@ -313,34 +349,49 @@
             class: 'registration-policy-dialog',
             onCloseAutoFocus: (event) => { event.preventDefault(); title?.focus({preventScroll: true}); }
         }}
-        footerProps={{class: 'registration-policy-footer'}}
-    >
+    footerProps={{class: 'registration-policy-footer'}}
+    bodyProps={{class: 'registration-policy-body', onscroll: (event) => checkPolicyScroll(event.currentTarget)}}
+    bind:bodyRef={policyBody}
+>
         <!-- svelte-ignore a11y_no_noninteractive_tabindex (The scrollable policy must be reachable by keyboard.) -->
         <div class="policy-document" lang={policy.locale.replace('_', '-')} role="region" aria-label={__('ui.auth.register.policyTitle')} tabindex="0">
             <Markdown message={policy.text} headingBaseLevel={3}/>
         </div>
         {#snippet footer()}
             <form class="policy-confirmation" onsubmit={(event) => { event.preventDefault(); acceptPolicy(); }}>
-                <label class="consent">
-                    <input type="checkbox" bind:this={consentInput} bind:checked={policyConsent} aria-invalid={invalidField === 'policy'} aria-describedby={invalidField === 'policy' ? 'policy-error' : undefined}/>
-                    <span>{__('ui.auth.register.acceptPolicy')}</span>
-                </label>
+                <Tooltip tooltip={scrolledToEnd ? '' : __('ui.auth.register.policyScrollHint')} disabled={scrolledToEnd} focusable={false} delayDuration={500}>
+                    {#snippet children({props})}
+                        <label class="consent" class:locked={!scrolledToEnd} {...props}>
+                            <input type="checkbox" bind:this={consentInput} bind:checked={policyConsent} disabled={!scrolledToEnd} onchange={() => { if (!policyConsent) accepted = false; }} aria-invalid={invalidField === 'policy'} aria-describedby={invalidField === 'policy' ? 'policy-error' : undefined}/>
+                            <span>{__('ui.auth.register.acceptPolicy')}</span>
+                        </label>
+                    {/snippet}
+                </Tooltip>
                 {#if invalidField === 'policy'}<p id="policy-error" class="auth-error" role="alert">{error}</p>{/if}
                 <div class="policy-actions">
-                    <Button type="button" variant="stroke" onclick={() => policyOpen = false}>{__('ui.dialog.cancelLabel')}</Button>
-                    <Button type="submit" variant="accent">{__('ui.auth.register.confirmPolicy')}</Button>
+                    <Button type="button" variant="stroke" onclick={declinePolicy}>{__('ui.auth.register.declinePolicy')}</Button>
+                    <Button type="submit" variant="accent" disabled={!policyConsent}>{__('ui.auth.register.confirmPolicy')}</Button>
                 </div>
             </form>
         {/snippet}
     </Dialog>
 {/if}
 <style>
+    /* The saving status can be longer than the button; cut it off with an ellipsis instead of wrapping. */
+    .finish-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .continue-blocked {
+        text-align: center;
+    }
     :global(.registration-policy-dialog.registration-policy-dialog) {
         box-sizing: border-box;
         width: calc(100% - 2rem);
         max-width: 48rem;
         max-height: calc(100dvh - 3rem);
-        grid-template-rows: auto minmax(0, 1fr) auto;
         gap: var(--space-5);
         overflow: hidden;
     }
@@ -357,10 +408,6 @@
         line-height: 1.5;
     }
     .policy-document {
-        min-height: 0;
-        overflow: auto;
-        overscroll-behavior: contain;
-        scrollbar-gutter: stable;
         padding-right: var(--space-4);
         color: var(--color-text);
     }
@@ -426,6 +473,17 @@
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;
     }
+    .consent.locked {
+        color: var(--color-text-disabled);
+        cursor: not-allowed;
+    }
+    .consent.locked input {
+        appearance: none;
+        cursor: not-allowed;
+        background-color: var(--color-disabled-bg);
+        border: 1px solid var(--color-text-disabled);
+        
+    }
     @media (--bp-xs) {
         :global(.registration-policy-dialog.registration-policy-dialog) {
             max-height: calc(100dvh - 1rem);
@@ -433,7 +491,10 @@
             padding: var(--space-4);
             gap: var(--space-4);
         }
-        .policy-document {
+    :global(.registration-policy-body) {
+        scrollbar-gutter: stable;
+    }
+    .policy-document {
             padding-right: var(--space-2);
         }
         .policy-actions {
