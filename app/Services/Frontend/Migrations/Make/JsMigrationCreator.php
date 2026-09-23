@@ -11,9 +11,9 @@ use Symfony\Component\Filesystem\Path;
 /**
  * Writes the TypeScript migration stub for a new frontend migration.
  *
- * The stub is placed alongside the PHP migration in the run-type subfolder under
- * `resources/js/migrations/`. The frontend runner discovers it by filename and
- * executes the exported `migrate()` function in the user's browser.
+ * The stub is placed in the run-type subfolder of a plugin's `migrations/`
+ * directory. The frontend runner discovers it by filename and executes the
+ * exported `migrate()` function in the user's browser.
  */
 readonly class JsMigrationCreator
 {
