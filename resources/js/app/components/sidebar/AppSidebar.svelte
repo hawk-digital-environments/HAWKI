@@ -13,6 +13,8 @@
     import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
     import MobileNavCollapse from '$lib/app/components/sidebar/MobileNavCollapse.svelte';
     import SearchDialog from '$lib/app/components/search/SearchDialog.svelte';
+    import AnnouncementsDialog from '$plugins/core/components/AnnouncementsDialog.svelte';
+    import ModelsDialog from '$plugins/core/components/ModelsDialog.svelte';
     import SettingsDialog, {type SettingsSection} from '$lib/app/components/settings/SettingsDialog.svelte';
     import AccessibilityIcon from '$lib/components/ui/icons/iconset/AccessibilityIcon.svelte';
     import ExternalLinkIcon from '$lib/components/ui/icons/iconset/ExternalLinkIcon.svelte';
@@ -54,6 +56,8 @@
     const chatPath = router.getPath('chat.index');
     let searchOpen = $state(false);
     let settingsOpen = $state(false);
+    let announcementsOpen = $state(false);
+    let modelsOpen = $state(false);
     let settingsSection = $state<SettingsSection | null>(null);
 
     function startNewChat(event: MouseEvent) {
@@ -70,6 +74,8 @@
     }
 
     onMount(() => app.events.sync.on('settingsRequested', section => openSettings(section)));
+    onMount(() => app.events.sync.on('announcementsRequested', () => announcementsOpen = true));
+    onMount(() => app.events.sync.on('modelsRequested', () => modelsOpen = true));
 </script>
 
 <Sidebar label={__('ui.navigation.label')}>
@@ -104,6 +110,8 @@
 
 <SearchDialog bind:open={searchOpen} />
 <SettingsDialog bind:open={settingsOpen} section={settingsSection}/>
+<AnnouncementsDialog bind:open={announcementsOpen}/>
+<ModelsDialog bind:open={modelsOpen}/>
 
 <style>
     .module-sidebar {
