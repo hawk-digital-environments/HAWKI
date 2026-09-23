@@ -45,7 +45,11 @@
     const router = useRouter();
     const toast = useToastContext();
     const modelStore = useStore('ai-models');
-    modelStore.loadData(app);
+    // Already loaded during bootstrap (and kept fresh on every connection
+    // refresh by AiToolStore) — only kick off a load here if nothing has
+    // populated the store yet, so opening this page never fires a redundant
+    // fetch on top of that.
+    if (modelStore.authorizationState === 'unknown') modelStore.loadData(app);
 
     const ASSISTANT_ADMIN_INCLUDES = [...ASSISTANT_EDIT_INCLUDES, 'assistant_review', 'assistant_feedback'] as const;
 
@@ -88,7 +92,12 @@
 
     $effect(() => {
         const id = assistantId;
-        if (id) void load(id);
+        // Guards against redundantly refetching an assistant already on
+        // screen: a spurious re-run of this effect (e.g. a `params` prop
+        // that gets a fresh object reference for the same route without the
+        // id actually changing) would otherwise flash `loading` back on and
+        // reload everything from scratch for no reason.
+        if (id && id !== assistant?.id) void load(id);
     });
 
     const unresolvedFlags = $derived(flags.filter((f) => !f.resolved));

@@ -155,7 +155,7 @@
         {#if !composing}
             <Button variant="ghost" size="xs" onclick={startWholeFieldFlag}>
                 <Flag01Icon size={14} />
-                {__('admin.flags.submit')}
+                <!--{__('admin.flags.submit')}-->
             </Button>
         {/if}
     </div>
@@ -300,7 +300,7 @@
         border: var(--border);
         border-radius: var(--corner-md);
         padding: var(--space-3);
-        background: var(--color-surface);
+        background: var(--color-bg);
     }
     .excerpt-preview {
         margin: 0;
