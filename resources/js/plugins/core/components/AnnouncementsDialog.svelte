@@ -6,9 +6,12 @@
   to the list. Mounted by `AppSidebar`, opened from the profile dropdown via
   `announcementsRequested`.
 
+  In the detail, the dialog header swaps "News" for the back arrow and the
+  announcement's title, with its publish date as the header description.
+
   The switch uses the same two-panel `DropdownMenuDetailView` as the composer's
-  tool menu. A list row and the detail share their insets, heading line and
-  text sizes, so the date and text stay put when switching.
+  tool menu. A list row and the detail share their insets and text sizes, so
+  the text stays put when switching.
 -->
 <script lang="ts">
     import {tick} from 'svelte';
@@ -49,7 +52,7 @@
 
     const dateFormat = $derived(new Intl.DateTimeFormat(
         app.localization.locale.lang.replace('_', '-'),
-        {dateStyle: 'long'}
+        {dateStyle: 'medium'}
     ));
 
     async function openDetail(id: string): Promise<void> {
@@ -85,30 +88,38 @@
 <Dialog
     {open}
     onOpenChange={isOpen => open = isOpen}
-    title={__('ui.announcements.pageTitle')}
+    description={detail?.starts_at ? dateDescription : undefined}
     contentProps={{class: 'announcements-dialog-content', onEscapeKeydown: handleEscape}}
     headerProps={{class: 'announcements-dialog-header'}}
 >
+    {#snippet title()}
+        {#if detail}
+            <ButtonWithTooltip
+                variant="ghost"
+                iconLeft={ArrowLeft01Icon}
+                tooltip={__('ui.announcements.back')}
+                bind:ref={backEl}
+                onclick={closeDetail}
+            />
+            <span class="announcements-dialog-title">{announcementDisplayTitle(detail)}</span>
+        {:else}
+            {__('ui.announcements.pageTitle')}
+        {/if}
+    {/snippet}
+
+    {#snippet dateDescription()}
+        {#if detail?.starts_at}
+            <time datetime={detail.starts_at}>{dateFormat.format(new Date(detail.starts_at))}</time>
+        {/if}
+    {/snippet}
+
     <DropdownMenuDetailView open={!!detail}>
         {#snippet details()}
             {#if detail}
                 <div class="announcements-view">
-                    <article class="announcement announcement--detail">
-                        <ButtonWithTooltip
-                            variant="ghost"
-                            iconLeft={ArrowLeft01Icon}
-                            tooltip={__('ui.announcements.back')}
-                            bind:ref={backEl}
-                            onclick={closeDetail}
-                        />
-                        <header class="announcement__heading">
-                            <h3 class="announcement__title">{announcementDisplayTitle(detail)}</h3>
-                            {#if detail.starts_at}
-                                <time datetime={detail.starts_at}>{dateFormat.format(new Date(detail.starts_at))}</time>
-                            {/if}
-                        </header>
+                    <article class="announcement">
                         <div class="announcement__body">
-                            <Markdown message={stripLeadingHeading(parseAnnouncementContent(detail.content).body)} headingBaseLevel={4}/>
+                            <Markdown message={stripLeadingHeading(parseAnnouncementContent(detail.content).body)} headingBaseLevel={3}/>
                         </div>
                     </article>
                 </div>
@@ -164,8 +175,31 @@
 
     :global(.announcements-dialog-header.announcements-dialog-header) {
         flex: none;
-        padding: var(--space-5) var(--space-6) var(--space-4);
+        /* The end inset clears the absolutely positioned close button. */
+        padding: var(--space-5) calc(var(--space-4) + 2rem) var(--space-4) var(--space-6);
         border-bottom: var(--divider);
+
+        /* The back button (2rem, with the composer's hover background) is
+           larger than its icon; let it overhang so the arrow lines up with
+           the body text and the header keeps its height. */
+        :global(.btn) {
+            --btn-icon-size: 1rem;
+            flex: none;
+            margin: calc(-1 * var(--space-2));
+        }
+
+        /* The date (only shown in the detail) lines up with the title, past
+           the back arrow and the title row's gap. */
+        :global(.dialog-description) {
+            padding-inline-start: calc(1rem + var(--space-2));
+        }
+    }
+
+    .announcements-dialog-title {
+        overflow: hidden;
+        min-width: 0;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .announcements-view {
@@ -188,7 +222,7 @@
     }
 
     /* Shared by a list row and the detail: heading line with the excerpt or
-       body below; the row's arrow trails, the back arrow leads. */
+       body below; the row's arrow trails. */
     .announcement {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 1rem;
@@ -197,19 +231,6 @@
         padding: var(--space-3);
         font-size: var(--font-size-sm);
         line-height: var(--line-height-normal);
-
-        /* The back button (2rem, with the composer's hover background) is
-           larger than its 1rem slot; let it overhang on all sides so it
-           neither widens the column nor makes the heading line taller. */
-        > :global(.btn) {
-            --btn-icon-size: 1rem;
-            margin: calc(-1 * var(--space-2));
-        }
-    }
-
-    .announcement--detail {
-        grid-template-columns: 1rem minmax(0, 1fr);
-        column-gap: var(--space-2);
     }
 
     .announcement-row {
@@ -266,8 +287,8 @@
         min-width: 0;
     }
 
-    /* The full text starts at the leading edge, below the back button. */
-    .announcement--detail .announcement__body {
+    /* The full text spans the row's arrow column too. */
+    article.announcement .announcement__body {
         grid-column: 1 / -1;
     }
 
