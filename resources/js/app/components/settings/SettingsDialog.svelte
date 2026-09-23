@@ -150,6 +150,7 @@
         onOpenChange={handleOpenChange}
         contentProps={{class: 'settings-dialog-content'}}
         headerProps={{class: 'settings-dialog-header'}}
+        bodyProps={{class: 'settings-dialog-body'}}
         titleProps={{id: titleId}}
     >
         {#snippet title()}
@@ -189,8 +190,9 @@
 
 <style>
     /* One grid on a single surface: the nav on the left, the page scrolling on
-       its own on the right, both below a header row holding the title and the
-       dialog's close button (a 24px box inset by --space-4). Every edge — and
+       its own on the right (the dialog body is the grid), both below a header
+       row holding the title and the dialog's close button (a 24px box inset
+       by --space-4). Every edge — and
        the gap under the header — shares that one inset, and the corner radius
        is the frames' radius plus it, so the 8px fields inside sit concentric
        with it.
@@ -206,8 +208,6 @@
         width: min(48rem, calc(100vw - 2 * var(--space-4)));
         max-width: none;
         max-height: calc(100dvh - var(--settings-top) - var(--space-4));
-        grid-template-columns: 11rem minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr);
         overflow: hidden;
         padding: 0;
         gap: 0;
@@ -217,8 +217,14 @@
     /* A 24px title line under the shared inset centres the title on the close
        button; on the left it lines up with the nav icons below it. */
     :global(.settings-dialog-header.settings-dialog-header) {
-        grid-column: 1 / -1;
         padding: var(--space-4) var(--space-12) 0 calc(var(--space-4) + var(--space-2_5));
+    }
+
+    /* The panel scrolls on its own, so the body itself must not. */
+    :global(.settings-dialog-body.settings-dialog-body) {
+        display: grid;
+        grid-template-columns: 11rem minmax(0, 1fr);
+        overflow: hidden;
     }
 
     .settings-title {

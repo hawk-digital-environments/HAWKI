@@ -37,16 +37,7 @@ readonly class AnnouncementContentResolver
      */
     public function resolve(Announcement $announcement, ?string $requestedLocale = null): ?AnnouncementContent
     {
-        $requested = $requestedLocale === null
-            ? $this->localeService->getCurrentLocale()->lang
-            : $this->localeService->getLocale($requestedLocale)?->lang;
-
-        $candidates = [
-            $requested,
-            $this->localeService->getDefaultLocale()->lang,
-        ];
-
-        foreach (array_unique(array_filter($candidates)) as $locale) {
+        foreach ($this->candidateLocales($requestedLocale) as $locale) {
             $file = $this->application->resourcePath("announcements/$announcement->view/$locale.md");
 
             if (is_file($file)) {
@@ -55,5 +46,42 @@ readonly class AnnouncementContentResolver
         }
 
         return null;
+    }
+
+    /**
+     * Returns the hand-written list teaser (the `excerpt` column, keyed by locale) with the same
+     * locale fallback as the content, or null when none is set — the frontend then derives one
+     * from the body.
+     */
+    public function resolveExcerpt(Announcement $announcement, ?string $requestedLocale = null): ?string
+    {
+        $excerpts = $announcement->excerpt ?? [];
+
+        foreach ($this->candidateLocales($requestedLocale) as $locale) {
+            $excerpt = trim((string)($excerpts[$locale] ?? ''));
+
+            if ($excerpt !== '') {
+                return $excerpt;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The requested (or current) locale first, then the default locale.
+     *
+     * @return array<int, string>
+     */
+    private function candidateLocales(?string $requestedLocale): array
+    {
+        $requested = $requestedLocale === null
+            ? $this->localeService->getCurrentLocale()->lang
+            : $this->localeService->getLocale($requestedLocale)?->lang;
+
+        return array_values(array_unique(array_filter([
+            $requested,
+            $this->localeService->getDefaultLocale()->lang,
+        ])));
     }
 }

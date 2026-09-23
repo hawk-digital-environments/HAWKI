@@ -45,14 +45,14 @@
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useRouter} from '$lib/components/ui/routing/index.js';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
-    const router = useRouter();
+    const app = useApp();
     const {__} = useTranslator();
 
     const ALL_TAB = '__all__';
@@ -168,9 +168,9 @@
         open = false;
     }
 
-    function openModelsPage(): void {
+    function openModelsDialog(): void {
         open = false;
-        void router.goToRoute('models.index');
+        app.events.sync.triggerVoid('modelsRequested');
     }
 
     function toggleFavorite(e: Event, model: AiModel): void {
@@ -442,7 +442,7 @@
 {/snippet}
 
 {#snippet allModelsLink()}
-    <button type="button" class="mp2-all-models" onclick={openModelsPage}>
+    <button type="button" class="mp2-all-models" onclick={openModelsDialog}>
         {__('chat.composer.modelPicker.allModelsLink')}
     </button>
 {/snippet}

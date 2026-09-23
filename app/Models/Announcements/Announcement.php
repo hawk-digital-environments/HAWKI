@@ -12,6 +12,7 @@ class Announcement extends Model
     protected $fillable = [
         'title',
         'view',
+        'excerpt',
         'type',
         'is_forced',
         'is_global',
@@ -22,6 +23,7 @@ class Announcement extends Model
     ];
 
     protected $casts = [
+        'excerpt' => 'array',
         'target_users' => 'array',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',

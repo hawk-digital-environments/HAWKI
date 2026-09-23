@@ -26,6 +26,9 @@ readonly class AnnouncementService
      * Example:
      * $service->createAnnouncement('announcements.terms_update', 'info', true);
      *
+     * @param array<string, string>|null $excerpt Optional list teaser keyed by locale code (e.g.
+     *        `['de_DE' => '…']`); without one the frontend derives it from the content. Not used
+     *        for policies, which are not listed in the announcements feed.
      * @throws \App\Services\Announcements\Exceptions\OverlappingPolicyException when publishing a
      *         policy whose validity window overlaps an already published one.
      */
@@ -38,7 +41,8 @@ readonly class AnnouncementService
         ?array  $targetUsers = null,
         ?string $anchor = null,
         ?string $startsAt = null,
-        ?string $expiresAt = null
+        ?string $expiresAt = null,
+        ?array  $excerpt = null
     ): Announcement
     {
         // A policy is the one document users consent to, so two of them may never be in effect at
@@ -65,6 +69,7 @@ readonly class AnnouncementService
             'anchor' => $anchor,
             'starts_at' => $startsAt,
             'expires_at' => $expiresAt,
+            'excerpt' => $excerpt ?: null,
         ]);
     }
 
