@@ -5,6 +5,7 @@
     import AdminResultDialog from '../components/AdminResultDialog.svelte';
     import AdminSearch from '../components/AdminSearch.svelte';
     import AdminTable from '../components/AdminTable.svelte';
+    import Badge from '$lib/components/ui/badge/Badge.svelte';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { roleLabel } from '../forms/authorization.js';
@@ -36,7 +37,7 @@
         row && !row.local_account ?
             Object.fromEntries(Object.entries(values).filter(([key]) => !directoryManagedFields.includes(key)))
         :   values;
-    const workspace = useAdminWorkspace(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-users', { query, signal }),
         {
@@ -81,32 +82,34 @@
     );
 </script>
 
-{#snippet assignments(ids: number[], mapped: boolean)}
+{#snippet assignments(ids: number[])}
     {#if ids.length}
         <ul class="assignments">
             {#each ids as id (id)}
-                <li>{roleLabel(id, workspace.content?.role_catalog ?? [], workspace.fields, __)}
-                    <span class="source">{__(mapped ? 'admin.role_source_mapped' : 'admin.role_source_manual')}</span>
+                <li>
+                    <Badge variant="secondary">
+                        {roleLabel(id, records.content?.role_catalog ?? [], records.fields, __)}
+                    </Badge>
                 </li>
             {/each}
         </ul>
     {:else}—{/if}
 {/snippet}
-{#snippet manualRoles(row: AdminUserResource)}{@render assignments(row.roles, false)}{/snippet}
-{#snippet mappedRoles(row: AdminUserResource)}{@render assignments(row.mapped_roles, true)}{/snippet}
+{#snippet manualRoles(row: AdminUserResource)}{@render assignments(row.roles)}{/snippet}
+{#snippet mappedRoles(row: AdminUserResource)}{@render assignments(row.mapped_roles)}{/snippet}
 
 <AdminPage
-    section="users"
-    {workspace}
+    workspace="users"
+    recordSet={records}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.users')}
         cells={{ roles: manualRoles, mapped_roles: mappedRoles }}
-        {workspace}
+        recordSet={records}
     />
     <AdminResultDialog
-        {workspace}
+        recordSet={records}
         action="tokens"
     >
         {#snippet children(response)}
@@ -120,7 +123,12 @@
 </AdminPage>
 
 <style>
-    .assignments { list-style: none; padding: 0; margin: 0; }
-    .assignments li + li { margin-top: var(--space-2); }
-    .source { display: block; font-size: var(--font-size-xs); }
+    .assignments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
 </style>

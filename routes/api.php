@@ -30,7 +30,9 @@ use App\Http\Controllers\Assistant\AssistantAvatarController;
 use App\Http\Controllers\Assistant\AssistantCategoryController;
 use App\Http\Controllers\Assistant\AssistantController;
 use App\Http\Controllers\Assistant\AssistantFeedbackController;
+use App\Http\Controllers\Assistant\AssistantFieldFlagController;
 use App\Http\Controllers\Assistant\AssistantReviewController;
+use App\Http\Controllers\Assistant\AssistantReviewLogController;
 use App\Http\Controllers\Assistant\AssistantSettingController;
 use App\Http\Controllers\Assistant\AssistantSettingValueController;
 use App\Http\Controllers\Assistant\AssistantTagController;
@@ -121,6 +123,7 @@ JsonApiRoute::server('v1')
                 ->only('index', 'store', 'update', 'destroy')
                 ->actions(function (ActionRegistrar $actions) {
                     $actions->withId()->post('actions/refresh', 'refresh');
+                    $actions->post('actions/check-status', 'checkStatus');
                 });
 
             $server->resource('admin-mcp', Admin\McpServerController::class)
@@ -159,6 +162,9 @@ JsonApiRoute::server('v1')
                 ->only('index');
 
             $server->resource('admin-environment', Admin\EnvironmentController::class)
+                ->only('index');
+
+            $server->resource('admin-assistants', Admin\AssistantController::class)
                 ->only('index');
 
             $server->resource('admin-health', Admin\HealthController::class)
@@ -328,6 +334,7 @@ JsonApiRoute::server('v1')
                 $actions->withId()->delete('actions/favorite', 'removeFavorite');
                 $actions->withId()->post('actions/attachment', 'uploadAttachment');
                 $actions->withId()->delete('actions/attachment', 'deleteAttachment');
+                $actions->withId()->post('actions/attachment/review', 'reviewAttachment');
             });
 
         $server->resource('assistant-avatars', AssistantAvatarController::class)
@@ -350,6 +357,12 @@ JsonApiRoute::server('v1')
             ->relationships(static function (Relationships $relationships): void {
                 $relationships->hasOne('assistant')->readOnly();
             });
+
+        $server->resource('assistant-review-logs', AssistantReviewLogController::class)
+            ->only('index');
+
+        $server->resource('assistant-field-flags', AssistantFieldFlagController::class)
+            ->only('index', 'store', 'update', 'destroy');
 
         $server->resource('assistant-settings', AssistantSettingController::class)
             ->only('index', 'show')

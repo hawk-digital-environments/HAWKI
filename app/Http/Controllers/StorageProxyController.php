@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Http\Controllers;
 
 use App\Models\AiConvMsg;
@@ -28,13 +26,14 @@ class StorageProxyController extends Controller
     public function __construct(
         private readonly CacheBusterGenerator $cacheBusterGenerator,
         private readonly AvatarStorageService $avatarStorage,
-        private readonly AttachmentRepository $attachmentRepository,
+        private readonly AttachmentRepository $attachmentService,
         private readonly AssistantAttachmentRepository $assistantAttachmentRepository,
-        private readonly FileStorageService $fileStorageService,
+        private readonly FileStorageService   $fileStorageService,
         private readonly ProviderIconStorageService $providerIconStorage,
-        #[CurrentUser()]
-        private readonly User $currentUser,
-    ) {
+        #[CurrentUser]
+        private readonly User                 $currentUser
+    )
+    {
     }
 
     public function streamRouted(Request $request, string $identifierString): StreamedResponse
@@ -58,7 +57,7 @@ class StorageProxyController extends Controller
     {
         return $this->createStreamResponse(
             $request,
-            $this->getFileOrFail($this->avatarStorage, $identifier),
+            $this->getFileOrFail($this->avatarStorage, $identifier)
         );
     }
 
@@ -77,8 +76,7 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentRepository->findOneByStoredFileIdentifier($identifier)?->attachable;
-
+        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
         if (!$attachable instanceof Message) {
             abort(400, 'Invalid request, attachment is not linked to a message');
         }
@@ -91,7 +89,7 @@ class StorageProxyController extends Controller
 
         return $this->createStreamResponse(
             $request,
-            $file,
+            $file
         );
     }
 
@@ -99,8 +97,7 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentRepository->findOneByStoredFileIdentifier($identifier)?->attachable;
-
+        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
         if (!$attachable instanceof AiConvMsg) {
             abort(400, 'Invalid request, attachment is not linked to a private ai conversation');
         }
@@ -111,7 +108,7 @@ class StorageProxyController extends Controller
 
         return $this->createStreamResponse(
             $request,
-            $file,
+            $file
         );
     }
 
@@ -129,25 +126,24 @@ class StorageProxyController extends Controller
 
         return $this->createStreamResponse(
             $request,
-            $file,
+            $file
         );
     }
 
     private function getFileOrFail(StorageServiceInterface $storage, StoredFileIdentifier $identifier): StoredFile
     {
         $file = $storage->retrieve($identifier);
-
         if (!$file) {
             abort(404, 'File not found');
         }
-
         return $file;
     }
 
     private function createStreamResponse(
-        Request $request,
-        StoredFile $file,
-    ): StreamedResponse {
+        Request    $request,
+        StoredFile $file
+    ): StreamedResponse
+    {
         $etag = $this->cacheBusterGenerator->getEtag($file->getEtag());
 
         if ($request->headers->get('if-None-match') === $etag) {
@@ -155,21 +151,26 @@ class StorageProxyController extends Controller
         }
 
         $stream = $file->getStream();
-
         if (!$stream) {
             abort(404, 'File not found');
         }
 
+        // Every existing caller forces a download; a review-panel preview
+        // (?disposition=inline) is the only opt-in exception, so the default
+        // stays 'attachment' unless explicitly asked otherwise.
+        $disposition = 'inline' === $request->query('disposition') ? 'inline' : 'attachment';
+
         return response()->streamDownload(
-            callback: static function () use ($stream): void {
+            callback: function () use ($stream) {
                 fpassthru($stream);
             },
             name: $file->getOriginalFilename(),
             headers: [
                 'Content-Type' => $file->getMimeType(),
                 'Cache-Control' => 'public, max-age=3600',
-                'ETag' => $etag,
+                'ETag' => $etag
             ],
+            disposition: $disposition,
         );
     }
 }

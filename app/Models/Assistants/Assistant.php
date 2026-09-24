@@ -201,6 +201,22 @@ class Assistant extends Model
     }
 
     /**
+     * @return HasMany<AssistantReviewLog, $this>
+     */
+    public function assistantReviewLogs(): HasMany
+    {
+        return $this->hasMany(AssistantReviewLog::class);
+    }
+
+    /**
+     * @return HasMany<AssistantFieldFlag, $this>
+     */
+    public function assistantFieldFlags(): HasMany
+    {
+        return $this->hasMany(AssistantFieldFlag::class);
+    }
+
+    /**
      * @return BelongsToMany<User, $this>
      */
     public function favoritedByUsers(): BelongsToMany

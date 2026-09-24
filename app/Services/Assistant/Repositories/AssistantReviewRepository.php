@@ -48,7 +48,13 @@ class AssistantReviewRepository extends AbstractRepository
         $review->save();
     }
 
-    public function deleteReviewForAssistantUnlessDenied(int $assistantId): void
+    /**
+     * Both denial variants stick — a denied review must survive the demotion
+     * to private that the denial itself triggers (see AssistantReleaseStatus),
+     * and a needs_revision review must survive so the creator can resubmit.
+     * An admin must clear either explicitly.
+     */
+    public function deleteReviewForAssistantUnlessTerminal(int $assistantId): void
     {
         // Both denial variants stick: a denied review must survive the demotion
         // to private that the denial itself triggers (see AssistantReleaseStatus),

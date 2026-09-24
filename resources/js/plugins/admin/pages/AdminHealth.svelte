@@ -20,10 +20,10 @@
         { id: 'message' },
         { id: 'response_time' }
     ];
-    const workspace = useAdminWorkspace(columns, (signal, query) =>
+    const records = useAdminWorkspace(columns, (signal, query) =>
         app.restApi.getResourceCollection('admin-health', { query, signal })
     );
-    const failedJobs = $derived(workspace.content?.failed_jobs ?? []);
+    const failedJobs = $derived(records.content?.failed_jobs ?? []);
     const menuItems = $derived<AdminMenuItem[]>(
         app.can('health.manage') && failedJobs.length ?
             [
@@ -32,7 +32,7 @@
                     icon: adminActionIcons['flush-jobs'],
                     destructive: true,
                     run: (target) =>
-                        workspace.action(
+                        records.action(
                             {
                                 id: 'flush-jobs',
                                 confirm: true,
@@ -53,16 +53,16 @@
     // Re-reads every 30 s while the tab is visible and nothing is in flight.
     onMount(() => {
         const timer = window.setInterval(() => {
-            if (!document.hidden && !workspace.loading && !workspace.busy && !workspace.updating.length)
-                void workspace.load();
+            if (!document.hidden && !records.loading && !records.busy && !records.updating.length)
+                void records.load();
         }, 30000);
         return () => window.clearInterval(timer);
     });
 </script>
 
 <AdminPage
-    section="health"
-    {workspace}
+    workspace="health"
+    recordSet={records}
     pageActions={app.can('health.manage') ?
         [
             {
@@ -81,13 +81,13 @@
 >
     <AdminTable
         caption={__('admin.sections.health')}
-        {workspace}
+        recordSet={records}
     />
-    {#if workspace.content}
+    {#if records.content}
         <section class="health-details">
             <h2>{__('admin.queues')}</h2>
             <dl>
-                {#each Object.entries(workspace.content?.queues ?? {}) as [name, value]}<div>
+                {#each Object.entries(records.content?.queues ?? {}) as [name, value]}<div>
                         <dt>{name}</dt>
                         <dd>{value ?? __('admin.values.unknown')}</dd>
                     </div>{/each}
@@ -100,14 +100,14 @@
                             <span>{job.queue} · {job.failed_at}</span>{#if app.can('health.manage')}<AdminActionMenu
                                     compact
                                     label={__('admin.row_actions', { name: job.queue + ' · ' + job.failed_at })}
-                                    disabled={workspace.busy}
-                                    dialogOpen={workspace.dialogOpen}
+                                    disabled={records.busy}
+                                    dialogOpen={records.dialogOpen}
                                     items={[
                                         {
                                             label: __('admin.actions.retry-job'),
                                             icon: adminActionIcons['retry-job'],
                                             run: (target) =>
-                                                workspace.action(
+                                                records.action(
                                                     {
                                                         id: 'retry-job',
                                                         confirm: true,
@@ -131,7 +131,7 @@
         <section class="health-details">
             <h2>{__('admin.environment')}</h2>
             <dl>
-                {#each Object.entries(workspace.content?.versions ?? {}) as [key, value]}<div>
+                {#each Object.entries(records.content?.versions ?? {}) as [key, value]}<div>
                         <dt>{__('admin.fields.' + key)}</dt>
                         <dd>{typeof value === 'boolean' ? __(value ? 'admin.yes' : 'admin.no') : value}</dd>
                     </div>{/each}

@@ -124,6 +124,56 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
+     * Applies configuration only when Administration does not own this prompt.
+     */
+    public function upsertFromConfiguration(
+        string $promptType,
+        string $usageType,
+        Locale $locale,
+        string $content,
+    ): ?SystemPrompt {
+        if ($this->getQueryWithoutContextualScopes()->where([
+            'prompt_type' => $promptType,
+            'usage_type' => $usageType,
+            'locale' => $locale,
+            'admin_managed' => true,
+        ])->exists()) {
+            return null;
+        }
+
+        return $this->upsert($promptType, $usageType, $locale, $content);
+    }
+
+    /**
+     * Stores one prompt per locale for an administrator-controlled system-model slot. An empty
+     * prompt remains a persisted override so a later file import cannot mistake the clear for a
+     * missing row that needs seeding.
+     *
+     * @param array<string, string|null> $prompts
+     */
+    public function replaceForSystemModel(string $promptType, string $usageType, array $prompts): void
+    {
+        foreach (['en_US', 'de_DE'] as $locale) {
+            $prompt = $this->getQueryWithoutContextualScopes()->firstOrNew([
+                'prompt_type' => $promptType,
+                'usage_type' => $usageType,
+                'locale' => $locale,
+            ]);
+            $prompt->setAttribute('prompt', $prompts[$locale] ?? '');
+            $prompt->setAttribute('admin_managed', true);
+            $prompt->save();
+        }
+    }
+
+    public function deleteForSystemModel(string $promptType, string $usageType): void
+    {
+        $this->getQueryWithoutContextualScopes()->where([
+            'prompt_type' => $promptType,
+            'usage_type' => $usageType,
+        ])->delete();
+    }
+
+    /**
      * Looks up a system prompt by type, locale, and usage type and throws when not found.
      *
      * The locale argument is resolved to the most likely concrete locale via

@@ -71,6 +71,9 @@
         :   items
     );
     const shown = $derived(matches.slice(0, maxItems));
+    // Without a single item the panel could only ever say "no matches", so the field stays a plain
+    // text box: clicking it to type must not cover the form with an empty list.
+    const barren = $derived(items.length === 0);
     // Only an explicit pick counts as selected; typed text that happens to equal an item must still be pickable.
     let picked = $state('');
     const selected = $derived(picked !== '' && picked === value ? picked : '');
@@ -104,7 +107,7 @@
                     oninput: (event: Event & { currentTarget: HTMLInputElement }) =>
                         setText(event.currentTarget.value),
                     onclick: () => {
-                        if (!disabled) open = true;
+                        if (!disabled && !barren) open = true;
                     }
                 },
                 inputProps as Record<string, unknown>
@@ -113,7 +116,7 @@
         <ComboboxPrimitive.Trigger
             class="combobox-toggle"
             aria-label={toggleLabel}
-            {disabled}
+            disabled={disabled || barren}
         >
             <ChevronDownIcon size={18} />
         </ComboboxPrimitive.Trigger>

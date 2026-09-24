@@ -6,22 +6,25 @@ namespace App\Models\Assistants;
 
 use App\Models\User;
 use App\Services\Assistant\Events\AssistantAttachmentDeletingEvent;
+use App\Services\Assistant\Values\AssistantAttachmentReviewStatus;
 use App\Services\Rag\Values\RagIngestionStatus;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property null|\Illuminate\Support\Carbon $created_at
- * @property int                            $id
- * @property string                         $mime
- * @property string                         $name
- * @property null|string                    $rag_batch_id
- * @property null|string                    $rag_document_id backend-assigned RAG handle: `adoc_*` (file ingestion) or `source_*` (text ingestion)
- * @property null|RagIngestionStatus        $rag_status
- * @property string                         $type
- * @property null|\Illuminate\Support\Carbon $updated_at
- * @property string                         $uuid
+ * @property null|\Illuminate\Support\Carbon        $created_at
+ * @property int                                    $id
+ * @property string                                 $mime
+ * @property string                                 $name
+ * @property null|string                            $rag_batch_id
+ * @property null|string                            $rag_document_id backend-assigned RAG handle: `adoc_*` (file ingestion) or `source_*` (text ingestion)
+ * @property null|RagIngestionStatus                $rag_status
+ * @property null|AssistantAttachmentReviewStatus   $review_status
+ * @property null|int                               $size
+ * @property string                                 $type
+ * @property null|\Illuminate\Support\Carbon        $updated_at
+ * @property string                                 $uuid
  */
 #[Table('assistant_attachments')]
 class AssistantAttachment extends Model
@@ -35,6 +38,7 @@ class AssistantAttachment extends Model
         'name',
         'type',
         'mime',
+        'size',
         'user_id',
     ];
 
@@ -59,6 +63,7 @@ class AssistantAttachment extends Model
         return [
             'rag_status' => RagIngestionStatus::class,
             'rag_ingested_at' => 'datetime',
+            'review_status' => AssistantAttachmentReviewStatus::class,
         ];
     }
 }

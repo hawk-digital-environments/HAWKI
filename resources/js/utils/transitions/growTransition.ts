@@ -10,32 +10,19 @@ import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
  * horizontally when a file upload begins.
  *
  * @param node - The element being transitioned (provided by Svelte).
- * @param params.direction - `'in'` (enter, default) or `'out'` (leave).
- *   Enter uses a spring overshoot; leave uses `cubicOut`.
  * @param params.mode - `'vertical'` (default, animates height) or
  *   `'horizontal'` (animates width).
- * @param params.overshoot - Tension of the enter's `backOut` curve, i.e. how far it swings
- *   past its natural size before settling back. `0` is a plain ease-out; `0.6` (the default)
- *   peaks about 1% over, which on a few dozen pixels is under half a pixel and reads as no
- *   spring at all; `1.3` peaks around 6% and reads as a small one; Svelte's own `backOut`
- *   sits near `1.7` (~10%). Leaving is always `cubicOut` — swinging on the way out would
- *   take the size below zero and just clip.
  *
  * @example
  * // Vertical grow (default)
  * <div transition:growTransition>…</div>
  *
- * // Horizontal grow, enter only
+ * // Horizontal grow
  * <span in:growTransition={{mode: 'horizontal'}}>…</span>
- *
- * // Vertical grow that visibly springs into place
- * <div transition:growTransition={{overshoot: 1.3}}>…</div>
  */
-import {cubicOut} from 'svelte/easing';
-
-/** `backOut` with the tension left open, so a caller can pick how much of a swing it wants. */
-function backOutWith(s: number) {
-    return (t: number) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
+function gentleBackOut(t: number) {
+    const s = 0.6;
+    return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
 }
 
 /**
@@ -49,18 +36,10 @@ function px(value: string): number {
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export interface GrowTransitionParams {
-    direction?: 'in' | 'out';
-    mode?: 'horizontal' | 'vertical';
-    overshoot?: number;
-}
-
-export function growTransition(node: Element, params?: GrowTransitionParams) {
+export function growTransition(node: Element, params?: {mode?: 'horizontal' | 'vertical'}) {
     const height = node.scrollHeight;
     const style = getComputedStyle(node);
-    const {direction = 'in', mode = 'vertical', overshoot = 0.6} = params ?? {};
-    const easing = direction === 'in' ? backOutWith(overshoot) : cubicOut;
-    const duration = direction === 'in' ? 300 : 220;
+    const {mode = 'vertical'} = params ?? {};
 
     if (mode === 'horizontal') {
         const width = node.scrollWidth;
@@ -69,8 +48,8 @@ export function growTransition(node: Element, params?: GrowTransitionParams) {
         const marginLeft = px(style.marginLeft);
         const marginRight = px(style.marginRight);
         return {
-            duration: motionDuration(duration),
-            easing,
+            duration: motionDuration(300),
+            easing: gentleBackOut,
             css: (t: number) => `
                 overflow: hidden;
                 opacity: ${t};
@@ -89,8 +68,8 @@ export function growTransition(node: Element, params?: GrowTransitionParams) {
     const marginTop = px(style.marginTop);
     const marginBottom = px(style.marginBottom);
     return {
-        duration: motionDuration(duration),
-        easing,
+        duration: motionDuration(300),
+        easing: gentleBackOut,
         css: (t: number) => `
             overflow: hidden;
             opacity: ${t};

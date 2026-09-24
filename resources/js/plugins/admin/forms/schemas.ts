@@ -1,7 +1,10 @@
 import z from 'zod';
 import { AccessRuleNameSchema } from '../schemas/admin-content.js';
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
-import type { SectionId } from '../sections.js';
+import type { WorkspaceId } from '../workspaces.js';
+
+/** Workspaces that have an editor; `tools` is edited on the MCP page and has no route of its own. */
+export type EditorSection = WorkspaceId | 'tools' | (string & {});
 
 const text = (max = 255) => z.string().trim().min(1).max(max);
 const optionalText = (max = 255) => z.string().max(max).nullish();
@@ -131,6 +134,7 @@ export const modelsSchema = z.object({
     pricing: pricingSchema,
     flags: tags,
     tools: ids,
+    allowed_roles: ids,
     usage_rules: z.array(z.enum(['main', 'external']))
 });
 export const mcpSchema = z.object({
@@ -147,6 +151,7 @@ export const toolsSchema = z.object({
     access_rule: AccessRuleNameSchema,
     description: optionalText(10000),
     active: z.boolean(),
+    mcp_server_id: id.nullable(),
     mapped_capability: optionalText(),
     models: ids
 });
@@ -239,7 +244,7 @@ const sectionSchemas = {
 };
 
 /** A distinct section schema, restricted to the fields the server permits this actor to edit. */
-export function editorSchema(section: SectionId, fields: AdminField[], row: AdminRow | null) {
+export function editorSchema(section: EditorSection, fields: AdminField[], row: AdminRow | null) {
     const schema =
         section === 'settings' ?
             z.object({ value: settingsSchemas[String(row?.key ?? row?.id)] ?? z.never() })

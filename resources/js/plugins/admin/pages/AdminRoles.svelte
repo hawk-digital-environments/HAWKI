@@ -20,7 +20,7 @@
     // Built-in roles keep their slug; name, description and permissions stay editable.
     const editFields = (row: AdminRoleResource, fields: AdminField[]) =>
         row.is_system ? fields.map((field) => (field.key === 'slug' ? { ...field, immutable: true } : field)) : fields;
-    const workspace = useAdminWorkspace(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-roles', { query, signal }),
         {
@@ -42,13 +42,13 @@
 </script>
 
 <AdminPage
-    section="roles"
-    {workspace}
+    workspace="roles"
+    recordSet={records}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.roles')}
-        {workspace}
+        recordSet={records}
         editSystemRows
     />
 </AdminPage>

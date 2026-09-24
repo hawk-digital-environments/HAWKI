@@ -43,6 +43,7 @@ use App\Services\Ai\Providers\Adapters\Implementations\GwdgAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\MistralAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\OllamaAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\OpenAiAdapter;
+use App\Services\Ai\Providers\Adapters\Implementations\LiteLlmAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\OpenAiLikeAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\OpenRouterAdapter;
 use App\Services\Ai\Providers\Adapters\ProviderAdapterRegistry;
@@ -197,6 +198,7 @@ class AiServiceProvider extends ServiceProvider
                 ->declare(WellKnownAdapterKeys::GEMINI, GeminiAdapter::class)
                 ->declare(WellKnownAdapterKeys::MISTRAL, MistralAdapter::class)
                 ->declare(WellKnownAdapterKeys::HUGGINGFACE, OpenAiLikeAdapter::class)
+                ->declare(WellKnownAdapterKeys::LITELLM, LiteLlmAdapter::class)
                 ->declare(WellKnownAdapterKeys::DEEPSEEK, DeepseekAdapter::class)
                 ->declare(WellKnownAdapterKeys::AWS_BEDROCK, AwsBedrockAdapter::class)
                 ->declare(WellKnownAdapterKeys::GWDG, GwdgAdapter::class)

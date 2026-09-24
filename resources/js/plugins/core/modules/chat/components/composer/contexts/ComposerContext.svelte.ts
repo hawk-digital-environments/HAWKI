@@ -76,7 +76,6 @@
  */
 import {onDestroy} from 'svelte';
 import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
-import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
 import {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
@@ -96,6 +95,7 @@ import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte';
 import type {MessageSenderTransportInterface} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
+import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 
 /** The kinds of chat a composer can be mounted into. Validated at runtime by {@link createComposerContext}. */
 const allowedContextTypes = ['aiConv', 'room'] as const;
@@ -607,6 +607,11 @@ export function createComposerContext(
         (message) => aiHandleStore.getHandlesIn(message),
         () => aiHandleStore.assistants
     );
+
+    $effect(() => {
+        if (aiModelStore.authorizationState !== 'ready') return;
+        if (!aiModelStore.getOneById(modelContext.current.model_id)) modelContext.set(null);
+    });
 
     const unbinders = options.useLegacyBridge === false ? [] : [
         oldUiBridge.onClearActiveConversation(() => {
