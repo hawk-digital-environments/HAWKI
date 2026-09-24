@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Services\Ai\LaravelAi\Values;
 
 use App\Services\Ai\LaravelAi\Values\UrlMultiCitation;
+use Laravel\Ai\Responses\Data\Citation;
+use Laravel\Ai\Responses\Data\UrlCitation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
@@ -148,5 +150,45 @@ class UrlMultiCitationTest extends TestCase
         $sut = new UrlMultiCitation('https://example.com');
         $result = $sut->toArray();
         static::assertFalse($result['byteOffset']);
+    }
+
+    // =========================================================================
+    // mergeByUrl
+    // =========================================================================
+
+    public function testItMergeByUrlCollapsesCitationsForTheSameUrl(): void
+    {
+        $result = UrlMultiCitation::mergeByUrl([
+            new UrlCitation('https://a.example', 'A', 0, 5),
+            new UrlCitation('https://b.example', 'B', 6, 9),
+            new UrlCitation('https://a.example', 'A', 10, 15),
+        ]);
+
+        static::assertCount(2, $result);
+        static::assertInstanceOf(UrlMultiCitation::class, $result[0]);
+        static::assertSame('https://a.example', $result[0]->url);
+        static::assertSame([[0, 5], [10, 15]], $result[0]->ranges->all());
+        static::assertFalse($result[0]->isByteOffset);
+        static::assertSame('https://b.example', $result[1]->url);
+    }
+
+    public function testItMergeByUrlFillsMissingTitleFromLaterCitation(): void
+    {
+        $result = UrlMultiCitation::mergeByUrl([
+            new UrlCitation('https://a.example'),
+            new UrlCitation('https://a.example', 'A'),
+        ]);
+
+        static::assertSame('A', $result[0]->title);
+    }
+
+    public function testItMergeByUrlKeepsNonUrlCitations(): void
+    {
+        $other = new class('Doc') extends Citation {};
+
+        $result = UrlMultiCitation::mergeByUrl([$other, new UrlCitation('https://a.example')]);
+
+        static::assertSame($other, $result[0]);
+        static::assertCount(2, $result);
     }
 }

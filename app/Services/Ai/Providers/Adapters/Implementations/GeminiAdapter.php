@@ -8,7 +8,6 @@ namespace App\Services\Ai\Providers\Adapters\Implementations;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
-use App\Services\Ai\LaravelAi\Drivers\GeminiExtended\ExtendedGeminiGateway;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 use App\Services\Ai\Models\Flags\Values\WellKnownModelFlags;
 use App\Services\Ai\Models\Parameters\Values\WellKnownModelParams;
@@ -21,6 +20,7 @@ use Illuminate\Support\Collection;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\Gemini\Concerns\CreatesGeminiClient;
+use Laravel\Ai\Gateway\Gemini\GeminiGateway;
 use Laravel\Ai\Providers\GeminiProvider;
 use Laravel\Ai\Providers\Provider as Driver;
 use Laravel\Ai\Providers\Tools\WebFetch;
@@ -29,11 +29,11 @@ use Laravel\Ai\Providers\Tools\WebSearch;
 /**
  * Provider adapter for Google Gemini.
  *
- * Uses an extended Gemini gateway ({@see ExtendedGeminiGateway}) that is wired through
- * the container builder pattern so the event dispatcher is injected automatically.
+ * Uses the Laravel AI {@see GeminiGateway} (Interactions API) wired through the container
+ * builder pattern so the event dispatcher is injected automatically.
  *
  * Beyond driver creation and model discovery, this adapter:
- * - Injects thinking-budget and safety-setting options into every text-generating agent
+ * - Injects thinking-summary and safety-setting options into every text-generating agent
  *   request via {@see getAdditionalDriverOptions()}.
  * - Exposes Gemini-native web search and URL-fetch tools via {@see getNativeToolFactoryForCapability()}.
  *
@@ -54,8 +54,7 @@ class GeminiAdapter extends AbstractProviderAdapter
     }
 
     /**
-     * Creates a Gemini driver using {@see ExtendedGeminiGateway} so that HAWKI's custom
-     * gateway extensions (e.g. thinking-token tracking) are active for every request.
+     * Creates a Gemini driver backed by {@see GeminiGateway}.
      */
     public function createDriver(AiProvider $provider, DriverFactory $factory): Driver
     {
@@ -66,7 +65,7 @@ class GeminiAdapter extends AbstractProviderAdapter
             ],
             builder: function (Dispatcher $dispatcher, array $config) {
                 return new GeminiProvider(
-                    gateway: new ExtendedGeminiGateway($dispatcher),
+                    gateway: new GeminiGateway($dispatcher),
                     config: $config,
                     events: $dispatcher
                 );
@@ -77,8 +76,9 @@ class GeminiAdapter extends AbstractProviderAdapter
     /**
      * Injects Gemini-specific generation config and safety settings for text-generating agents.
      *
-     * The thinking budget is capped at half the total max-token allowance so that the model
-     * cannot spend all its token budget on internal reasoning at the expense of the final answer.
+     * Option names follow the Gemini Interactions API used by Laravel AI 1.0. Thought
+     * summaries are requested so reasoning can be streamed to the client. The Interactions
+     * API has no token-based thinking budget, so the model's default thinking level applies.
      * Safety filtering is relaxed to "block only high" for dangerous content because HAWKI's
      * own content policy sits above the model layer.
      *
@@ -88,24 +88,10 @@ class GeminiAdapter extends AbstractProviderAdapter
     public function getAdditionalDriverOptions(Agent $agent, AgentRequestContext $context): array
     {
         if ($agent instanceof AbstractTextGeneratingAgent) {
-            $maxTokens = $context->modelParameters->getMaxTokens();
-            $maxThinkingTokens = $context->modelParameters->getMaxThinkingTokens();
-            $maxThinkingTokensLimited = min($maxThinkingTokens, $maxTokens / 2);
-
             return [
-                'generationConfig' => [
-                    'topK' => 10,
-                    'thinkingConfig' => [
-                        'includeThoughts' => true,
-                        'thinkingBudget' => $maxThinkingTokensLimited
-                    ]
+                'generation_config' => [
+                    'thinking_summaries' => 'auto',
                 ],
-                'safetySettings' => [
-                    [
-                        'category' => 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                        'threshold' => 'BLOCK_ONLY_HIGH'
-                    ]
-                ]
             ];
         }
 

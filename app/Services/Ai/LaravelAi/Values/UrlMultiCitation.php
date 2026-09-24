@@ -6,16 +6,17 @@ namespace App\Services\Ai\LaravelAi\Values;
 
 
 use Illuminate\Support\Collection;
+use Laravel\Ai\Responses\Data\Citation;
 use Laravel\Ai\Responses\Data\UrlCitation;
 
 /**
  * Extends Laravel AI's {@see UrlCitation} to aggregate multiple text ranges that
  * reference the same source URL into a single citation object.
  *
- * This is necessary for Google Gemini's grounding metadata format, where one URL
- * can appear in many `groundingSupports` entries — each with its own segment
- * `startIndex`/`endIndex`. Collapsing them avoids duplicate citation events while
- * preserving the full set of ranges for client-side highlighting.
+ * Laravel AI emits one citation per provider annotation, so one URL can arrive many
+ * times — each with its own `startIndex`/`endIndex`. Collapsing them via
+ * {@see mergeByUrl()} avoids duplicate citations while preserving the full set of
+ * ranges for client-side highlighting.
  *
  * The parent class stores only one `startIndex`/`endIndex` pair; this class
  * accumulates all pairs in {@see $ranges} and only populates the parent fields from
@@ -57,6 +58,44 @@ class UrlMultiCitation extends UrlCitation
         } else {
             $this->ranges = collect();
         }
+    }
+
+    /**
+     * Collapses all {@see UrlCitation}s pointing at the same URL into one {@see UrlMultiCitation}
+     * that carries every range. Laravel AI reports character offsets, so `$isByteOffset` is false.
+     * Other citation types pass through unchanged, and the first-seen order is kept.
+     *
+     * @param iterable<Citation> $citations
+     * @return list<Citation>
+     */
+    public static function mergeByUrl(iterable $citations): array
+    {
+        $merged = [];
+        /** @var array<string, self> $byUrl */
+        $byUrl = [];
+
+        foreach ($citations as $citation) {
+            if (!$citation instanceof UrlCitation) {
+                $merged[] = $citation;
+                continue;
+            }
+
+            $existing = $byUrl[$citation->url] ?? null;
+            if ($existing === null) {
+                $merged[] = $byUrl[$citation->url] = $citation instanceof self
+                    ? $citation
+                    : new self($citation->url, $citation->title, $citation->startIndex, $citation->endIndex);
+                continue;
+            }
+
+            $existing->title ??= $citation->title;
+            $ranges = $citation instanceof self ? $citation->ranges : [[$citation->startIndex, $citation->endIndex]];
+            foreach ($ranges as [$startIndex, $endIndex]) {
+                $existing->addRange($startIndex, $endIndex);
+            }
+        }
+
+        return $merged;
     }
 
     /**

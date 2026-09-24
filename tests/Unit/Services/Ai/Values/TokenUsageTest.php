@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Ai\Values;
 
 use App\Models\Ai\AiModel;
 use App\Services\Ai\Values\TokenUsage;
+use Laravel\Ai\Responses\Data\TextUsage;
 use Laravel\Ai\Responses\Data\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
@@ -41,22 +42,33 @@ class TokenUsageTest extends TestCase
     public function testItFromLaravelUsageMapsPromptTokens(): void
     {
         $model = $this->makeModel();
-        $usage = new Usage(promptTokens: 100, completionTokens: 50, reasoningTokens: 0);
+        $usage = new Usage(inputTokens: 100, outputTokens: 50);
 
         $sut = TokenUsage::fromLaravelUsage($usage, $model);
 
         static::assertSame(100, $sut->promptTokens);
     }
 
-    public function testItFromLaravelUsageSumsCompletionAndReasoningTokens(): void
+    public function testItFromLaravelUsageDoesNotAddReasoningTokensTwice(): void
     {
         $model = $this->makeModel();
-        $usage = new Usage(promptTokens: 10, completionTokens: 40, reasoningTokens: 15);
+        $usage = new TextUsage(inputTokens: 10, outputTokens: 40, reasoningTokens: 15);
 
         $sut = TokenUsage::fromLaravelUsage($usage, $model);
 
-        // Reasoning tokens are folded into completionTokens
-        static::assertSame(55, $sut->completionTokens);
+        // Laravel AI already includes reasoning tokens in outputTokens
+        static::assertSame(40, $sut->completionTokens);
+    }
+
+    public function testItFromLaravelUsageDoesNotAddCachedTokensTwice(): void
+    {
+        $model = $this->makeModel();
+        $usage = new TextUsage(inputTokens: 100, outputTokens: 5, cacheReadInputTokens: 60, cacheWriteInputTokens: 20);
+
+        $sut = TokenUsage::fromLaravelUsage($usage, $model);
+
+        // Laravel AI already includes cached tokens in inputTokens
+        static::assertSame(100, $sut->promptTokens);
     }
 
     public function testItFromLaravelUsageAttachesModel(): void
@@ -72,7 +84,7 @@ class TokenUsageTest extends TestCase
     public function testItFromLaravelUsageWithZeroReasoningTokens(): void
     {
         $model = $this->makeModel();
-        $usage = new Usage(promptTokens: 5, completionTokens: 30, reasoningTokens: 0);
+        $usage = new TextUsage(inputTokens: 5, outputTokens: 30, reasoningTokens: 0);
 
         $sut = TokenUsage::fromLaravelUsage($usage, $model);
 
