@@ -12,9 +12,9 @@ use Laravel\Ai\Responses\Data\Usage;
  * Immutable value object that records the token counts produced by a single AI response.
  *
  * Carries the model that was used together with the number of prompt tokens consumed
- * and completion tokens generated. Reasoning tokens (returned separately by some
- * providers) are folded into `$completionTokens` when constructing from a Laravel AI
- * {@see Usage} object via {@see fromLaravelUsage()}.
+ * and completion tokens generated. When constructed from a Laravel AI {@see Usage} object
+ * via {@see fromLaravelUsage()}, cached input tokens are part of `$promptTokens` and
+ * reasoning tokens are part of `$completionTokens`.
  *
  * Used by {@see UsageAnalyzerService} to persist usage records and by agent
  * implementations (e.g. {@see \App\Services\Ai\Agents\Adapters\AbstractLaravelAgent})
@@ -52,16 +52,17 @@ readonly class TokenUsage implements \JsonSerializable
     /**
      * Creates a TokenUsage from a Laravel AI {@see Usage} response object.
      *
-     * Reasoning tokens are added to `$completionTokens` because HAWKI tracks only
-     * two token buckets (prompt / completion); the split between generated and
-     * reasoning output is not relevant for billing or quota purposes here.
+     * Since Laravel AI 1.0 the reported counts are inclusive: `inputTokens` contains
+     * cached and cache-written tokens and `outputTokens` contains reasoning tokens.
+     * HAWKI tracks only two token buckets (prompt / completion), so the totals map
+     * directly without adding the breakdown on top.
      */
     public static function fromLaravelUsage(Usage $usage, AiModel $model): self
     {
         return new self(
             model: $model,
-            promptTokens: $usage->promptTokens,
-            completionTokens: $usage->completionTokens + $usage->reasoningTokens,
+            promptTokens: $usage->inputTokens,
+            completionTokens: $usage->outputTokens,
         );
     }
 }

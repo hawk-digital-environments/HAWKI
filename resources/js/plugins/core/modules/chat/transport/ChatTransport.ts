@@ -299,7 +299,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                         ...(delta ? {status: 'generating'} : {})
                     });
                 } else if (packet.type === 'citation' && packet.content) {
-                    citations = [...citations, packet.content as UrlCitation];
+                    citations = [...citations, packet.content];
                     this.store.patchMessage(conversationSlug, temporaryId, {citations});
                 } else if (packet.type === 'completion') {
                     completion = Boolean(packet.isDone);

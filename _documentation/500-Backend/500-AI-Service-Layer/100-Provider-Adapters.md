@@ -129,36 +129,13 @@ Each entry is consumed exactly once. If the transfer ID is unknown or already co
 - **`instanceWithConfig($name, $config)`** — resolves a driver with an ephemeral config array that is applied only for this call and then discarded. Uses a `try/finally` to guarantee the previous config is restored even on exception.
 - **`getDefaultInstance()` always throws** — because HAWKI always resolves providers by explicit name. There is no meaningful global default provider.
 
-## Gateway Extensions
+## Gateways and Citations
 
-The Laravel AI SDK defines `Citation` as a typed `StreamEvent`, but its upstream gateway classes do not actually emit it. HAWKI adds two extended gateways that intercept the SSE stream and emit `Citation` events.
+HAWKI uses the stock Laravel AI gateways. Since Laravel AI 1.0 they emit `Citation` stream events natively (Gemini via the Interactions API, OpenAI via `response.output_text.annotation.added`), so HAWKI no longer ships extended gateways.
 
-### `ExtendedGeminiGateway`
+Laravel AI emits one `UrlCitation` per provider annotation, so the same URL can arrive several times. `StreamController` collapses them with `UrlMultiCitation::mergeByUrl()` before cleaning, so clients receive one citation per unique URL carrying every character-offset range in `ranges` (`byteOffset: false`).
 
-`App\Services\Ai\LaravelAi\Drivers\GeminiExtended\ExtendedGeminiGateway` extends `GeminiGateway` with two fixes.
-
-**Fix 1 — Request body post-processing.** The upstream `GeminiGateway` serialises provider-supplied `generationConfig` options into a nested `generationConfig.generationConfig` structure instead of flattening them into the top-level object. This gateway calls `buildTextRequestBody()` on the parent, then post-processes the result to:
-
-- Hoist `generationConfig.generationConfig` keys up to the top-level `generationConfig` object.
-- Promote `safetySettings` from inside `generationConfig` to the request root, where the Gemini API actually reads them.
-
-Without this fix, provider-level generation config (temperature overrides, safety settings) silently has no effect.
-
-**Fix 2 — Citation extraction.** The gateway overrides `parseServerSentEvents()` to record the last raw SSE data frame. It then overrides `processTextStream()` to yield all parent events as normal, but inserts `Citation` events immediately before the `StreamEnd` event by parsing the final frame.
-
-Two citation formats are supported:
-- **Legacy `citationMetadata`** — simple list of `citationSources` URIs.
-- **Google Search grounding** — `groundingSupports` entries that map segment byte ranges to `groundingChunks`. Multiple supports for the same URL are merged into a single `UrlMultiCitation` with accumulated byte ranges.
-
-### `ExtendedOpenAiGateway`
-
-`App\Services\Ai\LaravelAi\Drivers\OpenAiExtended\ExtendedOpenAiGateway` extends `OpenAiGateway` with citation extraction only (no request body fix is needed for OpenAI).
-
-The OpenAI Responses API can annotate message content blocks with `url_citation` entries in the final SSE frame's `response.output` array. The gateway records the last SSE frame via `parseServerSentEvents()`, then injects `Citation` events before `StreamEnd` by scanning `output[*].content[*].annotations` for `url_citation` type entries. Multiple annotations for the same URL are merged into one `UrlMultiCitation` with accumulated character-offset ranges.
-
-:::note
-Both gateways use `UrlMultiCitation` (a HAWKI value object) rather than the SDK's plain `Citation` payload. `UrlMultiCitation` accumulates multiple byte or character ranges for the same URL, so callers receive one citation object per unique source URL regardless of how many text spans reference it.
-:::
+Gemini provider options must use the Interactions API names (`generation_config.thinking_summaries`, `safety_settings`). The Interactions API has no token-based thinking budget and no `top_k`.
 
 ## Config Files and Sync
 
@@ -184,6 +161,4 @@ Adapter authors who override `checkModelStatus()` should be aware that `ModelSta
 | `DriverFactoryFactory` | `Providers/Adapters/` | Creates one `DriverFactory` per provider |
 | `ExtendedAiManager` | `LaravelAi/` | Portal resolution + ephemeral config |
 | `ProviderDriverPortal` | `LaravelAi/Values/` | One-shot Driver transfer registry |
-| `ExtendedGeminiGateway` | `LaravelAi/Drivers/GeminiExtended/` | Request fix + citation extraction |
-| `ExtendedOpenAiGateway` | `LaravelAi/Drivers/OpenAiExtended/` | Citation extraction |
 | `UrlMultiCitation` | `LaravelAi/Values/` | Multi-range citation value object |

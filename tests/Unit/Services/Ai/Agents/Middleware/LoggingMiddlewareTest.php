@@ -8,8 +8,8 @@ use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Client\RequestException;
 use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Contracts\Providers\TextProvider;
-use Laravel\Ai\Prompts\AgentPrompt;
+use Laravel\Ai\Gateway\TextGenerationOptions;
+use Laravel\Ai\PendingStep;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
@@ -41,14 +41,18 @@ class LoggingMiddlewareTest extends TestCase
         return $auth;
     }
 
-    private function makePrompt(string $model = 'gpt-4o', string $invocationId = 'inv-123'): AgentPrompt
+    private function makeStep(string $model = 'gpt-4o', string $invocationId = 'inv-123', ?Agent $agent = null): PendingStep
     {
-        return new AgentPrompt(
-            agent: $this->createMock(Agent::class),
-            prompt: 'Test prompt',
-            attachments: [],
-            provider: $this->createMock(TextProvider::class),
+        return new PendingStep(
+            number: 0,
+            isFinalStep: false,
+            provider: 'openai',
             model: $model,
+            instructions: null,
+            messages: [],
+            tools: [],
+            schema: null,
+            options: new TextGenerationOptions(agent: $agent ?? $this->createMock(Agent::class)),
             invocationId: $invocationId,
         );
     }
@@ -122,7 +126,7 @@ class LoggingMiddlewareTest extends TestCase
         });
 
         $sut = $this->makeSut($logger, $this->makeAuthFactory());
-        $sut->handle($this->makePrompt(), fn($p) => new \stdClass());
+        $sut->handle($this->makeStep(), fn($p) => new \stdClass());
 
         static::assertContains('Sending prompt to agent', $infoCalls);
     }
@@ -137,7 +141,7 @@ class LoggingMiddlewareTest extends TestCase
         });
 
         $sut = $this->makeSut($logger, $this->makeAuthFactory());
-        $sut->handle($this->makePrompt(), fn($p) => new \stdClass());
+        $sut->handle($this->makeStep(), fn($p) => new \stdClass());
 
         static::assertContains('Received response from agent', $infoCalls);
     }
@@ -148,7 +152,7 @@ class LoggingMiddlewareTest extends TestCase
         $expected->value = 'the result';
 
         $sut = $this->makeSut($this->makeLogger(), $this->makeAuthFactory());
-        $result = $sut->handle($this->makePrompt(), fn($p) => $expected);
+        $result = $sut->handle($this->makeStep(), fn($p) => $expected);
 
         static::assertSame($expected, $result);
     }
@@ -162,10 +166,43 @@ class LoggingMiddlewareTest extends TestCase
         });
 
         $sut = $this->makeSut($logger, $this->makeAuthFactory());
-        $sut->handle($this->makePrompt('gpt-4o'), fn($p) => null);
+        $sut->handle($this->makeStep('gpt-4o'), fn($p) => null);
 
         $hasModel = array_filter($captured, fn(array $d) => ($d['model'] ?? null) === 'gpt-4o');
         static::assertNotEmpty($hasModel);
+    }
+
+    public function testItIncludesProviderAgentStepAndInvocationIdInLogData(): void
+    {
+        $agent = $this->createMock(Agent::class);
+
+        $logger = $this->makeLogger();
+        $captured = [];
+        $logger->method('info')->willReturnCallback(function (string $msg, array $data) use (&$captured) {
+            $captured[] = $data;
+        });
+
+        $sut = $this->makeSut($logger, $this->makeAuthFactory());
+        $sut->handle($this->makeStep(invocationId: 'inv-456', agent: $agent), fn($s) => null);
+
+        static::assertSame('openai', $captured[0]['provider']);
+        static::assertSame(get_class($agent), $captured[0]['agent']);
+        static::assertSame(0, $captured[0]['step']);
+        static::assertSame('inv-456', $captured[0]['invocation_id']);
+    }
+
+    public function testItPassesTheStepToTheNextClosure(): void
+    {
+        $step = $this->makeStep();
+        $received = null;
+
+        $sut = $this->makeSut($this->makeLogger(), $this->makeAuthFactory());
+        $sut->handle($step, function ($s) use (&$received) {
+            $received = $s;
+            return null;
+        });
+
+        static::assertSame($step, $received);
     }
 
     public function testItIncludesUserIdInLogDataWhenAuthenticated(): void
@@ -180,7 +217,7 @@ class LoggingMiddlewareTest extends TestCase
         });
 
         $sut = $this->makeSut($logger, $this->makeAuthFactory($user));
-        $sut->handle($this->makePrompt(), fn($p) => null);
+        $sut->handle($this->makeStep(), fn($p) => null);
 
         $hasUserId = array_filter($captured, fn(array $d) => ($d['user_id'] ?? 'missing') === 42);
         static::assertNotEmpty($hasUserId);
@@ -195,7 +232,7 @@ class LoggingMiddlewareTest extends TestCase
         });
 
         $sut = $this->makeSut($logger, $this->makeAuthFactory(null));
-        $sut->handle($this->makePrompt(), fn($p) => null);
+        $sut->handle($this->makeStep(), fn($p) => null);
 
         $hasNullUser = array_filter($captured, fn(array $d) => array_key_exists('user_id', $d) && $d['user_id'] === null);
         static::assertNotEmpty($hasNullUser);
@@ -221,7 +258,7 @@ class LoggingMiddlewareTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Something broke');
 
-        $sut->handle($this->makePrompt(), fn($p) => throw $exception);
+        $sut->handle($this->makeStep(), fn($p) => throw $exception);
     }
 
     public function testItRethrowsGenericThrowableUnchanged(): void
@@ -231,7 +268,7 @@ class LoggingMiddlewareTest extends TestCase
 
         $caught = null;
         try {
-            $sut->handle($this->makePrompt(), fn($p) => throw $original);
+            $sut->handle($this->makeStep(), fn($p) => throw $original);
         } catch (\LogicException $e) {
             $caught = $e;
         }
@@ -258,7 +295,7 @@ class LoggingMiddlewareTest extends TestCase
 
         $this->expectException(RequestException::class);
 
-        $sut->handle($this->makePrompt(), fn($p) => throw $requestException);
+        $sut->handle($this->makeStep(), fn($p) => throw $requestException);
     }
 
     public function testItTruncatesLongResponseBodyTo5000Characters(): void
@@ -278,7 +315,7 @@ class LoggingMiddlewareTest extends TestCase
         $sut = $this->makeSut($logger, $this->makeAuthFactory());
 
         try {
-            $sut->handle($this->makePrompt(), fn($p) => throw $requestException);
+            $sut->handle($this->makeStep(), fn($p) => throw $requestException);
         } catch (RequestException) {
             // expected — we only care about the log call above
         }
@@ -291,7 +328,7 @@ class LoggingMiddlewareTest extends TestCase
 
         $caught = null;
         try {
-            $sut->handle($this->makePrompt(), fn($p) => throw $requestException);
+            $sut->handle($this->makeStep(), fn($p) => throw $requestException);
         } catch (RequestException $e) {
             $caught = $e;
         }
