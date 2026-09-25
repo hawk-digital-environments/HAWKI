@@ -91,7 +91,7 @@
         {/snippet}
         {#each items as item (item.id)}
             <DropdownMenuItem
-                icon={item.icon}
+                iconLeft={item.icon}
                 aria-current={item.active ? 'page' : undefined}
                 onclick={() => activate(item)}
             >

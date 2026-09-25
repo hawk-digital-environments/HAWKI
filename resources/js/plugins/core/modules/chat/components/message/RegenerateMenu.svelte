@@ -106,7 +106,7 @@
         />
     {/snippet}
     <!-- Quick action: same model as before (or the transport's fallback when it is gone). -->
-    <DropdownMenuItem class="regen-menu-item" icon={ArrowReloadHorizontalIcon} disabled={usedModel?.status === 'offline'} onSelect={() => regenerate(usedModel)}>
+    <DropdownMenuItem class="regen-menu-item" iconLeft={ArrowReloadHorizontalIcon} disabled={usedModel?.status === 'offline'} onSelect={() => regenerate(usedModel)}>
         <span class="regen-menu-label">
             {usedModel ? usedModel.label : __('chat.actions.regenerate')}
         </span>

@@ -11,10 +11,12 @@
 
   ```svelte
   <DropdownMenu trigger="Export">
-      <DropdownMenuItem onclick={() => handleExport('pdf')}>
+      <DropdownMenuItem iconLeft={PrintIcon} onclick={() => handleExport('print')}>
+          {__('chat.export.print')}
+      </DropdownMenuItem>
+      <DropdownMenuItem iconRight={ShortcutIcon} onclick={() => handleExport('pdf')}>
           {__('chat.export.pdf')}
       </DropdownMenuItem>
-      <DropdownMenuSeparator />
       <DropdownMenuItem variant="destructive" onclick={handleDelete}>
           {__('chat.export.delete')}
       </DropdownMenuItem>
@@ -37,9 +39,11 @@
         closeOnSelect?: boolean;
         /** Item content. */
         children?: Snippet;
-        /** An optional icon to display alongside the item, e.g. `Settings05Icon`. */
-        icon?: IconComponent;
-        /** Visual style variant. If set to "destructive" without providing an icon, the icon is automatically set to a trash can. */
+        /** An optional icon before the item's content, e.g. `Settings05Icon`. */
+        iconLeft?: IconComponent;
+        /** An optional icon after the item's content; pushed to the row's end edge. */
+        iconRight?: IconComponent;
+        /** Visual style variant. If set to "destructive" without providing `iconLeft`, a trash-can icon is used. */
         variant?: 'default' | 'destructive';
     }
 
@@ -48,18 +52,21 @@
         onSelect,
         closeOnSelect = true,
         children,
-        icon,
+        iconLeft,
+        iconRight,
         variant = 'default',
         ...restProps
     }: Props = $props();
 
-    const Icon = $derived.by(() => {
-        if (variant === 'destructive' && !icon) {
+    const IconLeft = $derived.by(() => {
+        if (variant === 'destructive' && !iconLeft) {
             return Delete02Icon;
         }
-        if (!icon) return null;
-        return icon;
+        if (!iconLeft) return null;
+        return iconLeft;
     });
+
+    const IconRight = $derived.by(() => iconRight ?? null);
 
 </script>
 
@@ -71,10 +78,13 @@
                 variant === 'destructive' && 'variant--destructive'
             ]
         }, restProps, props)}>
-            {#if Icon}
-                <Icon size="14"/>
+            {#if IconLeft}
+                <IconLeft size="14"/>
             {/if}
             {@render children?.()}
+            {#if IconRight}
+                <IconRight size="14" class="dropdown-item-icon-end"/>
+            {/if}
         </div>
     {/snippet}
 </DropdownMenuPrimitive.Item>
@@ -113,5 +123,11 @@
     .dropdown-item[data-disabled] {
         pointer-events: none;
         opacity: 0.5;
+    }
+
+    /* `iconRight` rides the row's end edge (shortcut hints, badges). The class
+       lives on the icon component's svg, hence the :global descendant. */
+    .dropdown-item :global(.dropdown-item-icon-end) {
+        margin-inline-start: auto;
     }
 </style>
