@@ -95,7 +95,9 @@
         <!-- Sits on top of the row rather than inside it: a nav row is a
              button, so its trigger cannot be nested in the same element. -->
         <div class="actions">
-            <DropdownMenu bind:open={menuOpen} align="end">
+            <!-- alignOffset cancels the trigger's --action-gap inset (4px) so the
+                 menu lines up with the row's trailing edge. -->
+            <DropdownMenu bind:open={menuOpen} align="end" contentProps={{alignOffset: -4}}>
                 {#snippet trigger({props})}
                     <ButtonWithTooltip
                         {...props}
@@ -106,10 +108,10 @@
                         tooltipSide="right"
                     />
                 {/snippet}
-                <DropdownMenuItem icon={PencilEdit01Icon} onclick={() => renaming = true}>
+                <DropdownMenuItem iconLeft={PencilEdit01Icon} onclick={() => renaming = true}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
-                <DropdownMenuItem icon={Delete02Icon} variant="destructive" onclick={() => deleteOpen = true}>
+                <DropdownMenuItem iconLeft={Delete02Icon} variant="destructive" onclick={() => deleteOpen = true}>
                     {__('chat.nameMenu.deleteAction')}
                 </DropdownMenuItem>
             </DropdownMenu>

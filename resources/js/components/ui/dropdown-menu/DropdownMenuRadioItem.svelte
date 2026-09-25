@@ -20,6 +20,7 @@
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import Tick02Icon from '../icons/iconset/Tick02Icon.svelte';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
@@ -33,6 +34,10 @@
         closeOnSelect?: boolean;
         /** Item label content. */
         children?: Snippet;
+        /** An optional icon between the state indicator and the item's content. */
+        iconLeft?: IconComponent;
+        /** An optional icon after the item's content; pushed to the row's end edge. */
+        iconRight?: IconComponent;
     }
 
     const {
@@ -42,6 +47,8 @@
         closeOnSelect = true,
         children,
         class: className,
+        iconLeft: IconLeft,
+        iconRight: IconRight,
         ...restProps
     }: Props = $props();
 </script>
@@ -58,7 +65,13 @@
                     {/if}
                 {/if}
             </span>
+            {#if IconLeft}
+                <IconLeft size="14" class="dropdown-item-icon-start"/>
+            {/if}
             {@render children?.()}
+            {#if IconRight}
+                <IconRight size="14" class="dropdown-item-icon-end"/>
+            {/if}
         </div>
     {/snippet}
 </DropdownMenuPrimitive.RadioItem>
@@ -116,5 +129,16 @@
         height: 0.5rem;
         border-radius: var(--corner-full);
         background-color: currentColor;
+    }
+
+    /* No flex gap on the row itself, so the start icon brings its own; the end
+       icon rides the row's end edge. The classes live on the icon components'
+       svgs, hence :global. */
+    .dropdown-radio-item :global(.dropdown-item-icon-start) {
+        margin-inline-end: var(--space-2);
+    }
+
+    .dropdown-radio-item :global(.dropdown-item-icon-end) {
+        margin-inline-start: auto;
     }
 </style>

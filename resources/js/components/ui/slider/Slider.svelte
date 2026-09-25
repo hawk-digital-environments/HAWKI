@@ -117,7 +117,7 @@
         position: absolute;
         height: 100%;
         border-radius: var(--corner-full);
-        background-color: var(--color-hover);
+        background-color: var(--color-highlight);
     }
 
     :global(.slider-thumb) {
