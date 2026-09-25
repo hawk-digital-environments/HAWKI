@@ -39,6 +39,7 @@
     import Switch from '../switch/Switch.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
@@ -66,6 +67,10 @@
         switchLabel?: string;
         /** Shows the pointer cursor on the full row when the row itself has a click action (typically set alongside `toggleOnIndicatorOnly`). */
         rowClickable?: boolean;
+        /** An optional icon before the item's label. */
+        iconLeft?: IconComponent;
+        /** An optional icon after the item's label, before the switch. */
+        iconRight?: IconComponent;
     }
 
     let {
@@ -78,6 +83,8 @@
         toggleOnIndicatorOnly = false,
         switchLabel = __('ui.dropdownMenu.switchItem.toggleLabel'),
         rowClickable = false,
+        iconLeft: IconLeft,
+        iconRight: IconRight,
         ...restProps
     }: Props = $props();
 
@@ -133,7 +140,13 @@
                 onclick={toggleFromIndicator}>
                 <Switch checked={isChecked} {disabled}/>
             </button>
+            {#if IconLeft}
+                <IconLeft size="14" class="dropdown-item-icon-start"/>
+            {/if}
             {@render children?.()}
+            {#if IconRight}
+                <IconRight size="14" class="dropdown-item-icon-end"/>
+            {/if}
         </div>
     {/snippet}
 </DropdownMenuPrimitive.CheckboxItem>
@@ -193,6 +206,17 @@
         border: none;
         background: none;
         cursor: pointer;
+    }
+
+    /* No flex gap on the row itself, so the start icon brings its own; the end
+       icon sits before the absolutely positioned switch's reserved zone. The
+       classes live on the icon components' svgs, hence :global. */
+    .dropdown-checkbox-item :global(.dropdown-item-icon-start) {
+        margin-inline-end: var(--space-2);
+    }
+
+    .dropdown-checkbox-item :global(.dropdown-item-icon-end) {
+        margin-inline-start: auto;
     }
 
     .dropdown-item-indicator--button:disabled {

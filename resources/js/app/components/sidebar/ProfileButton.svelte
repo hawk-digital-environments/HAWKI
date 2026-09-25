@@ -92,14 +92,14 @@
     </div>
 
     <DropdownMenuSeparator/>
-    <DropdownMenuItem icon={Settings05Icon} onclick={openSettings}>
+    <DropdownMenuItem iconLeft={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
-    <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+    <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
         {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
-    <DropdownMenuItem icon={Logout02Icon} onclick={logout}>
+    <DropdownMenuItem iconLeft={Logout02Icon} onclick={logout}>
         {__('ui.profile.logout')}
     </DropdownMenuItem>
 </DropdownMenu>
