@@ -67,7 +67,7 @@
             {#if item.destructive && index > 0 && !items[index - 1].destructive}<DropdownMenuSeparator />{/if}
             <DropdownMenuItem
                 disabled={item.disabled}
-                icon={item.icon}
+                iconLeft={item.icon}
                 variant={item.destructive ? 'destructive' : 'default'}
                 onSelect={() => item.run(menuTrigger)}
             >
