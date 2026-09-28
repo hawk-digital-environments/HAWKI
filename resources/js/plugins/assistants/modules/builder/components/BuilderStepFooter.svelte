@@ -101,17 +101,17 @@
 
     <div class="actions">
         {#if index > 0}
-            <Button variant="ghost" iconLeft={ArrowLeft01Icon}
+            <Button class="icon-start" variant="ghost" iconLeft={ArrowLeft01Icon}
                     onclick={() => goTo(BUILDER_STEPS[index - 1])}>
                 {__('assistants.builder.steps.back')}
             </Button>
         {/if}
         {#if !isLast}
-            <Button variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
+            <Button class="icon-end" variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
                 {__('assistants.builder.steps.continue_to', {step: __(`assistants.builder.sidebar.${BUILDER_STEPS[index + 1]}`)})}
             </Button>
         {:else if canRelease}
-            <Button variant="accent" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
+            <Button class="icon-start" variant="accent" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
                 {releaseText}
             </Button>
         {/if}
@@ -184,6 +184,18 @@
         align-items: center;
         gap: var(--space-1);
         margin-left: auto;
+    }
+
+    /* Optical balance: tighter icon gap, and less padding on the icon side
+       (a glyph carries its own whitespace, unlike a text edge). */
+    .actions :global(.btn) {
+        column-gap: var(--space-1_5);
+    }
+    .actions :global(.btn.icon-start) {
+        padding-left: var(--space-3);
+    }
+    .actions :global(.btn.icon-end) {
+        padding-right: var(--space-3);
     }
 
     @media (--bp-md-and-smaller) {
