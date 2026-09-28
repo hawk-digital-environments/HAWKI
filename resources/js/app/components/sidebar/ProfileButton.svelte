@@ -18,11 +18,18 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
 
     const app = useApp();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
     const connection = useConnection();
+    // The sidebar bumps its rows up a notch on small screens; the avatar and the
+    // settings glyph follow the same step so the footer row stays proportional.
+    const breakpoint = useBreakpoint();
+    const compact = $derived(breakpoint.is('bpMdAndSmaller'));
+    const triggerAvatarSize = $derived(compact ? 24 : 22);
+    const triggerIconSize = $derived(compact ? 18 : 16);
     const userinfo = $derived(connection.hasUserInfo ? connection.userinfo : null);
     const userName = $derived(userinfo?.name || __('ui.profile.fallbackName'));
     const userEmail = $derived(userinfo?.email ?? '');
@@ -61,12 +68,17 @@
     contentProps={{class: 'profile-menu-content'}}
 >
     {#snippet trigger({props})}
-        <SidebarItem label={userName} active={menuOpen} {...props}>
+        <SidebarItem
+            label={userName}
+            active={menuOpen}
+            style={`--nav-media-size: ${triggerAvatarSize}px`}
+            {...props}
+        >
             {#snippet media()}
-                <Avatar src={avatarUrl} name={userName} label={userName} size={22}/>
+                <Avatar src={avatarUrl} name={userName} label={userName} size={triggerAvatarSize}/>
             {/snippet}
             {#snippet trailing()}
-                <Settings03Icon size={16} strokeWidth={2}/>
+                <Settings03Icon size={triggerIconSize} strokeWidth={2}/>
             {/snippet}
         </SidebarItem>
     {/snippet}
@@ -80,20 +92,20 @@
     </div>
 
     <DropdownMenuSeparator/>
-    <DropdownMenuItem icon={Settings05Icon} onclick={openSettings}>
+    <DropdownMenuItem iconLeft={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
-    <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+    <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
         {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
-    <DropdownMenuItem icon={Logout02Icon} onclick={logout}>
+    <DropdownMenuItem iconLeft={Logout02Icon} onclick={logout}>
         {__('ui.profile.logout')}
     </DropdownMenuItem>
 </DropdownMenu>
 
 <style>
-    :global(.profile-menu-content.profile-menu-content) {
+    :global(.profile-menu-content.dropdown-content--dropdown) {
         width: min(15rem, calc(100vw - 2 * var(--space-4)));
     }
 

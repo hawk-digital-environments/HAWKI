@@ -6,14 +6,14 @@ the floating composer via the inherited `--composer-dock-height` property set
 on the page element.
 -->
 <script lang="ts">
-    import AiChat01Icon from '$lib/components/ui/icons/iconset/AiChat01Icon.svelte';
+    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
 </script>
 
 <div class="welcome">
-    <span class="welcome-icon" aria-hidden="true"><AiChat01Icon size={28} /></span>
+    <span class="welcome-icon" aria-hidden="true"><BubbleChatAddIcon size={28} /></span>
     <h1>{__('chat.page.welcomeTitle')}</h1>
     <p>{__('chat.page.welcomeDescription')}</p>
 </div>

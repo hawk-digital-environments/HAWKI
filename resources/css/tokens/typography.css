@@ -7,6 +7,7 @@
 @layer tokens {
     :root {
         --font-family-base: 'Fire Sans', system-ui, sans-serif;
+        --font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
         /* ── Font sizes ─────────────────────────────────────────────────── */
         /* Matches legacy: xxs=×0.7, xs=×0.85, sm=1rem, md=×1.1, lg=×1.25, xl=×1.8, xxl=×2.5 */
