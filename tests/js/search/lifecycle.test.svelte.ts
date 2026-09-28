@@ -14,7 +14,7 @@ import type {ModuleSearchRegistrar, SearchEntry} from '$lib/kernel/search/types.
 async function fixture(declare: (registrar: ModuleSearchRegistrar) => void) {
     const connection = $state({id: 'hawki', isAuthenticated: true, userinfo: {id: 1, hash: 'user-one'}});
     const registry = new SearchRegistry();
-    const module = {name: 'test', plugin: {name: 'core'}, title: () => 'Test', search: declare} as HawkiModuleWithPlugin;
+    const module = {name: 'test', plugin: {name: 'core', isCorePlugin: true}, title: () => 'Test', search: declare} as HawkiModuleWithPlugin;
     registry.registerModule('core:test', module);
     const callbacks = new Map<string, () => void>();
     const storage = new Map<string, string>();

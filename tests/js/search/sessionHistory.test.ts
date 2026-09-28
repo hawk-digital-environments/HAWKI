@@ -47,7 +47,9 @@ describe('SearchRecentsStore', () => {
         store.record('ai-convs/a');
 
         store.useIdentity('user-2');
-        assert.deepEqual(store.entries, []);
+        // The copy keeps the assertion from narrowing `store.entries` to the
+        // empty literal's type for the reads below.
+        assert.deepEqual([...store.entries], []);
         store.record('ai-convs/b');
 
         store.useIdentity('user-1');

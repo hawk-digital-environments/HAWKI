@@ -9,7 +9,8 @@
         "test": "npm run test:search",
         "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test \"tests/js/**/*.test.ts\" \"tests/js/**/*.test.svelte.ts\"",
         "tsc": "tsc -p ./tsconfig.json",
-        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json"
+        "check:tests": "tsc -p ./tsconfig.test.json",
+        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json && tsc -p ./tsconfig.test.json"
     },
     "devDependencies": {
         "@antv/infographic": "^0.2.19",

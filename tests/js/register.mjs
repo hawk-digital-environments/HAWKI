@@ -16,6 +16,7 @@ import {compileModule} from 'svelte/compiler';
 const projectRoot = path.resolve(import.meta.dirname, '../..');
 const libRoot = path.join(projectRoot, 'resources/js');
 
+/** @param {string} specifier */
 function aliasedPath(specifier) {
     if (specifier === '$lib') {
         return libRoot;
@@ -30,6 +31,7 @@ function aliasedPath(specifier) {
 }
 
 /** The `.ts` file a `.js` specifier (or an extensionless one) actually refers to. */
+/** @param {string} target */
 function sourceFile(target) {
     const candidates = target.endsWith('.js')
         ? [target, `${target.slice(0, -3)}.ts`]
