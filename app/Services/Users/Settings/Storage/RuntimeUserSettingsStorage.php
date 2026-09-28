@@ -18,40 +18,12 @@ use Illuminate\Container\Attributes\Singleton;
 #[Singleton()]
 class RuntimeUserSettingsStorage implements UserSettingsStorageInterface
 {
+    use ArrayUserSettingsStorageTrait;
+
     /**
      * @var array<string, array<string, null|string>> namespace → (property → raw value)
      */
     private array $data = [];
-
-    /**
-     * {@inheritDoc}
-     */
-    public function loadRaw(string $namespace): array
-    {
-        return $this->data[$namespace] ?? [];
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function persistChanged(string $namespace, array $changed): void
-    {
-        $this->data[$namespace] = array_merge($this->loadRaw($namespace), $changed);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function removeKeys(string $namespace, array $keys): void
-    {
-        $remaining = $this->loadRaw($namespace);
-
-        foreach ($keys as $key) {
-            unset($remaining[$key]);
-        }
-
-        $this->data[$namespace] = $remaining;
-    }
 
     /**
      * {@inheritDoc}
@@ -64,18 +36,16 @@ class RuntimeUserSettingsStorage implements UserSettingsStorageInterface
     /**
      * {@inheritDoc}
      */
-    public function getNamespaces(): array
+    protected function readAll(): array
     {
-        return array_keys($this->data);
+        return $this->data;
     }
 
     /**
      * {@inheritDoc}
      */
-    public function inheritFrom(UserSettingsStorageInterface $source): void
+    protected function writeAll(array $data): void
     {
-        foreach ($source->getNamespaces() as $namespace) {
-            $this->persistChanged($namespace, $source->loadRaw($namespace));
-        }
+        $this->data = $data;
     }
 }

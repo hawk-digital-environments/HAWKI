@@ -7,6 +7,7 @@ namespace App\Services\Users\Repositories;
 use App\Models\User;
 use App\Models\UserSettingValue;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\LazyCollection;
 
 /**
@@ -49,64 +50,48 @@ class UserSettingValueRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Returns the distinct namespaces the given user has at least one row in.
+     * Applies one diff-based save for the user and namespace: `$changed` is upserted
+     * (existing rows overwritten, missing rows created) and `$removed` is deleted.
      *
-     * @return list<string>
-     */
-    public function getNamespacesForUser(User $user): array
-    {
-        return $this->getQuery()
-            ->where('user_id', $user->id)
-            ->distinct()
-            ->orderBy('namespace')
-            ->pluck('namespace')
-            ->all();
-    }
-
-    /**
-     * Upserts the given raw serialized strings for the user and namespace — existing
-     * rows are overwritten, missing rows are created. Timestamps are maintained by
-     * Eloquent's upsert.
+     * Both halves run in a single transaction because they are one logical write — a
+     * save that landed only its upserts would leave a property that reverted to its
+     * class default still showing the old customized value until the next save.
+     * Timestamps are maintained by Eloquent's upsert.
      *
-     * @param array<string, null|string> $values setting key → serialized value
+     * @param array<string, null|string> $changed setting key → serialized value
+     * @param list<string> $removed setting keys whose rows are to be deleted
      */
-    public function upsertValuesForUser(User $user, string $namespace, array $values): void
+    public function persistForUser(User $user, string $namespace, array $changed, array $removed): void
     {
-        if ([] === $values) {
+        if ([] === $changed && [] === $removed) {
             return;
         }
 
-        $rows = [];
+        DB::transaction(function () use ($user, $namespace, $changed, $removed): void {
+            if ([] !== $changed) {
+                $rows = [];
 
-        foreach ($values as $key => $value) {
-            $rows[] = [
-                'user_id' => $user->id,
-                'namespace' => $namespace,
-                'key' => $key,
-                'value' => $value,
-            ];
-        }
+                foreach ($changed as $key => $value) {
+                    $rows[] = [
+                        'user_id' => $user->id,
+                        'namespace' => $namespace,
+                        'key' => $key,
+                        'value' => $value,
+                    ];
+                }
 
-        UserSettingValue::upsert($rows, ['user_id', 'namespace', 'key'], ['value']);
-    }
+                $this->getQueryWithoutContextualScopes('access')
+                    ->upsert($rows, ['user_id', 'namespace', 'key'], ['value']);
+            }
 
-    /**
-     * Deletes the given setting keys for the user and namespace — used when a value
-     * reverted to its class default (sparse storage).
-     *
-     * @param list<string> $keys
-     */
-    public function deleteKeysForUser(User $user, string $namespace, array $keys): void
-    {
-        if ([] === $keys) {
-            return;
-        }
-
-        $this->getQuery()
-            ->where('user_id', $user->id)
-            ->where('namespace', $namespace)
-            ->whereIn('key', $keys)
-            ->delete();
+            if ([] !== $removed) {
+                $this->getQueryWithoutContextualScopes('access')
+                    ->where('user_id', $user->id)
+                    ->where('namespace', $namespace)
+                    ->whereIn('key', $removed)
+                    ->delete();
+            }
+        });
     }
 
     /**
@@ -115,7 +100,7 @@ class UserSettingValueRepository extends AbstractRepositoryWithContextualScopes
      */
     public function deleteAllForUser(User $user): void
     {
-        $this->getQuery()
+        $this->getQueryWithoutContextualScopes('access')
             ->where('user_id', $user->id)
             ->delete();
     }
@@ -139,7 +124,7 @@ class UserSettingValueRepository extends AbstractRepositoryWithContextualScopes
             ->distinct()
             ->lazyById(500, 'user_id');
 
-        return $rows->map(static fn (UserSettingValue $row) => $row->user_id);
+        return $rows->map(static fn(UserSettingValue $row) => $row->user_id);
     }
 
     /**
@@ -164,18 +149,19 @@ class UserSettingValueRepository extends AbstractRepositoryWithContextualScopes
      */
     public function upsertValueForUserId(int $userId, string $namespace, string $key, ?string $value): void
     {
-        UserSettingValue::upsert(
-            [
+        $this->getQueryWithoutContextualScopes('access')
+            ->upsert(
                 [
-                    'user_id' => $userId,
-                    'namespace' => $namespace,
-                    'key' => $key,
-                    'value' => $value,
+                    [
+                        'user_id' => $userId,
+                        'namespace' => $namespace,
+                        'key' => $key,
+                        'value' => $value,
+                    ],
                 ],
-            ],
-            ['user_id', 'namespace', 'key'],
-            ['value'],
-        );
+                ['user_id', 'namespace', 'key'],
+                ['value'],
+            );
     }
 
     /**

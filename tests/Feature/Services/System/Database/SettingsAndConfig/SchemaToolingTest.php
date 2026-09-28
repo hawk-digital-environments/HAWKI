@@ -139,8 +139,8 @@ class SchemaToolingTest extends TestCase
         User::factory()->create();
 
         $repository = $this->app->make(\App\Services\Users\Repositories\UserSettingValueRepository::class);
-        $repository->upsertValuesForUser($first, 'hawki-core', ['legacy_key' => 'first-legacy']);
-        $repository->upsertValuesForUser($second, 'hawki-core', ['legacy_key' => 'second-legacy']);
+        $repository->persistForUser($first, 'hawki-core', ['legacy_key' => 'first-legacy'], []);
+        $repository->persistForUser($second, 'hawki-core', ['legacy_key' => 'second-legacy'], []);
 
         UserSettingsSchema::update(CoreUserSettings::class, static function (UserSettingsBlueprint $b): void {
             $b->timezone = 'Europe/Berlin';
@@ -176,8 +176,8 @@ class SchemaToolingTest extends TestCase
         $first = User::factory()->create();
         $second = User::factory()->create();
         $repository = $this->app->make(\App\Services\Users\Repositories\UserSettingValueRepository::class);
-        $repository->upsertValuesForUser($first, 'hawki-core', ['theme' => 'dark', 'timezone' => 'UTC']);
-        $repository->upsertValuesForUser($second, 'hawki-core', ['theme' => 'light']);
+        $repository->persistForUser($first, 'hawki-core', ['theme' => 'dark', 'timezone' => 'UTC'], []);
+        $repository->persistForUser($second, 'hawki-core', ['theme' => 'light'], []);
 
         UserSettingsSchema::dropKey(CoreUserSettings::class, 'theme');
 

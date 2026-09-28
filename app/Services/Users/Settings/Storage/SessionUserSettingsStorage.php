@@ -15,7 +15,7 @@ use Illuminate\Contracts\Session\Session;
  * mapping namespace → (property → serialized value). Guest settings are **not
  * promoted to the database** automatically — when the user registers,
  * {@see \App\Services\Users\Settings\UserSettingsService::persistSessionSettings()}
- * converts them via {@see inheritFrom()}.
+ * hands them over via {@see promoteTo()}.
  *
  * The storage is only selected by {@see \App\Services\Users\Settings\UserSettingsService}
  * when the user context resolves no user and the process is not running in the console
@@ -24,42 +24,11 @@ use Illuminate\Contracts\Session\Session;
 #[Singleton()]
 class SessionUserSettingsStorage implements UserSettingsStorageInterface
 {
+    use ArrayUserSettingsStorageTrait;
     private const string SESSION_ROOT_KEY = 'user_settings';
 
     public function __construct(private readonly Session $session)
     {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function loadRaw(string $namespace): array
-    {
-        return $this->sessionData()[$namespace] ?? [];
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function persistChanged(string $namespace, array $changed): void
-    {
-        $this->put(array_merge($this->sessionData(), [
-            $namespace => array_merge($this->sessionData()[$namespace] ?? [], $changed),
-        ]),);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function removeKeys(string $namespace, array $keys): void
-    {
-        $data = $this->sessionData();
-
-        foreach ($keys as $key) {
-            unset($data[$namespace][$key]);
-        }
-
-        $this->put($data);
     }
 
     /**
@@ -71,30 +40,41 @@ class SessionUserSettingsStorage implements UserSettingsStorageInterface
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public function getNamespaces(): array
-    {
-        return array_keys($this->sessionData());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function inheritFrom(UserSettingsStorageInterface $source): void
-    {
-        foreach ($source->getNamespaces() as $namespace) {
-            $this->persistChanged($namespace, $source->loadRaw($namespace));
-        }
-    }
-
-    /**
-     * Returns the full session data map (namespace → property → raw value),
-     * defaulting to an empty array.
+     * Hands every namespace stored for the guest over to the target backend and empties
+     * the session afterwards — the registration-time promotion of a guest's settings
+     * onto the freshly created user.
      *
-     * @return array<string, array<string, null|string>>
+     * Everything is copied before anything is cleared, so an aborted run can only leave
+     * the guest's settings duplicated, never lost. The stored rows are already sparse
+     * (the diff-based save only writes customized keys), so the copy preserves sparsity.
+     *
+     * Deliberately **not** on {@see UserSettingsStorageInterface}: the session is the
+     * only backend that is ever promoted, and
+     * {@see \App\Services\Users\Settings\UserSettingsService::persistSessionSettings()}
+     * is the only caller. Putting it on the contract would force two other backends to
+     * implement a method nobody calls.
      */
-    private function sessionData(): array
+    public function promoteTo(UserSettingsStorageInterface $target): void
+    {
+        $data = $this->readAll();
+
+        if ([] === $data) {
+            return;
+        }
+
+        foreach ($data as $namespace => $rows) {
+            $target->persist($namespace, $rows, []);
+        }
+
+        // Cleared wholesale rather than key by key, so the same session can never
+        // resurface promoted values as guest defaults.
+        $this->writeAll([]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function readAll(): array
     {
         $stored = $this->session->get(self::SESSION_ROOT_KEY);
 
@@ -102,11 +82,9 @@ class SessionUserSettingsStorage implements UserSettingsStorageInterface
     }
 
     /**
-     * Writes the full session data map back.
-     *
-     * @param array<string, array<string, null|string>> $data
+     * {@inheritDoc}
      */
-    private function put(array $data): void
+    protected function writeAll(array $data): void
     {
         $this->session->put(self::SESSION_ROOT_KEY, $data);
     }

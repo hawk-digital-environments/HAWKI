@@ -99,8 +99,10 @@ class UserSettingsService
      *
      * Stale rows for properties that no longer exist on the class are removed as well —
      * under the sparse-storage rule they can never match a default, so they are garbage.
-     * Writes touch only the diff keys, so two parallel saves of different properties
-     * for the same user merge cleanly.
+     * Both halves go to the storage as a single {@see UserSettingsStorageInterface::persist()}
+     * call, so backends that can apply them atomically do. Writes touch only the diff
+     * keys, so two parallel saves of different properties for the same user merge
+     * cleanly.
      *
      * @throws InvalidUserSettingsClassException when $settings is not an {@see AbstractUserSettings} subclass
      */
@@ -126,16 +128,15 @@ class UserSettingsService
             }
         }
 
-        $removeKeys = [];
+        $removed = [];
 
         foreach (array_keys($storage->loadRaw($namespace)) as $property) {
             if (!$diff->isDifferent($property)) {
-                $removeKeys[] = $property;
+                $removed[] = $property;
             }
         }
 
-        $storage->persistChanged($namespace, $changed);
-        $storage->removeKeys($namespace, $removeKeys);
+        $storage->persist($namespace, $changed, $removed);
 
         $this->map[$this->mapKey($storage, $settingsClass)] = $settings;
     }
@@ -145,25 +146,15 @@ class UserSettingsService
      * user's database rows.
      *
      * Called once by the registration flow ({@see \App\Http\Controllers\AuthenticationController::completeRegistration})
-     * after the user has been created and logged in: the database storage inherits
-     * every namespace of the session storage (guest settings live there), and the
-     * session entries are removed afterwards so the same session can never resurface
-     * them as guest defaults. The session's rows are already sparse — only
-     * customized keys — so the copy preserves sparsity.
-     *
-     * Identity-map entries of the session storage are dropped along with its data;
-     * database-backed instances for the new user hydrate fresh on next access.
+     * after the user has been created and logged in. The hand-over itself belongs to
+     * the session storage ({@see SessionUserSettingsStorage::promoteTo()}) — it owns
+     * the rows and the order in which they are copied and cleared. What stays here is
+     * the part the service owns: dropping the session-backed entries from the identity
+     * map, so database-backed instances for the new user hydrate fresh on next access.
      */
     public function persistSessionSettings(): void
     {
-        $this->databaseStorage->inheritFrom($this->sessionStorage);
-
-        foreach ($this->sessionStorage->getNamespaces() as $namespace) {
-            $this->sessionStorage->removeKeys(
-                $namespace,
-                array_keys($this->sessionStorage->loadRaw($namespace)),
-            );
-        }
+        $this->sessionStorage->promoteTo($this->databaseStorage);
 
         $sessionMapKey = $this->sessionStorage->getStorageId() . '|';
         $this->map = array_filter(

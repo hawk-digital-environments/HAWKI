@@ -43,17 +43,9 @@ class DatabaseUserSettingsStorage implements UserSettingsStorageInterface
     /**
      * {@inheritDoc}
      */
-    public function persistChanged(string $namespace, array $changed): void
+    public function persist(string $namespace, array $changed, array $removed): void
     {
-        $this->repository->upsertValuesForUser($this->currentUser(), $namespace, $changed);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function removeKeys(string $namespace, array $keys): void
-    {
-        $this->repository->deleteKeysForUser($this->currentUser(), $namespace, $keys);
+        $this->repository->persistForUser($this->currentUser(), $namespace, $changed, $removed);
     }
 
     /**
@@ -62,26 +54,6 @@ class DatabaseUserSettingsStorage implements UserSettingsStorageInterface
     public function getStorageId(): string
     {
         return 'database:' . $this->currentUser()->id;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getNamespaces(): array
-    {
-        return $this->repository->getNamespacesForUser($this->currentUser());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function inheritFrom(UserSettingsStorageInterface $source): void
-    {
-        $user = $this->currentUser();
-
-        foreach ($source->getNamespaces() as $namespace) {
-            $this->repository->upsertValuesForUser($user, $namespace, $source->loadRaw($namespace));
-        }
     }
 
     /**

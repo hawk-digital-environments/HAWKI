@@ -27,13 +27,13 @@ class UserSettingValueRepositoryTest extends TestCase
     // Per-user access
     // =========================================================================
 
-    public function testItUpsertsAndReadsRawRowsPerUser(): void
+    public function testItPersistForUserUpsertsAndReadsRawRowsPerUser(): void
     {
         $user = User::factory()->create();
         $other = User::factory()->create();
 
-        $this->sut->upsertValuesForUser($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'Europe/Berlin']);
-        $this->sut->upsertValuesForUser($other, 'hawki-core', ['theme' => 'light']);
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'Europe/Berlin']);
+        $this->givenRows($other, 'hawki-core', ['theme' => 'light']);
 
         self::assertSame(
             ['theme' => 'dark', 'timezone' => 'Europe/Berlin'],
@@ -41,7 +41,7 @@ class UserSettingValueRepositoryTest extends TestCase
         );
 
         // Upserts overwrite existing rows of the same user and namespace.
-        $this->sut->upsertValuesForUser($user, 'hawki-core', ['theme' => 'light']);
+        $this->sut->persistForUser($user, 'hawki-core', ['theme' => 'light'], []);
 
         self::assertSame(
             ['theme' => 'light', 'timezone' => 'Europe/Berlin'],
@@ -54,17 +54,17 @@ class UserSettingValueRepositoryTest extends TestCase
         $user = User::factory()->create();
         $other = User::factory()->create();
 
-        $this->sut->upsertValuesForUser($user, 'hawki-core', ['theme' => 'dark']);
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark']);
 
         self::assertSame([], $this->sut->getRawRowsForUser($other, 'hawki-core'));
     }
 
-    public function testItDeleteKeysForUserRemovesOnlyTheGivenKeys(): void
+    public function testItPersistForUserRemovesOnlyTheGivenKeys(): void
     {
         $user = User::factory()->create();
 
-        $this->sut->upsertValuesForUser($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'Europe/Berlin']);
-        $this->sut->deleteKeysForUser($user, 'hawki-core', ['theme']);
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'Europe/Berlin']);
+        $this->sut->persistForUser($user, 'hawki-core', [], ['theme']);
 
         self::assertSame(
             ['timezone' => 'Europe/Berlin'],
@@ -72,12 +72,35 @@ class UserSettingValueRepositoryTest extends TestCase
         );
     }
 
+    public function testItPersistForUserAppliesUpsertsAndRemovalsInOneCall(): void
+    {
+        $user = User::factory()->create();
+
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'Europe/Berlin']);
+        $this->sut->persistForUser($user, 'hawki-core', ['timezone' => 'UTC'], ['theme']);
+
+        self::assertSame(
+            ['timezone' => 'UTC'],
+            $this->sut->getRawRowsForUser($user, 'hawki-core'),
+        );
+    }
+
+    public function testItPersistForUserIsANoOpWhenNothingChanged(): void
+    {
+        $user = User::factory()->create();
+
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark']);
+        $this->sut->persistForUser($user, 'hawki-core', [], []);
+
+        self::assertSame(['theme' => 'dark'], $this->sut->getRawRowsForUser($user, 'hawki-core'));
+    }
+
     public function testItDeleteAllForUserRemovesRowsAcrossAllNamespaces(): void
     {
         $user = User::factory()->create();
 
-        $this->sut->upsertValuesForUser($user, 'hawki-core', ['theme' => 'dark']);
-        $this->sut->upsertValuesForUser($user, 'other-namespace', ['key' => 'value']);
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark']);
+        $this->givenRows($user, 'other-namespace', ['key' => 'value']);
 
         $this->sut->deleteAllForUser($user);
 
@@ -95,9 +118,9 @@ class UserSettingValueRepositoryTest extends TestCase
         $other = User::factory()->create();
 
         // Two rows for $user (still one id), one row for $other, none for a third user.
-        $this->sut->upsertValuesForUser($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'UTC']);
-        $this->sut->upsertValuesForUser($other, 'hawki-core', ['theme' => 'light']);
-        $this->sut->upsertValuesForUser($other, 'other-namespace', ['key' => 'value']);
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'UTC']);
+        $this->givenRows($other, 'hawki-core', ['theme' => 'light']);
+        $this->givenRows($other, 'other-namespace', ['key' => 'value']);
 
         $ids = $this->sut->getUserIdsForNamespaceLazy('hawki-core')->values()->all();
 
@@ -120,8 +143,8 @@ class UserSettingValueRepositoryTest extends TestCase
         $user = User::factory()->create();
         $other = User::factory()->create();
 
-        $this->sut->upsertValuesForUser($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'UTC']);
-        $this->sut->upsertValuesForUser($other, 'hawki-core', ['theme' => 'light', 'timezone' => 'UTC']);
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark', 'timezone' => 'UTC']);
+        $this->givenRows($other, 'hawki-core', ['theme' => 'light', 'timezone' => 'UTC']);
 
         $this->sut->deleteForNamespaceAndKey('hawki-core', 'theme');
 
@@ -133,8 +156,8 @@ class UserSettingValueRepositoryTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->sut->upsertValuesForUser($user, 'hawki-core', ['theme' => 'dark']);
-        $this->sut->upsertValuesForUser($user, 'other-namespace', ['key' => 'value']);
+        $this->givenRows($user, 'hawki-core', ['theme' => 'dark']);
+        $this->givenRows($user, 'other-namespace', ['key' => 'value']);
 
         $this->sut->deleteForNamespace('hawki-core');
 
@@ -147,13 +170,25 @@ class UserSettingValueRepositoryTest extends TestCase
         $user = User::factory()->create();
         $other = User::factory()->create();
 
-        $this->sut->upsertValuesForUser($user, 'old-namespace', ['theme' => 'dark']);
-        $this->sut->upsertValuesForUser($other, 'old-namespace', ['theme' => 'light']);
+        $this->givenRows($user, 'old-namespace', ['theme' => 'dark']);
+        $this->givenRows($other, 'old-namespace', ['theme' => 'light']);
 
         $this->sut->renameNamespace('old-namespace', 'new-namespace');
 
         self::assertSame(['theme' => 'dark'], $this->sut->getRawRowsForUserId($user->id, 'new-namespace'));
         self::assertSame(['theme' => 'light'], $this->sut->getRawRowsForUserId($other->id, 'new-namespace'));
         self::assertSame([], $this->sut->getRawRowsForUserId($user->id, 'old-namespace'));
+    }
+
+    // =========================================================================
+    // Fixtures
+    // =========================================================================
+
+    /**
+     * @param array<string, null|string> $rows
+     */
+    private function givenRows(User $user, string $namespace, array $rows): void
+    {
+        $this->sut->persistForUser($user, $namespace, $rows, []);
     }
 }

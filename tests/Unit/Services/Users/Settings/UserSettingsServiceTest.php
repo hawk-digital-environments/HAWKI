@@ -174,8 +174,8 @@ class UserSettingsServiceTest extends TestCase
         $settings->theme = Theme::Dark;
 
         $this->runtimeStorage->expects($this->once())
-            ->method('persistChanged')
-            ->with('hawki-core', ['theme' => 'dark']);
+            ->method('persist')
+            ->with('hawki-core', ['theme' => 'dark'], []);
 
         $this->sut->save($settings);
     }
@@ -190,12 +190,8 @@ class UserSettingsServiceTest extends TestCase
         $settings->theme = Theme::Auto;
 
         $this->runtimeStorage->expects($this->once())
-            ->method('persistChanged')
-            ->with('hawki-core', []);
-
-        $this->runtimeStorage->expects($this->once())
-            ->method('removeKeys')
-            ->with('hawki-core', ['theme']);
+            ->method('persist')
+            ->with('hawki-core', [], ['theme']);
 
         $this->sut->save($settings);
     }
@@ -208,8 +204,8 @@ class UserSettingsServiceTest extends TestCase
         $settings = $this->sut->get(CoreUserSettings::class);
 
         $this->runtimeStorage->expects($this->once())
-            ->method('removeKeys')
-            ->with('hawki-core', ['removed_key']);
+            ->method('persist')
+            ->with('hawki-core', [], ['removed_key']);
 
         $this->sut->save($settings);
     }
@@ -224,12 +220,8 @@ class UserSettingsServiceTest extends TestCase
         $settings->theme = Theme::Auto;
 
         $this->runtimeStorage->expects($this->once())
-            ->method('persistChanged')
-            ->with('hawki-core', ['timezone' => 'Europe/Berlin']);
-
-        $this->runtimeStorage->expects($this->once())
-            ->method('removeKeys')
-            ->with('hawki-core', ['theme']);
+            ->method('persist')
+            ->with('hawki-core', ['timezone' => 'Europe/Berlin'], ['theme']);
 
         $this->sut->save($settings);
     }
@@ -247,6 +239,51 @@ class UserSettingsServiceTest extends TestCase
     }
 
     // =========================================================================
+    // Session -> database promotion
+    // =========================================================================
+
+    public function testItPersistSessionSettingsHandsTheSessionOverToTheDatabase(): void
+    {
+        $this->givenGuestWithSessionRows(['hawki-core' => ['theme' => 'dark']]);
+
+        $this->sessionStorage->expects($this->once())
+            ->method('promoteTo')
+            ->with($this->databaseStorage);
+
+        $this->sut->persistSessionSettings();
+    }
+
+    public function testItPersistSessionSettingsDropsTheSessionBackedIdentityMapEntries(): void
+    {
+        $this->givenGuestWithSessionRows(['hawki-core' => ['theme' => 'dark']]);
+        $this->systemEnvironment->method('runningInConsole')->willReturn(false);
+
+        $guestInstance = $this->sut->get(CoreUserSettings::class);
+
+        $this->sut->persistSessionSettings();
+
+        // The promoted instance must not survive the promotion — the next read
+        // hydrates freshly from whichever storage now matches the caller.
+        self::assertNotSame($guestInstance, $this->sut->get(CoreUserSettings::class));
+    }
+
+    public function testItPersistSessionSettingsKeepsInstancesOfOtherStorages(): void
+    {
+        // Only the session-backed identity-map entries are dropped; a database-backed
+        // instance resolved earlier in the same process stays cached.
+        $this->givenUser(42);
+        $this->databaseStorage->method('getStorageId')->willReturn('database:42');
+        $this->databaseStorage->method('loadRaw')->willReturn([]);
+        $this->sessionStorage->method('getStorageId')->willReturn('session');
+
+        $dbInstance = $this->sut->get(CoreUserSettings::class);
+
+        $this->sut->persistSessionSettings();
+
+        self::assertSame($dbInstance, $this->sut->get(CoreUserSettings::class));
+    }
+
+    // =========================================================================
     // Fixtures
     // =========================================================================
 
@@ -261,6 +298,17 @@ class UserSettingsServiceTest extends TestCase
     private function givenGuest(): void
     {
         $this->userContext->method('getUser')->willReturn(null);
+    }
+
+    /**
+     * @param array<string, array<string, null|string>> $rows namespace -> (key -> raw value)
+     */
+    private function givenGuestWithSessionRows(array $rows): void
+    {
+        $this->givenGuest();
+        $this->sessionStorage->method('getStorageId')->willReturn('session');
+        $this->sessionStorage->method('loadRaw')
+            ->willReturnCallback(static fn (string $namespace): array => $rows[$namespace] ?? []);
     }
 
     private function givenGuestInCliWithRawRows(array $rawRows): void
