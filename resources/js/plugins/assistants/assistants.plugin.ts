@@ -15,7 +15,6 @@ import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svel
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
 import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
 import ComputerIcon from '$lib/components/ui/icons/iconset/ComputerIcon.svelte';
-import TestTube01Icon from '$lib/components/ui/icons/iconset/TestTube01Icon.svelte';
 import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
 import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
 import CreateAssistantButton from '$plugins/assistants/components/CreateAssistantButton.svelte';
@@ -179,15 +178,6 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 route: 'assistants.builder.knowledge',
                 active: ctx.router.isRouteActive('assistants.builder.knowledge'),
                 disabled: isBuilderStepLocked('knowledge')
-            },
-            {
-                id: 'builder.test',
-                level: 'builder',
-                label: ctx.translate('assistants.builder.sidebar.test'),
-                icon: TestTube01Icon,
-                route: 'assistants.builder.test',
-                active: ctx.router.isRouteActive('assistants.builder.test'),
-                disabled: isBuilderStepLocked('test')
             },
             {
                 id: 'builder.publish',

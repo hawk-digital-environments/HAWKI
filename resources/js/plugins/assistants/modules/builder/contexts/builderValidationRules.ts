@@ -2,7 +2,7 @@ import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
 import { ValidationState } from "$plugins/assistants/types/enums/ValidationState";
 
 /** The builder's steps in flow order; each maps to `assistants.builder.<step>`. */
-export const BUILDER_STEPS = ['general', 'model', 'behaviour', 'knowledge', 'test', 'publish'] as const;
+export const BUILDER_STEPS = ['general', 'model', 'behaviour', 'knowledge', 'publish'] as const;
 export type BuilderStep = typeof BUILDER_STEPS[number];
 
 /** Per-field error message, keyed by `Assistant` field. */

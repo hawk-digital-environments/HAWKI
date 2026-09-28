@@ -283,7 +283,11 @@
             },
             "test": {
                 "title": "Private Testumgebung",
-                "description": "Teste und verfeinere deinen Assistenten."
+                "description": "Teste und verfeinere deinen Assistenten.",
+                "open": "Testchat öffnen",
+                "close": "Testchat schließen",
+                "reset": "Unterhaltung neu starten",
+                "no_model": "Wähle zuerst ein Modell"
             },
             "publish": {
                 "title": "Veröffentlichen",
@@ -345,7 +349,11 @@
             }
         },
         "testChat": {
-            "empty_hint": "Starte eine Unterhaltung, um den Assistenten zu testen."
+            "empty_hint": "Schreib eine Nachricht, um ihn auszuprobieren. Änderungen wirken sofort, ohne Speichern.",
+            "no_model_hint": "Wähle ein Modell, um mit dem Testen zu beginnen.",
+            "unnamed": "Dein Assistent",
+            "placeholder": "Nachricht an deinen Assistenten…",
+            "send": "Senden"
         }
     }
 }

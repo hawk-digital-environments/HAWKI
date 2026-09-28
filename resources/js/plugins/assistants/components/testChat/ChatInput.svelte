@@ -1,6 +1,7 @@
 <script lang="ts">
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
     import Button from "$lib/components/ui/button/Button.svelte";
-    import SentIcon from "$lib/components/ui/icons/iconset/SentIcon.svelte";
+    import ArrowUp02Icon from "$lib/components/ui/icons/iconset/ArrowUp02Icon.svelte";
     import {resizeTextarea, watchManualResize} from "./textarea-resizer";
     import {useChatStore} from "./stream/chatStore.svelte.js";
     import {useChatConfig} from "./stream/chatConfig.svelte.js";
@@ -9,7 +10,9 @@
     const config = useChatConfig();
     const hasModel = $derived(config.hasModel);
 
-    const HINT = "Kein Modell ausgewählt — wähle ein Modell aus, um den Assistenten zu testen.";
+    const {__} = useTranslator();
+    const HINT = $derived(__('assistants.builder.test.no_model'));
+    const canSend = $derived(hasModel && value.trim() !== "" && chat.status !== "streaming");
 
     let inputField = $state<HTMLTextAreaElement | null>(null);
     let minHeight = $state<number | null>(null);
@@ -30,7 +33,7 @@
 
     const send = (): void => {
         const text = value.trim();
-        if (!text || !hasModel) return;
+        if (!text || !canSend) return;
         chat.send(text);
         value = "";
         requestAnimationFrame(resize);
@@ -45,48 +48,58 @@
 </script>
 
 <div class="chatlog-input-container">
-    {#if !hasModel}
-        <p class="handle-hint">{HINT}</p>
-    {/if}
-    <textarea
-        bind:this={inputField}
-        bind:value
-        id="chatbox-input"
-        class="chatbox-input"
-        placeholder={hasModel ? "Nachricht schreiben…" : ""}
-        disabled={!hasModel}
-        title={hasModel ? "" : HINT}
-        rows="1"
-        oninput={resize}
-        onkeydown={handleKeydown}
-    ></textarea>
-    <div class="send-btn-wrapper" title={hasModel ? "" : HINT}>
-        <Button
-            variant="fill"
-            iconLeft={SentIcon}
+    <div class="composer" class:disabled={!hasModel}>
+        <textarea
+            bind:this={inputField}
+            bind:value
+            id="chatbox-input"
+            class="chatbox-input"
+            placeholder={hasModel ? __('assistants.testChat.placeholder') : HINT}
             disabled={!hasModel}
+            aria-label={__('assistants.testChat.placeholder')}
+            rows="1"
+            oninput={resize}
+            onkeydown={handleKeydown}
+        ></textarea>
+        <Button
+            class="send-btn"
+            variant="accent"
+            iconLeft={ArrowUp02Icon}
+            aria-label={__('assistants.testChat.send')}
+            disabled={!canSend}
             onclick={send}
         />
     </div>
 </div>
 
 <style>
+    /* Mirrors the builder's step footer bar: same bottom inset, height,
+       fill and pill shape, so both columns end on one line. */
     .chatlog-input-container {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        align-items: end;
+        padding: 0 var(--space-4) var(--space-4);
+    }
+
+    .composer {
+        --composer-inset: var(--space-1_5);
+        --composer-control: 2.5rem;
+        display: flex;
+        align-items: flex-end;
         gap: var(--space-2);
-        padding: var(--space-2);
-        border-top: var(--divider);
+        padding: var(--composer-inset) var(--composer-inset) var(--composer-inset) var(--space-5);
+        border-radius: calc(var(--composer-control) / 2 + var(--composer-inset));
+        background: var(--color-surface-light);
     }
 
     .chatbox-input {
+        flex: 1;
+        min-width: 0;
+        box-sizing: border-box;
         background-color: transparent;
-        /* Size to content: a single-row base that grows up to max-height,
-           rather than a giant fixed block. */
-        min-height: 2.5rem;
+        /* One line is exactly the send button's height, so text and button
+           share a centre line; grows up to max-height from there. */
+        min-height: var(--composer-control);
         max-height: 10rem;
-        padding: var(--space-2) var(--space-3);
+        padding: var(--space-2) 0;
         border: none;
         outline: none;
         resize: none;
@@ -100,17 +113,14 @@
         color: var(--color-text-muted);
     }
 
-    .handle-hint {
-        grid-column: 1 / -1;
-        margin: 0;
-        padding: var(--space-1) var(--space-3);
-        font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
+    .composer.disabled .chatbox-input {
+        cursor: not-allowed;
     }
 
-    .send-btn-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .composer :global(.send-btn) {
+        flex-shrink: 0;
+        width: var(--composer-control);
+        height: var(--composer-control);
+        border-radius: var(--corner-full);
     }
 </style>

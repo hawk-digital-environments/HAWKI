@@ -283,7 +283,11 @@
             },
             "test": {
                 "title": "Private test environment",
-                "description": "Test and refine your assistant."
+                "description": "Test and refine your assistant.",
+                "open": "Open test chat",
+                "close": "Close test chat",
+                "reset": "Restart conversation",
+                "no_model": "Choose a model first"
             },
             "publish": {
                 "title": "Publish",
@@ -345,7 +349,11 @@
             }
         },
         "testChat": {
-            "empty_hint": "Start a conversation to test the assistant."
+            "empty_hint": "Send a message to try it out. Your changes apply instantly, no need to save.",
+            "no_model_hint": "Pick a model to start testing.",
+            "unnamed": "Your assistant",
+            "placeholder": "Message your assistant…",
+            "send": "Send"
         }
 
 
