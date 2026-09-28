@@ -35,11 +35,6 @@ export class BuilderModule implements HawkiCoreModule {
                 {name: "assistants.builder.model"}
             );
             builder.lazyRoute(
-                '/test',
-                () => import('$plugins/assistants/modules/builder/pages/advanced/sections/test.svelte'),
-                {name: "assistants.builder.test"}
-            );
-            builder.lazyRoute(
                 '/publish',
                 () => import('$plugins/assistants/modules/builder/pages/advanced/sections/publish.svelte'),
                 {name: "assistants.builder.publish"}

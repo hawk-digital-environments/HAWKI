@@ -17,10 +17,9 @@ use Psr\Log\LoggerInterface;
  * Composes the AI run parameters for a chat exchange driven by an assistant:
  * the fully assembled system prompt, the assistant's model (and whether the
  * client may override it), the sampling parameters, and the tool-transfer
- * strings — the persisted capability selections (`capabilities`), the
- * concrete `ai_tools` attachments, and the transfer strings injected by
- * active {@see AgentTool}s (ambient capabilities granted by modules, e.g.
- * the knowledge-base tool of the AssistantKnowledge slice).
+ * strings — the concrete `ai_tools` attachments and the transfer strings
+ * injected by active {@see AgentTool}s (ambient capabilities granted by
+ * modules, e.g. the knowledge-base tool of the AssistantKnowledge slice).
  *
  * An active agent tool supersedes attached tools under the tool names it
  * grants (the `name:` prefix of its transfer strings): the grant is the
@@ -70,7 +69,6 @@ class AssistantRunComposer
                 'max_tokens' => $assistant->max_tokens,
             ]),
             toolTransferStrings: [
-                ...($assistant->capabilities ?? []),
                 ...$assistant->ai_tools
                     ->reject(fn (AiTool $tool): bool => $this->isSupersededByGrant($tool, $assistant, $agentToolStrings))
                     ->map(fn (AiTool $tool): string => $tool->name)

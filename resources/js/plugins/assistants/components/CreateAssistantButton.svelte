@@ -1,5 +1,5 @@
 <!--
-  @component The assistants module's primary sidebar action: the "Erstellen"
+  @component The assistants module's primary sidebar action: the "Create assistant"
   button, contributed to the app sidebar's pinned action area via the
   `sidebarSlots` hook (see `AssistantsPlugin.hooks()`); its slot is active on
   dashboard routes only, so it hides while the builder is open — mirroring the
@@ -13,7 +13,7 @@
 -->
 <script lang="ts">
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
-    import AddCircleIcon from '$lib/components/ui/icons/iconset/AddCircleIcon.svelte';
+    import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
@@ -31,7 +31,7 @@
 </script>
 
 <SidebarButton
-    icon={AddCircleIcon}
+    icon={Add01Icon}
     label={__('assistants.sidebar.create')}
     onclick={startCreate}
 />

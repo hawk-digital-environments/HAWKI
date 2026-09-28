@@ -65,8 +65,11 @@ class AssistantChatAgentFactory implements AgentFactoryInterface
             return null;
         }
 
-        $handle = $payload->assistantHandle();
-        if ($handle === null) {
+        // The slice's own extension field (declared through the
+        // HawkiExtensionsRegistry): the handle of the assistant this run is
+        // driven by.
+        $handle = $payload->hawkiExtensions()['assistant_handle'] ?? null;
+        if (!\is_string($handle) || $handle === '') {
             return null;
         }
 

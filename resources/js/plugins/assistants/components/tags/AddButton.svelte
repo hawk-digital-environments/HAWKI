@@ -69,6 +69,8 @@
                 containerEl &&
                 !containerEl.contains(e.target as Node)
             ) {
+                // Clicking away keeps what was typed rather than dropping it.
+                confirm();
                 switchMode(false);
             }
         }

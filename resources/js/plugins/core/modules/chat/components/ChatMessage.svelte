@@ -213,19 +213,19 @@
 
         {#if !message.isStreaming && !message.isPending}
             <ul class="actions" aria-label={__('chat.actions.groupLabel', {author: authorName})}>
-                <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Copy01Icon} tooltip={__('chat.actions.copy')} onclick={copyMessage} /></li>
-                <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={VolumeHighIcon} tooltip={__('chat.actions.speak')} onclick={speakMessage} /></li>
+                <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={Copy01Icon} tooltip={__('chat.actions.copy')} onclick={copyMessage} /></li>
+                <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={VolumeHighIcon} tooltip={__('chat.actions.speak')} onclick={speakMessage} /></li>
                 {#if composer && !isAssistant}
-                    <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageEdit01Icon} tooltip={__('chat.actions.edit')} onclick={() => composer?.mode.enter('edit', message)} /></li>
+                    <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={MessageEdit01Icon} tooltip={__('chat.actions.edit')} onclick={() => composer?.mode.enter('edit', message)} /></li>
                 {/if}
                 {#if onRegenerate && isAssistant}
                     <!-- The action bar disappears while the reply streams; focus moves to the article instead of getting lost. -->
                     <li><RegenerateMenu {message} {onRegenerate} returnFocusTo={article} /></li>
                 {/if}
                 {#if canThread}
-                    <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} /></li>
+                    <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} /></li>
                 {/if}
-                <li><ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Delete02Icon} tooltip={__('chat.actions.delete')} onclick={() => onDelete(message)} /></li>
+                <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={Delete02Icon} tooltip={__('chat.actions.delete')} onclick={() => onDelete(message)} /></li>
             </ul>
         {/if}
 
@@ -257,7 +257,7 @@
                             </div>
                         {:else if canThread}
                             <div class="thread-reply">
-                                <Button variant="ghost" size="xs" iconLeft={MessageCircleReplyIcon} onclick={openThreadComposer}>
+                                <Button variant="ghost" size="sm" iconLeft={MessageCircleReplyIcon} onclick={openThreadComposer}>
                                     {__('chat.thread.reply')}
                                 </Button>
                             </div>

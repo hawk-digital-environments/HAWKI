@@ -1,0 +1,76 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Assistant;
+
+use App\Services\Assistant\BuilderGuide\Values\AssistantBuilderDraftSchema;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
+
+/**
+ * One turn of the assistant builder's guide chat. Only someone who may edit
+ * the assistant gets the guide, since its answers are meant to be written
+ * into the assistant.
+ */
+class AssistantBuilderGuideRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        Gate::authorize('update', $this->route('assistant'));
+
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'messages' => ['required', 'array', 'min:1'],
+            'messages.*.role' => ['required', 'string', 'in:user,assistant'],
+            'messages.*.content' => ['required', 'string'],
+            'draft' => ['present', 'array'],
+            ...AssistantBuilderDraftSchema::draftRules(),
+            'avatarBackgrounds' => ['sometimes', 'array'],
+            'avatarBackgrounds.*' => ['string', 'distinct', 'regex:/^[a-z0-9-]{1,64}$/'],
+        ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $messages = $this->input('messages');
+            if (\is_array($messages) && 'user' !== (end($messages)['role'] ?? null)) {
+                $validator->errors()->add('messages', 'The last message must be from the user.');
+            }
+        });
+    }
+
+    /**
+     * @return list<array{role: string, content: string}>
+     */
+    public function guideMessages(): array
+    {
+        return array_values(array_map(
+            static fn (array $m): array => ['role' => $m['role'], 'content' => $m['content']],
+            $this->validated('messages'),
+        ));
+    }
+
+    /**
+     * Ids of the avatar background presets the builder offers.
+     *
+     * @return list<string>
+     */
+    public function avatarBackgrounds(): array
+    {
+        return array_values($this->validated('avatarBackgrounds') ?? []);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function draft(): array
+    {
+        return $this->validated('draft') ?? [];
+    }
+}

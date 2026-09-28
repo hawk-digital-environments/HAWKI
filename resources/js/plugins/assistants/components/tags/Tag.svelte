@@ -30,6 +30,8 @@
         gap: var(--space-1);
         height: 2.25rem;
         width: max-content;
+        /* The text stays on one line; whole tags wrap instead (TagInput). */
+        white-space: nowrap;
         justify-content: space-between;
         padding: 0 var(--space-1_5) 0 var(--space-3);
         align-items: center;
@@ -42,6 +44,11 @@
     }
     .tag:hover{
         background-color: var(--color-accent-200);
+    }
+    /* accent-200 stays light in dark mode; step up to the solid fill instead
+       so the light accent text keeps its contrast. */
+    :global(html.darkMode) .tag:hover{
+        background-color: var(--color-accent-fill-hover);
     }
     .tag.highlight{
         animation: highlight 200ms ease-in-out;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\ConfigFileSync\Syncers;
 
-
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\SystemModels\SystemModelRegistry;
 use App\Services\Ai\SystemModels\SystemModelRepository;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
@@ -18,15 +18,18 @@ use Illuminate\Container\Attributes\Config;
  * Syncs system-model assignments from config into the database.
  *
  * System models are the specific AI model instances that HAWKI selects automatically for
- * built-in tasks such as "default chat", "title generation", "prompt improvement" and
- * "summary". They are configured via `model_providers.system_models` (main app) and
+ * built-in tasks such as "default chat", "title generation", "prompt improvement",
+ * "summary" and "translation". They are configured via `model_providers.system_models` (main app) and
  * `model_providers.system_models_ext_app` (external app).
  *
- * Config keys map to {@see WellKnownSystemModelTypes} via {@see upgradeOldModelTypes()},
- * which also handles the legacy key names still present in some installations. A null
- * value for an external-app key removes the corresponding assignment. After all
- * assignments are written, a sanity check validates that every system model points to an
- * active model that is permitted for its usage type.
+ * Config keys resolve to canonical types via {@see resolveModelType()}: the
+ * Ai core's own legacy file-key names are mapped by the core itself, and any
+ * other key resolves through the {@see SystemModelRegistry}'s declarations —
+ * recognition is derived from the contributions, so a domain's key never
+ * appears inside this syncer. A null value for an external-app key removes
+ * the corresponding assignment. After all assignments are written, a sanity
+ * check validates that every system model points to an active model that is
+ * permitted for its usage type.
  *
  * @internal
  */
@@ -37,6 +40,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         private array                 $systemModels,
         #[Config('model_providers.system_models_ext_app', [])]
         private array                 $extAppSystemModels,
+        private SystemModelRegistry   $registry,
         private Repository            $configRepository,
         private SystemModelRepository $systemModelRepository,
         private AiModelRepository     $modelRepository
@@ -48,15 +52,16 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
     {
         return md5(
             json_encode([
-                'systemModels' => $this->systemModels,
-                'extAppSystemModels' => $this->extAppSystemModels
+                'systemModels' => $this->mergedSystemModels(),
+                'extAppSystemModels' => $this->extAppSystemModels,
+                'registryEntries' => $this->registry->entries(),
             ])
         );
     }
 
     public function sync(JobMetrics $metrics): void
     {
-        $systemModels = $this->systemModels;
+        $systemModels = $this->mergedSystemModels();
         $defaultModelFromLegacyConfig = $this->warnForLegacyConfiguration($metrics);
         if ($defaultModelFromLegacyConfig !== null) {
             $systemModels['default_model'] = $defaultModelFromLegacyConfig;
@@ -67,10 +72,15 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
 
         foreach ($this->extAppSystemModels as $key => $modelId) {
+            $modelType = $this->resolveModelType($key);
+            if ($modelType === null) {
+                $metrics = $metrics->addError("Invalid system model type key '$key' in configuration for external app default models.");
+                continue;
+            }
             if ($modelId === null) {
                 try {
                     $this->systemModelRepository->deleteWithTypeFilter(
-                        modelType: $this->upgradeOldModelTypes($key),
+                        modelType: $modelType,
                         usageType: WellKnownUsageTypes::EXTERNAL_APP,
                         scopeOverrides: $this->systemModelRepository->makeScopeOverrides()
                     );
@@ -98,6 +108,20 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         return null;
     }
 
+    /**
+     * The file-based configuration with the registry's domain-contributed
+     * entries merged over it (per key, registry wins): domains own their
+     * defaults in their own config and declare them through the
+     * {@see SystemModelRegistry} instead of writing into the Ai core's
+     * config file.
+     *
+     * @return array<string, string|null>
+     */
+    private function mergedSystemModels(): array
+    {
+        return array_merge($this->systemModels, $this->registry->systemModels());
+    }
+
     private function syncModel(string $usageType, string $key, string $modelId, JobMetrics $metrics): void
     {
         $model = $this->modelRepository->findOne($modelId, $this->modelRepository->makeScopeOverrides());
@@ -106,9 +130,8 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             return;
         }
 
-        try {
-            $modelType = $this->upgradeOldModelTypes($key);
-        } catch (\Throwable) {
+        $modelType = $this->resolveModelType($key);
+        if ($modelType === null) {
             $metrics->error("Invalid system model type key '$key' in configuration.");
             return;
         }
@@ -139,15 +162,24 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
     }
 
-    private function upgradeOldModelTypes(string $oldModelType): string
+    /**
+     * Resolves a configuration-style key to its canonical system-model type.
+     * The Ai core's own legacy file-key names are mapped here — the core's
+     * history is the core's to keep — while every other key resolves through
+     * the {@see SystemModelRegistry}'s declarations, so a contributing
+     * domain's key never appears inside this syncer. Null when nothing
+     * declares the key.
+     */
+    private function resolveModelType(string $key): ?string
     {
-        return match ($oldModelType) {
+        $legacyCoreType = match ($key) {
             'default_model' => WellKnownSystemModelTypes::DEFAULT,
             'title_generator' => WellKnownSystemModelTypes::TITLE_GENERATION,
             'prompt_improver' => WellKnownSystemModelTypes::PROMPT_IMPROVEMENT,
             'summarizer' => WellKnownSystemModelTypes::SUMMARY,
-            // I did not bother to implement a custom exception class for this, as this is only used internally and will be removed soon anyway.
-            default => throw new \InvalidArgumentException("Invalid legacy key: $oldModelType")
+            default => null,
         };
+
+        return $legacyCoreType ?? $this->registry->typeForKey($key);
     }
 }

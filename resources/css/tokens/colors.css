@@ -72,10 +72,10 @@
         );
 
         /* ── Status colors ──────────────────────────────────────────────── */
-        --color-success: oklch(50% 0.17 145);
-        --color-warning: oklch(62% 0.17 75);
-        --color-error: oklch(52% 0.21 25);
-        --color-info: oklch(55% 0.14 230);
+        --color-success: oklch(70% 0.17 162);
+        --color-warning: oklch(77% 0.17 70);
+        --color-error: oklch(64% 0.22 25);
+        --color-info: oklch(62% 0.19 262);
 
         /* ── Neutral surfaces ───────────────────────────────────────────── */
         --color-bg: oklch(100% 0 0);

@@ -97,50 +97,6 @@ class AssistantRunComposerTest extends TestCase
         );
     }
 
-    public function testActiveAgentToolLeavesPersistedCapabilityStringsUntouched(): void
-    {
-        $assistant = $this->assistantWithTools([]);
-        $assistant->capabilities = [
-            'capability:knowledge_base:auto',
-            'capability:web_search:native',
-        ];
-
-        $run = $this->composerWithKnowledgeAgentTool(
-            available: true,
-            transferStrings: ['hawki-rag-query-search:{"dataset_id":"assistant_12"}'],
-        )->compose($assistant);
-
-        static::assertSame(
-            [
-                'capability:knowledge_base:auto',
-                'capability:web_search:native',
-                'hawki-rag-query-search:{"dataset_id":"assistant_12"}',
-            ],
-            $run->toolTransferStrings,
-        );
-    }
-
-    public function testUnavailableAgentToolLeavesExplicitSelectionsUntouched(): void
-    {
-        $assistant = $this->assistantWithTools([
-            $this->tool('hawki-rag-query-search', WellKnownCapabilities::KNOWLEDGE_BASE),
-        ]);
-        $assistant->capabilities = ['capability:knowledge_base:auto'];
-
-        $run = $this->composerWithKnowledgeAgentTool(
-            available: false,
-            transferStrings: ['hawki-rag-query-search:{"dataset_id":"assistant_12"}'],
-        )->compose($assistant);
-
-        static::assertSame(
-            [
-                'capability:knowledge_base:auto',
-                'hawki-rag-query-search',
-            ],
-            $run->toolTransferStrings,
-        );
-    }
-
     public function testPromptComposerLearnsWhetherKnowledgeIsHandledByAnAgentTool(): void
     {
         $flags = [];
@@ -195,26 +151,6 @@ class AssistantRunComposerTest extends TestCase
                 [],
             ],
             $instructionsSeen,
-        );
-    }
-
-    public function testNonStringCapabilityEntriesPassThrough(): void
-    {
-        $assistant = $this->assistantWithTools([]);
-        $assistant->capabilities = [42, 'capability:web_search:native'];
-
-        $run = $this->composerWithKnowledgeAgentTool(
-            available: true,
-            transferStrings: ['hawki-rag-query-search:{"dataset_id":"assistant_12"}'],
-        )->compose($assistant);
-
-        static::assertSame(
-            [
-                42,
-                'capability:web_search:native',
-                'hawki-rag-query-search:{"dataset_id":"assistant_12"}',
-            ],
-            $run->toolTransferStrings,
         );
     }
 

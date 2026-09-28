@@ -463,7 +463,7 @@
                             </span>
                             <Button
                                 variant="ghost"
-                                size="xs"
+                                size="sm"
                                 aria-label={__('ui.search.retryLabel', {group})}
                                 onclick={() => session?.retry(error.providerId)}
                             >

@@ -26,17 +26,12 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
     import {isAiToolAvailableFor} from '$plugins/core/stores/aiToolStoreData.js';
-    import {
-        createToolOrCapabilityWithStateFromTransferString,
-        type AiToolOrCapabilityWithState
-    } from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
     import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
 
     const builder = useBuilderContext();
     const modelStore = useStore('ai-models');
-    const toolStore = useStore('ai-tools');
     const {__} = useTranslator();
 
     // `Assistant.aiTools` is persisted to sessionStorage between builder
@@ -45,42 +40,21 @@
     // plain `id`/`status` fields that survive that round-trip.
     const activeTools = $derived(builder.draft.aiTools ?? []);
 
-    // Live store wrappers for the draft's capability transfer strings,
-    // re-wrapped with their selection state — `isAvailableFor(model)` then
-    // mirrors the composer's per-mode availability (native → the model's
-    // native capability, auto → native or any mapped tool, concrete name →
-    // that tool). Strings whose capability/tool vanished resolve to null and
-    // are skipped.
-    const activeCapabilities = $derived.by(() => {
-        const wrapped: AiToolOrCapabilityWithState[] = [];
-        for (const transfer of builder.draft.capabilities ?? []) {
-            const state = createToolOrCapabilityWithStateFromTransferString(transfer, toolStore);
-            if (state) wrapped.push(state);
-        }
-        return wrapped;
-    });
-
     const currentModel = $derived(
         modelStore.getOneById(builder.draft.model)
     );
 
     function isModelUsable(model: AiModel): boolean {
-        if (activeTools.length === 0 && activeCapabilities.length === 0) return true;
+        if (activeTools.length === 0) return true;
         if (!model.settings?.tool_calling) return false;
-        return activeTools.every(tool => isAiToolAvailableFor(tool, model))
-            && activeCapabilities.every(tool => tool.isAvailableFor(model));
+        return activeTools.every(tool => isAiToolAvailableFor(tool, model));
     }
 
     const missingTools = $derived.by(() => {
         if (!currentModel) return [];
-        return [
-            ...activeTools
-                .filter(tool => !isAiToolAvailableFor(tool, currentModel))
-                .map(tool => ({name: tool.name})),
-            ...activeCapabilities
-                .filter(tool => !tool.isAvailableFor(currentModel))
-                .map(tool => ({name: tool.displayName})),
-        ];
+        return activeTools
+            .filter(tool => !isAiToolAvailableFor(tool, currentModel))
+            .map(tool => ({name: tool.name}));
     });
 
     const isValid = $derived(!currentModel || isModelUsable(currentModel));

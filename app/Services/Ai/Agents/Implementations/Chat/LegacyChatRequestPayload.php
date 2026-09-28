@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Agents\Implementations\Chat;
-
 
 /**
  * Typed wrapper around the legacy frontend chat request payload.
@@ -41,22 +40,21 @@ readonly class LegacyChatRequestPayload
          *
          * @var array<string, mixed>
          */
-        private array $payload
-    )
-    {
+        private array $payload,
+    ) {
     }
 
     /**
      * Returns a payload instance when the request matches the legacy shape, null otherwise.
      * Returning null lets {@see \App\Services\Ai\Agents\AgentRegistry} try the next factory.
      */
-    public static function tryFromRequest(mixed $request): self|null
+    public static function tryFromRequest(mixed $request): ?self
     {
         if (
-            !is_array($request)
-            || !is_array($request['payload'] ?? null)
-            || !is_array($request['payload']['messages'] ?? null)
-            || !is_string($request['payload']['model'] ?? null)
+            !\is_array($request)
+            || !\is_array($request['payload'] ?? null)
+            || !\is_array($request['payload']['messages'] ?? null)
+            || !\is_string($request['payload']['model'] ?? null)
         ) {
             return null;
         }
@@ -79,8 +77,8 @@ readonly class LegacyChatRequestPayload
     public function systemInstructions(): string
     {
         foreach ($this->messages() as $message) {
-            if (isset($message['role']) && $message['role'] === 'system' && isset($message['content'])) {
-                return (string)($message['content']['text'] ?? '');
+            if (isset($message['role']) && 'system' === $message['role'] && isset($message['content'])) {
+                return (string) ($message['content']['text'] ?? '');
             }
         }
 
@@ -101,7 +99,8 @@ readonly class LegacyChatRequestPayload
     public function params(): array
     {
         $params = $this->payload['params'] ?? null;
-        return is_array($params) ? $params : [];
+
+        return \is_array($params) ? $params : [];
     }
 
     /**
@@ -110,21 +109,24 @@ readonly class LegacyChatRequestPayload
     public function tools(): array
     {
         $tools = $this->payload['tools'] ?? null;
-        return is_array($tools) ? $tools : [];
+
+        return \is_array($tools) ? $tools : [];
     }
 
     /**
-     * The explicitly requested assistant handle
-     * (`payload.hawkiExtensions.assistant_handle`), or null when absent.
-     * Accepted by the stream validation rules, so both the chat clients and
-     * the server-side streamer ({@see \App\Services\Ai\Streaming\AgentStreamer})
-     * may set it.
+     * The request's `hawkiExtensions` envelope — the JSON home for
+     * HAWKI-specific request extensions. Fields are declared per slice
+     * through {@see HawkiExtensionsRegistry}; this getter is generic and
+     * names none of them, so slices read their own keys and own their
+     * shape checks.
+     *
+     * @return array<string, mixed>
      */
-    public function assistantHandle(): string|null
+    public function hawkiExtensions(): array
     {
-        $handle = $this->payload['hawkiExtensions']['assistant_handle'] ?? null;
+        $extensions = $this->payload['hawkiExtensions'] ?? [];
 
-        return \is_string($handle) && $handle !== '' ? $handle : null;
+        return \is_array($extensions) ? $extensions : [];
     }
 
     /**
@@ -132,7 +134,7 @@ readonly class LegacyChatRequestPayload
      */
     public function isBroadcast(): bool
     {
-        return ($this->payload['broadcast'] ?? null) === true;
+        return true === ($this->payload['broadcast'] ?? null);
     }
 
     /**

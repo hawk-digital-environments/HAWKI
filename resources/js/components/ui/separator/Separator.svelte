@@ -5,9 +5,9 @@
   @example
   ```svelte
   <div class="toolbar">
-      <Button size="xs">Copy</Button>
+      <Button size="sm">Copy</Button>
       <Separator orientation="vertical"/>
-      <Button size="xs">Delete</Button>
+      <Button size="sm">Delete</Button>
   </div>
   ```
 -->

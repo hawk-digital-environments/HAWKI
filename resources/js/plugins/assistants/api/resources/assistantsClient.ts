@@ -1,7 +1,8 @@
 import { useApp } from "$lib/app/hooks/useApp.svelte.js";
-import type { FetchCollectionQuery, FetchResourceQuery } from "$lib/kernel/api/buildQueryString.js";
+import { buildQueryString, type FetchCollectionQuery, type FetchResourceQuery } from "$lib/kernel/api/buildQueryString.js";
 import { decodeJsonApiResourceResponse, type JsonApiPagination } from "$lib/kernel/api/jsonApiEncoding.js";
 import { logApiError } from "$plugins/assistants/api/errors";
+import z from "zod";
 import type { Assistant, Review } from "$plugins/assistants/types/assistant";
 import {
   assistantToApi,
@@ -414,3 +415,31 @@ export async function toggleAssistantFavorite(
     });
   }
 }
+
+/**
+ * The handle-namespace probe (`GET /assistants/actions/handles`): which of
+ * the given candidate handles already exist — globally, regardless of
+ * visibility, answered with the handles only. One request resolves a
+ * derived handle up front; the save's unique validation stays the
+ * authority for races.
+ */
+export async function fetchExistingHandles(
+    candidates: readonly string[],
+    signal?: AbortSignal,
+): Promise<string[]> {
+  const handles = [...new Set(candidates.filter((candidate) => candidate !== ''))];
+  if (handles.length === 0) return [];
+
+  try {
+    const response = await useApp().restApi.fetch(
+      `/api/hawki/v1/assistants/actions/handles${buildQueryString({handles: handles.join(',')})}`,
+      {schema: HandlesResponseSchema, signal},
+    );
+    return response.data;
+  } catch (err) {
+    throw logApiError("fetchExistingHandles", err, {handles});
+  }
+}
+
+const HandlesResponseSchema = z.object({data: z.array(z.string())});
+

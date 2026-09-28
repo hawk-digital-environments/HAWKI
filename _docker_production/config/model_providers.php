@@ -43,7 +43,7 @@ return [
 //        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
         'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
         'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
-        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
+        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano')
     ],
 
     /*
@@ -55,6 +55,7 @@ return [
 //        'title_generator' => null,
 //        'prompt_improver' => null,
 //        'summarizer' => null,
+//        'assistant_guide' => null,
     ],
 
     /*

@@ -1,7 +1,7 @@
 <!--
   @component Collapsible card grouping a set of tools on the builder's model
-  page — the shared chrome the MCP server cards, the capabilities card, and
-  the standalone-tools card are built from.
+  page — the shared chrome the MCP server cards and the standalone-tools
+  card are built from.
 
   Header button: icon on a status swatch, label, optional description, an
   optional ":selected of :count selected" badge (visible while collapsed —
@@ -17,12 +17,12 @@
   ## Usage
   ```svelte
   <ToolGroupCard
-      label={__('chat.composer.toolMenu.capabilitiesLabel')}
-      icon={AiMagicIcon}
+      label={__('chat.composer.toolMenu.hawkiToolsLabel')}
+      icon={ToolsIcon}
       selectedCount={selectedCount}
-      totalCount={capabilities.length}
+      totalCount={tools.length}
   >
-      <CapabilitiesList ... />
+      <ToolsList ... />
   </ToolGroupCard>
   ```
 -->
@@ -110,14 +110,15 @@
 </div>
 
 <style>
+    /* Flat rows; a hairline only between consecutive cards. */
     .tool-group-card{
         position: relative;
         min-height: 3rem;
-        border: var(--border);
-        border-radius: var(--corner-md);
-        padding: .75rem;
-        margin-top: .5rem;
-        background: var(--color-surface-raised);
+        padding: .75rem 0;
+    }
+
+    :global(.tool-group-card) + .tool-group-card{
+        border-top: var(--border);
     }
 
     .header{
@@ -165,7 +166,7 @@
         display: inline-flex;
         align-items: center;
         flex-shrink: 0;
-        transition: transform var(--duration-medium);
+        transition: transform var(--duration-medium) var(--easing-spring);
     }
 
     .chevron.open{
@@ -178,7 +179,7 @@
         overflow: hidden;
         width: 100%;
         margin-top: 0;
-        transition: all var(--duration-medium);
+        transition: all var(--duration-medium) var(--easing-spring);
     }
 
     .details-wrapper.active{

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\JsonApi\V1\Assistants;
 
-use App\Models\Ai\AiTool;
-use App\Services\Ai\Agents\Implementations\Chat\Values\ToolTransferData;
-use App\Services\Ai\Models\Capabilities\AiModelCapabilityRegistry;
+use App\Services\Assistant\Values\AssistantFieldRules;
 use LaravelJsonApi\Laravel\Http\Requests\ResourceRequest;
 use LaravelJsonApi\Validation\Rule as JsonApiRule;
 
@@ -21,32 +19,28 @@ class AssistantRequest extends ResourceRequest
         'greeting',
         'description',
         'detail_description',
-        'capabilities',
     ];
 
     public function rules(): array
     {
         $rules = [
-            'name' => ['string', 'max:255'],
+            'name' => AssistantFieldRules::name(),
             'handle' => [
                 'nullable',
-                'string',
-                'max:255',
-                'regex:/^[a-zA-Z0-9_-]+$/', // Mirrors handle detection in AiHandleStore in frontend
+                ...AssistantFieldRules::handle(),
                 'unique:assistants,handle' . $this->uniqueIdSuffix(),
                 'unique:ai_models,label',
             ],
-            'system_prompt' => ['string'],
-            'greeting' => ['string'],
-            'description' => ['string'],
-            'detail_description' => ['string'],
+            'system_prompt' => AssistantFieldRules::text(),
+            'greeting' => AssistantFieldRules::text(),
+            'description' => AssistantFieldRules::text(),
+            'detail_description' => AssistantFieldRules::text(),
             'allow_remix' => ['boolean'],
             'allow_model_select' => ['boolean'],
             'assistant_category' => ['nullable', JsonApiRule::toOne()],
-            'model' => ['string'],
-            'capabilities' => ['array', 'distinct', $this->capabilityEntryRule()],
+            'model' => AssistantFieldRules::text(),
             'max_tokens' => ['integer', 'min:0'],
-            'temp' => ['numeric', 'min:0', 'max:1'],
+            'temp' => ['numeric', 'min:0', 'max:2'],
             'top_p' => ['numeric', 'min:0', 'max:1'],
             'ai_tools' => [JsonApiRule::toMany()],
             'assistant_tags' => [JsonApiRule::toMany()],
@@ -66,71 +60,6 @@ class AssistantRequest extends ResourceRequest
         }
 
         return $rules;
-    }
-
-    /**
-     * Builds the rule validating every capabilities entry: a capability transfer
-     * string ("capability:<key>:<native|auto|<tool-name>>") whose capability key is
-     * declared in the {@see AiModelCapabilityRegistry} and whose concrete inner tool
-     * (when one is named) matches an existing tool.
-     *
-     * Concrete tool selections without a capability belong to the assistant's
-     * `ai_tools` relationship, not to this attribute.
-     */
-    private function capabilityEntryRule(): \Closure
-    {
-        return function (string $attribute, mixed $value, \Closure $fail): void {
-            if (!\is_array($value)) {
-                return;
-            }
-
-            foreach ($value as $entry) {
-                $this->validateCapabilityEntry($attribute, $entry, $fail);
-            }
-        };
-    }
-
-    private function validateCapabilityEntry(string $attribute, mixed $value, \Closure $fail): void
-    {
-        if (!\is_string($value) || $value === '') {
-            $fail('The capabilities must be non-empty transfer strings.');
-
-            return;
-        }
-
-        try {
-            $transferData = ToolTransferData::fromString($value);
-        } catch (\Throwable) {
-            $fail('The capability string is not a valid tool transfer string.');
-
-            return;
-        }
-
-        if (!$transferData->isCapability()) {
-            $fail('The capabilities only accept capability transfer strings (capability:<key>:<native|auto|<tool>).');
-
-            return;
-        }
-
-        $registry = app(AiModelCapabilityRegistry::class);
-
-        if (!$registry->has($transferData->toolOrCapability)) {
-            $fail('The capability references an unknown capability key.');
-
-            return;
-        }
-
-        $innerTool = $transferData->innerTool;
-
-        if ($innerTool !== null && $innerTool !== 'native' && $innerTool !== 'auto') {
-            $toolExists = AiTool::query()
-                ->where('name', $innerTool)
-                ->exists();
-
-            if (!$toolExists) {
-                $fail('The capability references an unknown tool.');
-            }
-        }
     }
 
     /**
