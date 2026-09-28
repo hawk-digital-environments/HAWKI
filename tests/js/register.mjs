@@ -15,6 +15,16 @@ import {compileModule} from 'svelte/compiler';
 
 const projectRoot = path.resolve(import.meta.dirname, '../..');
 const libRoot = path.join(projectRoot, 'resources/js');
+const testsRoot = path.join(projectRoot, 'tests/js');
+
+/** Whether `candidate` is `root` itself or somewhere below it. */
+/**
+ * @param {string} root
+ * @param {string} candidate
+ */
+function isWithin(root, candidate) {
+    return candidate === root || candidate.startsWith(`${root}${path.sep}`);
+}
 
 /** @param {string} specifier */
 function aliasedPath(specifier) {
@@ -41,17 +51,22 @@ function sourceFile(target) {
 
 registerHooks({
     resolve(specifier, context, nextResolve) {
-        if (specifier.includes('?worker&url')) {
+        if (specifier.endsWith('?worker&url')) {
             return {url: 'data:text/javascript,export default "/search.worker.js";', shortCircuit: true};
         }
         let target = aliasedPath(specifier);
+        let ownSource = target !== null;
         if (target === null && (specifier.startsWith('./') || specifier.startsWith('../'))) {
             const parent = context.parentURL?.startsWith('file:')
                 ? path.dirname(fileURLToPath(context.parentURL))
                 : projectRoot;
             target = path.resolve(parent, specifier);
+            // Only the project's own sources are ours to redirect and load as
+            // ESM; a relative import inside a dependency (a `.cjs`, a `.json`)
+            // must keep Node's own resolution.
+            ownSource = isWithin(libRoot, target) || isWithin(testsRoot, target);
         }
-        if (target === null) {
+        if (target === null || !ownSource) {
             return nextResolve(specifier, context);
         }
         const resolved = sourceFile(target);
