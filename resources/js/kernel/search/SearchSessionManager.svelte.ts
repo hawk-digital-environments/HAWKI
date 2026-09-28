@@ -40,6 +40,8 @@ import {
 } from '$lib/kernel/search/sessionPublication.js';
 import {
     ConcurrencyGate,
+    DEFAULT_RUNNER_TIMING,
+    DEFAULT_SCHEDULER_TIMERS,
     DynamicQueryRunner,
     type DynamicProviderOutcome,
     type DynamicProviderTask
@@ -149,12 +151,17 @@ class SearchSessionImpl implements SearchSession {
         this.allowedScope = options.allowedScope ? {...options.allowedScope} : undefined;
         this.forget = forget;
         this.selectionChanged = selectionChanged;
-        this.runner = new DynamicQueryRunner(gate, {
-            onGroupSettled: (groupId, outcomes) => this.acceptGroup(groupId, outcomes),
-            onPendingChange: pending => {
-                this.remotePending = pending;
-            }
-        });
+        this.runner = new DynamicQueryRunner(
+            gate,
+            {
+                onGroupSettled: (groupId, outcomes) => this.acceptGroup(groupId, outcomes),
+                onPendingChange: pending => {
+                    this.remotePending = pending;
+                }
+            },
+            DEFAULT_RUNNER_TIMING,
+            this.host.schedulerTimers ?? DEFAULT_SCHEDULER_TIMERS
+        );
 
         const session = this;
         this.stateView = {

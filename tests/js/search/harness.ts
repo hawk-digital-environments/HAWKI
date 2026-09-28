@@ -7,6 +7,7 @@
 import {SearchRegistry, type SearchProviderDefinition} from '$lib/kernel/search/searchRegistry.js';
 import {SharedSearchIndex} from '$lib/kernel/search/sharedIndex.js';
 import type {SearchSessionHost} from '$lib/kernel/search/sessionHost.js';
+import type {SchedulerTimers} from '$lib/kernel/search/sessionScheduler.js';
 import type {ModuleSearchRegistrar, SearchEntry, SearchProviderError, StaticSource} from '$lib/kernel/search/types.js';
 import type {SearchScores} from '$lib/kernel/search/searchEngine.js';
 
@@ -35,6 +36,7 @@ export class TestSearchHost implements SearchSessionHost {
     public readonly registry = new SearchRegistry();
     public readonly index = new SharedSearchIndex();
     public readonly storage = new MemoryStorage();
+    public readonly schedulerTimers = new FakeTimers();
     public readonly app: any;
     public identity: string | null = 'user-1@connection-a';
     public errors: SearchProviderError[] = [];
@@ -117,6 +119,53 @@ export function entry(id: string, title: string, extra: Partial<SearchEntry> = {
 /** Lets pending promise callbacks and microtasks run. */
 export function tick(ms = 0): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Lets every already-scheduled promise callback run. */
+async function flushPromises(rounds = 8): Promise<void> {
+    for (let round = 0; round < rounds; round++) {
+        await new Promise(resolve => setImmediate(resolve));
+    }
+}
+
+/**
+ * A deterministic clock for the dynamic scheduler: timers only fire when
+ * time is advanced, and every firing is followed by a promise flush so
+ * dispatch chains settle between timers.
+ */
+export class FakeTimers implements SchedulerTimers {
+    private readonly pending = new Map<number, {due: number; handler: () => void}>();
+    private nextHandle = 1;
+    private now = 0;
+
+    public setTimeout(handler: () => void, ms: number): number {
+        const handle = this.nextHandle++;
+        this.pending.set(handle, {due: this.now + ms, handler});
+        return handle;
+    }
+
+    public clearTimeout(handle: number): void {
+        this.pending.delete(handle);
+    }
+
+    /** Fires everything due within `ms`, in order, flushing promises in between. */
+    public async advance(ms: number): Promise<void> {
+        const target = this.now + ms;
+        for (;;) {
+            const due = [...this.pending.entries()]
+                .filter(([, timer]) => timer.due <= target)
+                .sort((a, b) => a[1].due - b[1].due)[0];
+            if (!due) {
+                break;
+            }
+            this.pending.delete(due[0]);
+            this.now = due[1].due;
+            due[1].handler();
+            await flushPromises();
+        }
+        this.now = target;
+        await flushPromises();
+    }
 }
 
 export function rowTitles(groups: readonly {items: readonly {title: string}[]}[]): string[] {

@@ -4,9 +4,9 @@ import {
     ConcurrencyGate,
     DynamicQueryRunner,
     type DynamicProviderOutcome,
-    type DynamicProviderTask,
-    type SchedulerTimers
+    type DynamicProviderTask
 } from '$lib/kernel/search/sessionScheduler.js';
+import {FakeTimers} from './harness.js';
 import type {SearchEntry} from '$lib/kernel/search/types.js';
 
 const TIMING = {debounceMs: 250, deadlineMs: 5000};
@@ -15,41 +15,6 @@ const TIMING = {debounceMs: 250, deadlineMs: 5000};
 async function flush(rounds = 8): Promise<void> {
     for (let round = 0; round < rounds; round++) {
         await new Promise(resolve => setImmediate(resolve));
-    }
-}
-
-class FakeTimers implements SchedulerTimers {
-    private readonly pending = new Map<number, {due: number; handler: () => void}>();
-    private nextHandle = 1;
-    private now = 0;
-
-    public setTimeout(handler: () => void, ms: number): number {
-        const handle = this.nextHandle++;
-        this.pending.set(handle, {due: this.now + ms, handler});
-        return handle;
-    }
-
-    public clearTimeout(handle: number): void {
-        this.pending.delete(handle);
-    }
-
-    /** Fires everything due within `ms`, in order, flushing promises in between. */
-    public async advance(ms: number): Promise<void> {
-        const target = this.now + ms;
-        for (;;) {
-            const due = [...this.pending.entries()]
-                .filter(([, timer]) => timer.due <= target)
-                .sort((a, b) => a[1].due - b[1].due)[0];
-            if (!due) {
-                break;
-            }
-            this.pending.delete(due[0]);
-            this.now = due[1].due;
-            due[1].handler();
-            await flush();
-        }
-        this.now = target;
-        await flush();
     }
 }
 

@@ -49,7 +49,7 @@ test('server groups publish together, use Fuse scores, and retain server-only ma
     try {
         const session = api.createSession();
         session.setInput({query: 'design'});
-        await tick(280);
+        await host.schedulerTimers.advance(250);
         assert.deepEqual(session.state.groups, []);
         slow.resolve([entry('second', 'Unrelated')]);
         await tick();
@@ -70,7 +70,7 @@ test('disabled dynamic callbacks cannot return into the current query', async ()
     try {
         const session = api.createSession();
         session.setInput({query: 'design'});
-        await tick(280);
+        await host.schedulerTimers.advance(250);
         host.deactivate('core:test.remote'); api.invalidate();
         pending.resolve([entry('old', 'Design old')]);
         await tick();
@@ -89,7 +89,7 @@ test('a server-only match uses an available static copy and records static histo
     const api = manager(host);
     try {
         const session = api.createSession();
-        session.setInput({query: 'design'}); await tick(280);
+        session.setInput({query: 'design'}); await host.schedulerTimers.advance(250);
         assert.equal(session.state.groups[0].id, 'core:test.local');
         assert.equal(session.select('shared')!.kind, 'static');
         const history = JSON.parse([...host.storage.items.values()][0]);
@@ -108,9 +108,9 @@ test('IME composition cancels in-flight results and resumes the current query', 
     const api = manager(host);
     try {
         const session = api.createSession();
-        session.setInput({query: 'before'}); await tick(280);
+        session.setInput({query: 'before'}); await host.schedulerTimers.advance(250);
         session.suspend(); session.setInput({query: 'after'});
-        old.resolve([entry('old','before')]); await tick(280);
+        old.resolve([entry('old','before')]); await tick();
         assert.equal(calls, 1);
         assert.deepEqual(session.state.groups, []);
         session.suspend(false); await tick();
@@ -141,7 +141,7 @@ test('unknown and conflicting scopes issue no requests', async () => {
     const api = manager(host);
     try {
         const session=api.createSession({allowedScope:{pluginId:'other'}});
-        session.setInput({query:'design',scope:{moduleId:'core:test'}}); await tick(280);
+        session.setInput({query:'design',scope:{moduleId:'core:test'}}); await host.schedulerTimers.advance(250);
         assert.equal(calls,0); assert.deepEqual(session.state.groups,[]);
     } finally {api.dispose();}
 });
