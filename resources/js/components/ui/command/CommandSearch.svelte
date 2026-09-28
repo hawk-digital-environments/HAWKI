@@ -25,10 +25,9 @@
       onIntent={() => session?.freezeOrder()}
       onCompositionChange={handleComposition}
       describedBy={hintId}
-  >
-      {#snippet leading()}<SearchIcon />{/snippet}
-      {#snippet trailing()}<EscKeycap />{/snippet}
-  </CommandSearch>
+      iconLeft={Search01Icon}
+      hint={escKeycap}
+  />
   ```
 -->
 <script module lang="ts">
@@ -41,6 +40,7 @@
     import CommandResults from './CommandResults.svelte';
     import type {CommandGroupDefinition} from './CommandResults.svelte';
     import {CommandSelection, isNavigationKey} from './commandSelection.svelte.js';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     interface Props {
         /** Accessible name of the field and its result list. */
@@ -69,10 +69,12 @@
         describedBy?: string;
         /** Accessible name of the results list. */
         resultsLabel?: string;
-        /** Leading field content, e.g. a search icon. */
-        leading?: Snippet;
-        /** Trailing field content, e.g. an Escape keycap. */
-        trailing?: Snippet;
+        /** An optional icon before the field, e.g. `Search01Icon`. */
+        iconLeft?: IconComponent;
+        /** An optional icon at the field's end edge. */
+        iconRight?: IconComponent;
+        /** Trailing non-icon content, e.g. an Escape keycap. */
+        hint?: Snippet;
         /** Class of the command root element. */
         class?: string;
     }
@@ -91,10 +93,14 @@
         onCompositionChange,
         describedBy,
         resultsLabel,
-        leading,
-        trailing,
+        iconLeft,
+        iconRight,
+        hint,
         class: className = ''
     }: Props = $props();
+
+    const IconLeft = $derived(iconLeft ?? null);
+    const IconRight = $derived(iconRight ?? null);
 
     const selection = new CommandSelection({
         isFrozen: () => frozen,
@@ -171,7 +177,11 @@
     class={className}
 >
     <div class="command-search-field">
-        {#if leading}{@render leading()}{/if}
+        {#if IconLeft}
+            <span class="command-search-icon" aria-hidden="true">
+                <IconLeft size={18} strokeWidth={2} />
+            </span>
+        {/if}
         <CommandPrimitive.Input
             {autofocus}
             class="command-search-input"
@@ -183,7 +193,14 @@
             onkeydown={event => {if (composing || event.isComposing) event.stopPropagation();}}
             bind:value
         />
-        {#if trailing}{@render trailing()}{/if}
+        {#if hint}
+            <span class="command-search-hint">{@render hint()}</span>
+        {/if}
+        {#if IconRight}
+            <span class="command-search-icon" aria-hidden="true">
+                <IconRight size={18} strokeWidth={2} />
+            </span>
+        {/if}
     </div>
     <CommandResults
         {groups}
@@ -221,5 +238,16 @@
 
     :global(.command-search-input::placeholder) {
         color: var(--color-text-muted);
+    }
+
+    :global(.command-search-icon) {
+        display: inline-flex;
+        flex-shrink: 0;
+        color: var(--color-text-muted);
+    }
+
+    :global(.command-search-hint) {
+        display: inline-flex;
+        flex-shrink: 0;
     }
 </style>

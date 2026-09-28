@@ -332,18 +332,9 @@
         onCompositionChange={handleComposition}
         describedBy={hintId}
         resultsLabel={__('ui.search.resultsLabel')}
-    >
-        {#snippet leading()}
-            <span class="search-icon" aria-hidden="true">
-                <Search01Icon size={18} strokeWidth={2} />
-            </span>
-        {/snippet}
-        {#snippet trailing()}
-            {#if hint}
-                <span class="search-field-hint">{@render hint()}</span>
-            {/if}
-        {/snippet}
-    </CommandSearch>
+        iconLeft={Search01Icon}
+        {hint}
+    />
 
     <p id={hintId} class="u-sr-only">{__('ui.search.keyboardHint')}</p>
 
@@ -411,21 +402,6 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
-    }
-
-    /* ── Field ────────────────────────────────────────────────────────── */
-    /* The field itself (padding, border, input) is styled by CommandSearch;
-       only the host-provided decorations are styled here. */
-
-    :global(.search-bar .search-icon) {
-        display: inline-flex;
-        flex-shrink: 0;
-        color: var(--color-text-muted);
-    }
-
-    :global(.search-bar .search-field-hint) {
-        display: inline-flex;
-        flex-shrink: 0;
     }
 
     /* ── Filters ──────────────────────────────────────────────────────── */
