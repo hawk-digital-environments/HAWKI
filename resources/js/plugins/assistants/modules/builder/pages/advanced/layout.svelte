@@ -69,7 +69,7 @@
         height: 100%;
         box-sizing: border-box;
         /* Room to scroll the last content out from under the step footer. */
-        padding-bottom: 6rem;
+        padding-bottom: 8rem;
         min-height: 0;
         min-width: 0;
         overflow-y: auto;

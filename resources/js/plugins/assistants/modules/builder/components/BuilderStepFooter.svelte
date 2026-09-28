@@ -135,7 +135,8 @@
         content: '';
         position: absolute;
         z-index: -1;
-        inset: 0;
+        /* Reaches well above the bar so the fade has room to ease out. */
+        inset: -3rem 0 0;
         background: color-mix(in oklch, var(--color-bg) 88%, transparent);
         backdrop-filter: blur(12px);
         --footer-fade: linear-gradient(
