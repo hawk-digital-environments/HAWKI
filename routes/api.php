@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\RoomMessageController;
 use App\Http\Controllers\Api\V1\SystemModelController;
 use App\Http\Controllers\Api\V1\SystemPromptController;
 use App\Http\Controllers\Api\V1\TranslationLabelController;
+use App\Http\Controllers\Api\V1\UserFavoriteController;
 use App\Http\Controllers\Api\V1\UserKeychainValueController;
 use App\Http\Controllers\Api\V1\UsersController;
 use App\Http\Controllers\Api\V1\UserSettingController;
@@ -104,6 +105,10 @@ JsonApiRoute::server('v1')
 
         $server->resource('user-settings', UserSettingController::class)
             ->only('index', 'show', 'store', 'update');
+
+        $server->resource('user-favorites', UserFavoriteController::class)
+            ->only('index', 'store', 'destroy')
+            ->middleware('auth:sanctum');
 
         $server->resource('translation-labels', TranslationLabelController::class)
             ->only('show');
