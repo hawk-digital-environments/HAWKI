@@ -33,7 +33,7 @@ import {ModelFavoritesStore} from '$plugins/core/stores/ModelFavoritesStore.svel
 import {ModelSelectionStore} from '$plugins/core/stores/ModelSelectionStore.svelte.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import {ChatModule} from '$plugins/core/modules/chat/ChatModule.js';
-import {SettingsModule} from '$lib/app/components/settings/SettingsModule.js';
+import {SettingsModule} from '$plugins/core/modules/settings/SettingsModule.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 

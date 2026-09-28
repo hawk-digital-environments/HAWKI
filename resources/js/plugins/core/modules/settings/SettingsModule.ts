@@ -1,13 +1,15 @@
 import type {HawkiModule} from '$lib/kernel/modules/types.js';
 import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
-import type {SettingsSection} from './types.js';
 import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
 import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
 import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
 import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
 import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
 import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
+
+/** A settings section the account dialog can open. */
+export type SettingsSection = 'general' | 'profile' | 'experiments';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiSyncEvents {
