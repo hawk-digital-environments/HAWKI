@@ -15,6 +15,7 @@ use App\Services\System\Http\SsrfSafeGetterMacro;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
 use App\Services\System\Time\CarbonClock;
 use App\Services\System\Time\CarbonClockInterface;
+use App\Services\System\Time\TimezoneGuard;
 use App\Services\System\UsageTypes\UsageContext;
 use App\Services\System\UserTypes\UserContext;
 use App\Services\Translation\LocaleService;
@@ -54,6 +55,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Fail loud and early when the configured timezone is an unsafe
+        // abbreviation (e.g. "CET"): PHP treats those as fixed offsets without
+        // DST in some code paths while applying DST in others, silently
+        // corrupting stored timestamps and time-window comparisons.
+        TimezoneGuard::ensureSafe((string) config('app.timezone'));
+
         $this->bootSchedulerMacros();
         $this->bootArrMacros();
         $this->bootUrlGeneratorMacros();
