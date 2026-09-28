@@ -195,12 +195,6 @@ export class BuilderValidatorContext {
         if (failures.length) throw new ValidationError(failures);
     }
 
-    /** Whether every required field of `step` is filled. */
-    isStepComplete(step: BuilderStep): boolean {
-        const draft = this.getDraft();
-        return COMPLETENESS_RULES.every(rule => rule.step !== step || rule.isFilled(draft));
-    }
-
     /**
      * Gate for the step footer's "Continue": checks the required fields of
      * `step` and marks each empty one with `message` as an inline error

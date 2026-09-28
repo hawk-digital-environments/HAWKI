@@ -171,6 +171,8 @@
                 "progress": "Fortschritt",
                 "back": "Zurück",
                 "continue": "Weiter",
+                "continue_to": "Weiter zu :step",
+                "step_of": "Schritt :current von :total",
                 "required": "Dieses Feld ist erforderlich.",
                 "incomplete": "Bitte fülle die Pflichtfelder aus."
             },

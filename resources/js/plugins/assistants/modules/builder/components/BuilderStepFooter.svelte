@@ -1,5 +1,6 @@
 <!--
-  @component Pinned footer of the builder flow: step progress plus Back /
+  @component Pinned footer of the builder flow: the current step's position (step
+  navigation itself lives in the sidebar) plus Back /
   Continue. "Continue" checks the current step's required fields first
   (`validator.validateStep`), marking empty ones inline and staying put if
   any are missing (with an error toast). The last step (publish) has its own action, so no
@@ -40,23 +41,12 @@
 </script>
 
 <footer class="step-footer">
-    <ol class="steps" aria-label={__('assistants.builder.steps.progress')}>
-        {#each BUILDER_STEPS as step, i (step)}
-            <li>
-                <button
-                        type="button"
-                        class="step"
-                        class:done={i < index}
-                        class:active={i === index}
-                        aria-current={i === index ? 'step' : undefined}
-                        onclick={() => goTo(step)}
-                >
-                    <span class="bar"></span>
-                    <span class="label">{__(`assistants.builder.sidebar.${step}`)}</span>
-                </button>
-            </li>
-        {/each}
-    </ol>
+  <div class="bar">
+    <div class="progress">
+        <span class="count">
+            {__('assistants.builder.steps.step_of', {current: String(index + 1), total: String(BUILDER_STEPS.length)})}
+        </span>
+    </div>
 
     <div class="actions">
         <Button variant="ghost" iconLeft={ArrowLeft01Icon} disabled={index === 0}
@@ -65,93 +55,56 @@
         </Button>
         {#if !isLast}
             <Button variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
-                {__('assistants.builder.steps.continue')}
+                {__('assistants.builder.steps.continue_to', {step: __(`assistants.builder.sidebar.${BUILDER_STEPS[index + 1]}`)})}
             </Button>
         {/if}
     </div>
+  </div>
 </footer>
 
 <style>
+    /* Aligned with the section page's content column (.page-content). */
     .step-footer {
-        display: flex;
-        align-items: center;
-        gap: var(--space-5);
-        padding: var(--space-3) var(--space-8);
-        border-top: 1px solid var(--color-border);
-        background: var(--color-bg);
-    }
-
-    .steps {
-        display: flex;
-        flex: 1;
-        gap: var(--space-2);
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        min-width: 0;
-    }
-
-    .steps li {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .step {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1_5);
+        box-sizing: border-box;
         width: 100%;
-        padding: 0;
-        border: 0;
-        background: none;
-        text-align: left;
-        cursor: pointer;
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: var(--space-2) var(--space-8) var(--space-4);
     }
-
 
     .bar {
-        height: 4px;
-        border-radius: 2px;
-        background: var(--color-border);
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-1_5) var(--space-1_5) var(--space-1_5) var(--space-5);
+        border-radius: var(--corner-full);
+        background: var(--color-surface-light);
     }
 
-    .step.done .bar,
-    .step.active .bar {
-        background: var(--color-accent-fill);
+    .progress {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-0_5);
+        min-width: 0;
     }
 
-    .label {
-        overflow: hidden;
-        font-size: var(--font-size-xs);
+    .count {
+        font-size: var(--font-size-sm);
         color: var(--color-text-muted);
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .step.active .label {
-        color: var(--color-text);
+        font-variant-numeric: tabular-nums;
     }
 
     .actions {
         display: flex;
+        flex-shrink: 0;
         align-items: center;
-        gap: var(--space-2);
+        gap: var(--space-1);
+        margin-left: auto;
     }
 
     @media (--bp-md-and-smaller) {
         .step-footer {
-            flex-direction: column;
-            align-items: stretch;
-            gap: var(--space-3);
-            padding: var(--space-3) var(--space-4);
-        }
-
-        .label {
-            display: none;
-        }
-
-        .actions {
-            justify-content: flex-end;
+            padding: var(--space-2) var(--space-4) var(--space-3);
         }
     }
 </style>
