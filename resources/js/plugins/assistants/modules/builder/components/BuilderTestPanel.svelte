@@ -156,9 +156,48 @@
         height: 100cqh;
     }
 
+    /* Wide viewports: open = docked column. The shell spans the full right
+       edge; the panel slides its corner offset to 0 and squares off while
+       it grows, so the circle morphs straight into the column. */
+    @media (--bp-xl) {
+        .test-shell {
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: var(--test-panel-w);
+            height: auto;
+        }
+
+        .test-panel {
+            right: var(--test-fab-inset);
+            bottom: var(--test-fab-inset);
+            transition:
+                height 340ms var(--settle),
+                width 360ms var(--settle) 30ms,
+                right 360ms var(--settle) 30ms,
+                bottom 340ms var(--settle),
+                border-radius 300ms var(--settle) 60ms,
+                box-shadow 360ms var(--settle);
+        }
+
+        .test-panel.open {
+            right: 0;
+            bottom: 0;
+            border-radius: 0;
+            box-shadow: -1px 0 0 var(--color-border);
+            transition:
+                width 480ms var(--settle),
+                height 560ms var(--spring) 35ms,
+                right 480ms var(--settle),
+                bottom 480ms var(--settle),
+                border-radius 360ms var(--settle) 120ms,
+                box-shadow 360ms var(--settle);
+        }
+    }
+
     @media (prefers-reduced-motion: reduce) {
         .test-panel, .test-panel.open, .launcher, .open .launcher {
-            transition: none;
+            transition: none !important;
         }
     }
 

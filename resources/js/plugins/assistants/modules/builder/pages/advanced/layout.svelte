@@ -21,7 +21,8 @@
     // it up via useBuilderContext), and released when the layout unmounts.
     const builder = createBuilderContext(useToastContext(), __);
 
-    // The test chat floats over every step; collapsed to a chat button by default.
+    // The test chat floats over every step (docked as a column on wide
+    // viewports); collapsed to a chat button by default.
     let testOpen = $state(false);
 
     onMount(() => {
@@ -32,7 +33,7 @@
 
 
 
-<div class="wrapper-grid">
+<div class="wrapper-grid" class:test-open={testOpen}>
     <div class="content-col">
         {@render children()}
     </div>
@@ -67,6 +68,28 @@
         overflow: hidden;
         --test-panel-w: 26rem;
         --test-fab-inset: var(--space-4);
+    }
+
+    /* Wide viewports: the open test chat docks as a right-hand column. The
+       track opens in step with the panel's morph (BuilderTestPanel), so the
+       content makes room while the button grows into the column. */
+    @media (--bp-xl) {
+        .wrapper-grid {
+            grid-template-columns: minmax(0, 1fr) 0rem;
+            grid-template-areas: 'main .';
+            transition: grid-template-columns 360ms cubic-bezier(0.3, 0, 0.2, 1) 30ms;
+        }
+
+        .wrapper-grid.test-open {
+            grid-template-columns: minmax(0, 1fr) var(--test-panel-w);
+            transition: grid-template-columns 480ms cubic-bezier(0.3, 0, 0.2, 1);
+        }
+    }
+
+    @media (--bp-xl) and (prefers-reduced-motion: reduce) {
+        .wrapper-grid, .wrapper-grid.test-open {
+            transition: none;
+        }
     }
 
     /* Sole scroll region of the builder. `min-height: 0` lets it shrink inside
