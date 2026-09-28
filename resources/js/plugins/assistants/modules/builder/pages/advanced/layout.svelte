@@ -57,8 +57,7 @@
         display: grid;
         box-sizing: border-box;
         grid-template-columns: minmax(0, 1fr);
-        /* Content scrolls; the step footer is pinned below it. */
-        grid-template-rows: minmax(0, 1fr) auto;
+        grid-template-rows: minmax(0, 1fr);
         overflow: hidden;
     }
 
@@ -66,10 +65,21 @@
        the grid row so its own `overflow-y` engages instead of overflowing the
        shell (and the parent AppContent). */
     .content-col {
+        grid-area: 1 / 1;
         height: 100%;
+        box-sizing: border-box;
+        /* Room to scroll the last content out from under the step footer. */
+        padding-bottom: 6rem;
         min-height: 0;
         min-width: 0;
         overflow-y: auto;
+    }
+
+    /* The step footer floats over the bottom of the content column. */
+    .wrapper-grid > :global(.step-footer) {
+        grid-area: 1 / 1;
+        align-self: end;
+        z-index: 1;
     }
 
     /* Mobile: the floating nav toggle overlays the content top.

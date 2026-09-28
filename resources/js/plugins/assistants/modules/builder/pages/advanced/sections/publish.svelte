@@ -6,8 +6,6 @@ import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte"
 import ChecklistItem from "$plugins/assistants/components/report/ChecklistItem.svelte";
 import Alert from "$lib/components/ui/alert/Alert.svelte";
 import BuilderInput from "$plugins/assistants/modules/builder/components/BuilderInput.svelte";
-import Button from "$lib/components/ui/button/Button.svelte";
-import FloppyDiskIcon from "$lib/components/ui/icons/iconset/FloppyDiskIcon.svelte";
 import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
 import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
 import { ReviewStage } from "$plugins/assistants/types/assistant/ReviewStage";
@@ -72,24 +70,6 @@ let requiresReview = $derived(
     assistant.releaseStage === ReleaseMode.ORGANIZATIONAL ||
     assistant.releaseStage === ReleaseMode.FEDERATED
 );
-
-let saveAsText = $derived.by(() => {
-    switch (assistant.releaseStage) {
-        case ReleaseMode.PRIVATE:
-            return __('assistants.builder.publish.save_as_private_assistant');
-        case ReleaseMode.ORGANIZATIONAL:
-        case ReleaseMode.FEDERATED:
-            return __('assistants.builder.publish.save_as_review');
-        case ReleaseMode.DRAFT:
-            return __('assistants.builder.publish.keep_as_draft');
-        default:
-            return '';
-    }
-});
-
-
-
-
 
 </script>
 
@@ -214,14 +194,6 @@ let saveAsText = $derived.by(() => {
                 assistantValueKey="submissionNote"
                 />
 
-
-            <Button
-                variant="fill"
-                size="md"
-                block
-                iconLeft={FloppyDiskIcon}
-                onclick={() => {builder.requestRelease()}}
-            >{saveAsText}</Button>
         {/if}
 
     </div>
