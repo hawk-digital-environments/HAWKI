@@ -11,6 +11,7 @@ import {
     type FieldErrorMap,
     type ReportGroup,
     type BuilderStep,
+    BUILDER_STEPS,
 } from "./builderValidationRules.js";
 
 export type {CheckItem, FieldErrorMap, ReportGroup, BuilderStep} from "./builderValidationRules.js";
@@ -194,6 +195,16 @@ export class BuilderValidatorContext {
         const failures = this.completeness.filter(c => !c.ok);
         if (failures.length) throw new ValidationError(failures);
     }
+
+    /** Index (in {@link BUILDER_STEPS}) of the first step with an unfilled
+     *  required field, or the step count when all are complete. Steps up to
+     *  and including it are reachable; later ones are locked. */
+    readonly firstIncompleteStep = $derived.by(() => {
+        const draft = this.getDraft();
+        const i = BUILDER_STEPS.findIndex(step =>
+            COMPLETENESS_RULES.some(rule => rule.step === step && !rule.isFilled(draft)));
+        return i === -1 ? BUILDER_STEPS.length : i;
+    });
 
     /**
      * Gate for the step footer's "Continue": checks the required fields of

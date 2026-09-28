@@ -29,6 +29,7 @@ import AssistantFeedbackSchema from '$plugins/assistants/api/schemas/resources/a
 import AssistantCategoriesSchema from '$plugins/assistants/api/schemas/resources/assistant-categories.schema';
 import AssistantTagsSchema from '$plugins/assistants/api/schemas/resources/assistant-tags.schema';
 import AssistantSettingsSchema from '$plugins/assistants/api/schemas/resources/assistant-settings.schema';
+import { isBuilderStepLocked } from '$plugins/assistants/modules/builder/contexts/builderProgress.svelte.js';
 import { BuilderModule } from '$plugins/assistants/modules/builder/BuilderModule';
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -149,7 +150,8 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 label: ctx.translate('assistants.builder.sidebar.general'),
                 icon: Settings01Icon,
                 route: 'assistants.builder.general',
-                active: ctx.router.isRouteActive('assistants.builder.general')
+                active: ctx.router.isRouteActive('assistants.builder.general'),
+                disabled: isBuilderStepLocked('general')
             },
             {
                 id: 'builder.model',
@@ -157,7 +159,8 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 label: ctx.translate('assistants.builder.sidebar.model'),
                 icon: ComputerIcon,
                 route: 'assistants.builder.model',
-                active: ctx.router.isRouteActive('assistants.builder.model')
+                active: ctx.router.isRouteActive('assistants.builder.model'),
+                disabled: isBuilderStepLocked('model')
             },
             {
                 id: 'builder.behaviour',
@@ -165,7 +168,8 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 label: ctx.translate('assistants.builder.sidebar.behaviour'),
                 icon: BubbleChatIcon,
                 route: 'assistants.builder.behaviour',
-                active: ctx.router.isRouteActive('assistants.builder.behaviour')
+                active: ctx.router.isRouteActive('assistants.builder.behaviour'),
+                disabled: isBuilderStepLocked('behaviour')
             },
             {
                 id: 'builder.knowledge',
@@ -173,7 +177,8 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 label: ctx.translate('assistants.builder.sidebar.knowledge'),
                 icon: Database01Icon,
                 route: 'assistants.builder.knowledge',
-                active: ctx.router.isRouteActive('assistants.builder.knowledge')
+                active: ctx.router.isRouteActive('assistants.builder.knowledge'),
+                disabled: isBuilderStepLocked('knowledge')
             },
             {
                 id: 'builder.test',
@@ -181,7 +186,8 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 label: ctx.translate('assistants.builder.sidebar.test'),
                 icon: TestTube01Icon,
                 route: 'assistants.builder.test',
-                active: ctx.router.isRouteActive('assistants.builder.test')
+                active: ctx.router.isRouteActive('assistants.builder.test'),
+                disabled: isBuilderStepLocked('test')
             },
             {
                 id: 'builder.publish',
@@ -189,7 +195,8 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 label: ctx.translate('assistants.builder.sidebar.publish'),
                 icon: SentIcon,
                 route: 'assistants.builder.publish',
-                active: ctx.router.isRouteActive('assistants.builder.publish')
+                active: ctx.router.isRouteActive('assistants.builder.publish'),
+                disabled: isBuilderStepLocked('publish')
             }
         ]);
     }

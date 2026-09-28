@@ -143,6 +143,7 @@
                                 icon={section.icon}
                                 label={section.label}
                                 active={section.active ?? (section.route ? router.isRouteActive(section.route) : false)}
+                                disabled={section.disabled}
                                 onclick={() => openEntry(section)}
                             />
                         {/if}

@@ -1,9 +1,9 @@
 <!--
   @component Pinned footer of the builder flow: the current step's position (step
   navigation itself lives in the sidebar) plus Back /
-  Continue. "Continue" checks the current step's required fields first
-  (`validator.validateStep`), marking empty ones inline and staying put if
-  any are missing (with an error toast). On the last step (publish) Continue is replaced by
+  Continue. A navigation guard only lets the user move to steps whose
+  predecessors are complete; a blocked jump marks the missing fields inline
+  (`validator.validateStep`) and shows an error toast. On the last step (publish) Continue is replaced by
   the release action.
 -->
 <script lang="ts">
@@ -17,6 +17,7 @@
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
+    import {builderProgress} from '$plugins/assistants/modules/builder/contexts/builderProgress.svelte.js';
     import {BUILDER_STEPS, type BuilderStep} from '$plugins/assistants/modules/builder/contexts/BuilderValidatorContext.svelte.js';
 
     const builder = useBuilderContext();
@@ -56,6 +57,38 @@
         }
         goTo(BUILDER_STEPS[index + 1]);
     }
+
+    /** Builder step a path points at, or -1 for non-step paths. */
+    const basePath = router.getPath('assistants.builder.index').replace(/\/+$/, '');
+    function stepIndexOf(path: string): number {
+        if (!path.startsWith(basePath + '/')) return -1;
+        const segment = path.slice(basePath.length + 1).split(/[/?#]/)[0];
+        return BUILDER_STEPS.indexOf(segment as BuilderStep);
+    }
+
+    // Publish how far the flow may be navigated, so the sidebar can disable
+    // locked steps; reset when the builder unmounts.
+    $effect(() => {
+        builderProgress.reachable = builder.validator.firstIncompleteStep;
+    });
+    $effect(() => () => { builderProgress.reachable = BUILDER_STEPS.length; });
+
+    // Only completed steps are navigable: a jump past the first incomplete
+    // step (browser history, anything bypassing Continue) is vetoed and that step's missing
+    // fields are marked. Going back is always allowed.
+    $effect(() => {
+        return router.registerNavigationGuard(({to}) => {
+            const target = stepIndexOf(to);
+            const blocker = builder.validator.firstIncompleteStep;
+            if (target === -1 || target <= blocker) return true;
+
+            if (blocker === index) {
+                builder.validator.validateStep(current, __('assistants.builder.steps.required'));
+            }
+            toast.error(__('assistants.builder.steps.incomplete'));
+            return false;
+        });
+    });
 </script>
 
 <footer class="step-footer">
@@ -67,10 +100,12 @@
     </div>
 
     <div class="actions">
-        <Button variant="ghost" iconLeft={ArrowLeft01Icon} disabled={index === 0}
-                onclick={() => goTo(BUILDER_STEPS[index - 1])}>
-            {__('assistants.builder.steps.back')}
-        </Button>
+        {#if index > 0}
+            <Button variant="ghost" iconLeft={ArrowLeft01Icon}
+                    onclick={() => goTo(BUILDER_STEPS[index - 1])}>
+                {__('assistants.builder.steps.back')}
+            </Button>
+        {/if}
         {#if !isLast}
             <Button variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
                 {__('assistants.builder.steps.continue_to', {step: __(`assistants.builder.sidebar.${BUILDER_STEPS[index + 1]}`)})}
