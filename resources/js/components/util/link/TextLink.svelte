@@ -32,10 +32,7 @@
 </script>
 
 <Link {...restProps}>
-    {#snippet children({favicon: renderFavicon})}
-        {#if favicon}
-            {@render renderFavicon()}
-        {/if}
-        {@render content?.()}
-    {/snippet}
+    <!-- Deliberately a single line: whitespace between the blocks would render
+         as a stray space inside the anchor (visible next to inline links). -->
+    {#snippet children({favicon: renderFavicon})}{#if favicon}{@render renderFavicon()}{/if}{@render content?.()}{/snippet}
 </Link>

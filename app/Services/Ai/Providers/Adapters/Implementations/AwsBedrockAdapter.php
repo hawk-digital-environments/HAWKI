@@ -6,15 +6,21 @@ namespace App\Services\Ai\Providers\Adapters\Implementations;
 
 
 use App\Models\Ai\AiProvider;
+use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
+use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Exceptions\InvalidProviderConfigurationException;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
+use App\Services\Ai\Providers\Adapters\Values\AnthropicThinkingConfig;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use Aws\Bedrock\BedrockClient;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\Bedrock\Concerns\CreatesBedrockClient;
 use Laravel\Ai\Providers\Provider as Driver;
+use Psr\Log\LoggerInterface;
 
 /**
  * Provider adapter for AWS Bedrock.
@@ -33,6 +39,12 @@ use Laravel\Ai\Providers\Provider as Driver;
 class AwsBedrockAdapter extends AbstractProviderAdapter
 {
     use CreatesBedrockClient;
+
+    public function __construct(
+        private readonly LoggerInterface $logger,
+    )
+    {
+    }
 
     /**
      * Creates a Bedrock driver instance from the provider's API key.
@@ -76,6 +88,59 @@ class AwsBedrockAdapter extends AbstractProviderAdapter
                 'key' => $token
             ]
         );
+    }
+
+    /**
+     * Enables Claude extended thinking for reasoning-capable Anthropic text models.
+     *
+     * Budget and sampling decisions are made by the shared {@see AnthropicThinkingConfig}
+     * (Bedrock runs the same Claude thinking feature); this adapter only maps the result
+     * into Bedrock's Converse envelope: thinking rides in `additionalModelRequestFields`,
+     * and neutralised sampling values replace the inference config for this request.
+     * Every deviation from the user-configured parameters is logged as a warning.
+     *
+     * @see https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages-extended-thinking.html
+     */
+    public function getAdditionalDriverOptions(Agent $agent, AgentRequestContext $context): array
+    {
+        $modelId = strtolower($context->model->model_id);
+        if (
+            !$agent instanceof AbstractTextGeneratingAgent
+            || !$context->model->flags->hasStrengthReasoning()
+            || (!str_contains($modelId, 'anthropic.') && !str_contains($modelId, 'claude'))
+        ) {
+            return [];
+        }
+
+        $config = AnthropicThinkingConfig::from(
+            requestedBudgetTokens: $context->modelParameters->getMaxThinkingTokens(),
+            maxTokens: $agent->maxTokens() ?? $context->modelParameters->getMaxTokens(),
+            temperature: $agent->temperature(),
+            topP: $agent->topP(),
+        );
+
+        foreach ($config->warnings as $warning) {
+            $this->logger->warning($warning);
+        }
+
+        if (!$config->enabled) {
+            return [];
+        }
+
+        $options = [
+            'additionalModelRequestFields' => [
+                'thinking' => $config->thinking,
+            ],
+        ];
+
+        if ($config->overridesSampling) {
+            $options['inferenceConfig'] = Arr::whereNotNull([
+                'maxTokens' => $agent->maxTokens(),
+                'temperature' => 1.0,
+            ]);
+        }
+
+        return $options;
     }
 
     /**

@@ -3,10 +3,18 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Ai\Providers\Adapters\Implementations;
 
+use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
+use App\Services\Ai\Agents\Implementations\Chat\ChatAgent;
+use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Exceptions\InvalidProviderConfigurationException;
+use App\Services\Ai\Models\Flags\Values\AiModelFlags;
+use App\Services\Ai\Models\Flags\Values\WellKnownModelFlags;
+use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
+use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Adapters\Implementations\AzureOpenAiAdapter;
+use App\Services\Ai\Providers\Values\AiProviderProxy;
 use Laravel\Ai\Providers\Provider as Driver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
@@ -48,6 +56,48 @@ class AzureOpenAiAdapterTest extends TestCase
                 return $this->createMock(Driver::class);
             });
         return $factory;
+    }
+
+    private function makeProviderProxy(): AiProviderProxy
+    {
+        $provider = new AiProvider();
+
+        $driver = $this->createMock(Driver::class);
+        $driver->method('providerCredentials')->willReturn(['key' => 'test-key']);
+
+        return new AiProviderProxy(
+            provider: $provider,
+            adapter: $this->createMock(ProviderAdapterInterface::class),
+            driver: $driver,
+        );
+    }
+
+    private function makeRequestContext(bool $hasReasoning): AgentRequestContext
+    {
+        $flags = AiModelFlags::fromArray(
+            $hasReasoning ? [WellKnownModelFlags::FEATURE_REASONING] : []
+        );
+        $model = $this->createMock(AiModel::class);
+        $model->method('__get')->willReturnCallback(
+            fn(string $key) => $key === 'flags' ? $flags : null
+        );
+
+        return new AgentRequestContext(
+            provider: $this->makeProviderProxy(),
+            model: $model,
+            modelParameters: new AiModelParameters(),
+        );
+    }
+
+    private function makeTextAgent(AgentRequestContext $context): ChatAgent
+    {
+        return new ChatAgent(
+            context: $context,
+            instructions: 'Be helpful.',
+            messages: [],
+            tools: [],
+            promptString: 'Hello AI',
+        );
     }
 
     // =========================================================================
@@ -147,6 +197,46 @@ class AzureOpenAiAdapterTest extends TestCase
         $this->expectException(InvalidProviderConfigurationException::class);
 
         $sut->createDriver($provider, $factory);
+    }
+
+    // =========================================================================
+    // getAdditionalDriverOptions
+    // =========================================================================
+
+    public function testItGetAdditionalDriverOptionsAddsReasoningForReasoningModels(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: true);
+
+        $result = $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        );
+
+        static::assertSame(['reasoning' => ['summary' => 'auto']], $result);
+    }
+
+    public function testItGetAdditionalDriverOptionsReturnsEmptyArrayWithoutReasoning(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: false);
+
+        $result = $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        );
+
+        static::assertSame([], $result);
+    }
+
+    public function testItGetAdditionalDriverOptionsReturnsEmptyArrayForNonTextAgent(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: true);
+
+        $result = $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->createMock(\Laravel\Ai\Contracts\Agent::class),
+            $context,
+        );
+
+        static::assertSame([], $result);
     }
 
     // =========================================================================

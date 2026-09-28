@@ -11,6 +11,9 @@ use Illuminate\Support\Collection;
 use Laravel\Ai\Gateway\OpenAi\OpenAiGateway;
 use Laravel\Ai\Providers\Provider;
 use Laravel\Ai\Streaming\Events\Citation;
+use Laravel\Ai\Streaming\Events\ReasoningDelta;
+use Laravel\Ai\Streaming\Events\ReasoningEnd;
+use Laravel\Ai\Streaming\Events\ReasoningStart;
 use Laravel\Ai\Streaming\Events\StreamEnd;
 use Laravel\Ai\Streaming\Events\TextDelta;
 use Laravel\Ai\Streaming\Events\TextEnd;
@@ -23,6 +26,14 @@ use Laravel\Ai\Streaming\Events\TextEnd;
  * annotations. These arrive in the final SSE frame's `response.output` array rather
  * than incrementally, so this gateway records the last raw SSE data frame while
  * streaming and processes citations once a {@see StreamEnd} event is detected.
+ *
+ * OpenAI streams a reasoning item as several summary parts (typically
+ * "**Title**\n\nBody") while the parent gateway concatenates their deltas into one
+ * undelimited stream, gluing a part's last line to the next part's `**Title**`
+ * heading. This gateway watches the raw `response.reasoning_summary_part.done`
+ * frames and prefixes the first delta of each subsequent part with a blank line,
+ * so the concatenated reasoning text keeps the markdown block structure the
+ * parts imply (each part renders as its own section).
  *
  * Multiple annotation entries for the same URL are merged into one
  * {@see UrlMultiCitation} with accumulated ranges, so the client receives one
@@ -42,15 +53,23 @@ class ExtendedOpenAiGateway extends OpenAiGateway
      */
     private array $lastData = [];
 
+    /** OpenAI reported that the current reasoning summary part is complete. */
+    private bool $reasoningPartBoundaryPending = false;
+
     /**
      * @inheritDoc
      *
-     * Intercepts each parsed SSE data frame to keep {@see $lastData} current.
+     * Intercepts each parsed SSE data frame to keep {@see $lastData} current and to
+     * flag completed reasoning summary parts for {@see processTextStream()}.
      */
     protected function parseServerSentEvents($streamBody): Generator
     {
+        $this->reasoningPartBoundaryPending = false;
         foreach (parent::parseServerSentEvents($streamBody) as $data) {
             $this->lastData = $data;
+            if (($data['type'] ?? '') === 'response.reasoning_summary_part.done') {
+                $this->reasoningPartBoundaryPending = true;
+            }
             yield $data;
         }
     }
@@ -58,17 +77,41 @@ class ExtendedOpenAiGateway extends OpenAiGateway
     /**
      * @inheritDoc
      *
-     * Yields all events from the parent stream, then injects {@see Citation} events
-     * derived from `url_citation` annotations in the final SSE frame immediately
-     * before the {@see StreamEnd} event.
+     * Separates OpenAI reasoning summary parts with a blank line and injects
+     * {@see Citation} events immediately before {@see StreamEnd}.
      */
     protected function processTextStream(string $invocationId, Provider $provider, string $model, $streamBody): Generator
     {
         $response = parent::processTextStream($invocationId, $provider, $model, $streamBody);
         $messageId = $this->generateEventId();
+        $reasoningStarted = false;
         foreach ($response as $event) {
             if ($event instanceof TextDelta || $event instanceof TextEnd) {
                 $messageId = $event->messageId;
+            }
+
+            if ($event instanceof ReasoningStart) {
+                $reasoningStarted = true;
+            }
+
+            if ($event instanceof ReasoningDelta && $reasoningStarted && $this->reasoningPartBoundaryPending) {
+                $this->reasoningPartBoundaryPending = false;
+                $separated = new ReasoningDelta(
+                    $event->id,
+                    $event->reasoningId,
+                    "\n\n" . $event->delta,
+                    $event->timestamp,
+                    $event->summary,
+                );
+                if ($event->invocationId !== null) {
+                    $separated->withInvocationId($event->invocationId);
+                }
+                $event = $separated;
+            }
+
+            if ($event instanceof ReasoningEnd) {
+                $reasoningStarted = false;
+                $this->reasoningPartBoundaryPending = false;
             }
 
             if ($event instanceof StreamEnd) {

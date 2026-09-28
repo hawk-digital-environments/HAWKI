@@ -9,8 +9,8 @@
   Compose it with the other family members as `children`:
   `DropdownMenuItem`, `DropdownMenuGroup`, `DropdownMenuLabel`,
   `DropdownMenuSeparator`, `DropdownMenuCheckboxItem`, `DropdownMenuSwitchItem`,
-  `DropdownMenuRadioGroup` + `DropdownMenuRadioItem`, and
-  `DropdownMenuDetailView` for a nested two-panel picker.
+  `DropdownMenuRadioGroup` + `DropdownMenuRadioItem`, `DropdownMenuSub` for a
+  hover-opening submenu, and `DropdownMenuDetailView` for a nested two-panel picker.
 
   ```svelte
   <DropdownMenu bind:open title={__('chat.export.title')} align="end">
@@ -189,6 +189,19 @@
         to {
             opacity: 0;
             scale: 0.97;
+        }
+    }
+
+    /* ── Mobile bottom-sheet rows ─────────────────────────────────────── */
+
+    /* Below `md` the menu is a BottomSheet, so every row gets a touch-sized
+       target (≥ 44px, like SingleSelect's sheet). Submenu panels are included:
+       DropdownMenuSub floats them over the sheet at this size. */
+    @media (--bp-smaller-than-md) {
+        :global(.dropdown-content:is(.dropdown-content--sheet, .dropdown-sub-content)) {
+            :global(:is(.dropdown-item, .dropdown-checkbox-item, .dropdown-radio-item, .dropdown-sub-trigger)) {
+                min-height: 2.75rem;
+            }
         }
     }
 </style>

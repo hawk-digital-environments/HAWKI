@@ -8,13 +8,25 @@
             "history": "Chatverlauf",
             "loading": "Chats werden geladen…",
             "generating": "Antwort wird generiert",
-            "empty": "Deine Unterhaltungen erscheinen hier."
+            "empty": "Deine Unterhaltungen erscheinen hier.",
+            "groups": {
+                "today": "Heute",
+                "yesterday": "Gestern",
+                "last7Days": "Letzte 7 Tage",
+                "last30Days": "Letzte 30 Tage",
+                "older": "Älter"
+            }
         },
         "page": {
             "newChat": "Neuer Chat",
             "loading": "Unterhaltung wird geladen…",
             "retry": "Erneut versuchen",
             "thinking": "Denkt nach…",
+            "reasoning": "Gedankengang",
+            "webSearch": "Websuche",
+            "webSearchOpened": "Seite geöffnet",
+            "webSearchFind": "In Seite gesucht",
+            "webSearchMore": "+:count weitere",
             "generating": "Antwort wird generiert…",
             "responseReady": "Die Antwort ist vollständig.",
             "messageHistory": "Nachrichtenverlauf",
@@ -22,6 +34,15 @@
             "loadError": "Die Unterhaltung konnte nicht geladen werden.",
             "sendError": "Die Nachricht konnte nicht gesendet werden.",
             "noResponse": "Das Modell hat keine Antwort zurückgegeben.",
+            "stats": {
+                "label": "Generierungsstatistik",
+                "outputTokens": "Ausgabe-Tokens",
+                "promptTokens": "Eingabe-Tokens",
+                "tokensPerSecond": "Tokens pro Sekunde",
+                "timeToFirstToken": "Zeit bis zum ersten Token",
+                "duration": "Gesamtdauer",
+                "unknown": "k. A."
+            },
             "noImprovementModel": "Es ist kein Modell verfügbar, um die Nachricht zu verbessern.",
             "noConversationOpen": "Es ist keine Unterhaltung geöffnet.",
             "requestFailed": "Die KI-Anfrage ist fehlgeschlagen.",
@@ -39,6 +60,13 @@
             "deleteAttachment": "Anhang löschen",
             "deleteConfirmTitle": "Nachricht löschen?",
             "deleteConfirmDescription": "Diese Nachricht wird dauerhaft entfernt."
+        },
+        "thread": {
+            "title": "Thread",
+            "replyCountOne": "1 Antwort",
+            "replyCount": ":count Antworten",
+            "reply": "Im Thread antworten",
+            "writing": "Du schreibst in diesem Thread"
         },
         "nameMenu": {
             "emptyNameError": "Der Chatname darf nicht leer sein",
@@ -90,6 +118,7 @@
             "textareaPlaceholder": "Hier kannst du deine Anfrage stellen…",
             "textareaPlaceholderRoom": "Schreibe eine Gruppennachricht oder nutze die KI mit @hawki...",
             "attachFileTooltip": "Datei anhängen",
+            "pastedTextFileName": "Eingefügter Text",
             "error": {
                 "unsupported_file_type": "Dateien vom Typ „:type“ können nicht angehängt werden.",
                 "file_too_large": "Die Datei „:name“ ist zu groß. Maximal erlaubt sind :maxSize.",
@@ -134,7 +163,19 @@
                 "topPInfo": "Begrenzt die Auswahlmöglichkeiten der KI auf die wahrscheinlichsten Wörter, deren Gesamtwahrscheinlichkeit diesen Wert nicht überschreitet. Ein niedrigerer Top_P-Wert (z. B. 0,7) führt zu zurückhaltenderen Antworten; höhere Werte (z. B. 0,9) ermöglichen eine größere Vielfalt.",
                 "topPAriaLabel": "Top P einstellen",
                 "adjustSettingsTooltip": "Modelleinstellungen anpassen",
-                "settingsTitle": "Modelleinstellungen"
+                "settingsTitle": "Modelleinstellungen",
+                "advancedSettings": "Erweiterte Einstellungen",
+                "reasoningHeading": "Denkaufwand",
+                "reasoningInfo": "Legt fest, wie intensiv das Modell nachdenkt, bevor es antwortet. Höherer Aufwand liefert gründlichere Antworten, dauert aber länger und verbraucht mehr Tokens.",
+                "reasoningDefault": "Standard",
+                "reasoningAriaLabel": "Denkaufwand einstellen",
+                "reasoningLevelNone": "Sofort",
+                "reasoningLevelMinimal": "Minimal",
+                "reasoningLevelLow": "Niedrig",
+                "reasoningLevelMedium": "Mittel",
+                "reasoningLevelHigh": "Hoch",
+                "reasoningLevelXhigh": "Sehr hoch",
+                "reasoningLevelMax": "Maximal"
             },
             "statusDot": {
                 "onlineLabel": "Online",

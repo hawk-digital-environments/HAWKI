@@ -6,11 +6,14 @@ namespace App\Services\Ai\Providers\Adapters\Implementations;
 
 
 use App\Models\Ai\AiProvider;
+use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
+use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Adapters\Traits\OpenAiModelListTrait;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use Illuminate\Support\Collection;
+use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\AzureOpenAi\Concerns\CreatesAzureOpenAiClient;
 use Laravel\Ai\Providers\Provider as Driver;
@@ -63,6 +66,26 @@ class AzureOpenAiAdapter extends AbstractProviderAdapter
             $this->createModelListClient($this->client($provider->driver)),
             $this->findEndpoint($provider->getRealProvider()) . '/openai/models'
         );
+    }
+
+    /**
+     * Adds Responses API options required by HAWKI's text-generating agents.
+     *
+     * Azure OpenAI uses the same Responses API as OpenAI. Reasoning-capable models
+     * receive `reasoning.summary` so the gateway can stream
+     * {@see \Laravel\Ai\Streaming\Events\ReasoningDelta} events.
+     */
+    public function getAdditionalDriverOptions(Agent $agent, AgentRequestContext $context): array
+    {
+        if (!$agent instanceof AbstractTextGeneratingAgent || !$context->model->flags->hasStrengthReasoning()) {
+            return [];
+        }
+
+        return [
+            'reasoning' => [
+                'summary' => 'auto',
+            ],
+        ];
     }
 
     /**

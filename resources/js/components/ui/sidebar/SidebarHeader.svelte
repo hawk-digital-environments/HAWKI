@@ -114,9 +114,9 @@
         /* Named because the absolutely-positioned brand has to inset itself by
            the same amounts — see below. */
         --header-pad-top: var(--space-1);
-        /* A touch tighter than the sidebar's group gap: the brand row reads as
-           the panel's cap rather than as another group, so it sits closer to
-           the module switcher below it. */
+        /* Tighter than the sidebar's group gap: the brand row reads as the
+           panel's cap rather than as another group, so it sits closer to the
+           switcher below it. */
         --header-pad-bottom: var(--space-2);
         /* Horizontal room the actions occupy, for the brand's max-width. The
            actions are `--nav-row-h` squares: at rail width a row is square, so

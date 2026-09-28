@@ -55,4 +55,32 @@
     a {
         color: var(--color-link);
     }
+
+    /* ── Form elements ──────────────────────────────────────────────────── */
+    /* Buttons are unstyled by default; components and the Button primitive
+       provide their own look (their unlayered scoped styles always win over
+       this base-layer reset). Legacy Blade pages keep their button styling —
+       it lives in the higher-priority `legacy` layer. */
+    button {
+        border: none;
+        background: transparent;
+        color: inherit;
+    }
+
+    button:disabled {
+        opacity: 0.5;
+    }
+
+    label {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text);
+    }
+
+    /* ── Rules ──────────────────────────────────────────────────────────── */
+    hr {
+        border: none;
+        border-top: var(--divider);
+        margin: var(--space-2) 0;
+    }
 }

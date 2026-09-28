@@ -43,7 +43,6 @@
         },
         "settings": {
             "title": "Einstellungen",
-            "description": "Verwalte dein Konto und deine Präferenzen.",
             "navLabel": "Einstellungsbereiche",
             "nav": {
                 "general": "Allgemein",
@@ -57,11 +56,12 @@
             },
             "general": {
                 "title": "Allgemein",
-                "description": "Sprache, Erscheinungsbild und kontoweite Aktionen.",
                 "languageLabel": "Sprache",
+                "languageHint": "Gilt für Menüs, Schaltflächen und Meldungen.",
                 "languageError": "Die Sprache konnte nicht geändert werden. Bitte versuche es erneut.",
                 "themeLabel": "Design",
                 "themeAuto": "Automatisch (System)",
+                "themeHint": "Wähle, wie die Oberfläche auf diesem Gerät aussieht.",
                 "themeLight": "Hell",
                 "themeDark": "Dunkel",
                 "themeSaveError": "Das Design konnte nicht gespeichert werden. Bitte versuche es erneut.",
@@ -76,9 +76,7 @@
             },
             "profile": {
                 "title": "Profil",
-                "description": "Bearbeite die Angaben, die andere bei der Zusammenarbeit sehen.",
-                "avatarHint": "Bilder werden automatisch quadratisch zugeschnitten.",
-                "changeAvatar": "Ändern",
+                "changeAvatar": "Avatar ändern",
                 "avatarUploading": "Wird hochgeladen…",
                 "avatarSaved": "Avatar aktualisiert.",
                 "avatarError": "Der Avatar konnte nicht hochgeladen werden.",
@@ -90,13 +88,16 @@
             },
             "experiments": {
                 "title": "Experimente",
-                "description": "Probiere unfertige Funktionen der neuen Oberfläche aus.",
                 "emptyTitle": "Keine Experimente verfügbar",
                 "emptyHint": "Aktuell gibt es nichts auszuprobieren. Neue Experimente erscheinen hier.",
                 "flags": {
                     "modelPickerV2": {
                         "title": "Neue Modellauswahl",
                         "description": "Eine erweiterte Modellauswahl mit Anbieter-Tabs, Suche, Favoriten und Tastaturkürzeln."
+                    },
+                    "statsForNerds": {
+                        "title": "Statistiken für Nerds",
+                        "description": "Zeigt Token-Anzahl, Tokens pro Sekunde und Zeitangaben unter jeder KI-Antwort."
                     }
                 }
             }

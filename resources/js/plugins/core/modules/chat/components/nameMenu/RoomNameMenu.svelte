@@ -72,13 +72,13 @@
     {#if !!slug}
         {#if oldUiMessageHistory.canAdministrate}
             <DropdownMenuItem
-                icon={Settings05Icon}
+                iconLeft={Settings05Icon}
                 onclick={() => oldUiBridge.triggerOpenRoomControlPanel(slug ?? '')}>
                 {__('chat.nameMenu.manageRoom')}
             </DropdownMenuItem>
         {/if}
         <DropdownMenuItem
-            icon={ViewIcon}
+            iconLeft={ViewIcon}
             onclick={() => oldUiBridge.triggerMarkRoomMessagesAsRead(slug ?? '')}
             disabled={!hasUnreadMessages}>
             {__('chat.nameMenu.markAsRead')}
@@ -87,7 +87,7 @@
 
         <DropdownMenuItem
             variant="destructive"
-            icon={Logout02Icon}
+            iconLeft={Logout02Icon}
             onclick={() => leaveConfirmOpen = true}>
             {__('chat.nameMenu.leaveAction')}
         </DropdownMenuItem>

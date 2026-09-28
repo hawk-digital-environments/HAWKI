@@ -43,7 +43,6 @@
         },
         "settings": {
             "title": "Settings",
-            "description": "Manage your account and preferences.",
             "navLabel": "Settings sections",
             "nav": {
                 "general": "General",
@@ -57,11 +56,12 @@
             },
             "general": {
                 "title": "General",
-                "description": "Language, appearance and account-wide actions.",
                 "languageLabel": "Language",
+                "languageHint": "Used for menus, buttons and messages.",
                 "languageError": "The language could not be changed. Please try again.",
                 "themeLabel": "Theme",
                 "themeAuto": "Auto (system)",
+                "themeHint": "Choose how the interface looks on this device.",
                 "themeLight": "Light",
                 "themeDark": "Dark",
                 "themeSaveError": "The theme preference could not be saved. Please try again.",
@@ -76,9 +76,7 @@
             },
             "profile": {
                 "title": "Profile",
-                "description": "Update the details people see when you collaborate.",
-                "avatarHint": "Images are cropped to a square automatically.",
-                "changeAvatar": "Change",
+                "changeAvatar": "Change avatar",
                 "avatarUploading": "Uploading…",
                 "avatarSaved": "Avatar updated.",
                 "avatarError": "The avatar could not be uploaded.",
@@ -90,13 +88,16 @@
             },
             "experiments": {
                 "title": "Experiments",
-                "description": "Try unfinished features of the new interface.",
                 "emptyTitle": "No experiments available",
                 "emptyHint": "There is nothing to try right now. New experiments will show up here.",
                 "flags": {
                     "modelPickerV2": {
                         "title": "New model picker",
                         "description": "A richer model picker with provider tabs, search, favorites and keyboard shortcuts."
+                    },
+                    "statsForNerds": {
+                        "title": "Stats for nerds",
+                        "description": "Shows token counts, tokens per second and timing details below every AI response."
                     }
                 }
             }

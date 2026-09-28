@@ -197,12 +197,12 @@
         border: var(--border);
 
         &:not(:disabled):hover {
-            --btn-bg: var(--color-hover);
+            --btn-bg: var(--color-highlight);
             --btn-color: var(--color-text);
         }
 
         &:not(:disabled):active {
-            --btn-bg: var(--color-hover);
+            --btn-bg: var(--color-highlight);
             --btn-color: var(--color-text);
         }
     }
@@ -266,20 +266,18 @@
         width: fit-content;
         height: 2rem;
         column-gap: var(--space-1);
-        padding: 0 var(--space-2);
+        padding: 0 var(--space-3);
         font-size: var(--font-size-xs);
         border-radius: var(--corner-full);
 
-        &:not(:has(> :global(.btnIcon))) {
-            padding-inline: var(--space-3);
-        }
-
+        /* Icons carry their own side bearing, so the icon side sits a notch
+           tighter than the text side to look even. */
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-3);
+            padding-inline-start: var(--space-2_5);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-3);
+            padding-inline-end: var(--space-2_5);
         }
     }
 
@@ -287,20 +285,18 @@
         --btn-icon-size: 16px;
         width: fit-content;
         height: 2rem;
-        padding: 0 var(--space-2);
+        padding: 0 var(--space-3);
         font-size: var(--font-size-sm);
         border-radius: var(--corner-full);
 
-        &:not(:has(> :global(.btnIcon))) {
-            padding-inline: var(--space-3);
-        }
-
+        /* Icons carry their own side bearing, so the icon side sits a notch
+           tighter than the text side to look even. */
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-3);
+            padding-inline-start: var(--space-2_5);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-3);
+            padding-inline-end: var(--space-2_5);
         }
     }
 
@@ -313,21 +309,17 @@
         align-items: center;
         height: 2.5rem;
         min-width: 6rem;
-        padding: var(--space-2) var(--space-4);
+        padding: var(--space-2) calc(var(--space-4) + var(--space-1));
         overflow: hidden;
         font-size: var(--font-size-md);
         border-radius: var(--corner-full);
 
-        &:not(:has(> :global(.btnIcon))) {
-            padding-inline: calc(var(--space-4) + var(--space-1));
-        }
-
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: calc(var(--space-4) + var(--space-1));
+            padding-inline-start: var(--space-4);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: calc(var(--space-4) + var(--space-1));
+            padding-inline-end: var(--space-4);
         }
     }
 

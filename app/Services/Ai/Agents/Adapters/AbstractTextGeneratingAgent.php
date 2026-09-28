@@ -163,6 +163,11 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
      */
     public function tools(): iterable
     {
+        // The SDK and provider options both read tools, so retain generator results.
+        if ($this->tools instanceof \Traversable) {
+            $this->tools = iterator_to_array($this->tools, false);
+        }
+
         return $this->tools ?? [];
     }
 

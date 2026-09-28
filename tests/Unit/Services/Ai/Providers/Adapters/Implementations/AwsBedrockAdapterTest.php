@@ -3,11 +3,20 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Ai\Providers\Adapters\Implementations;
 
+use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
+use App\Services\Ai\Agents\Implementations\Chat\ChatAgent;
+use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Exceptions\InvalidProviderConfigurationException;
+use App\Services\Ai\Models\Flags\Values\AiModelFlags;
+use App\Services\Ai\Models\Flags\Values\WellKnownModelFlags;
+use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
+use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Adapters\Implementations\AwsBedrockAdapter;
+use App\Services\Ai\Providers\Values\AiProviderProxy;
 use App\Services\Ai\Providers\Values\ProviderSettings;
+use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Providers\Provider as Driver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -20,9 +29,9 @@ class AwsBedrockAdapterTest extends TestCase
     // Helpers
     // =========================================================================
 
-    private function makeAdapter(): AwsBedrockAdapter
+    private function makeAdapter(\Psr\Log\LoggerInterface|null $logger = null): AwsBedrockAdapter
     {
-        return new AwsBedrockAdapter();
+        return new AwsBedrockAdapter($logger ?? new \Psr\Log\NullLogger());
     }
 
     private function makeProvider(string $apiKey, array $adapterSettings = []): AiProvider
@@ -49,6 +58,57 @@ class AwsBedrockAdapterTest extends TestCase
                 return $this->createMock(Driver::class);
             });
         return $factory;
+    }
+
+    private function makeProviderProxy(int $id = 1): AiProviderProxy
+    {
+        $provider     = new AiProvider();
+        $provider->id = $id;
+
+        return new AiProviderProxy(
+            provider: $provider,
+            adapter: $this->createMock(ProviderAdapterInterface::class),
+            driver: $this->createMock(Driver::class),
+        );
+    }
+
+    private function makeRequestContext(
+        bool $hasReasoning,
+        string $modelId = 'anthropic.claude-sonnet-4-5-20250929-v1:0',
+        bool $hasSamplingParameters = false,
+        AiModelParameters|null $parameters = null,
+    ): AgentRequestContext {
+        $flagNames = $hasReasoning ? [WellKnownModelFlags::FEATURE_REASONING] : [];
+        if ($hasSamplingParameters) {
+            $flagNames[] = WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS;
+        }
+
+        $flags = AiModelFlags::fromArray($flagNames);
+        $model = $this->createMock(AiModel::class);
+        $model->method('__get')->willReturnCallback(
+            fn(string $key) => match ($key) {
+                'flags' => $flags,
+                'model_id' => $modelId,
+                default => null,
+            }
+        );
+
+        return new AgentRequestContext(
+            provider: $this->makeProviderProxy(),
+            model: $model,
+            modelParameters: $parameters ?? new AiModelParameters(),
+        );
+    }
+
+    private function makeTextAgent(AgentRequestContext $context): ChatAgent
+    {
+        return new ChatAgent(
+            context: $context,
+            instructions: 'Be helpful.',
+            messages: [],
+            tools: [],
+            promptString: 'Hello AI',
+        );
     }
 
     // =========================================================================
@@ -187,5 +247,128 @@ class AwsBedrockAdapterTest extends TestCase
     public function testItGetNativeToolFactoryForCapabilityReturnsNull(): void
     {
         static::assertNull($this->makeAdapter()->getNativeToolFactoryForCapability('web_search'));
+    }
+
+    // =========================================================================
+    // getAdditionalDriverOptions
+    // =========================================================================
+
+    public function testItDoesNotEnableThinkingForNonReasoningClaudeModels(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: false);
+
+        static::assertSame([], $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        ));
+    }
+
+    public function testItDoesNotEnableThinkingForNonAnthropicModels(): void
+    {
+        $context = $this->makeRequestContext(
+            hasReasoning: true,
+            modelId: 'amazon.nova-pro-v1:0',
+        );
+
+        static::assertSame([], $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        ));
+    }
+
+    public function testItDoesNotEnableThinkingForNonTextAgents(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: true);
+
+        static::assertSame([], $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->createMock(Agent::class),
+            $context,
+        ));
+    }
+
+    public function testItEnablesThinkingWithoutSamplingParameters(): void
+    {
+        $context = $this->makeRequestContext(hasReasoning: true);
+
+        static::assertSame([
+            'additionalModelRequestFields' => [
+                'thinking' => [
+                    'type' => 'enabled',
+                    'budget_tokens' => 2_048,
+                ],
+            ],
+        ], $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        ));
+    }
+
+    public function testItLimitsThinkingBudgetAndNeutralisesSamplingParameters(): void
+    {
+        $parameters = (new AiModelParameters())
+            ->setMaxTokens(8_192)
+            ->setMaxThinkingTokens(6_000)
+            ->setTemperature(0.5)
+            ->setTopP(0.9);
+        $context = $this->makeRequestContext(
+            hasReasoning: true,
+            hasSamplingParameters: true,
+            parameters: $parameters,
+        );
+
+        static::assertSame([
+            'additionalModelRequestFields' => [
+                'thinking' => [
+                    'type' => 'enabled',
+                    'budget_tokens' => 4_096,
+                ],
+            ],
+            'inferenceConfig' => [
+                'maxTokens' => 8_192,
+                'temperature' => 1.0,
+            ],
+        ], $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        ));
+    }
+
+    public function testItDisablesThinkingAndWarnsWhenRequestedBudgetIsBelowAnthropicsMinimum(): void
+    {
+        $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+        $logger->expects(static::once())
+            ->method('warning')
+            ->with(static::stringContains("below Anthropic's minimum"));
+
+        $parameters = (new AiModelParameters())
+            ->setMaxTokens(8_192)
+            ->setMaxThinkingTokens(512);
+        $context = $this->makeRequestContext(
+            hasReasoning: true,
+            hasSamplingParameters: true,
+            parameters: $parameters,
+        );
+
+        static::assertSame([], $this->makeAdapter($logger)->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        ));
+    }
+
+    public function testItDoesNotEnableThinkingWhenMaxTokensIsTooSmall(): void
+    {
+        $parameters = (new AiModelParameters())
+            ->setMaxTokens(1_024)
+            ->setMaxThinkingTokens(2_048);
+        $context = $this->makeRequestContext(
+            hasReasoning: true,
+            hasSamplingParameters: true,
+            parameters: $parameters,
+        );
+
+        static::assertSame([], $this->makeAdapter()->getAdditionalDriverOptions(
+            $this->makeTextAgent($context),
+            $context,
+        ));
     }
 }

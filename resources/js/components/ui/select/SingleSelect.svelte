@@ -80,6 +80,7 @@
 
     let {
         value = $bindable(),
+        open = $bindable(false),
         items,
         itemSnippet: itemSnippet,
         triggerProps = {},
@@ -92,7 +93,6 @@
 
     let triggerElement = $state<HTMLButtonElement>();
     let contentAlign: 'start' | 'end' = $state('start');
-    let open = $state(false);
 
     function updateContentAlign() {
         if (!triggerElement) {
