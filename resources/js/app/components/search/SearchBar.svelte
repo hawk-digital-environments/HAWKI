@@ -7,7 +7,9 @@
 
   A session lives exactly as long as the bar is `active`, so a palette that is
   closed holds no queries open and a second bar neither reloads sources nor
-  cancels the first one's work. Selecting a row hands the *live* entry to
+  cancels the first one's work. The field and its selection choreography
+  belong to `CommandSearch`; this bar owns the session wiring, the filters
+  and the announcements. Selecting a row hands the *live* entry to
   `onSelect`; the host closes itself first and then runs `entry.onSelect()`
   (see `SearchDialog`), which is why the action is never invoked here.
 
@@ -278,7 +280,8 @@
 
     // ── Announcements ────────────────────────────────────────────────────
     // The spinner speaks for the search while the list is still empty; from
-    // the first row on, the status line is the only thing that talks.
+    // the first row on, the status line is the only thing that talks. The
+    // empty state is announced once, by its visible paragraph below.
 
     const showSpinner = $derived(pending && rowCount === 0);
 
@@ -286,7 +289,7 @@
         if (!active || showSpinner) return '';
         if (pending) return pendingLabel;
         if (providerErrors.length) return '';
-        if (rowCount === 0) return query ? __('ui.search.noResults', {query}) : __('ui.search.empty');
+        if (rowCount === 0) return '';
         if (rowCount === 1) return __('ui.search.resultCountOne');
         return __('ui.search.resultCount', {count: String(rowCount)});
     });
@@ -350,7 +353,9 @@
                 {#snippet children()}{/snippet}
             </Loader>
         {:else if rowCount === 0 && providerErrors.length === 0}
-            <p class="search-empty">
+            <!-- A live region of its own, so the empty state is announced
+                 exactly once — the status line above stays silent for it. -->
+            <p class="search-empty" role="status">
                 {query ? __('ui.search.noResults', {query}) : __('ui.search.empty')}
             </p>
         {/if}

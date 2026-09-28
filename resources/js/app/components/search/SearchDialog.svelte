@@ -30,6 +30,38 @@
     const search = useApp().search;
     const {__} = useTranslator();
 
+    /**
+     * The session outlives the close animation so the results do not
+     * collapse into a bare field while the dialog is still fading out.
+     * `CLOSE_LINGER_MS` tracks the close animation duration
+     * (`--duration-normal`, 200ms); with reduced motion the extra 20ms are
+     * invisible.
+     */
+    const CLOSE_LINGER_MS = 220;
+    let sessionActive = $state(false);
+    let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    $effect(() => {
+        if (open) {
+            if (closeTimer !== null) {
+                clearTimeout(closeTimer);
+                closeTimer = null;
+            }
+            sessionActive = true;
+            return;
+        }
+        closeTimer = setTimeout(() => {
+            closeTimer = null;
+            sessionActive = false;
+        }, CLOSE_LINGER_MS);
+        return () => {
+            if (closeTimer !== null) {
+                clearTimeout(closeTimer);
+                closeTimer = null;
+            }
+        };
+    });
+
     function select(entry: SearchEntry) {
         open = false;
         entry.onSelect();
@@ -45,7 +77,7 @@
         <DialogPrimitive.Overlay class="dialog-overlay" />
         <DialogPrimitive.Content class="search-dialog" aria-describedby={undefined}>
             <DialogPrimitive.Title class="u-sr-only">{__('ui.search.title')}</DialogPrimitive.Title>
-            <SearchBar {search} active={open} autofocus onSelect={select}>
+            <SearchBar {search} active={sessionActive} autofocus onSelect={select}>
                 {#snippet hint()}
                     <!-- The keycap is decorative (aria-hidden); the text next to
                          it carries the hint for screen readers. -->
