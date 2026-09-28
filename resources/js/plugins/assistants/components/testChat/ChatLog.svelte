@@ -78,17 +78,26 @@
         text-align: center;
     }
 
-    /* Same footprint as AssistantAvatarIcon size="small". */
+    /* Between the avatar's small and medium presets. */
+    .chatlog-empty :global(.icon-container) {
+        width: 4rem;
+        height: 4rem;
+    }
+
+    .chatlog-empty :global(.icon-container .symbol) {
+        font-size: 2rem;
+    }
+
     .avatar-placeholder {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 3rem;
-        height: 3rem;
+        width: 4rem;
+        height: 4rem;
         box-sizing: border-box;
         border: 1.5px dashed var(--color-border);
         border-radius: var(--corner-md);
-        font-size: 1.5rem;
+        font-size: 2rem;
         line-height: 1;
     }
 
