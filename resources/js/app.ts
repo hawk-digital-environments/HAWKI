@@ -31,6 +31,8 @@
  * app-wide extension, or change the relative ordering of existing ones.
  */
 import {ConfigurationExtension} from '$lib/kernel/config/ConfigurationExtension.svelte.js';
+import {UserSettingsExtension} from '$lib/kernel/userSettings/UserSettingsExtension.svelte.js';
+import {ThemeExtension} from '$lib/kernel/theme/ThemeExtension.svelte.js';
 import {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import {ModuleExtension} from '$lib/kernel/modules/ModuleExtension.js';
 import {createApp} from '$lib/kernel/HawkiApp.js';
@@ -77,6 +79,8 @@ provideLegacyGlobals();
             new ClientExtension(events),
             new PluginExtension(),
             new ConfigurationExtension(),
+            new UserSettingsExtension(),
+            new ThemeExtension(),
             new MigrationExtension(),
             new LocalizationExtension(),
             new ModuleExtension(),

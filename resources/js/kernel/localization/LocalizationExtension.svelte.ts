@@ -26,9 +26,15 @@ declare module '$lib/kernel/extendableTypes.js' {
  * `main` stage it loads the labels for the active locale (falling back to the
  * default locale when the requested labels fail to load). Locales are
  * `.svelte.ts` runes (`$state`), so consumers that read `app.localization.labels`
- * or `app.translator.translate(...)` re-render automatically when
- * {@link setLocale} swaps locales. Loaded label sets are memoised per locale
- * so switching back is instant.
+ * or `app.translator.translate(...)` re-render automatically when the locale
+ * changes. Loaded label sets are memoised per locale so switching back is
+ * instant.
+ *
+ * Locale changes are event-driven: when the `localeChanged` event fires on
+ * `app.events.async` (after the new locale has been persisted to the user settings
+ * and the connection has been refreshed — this extension's listener registers
+ * after the client extension's), the active locale is re-read from
+ * `connection.locale` and the labels for it are loaded.
  *
  * `app.translator` is the single entry point most code should reach for — it
  * reads off this extension internally so callers don't need to.
@@ -64,7 +70,7 @@ export class LocalizationExtension implements HawkiAppExtension {
         return this._labels.labels;
     }
 
-    public async setLocale(lang: string | Locale) {
+    private async applyLocale(lang: string | Locale) {
         if (typeof lang === 'string') {
             this._locale = this.findLocale(lang);
         } else {
@@ -133,7 +139,13 @@ export class LocalizationExtension implements HawkiAppExtension {
                 this._locale = this._defaultLocale;
             }
         });
-        bootstrapper.onMainStage(() => this.setLocale(this.locale));
+        bootstrapper.onMainStage(() => this.applyLocale(this.locale));
+
+        // Runs after the client extension's localeChanged listener, so the
+        // connection already carries the refreshed locale.
+        app.getOrFail('events').async.on('localeChanged', async () => {
+            await this.applyLocale(app.getOrFail('connection').locale);
+        });
     }
 
     public provideProperties(): Record<string, any> {

@@ -15,13 +15,13 @@
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useTheme} from '$lib/app/hooks/useTheme.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
 
     const app = useApp();
-    const themeStore = useStore('theme');
+    const {theme, setTheme} = useTheme();
     const {__} = useTranslator();
     const connection = useConnection();
     // The sidebar bumps its rows up a notch on small screens; the avatar and the
@@ -44,7 +44,7 @@
     let settingsOpen = $state(false);
 
     function toggleTheme(): void {
-        themeStore.theme = themeStore.isDark ? 'light' : 'dark';
+        setTheme(theme === 'dark' ? 'light' : 'dark');
     }
 
     function openSettings(): void {
@@ -95,8 +95,8 @@
     <DropdownMenuItem iconLeft={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
-    <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
-        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
+    <DropdownMenuItem iconLeft={theme === 'dark' ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+        {theme === 'dark' ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
     <DropdownMenuItem iconLeft={Logout02Icon} onclick={logout}>

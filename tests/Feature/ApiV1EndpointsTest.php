@@ -209,18 +209,6 @@ class ApiV1EndpointsTest extends TestCase
         self::assertDatabaseMissing('ai_convs', ['id' => $conversation->id]);
     }
 
-    public function testItPersistsTheLocalePreferenceOnTheCurrentUser(): void
-    {
-        $user = User::factory()->create(['locale' => null]);
-
-        $this->actingAs($user)
-            ->postJson('/api/hawki/v1/users/actions/locale', ['locale' => 'de_DE'], $this->jsonApiHeaders())
-            ->assertOk()
-            ->assertJsonPath('locale', 'de_DE');
-
-        self::assertSame('de_DE', $user->refresh()->locale);
-    }
-
     // =========================================================================
 
     private function createConversation(User $owner): AiConv
@@ -261,7 +249,7 @@ class ApiV1EndpointsTest extends TestCase
     }
 
     /**
-     * @return string The uuid of the temporary upload.
+     * @return string the uuid of the temporary upload
      */
     private function uploadTemporaryAttachment(User $user): string
     {
