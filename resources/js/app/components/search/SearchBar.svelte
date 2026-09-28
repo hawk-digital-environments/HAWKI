@@ -28,10 +28,9 @@
   ```
 -->
 <script lang="ts">
-    import {Command as CommandPrimitive} from 'bits-ui';
     import {untrack, type Snippet} from 'svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
-    import CommandResults, {type CommandGroupDefinition} from '$lib/components/ui/command/CommandResults.svelte';
+    import CommandSearch, {type CommandGroupDefinition} from '$lib/components/ui/command/CommandSearch.svelte';
     import Loader from '$lib/components/ui/loader/Loader.svelte';
     import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
@@ -124,7 +123,6 @@
         query = '';
         pluginFilter = ALL;
         moduleFilter = ALL;
-        selection = '';
     });
 
     // ── Scope ────────────────────────────────────────────────────────────
@@ -208,16 +206,13 @@
     // ── Input ────────────────────────────────────────────────────────────
 
     // Query dispatch is suspended for the length of an IME composition, so a
-    // half-composed syllable never reaches the providers.
-    let composing = false;
-
-    function startComposition() {
-        composing = true;
-        session?.suspend();
-    }
-
-    function endComposition() {
-        composing = false;
+    // half-composed syllable never reaches the providers. The command field
+    // reports the composition and keeps its keys quiet meanwhile.
+    function handleComposition(composing: boolean) {
+        if (composing) {
+            session?.suspend();
+            return;
+        }
         session?.setInput({query, scope});
         session?.suspend(false);
     }
@@ -226,11 +221,7 @@
         const current = session;
         if (!current) return;
         const input = {query, scope};
-        untrack(() => {
-            selection = '';
-            commandValue = '';
-            current.setInput(input);
-        });
+        untrack(() => current.setInput(input));
     });
 
     // ── Results ──────────────────────────────────────────────────────────
@@ -246,10 +237,13 @@
     );
     const rowCount = $derived(groups.reduce((total, group) => total + group.items.filter(row => row.available).length, 0));
 
-    /** Every row's key, so a vanished selection can be noticed. */
-    const selectableKeys = $derived(
+    /** Every selectable row's value; the command field keeps its highlight inside this set. */
+    const selectableValues = $derived(
         new Set(groups.flatMap(group => group.items.filter(row => row.available).map(row => row.entityKey)))
     );
+
+    /** Whether the kernel froze the row order; a frozen order keeps the user's highlight. */
+    const frozen = $derived(sessionState?.frozen ?? false);
 
     const commandGroups = $derived<CommandGroupDefinition[]>(
         groups.map(group => ({
@@ -270,81 +264,11 @@
     const groupLabels = $derived(new Map(groups.map(group => [group.id, group.label])));
 
     // ── Selection ────────────────────────────────────────────────────────
-    // Command keeps the highlight (and with it `aria-activedescendant`) in its
-    // own `value`, and re-selects the first row whenever rows are registered.
-    // `selection` is the row the *user* is on, so an appended group cannot
-    // pull the highlight away from it.
-
-    let commandValue = $state('');
-    let selection = $state('');
-
-    /**
-     * True while an event of ours is still on the stack. Command applies its
-     * own re-selection in a microtask after a DOM flush, so a value change
-     * seen inside a gesture is intent and any other one is bookkeeping.
-     */
-    let inGesture = false;
-
-    function noteGesture() {
-        inGesture = true;
-        queueMicrotask(() => (inGesture = false));
-    }
-
-    function handleValueChange(value: string) {
-        if (inGesture) selection = value;
-        else if (sessionState?.frozen) commandValue = selectableKeys.has(selection) ? selection : '';
-    }
-
-    $effect(() => {
-        void selectableKeys;
-        if (!selection) return;
-        if (!selectableKeys.has(selection)) {
-            // The row was deleted or lost access; drop the selection rather
-            // than keep pointing at a placeholder.
-            selection = '';
-            commandValue = '';
-            return;
-        }
-        if (!inGesture && commandValue !== selection) commandValue = selection;
-    });
-
-    const NAV_KEYS = new Set(['ArrowDown', 'ArrowUp', 'Home', 'End', 'PageDown', 'PageUp']);
-    const VIM_KEYS = new Set(['n', 'p', 'j', 'k']);
-
-    function handleKeydown(event: KeyboardEvent) {
-        if (!(event.target instanceof HTMLInputElement) || !event.target.classList.contains('search-input')) {
-            // Keep filter/retry keys from also selecting a command row.
-            return;
-        }
-        if (composing || event.isComposing) {
-            return;
-        }
-        noteGesture();
-        const navigates =
-            NAV_KEYS.has(event.key) || (event.ctrlKey && VIM_KEYS.has(event.key.toLowerCase()));
-        if (navigates) session?.freezeOrder();
-    }
-
-    /**
-     * Pointer *motion* into a row is intent; rows landing under a stationary
-     * pointer are not, which is why this hangs off `pointermove` rather than
-     * off the row's hover state.
-     */
-    function handlePointerMove(event: PointerEvent) {
-        if (!event.movementX && !event.movementY) return;
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-        const row = target.closest<HTMLElement>('.command-item');
-        if (!row || row.hasAttribute('data-disabled')) return;
-        const value = row.getAttribute('data-value');
-        if (!value) return;
-        session?.freezeOrder();
-        selection = value;
-        commandValue = value;
-    }
+    // The command field owns the highlight and its gestures (see
+    // CommandSearch); this bar only validates the picked row against the
+    // live session.
 
     function choose(entityKey: string) {
-        noteGesture();
         // The kernel re-checks the row and records the static history; a row
         // that has gone stale in the meantime yields nothing and does nothing.
         const entry = session?.select(entityKey);
@@ -390,67 +314,58 @@
         </div>
     {/if}
 
-    <CommandPrimitive.Root
-        label={fieldLabel}
-        loop
-        shouldFilter={false}
-        disablePointerSelection
-        bind:value={commandValue}
-        onValueChange={handleValueChange}
-        onkeydown={handleKeydown}
+    <CommandSearch
         class="search-command"
+        label={fieldLabel}
+        placeholder={__('ui.search.placeholder')}
+        bind:value={query}
+        {autofocus}
+        groups={commandGroups}
+        selectableValues={selectableValues}
+        {frozen}
+        resetKey={scopeKey}
+        onSelect={choose}
+        onIntent={() => session?.freezeOrder()}
+        onCompositionChange={handleComposition}
+        describedBy={hintId}
+        resultsLabel={__('ui.search.resultsLabel')}
     >
-        <div class="search-field">
+        {#snippet leading()}
             <span class="search-icon" aria-hidden="true">
                 <Search01Icon size={18} strokeWidth={2} />
             </span>
-            <CommandPrimitive.Input
-                {autofocus}
-                class="search-input"
-                aria-label={fieldLabel}
-                placeholder={__('ui.search.placeholder')}
-                aria-describedby={hintId}
-                oncompositionstart={startComposition}
-                oncompositionend={endComposition}
-                onkeydown={event => {if (composing || event.isComposing) event.stopPropagation();}}
-                bind:value={query}
-            />
+        {/snippet}
+        {#snippet trailing()}
             {#if hint}
                 <span class="search-field-hint">{@render hint()}</span>
             {/if}
-        </div>
-        <p id={hintId} class="u-sr-only">{__('ui.search.keyboardHint')}</p>
+        {/snippet}
+    </CommandSearch>
 
-        {#if active}
-            <CommandResults
-                groups={commandGroups}
-                onSelect={choose}
-                aria-label={__('ui.search.resultsLabel')}
-                onpointermove={handlePointerMove}
-            />
-            {#if showSpinner}
-                <Loader active label={pendingLabel}>
-                    {#snippet children()}{/snippet}
-                </Loader>
-            {:else if rowCount === 0 && providerErrors.length === 0}
-                <p class="search-empty">
-                    {query ? __('ui.search.noResults', {query}) : __('ui.search.empty')}
-                </p>
-            {/if}
+    <p id={hintId} class="u-sr-only">{__('ui.search.keyboardHint')}</p>
 
-            <!-- One region per concern: progress and counts here, failures below.
-                 Neither re-reads the list. Both stay mounted so a late message is
-                 announced instead of arriving with a freshly inserted region. -->
-            <span class="u-sr-only" role="status" aria-atomic="true">{status}</span>
-
-            {#if pending && rowCount > 0}
-                <!-- Visible counterpart of the announcement above: results are
-                     already selectable while a group is still on its way. -->
-                <p class="search-pending">{pendingLabel}</p>
-            {/if}
-
+    {#if active}
+        {#if showSpinner}
+            <Loader active label={pendingLabel}>
+                {#snippet children()}{/snippet}
+            </Loader>
+        {:else if rowCount === 0 && providerErrors.length === 0}
+            <p class="search-empty">
+                {query ? __('ui.search.noResults', {query}) : __('ui.search.empty')}
+            </p>
         {/if}
-    </CommandPrimitive.Root>
+
+        <!-- One region per concern: progress and counts here, failures below.
+             Neither re-reads the list. Both stay mounted so a late message is
+             announced instead of arriving with a freshly inserted region. -->
+        <span class="u-sr-only" role="status" aria-atomic="true">{status}</span>
+
+        {#if pending && rowCount > 0}
+            <!-- Visible counterpart of the announcement above: results are
+                 already selectable while a group is still on its way. -->
+            <p class="search-pending">{pendingLabel}</p>
+        {/if}
+    {/if}
     {#if active}
         <div role="alert">
             {#if providerErrors.length > 0}
@@ -494,34 +409,12 @@
     }
 
     /* ── Field ────────────────────────────────────────────────────────── */
-
-    :global(.search-bar .search-field) {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2_5);
-        padding: var(--space-3) var(--space-4);
-        border-bottom: var(--border);
-    }
+    /* The field itself (padding, border, input) is styled by CommandSearch;
+       only the host-provided decorations are styled here. */
 
     :global(.search-bar .search-icon) {
         display: inline-flex;
         flex-shrink: 0;
-        color: var(--color-text-muted);
-    }
-
-    :global(.search-bar .search-input) {
-        flex: 1;
-        min-width: 0;
-        border: none;
-        outline-offset: var(--space-1);
-        background: transparent;
-        color: var(--color-text);
-        font: inherit;
-        font-size: var(--font-size-sm);
-        line-height: var(--line-height-normal);
-    }
-
-    :global(.search-bar .search-input::placeholder) {
         color: var(--color-text-muted);
     }
 

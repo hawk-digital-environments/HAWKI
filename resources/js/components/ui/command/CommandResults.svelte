@@ -59,6 +59,10 @@
         children?: Snippet;
         /** Rendered instead of the groups when there are none. */
         empty?: Snippet;
+        /** Real pointer motion onto an enabled row; the host decides what intent means. */
+        onRowPointerMove?: (value: string, event: PointerEvent) => void;
+        /** A pointer press on an enabled row. */
+        onRowPointerDown?: (value: string) => void;
         /** The viewport element. Supports bind:viewport. */
         viewport?: HTMLElement | null;
     }
@@ -69,6 +73,8 @@
         current,
         children,
         empty,
+        onRowPointerMove,
+        onRowPointerDown,
         viewport = $bindable(null),
         ...restProps
     }: Props = $props();
@@ -96,6 +102,8 @@
                             keywords={item.keywords}
                             disabled={item.disabled}
                             onSelect={() => onSelect(item.value)}
+                            onpointermove={event => {if (!item.disabled) onRowPointerMove?.(item.value, event);}}
+                            onpointerdown={() => {if (!item.disabled) onRowPointerDown?.(item.value);}}
                         >
                             <span class="item-icon" aria-hidden="true">
                                 {#if Icon}
