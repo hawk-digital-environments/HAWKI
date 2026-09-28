@@ -123,6 +123,15 @@
         transition: opacity 160ms var(--settle) 190ms, background-color 150ms;
     }
 
+    /* Same dark-mode foreground as the accent Button (Button.svelte). */
+    :global(html.darkMode) .launcher {
+        color: var(--color-active-text);
+    }
+
+    :global(html.darkMode) .launcher:focus-visible {
+        outline-color: var(--color-active-text);
+    }
+
     /* The icon stays pinned in the corner the button came from. */
     .launcher :global(svg) {
         width: 1.375rem;
