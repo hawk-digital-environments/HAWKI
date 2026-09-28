@@ -228,7 +228,7 @@
                 )}/>
             {/snippet}
             {#if allowRename && !!slug}
-                <DropdownMenuItem onclick={() => isRenaming = true} icon={PencilEdit01Icon}>
+                <DropdownMenuItem onclick={() => isRenaming = true} iconLeft={PencilEdit01Icon}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
             {/if}

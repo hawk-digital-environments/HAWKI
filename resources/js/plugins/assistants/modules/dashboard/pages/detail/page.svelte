@@ -256,12 +256,12 @@
                         </Tooltip>
                     {/snippet}
                     {#if assistant.actionPermissions?.update === true}
-                        <DropdownMenuItem icon={PencilEdit01Icon} onclick={startEdit}>
+                        <DropdownMenuItem iconLeft={PencilEdit01Icon} onclick={startEdit}>
                             {__('assistants.detail.edit')}
                         </DropdownMenuItem>
                     {/if}
                     {#if assistant.actionPermissions?.delete === true}
-                        <DropdownMenuItem variant="destructive" icon={Delete02Icon} onclick={() => deleteConfirmOpen = true}>
+                        <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => deleteConfirmOpen = true}>
                             {__('assistants.detail.delete')}
                         </DropdownMenuItem>
                     {/if}

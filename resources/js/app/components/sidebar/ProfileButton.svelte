@@ -109,21 +109,21 @@
     </div>
 
     <DropdownMenuSeparator/>
-    <DropdownMenuItem icon={Settings05Icon} onclick={openSettings}>
+    <DropdownMenuItem iconLeft={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
-    <DropdownMenuItem icon={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+    <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
         {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
-    <DropdownMenuItem icon={Megaphone01Icon} onclick={openAnnouncements}>
+    <DropdownMenuItem iconLeft={Megaphone01Icon} onclick={openAnnouncements}>
         {__('ui.profile.announcements')}
     </DropdownMenuItem>
-    <DropdownMenuItem icon={AiChipIcon} onclick={openModels}>
+    <DropdownMenuItem iconLeft={AiChipIcon} onclick={openModels}>
         {__('ui.profile.models')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
-    <DropdownMenuItem icon={Logout02Icon} onclick={logout}>
+    <DropdownMenuItem iconLeft={Logout02Icon} onclick={logout}>
         {__('ui.profile.logout')}
     </DropdownMenuItem>
 </DropdownMenu>

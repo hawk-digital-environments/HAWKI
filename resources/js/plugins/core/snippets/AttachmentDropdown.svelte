@@ -78,13 +78,13 @@ Usage (embedded in the legacy attachment template — see
     {/snippet}
     {#if canPreview}
         <DropdownMenuItem
-            icon={FileViewIcon}
+            iconLeft={FileViewIcon}
             onclick={() => oldUiBridge.triggerPreviewAttachment(fileData)}>
             {__('chat.attachmentDropdown.preview')}
         </DropdownMenuItem>
     {/if}
     <DropdownMenuItem
-        icon={Download01Icon}
+        iconLeft={Download01Icon}
         onclick={() => oldUiBridge.triggerDownloadAttachment(fileData)}>
         {__('chat.attachmentDropdown.download')}
     </DropdownMenuItem>

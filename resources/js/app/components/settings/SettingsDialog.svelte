@@ -185,12 +185,12 @@
 {/if}
 
 <style>
-    /* One grid on a single surface: the nav on the left, the page scrolling on
-       its own on the right, both below a header row holding the title and the
-       dialog's close button (a 24px box inset by --space-4). Every edge — and
-       the gap under the header — shares that one inset, and the corner radius
-       is the frames' radius plus it, so the 8px fields inside sit concentric
-       with it.
+    /* One surface, two rows: the header on top and the dialog body as a
+       nav/page row below it (the nav on the left, the page scrolling on its
+       own on the right, beside the close button inset by --space-4). Every
+       edge — and the gap under the header — shares that one inset, and the
+       corner radius is the frames' radius plus it, so the 8px fields inside
+       sit concentric with it.
 
        The dialog is as tall as the current page and hangs from a fixed top
        edge, so switching to a shorter or taller section never moves the nav.
@@ -203,8 +203,6 @@
         width: min(48rem, calc(100vw - 2 * var(--space-4)));
         max-width: none;
         max-height: calc(100dvh - var(--settings-top) - var(--space-4));
-        grid-template-columns: 11rem minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr);
         overflow: hidden;
         padding: 0;
         gap: 0;
@@ -214,8 +212,15 @@
     /* A 24px title line under the shared inset centres the title on the close
        button; on the left it lines up with the nav icons below it. */
     :global(.settings-dialog-header.settings-dialog-header) {
-        grid-column: 1 / -1;
         padding: var(--space-4) var(--space-12) 0 calc(var(--space-4) + var(--space-2_5));
+    }
+
+    /* The dialog's body region is the nav/page row: a fixed nav rail beside
+       the page. The base `.dialog-body` scroll is replaced by the panel's own
+       scroller, so only the page scrolls. */
+    :global(.settings-dialog-content .dialog-body) {
+        display: flex;
+        overflow: hidden;
     }
 
     .settings-title {
@@ -225,6 +230,7 @@
 
     .settings-nav {
         display: flex;
+        flex: 0 0 11rem;
         flex-direction: column;
         min-height: 0;
         padding: var(--space-4) 0 var(--space-4) var(--space-4);
@@ -272,6 +278,7 @@
     }
 
     .settings-panel {
+        flex: 1 1 auto;
         min-width: 0;
         min-height: 0;
         max-height: 100%;

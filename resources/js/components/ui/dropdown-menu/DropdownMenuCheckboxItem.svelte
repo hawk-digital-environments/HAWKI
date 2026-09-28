@@ -20,6 +20,7 @@
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
     import Tick02Icon from '../icons/iconset/Tick02Icon.svelte';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Whether the checkbox is checked. Supports bind:checked. */
@@ -34,6 +35,10 @@
         closeOnSelect?: boolean;
         /** Bindable reference to the rendered item element. */
         ref?: HTMLDivElement | null;
+        /** An optional icon between the state indicator and the item's content. */
+        iconLeft?: IconComponent;
+        /** An optional icon after the item's content; pushed to the row's end edge. */
+        iconRight?: IconComponent;
     }
 
     let {
@@ -44,6 +49,8 @@
         class: className,
         closeOnSelect = true,
         ref = $bindable(null),
+        iconLeft: IconLeft,
+        iconRight: IconRight,
         ...restProps
     }: Props = $props();
 </script>
@@ -56,7 +63,13 @@
                     <Tick02Icon size={12}/>
                 {/if}
             </span>
+            {#if IconLeft}
+                <IconLeft size="14" class="dropdown-item-icon-start"/>
+            {/if}
             {@render children?.(isChecked)}
+            {#if IconRight}
+                <IconRight size="14" class="dropdown-item-icon-end"/>
+            {/if}
         </div>
     {/snippet}
 </DropdownMenuPrimitive.CheckboxItem>
@@ -104,5 +117,17 @@
         align-items: center;
         justify-content: center;
         color: var(--color-text);
+    }
+
+    /* No flex gap on the row itself, so the start icon brings its own; the end
+       icon rides the row's end edge, before the absolutely positioned state
+       indicator's reserved zone. The classes live on the icon components'
+       svgs, hence :global. */
+    .dropdown-checkbox-item :global(.dropdown-item-icon-start) {
+        margin-inline-end: var(--space-2);
+    }
+
+    .dropdown-checkbox-item :global(.dropdown-item-icon-end) {
+        margin-inline-start: auto;
     }
 </style>

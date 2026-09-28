@@ -136,10 +136,10 @@
                         tooltipSide="right"
                     />
                 {/snippet}
-                <DropdownMenuItem icon={PencilEdit01Icon} onclick={() => renaming = true}>
+                <DropdownMenuItem iconLeft={PencilEdit01Icon} onclick={() => renaming = true}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
-                <DropdownMenuItem icon={Delete02Icon} variant="destructive" onclick={() => deleteOpen = true}>
+                <DropdownMenuItem iconLeft={Delete02Icon} variant="destructive" onclick={() => deleteOpen = true}>
                     {__('chat.nameMenu.deleteAction')}
                 </DropdownMenuItem>
             </DropdownMenu>
