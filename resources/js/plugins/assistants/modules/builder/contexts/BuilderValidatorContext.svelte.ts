@@ -10,9 +10,11 @@ import {
     type CheckItem,
     type FieldErrorMap,
     type ReportGroup,
+    type BuilderStep,
 } from "./builderValidationRules.js";
 
-export type {CheckItem, FieldErrorMap, ReportGroup} from "./builderValidationRules.js";
+export type {CheckItem, FieldErrorMap, ReportGroup, BuilderStep} from "./builderValidationRules.js";
+export {BUILDER_STEPS} from "./builderValidationRules.js";
 
 /** Thrown by {@link BuilderValidatorContext.validate} when required fields are
  *  not satisfied; `failures` carries the unsatisfied checks for reporting. */
@@ -191,5 +193,29 @@ export class BuilderValidatorContext {
     validate(): void {
         const failures = this.completeness.filter(c => !c.ok);
         if (failures.length) throw new ValidationError(failures);
+    }
+
+    /** Whether every required field of `step` is filled. */
+    isStepComplete(step: BuilderStep): boolean {
+        const draft = this.getDraft();
+        return COMPLETENESS_RULES.every(rule => rule.step !== step || rule.isFilled(draft));
+    }
+
+    /**
+     * Gate for the step footer's "Continue": checks the required fields of
+     * `step` and marks each empty one with `message` as an inline error
+     * (cleared again on edit). Returns whether the step is complete.
+     */
+    validateStep(step: BuilderStep, message: string): boolean {
+        const draft = this.getDraft();
+        const patch: FieldErrorMap = {};
+        for (const rule of COMPLETENESS_RULES) {
+            if (rule.step !== step || rule.isFilled(draft)) continue;
+            const empty = rule.keys.filter(k => !draft[k]);
+            for (const key of empty.length ? empty : rule.keys) patch[key] = message;
+        }
+        if (!Object.keys(patch).length) return true;
+        this.fieldErrors = { ...this.fieldErrors, ...patch };
+        return false;
     }
 }

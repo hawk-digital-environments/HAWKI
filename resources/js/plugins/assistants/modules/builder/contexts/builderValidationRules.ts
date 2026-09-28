@@ -1,6 +1,10 @@
 import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
 import { ValidationState } from "$plugins/assistants/types/enums/ValidationState";
 
+/** The builder's steps in flow order; each maps to `assistants.builder.<step>`. */
+export const BUILDER_STEPS = ['general', 'model', 'behaviour', 'knowledge', 'test', 'publish'] as const;
+export type BuilderStep = typeof BUILDER_STEPS[number];
+
 /** Per-field error message, keyed by `Assistant` field. */
 export type FieldErrorMap = Partial<Record<keyof Assistant, string>>;
 
@@ -25,6 +29,8 @@ export interface ReportGroup {
 export interface CompletenessRule {
     id: string;
     group: string;
+    /** Builder step (section route suffix) whose fields this rule checks. */
+    step: BuilderStep;
     /** Fields this rule concerns (used for the remix "changed" check). */
     keys: (keyof Assistant)[];
     /** Whether the field(s) hold an acceptable value. */
@@ -49,6 +55,7 @@ export interface TriggerRule {
 export const COMPLETENESS_RULES: CompletenessRule[] = [
     {
         id: 'name-handle',
+        step: 'general',
         group: 'Allgemeine Informationen',
         keys: ['name', 'handle'],
         isFilled: a => !!(a.name && a.handle),
@@ -57,6 +64,7 @@ export const COMPLETENESS_RULES: CompletenessRule[] = [
     },
     {
         id: 'description',
+        step: 'general',
         group: 'Allgemeine Informationen',
         keys: ['description'],
         isFilled: a => a.description !== '',
@@ -66,6 +74,7 @@ export const COMPLETENESS_RULES: CompletenessRule[] = [
     },
     {
         id: 'category',
+        step: 'general',
         group: 'Allgemeine Informationen',
         keys: ['category'],
         isFilled: a => !!a.category,
@@ -74,6 +83,7 @@ export const COMPLETENESS_RULES: CompletenessRule[] = [
     },
     {
         id: 'system-prompt',
+        step: 'behaviour',
         group: 'Verhalten',
         keys: ['systemPrompt'],
         isFilled: a => !!a.systemPrompt,
@@ -83,6 +93,7 @@ export const COMPLETENESS_RULES: CompletenessRule[] = [
     },
     {
         id: 'model',
+        step: 'model',
         group: 'Model',
         keys: ['model'],
         isFilled: a => !!a.model,

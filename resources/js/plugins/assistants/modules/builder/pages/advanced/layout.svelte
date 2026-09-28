@@ -9,6 +9,7 @@
     import {createBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import BuilderStepFooter from "$plugins/assistants/modules/builder/components/BuilderStepFooter.svelte";
     import ConfirmBuilderExit from "$plugins/assistants/modules/builder/components/ConfirmBuilderExit.svelte";
 
     let { children } = $props();
@@ -31,6 +32,7 @@
     <div class="content-col">
         {@render children()}
     </div>
+    <BuilderStepFooter />
     <!-- Draft keep/discard decision when leaving the builder: registers its
          own router navigation guard and dialog for exactly as long as this
          layout (and therefore the builder session) is mounted. -->
@@ -55,7 +57,8 @@
         display: grid;
         box-sizing: border-box;
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr);
+        /* Content scrolls; the step footer is pinned below it. */
+        grid-template-rows: minmax(0, 1fr) auto;
         overflow: hidden;
     }
 

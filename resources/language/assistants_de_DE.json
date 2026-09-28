@@ -167,6 +167,13 @@
                 "test": "Testen",
                 "publish": "Veröffentlichen"
             },
+            "steps": {
+                "progress": "Fortschritt",
+                "back": "Zurück",
+                "continue": "Weiter",
+                "required": "Dieses Feld ist erforderlich.",
+                "incomplete": "Bitte fülle die Pflichtfelder aus."
+            },
             "exit_dialog": {
                 "title": "Entwurf behalten?",
                 "description": "Dein Assistent ist noch nicht veröffentlicht. Möchtest du den Entwurf behalten oder endgültig verwerfen?",

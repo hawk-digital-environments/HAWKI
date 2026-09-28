@@ -167,6 +167,13 @@
                 "test": "Test",
                 "publish": "Publish"
             },
+            "steps": {
+                "progress": "Progress",
+                "back": "Back",
+                "continue": "Continue",
+                "required": "This field is required.",
+                "incomplete": "Please fill in the required fields."
+            },
             "exit_dialog": {
                 "title": "Keep draft?",
                 "description": "This assistant hasn't been published yet. Keep the draft or discard it permanently?",
