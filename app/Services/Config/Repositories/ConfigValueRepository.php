@@ -31,7 +31,7 @@ class ConfigValueRepository extends AbstractRepository
      */
     public function getRawRows(string $namespace): array
     {
-        return ConfigValue::query()
+        return $this->getQuery()
             ->where('namespace', $namespace)
             ->pluck('value', 'key')
             ->all();
@@ -43,7 +43,7 @@ class ConfigValueRepository extends AbstractRepository
      */
     public function insertIgnore(string $namespace, string $key, ?string $value): void
     {
-        ConfigValue::insertOrIgnore([
+        $this->getQueryWithoutAnyScopes()->insertOrIgnore([
             'namespace' => $namespace,
             'key' => $key,
             'value' => $value,
@@ -58,16 +58,15 @@ class ConfigValueRepository extends AbstractRepository
      */
     public function upsertValue(string $namespace, string $key, ?string $value): void
     {
-        ConfigValue::upsert(
+        $this->getQueryWithoutAnyScopes()->upsert(
             [
-                [
-                    'namespace' => $namespace,
-                    'key' => $key,
-                    'value' => $value,
-                ],
+                'namespace' => $namespace,
+                'key' => $key,
+                'value' => $value,
+                'updated_at' => $this->clock->now(),
             ],
             ['namespace', 'key'],
-            ['value'],
+            ['value', 'updated_at'],
         );
     }
 
@@ -76,7 +75,7 @@ class ConfigValueRepository extends AbstractRepository
      */
     public function deleteForNamespaceAndKey(string $namespace, string $key): void
     {
-        ConfigValue::query()
+        $this->getQuery()
             ->where('namespace', $namespace)
             ->where('key', $key)
             ->delete();
@@ -87,7 +86,7 @@ class ConfigValueRepository extends AbstractRepository
      */
     public function deleteForNamespace(string $namespace): void
     {
-        ConfigValue::query()
+        $this->getQuery()
             ->where('namespace', $namespace)
             ->delete();
     }
@@ -98,7 +97,7 @@ class ConfigValueRepository extends AbstractRepository
      */
     public function renameNamespace(string $fromNamespace, string $toNamespace): void
     {
-        ConfigValue::query()
+        $this->getQuery()
             ->where('namespace', $fromNamespace)
             ->update(['namespace' => $toNamespace]);
     }
