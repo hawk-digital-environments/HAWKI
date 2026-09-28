@@ -166,6 +166,18 @@ Once selection intent freezes the view, existing rows keep their positions. New 
 
 An empty query shows up to ten distinct recent static selections, resolved against current enabled entries and filtered to the scope. Storage contains only entity IDs and timestamps, scoped to the user and connection. Dynamic selections never enter this history. Recents retain the five-per-group cap and do not fill spare slots with unrelated entries. If no recent entries resolve, the bar falls back to static group, provider, and item registration order. Empty queries never request server results.
 
+## Privacy and persistence
+
+The search index lives in memory only. Titles, keywords and content exist as plaintext solely in RAM and are never serialized to storage. Nothing is written to disk when a palette closes or the app reloads.
+
+The only persisted artifact is the recents history: one `hawki.search.recents.<identity>` storage key holding entity IDs and timestamps, never titles or content. Rows are resolved against the live index at read time, so a renamed entry shows its new title and a deleted one disappears.
+
+Rules for anything that changes this:
+
+- Persisted search data (for example a future message-content index) must go through the kernel encryption helpers (`kernel/encryption/`): encrypt at rest, decrypt at load, rebuild the index in memory. Never store plaintext search text.
+- Matching on encrypted fields stays local. Once a field such as a conversation title is encrypted end-to-end, the server cannot match it, so server-side search over it is impossible by design — keep such sources static. Dynamic providers must never be sent plaintext the server does not already hold.
+- Search runs on data decrypted into memory. When decryption is key-gated, results appear progressively as plaintext becomes available; `enabled` can gate a source on key readiness.
+
 ## Source files
 
 The provider contract is in `resources/js/kernel/search/types.ts`. Registration, observation, and sessions live in `resources/js/kernel/search/`. Chat's provider definitions are in `resources/js/plugins/core/modules/chat/search.ts`. The reusable bar and dialog live in `resources/js/app/components/search/`.
