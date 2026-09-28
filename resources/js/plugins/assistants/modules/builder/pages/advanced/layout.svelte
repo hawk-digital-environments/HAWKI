@@ -12,8 +12,6 @@
     import BuilderStepFooter from "$plugins/assistants/modules/builder/components/BuilderStepFooter.svelte";
     import ConfirmBuilderExit from "$plugins/assistants/modules/builder/components/ConfirmBuilderExit.svelte";
     import BuilderTestPanel from "$plugins/assistants/modules/builder/components/BuilderTestPanel.svelte";
-    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import PanelRightOpenIcon from '$lib/components/ui/icons/iconset/PanelRightOpenIcon.svelte';
 
     let { children } = $props();
 
@@ -23,7 +21,7 @@
     // it up via useBuilderContext), and released when the layout unmounts.
     const builder = createBuilderContext(useToastContext(), __);
 
-    // The test chat sits beside every step; collapsed by default.
+    // The test chat floats over every step; collapsed to a chat button by default.
     let testOpen = $state(false);
 
     onMount(() => {
@@ -34,19 +32,11 @@
 
 
 
-<div class="wrapper-grid" class:test-open={testOpen}>
+<div class="wrapper-grid">
     <div class="content-col">
         {@render children()}
     </div>
     <BuilderStepFooter />
-    {#if !testOpen}
-        <div class="test-toggle">
-            <ButtonWithTooltip variant="iconGhost" iconLeft={PanelRightOpenIcon}
-                               tooltip={__('assistants.builder.test.open')}
-                               tooltipSide="left"
-                               onclick={() => testOpen = true}/>
-        </div>
-    {/if}
     <BuilderTestPanel bind:open={testOpen} />
     <!-- Draft keep/discard decision when leaving the builder: registers its
          own router navigation guard and dialog for exactly as long as this
@@ -71,24 +61,12 @@
         min-height: 0;
         display: grid;
         box-sizing: border-box;
-        grid-template-columns: minmax(0, 1fr) var(--test-panel-track);
+        grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(0, 1fr);
-        grid-template-areas: 'main test';
+        grid-template-areas: 'main';
         overflow: hidden;
         --test-panel-w: 26rem;
-        --test-panel-track: 0rem;
-    }
-
-    .wrapper-grid.test-open {
-        --test-panel-track: var(--test-panel-w);
-    }
-
-    .test-toggle {
-        grid-area: main;
-        align-self: start;
-        justify-self: end;
-        z-index: 1;
-        padding: var(--space-3);
+        --test-fab-inset: var(--space-4);
     }
 
     /* Sole scroll region of the builder. `min-height: 0` lets it shrink inside
@@ -116,10 +94,6 @@
        Scroll-away padding keeps at-rest content below it while letting it
        scroll up under the SidebarContent fade overlay. */
     @media (--bp-md-and-smaller) {
-        .wrapper-grid.test-open {
-            --test-panel-track: 0rem;
-        }
-
         .content-col {
             padding-top: calc(var(--space-2_5) + var(--nav-row-h));
         }
