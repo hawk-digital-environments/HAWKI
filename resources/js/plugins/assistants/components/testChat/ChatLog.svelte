@@ -31,8 +31,13 @@
 
 <div class="chatlog" bind:this={scroller} class:empty={messages.length === 0}>
     {#if messages.length === 0}
-        <div class="chatlog-empty" class:disabled={!config.hasModel}>
-            <AssistantAvatarIcon size="small" assistantAvatar={avatar}/>
+        <div class="chatlog-empty">
+            {#if config.hasModel}
+                <AssistantAvatarIcon size="small" assistantAvatar={avatar}/>
+            {:else}
+                <!-- No model yet: an unfilled outline of the avatar. -->
+                <div class="avatar-placeholder" aria-hidden="true">{avatar.name}</div>
+            {/if}
             <p class="empty-title">{assistant.name.trim() || __('assistants.testChat.unnamed')}</p>
             <p class="empty-hint">
                 {config.hasModel ? __('assistants.testChat.empty_hint') : __('assistants.testChat.no_model_hint')}
@@ -73,10 +78,18 @@
         text-align: center;
     }
 
-    /* Without a model the assistant can't answer yet: dim its avatar. */
-    .chatlog-empty.disabled :global(.icon-container) {
-        filter: grayscale(1);
-        opacity: 0.5;
+    /* Same footprint as AssistantAvatarIcon size="small". */
+    .avatar-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        box-sizing: border-box;
+        border: 1.5px dashed var(--color-border);
+        border-radius: var(--corner-md);
+        font-size: 1.5rem;
+        line-height: 1;
     }
 
     .empty-title {
