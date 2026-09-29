@@ -24,7 +24,7 @@
 import type {SearchScores} from './searchEngine.js';
 import type {SearchWorkerRequest, SearchWorkerResponse} from './search.worker.js';
 import type {IndexDelta, SharedSearchIndex} from './sharedIndex.js';
-import {createCrossOriginWorker} from '$lib/utils/crossOriginWorker.js';
+import {createModuleWorker} from '$lib/utils/crossOriginWorker.js';
 import searchWorkerUrl from './search.worker.ts?worker&url';
 
 /** A worker answer: the scores plus the index revision they describe. */
@@ -313,7 +313,7 @@ function createDefaultWorker(): Worker {
         || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
         throw new SearchWorkerError('This browser cannot run the search worker.', false);
     }
-    return createCrossOriginWorker(searchWorkerUrl, import.meta.url);
+    return createModuleWorker(searchWorkerUrl, import.meta.url);
 }
 
 function abortError(): Error {
