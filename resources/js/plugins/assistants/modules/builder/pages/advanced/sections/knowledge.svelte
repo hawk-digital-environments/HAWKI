@@ -58,7 +58,7 @@
         <Notice
                 label={__('assistants.builder.knowledge.warning_knowledge_sources')}
                 icon={AlertCircleIcon}
-                tone="warning"
+                tone="neutral"
         />
 
         {#if ragEnabled && currentModel === null}

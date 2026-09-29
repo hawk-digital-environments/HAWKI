@@ -29,7 +29,7 @@ const {__} = useTranslator();
         <Notice
             label={__('assistants.builder.behaviour.warning_system_prompt')}
             icon={AlertCircleIcon}
-            tone="warning"
+            tone="neutral"
         />
 
         <BuilderInput

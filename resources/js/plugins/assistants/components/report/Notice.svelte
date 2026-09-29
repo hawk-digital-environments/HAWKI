@@ -10,7 +10,7 @@
     interface Props {
         label: string;
         icon: IconComponent;
-        tone?: 'info' | 'warning' | 'error';
+        tone?: 'neutral' | 'info' | 'warning' | 'error';
     }
 
     const {label, icon: Icon, tone = 'info'}: Props = $props();
@@ -42,6 +42,7 @@
         height: calc(var(--font-size-xs) * var(--line-height-normal));
         font-size: var(--font-size-sm);
     }
+    [data-tone='neutral'] .icon { color: var(--color-text-muted); }
     [data-tone='info'] .icon { color: var(--color-info); }
     [data-tone='warning'] .icon { color: color-mix(in oklch, var(--color-warning) 80%, var(--color-text)); }
     [data-tone='error'] .icon { color: var(--color-error); }
