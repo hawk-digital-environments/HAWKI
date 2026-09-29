@@ -3,7 +3,7 @@
     import Button from "$lib/components/ui/button/Button.svelte";
     import ButtonWithTooltip from "$lib/components/ui/button/ButtonWithTooltip.svelte";
     import ArrowUp02Icon from "$lib/components/ui/icons/iconset/ArrowUp02Icon.svelte";
-    import Attachment01Icon from "$lib/components/ui/icons/iconset/Attachment01Icon.svelte";
+    import AttachmentIcon from "$lib/components/ui/icons/iconset/AttachmentIcon.svelte";
     import StarterPrompts from "$lib/components/ui/starter-prompts/StarterPrompts.svelte";
     import {resizeTextarea, watchManualResize} from "./textarea-resizer";
     import {useChatStore} from "./stream/chatStore.svelte.js";
@@ -96,7 +96,7 @@
             <ButtonWithTooltip
                 class="attach-btn"
                 variant="iconGhost"
-                iconLeft={Attachment01Icon}
+                iconLeft={AttachmentIcon}
                 tooltip={uploads.blockedHint ?? __('assistants.builder.guide.attach')}
                 aria-label={__('assistants.builder.guide.attach')}
                 disabled={!ready || uploads.busy || uploads.blockedHint !== null}

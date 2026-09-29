@@ -304,9 +304,9 @@
                 "mode_guide": "KI-Guide"
             },
             "guide": {
-                "placeholder": "Beschreibe deinen Assistenten oder stelle eine Frage…",
-                "empty_title": "Richte deinen Assistenten gemeinsam ein",
-                "empty_hint": "Erzähl dem Guide, was dein Assistent können soll, oder zieh Material wie ein Modulhandbuch hier hinein. Er stellt Rückfragen, füllt die Felder für dich aus und beantwortet deine Fragen.",
+                "placeholder": "Frag den Guide…",
+                "empty_title": "Gemeinsam einrichten",
+                "empty_hint": "Beschreib dein Ziel oder zieh Material hinein – der Guide füllt die Felder aus.",
                 "applied": "Ausgefüllt",
                 "open_field": ":field anzeigen",
                 "error": "Der Guide konnte nicht antworten. Bitte versuche es erneut.",

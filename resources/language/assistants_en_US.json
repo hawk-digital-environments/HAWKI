@@ -304,9 +304,9 @@
                 "mode_guide": "AI guide"
             },
             "guide": {
-                "placeholder": "Describe your assistant or ask a question…",
-                "empty_title": "Set up your assistant together",
-                "empty_hint": "Tell the guide what your assistant should do, or drop in material like a syllabus. It asks follow-up questions, fills in the fields for you and answers your questions.",
+                "placeholder": "Ask the guide…",
+                "empty_title": "Build it together",
+                "empty_hint": "Describe your goal or drop in material – the guide fills in the fields.",
                 "applied": "Filled in",
                 "open_field": "Show :field",
                 "error": "The guide could not answer. Please try again.",
