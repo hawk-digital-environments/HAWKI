@@ -19,6 +19,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
+    import RadialProgress from '$lib/components/ui/radial-progress/RadialProgress.svelte';
     import type {IconComponent} from '$lib/components/ui/icons';
     import TaskEdit01Icon from '$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte';
     import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
@@ -119,6 +120,11 @@
         <span class="glyph" aria-hidden="true"><CheckListIcon size="100%"/></span>
         <div class="tile-head">
             <span class="cell-title">{__('assistants.builder.publish.completeness.label')}</span>
+            <RadialProgress
+                value={checks.length ? (score.current / checks.length) * 100 : 0}
+                size={20}
+                strokeWidth={2.5}
+                aria-hidden="true"/>
         </div>
         <div class="tile-body">
             <p class="tile-value score" aria-label="{done}/{checks.length}">
@@ -225,7 +231,7 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        gap: var(--space-3);
+        gap: var(--space-1);
         position: relative;
         overflow: hidden;
         padding: var(--space-4);
@@ -257,7 +263,6 @@
         display: flex;
         align-items: center;
         gap: var(--space-1);
-        margin-top: var(--space-1);
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
@@ -297,10 +302,10 @@
     .readiness .glyph {
         color: color-mix(in oklab, white 16%, transparent);
     }
-    /* The one oversized number: the count, with its total riding high. */
+    /* The one oversized number: the count, with its total on the baseline. */
     .score {
         display: flex;
-        align-items: flex-start;
+        align-items: baseline;
         font-size: calc(var(--font-size-2xl) * 1.5);
         font-weight: var(--font-weight-normal);
         letter-spacing: -0.07em;
@@ -309,9 +314,10 @@
     }
     .score-total {
         margin-inline-start: 0.2em;
-        font-size: var(--font-size-sm);
-        letter-spacing: 0;
-        line-height: 1;
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-medium);
+        letter-spacing: -0.035em;
+        line-height: 1.1;
         color: color-mix(in oklab, var(--color-on-accent-fill) 60%, transparent);
     }
     /* ── Checklist cell ───────────────────────────────────────────────── */
