@@ -58,6 +58,13 @@
          */
         maxWidth?: string;
         /**
+         * CSS `max-height` for the tooltip bubble, e.g. `'50dvh'` or
+         * `'calc(100dvh - var(--space-8))'`. When set, content taller than the
+         * cap scrolls inside the bubble (`overflow-y: auto`); when unset, the
+         * bubble grows to fit its content.
+         */
+        maxHeight?: string;
+        /**
          * If false, the trigger is removed from the tab order. Use this for decorative
          * tooltips nested inside another focusable control (a status dot inside a button,
          * for example) — without it every such tooltip adds its own tab stop.
@@ -86,6 +93,7 @@
         open = $bindable(false),
         disabled,
         maxWidth,
+        maxHeight,
         focusable = true,
         hiddenLabel,
         ...restProps
@@ -94,6 +102,18 @@
     // A snippet tooltip can't be flattened to text, so only a plain string may
     // stand in for a missing hiddenLabel.
     const srOnlyLabel = $derived(hiddenLabel ?? (typeof tooltip === 'string' ? tooltip : undefined));
+
+    // Inline size caps for the bubble. A max-height implies internal scrolling:
+    // the bubble is hoverable, so the pointer can move onto it to scroll.
+    const contentStyle = $derived.by(() => {
+        const style: Record<string, string> = {};
+        if (maxWidth) style['max-width'] = maxWidth;
+        if (maxHeight) {
+            style['max-height'] = maxHeight;
+            style['overflow-y'] = 'auto';
+        }
+        return Object.keys(style).length > 0 ? style : undefined;
+    });
 
     // bits-ui makes every trigger focusable. For decorative triggers inside another
     // control that would add a redundant tab stop, so strip the tabindex it injects.
@@ -159,7 +179,7 @@
             behind every tooltip-wrapped inline element (e.g. links in chat markdown).
         --><TooltipPrimitive.Portal>
             <TooltipPrimitive.Content
-                {...mergeProps({class: 'tooltip-content', side, sideOffset, style: maxWidth ? {'max-width': maxWidth} : undefined}, restProps) as TooltipContentProps}
+                {...mergeProps({class: 'tooltip-content', side, sideOffset, style: contentStyle}, restProps) as TooltipContentProps}
             >
                 <SnippetOrString value={tooltip}/>
             </TooltipPrimitive.Content>
@@ -184,6 +204,9 @@
         box-shadow: var(--elevation-1);
         z-index: var(--layer-tooltip);
         max-width: 300px;
+        /* Long unbreakable tokens (URLs, concatenated words) must wrap inside
+           the bubble instead of painting past its border. */
+        overflow-wrap: anywhere;
 
         &[data-state="delayed-open"],
         &[data-state="instant-open"] {

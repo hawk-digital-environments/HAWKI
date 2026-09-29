@@ -89,6 +89,7 @@
         disabled={!truncated}
         style="width: max-content"
         maxWidth="calc(100vw - var(--space-8))"
+        maxHeight="calc(100dvh - var(--space-8))"
         {side}
         {sideOffset}
         {delayDuration}
@@ -130,5 +131,9 @@
         -webkit-line-clamp: var(--overflow-text-lines, 1);
         line-clamp: var(--overflow-text-lines, 1);
         overflow: hidden;
+        /* `anywhere` (not `break-word`): break opportunities must also count
+           towards min-content sizing, or a single unbreakable token widens
+           the element past its container instead of filling `lines` lines. */
+        overflow-wrap: anywhere;
     }
 </style>

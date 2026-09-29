@@ -352,7 +352,7 @@
         </div>
 
         <div class="detailed-description">
-            {assistant.detailDescription}
+            <OverflowTooltip value={assistant.detailDescription} lines={8} truncate="clamp"/>
         </div>
 
         <div class="tags">
