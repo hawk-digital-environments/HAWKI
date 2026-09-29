@@ -106,6 +106,16 @@
         min-height: 0;
         min-width: 0;
         overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .content-col :global(textarea) {
+        scrollbar-width: none;
+    }
+
+    .content-col::-webkit-scrollbar,
+    .content-col :global(textarea::-webkit-scrollbar) {
+        display: none;
     }
 
     /* The step footer floats over the bottom of the content column. */
