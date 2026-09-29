@@ -11,6 +11,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import BuilderStepFooter from "$plugins/assistants/modules/builder/components/BuilderStepFooter.svelte";
     import ConfirmBuilderExit from "$plugins/assistants/modules/builder/components/ConfirmBuilderExit.svelte";
+    import {breakpointsQueries} from '$lib/components/util/breakpoints/breakpoints.js';
     import BuilderTestPanel from "$plugins/assistants/modules/builder/components/BuilderTestPanel.svelte";
 
     let { children } = $props();
@@ -22,8 +23,9 @@
     const builder = createBuilderContext(useToastContext(), __);
 
     // The test chat floats over every step (docked as a column on wide
-    // viewports); collapsed to a chat button by default.
-    let testOpen = $state(false);
+    // viewports). Open by default, except on small screens where it would
+    // cover the whole builder — there it starts as the chat button.
+    let testOpen = $state(!window.matchMedia(breakpointsQueries.bpMdAndSmaller).matches);
 
     onMount(() => {
         assistantOptionsStore.load();
