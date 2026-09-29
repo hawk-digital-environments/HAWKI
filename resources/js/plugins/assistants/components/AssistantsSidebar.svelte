@@ -2,25 +2,23 @@
   @component Assistants module sidebar with two drill levels. On dashboard
   routes it lists the dashboard sections (Store plus the "My assistants"
   collapsible with the personal sections); while a builder
-  route is active the list is swapped for the builder's sections plus a
-  "Zurück" row — a drill-down, not an inline submenu, mirroring the mobile
+  route is active the list is swapped for the builder's sections — a drill-down, not an inline submenu, mirroring the mobile
   nav-stack pattern of DropdownMenuDetailView. The level is derived from the
   active route (the builder module's route group), so navigating in or out is
   what swaps it. The rows themselves are collected via the
   `assistantMenuEntries` hook (see `hooks/assistantMenuHooks.svelte.ts`) —
   the assistants plugin pushes the standard sections, other plugins may add
-  their own. The module's "Erstellen" action lives in the app sidebar's
-  action area now (see `CreateAssistantButton.svelte`).
+  their own. The module's "Erstellen" action and the builder's "Zurück"
+  exit live in the app sidebar's action area (see `CreateAssistantButton.svelte`
+  and `BuilderBackButton.svelte`).
 -->
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     import SidebarGroup from '$lib/components/ui/sidebar/SidebarGroup.svelte';
     import type {SidebarGroupItem} from '$lib/components/ui/sidebar/SidebarGroup.svelte';
-    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import UserAiIcon from '$lib/components/ui/icons/iconset/UserAiIcon.svelte';
     import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte.js';
-    import {builderReturnPath} from '$plugins/assistants/modules/builder/contexts/builderReturn.js';
     import {useSidebarContext} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import {assistantHandlesStore} from '$plugins/assistants/stores/AssistantHandlesStore.svelte.js';
     import {drillTransition} from '$lib/utils/transitions/drillTransition';
@@ -97,20 +95,6 @@
             entry.onSelect?.(sidebarContext);
         }
     }
-
-    /**
-     * Drill back out of the builder, to the page it was opened from — the
-     * assistant's detail page, the drafts list, wherever the user hit "Edit",
-     * "Remix" or "Erstellen". Entering the builder without an origin (a
-     * direct URL, say) falls back to the drafts list, where a freshly
-     * created assistant now lives.
-     *
-     * The exit confirmation runs on top of this as a router navigation guard
-     * (see `ConfirmBuilderExit`), which can still cancel the navigation.
-     */
-    function exitBuilder() {
-        router.goTo(builderReturnPath() ?? router.getPath('assistants.dashboard.drafts'));
-    }
 </script>
 
 <div class="assistants-sidebar">
@@ -129,11 +113,6 @@
                     onintrostart={beginNavTransition}
                     onoutrostart={beginNavTransition}
                 >
-                    <SidebarItem
-                        icon={ArrowLeft01Icon}
-                        label={__('assistants.sidebar.back')}
-                        onclick={exitBuilder}
-                    />
                     {#each builderSections as section (section.id)}
                         {#if section.component}
                             {@const Row = section.component}

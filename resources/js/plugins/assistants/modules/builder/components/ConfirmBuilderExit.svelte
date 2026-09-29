@@ -17,7 +17,7 @@
     opened it (`BuilderContext.revertToSessionOrigin`).
 
   The guard never redirects: it only decides whether the navigation may
-  proceed. Where "leaving the builder" goes is the sidebar's "Zurück" row to
+  proceed. Where "leaving the builder" goes is the sidebar's "Zurück" button to
   choose (it returns to the page the builder was opened from), which keeps a
   deliberate navigation elsewhere — the module selector, say — going where
   the user actually pointed it.

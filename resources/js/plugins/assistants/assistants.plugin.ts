@@ -18,6 +18,7 @@ import ComputerIcon from '$lib/components/ui/icons/iconset/ComputerIcon.svelte';
 import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
 import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
 import CreateAssistantButton from '$plugins/assistants/components/CreateAssistantButton.svelte';
+import BuilderBackButton from '$plugins/assistants/components/BuilderBackButton.svelte';
 import { DashboardModule } from '$plugins/assistants/modules/dashboard/DashboardModule';
 import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
 import { assistantHandlesStore } from '$plugins/assistants/stores/AssistantHandlesStore.svelte';
@@ -73,12 +74,20 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
             },
             {
-                // Dashboard routes only — inside the builder the primary
-                // action would compete with the level's own chrome.
+                // Dashboard routes only — inside the builder the back
+                // action below takes its place.
                 id: 'assistants:create',
                 position: 'action',
                 component: CreateAssistantButton,
                 active: ctx.router.isRouteActive(dashboardGroup)
+            },
+            {
+                // Builder routes only — takes the create action's place and
+                // leaves the builder for the page it was opened from.
+                id: 'assistants:builder-back',
+                position: 'action',
+                component: BuilderBackButton,
+                active: ctx.router.isRouteActive(builderGroup)
             }
         ]);
 
