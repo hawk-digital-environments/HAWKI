@@ -13,9 +13,24 @@ import type {
     ChatStoreApi,
     StagedUpload,
 } from "$plugins/assistants/components/testChat/stream/chatStore.svelte.js";
-import type { ChatMessage } from "$plugins/assistants/components/testChat/types";
+import type { AppliedField, ChatMessage } from "$plugins/assistants/components/testChat/types";
+import { BUILDER_STEPS, type BuilderStep } from "./builderValidationRules.js";
 import type { UploadFile } from "$plugins/assistants/types/UploadFile";
+import type { useRouter } from "$lib/components/ui/routing/index.js";
 import { assistantOptionsStore } from "$plugins/assistants/stores/AssistantOptionsStore.svelte";
+
+/** Builder step each field the guide can fill lives on. */
+const FIELD_STEPS: Record<keyof typeof FIELD_LABELS, BuilderStep> = {
+    name: "general",
+    handle: "general",
+    description: "general",
+    detailDescription: "general",
+    category: "general",
+    model: "model",
+    systemPrompt: "behaviour",
+    greeting: "behaviour",
+    starterPrompts: "behaviour",
+};
 
 /** Builder label of every field the guide can fill. */
 const FIELD_LABELS: Record<BuilderGuideField | "handle" | "category" | "model", string> = {
@@ -54,6 +69,7 @@ export function createBuilderGuideChat(
     builder: BuilderContext,
     uploader: KnowledgeUploader,
     __: (key: string) => string,
+    router: Pick<ReturnType<typeof useRouter>, "goToRoute" | "isRouteActive">,
 ): ChatStoreApi {
     let messages = $state<ChatMessage[]>([]);
     let status = $state<ChatStatus>("idle");
@@ -72,11 +88,27 @@ export function createBuilderGuideChat(
     };
 
     /**
-     * Write the guide's field values into the draft; returns the labels of
-     * the fields that changed. The server has already checked handle,
+     * Open the step a field lives on and scroll to the field. The scroll is
+     * requested before navigating (the field picks it up once its page has
+     * mounted; `isRouteActive` can still report the old step right after
+     * `goToRoute` resolves), and only when the step lock will let the
+     * navigation through, so a vetoed one leaves no request pending.
+     */
+    const openField = async (key: keyof typeof FIELD_LABELS): Promise<void> => {
+        const step = FIELD_STEPS[key];
+        const route = `assistants.builder.${step}`;
+        if (BUILDER_STEPS.indexOf(step) <= builder.validator.firstIncompleteStep) {
+            builder.requestScrollTo(key);
+        }
+        if (!router.isRouteActive(route)) await router.goToRoute(route);
+    };
+
+    /**
+     * Write the guide's field values into the draft; returns the fields that
+     * changed. The server has already checked handle,
      * category and model against what the creator may pick.
      */
-    const applyUpdates = (updates: BuilderGuideUpdates): string[] => {
+    const applyUpdates = (updates: BuilderGuideUpdates): AppliedField[] => {
         const filled: (keyof typeof FIELD_LABELS)[] = [];
         for (const key of BUILDER_GUIDE_FIELDS) {
             const value = updates[key];
@@ -99,7 +131,11 @@ export function createBuilderGuideChat(
         }
         // Highlights the filled fields in the builder (see AiFillReveal.svelte).
         builder.markAiFilled(filled);
-        return filled.map((key) => __(FIELD_LABELS[key]));
+        // Listed in builder order, each linking to the step it lives on.
+        return filled
+            .map((key, i) => ({ key, i }))
+            .sort((a, b) => BUILDER_STEPS.indexOf(FIELD_STEPS[a.key]) - BUILDER_STEPS.indexOf(FIELD_STEPS[b.key]) || a.i - b.i)
+            .map(({ key }) => ({ label: __(FIELD_LABELS[key]), open: () => void openField(key) }));
     };
 
     const clear = (): void => {
@@ -135,10 +171,10 @@ export function createBuilderGuideChat(
         try {
             const { reply, updates } = await requestBuilderGuide(builder.draft, history, ctrl.signal);
             if (ctrl.signal.aborted) return;
-            const labels = applyUpdates(updates);
+            const fields = applyUpdates(updates);
             messages[idx].parts = [
                 ...(reply ? [{ type: "text" as const, text: reply }] : []),
-                ...(labels.length ? [{ type: "applied" as const, labels }] : []),
+                ...(fields.length ? [{ type: "applied" as const, fields }] : []),
             ];
             messages[idx].streaming = false;
             status = "idle";

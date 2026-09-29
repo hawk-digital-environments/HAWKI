@@ -10,8 +10,11 @@ export type MessagePart =
     | { type: "text"; text: string }
     | { type: "reasoning"; text: string }
     | { type: "tool-call"; name: string }
-    /** Builder guide only: the (translated) labels of the fields this reply filled in. */
-    | { type: "applied"; labels: string[] };
+    /** Builder guide only: the fields this reply filled in. */
+    | { type: "applied"; fields: AppliedField[] };
+
+/** A field the builder guide filled: its translated label and, optionally, how to show it. */
+export type AppliedField = { label: string; open?: () => void };
 
 export type ChatMessage = {
     id: string;

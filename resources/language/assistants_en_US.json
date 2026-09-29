@@ -297,6 +297,7 @@
                 "empty_title": "Set up your assistant together",
                 "empty_hint": "Tell the guide what your assistant should do. It asks follow-up questions, fills in the fields for you and answers your questions. Attached files go into the knowledge base.",
                 "applied": "Filled in",
+                "open_field": "Show :field",
                 "error": "The guide could not answer. Please try again.",
                 "attach": "Add files to the knowledge base",
                 "attached_files": "Attached files",

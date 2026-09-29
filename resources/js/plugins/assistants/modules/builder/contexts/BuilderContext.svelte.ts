@@ -408,6 +408,24 @@ export class BuilderContext {
     this.aiFills = next;
   }
 
+  /**
+   * A field the UI asked to bring into view (e.g. a chip in the guide's
+   * "filled in" summary). The field's `AiFillReveal` scrolls to itself once it
+   * is mounted — right away, or after the step it lives on has opened.
+   */
+  scrollRequest = $state<keyof Assistant | null>(null);
+
+  requestScrollTo(key: keyof Assistant): void {
+    this.scrollRequest = key;
+  }
+
+  /** Whether `key` was asked to scroll into view; claims the request, so it scrolls once. */
+  claimScrollRequest(key: keyof Assistant): boolean {
+    if (this.scrollRequest !== key) return false;
+    this.scrollRequest = null;
+    return true;
+  }
+
   /** Whether `key`'s latest fill still needs its reveal; claims it, so it plays once. */
   claimAiFill(key: keyof Assistant): boolean {
     const fill = this.aiFills[key];

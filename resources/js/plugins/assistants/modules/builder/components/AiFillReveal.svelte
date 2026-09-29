@@ -4,7 +4,8 @@
   behind a soft edge with a faint blue sheen. The reveal waits
   until the field is on screen, so a field filled on another step plays when
   that step is opened, and it plays once per fill. Several fields filled
-  together cascade top to bottom.
+  together cascade top to bottom. It also scrolls the field into view on
+  `builder.requestScrollTo(field)`.
 
   @example
   ```svelte
@@ -17,6 +18,7 @@
     import {onDestroy, type Snippet} from 'svelte';
     import type {Assistant} from '$plugins/assistants/types/assistant/Assistant';
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
+    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     interface Props {
         field: keyof Assistant;
@@ -25,6 +27,7 @@
 
     const {field, children}: Props = $props();
     const builder = useBuilderContext();
+    const reducedMotion = useReducedMotion();
 
     /** Length of the reveal, excluding its cascade delay (ms). */
     const DURATION = 900;
@@ -37,6 +40,18 @@
     let hideTimer: ReturnType<typeof setTimeout> | undefined;
 
     onDestroy(() => clearTimeout(hideTimer));
+
+    // Bring the field into view when asked to (see `builder.requestScrollTo`).
+    // A frame's delay lets a freshly opened step finish laying out first.
+    $effect(() => {
+        if (!host || builder.scrollRequest !== field) return;
+        builder.claimScrollRequest(field);
+        const el = host;
+        requestAnimationFrame(() => el.scrollIntoView({
+            behavior: reducedMotion.current ? 'auto' : 'smooth',
+            block: 'center',
+        }));
+    });
 
     $effect(() => {
         const fill = builder.aiFills[field];

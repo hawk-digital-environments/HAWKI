@@ -45,7 +45,7 @@
         {:else if part.type === "tool-call"}
             <ToolCallPart name={part.name}/>
         {:else if part.type === "applied"}
-            <AppliedPart labels={part.labels}/>
+            <AppliedPart fields={part.fields}/>
         {/if}
     {/each}
     {#if message.streaming && message.parts.length === 0}

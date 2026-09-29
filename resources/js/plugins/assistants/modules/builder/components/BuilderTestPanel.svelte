@@ -21,6 +21,7 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import RefreshIcon from '$lib/components/ui/icons/iconset/RefreshIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
 
     interface Props {
@@ -34,7 +35,7 @@
     const uid = $props.id();
 
     const testChat = createChatStore(createChatConfig(() => builder.draft));
-    const guideChat = createBuilderGuideChat(builder, new KnowledgeUploader(), __);
+    const guideChat = createBuilderGuideChat(builder, new KnowledgeUploader(), __, useRouter());
 
     let mode = $state<ChatVariant>('guide');
     const chat = $derived(mode === 'guide' ? guideChat : testChat);

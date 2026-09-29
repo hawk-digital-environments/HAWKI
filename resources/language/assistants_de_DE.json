@@ -297,6 +297,7 @@
                 "empty_title": "Richte deinen Assistenten gemeinsam ein",
                 "empty_hint": "Erzähl dem Guide, was dein Assistent können soll. Er stellt Rückfragen, füllt die Felder für dich aus und beantwortet deine Fragen. Angehängte Dateien landen in der Wissensbasis.",
                 "applied": "Ausgefüllt",
+                "open_field": ":field anzeigen",
                 "error": "Der Guide konnte nicht antworten. Bitte versuche es erneut.",
                 "attach": "Dateien zur Wissensbasis hinzufügen",
                 "attached_files": "Angehängte Dateien",
