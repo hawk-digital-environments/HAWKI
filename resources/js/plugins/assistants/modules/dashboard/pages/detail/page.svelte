@@ -351,6 +351,10 @@
                 type={ValidationState.UNKNOWN} />
         </div>
 
+        <div class="detailed-description">
+            {assistant.detailDescription}
+        </div>
+
         <div class="tags">
             {#if assistant.category}
                 <span class="tag tag-accent">{__(assistant.category.text)}</span>
