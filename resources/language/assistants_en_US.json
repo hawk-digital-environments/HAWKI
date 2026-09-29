@@ -207,6 +207,7 @@
                 "avatar_background": "Background",
                 "avatar_preview_name": "Your assistant",
                 "avatar_preview_handle": "@your-handle",
+                "input_tags": "Tags",
                 "tag_add": "Add tag",
                 "tag_input_aria": "Enter tag",
                 "tag_confirm_aria": "Confirm tag"
@@ -298,6 +299,10 @@
                 "empty_hint": "Tell the guide what your assistant should do. It asks follow-up questions, fills in the fields for you and answers your questions. Attached files go into the knowledge base.",
                 "applied": "Filled in",
                 "open_field": "Show :field",
+                "fill_field": "Fill in with the AI guide",
+                "revise_field": "Revise with the AI guide",
+                "fill_field_prompt": "Please fill in the field “:field”.",
+                "revise_field_prompt": "The field “:field” is already filled in. Ask me what I’d like to change, or explain the current content.",
                 "error": "The guide could not answer. Please try again.",
                 "attach": "Add files to the knowledge base",
                 "attached_files": "Attached files",

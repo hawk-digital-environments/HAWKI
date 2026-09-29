@@ -38,6 +38,11 @@ class AssistantBuilderGuideRequest extends FormRequest
             'draft.greeting' => ['nullable', 'string'],
             'draft.starterPrompts' => ['nullable', 'array'],
             'draft.starterPrompts.*' => ['string'],
+            'draft.language' => ['nullable', 'string'],
+            'draft.formality' => ['nullable', 'string'],
+            'draft.answerStyle' => ['nullable', 'string'],
+            'draft.tags' => ['nullable', 'array'],
+            'draft.tags.*' => ['string'],
         ];
     }
 

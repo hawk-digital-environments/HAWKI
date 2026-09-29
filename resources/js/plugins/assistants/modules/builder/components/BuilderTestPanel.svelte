@@ -14,7 +14,7 @@
     import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
     import {createChatStore} from '$plugins/assistants/components/testChat/stream/chatStore.svelte.js';
     import {createChatConfig, type ChatVariant} from '$plugins/assistants/components/testChat/stream/chatConfig.svelte.js';
-    import {createBuilderGuideChat} from '$plugins/assistants/modules/builder/contexts/builderGuideChat.svelte.js';
+    import {createBuilderGuideChat, type GuideFillableField} from '$plugins/assistants/modules/builder/contexts/builderGuideChat.svelte.js';
     import {KnowledgeUploader} from '$plugins/assistants/modules/builder/components/fileUpload/knowledgeUploader.svelte.js';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
@@ -39,6 +39,18 @@
 
     let mode = $state<ChatVariant>('guide');
     const chat = $derived(mode === 'guide' ? guideChat : testChat);
+
+    // A field's star asked the guide to fill it: show the guide right away,
+    // send the request once the guide is free.
+    $effect(() => {
+        const field = builder.guideFillRequest;
+        if (!field) return;
+        open = true;
+        mode = 'guide';
+        if (!guideChat.ready || guideChat.status === 'streaming') return;
+        builder.claimGuideFillRequest(field);
+        void guideChat.fillField(field as GuideFillableField);
+    });
 
     const modes = $derived([
         {key: 'guide', label: __('assistants.builder.test.mode_guide'), id: `${uid}-tab-guide`, panelId: `${uid}-panel`},

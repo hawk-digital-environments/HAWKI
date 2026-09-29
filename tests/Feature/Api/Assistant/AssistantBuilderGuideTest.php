@@ -8,6 +8,8 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantCategory;
+use App\Models\Assistants\AssistantSetting;
+use App\Models\Assistants\AssistantTag;
 use App\Models\User;
 use App\Services\Ai\Agents\Middleware\LoggingMiddleware;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
@@ -112,6 +114,71 @@ class AssistantBuilderGuideTest extends TestCase
             ['messages' => [['role' => 'user', 'content' => 'Build it for me']], 'draft' => []],
             ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
         )->assertOk()->assertExactJson(['data' => ['reply' => 'Done.', 'updates' => []]]);
+    }
+
+    public function testSettingsAreFilledFromTheirOptions(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = $this->createAssistant($owner);
+        $this->actingAsUser($owner);
+        foreach (['language' => ['', 'en', 'de'], 'formality' => ['', 'casual', 'academic']] as $key => $values) {
+            AssistantSetting::query()->create([
+                'key' => $key,
+                'label' => "assistants.settings.{$key}.label",
+                'ui_type' => 'select',
+                'ui_options' => array_map(static fn (string $v): array => ['value' => $v, 'label' => $v], $values),
+            ]);
+        }
+
+        $gateway = new CapturingTextGateway([[
+            'reply' => 'Set the tone.',
+            // Answer style has no options here, so it is not offered and dropped.
+            'updates' => ['language' => 'de', 'formality' => 'pirate', 'answerStyle' => 'detailed'],
+        ]]);
+        $this->mockProviderInfrastructure($gateway);
+
+        $this->postJson(
+            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
+            [
+                'messages' => [['role' => 'user', 'content' => 'Answer in German']],
+                'draft' => ['language' => null, 'formality' => 'academic', 'answerStyle' => null],
+            ],
+            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
+        )->assertOk()->assertExactJson(['data' => ['reply' => 'Set the tone.', 'updates' => ['language' => 'de']]]);
+
+        $instructions = $gateway->capturedSteps[0]['instructions'];
+        static::assertStringContainsString('"formality": "academic"', $instructions);
+        static::assertStringContainsString('- language: en, de', $instructions);
+        static::assertStringContainsString('- formality: casual, academic', $instructions);
+        static::assertStringNotContainsString('- answerStyle:', $instructions);
+    }
+
+    public function testTagsTakeTheExistingSpellingAndAreCapped(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = $this->createAssistant($owner);
+        $this->actingAsUser($owner);
+        AssistantTag::query()->create(['text' => 'Statistics']);
+
+        $gateway = new CapturingTextGateway([[
+            'reply' => 'Tagged it.',
+            'updates' => ['tags' => ['statistics', ' Tutoring ', 'STATISTICS', '', str_repeat('x', 41), 'Maths', 'R', 'Exams', 'Surplus']],
+        ]]);
+        $this->mockProviderInfrastructure($gateway);
+
+        $this->postJson(
+            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
+            ['messages' => [['role' => 'user', 'content' => 'Add tags']], 'draft' => ['tags' => ['Maths']]],
+            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
+        )->assertOk()->assertExactJson(['data' => [
+            'reply' => 'Tagged it.',
+            'updates' => ['tags' => ['Statistics', 'Tutoring', 'Maths', 'R', 'Exams']],
+        ]]);
+
+        $instructions = $gateway->capturedSteps[0]['instructions'];
+        static::assertStringContainsString('"Maths"', $instructions);
+        // The guide only proposes tags; creating them is the frontend's job.
+        static::assertSame(1, AssistantTag::query()->count());
     }
 
     public function testAReplyWithoutUpdatesStillSendsAnObject(): void

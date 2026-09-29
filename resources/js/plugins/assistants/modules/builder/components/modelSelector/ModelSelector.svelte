@@ -6,6 +6,7 @@
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import Select, {type SelectOption} from "$plugins/assistants/components/select/Select.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
+    import AiFillButton from "$plugins/assistants/modules/builder/components/AiFillButton.svelte";
 
     const {
         disabled = false,
@@ -33,7 +34,12 @@
 
 
 <div class="input-container renderBlock">
-    <label for="modelSelector">{__('assistants.builder.model.input_model')}</label>
+    <div class="field-header">
+        <label for="modelSelector">{__('assistants.builder.model.input_model')}</label>
+        {#if !disabled}
+            <AiFillButton field="model" label={__('assistants.builder.model.input_model')}/>
+        {/if}
+    </div>
 
     <!-- Reveal on the dropdown only, like every other field (see BuilderInput). -->
     <AiFillReveal field="model">

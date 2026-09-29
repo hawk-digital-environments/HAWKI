@@ -8,12 +8,16 @@ namespace App\Services\Assistant\BuilderGuide;
 use App\Models\Ai\AiModel;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantCategory;
+use App\Models\Assistants\AssistantSetting;
+use App\Models\Assistants\AssistantTag;
 use App\Services\Ai\Agents\Utils\ExtractTextCollector;
 use App\Services\Ai\AiService;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
+use App\Services\Assistant\Values\WellKnownAssistantSettingKeys;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Ai\Messages\AssistantMessage;
 use Laravel\Ai\Messages\Message;
@@ -35,6 +39,11 @@ class AssistantBuilderGuideService
 {
     public const int MAX_STARTER_PROMPTS = 6;
 
+    public const int MAX_TAGS = 5;
+
+    /** Longest tag the guide may propose. */
+    private const int MAX_TAG_CHARS = 40;
+
     /** Per-file cap on the knowledge excerpts handed to the guide. */
     private const int FILE_EXCERPT_CHARS = 4000;
 
@@ -44,8 +53,22 @@ class AssistantBuilderGuideService
     /** The free-text draft fields the guide may read and fill. */
     public const array TEXT_FIELDS = ['name', 'description', 'detailDescription', 'systemPrompt', 'greeting', 'starterPrompts'];
 
+    /** The settings fields the guide may read and fill, keyed by draft field, with their `assistant_settings` key. */
+    public const array SETTING_FIELDS = [
+        'language' => 'language',
+        'formality' => 'formality',
+        'answerStyle' => WellKnownAssistantSettingKeys::ANSWER_STYLE,
+    ];
+
+    /** What each settings field means, for the structured-output schema. */
+    public const array SETTING_DESCRIPTIONS = [
+        'language' => 'Language the assistant answers in.',
+        'formality' => 'How formal the assistant\'s tone is.',
+        'answerStyle' => 'How long and detailed the assistant\'s answers are.',
+    ];
+
     /** Every draft field the guide may read and fill. */
-    public const array FIELDS = [...self::TEXT_FIELDS, 'handle', 'categoryId', 'model'];
+    public const array FIELDS = [...self::TEXT_FIELDS, 'handle', 'categoryId', 'model', 'language', 'formality', 'answerStyle', 'tags'];
 
     /** Fields the builder requires before the assistant can be released (see `builderValidationRules.ts`). */
     private const array REQUIRED_FIELDS = ['name', 'handle', 'description', 'categoryId', 'systemPrompt', 'model'];
@@ -71,13 +94,15 @@ class AssistantBuilderGuideService
             ->filter(static fn (AiModel $model): bool => $model->active)
             ->mapWithKeys(static fn (AiModel $model): array => [$model->model_id => $model->label])
             ->all();
+        $settingOptions = $this->loadSettingOptions();
 
         $agent = $this->agentFactory->createAgent([
             'model' => $this->resolveModel($assistant),
-            'instructions' => $this->buildInstructions($assistant, $draft, $locale, $categories, $models),
+            'instructions' => $this->buildInstructions($assistant, $draft, $locale, $categories, $models, $settingOptions),
             'messages' => $this->toMessages($messages),
             'categoryIds' => array_map(strval(...), array_keys($categories)),
             'modelIds' => array_map(strval(...), array_keys($models)),
+            'settingOptions' => $settingOptions,
         ]);
 
         $response = $agent->send();
@@ -90,8 +115,37 @@ class AssistantBuilderGuideService
 
         return [
             'reply' => trim((string)($structured['reply'] ?? '')),
-            'updates' => $this->normalizeUpdates($structured['updates'] ?? [], $assistant, $categories, $models),
+            'updates' => $this->normalizeUpdates($structured['updates'] ?? [], $assistant, $categories, $models, $settingOptions),
         ];
+    }
+
+    /**
+     * The values the creator may pick for each settings field (the builder's
+     * select options, minus "not set"). A setting without options is left
+     * out, so the guide is never offered it.
+     *
+     * @return array<string, list<string>>
+     */
+    private function loadSettingOptions(): array
+    {
+        $settings = AssistantSetting::query()
+            ->whereIn('key', array_values(self::SETTING_FIELDS))
+            ->get()
+            ->keyBy('key');
+
+        $out = [];
+        foreach (self::SETTING_FIELDS as $field => $key) {
+            $values = array_map(
+                static fn (mixed $option): string => \is_array($option) ? (string)($option['value'] ?? '') : '',
+                $settings->get($key)->ui_options ?? [],
+            );
+            $values = array_values(array_filter($values, static fn (string $value): bool => '' !== $value));
+            if ([] !== $values) {
+                $out[$field] = $values;
+            }
+        }
+
+        return $out;
     }
 
     private function resolveModel(Assistant $assistant): AiModel
@@ -130,8 +184,9 @@ class AssistantBuilderGuideService
      * @param array<string, mixed> $draft
      * @param array<int|string, string> $categories Category text by id.
      * @param array<string, string> $models Model label by model_id.
+     * @param array<string, list<string>> $settingOptions Option values per settings field.
      */
-    private function buildInstructions(Assistant $assistant, array $draft, string $locale, array $categories, array $models): string
+    private function buildInstructions(Assistant $assistant, array $draft, string $locale, array $categories, array $models, array $settingOptions): string
     {
         $current = [];
         foreach (self::FIELDS as $field) {
@@ -141,6 +196,7 @@ class AssistantBuilderGuideService
         $currentJson = json_encode($current, $jsonFlags);
         $files = $this->collectKnowledge($assistant);
         $maxPrompts = self::MAX_STARTER_PROMPTS;
+        $maxTags = self::MAX_TAGS;
         $required = implode(', ', self::REQUIRED_FIELDS);
         $missing = array_values(array_filter(
             self::REQUIRED_FIELDS,
@@ -149,6 +205,10 @@ class AssistantBuilderGuideService
         $missingText = [] === $missing ? '(none)' : implode(', ', $missing);
         $categoryList = $this->formatOptions($categories);
         $modelList = $this->formatOptions($models);
+        $settingList = $this->formatOptions(array_map(
+            static fn (array $values): string => implode(', ', $values),
+            $settingOptions,
+        ));
 
         return <<<PROMPT
             You are the setup guide of HAWKI's assistant builder. HAWKI is the AI chat platform of a university; its members build custom AI assistants (tutors, writing helpers, research aids, admin helpers, ...) that they and others can chat with.
@@ -168,11 +228,13 @@ class AssistantBuilderGuideService
             - `handle` is the unique @handle users mention the assistant with: lowercase letters, digits and hyphens only, derived from the name (e.g. `statistics-tutor`). It is made unique automatically.
             - `categoryId` is the id of the category below that fits best.
             - `model` is the model_id of one of the available models below. Unless the creator wants a specific one, pick a capable general-purpose model.
+            - `language`, `formality` and `answerStyle` set the language the assistant answers in, its tone and its answer length; each takes one of the values listed below. Set them when the creator states a preference or it clearly follows from the audience.
+            - `tags` are at most {$maxTags} short, general keywords describing the assistant. Always send the complete list, not only the additions.
             - Write field contents in the language the assistant's users will speak; if unclear, use the creator's language.
 
             Required fields: {$required}. Still empty: {$missingText}.
 
-            Other builder settings you cannot change, but can explain: the avatar, the model parameters (temperature, top-p, max tokens), tools, tags, knowledge files and the release (private, shared, organisation-wide, ...). Knowledge files can also be uploaded right here in this chat with the paperclip button; they become part of the assistant's knowledge.
+            Other builder settings you cannot change, but can explain: the avatar, the model parameters (temperature, top-p, max tokens), tools, knowledge files and the release (private, shared, organisation-wide, ...). Knowledge files can also be uploaded right here in this chat with the paperclip button; they become part of the assistant's knowledge.
 
             Reply in the language the creator writes in. The creator's interface language is `{$locale}`.
 
@@ -184,6 +246,9 @@ class AssistantBuilderGuideService
 
             Available models (model_id: name):
             {$modelList}
+
+            Settings (field: allowed values):
+            {$settingList}
 
             Knowledge files attached to the assistant:
             {$files}
@@ -244,15 +309,16 @@ class AssistantBuilderGuideService
     }
 
     /**
-     * Keep only well-formed, non-empty field values. Category and model are
-     * re-checked against the options even though the schema enumerates them:
+     * Keep only well-formed, non-empty field values. Category, model and the
+     * settings are re-checked against the options even though the schema enumerates them:
      * not every provider enforces structured output strictly.
      *
      * @param array<int|string, string> $categories
      * @param array<string, string> $models
+     * @param array<string, list<string>> $settingOptions
      * @return array<string, string|list<string>>
      */
-    private function normalizeUpdates(mixed $updates, Assistant $assistant, array $categories, array $models): array
+    private function normalizeUpdates(mixed $updates, Assistant $assistant, array $categories, array $models, array $settingOptions): array
     {
         if (!\is_array($updates)) {
             return [];
@@ -273,6 +339,17 @@ class AssistantBuilderGuideService
         $model = $updates['model'] ?? null;
         if (\is_string($model) && \array_key_exists($model, $models)) {
             $out['model'] = $model;
+        }
+
+        foreach ($settingOptions as $field => $values) {
+            $value = $updates[$field] ?? null;
+            if (\is_string($value) && \in_array($value, $values, true)) {
+                $out[$field] = $value;
+            }
+        }
+
+        if (\is_array($updates['tags'] ?? null)) {
+            $out['tags'] = $this->normalizeTags($updates['tags']);
         }
 
         foreach (self::TEXT_FIELDS as $field) {
@@ -296,6 +373,47 @@ class AssistantBuilderGuideService
             }
 
             $out[$field] = 'name' === $field ? mb_substr(trim($value), 0, 255) : trim($value);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Trimmed, de-duplicated tag names, at most {@see self::MAX_TAGS}. A name
+     * matching an existing tag up to case is replaced by that tag's spelling:
+     * the frontend reuses tags by exact name, and creating "statistics" next
+     * to "Statistics" would fail the case-insensitive unique check. Only the
+     * proposed names are looked up, so this is one small query however many
+     * tags exist.
+     *
+     * @param array<mixed> $proposal
+     * @return list<string>
+     */
+    private function normalizeTags(array $proposal): array
+    {
+        $names = [];
+        foreach ($proposal as $name) {
+            $name = \is_string($name) ? trim($name) : '';
+            if ('' === $name || mb_strlen($name) > self::MAX_TAG_CHARS) {
+                continue;
+            }
+            $names[mb_strtolower($name)] ??= $name;
+        }
+        $names = \array_slice($names, 0, self::MAX_TAGS, true);
+
+        if ([] === $names) {
+            return [];
+        }
+
+        $existing = AssistantTag::query()
+            ->whereIn(DB::raw('LOWER(text)'), array_map(strval(...), array_keys($names)))
+            ->pluck('text')
+            ->mapWithKeys(static fn (string $text): array => [mb_strtolower($text) => $text])
+            ->all();
+
+        $out = [];
+        foreach ($names as $key => $name) {
+            $out[] = $existing[$key] ?? $name;
         }
 
         return $out;

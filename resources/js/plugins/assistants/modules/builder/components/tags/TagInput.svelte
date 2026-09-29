@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tick, untrack } from "svelte";
+    import { untrack } from "svelte";
     import Tag from '$plugins/assistants/components/tags/Tag.svelte';
     import type { AssistantTag as TagType } from '$plugins/assistants/types/assistant/AssistantTag'
     import AddButton from "$plugins/assistants/components/tags/AddButton.svelte";
@@ -8,6 +8,9 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
     import {ApiError} from "$plugins/assistants/api/errors";
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
+    import AiFillButton from "$plugins/assistants/modules/builder/components/AiFillButton.svelte";
+    import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
 
     interface Props {
         id?: string
@@ -22,10 +25,10 @@
 
     const builder = useBuilderContext();
     const toast = useToastContext();
+    const {__} = useTranslator();
 
     // eslint-disable-next-line svelte/state_referenced_locally
     let tags = $derived<TagType[]>(builder.draft.tags);
-    let tagsEl = $state<HTMLElement | null>(null);
     let highlightedTag = $state<string | null>(null);
 
     async function addTag(value: string): Promise<void> {
@@ -55,13 +58,6 @@
 
             tags = [...tags, newTag];
             builder.set('tags', tags)
-
-            tick().then(() => {
-                tagsEl?.scrollTo({
-                    left: tagsEl.scrollWidth,
-                    behavior: 'smooth'
-                });
-            });
         } catch (err) {
             // A unique-name conflict (or any other field-scoped validation
             // failure) belongs on the field itself; anything else (dropped
@@ -91,8 +87,10 @@
         </div>
     {/if}
 
+    <!-- Blue reveal when the AI guide fills the tags. -->
+    <AiFillReveal field="tags">
     <div class="tags-container" id={id}>
-        <div class="tags" bind:this={tagsEl}>
+        <div class="tags">
             {#each tags as tag}
                 <Tag value={tag.text}
                      highlighted={highlightedTag === tag.text}
@@ -103,33 +101,26 @@
                 suggestions={assistantOptionsStore.tags.map(t=>t.text)}
                 onAdd={addTag}
                 disabled={disabled} />
+        {#if !disabled}
+            <!-- No header row here, so the star closes the tag row instead. -->
+            <AiFillButton field="tags" label={label ?? __('assistants.builder.general.input_tags')}/>
+        {/if}
     </div>
+    </AiFillReveal>
 </div>
 
 
 <style>
+    /* Tags wrap into rows; "Add tag" and the star follow the last tag. */
     .tags-container {
         display: flex;
-        flex-direction: row;
+        flex-wrap: wrap;
         align-items: center;
         max-width: 100%;
         gap: var(--space-2);
         padding: var(--space-1) 0;
     }
-    .tags:empty {
-        display: none;
-    }
     .tags {
-        display: flex;
-        flex-direction: row;
-        flex: 0 1 auto;
-        min-width: 0;
-        align-items: center;
-        gap: var(--space-2);
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-    .tags::-webkit-scrollbar {
-        display: none;
+        display: contents;
     }
 </style>

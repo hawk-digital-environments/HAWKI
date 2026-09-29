@@ -18,14 +18,16 @@ use Laravel\Ai\Contracts\HasStructuredOutput;
  *
  * Every property is required (nullable where "no change" is valid) so the
  * schema also holds under providers that enforce strict structured output.
- * Category and model are enums of what the creator may actually pick, so a
- * provider that enforces the schema cannot invent one.
+ * Category, model and the settings (language, formality, answer style) are
+ * enums of what the creator may actually pick, so a provider that enforces the
+ * schema cannot invent one.
  */
 class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements HasStructuredOutput
 {
     /**
      * @param list<string> $categoryIds
      * @param list<string> $modelIds
+     * @param array<string, list<string>> $settingOptions Option values per settings field, e.g. `formality`.
      */
     public function __construct(
         AgentRequestContext $context,
@@ -33,12 +35,22 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
         array $messages,
         private readonly array $categoryIds,
         private readonly array $modelIds,
+        private readonly array $settingOptions,
     ) {
         parent::__construct(context: $context, instructions: $instructions, messages: $messages, tools: []);
     }
 
     public function schema(JsonSchema $schema): array
     {
+        $settings = [];
+        foreach ($this->settingOptions as $field => $options) {
+            $settings[$field] = $schema->string()
+                ->enum([...$options, null])
+                ->description(AssistantBuilderGuideService::SETTING_DESCRIPTIONS[$field] . ' null to keep the current value.')
+                ->nullable()
+                ->required();
+        }
+
         return [
             'reply' => $schema->string()
                 ->description('The message shown to the creator in the chat. Markdown is allowed.')
@@ -84,6 +96,13 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
                     ->description('The complete list of suggested opening prompts for users, replacing the current list. null to keep the current value.')
                     ->nullable()
                     ->required(),
+                'tags' => $schema->array()
+                    ->items($schema->string())
+                    ->max(AssistantBuilderGuideService::MAX_TAGS)
+                    ->description('The complete list of tag names, replacing the current tags. Prefer existing tags. null to keep the current value.')
+                    ->nullable()
+                    ->required(),
+                ...$settings,
             ])->required(),
         ];
     }

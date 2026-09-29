@@ -18,7 +18,7 @@ use Laravel\Ai\Messages\Message;
 class AssistantBuilderGuideAgentFactory extends AbstractAgentFactory
 {
     /**
-     * @param array{model: AiModel, instructions: string, messages: list<Message>, categoryIds: list<string>, modelIds: list<string>} $request
+     * @param array{model: AiModel, instructions: string, messages: list<Message>, categoryIds: list<string>, modelIds: list<string>, settingOptions: array<string, list<string>>} $request
      */
     public function createAgent(mixed $request): AgentInterface|null
     {
@@ -28,6 +28,7 @@ class AssistantBuilderGuideAgentFactory extends AbstractAgentFactory
             messages: $request['messages'],
             categoryIds: $request['categoryIds'],
             modelIds: $request['modelIds'],
+            settingOptions: $request['settingOptions'],
         );
     }
 }

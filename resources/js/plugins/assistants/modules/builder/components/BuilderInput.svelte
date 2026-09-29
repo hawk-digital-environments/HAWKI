@@ -15,6 +15,7 @@
     import type {IconComponent} from '$lib/components/ui/icons';
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
+    import AiFillButton from "$plugins/assistants/modules/builder/components/AiFillButton.svelte";
 
 
     const {__} = useTranslator();
@@ -170,6 +171,8 @@
             <InputError message={error} />
             {#if type === 'slider'}
                 <span class="slider-value">{numberValue}</span>
+            {:else if label && !disabled}
+                <AiFillButton field={assistantValueKey} {label}/>
             {/if}
         </div>
     {/if}

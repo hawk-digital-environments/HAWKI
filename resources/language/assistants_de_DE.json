@@ -207,6 +207,7 @@
                 "avatar_background": "Hintergrund",
                 "avatar_preview_name": "Dein Assistent",
                 "avatar_preview_handle": "@dein-handle",
+                "input_tags": "Tags",
                 "tag_add": "Tag hinzufügen",
                 "tag_input_aria": "Tag eingeben",
                 "tag_confirm_aria": "Tag bestätigen"
@@ -298,6 +299,10 @@
                 "empty_hint": "Erzähl dem Guide, was dein Assistent können soll. Er stellt Rückfragen, füllt die Felder für dich aus und beantwortet deine Fragen. Angehängte Dateien landen in der Wissensbasis.",
                 "applied": "Ausgefüllt",
                 "open_field": ":field anzeigen",
+                "fill_field": "Mit dem KI-Guide ausfüllen",
+                "revise_field": "Mit dem KI-Guide überarbeiten",
+                "fill_field_prompt": "Bitte fülle das Feld „:field“ aus.",
+                "revise_field_prompt": "Das Feld „:field“ ist schon ausgefüllt. Frag mich, was ich ändern möchte, oder erkläre den aktuellen Inhalt.",
                 "error": "Der Guide konnte nicht antworten. Bitte versuche es erneut.",
                 "attach": "Dateien zur Wissensbasis hinzufügen",
                 "attached_files": "Angehängte Dateien",
