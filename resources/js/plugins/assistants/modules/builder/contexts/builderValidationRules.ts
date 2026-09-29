@@ -17,6 +17,8 @@ export interface CheckItem {
     status: ValidationState;
     /** Whether the check passes (required field satisfied / no trigger). */
     ok: boolean;
+    /** Builder step that holds the checked field(s), if any. */
+    step?: BuilderStep;
 }
 
 /** Report items grouped under a section title, for rendering. */

@@ -349,6 +349,14 @@
                     "denied": "Denied",
                     "needs_revision": "Needs revision"
                 },
+                "status_hint": {
+                    "draft": "Not published yet",
+                    "private": "Visible only to you",
+                    "organizational": "Reviewed by your university",
+                    "federated": "Reviewed across the federation",
+                    "denied": "Contact your administrator",
+                    "needs_revision": "Address the reviewer's feedback"
+                },
                 "denied": {
                     "description": "Your assistant has been permanently denied. Please contact your system administrator.",
                     "reason_label": "Reason:"
@@ -362,12 +370,15 @@
                     "description": "The risk level results from knowledge files and tools.",
                     "label_status": "Status",
                     "label_risk_level": "Risk level",
-                    "risk_level_low": "Low risk"
+                    "risk_level_low": "Low risk",
+                    "hint": "Based on files and tools"
                 },
                 "completeness": {
                     "title": "Completeness check",
                     "description": "Mandatory for publishing.",
-                    "label": "Requirements"
+                    "label": "Requirements",
+                    "ready": "Ready to publish",
+                    "open": ":count still open"
                 },
                 "triggers": {
                     "title": "Review triggers"

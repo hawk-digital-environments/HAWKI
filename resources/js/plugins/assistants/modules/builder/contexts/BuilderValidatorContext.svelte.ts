@@ -144,6 +144,7 @@ export class BuilderValidatorContext {
             return {
                 id: rule.id,
                 group: rule.group,
+                step: rule.step,
                 ok,
                 status: ok ? ValidationState.SAFE : (rule.failStatus ?? ValidationState.WARNING),
                 label: ok ? rule.okLabel : rule.failLabel,
