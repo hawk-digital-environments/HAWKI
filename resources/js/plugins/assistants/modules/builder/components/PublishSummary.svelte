@@ -358,7 +358,7 @@
         outline-offset: -2px;
     }
 
-    /* Done items stay quiet (a thin tick); open items get a filled disc. */
+    /* Done items stay quiet (a neutral tick); open items get a filled disc. */
     .mark {
         display: grid;
         place-items: center;
@@ -367,7 +367,7 @@
         height: 1.25rem;
         border-radius: var(--corner-full);
         font-size: var(--font-size-sm);
-        color: var(--tone);
+        color: var(--color-text);
     }
     .open .mark {
         background: var(--tone);
