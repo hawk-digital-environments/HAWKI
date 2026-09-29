@@ -304,13 +304,18 @@
             "guide": {
                 "placeholder": "Describe your assistant or ask a question…",
                 "empty_title": "Set up your assistant together",
-                "empty_hint": "Tell the guide what your assistant should do. It asks follow-up questions, fills in the fields for you and answers your questions. Attached files go into the knowledge base.",
+                "empty_hint": "Tell the guide what your assistant should do, or drop in material like a syllabus. It asks follow-up questions, fills in the fields for you and answers your questions.",
                 "applied": "Filled in",
                 "open_field": "Show :field",
                 "error": "The guide could not answer. Please try again.",
                 "attach": "Add files to the knowledge base",
-                "attached_files": "Attached files",
-                "remove_file": "Remove file",
+                "drop_label": "Drop files to add them to the knowledge base",
+                "ingest": {
+                    "uploading": "Adding to the knowledge base…",
+                    "done": "Added to the knowledge base",
+                    "failed": "Couldn't add the files",
+                    "file_failed": "Failed"
+                },
                 "upload_needs_model": "Choose a model first to add knowledge files.",
                 "starters": {
                     "label": "Example requests",
@@ -385,6 +390,8 @@
                 "sending": "Sending your message…",
                 "reading": "Reading your message…",
                 "reviewing": "Looking at your assistant…",
+                "reading_files": "Reading your files…",
+                "planning_files": "Working out how to use them…",
                 "thinking": "Thinking…",
                 "writing": "Writing a reply…"
             },

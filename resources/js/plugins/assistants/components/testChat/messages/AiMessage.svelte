@@ -21,7 +21,15 @@
     // Neither endpoint reports progress before the first output, so the
     // stages are timed. Each is true for every request: the guide always reads
     // the message, then the draft and its knowledge files, then generates.
-    const pendingSteps: StatusStep[] = config.variant === "guide"
+    // svelte-ignore state_referenced_locally
+    const pendingSteps: StatusStep[] = message.trigger === "files"
+        // The guide's own turn after an upload: it starts from the files.
+        ? [
+            {icon: FileSearchIcon, label: __("assistants.testChat.status.reading_files"), at: 0},
+            {icon: AiBrain01Icon, label: __("assistants.testChat.status.planning_files"), at: 2500},
+            {icon: AiEditingIcon, label: __("assistants.testChat.status.writing"), at: 6000},
+        ]
+        : config.variant === "guide"
         ? [
             {icon: MessageSearch01Icon, label: __("assistants.testChat.status.reading"), at: 0},
             {icon: FileSearchIcon, label: __("assistants.testChat.status.reviewing"), at: 1200},

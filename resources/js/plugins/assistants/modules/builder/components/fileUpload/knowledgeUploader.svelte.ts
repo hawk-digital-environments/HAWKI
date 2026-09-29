@@ -107,11 +107,15 @@ export class KnowledgeUploader {
 
     /**
      * Queue the files on the draft and upload them right away. Rejected and
-     * failed files are toasted and dropped.
+     * failed files are toasted and dropped. `onProgress` follows each
+     * accepted file's upload (0–100).
      *
      * @returns The files that were uploaded, as they now stand in the draft.
      */
-    async addFiles(fileList: FileList | File[]): Promise<UploadFile[]> {
+    async addFiles(
+        fileList: FileList | File[],
+        onProgress?: (file: File, progress: number) => void,
+    ): Promise<UploadFile[]> {
         const __ = this.translator.__;
         if (this.disabled || this.uploadProgress !== undefined) return [];
 
@@ -143,7 +147,10 @@ export class KnowledgeUploader {
             accepted,
             // Progress only — don't flip status to "complete" here: the byte
             // stream can finish and still yield a 422.
-            (file, progress) => this.patchFile(file, { progress }),
+            (file, progress) => {
+                this.patchFile(file, { progress });
+                onProgress?.(file, progress);
+            },
         );
 
         // Reconcile per result: mark successes, drop failures with a toast.

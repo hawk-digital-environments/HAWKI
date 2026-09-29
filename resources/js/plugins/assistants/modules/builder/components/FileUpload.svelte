@@ -9,6 +9,7 @@
     import Item from '$plugins/assistants/components/itemList/Item.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import { dragDrop } from '$plugins/assistants/actions/dragDrop.svelte.js';
+    import { formatFileSize } from '$plugins/assistants/utils/formatFileSize';
     import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte';
     import { deleteAssistantAttachment } from '$plugins/assistants/api/resources/assistantAttachmentClient';
     import { KnowledgeUploader } from '$plugins/assistants/modules/builder/components/fileUpload/knowledgeUploader.svelte.js';
@@ -149,16 +150,9 @@
     /** Human-readable extension list shared by the tooltip and its screen-reader label. */
     const extensionDisplay = $derived(allowedExtensions.map((ext) => `.${ext}`).join(', '));
     const restrictionText = $derived(
-        `${__('assistants.builder.knowledge.upload_max_size')}: ${formatSize(maxFileSize)}. ` +
+        `${__('assistants.builder.knowledge.upload_max_size')}: ${formatFileSize(maxFileSize)}. ` +
             `${__('assistants.builder.knowledge.upload_allowed_extensions')}: ${extensionDisplay}`
     );
-
-    function formatSize(bytes?: number): string {
-        if (bytes === undefined || bytes === null) return '';
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    }
 
     function formatDate(date?: Date): string {
         if (!date) return '';
@@ -300,7 +294,7 @@
                                     <div class="restriction-label">
                                         {__('assistants.builder.knowledge.upload_max_size')}
                                     </div>
-                                    <div class="restriction-value">{formatSize(maxFileSize)}</div>
+                                    <div class="restriction-value">{formatFileSize(maxFileSize)}</div>
                                     <div class="restriction-divider" aria-hidden="true"></div>
                                     <div class="restriction-label">
                                         {__('assistants.builder.knowledge.upload_allowed_extensions')}
@@ -355,7 +349,7 @@
                         : ''}
                     <Item
                         label={file.name}
-                        description={[formatSize(file.size), formatDate(file.date), formatStatus(file)]
+                        description={[formatFileSize(file.size), formatDate(file.date), formatStatus(file)]
                             .filter(Boolean)
                             .join(' · ')}
                         icon={File01Icon}

@@ -19,7 +19,7 @@
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
-    import RefreshIcon from '$lib/components/ui/icons/iconset/RefreshIcon.svelte';
+    import Refresh01Icon from '$lib/components/ui/icons/iconset/Refresh01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
@@ -44,6 +44,13 @@
         {key: 'guide', label: __('assistants.builder.test.mode_guide'), id: `${uid}-tab-guide`, panelId: `${uid}-panel`},
         {key: 'test', label: __('assistants.builder.test.mode_test'), id: `${uid}-tab-test`, panelId: `${uid}-panel`},
     ]);
+
+    /** Files dragged onto the launcher open the guide, which takes them. */
+    const openForFiles = (e: DragEvent): void => {
+        if (!Array.from(e.dataTransfer?.types ?? []).includes('Files')) return;
+        mode = 'guide';
+        open = true;
+    };
 </script>
 
 <div class="test-shell" class:open>
@@ -51,7 +58,8 @@
     <button type="button" class="launcher" inert={open}
             aria-label={__('assistants.builder.test.open')}
             title={__('assistants.builder.test.open')}
-            onclick={() => open = true}>
+            onclick={() => open = true}
+            ondragenter={openForFiles}>
         <BubbleChatIcon/>
     </button>
     <div class="inner" inert={!open}>
@@ -64,7 +72,7 @@
             </div>
             <div class="header-actions">
                 {#if chat.messages.length > 0}
-                    <ButtonWithTooltip variant="iconGhost" iconLeft={RefreshIcon}
+                    <ButtonWithTooltip variant="iconGhost" iconLeft={Refresh01Icon}
                                        tooltip={__('assistants.builder.test.reset')}
                                        disabled={chat.status === 'streaming'}
                                        onclick={() => chat.clear()}/>
@@ -277,6 +285,7 @@
 
     /* The panel is the frame; drop the chatbox's own card chrome. */
     .inner :global(.chatbox) {
+        --chatbox-drop-bg: var(--color-bg);
         border: none;
         border-radius: 0;
         background: transparent;

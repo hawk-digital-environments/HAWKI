@@ -304,13 +304,18 @@
             "guide": {
                 "placeholder": "Beschreibe deinen Assistenten oder stelle eine Frage…",
                 "empty_title": "Richte deinen Assistenten gemeinsam ein",
-                "empty_hint": "Erzähl dem Guide, was dein Assistent können soll. Er stellt Rückfragen, füllt die Felder für dich aus und beantwortet deine Fragen. Angehängte Dateien landen in der Wissensbasis.",
+                "empty_hint": "Erzähl dem Guide, was dein Assistent können soll, oder zieh Material wie ein Modulhandbuch hier hinein. Er stellt Rückfragen, füllt die Felder für dich aus und beantwortet deine Fragen.",
                 "applied": "Ausgefüllt",
                 "open_field": ":field anzeigen",
                 "error": "Der Guide konnte nicht antworten. Bitte versuche es erneut.",
                 "attach": "Dateien zur Wissensbasis hinzufügen",
-                "attached_files": "Angehängte Dateien",
-                "remove_file": "Datei entfernen",
+                "drop_label": "Dateien ablegen, um sie zur Wissensbasis hinzuzufügen",
+                "ingest": {
+                    "uploading": "Wird zur Wissensbasis hinzugefügt…",
+                    "done": "Zur Wissensbasis hinzugefügt",
+                    "failed": "Dateien konnten nicht hinzugefügt werden",
+                    "file_failed": "Fehlgeschlagen"
+                },
                 "upload_needs_model": "Wähle zuerst ein Modell, um Wissensdateien hinzuzufügen.",
                 "starters": {
                     "label": "Beispielanfragen",
@@ -385,6 +390,8 @@
                 "sending": "Sendet deine Nachricht…",
                 "reading": "Liest deine Nachricht…",
                 "reviewing": "Sieht sich deinen Assistenten an…",
+                "reading_files": "Liest deine Dateien…",
+                "planning_files": "Überlegt, wie sie sich nutzen lassen…",
                 "thinking": "Denkt nach…",
                 "writing": "Schreibt die Antwort…"
             },

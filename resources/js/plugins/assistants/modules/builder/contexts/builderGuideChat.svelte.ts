@@ -10,15 +10,10 @@ import {
     type BuilderGuideMessage,
     type BuilderGuideUpdates,
 } from "$plugins/assistants/api/resources/assistantBuilderGuideClient";
-import type {
-    ChatStatus,
-    ChatStoreApi,
-    StagedUpload,
-} from "$plugins/assistants/components/testChat/stream/chatStore.svelte.js";
-import type { AppliedField, ChatMessage } from "$plugins/assistants/components/testChat/types";
+import type { ChatStatus, ChatStoreApi } from "$plugins/assistants/components/testChat/stream/chatStore.svelte.js";
+import type { AppliedField, ChatMessage, IngestFile } from "$plugins/assistants/components/testChat/types";
 import type { AssistantTag } from "$plugins/assistants/types/assistant/AssistantTag";
 import { BUILDER_STEPS, type BuilderStep } from "./builderValidationRules.js";
-import type { UploadFile } from "$plugins/assistants/types/UploadFile";
 import type { useRouter } from "$lib/components/ui/routing/index.js";
 import { assistantOptionsStore } from "$plugins/assistants/stores/AssistantOptionsStore.svelte";
 
@@ -56,8 +51,6 @@ const FIELD_LABELS: Record<BuilderGuideField | BuilderGuideSettingField | "handl
     tags: "assistants.builder.general.input_tags",
 };
 
-type Staged = StagedUpload & { file?: UploadFile };
-
 /**
  * # Builder guide chat
  *
@@ -69,9 +62,11 @@ type Staged = StagedUpload & { file?: UploadFile };
  * `builder.set()`, so they autosave like any manual edit and show up on the
  * builder pages immediately.
  *
- * Files picked in the composer go into the assistant's knowledge through the
- * shared {@link KnowledgeUploader} and are staged until the next message, which
- * tells the guide about them (the server reads their content itself).
+ * Files picked or dropped on the chat go into the assistant's knowledge right
+ * away through the shared {@link KnowledgeUploader}. Each batch shows up in
+ * the conversation as an `ingest` part with its upload progress, and once it
+ * has landed the guide takes a turn on its own to react to the files (the
+ * server reads their content itself).
  *
  * Implements the test chat's {@link ChatStoreApi}, so the same `<Chatbox>`
  * renders it. Owned by the test panel, so it survives mode and step changes.
@@ -85,17 +80,37 @@ export function createBuilderGuideChat(
     let messages = $state<ChatMessage[]>([]);
     let status = $state<ChatStatus>("idle");
     let error = $state<string | null>(null);
-    let staged = $state<Staged[]>([]);
+    let uploading = $state(false);
+    /** Files landed while a turn was running; the guide reacts once it is done. */
+    let filesPending = false;
     let abortCtrl: AbortController | null = null;
 
-    /** What the guide reads for a message: its text plus a note about files uploaded with it. */
-    const toGuideMessage = (m: ChatMessage): BuilderGuideMessage => {
-        const text = m.parts
-            .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
-            .map((p) => p.text)
-            .join("");
-        const files = m.attachments?.length ? `[Uploaded knowledge files: ${m.attachments.join(", ")}]` : "";
-        return { role: m.role, content: [text, files].filter(Boolean).join("\n\n") };
+    /** What the guide reads for a message: its text, and a note about the files that landed. */
+    const toGuideContent = (m: ChatMessage): string => m.parts
+        .map((p) => {
+            if (p.type === "text") return p.text;
+            if (p.type !== "ingest") return "";
+            const names = p.files.filter((f) => f.state === "done").map((f) => f.name);
+            return names.length ? `[Uploaded knowledge files: ${names.join(", ")}]` : "";
+        })
+        .filter(Boolean)
+        .join("\n\n");
+
+    /**
+     * The conversation as the guide reads it. An upload and a message the
+     * creator wrote meanwhile are both theirs, so consecutive turns of one
+     * role merge into one.
+     */
+    const toGuideHistory = (): BuilderGuideMessage[] => {
+        const out: BuilderGuideMessage[] = [];
+        for (const m of messages) {
+            const content = toGuideContent(m);
+            if (!content) continue;
+            const last = out[out.length - 1];
+            if (last?.role === m.role) last.content += `\n\n${content}`;
+            else out.push({ role: m.role, content });
+        }
+        return out;
     };
 
     /**
@@ -175,27 +190,23 @@ export function createBuilderGuideChat(
 
     const clear = (): void => {
         abortCtrl?.abort();
+        filesPending = false;
         messages = [];
         error = null;
         status = "idle";
     };
 
-    const send = async (text: string): Promise<void> => {
-        const content = text.trim();
-        const attachments = staged.filter((s) => !s.uploading).map((s) => s.name);
-        if ((!content && attachments.length === 0) || status === "streaming") return;
-        if (staged.some((s) => s.uploading)) return;
+    /**
+     * One guide turn over the conversation so far. `trigger` marks a turn the
+     * guide takes on its own. Files that land meanwhile get a turn of their
+     * own right after.
+     */
+    const respond = async (trigger?: "files"): Promise<void> => {
+        // This turn's history already covers every file that has landed.
+        filesPending = false;
+        const history = toGuideHistory();
 
-        staged = [];
-        messages.push({
-            id: crypto.randomUUID(),
-            role: "user",
-            parts: content ? [{ type: "text", text: content }] : [],
-            ...(attachments.length ? { attachments } : {}),
-        });
-        const history = messages.map(toGuideMessage);
-
-        messages.push({ id: crypto.randomUUID(), role: "assistant", parts: [], streaming: true });
+        messages.push({ id: crypto.randomUUID(), role: "assistant", parts: [], streaming: true, ...(trigger ? { trigger } : {}) });
         const idx = messages.length - 1;
 
         status = "streaming";
@@ -223,23 +234,59 @@ export function createBuilderGuideChat(
         } finally {
             if (abortCtrl === ctrl) abortCtrl = null;
         }
+
+        if (filesPending) void respond("files");
     };
 
+    const send = async (text: string): Promise<void> => {
+        const content = text.trim();
+        if (!content || status === "streaming") return;
+
+        messages.push({ id: crypto.randomUUID(), role: "user", parts: [{ type: "text", text: content }] });
+        await respond();
+    };
+
+    /**
+     * Upload files into the knowledge and show them in the conversation while
+     * they do; once at least one has landed, the guide reacts to them.
+     */
     const add = async (files: File[]): Promise<void> => {
-        const placeholders: Staged[] = files.map((f) => ({ name: f.name, uploading: true }));
-        staged.push(...placeholders);
-        const uploaded = await uploader.addFiles(files);
-        staged = [
-            ...staged.filter((s) => !placeholders.some((p) => p.name === s.name && s.uploading)),
-            ...uploaded.map((file) => ({ name: file.name, uploading: false, file })),
-        ];
-    };
+        if (uploading || files.length === 0) return;
+        uploading = true;
 
-    const remove = async (upload: StagedUpload): Promise<void> => {
-        const entry = staged.find((s) => s.name === upload.name && !s.uploading);
-        if (!entry) return;
-        if (entry.file && !(await uploader.removeFile(entry.file))) return;
-        staged = staged.filter((s) => s !== entry);
+        messages.push({
+            id: crypto.randomUUID(),
+            role: "user",
+            parts: [{
+                type: "ingest",
+                files: files.map((f): IngestFile => ({ name: f.name, size: f.size, progress: 0, state: "uploading" })),
+            }],
+        });
+        // Through the state proxy, so progress updates render.
+        const message = messages[messages.length - 1];
+        const part = message.parts[0] as Extract<ChatMessage["parts"][number], { type: "ingest" }>;
+        const entryOf = (file: File): IngestFile | undefined => part.files[files.indexOf(file)];
+
+        try {
+            const uploaded = await uploader.addFiles(files, (file, progress) => {
+                const entry = entryOf(file);
+                if (entry) entry.progress = progress;
+            });
+            part.files.forEach((entry, i) => {
+                const done = uploaded.some((u) => u.file === files[i]);
+                entry.state = done ? "done" : "failed";
+                if (done) entry.progress = 100;
+            });
+        } catch {
+            part.files.forEach((entry) => entry.state = "failed");
+        } finally {
+            uploading = false;
+        }
+
+        // Cleared meanwhile, or nothing landed: nothing to react to.
+        if (!messages.includes(message) || !part.files.some((f) => f.state === "done")) return;
+        filesPending = true;
+        if (status !== "streaming") void respond("files");
     };
 
     return {
@@ -256,8 +303,8 @@ export function createBuilderGuideChat(
             return builder.draft.id !== null;
         },
         uploads: {
-            get staged(): StagedUpload[] {
-                return staged;
+            get busy(): boolean {
+                return uploading;
             },
             get accept(): string | undefined {
                 return uploader.acceptFilter;
@@ -273,7 +320,6 @@ export function createBuilderGuideChat(
                 }
             },
             add,
-            remove,
         },
         clear,
         send,

@@ -1,22 +1,24 @@
 <script lang="ts">
     import type {ChatMessage} from "../types";
-    import Attachment01Icon from "$lib/components/ui/icons/iconset/Attachment01Icon.svelte";
+    import IngestPart from "./parts/IngestPart.svelte";
 
     let {message} = $props<{ message: ChatMessage }>();
 </script>
 
 <!-- Same bubble as the main chat's user messages (core ChatMessage.svelte),
-     pinned to the right edge. -->
-<div class="user-message">
-    {#each message.attachments ?? [] as name (name)}
-        <span class="attachment"><Attachment01Icon size="1em"/><span class="attachment-name">{name}</span></span>
-    {/each}
-    {#each message.parts as part, i (i)}
-        {#if part.type === "text"}
+     pinned to the right edge. Files the creator added show as their upload
+     card instead. -->
+{#each message.parts as part, i (i)}
+    {#if part.type === "text"}
+        <div class="user-message">
             <p class="text">{part.text}</p>
-        {/if}
-    {/each}
-</div>
+        </div>
+    {:else if part.type === "ingest"}
+        <div class="user-ingest">
+            <IngestPart files={part.files}/>
+        </div>
+    {/if}
+{/each}
 
 <style>
     .user-message {
@@ -31,19 +33,11 @@
         color: var(--color-text);
     }
 
-    .attachment {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1_5);
-        min-width: 0;
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-    }
-
-    .attachment-name {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    .user-ingest {
+        display: flex;
+        justify-content: flex-end;
+        align-self: flex-end;
+        max-width: 85%;
     }
 
     .text {

@@ -5,26 +5,19 @@ import type { ChatMessage, MessagePart } from "../types";
 
 export type ChatStatus = "idle" | "streaming" | "error";
 
-/** A file uploaded from the composer, waiting to go out with the next message. */
-export type StagedUpload = {
-    readonly name: string;
-    /** `true` while the upload is still running. */
-    readonly uploading: boolean;
-};
-
 /**
  * Optional file-upload support of a chat. When present, the composer offers a
- * paperclip button; picked files upload right away and are staged until the
- * next message is sent (which may then have no text at all).
+ * paperclip button and files can be dropped on the chat; they upload right
+ * away and show up in the conversation, which reacts to them on its own.
  */
 export type ChatUploadsApi = {
-    readonly staged: StagedUpload[];
     /** `accept` filter for the file picker. */
     readonly accept: string | undefined;
     /** Why uploading is currently not possible, or `null` when it is. */
     readonly blockedHint: string | null;
+    /** `true` while files are uploading; no new ones are taken until they are done. */
+    readonly busy: boolean;
     add: (files: File[]) => Promise<void>;
-    remove: (upload: StagedUpload) => Promise<void>;
 };
 
 export type ChatStoreApi = {
