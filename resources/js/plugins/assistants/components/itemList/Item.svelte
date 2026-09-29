@@ -58,7 +58,7 @@
 <style>
     .item{
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 1rem;
         width: 100%;
         align-items: center;
@@ -79,6 +79,12 @@
         width: 2rem;
         height: 2rem;
         margin-left: auto;
+    }
+    /* min-width lets the flex item shrink below its longest word, so long
+       unbroken names (URLs, file names) wrap instead of overflowing. */
+    .text-wrapper{
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
     .content{
         display: flex;
