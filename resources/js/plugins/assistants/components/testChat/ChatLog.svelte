@@ -6,6 +6,8 @@
     import {useChatConfig} from "./stream/chatConfig.svelte.js";
     import AssistantAvatarIcon from "$plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte";
     import {resolveAssistantAvatar} from "$plugins/assistants/utils/resolveAssistantAvatar";
+    import {StatusIcon} from "$lib/components/ui/icons";
+    import AiMagicIcon from "$lib/components/ui/icons/iconset/AiMagicIcon.svelte";
 
     const chat = useChatStore();
     const {__} = useTranslator();
@@ -32,16 +34,22 @@
 <div class="chatlog" bind:this={scroller} class:empty={messages.length === 0}>
     {#if messages.length === 0}
         <div class="chatlog-empty">
-            {#if config.hasModel}
-                <AssistantAvatarIcon size="small" assistantAvatar={avatar}/>
+            {#if config.variant === "guide"}
+                <StatusIcon icon={AiMagicIcon} tone="neutral" size="xl"/>
+                <p class="empty-title">{__('assistants.builder.guide.empty_title')}</p>
+                <p class="empty-hint">{__('assistants.builder.guide.empty_hint')}</p>
             {:else}
-                <!-- No model yet: an unfilled outline of the avatar. -->
-                <div class="avatar-placeholder" aria-hidden="true">{avatar.name}</div>
+                {#if config.hasModel}
+                    <AssistantAvatarIcon size="small" assistantAvatar={avatar}/>
+                {:else}
+                    <!-- No model yet: an unfilled outline of the avatar. -->
+                    <div class="avatar-placeholder" aria-hidden="true">{avatar.name}</div>
+                {/if}
+                <p class="empty-title">{assistant.name.trim() || __('assistants.testChat.unnamed')}</p>
+                <p class="empty-hint">
+                    {config.hasModel ? __('assistants.testChat.empty_hint') : __('assistants.testChat.no_model_hint')}
+                </p>
             {/if}
-            <p class="empty-title">{assistant.name.trim() || __('assistants.testChat.unnamed')}</p>
-            <p class="empty-hint">
-                {config.hasModel ? __('assistants.testChat.empty_hint') : __('assistants.testChat.no_model_hint')}
-            </p>
         </div>
     {/if}
     {#each messages as message, i (i)}
@@ -51,6 +59,9 @@
             <AiMessage {message}/>
         {/if}
     {/each}
+    {#if chat.status === "error" && chat.error}
+        <p class="chat-error" role="alert">{chat.error}</p>
+    {/if}
 </div>
 
 <style>
@@ -59,7 +70,7 @@
         min-height: 12rem;
         display: flex;
         flex-direction: column;
-        gap: var(--space-3);
+        gap: var(--space-5);
         padding: var(--space-4);
         overflow-y: auto;
     }
@@ -106,6 +117,12 @@
         font-size: var(--font-size-base);
         font-weight: var(--font-weight-medium);
         color: var(--color-text);
+    }
+
+    .chat-error {
+        margin: 0;
+        font-size: var(--font-size-sm);
+        color: var(--color-error);
     }
 
     .empty-hint {

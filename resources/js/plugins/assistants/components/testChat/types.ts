@@ -9,11 +9,15 @@
 export type MessagePart =
     | { type: "text"; text: string }
     | { type: "reasoning"; text: string }
-    | { type: "tool-call"; name: string };
+    | { type: "tool-call"; name: string }
+    /** Builder guide only: the (translated) labels of the fields this reply filled in. */
+    | { type: "applied"; labels: string[] };
 
 export type ChatMessage = {
     id: string;
     role: "user" | "assistant";
     parts: MessagePart[];
+    /** Names of the files uploaded with this message. */
+    attachments?: string[];
     streaming?: boolean;
 };

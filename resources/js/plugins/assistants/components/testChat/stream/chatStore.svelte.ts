@@ -5,10 +5,35 @@ import type { ChatMessage, MessagePart } from "../types";
 
 export type ChatStatus = "idle" | "streaming" | "error";
 
+/** A file uploaded from the composer, waiting to go out with the next message. */
+export type StagedUpload = {
+    readonly name: string;
+    /** `true` while the upload is still running. */
+    readonly uploading: boolean;
+};
+
+/**
+ * Optional file-upload support of a chat. When present, the composer offers a
+ * paperclip button; picked files upload right away and are staged until the
+ * next message is sent (which may then have no text at all).
+ */
+export type ChatUploadsApi = {
+    readonly staged: StagedUpload[];
+    /** `accept` filter for the file picker. */
+    readonly accept: string | undefined;
+    /** Why uploading is currently not possible, or `null` when it is. */
+    readonly blockedHint: string | null;
+    add: (files: File[]) => Promise<void>;
+    remove: (upload: StagedUpload) => Promise<void>;
+};
+
 export type ChatStoreApi = {
     readonly messages: ChatMessage[];
     readonly status: ChatStatus;
     readonly error: string | null;
+    /** Whether the chat can take a message at all (e.g. the test chat needs a model). */
+    readonly ready: boolean;
+    readonly uploads?: ChatUploadsApi;
     clear: () => void;
     send: (text: string) => Promise<void>;
 };
@@ -79,7 +104,12 @@ function toApiMessages(assistant: Assistant, history: ChatMessage[]): ApiMessage
     return out;
 }
 
-export const provideChatStore = (config: ChatConfigApi): ChatStoreApi => {
+/**
+ * The test chat against the assistant under test. Created without a context
+ * so an owner outside the `<Chatbox>` (the builder's test panel) can keep the
+ * conversation alive across remounts and hand it in via `provideChatStore`.
+ */
+export const createChatStore = (config: ChatConfigApi): ChatStoreApi => {
     let messages = $state<ChatMessage[]>([]);
     let status = $state<ChatStatus>("idle");
     let error = $state<string | null>(null);
@@ -216,10 +246,19 @@ export const provideChatStore = (config: ChatConfigApi): ChatStoreApi => {
         get error(): string | null {
             return error;
         },
+        get ready(): boolean {
+            return config.hasModel;
+        },
         clear,
         send,
     };
 
+    return api;
+};
+
+/** Exposes `chat` (or a fresh test chat) to the `<Chatbox>` subtree. */
+export const provideChatStore = (config: ChatConfigApi, chat?: ChatStoreApi): ChatStoreApi => {
+    const api = chat ?? createChatStore(config);
     setContext(KEY, api);
     return api;
 };

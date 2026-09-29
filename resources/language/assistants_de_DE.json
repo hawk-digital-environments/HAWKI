@@ -287,7 +287,28 @@
                 "open": "Testchat öffnen",
                 "close": "Testchat schließen",
                 "reset": "Unterhaltung neu starten",
-                "no_model": "Wähle zuerst ein Modell"
+                "no_model": "Wähle zuerst ein Modell",
+                "mode": "Chat-Modus",
+                "mode_test": "Testen",
+                "mode_guide": "KI-Guide"
+            },
+            "guide": {
+                "placeholder": "Beschreibe deinen Assistenten oder stelle eine Frage…",
+                "empty_title": "Richte deinen Assistenten gemeinsam ein",
+                "empty_hint": "Erzähl dem Guide, was dein Assistent können soll. Er stellt Rückfragen, füllt die Felder für dich aus und beantwortet deine Fragen. Angehängte Dateien landen in der Wissensbasis.",
+                "applied": "Ausgefüllt",
+                "error": "Der Guide konnte nicht antworten. Bitte versuche es erneut.",
+                "attach": "Dateien zur Wissensbasis hinzufügen",
+                "attached_files": "Angehängte Dateien",
+                "remove_file": "Datei entfernen",
+                "upload_needs_model": "Wähle zuerst ein Modell, um Wissensdateien hinzuzufügen.",
+                "starters": {
+                    "label": "Beispielanfragen",
+                    "build": "Bau mir einen Schreibcoach für Hausarbeiten",
+                    "prompt": "Was macht einen guten System-Prompt aus?",
+                    "model": "Welches Modell sollte ich wählen?",
+                    "knowledge": "Wie funktionieren Wissensdateien?"
+                }
             },
             "publish": {
                 "title": "Veröffentlichen",

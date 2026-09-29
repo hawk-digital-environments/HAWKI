@@ -1,5 +1,6 @@
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
 import type { SectionId } from '../sections.js';
+import { promptlessModelSlots } from './schemas.js';
 
 export interface Control {
     type:
@@ -145,12 +146,12 @@ export function controlFor(
         if (key === 'pricing') return { type: 'pricing' };
     }
     if (section === 'system-models' && key === 'prompts') {
-        const translation = values.model_type === 'translation';
+        const promptless = (promptlessModelSlots as readonly unknown[]).includes(values.model_type);
         return {
             type: 'localized-text',
             rows: 12,
-            disabled: translation,
-            hint: translation ? 'admin.system_prompt_not_used' : undefined
+            disabled: promptless,
+            hint: promptless ? 'admin.system_prompt_not_used' : undefined
         };
     }
     if (section === 'providers') {

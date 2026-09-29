@@ -11,22 +11,33 @@ import type { Assistant } from "$plugins/assistants/types/assistant";
  * `StreamController::handleStreamingRequest`, which never touches `slug`),
  * so there's no need to save/release the assistant first.
  */
+/**
+ * What the chat talks to: `test` chats with the assistant under test, `guide`
+ * with the builder's setup guide about that assistant.
+ */
+export type ChatVariant = "test" | "guide";
+
 export type ChatConfigApi = {
     readonly assistant: Assistant;
     readonly hasModel: boolean;
+    readonly variant: ChatVariant;
 };
 
 const KEY = Symbol("chat-config");
 
-export const provideChatConfig = (getAssistant: () => Assistant): ChatConfigApi => {
-    const api: ChatConfigApi = {
-        get assistant(): Assistant {
-            return getAssistant();
-        },
-        get hasModel(): boolean {
-            return getAssistant().model.length > 0;
-        },
-    };
+/** A config without context, for chat stores owned outside a `<Chatbox>`. */
+export const createChatConfig = (getAssistant: () => Assistant, variant: ChatVariant = "test"): ChatConfigApi => ({
+    get assistant(): Assistant {
+        return getAssistant();
+    },
+    get hasModel(): boolean {
+        return getAssistant().model.length > 0;
+    },
+    variant,
+});
+
+export const provideChatConfig = (getAssistant: () => Assistant, variant: ChatVariant = "test"): ChatConfigApi => {
+    const api = createChatConfig(getAssistant, variant);
 
     setContext(KEY, api);
     return api;

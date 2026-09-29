@@ -10,18 +10,14 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import { dragDrop } from '$plugins/assistants/actions/dragDrop.svelte.js';
     import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte';
-    import { ApiError } from '$plugins/assistants/api/errors';
-    import {
-        uploadAssistantAttachmentQueue,
-        deleteAssistantAttachment
-    } from '$plugins/assistants/api/resources/assistantAttachmentClient';
+    import { deleteAssistantAttachment } from '$plugins/assistants/api/resources/assistantAttachmentClient';
+    import { KnowledgeUploader } from '$plugins/assistants/modules/builder/components/fileUpload/knowledgeUploader.svelte.js';
     import {
         watchRagIngestion,
         type RagFileState,
         type RagIngestionWatcher
     } from '$plugins/assistants/modules/builder/components/fileUpload/ragIngestion.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
-    import { useConfig } from '$lib/app/hooks/useConfig.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {StatusIcon} from '$lib/components/ui/icons';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
@@ -33,40 +29,27 @@
     const builder = useBuilderContext();
 
     /**
-     * Disables the dropzone entirely (no click, keyboard, or drop upload).
-     * Set by the knowledge page while no model is selected — file handling
-     * depends on the model context, so nothing may be uploaded yet.
+     * Upload constraints, the "may upload" gate and the upload itself are
+     * shared with the builder's guide chat (see `knowledgeUploader.svelte.ts`).
+     * The dropzone is disabled while the gate is closed — e.g. with RAG on and
+     * no model whose knowledge-base tool the assistant can use.
      */
-    let {
-        disabled = false,
-        disabledHint,
-    } = $props <{
-        disabled?: boolean;
-        /** Shown as a tooltip beside the disabled dropzone, explaining why (e.g. the selected model lacks the knowledge-base tool). */
-        disabledHint?: string;
-    }>();
+    const uploader = new KnowledgeUploader();
+    const disabled = $derived(uploader.disabled);
+    // "No model" is already explained by the knowledge page's status card.
+    const disabledHint = $derived(
+        uploader.blockedReason === 'no-knowledge-tool'
+            ? __('assistants.builder.knowledge.upload_disabled_model_not_configured')
+            : undefined
+    );
 
-    let currentFiles = $derived((builder.draft.files ?? []) as UploadFile[]);
-
-    /**
-     * Mean progress (0–100) over the currently uploading/pending batch;
-     * `undefined` while no upload is in flight, which restores the icon.
-     */
-    let uploadProgress = $derived.by(() => {
-        const active = currentFiles.filter((f) => f.status === 'uploading' || f.status === 'pending');
-        if (active.length === 0) return undefined;
-        return Math.round(active.reduce((sum, f) => sum + (f.progress ?? 0), 0) / active.length);
-    });
+    let currentFiles = $derived(uploader.files);
+    let uploadProgress = $derived(uploader.uploadProgress);
 
     let fileInput = $state<HTMLInputElement | null>(null);
 
-    /** Guards against duplicate in-flight delete requests (rapid trash-icon clicks). */
-    let deleting = $state(false);
-
     /** Active drag-over state for the drop zone; drives the overlay badge. */
     let dragState = $state<'idle' | 'valid' | 'invalid'>('idle');
-
-    const config = useConfig();
 
     /**
      * RAG mode: uploads continue into the knowledge-base ingestion pipeline
@@ -75,7 +58,7 @@
      * `./fileUpload/ragIngestion.js` + the handlers below and is skipped
      * entirely when RAG is disabled — the plain upload path stays as is.
      */
-    const ragEnabled = $derived(config.rag?.enabled === true);
+    const ragEnabled = $derived(uploader.ragEnabled);
 
     let watcher: RagIngestionWatcher | null = null;
 
@@ -158,20 +141,10 @@
 
     onDestroy(() => watcher?.stop());
 
-    /** Config-driven upload constraints (`storage_files` is absent while uploads are disabled). */
-    const allowedMimeTypes = $derived(config.storage_files?.allowedMimeTypes ?? []);
-    const allowedExtensions = $derived(config.storage_files?.allowedExtensions ?? []);
-    const maxFileSize = $derived(config.storage_files?.maxFileSize ?? 0);
-
-    /**
-     * Accept filter for the native file picker: config MIME types plus
-     * dot-prefixed extensions. Kept as one derived so variants (mime-only,
-     * extensions-only, none) are easy to A/B while comparing picker
-     * performance across browsers — long lists can make the OS dialog slow.
-     */
-    const acceptFilter = $derived(
-        [...allowedMimeTypes, ...allowedExtensions.map((ext) => `.${ext}`)].join(',') || undefined
-    );
+    const allowedMimeTypes = $derived(uploader.allowedMimeTypes);
+    const allowedExtensions = $derived(uploader.allowedExtensions);
+    const maxFileSize = $derived(uploader.maxFileSize);
+    const acceptFilter = $derived(uploader.acceptFilter);
 
     /** Human-readable extension list shared by the tooltip and its screen-reader label. */
     const extensionDisplay = $derived(allowedExtensions.map((ext) => `.${ext}`).join(', '));
@@ -239,144 +212,16 @@
         }
     }
 
-    /** Replace the draft's files array, patching the entry whose local `file`
-     *  reference matches. Mirrors the per-file status mutations HAWKI applied
-     *  via the `SendMessageStatus` object. */
-    function patchFile(fileRef: File | undefined, patch: Partial<UploadFile>): void {
-        const next = (builder.draft.files ?? []).map((f) => (f.file === fileRef ? { ...f, ...patch } : f));
-        builder.set('files', next);
-    }
-
-    /**
-     * Client-side type filter applied just before queueing an upload, in place
-     * of an `accept` attribute — the config-driven extension list is far too
-     * long for the native file picker (it makes the OS dialog take seconds to
-     * open). Unconfigured lists, extension-less files and unknown MIME types
-     * pass through so the server remains the real enforcer.
-     */
-    function isFileAccepted(file: File): boolean {
-        if (allowedMimeTypes.length === 0 && allowedExtensions.length === 0) return true;
-        const dot = file.name.lastIndexOf('.');
-        const ext = dot !== -1 ? file.name.slice(dot + 1).toLowerCase() : undefined;
-        if (ext === undefined) return true;
-        const mime = file.type.toLowerCase();
-        return allowedExtensions.includes(ext) || (mime !== '' && allowedMimeTypes.includes(mime));
-    }
-
     // --- File handling ---
-    /**
-     * Add files to the queue and kick off the upload immediately.
-     *
-     * Unify with hawki frontend function `uploadAttachmentQueue` when migrating
-     * to hawki frontend. Ported from HAWKI/public/js/attachment_handler.js:145 —
-     * `status.setFileProgress(...)` / `status.setFileUuid(...)` side-effects are
-     * expressed here as per-file `patchFile(...)` updates on the builder store.
-     */
+    // Watching a fresh upload's RAG ingestion needs nothing here: the uploader
+    // leaves it in `ragStatus: 'pending'`, which the effect above tracks.
     async function addFiles(fileList: FileList): Promise<void> {
-        if (disabled || uploadProgress !== undefined) return; // disabled or upload in flight — dropzone is disabled
-
-        const incoming = Array.from(fileList);
-        const accepted = incoming.filter(isFileAccepted);
-        for (const rejected of incoming.filter((f) => !isFileAccepted(f))) {
-            toast.error(`${rejected.name}: ${__('assistants.builder.knowledge.upload_rejected_type')}`);
-        }
-        if (accepted.length === 0) return;
-
-        const queued: UploadFile[] = accepted.map((file) => ({
-            name: file.name,
-            size: file.size,
-            mimeType: file.type,
-            date: new Date(),
-            file,
-            status: 'pending',
-            progress: 0
-        }));
-        builder.set('files', [...(builder.draft.files ?? []), ...queued]);
-
-        const assistantId = builder.draft.id;
-        if (!assistantId) return;
-
-        queued.forEach((q) => patchFile(q.file, { status: 'uploading', progress: 0 }));
-
-        const results = await uploadAssistantAttachmentQueue(
-            assistantId,
-            accepted,
-            // Progress only — don't flip status to "complete" here: axios fires
-            // 100% when the byte stream finishes, which can still yield a 422.
-            (file, progress) => patchFile(file, { progress })
-        );
-
-        // Reconcile per result: mark successes, drop failures with a toast.
-        const current = builder.draft.files ?? [];
-        const next: UploadFile[] = [];
-        for (const f of current) {
-            const idx = queued.findIndex((q) => q.file === f.file);
-            if (idx === -1) {
-                next.push(f); // not part of this batch — keep untouched
-                continue;
-            }
-            const result = results[idx];
-            if (result?.error) {
-                const reason =
-                    result.error.errors[0]?.detail ?? result.error.fieldErrors[0]?.message ?? result.error.userMessage;
-                toast.error(`${f.name}: ${reason}`);
-                continue; // drop the failed file from the list
-            }
-            if (ragEnabled && result?.uuid) {
-                // Upload done, ingestion just started — the file only becomes
-                // "complete" when the RAG pipeline reports `ingested`.
-                next.push({
-                    ...f,
-                    status: 'ingesting',
-                    progress: 100,
-                    uuid: result.uuid,
-                    ragStatus: 'pending'
-                });
-                ensureWatcher(assistantId).track(result.uuid, 'pending');
-                continue;
-            }
-            next.push({
-                ...f,
-                status: 'complete',
-                progress: 100,
-                ...(result?.uuid ? { uuid: result.uuid } : {})
-            });
-        }
-        builder.set('files', next);
+        await uploader.addFiles(fileList);
     }
 
-    /**
-     * Remove a file. If it has been persisted (has a uuid), the server copy is
-     * deleted first via the attachment delete action; on failure the local
-     * entry is kept so the user can retry.
-     *
-     * Unify with hawki frontend function `requestAtchDelete` when migrating to
-     * hawki frontend. Ported from HAWKI/public/js/attachment_handler.js:68.
-     */
     async function removeFile(index: number): Promise<void> {
-        if (deleting) return;
-        const files = builder.draft.files ?? [];
-        const target = files[index];
-        if (!target) return;
-
-        const assistantId = builder.draft.id;
-        if (assistantId && target.uuid) {
-            deleting = true;
-            try {
-                await deleteAssistantAttachment(assistantId, target.uuid);
-            } catch (err) {
-                const apiErr = ApiError.from(err);
-                const reason = apiErr.errors[0]?.detail ?? apiErr.fieldErrors[0]?.message ?? apiErr.userMessage;
-                toast.error(`${target.name}: ${reason}`);
-                return; // keep the row — surface the failure via toast
-            } finally {
-                deleting = false;
-            }
-        }
-        builder.set(
-            'files',
-            files.filter((_, i) => i !== index)
-        );
+        const target = currentFiles[index];
+        if (target) await uploader.removeFile(target);
     }
 
     function browse(): void {

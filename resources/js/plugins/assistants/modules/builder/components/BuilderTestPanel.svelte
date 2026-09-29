@@ -3,9 +3,19 @@
   element morphs between the round launcher and the chat card. Stays mounted
   across every builder step (it lives in the builder layout), so a running
   conversation survives step changes and always reflects the live `draft`.
+
+  A switch in the header flips between two conversations, both owned here so
+  neither is lost when switching: the test chat with the assistant itself,
+  and the guide chat that walks the creator through the setup and fills the
+  builder fields (see `builderGuideChat.svelte.ts`).
 -->
 <script lang="ts">
     import Chatbox from '$plugins/assistants/components/testChat';
+    import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
+    import {createChatStore} from '$plugins/assistants/components/testChat/stream/chatStore.svelte.js';
+    import {createChatConfig, type ChatVariant} from '$plugins/assistants/components/testChat/stream/chatConfig.svelte.js';
+    import {createBuilderGuideChat} from '$plugins/assistants/modules/builder/contexts/builderGuideChat.svelte.js';
+    import {KnowledgeUploader} from '$plugins/assistants/modules/builder/components/fileUpload/knowledgeUploader.svelte.js';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
@@ -21,6 +31,18 @@
 
     const {__} = useTranslator();
     const builder = useBuilderContext();
+    const uid = $props.id();
+
+    const testChat = createChatStore(createChatConfig(() => builder.draft));
+    const guideChat = createBuilderGuideChat(builder, new KnowledgeUploader(), __);
+
+    let mode = $state<ChatVariant>('guide');
+    const chat = $derived(mode === 'guide' ? guideChat : testChat);
+
+    const modes = $derived([
+        {key: 'guide', label: __('assistants.builder.test.mode_guide'), id: `${uid}-tab-guide`, panelId: `${uid}-panel`},
+        {key: 'test', label: __('assistants.builder.test.mode_test'), id: `${uid}-tab-test`, panelId: `${uid}-panel`},
+    ]);
 </script>
 
 <div class="test-shell" class:open>
@@ -32,23 +54,33 @@
         <BubbleChatIcon/>
     </button>
     <div class="inner" inert={!open}>
-        <Chatbox assistant={builder.draft}>
-            {#snippet header(chat)}
-                <header class="panel-header">
-                    <h3 class="panel-title">{__('assistants.builder.test.title')}</h3>
-                    <p class="u-sr-only">{__('assistants.builder.test.description')}</p>
-                    {#if chat.messages.length > 0}
-                        <ButtonWithTooltip variant="iconGhost" iconLeft={RefreshIcon}
-                                           tooltip={__('assistants.builder.test.reset')}
-                                           disabled={chat.status === 'streaming'}
-                                           onclick={() => chat.clear()}/>
-                    {/if}
-                    <ButtonWithTooltip variant="iconGhost" iconLeft={Cancel01Icon}
-                                       tooltip={__('assistants.builder.test.close')}
-                                       onclick={() => open = false}/>
-                </header>
-            {/snippet}
-        </Chatbox>
+        <header class="panel-header">
+            <h3 class="u-sr-only">{__('assistants.builder.test.title')}</h3>
+            <p class="u-sr-only">{__('assistants.builder.test.description')}</p>
+            <div class="mode-switch">
+                <Tabs items={modes} value={mode} onChange={(key) => mode = key as ChatVariant}
+                      aria-label={__('assistants.builder.test.mode')}/>
+            </div>
+            <div class="header-actions">
+                {#if chat.messages.length > 0}
+                    <ButtonWithTooltip variant="iconGhost" iconLeft={RefreshIcon}
+                                       tooltip={__('assistants.builder.test.reset')}
+                                       disabled={chat.status === 'streaming'}
+                                       onclick={() => chat.clear()}/>
+                {/if}
+                <ButtonWithTooltip variant="iconGhost" iconLeft={Cancel01Icon}
+                                   tooltip={__('assistants.builder.test.close')}
+                                   onclick={() => open = false}/>
+            </div>
+        </header>
+        <div class="panel-body" id="{uid}-panel" role="tabpanel"
+             aria-labelledby={mode === 'guide' ? `${uid}-tab-guide` : `${uid}-tab-test`}>
+            <!-- Keyed so each conversation mounts its own chatbox; the chats
+                 themselves live above, so switching loses nothing. -->
+            {#key mode}
+                <Chatbox assistant={builder.draft} variant={mode} chat={chat}/>
+            {/key}
+        </div>
     </div>
 </aside>
 </div>
@@ -161,8 +193,15 @@
         position: absolute;
         right: 0;
         bottom: 0;
+        display: flex;
+        flex-direction: column;
         width: 100cqw;
         height: 100cqh;
+    }
+
+    .panel-body {
+        flex: 1;
+        min-height: 0;
     }
 
     /* Wide viewports: open = docked column. The shell spans the full right
@@ -210,21 +249,29 @@
         }
     }
 
+    /* Three columns with equal outer tracks keep the switch centred no
+       matter how many actions sit on the right. */
     .panel-header {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
         align-items: center;
         gap: var(--space-1);
         /* Mirrors the composer at the bottom (see ChatInput.svelte): same
-           outer inset on top and right as the composer box has at the
-           bottom and sides, title aligned with the composer's text. */
-        padding: var(--space-4) var(--space-4) 0 calc(var(--space-4) + var(--space-5));
+           outer inset on top and sides as the composer box has at the
+           bottom and sides. */
+        padding: var(--space-4) var(--space-4) 0;
     }
 
-    .panel-title {
-        margin: 0 auto 0 0;
-        font-size: var(--font-size-base);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-text);
+    .mode-switch {
+        grid-column: 2;
+        width: 14rem;
+        max-width: 100%;
+    }
+
+    .header-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-1);
     }
 
     /* The panel is the frame; drop the chatbox's own card chrome. */

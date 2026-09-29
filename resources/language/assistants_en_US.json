@@ -287,7 +287,28 @@
                 "open": "Open test chat",
                 "close": "Close test chat",
                 "reset": "Restart conversation",
-                "no_model": "Choose a model first"
+                "no_model": "Choose a model first",
+                "mode": "Chat mode",
+                "mode_test": "Test",
+                "mode_guide": "AI guide"
+            },
+            "guide": {
+                "placeholder": "Describe your assistant or ask a question…",
+                "empty_title": "Set up your assistant together",
+                "empty_hint": "Tell the guide what your assistant should do. It asks follow-up questions, fills in the fields for you and answers your questions. Attached files go into the knowledge base.",
+                "applied": "Filled in",
+                "error": "The guide could not answer. Please try again.",
+                "attach": "Add files to the knowledge base",
+                "attached_files": "Attached files",
+                "remove_file": "Remove file",
+                "upload_needs_model": "Choose a model first to add knowledge files.",
+                "starters": {
+                    "label": "Example requests",
+                    "build": "Build me a writing coach for student essays",
+                    "prompt": "What makes a good system prompt?",
+                    "model": "Which model should I choose?",
+                    "knowledge": "How do knowledge files work?"
+                }
             },
             "publish": {
                 "title": "Publish",

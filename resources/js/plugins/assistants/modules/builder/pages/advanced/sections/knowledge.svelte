@@ -30,8 +30,8 @@
     // RAG mode decides where uploaded files go: ingested into the assistant's
     // preassembled knowledge-base dataset (rag on) or injected into the
     // conversation context per request (rag off). Ingestion is an upload-time
-    // workflow, so with rag on the model must already be decided; context
-    // injection happens per request, so uploads are always allowed with rag off.
+    // workflow, so with rag on the model must already be decided (FileUpload
+    // gates itself, see `knowledgeUploader.svelte.ts`).
     const ragEnabled = $derived(config.rag?.enabled === true);
 
     // Same model resolution as the model page's conflict panel: the draft
@@ -45,17 +45,6 @@
         currentModel
             ? knowledgeToolsOf(toolStore.tools).filter(t => isAiToolAvailableFor(t, currentModel))
             : []
-    );
-
-    // With rag on, uploading requires a model whose knowledge-base tool the
-    // assistant can use — the files are preassembled into that dataset.
-    const uploadDisabled = $derived(
-        ragEnabled && (currentModel === null || availableKnowledgeTools.length === 0)
-    );
-    const uploadDisabledHint = $derived(
-        ragEnabled && currentModel !== null && availableKnowledgeTools.length === 0
-            ? __('assistants.builder.knowledge.upload_disabled_model_not_configured')
-            : undefined
     );
 
 </script>
@@ -81,7 +70,7 @@
             />
         {/if}
 
-        <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
+        <FileUpload/>
         <!-- Mock mode (VITE_MOCK_VECTOR_DATABASES): the mocked list fully
              replaces the real knowledge-databases component; see
              mocks/mockVectorDatabases.svelte.ts. -->

@@ -1,22 +1,56 @@
 <script lang="ts">
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
     import Button from "$lib/components/ui/button/Button.svelte";
+    import ButtonWithTooltip from "$lib/components/ui/button/ButtonWithTooltip.svelte";
     import ArrowUp02Icon from "$lib/components/ui/icons/iconset/ArrowUp02Icon.svelte";
+    import Attachment01Icon from "$lib/components/ui/icons/iconset/Attachment01Icon.svelte";
+    import Cancel01Icon from "$lib/components/ui/icons/iconset/Cancel01Icon.svelte";
+    import StarterPrompts from "$lib/components/ui/starter-prompts/StarterPrompts.svelte";
     import {resizeTextarea, watchManualResize} from "./textarea-resizer";
     import {useChatStore} from "./stream/chatStore.svelte.js";
     import {useChatConfig} from "./stream/chatConfig.svelte.js";
 
     const chat = useChatStore();
     const config = useChatConfig();
-    const hasModel = $derived(config.hasModel);
+    const ready = $derived(chat.ready);
+    const uploads = chat.uploads;
+
+    let value = $state("");
 
     const {__} = useTranslator();
-    const HINT = $derived(__('assistants.builder.test.no_model'));
-    const canSend = $derived(hasModel && value.trim() !== "" && chat.status !== "streaming");
+    const placeholder = $derived(
+        config.variant === "guide"
+            ? __('assistants.builder.guide.placeholder')
+            : ready ? __('assistants.testChat.placeholder') : __('assistants.builder.test.no_model')
+    );
+    const staged = $derived(uploads?.staged ?? []);
+    const uploading = $derived(staged.some((u) => u.uploading));
+    const canSend = $derived(
+        ready
+        && chat.status !== "streaming"
+        && !uploading
+        && (value.trim() !== "" || staged.length > 0)
+    );
+
+    let fileInput = $state<HTMLInputElement | null>(null);
+
+    /**
+     * Guide only, until the first message: a mix of "do it for me" and
+     * questions, so it's clear the guide does both. Picking one sends it.
+     */
+    const starters = $derived(
+        config.variant === "guide" && chat.messages.length === 0
+            ? [
+                __('assistants.builder.guide.starters.build'),
+                __('assistants.builder.guide.starters.prompt'),
+                __('assistants.builder.guide.starters.model'),
+                __('assistants.builder.guide.starters.knowledge'),
+            ]
+            : []
+    );
 
     let inputField = $state<HTMLTextAreaElement | null>(null);
     let minHeight = $state<number | null>(null);
-    let value = $state("");
 
     $effect(() => {
         if (!inputField) return;
@@ -33,10 +67,18 @@
 
     const send = (): void => {
         const text = value.trim();
-        if (!text || !canSend) return;
+        if (!canSend) return;
         chat.send(text);
         value = "";
         requestAnimationFrame(resize);
+    };
+
+    const handleFileChange = (e: Event): void => {
+        const input = e.currentTarget as HTMLInputElement;
+        if (input.files?.length) {
+            void uploads?.add(Array.from(input.files));
+            input.value = ""; // reset so the same file can be picked again
+        }
     };
 
     const handleKeydown = (e: KeyboardEvent): void => {
@@ -48,15 +90,50 @@
 </script>
 
 <div class="chatlog-input-container">
-    <div class="composer" class:disabled={!hasModel}>
+    {#if starters.length > 0}
+        <div class="starters">
+            <StarterPrompts layout="list" prompts={starters} onselect={(prompt) => chat.send(prompt)}
+                            disabled={!ready || chat.status === "streaming"}
+                            aria-label={__('assistants.builder.guide.starters.label')}/>
+        </div>
+    {/if}
+    {#if staged.length > 0}
+        <ul class="staged" aria-label={__('assistants.builder.guide.attached_files')}>
+            {#each staged as upload (upload.name)}
+                <li class="staged-file" class:uploading={upload.uploading} aria-busy={upload.uploading}>
+                    <span class="staged-name">{upload.name}</span>
+                    {#if !upload.uploading}
+                        <button type="button" class="staged-remove"
+                                aria-label={`${__('assistants.builder.guide.remove_file')}: ${upload.name}`}
+                                onclick={() => uploads?.remove(upload)}>
+                            <Cancel01Icon size="12"/>
+                        </button>
+                    {/if}
+                </li>
+            {/each}
+        </ul>
+    {/if}
+    <div class="composer" class:disabled={!ready} class:with-attach={uploads}>
+        {#if uploads}
+            <input type="file" multiple hidden accept={uploads.accept}
+                   bind:this={fileInput} onchange={handleFileChange}/>
+            <ButtonWithTooltip
+                class="attach-btn"
+                variant="iconGhost"
+                iconLeft={Attachment01Icon}
+                tooltip={uploads.blockedHint ?? __('assistants.builder.guide.attach')}
+                aria-label={__('assistants.builder.guide.attach')}
+                disabled={!ready || uploading || uploads.blockedHint !== null}
+                onclick={() => fileInput?.click()}
+            />
+        {/if}
         <textarea
             bind:this={inputField}
             bind:value
-            id="chatbox-input"
             class="chatbox-input"
-            placeholder={hasModel ? __('assistants.testChat.placeholder') : HINT}
-            disabled={!hasModel}
-            aria-label={__('assistants.testChat.placeholder')}
+            {placeholder}
+            disabled={!ready}
+            aria-label={placeholder}
             rows="1"
             oninput={resize}
             onkeydown={handleKeydown}
@@ -88,6 +165,71 @@
         padding: var(--composer-inset) var(--composer-inset) var(--composer-inset) var(--space-5);
         border-radius: calc(var(--composer-control) / 2 + var(--composer-inset));
         background: var(--color-surface-light);
+    }
+
+    /* The attach button mirrors the send button's inset on the left. */
+    .composer.with-attach {
+        padding-left: var(--composer-inset);
+    }
+
+    .composer :global(.attach-btn) {
+        flex-shrink: 0;
+        width: var(--composer-control);
+        height: var(--composer-control);
+        border-radius: var(--corner-full);
+    }
+
+    .starters {
+        margin-bottom: var(--space-3);
+    }
+
+    .staged {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+        margin: 0 0 var(--space-2);
+        padding: 0;
+        list-style: none;
+    }
+
+    .staged-file {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        max-width: 100%;
+        padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+        border-radius: var(--corner-full);
+        background: var(--color-surface-light);
+        font-size: var(--font-size-xs);
+        color: var(--color-text);
+    }
+
+    .staged-file.uploading {
+        padding-right: var(--space-3);
+        color: var(--color-text-muted);
+    }
+
+    .staged-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .staged-remove {
+        display: grid;
+        place-items: center;
+        width: 1.25rem;
+        height: 1.25rem;
+        padding: 0;
+        border: none;
+        border-radius: var(--corner-full);
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+    }
+
+    .staged-remove:hover {
+        color: var(--color-text);
     }
 
     .chatbox-input {
