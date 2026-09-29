@@ -40,7 +40,7 @@
  * </script>
  * ```
  */
-import { createContext } from 'svelte';
+import { createHmrSafeContext } from '$lib/utils/hmrSafeContext.js';
 import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
 import type { Review } from "$plugins/assistants/types/assistant/Review";
 import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
@@ -389,6 +389,31 @@ export class BuilderContext {
 
   isChanged(key: keyof Assistant): boolean {
     return this.changedKeys.has(key);
+  }
+
+  /**
+   * When the AI guide last filled each field (a fill counter per key). Fields
+   * watch it to play their reveal (`AiFillReveal.svelte`); a fill made while a
+   * field is on another step plays once that field is first seen.
+   */
+  aiFills = $state<Partial<Record<keyof Assistant, number>>>({});
+  private aiFillCounter = 0;
+  private readonly playedAiFills = new Map<keyof Assistant, number>();
+
+  markAiFilled(keys: (keyof Assistant)[]): void {
+    if (keys.length === 0) return;
+    const fill = ++this.aiFillCounter;
+    const next = { ...this.aiFills };
+    for (const key of keys) next[key] = fill;
+    this.aiFills = next;
+  }
+
+  /** Whether `key`'s latest fill still needs its reveal; claims it, so it plays once. */
+  claimAiFill(key: keyof Assistant): boolean {
+    const fill = this.aiFills[key];
+    if (fill === undefined || this.playedAiFills.get(key) === fill) return false;
+    this.playedAiFills.set(key, fill);
+    return true;
   }
 
   set<K extends keyof Assistant>(key: K, value: Assistant[K]): void {
@@ -821,7 +846,8 @@ export class BuilderContext {
   }
 }
 
-const [get, set] = createContext<BuilderContext>();
+// HMR-safe: a hot-reloaded builder module keeps talking to the mounted layout's session.
+const [get, set] = createHmrSafeContext<BuilderContext>('hawki.assistants.builder');
 
 /** Returns the builder session published by the nearest {@link createBuilderContext} ancestor. */
 export function useBuilderContext(): BuilderContext {

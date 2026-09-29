@@ -77,27 +77,29 @@ export function createBuilderGuideChat(
      * category and model against what the creator may pick.
      */
     const applyUpdates = (updates: BuilderGuideUpdates): string[] => {
-        const labels: string[] = [];
+        const filled: (keyof typeof FIELD_LABELS)[] = [];
         for (const key of BUILDER_GUIDE_FIELDS) {
             const value = updates[key];
             if (value === undefined || valuesEqual(value, builder.draft[key])) continue;
             builder.set(key, value as never);
-            labels.push(__(FIELD_LABELS[key]));
+            filled.push(key);
         }
         if (updates.handle !== undefined && updates.handle !== builder.draft.handle) {
             builder.set("handle", updates.handle);
-            labels.push(__(FIELD_LABELS.handle));
+            filled.push("handle");
         }
         const category = assistantOptionsStore.categories.find((c) => c.id === updates.categoryId);
         if (category && category.id !== builder.draft.category?.id) {
             builder.set("category", {...category});
-            labels.push(__(FIELD_LABELS.category));
+            filled.push("category");
         }
         if (updates.model !== undefined && updates.model !== builder.draft.model) {
             builder.setModel(updates.model);
-            labels.push(__(FIELD_LABELS.model));
+            filled.push("model");
         }
-        return labels;
+        // Highlights the filled fields in the builder (see AiFillReveal.svelte).
+        builder.markAiFilled(filled);
+        return filled.map((key) => __(FIELD_LABELS[key]));
     };
 
     const clear = (): void => {

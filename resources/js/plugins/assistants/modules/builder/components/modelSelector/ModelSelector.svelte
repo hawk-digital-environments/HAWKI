@@ -5,6 +5,7 @@
     import {useStore} from "$lib/app/hooks/useStore.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import Select, {type SelectOption} from "$plugins/assistants/components/select/Select.svelte";
+    import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
 
     const {
         disabled = false,
@@ -34,11 +35,14 @@
 <div class="input-container renderBlock">
     <label for="modelSelector">{__('assistants.builder.model.input_model')}</label>
 
-    <Select
-        id="modelSelector"
-        {options}
-        value={builder.draft.model ?? ''}
-        {disabled}
-        onchange={(e) => onchange?.(e.currentTarget.value)}
-    />
+    <!-- Reveal on the dropdown only, like every other field (see BuilderInput). -->
+    <AiFillReveal field="model">
+        <Select
+            id="modelSelector"
+            {options}
+            value={builder.draft.model ?? ''}
+            {disabled}
+            onchange={(e) => onchange?.(e.currentTarget.value)}
+        />
+    </AiFillReveal>
 </div>

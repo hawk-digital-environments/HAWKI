@@ -14,6 +14,7 @@
     import AlertCircleIcon from "$lib/components/ui/icons/iconset/AlertCircleIcon.svelte";
     import type {IconComponent} from '$lib/components/ui/icons';
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
 
 
     const {__} = useTranslator();
@@ -192,42 +193,7 @@
     >
         {@render fieldHeader()}
 
-        {#if type === 'input'}
-            <Input
-                id={name}
-                {placeholder}
-                {disabled}
-                value={currentValue ?? ''}
-                oninput={(e) => update(e.currentTarget.value)}
-            />
-
-        {:else if type === 'textarea'}
-            <Textarea
-                id={name}
-                {placeholder}
-                {disabled}
-                value={currentValue ?? ''}
-                oninput={(e) => update(e.currentTarget.value)}
-            />
-
-        {:else if type === 'select'}
-            <Select
-                id={name}
-                options={selectOptions}
-                value={selectValue}
-                {disabled}
-                oninput={(e) => update(e.currentTarget.value)}
-            />
-
-        {:else if type === 'itemList'}
-            <AddableItemList
-                defaultValue={stringArrayValue}
-                {addItemLabel}
-                {disabled}
-                onchange={update}
-            />
-
-        {:else if type === 'slider'}
+        {#if type === 'slider'}
             {#if description}
                 <p class="field-note">{description}</p>
             {/if}
@@ -239,6 +205,46 @@
                 {disabled}
                 onValueChange={update}
             />
+        {:else}
+            <!-- Blue reveal when the AI guide fills this field. -->
+            <AiFillReveal field={assistantValueKey}>
+                {#if type === 'input'}
+                    <Input
+                        id={name}
+                        {placeholder}
+                        {disabled}
+                        value={currentValue ?? ''}
+                        oninput={(e) => update(e.currentTarget.value)}
+                    />
+
+                {:else if type === 'textarea'}
+                    <Textarea
+                        id={name}
+                        {placeholder}
+                        {disabled}
+                        value={currentValue ?? ''}
+                        oninput={(e) => update(e.currentTarget.value)}
+                    />
+
+                {:else if type === 'select'}
+                    <Select
+                        id={name}
+                        options={selectOptions}
+                        value={selectValue}
+                        {disabled}
+                        oninput={(e) => update(e.currentTarget.value)}
+                    />
+
+                {:else if type === 'itemList'}
+                    <AddableItemList
+                        defaultValue={stringArrayValue}
+                        {addItemLabel}
+                        {disabled}
+                        onchange={update}
+                    />
+
+                {/if}
+            </AiFillReveal>
         {/if}
     </div>
 {/if}

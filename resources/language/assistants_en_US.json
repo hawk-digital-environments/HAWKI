@@ -370,6 +370,13 @@
             }
         },
         "testChat": {
+            "status": {
+                "sending": "Sending your message…",
+                "reading": "Reading your message…",
+                "reviewing": "Looking at your assistant…",
+                "thinking": "Thinking…",
+                "writing": "Writing a reply…"
+            },
             "empty_hint": "Send a message to try it out. Your changes apply instantly, no need to save.",
             "no_model_hint": "Pick a model to start testing.",
             "unnamed": "Your assistant",

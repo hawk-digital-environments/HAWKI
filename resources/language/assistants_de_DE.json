@@ -370,6 +370,13 @@
             }
         },
         "testChat": {
+            "status": {
+                "sending": "Sendet deine Nachricht…",
+                "reading": "Liest deine Nachricht…",
+                "reviewing": "Sieht sich deinen Assistenten an…",
+                "thinking": "Denkt nach…",
+                "writing": "Schreibt die Antwort…"
+            },
             "empty_hint": "Schreib eine Nachricht, um ihn auszuprobieren. Änderungen wirken sofort, ohne Speichern.",
             "no_model_hint": "Wähle ein Modell, um mit dem Testen zu beginnen.",
             "unnamed": "Dein Assistent",
