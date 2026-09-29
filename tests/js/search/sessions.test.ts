@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SearchSessionManager} from '$lib/kernel/search/SearchSessionManager.svelte.js';
+import {SEARCH_WORKER_PROVIDER_ID, SearchSessionManager} from '$lib/kernel/search/SearchSessionManager.svelte.js';
 import {documentKey} from '$lib/kernel/search/sharedIndex.js';
-import {TestSearchHost, staticSourceOf, entry, tick, rowTitles} from './harness.js';
+import {SEARCH_LOCAL_PENDING_DELAY_MS} from '$lib/kernel/search/types.js';
+import {TestSearchHost, staticSourceOf, entry, tick, rowTitles, type WorkerReply} from './harness.js';
 
 function manager(host: TestSearchHost) {
     const result = new SearchSessionManager(host);
@@ -123,7 +124,7 @@ test('worker replies from an old revision cannot restore a removed document', as
     const replies: {revision:number; result:ReturnType<typeof deferred<any>>}[] = [];
     host.worker = () => {const result = deferred<any>(); replies.push({revision:host.index.revision,result}); return result.promise;};
     const rows = [entry('one', 'Design')];
-    host.register('core:test', 'core', ({group}) => group('worker', {kind:'static',label:()=> 'Worker'}).add('worker', staticSourceOf(rows,'worker')));
+    host.register('core:test', 'core', ({group}) => group('worker', {kind:'static',label:()=> 'Worker'}).add('worker', staticSourceOf(rows)));
     const api = manager(host);
     try {
         const session = api.createSession(); session.setInput({query:'design'});
@@ -143,5 +144,70 @@ test('unknown and conflicting scopes issue no requests', async () => {
         const session=api.createSession({allowedScope:{pluginId:'other'}});
         session.setInput({query:'design',scope:{moduleId:'core:test'}}); await host.schedulerTimers.advance(250);
         assert.equal(calls,0); assert.deepEqual(session.state.groups,[]);
+    } finally {api.dispose();}
+});
+
+function registerTitles(host: TestSearchHost) {
+    host.register('core:chat', 'core', ({group}) => group('titles', {kind: 'static', label: () => 'Titles'})
+        .add('titles', staticSourceOf([entry('a', 'Design review'), entry('b', 'Release plan')])));
+}
+
+test('static rows come from the worker, and the previous rows hold until it answers', async () => {
+    const host = new TestSearchHost();
+    host.answerFromEngine();
+    const answer = host.worker;
+    const gates: (() => void)[] = [];
+    host.worker = (query, signal) => answer(query, signal)
+        .then(reply => new Promise<WorkerReply>(resolve => gates.push(() => resolve(reply))));
+    registerTitles(host);
+    const api = manager(host);
+    try {
+        const session = api.createSession();
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review', 'Release plan']);
+        session.setInput({query: 'design'});
+        // Held: the blank-query list stays until the worker has answered.
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review', 'Release plan']);
+        assert.equal(session.state.localPending, false);
+        session.freezeOrder();
+        assert.equal(session.state.frozen, false);
+        await tick();
+        gates.shift()!();
+        await tick();
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review']);
+    } finally {api.dispose();}
+});
+
+test('a slow worker releases the hold after the delay and reports localPending', async () => {
+    const host = new TestSearchHost();
+    registerTitles(host);
+    const api = manager(host);
+    try {
+        const session = api.createSession();
+        session.setInput({query: 'design'});
+        assert.equal(session.state.groups.length, 1);
+        await host.schedulerTimers.advance(SEARCH_LOCAL_PENDING_DELAY_MS);
+        assert.equal(session.state.localPending, true);
+        assert.deepEqual(session.state.groups, []);
+    } finally {api.dispose();}
+});
+
+test('a worker failure publishes a retryable error instead of static rows', async () => {
+    const host = new TestSearchHost();
+    host.worker = () => Promise.reject(new Error('Worker crashed'));
+    registerTitles(host);
+    const api = manager(host);
+    try {
+        const session = api.createSession();
+        session.setInput({query: 'design'});
+        await tick();
+        assert.deepEqual(session.state.groups, []);
+        assert.deepEqual(session.state.providerErrors.map(error => error.providerId), [SEARCH_WORKER_PROVIDER_ID]);
+
+        host.answerFromEngine();
+        session.retry(SEARCH_WORKER_PROVIDER_ID);
+        await tick();
+        assert.equal(host.retriedWorker, 1);
+        assert.deepEqual(session.state.providerErrors, []);
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review']);
     } finally {api.dispose();}
 });

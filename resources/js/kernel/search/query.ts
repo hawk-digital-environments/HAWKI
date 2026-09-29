@@ -1,8 +1,8 @@
 /**
  * Query normalization shared by every search session.
  *
- * One canonical form for the whole pipeline: the immediate engine, the worker
- * and every dynamic provider see the exact same string, so a session can
+ * One canonical form for the whole pipeline: the worker, the remote-result
+ * engine and every dynamic provider see the exact same string, so a session can
  * compare two inputs for equality and skip work that would produce identical
  * results.
  */

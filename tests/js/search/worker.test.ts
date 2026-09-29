@@ -1,30 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SearchWorkerClient} from '$lib/kernel/search/SearchWorkerClient.js';
-import {SearchEngine} from '$lib/kernel/search/searchEngine.js';
-import {handleSearchWorkerRequest, type SearchWorkerRequest} from '$lib/kernel/search/search.worker.js';
 import {SharedSearchIndex, type IndexedProvider} from '$lib/kernel/search/sharedIndex.js';
+import {FakeSearchWorker} from './harness.js';
 
-class FakeWorker extends EventTarget {
-    engine = new SearchEngine();
-    held: SearchWorkerRequest[] = [];
-    hold = false;
-    fail = false;
-    terminated = false;
-    postMessage(request: SearchWorkerRequest) {
-        if (this.fail) throw new Error('Worker transport failed');
-        if (this.hold && request.type === 'search') {this.held.push(request); return;}
-        const response = handleSearchWorkerRequest(this.engine, request);
-        queueMicrotask(() => this.dispatchEvent(new MessageEvent('message', {data: response})));
-    }
-    terminate() {this.terminated = true;}
-}
-const provider: IndexedProvider = {id:'core:test.worker',groupId:'core:test.worker',pluginId:'core',moduleId:'core:test',kind:'static',matchIn:'worker',order:0};
+const provider: IndexedProvider = {id:'core:test.worker',groupId:'core:test.worker',pluginId:'core',moduleId:'core:test',kind:'static',order:0};
 function fixture() {
     const index = new SharedSearchIndex();
-    const workers: FakeWorker[] = [];
+    const workers: FakeSearchWorker[] = [];
     const client = new SearchWorkerClient(index, {createWorker: () => {
-        const worker = new FakeWorker(); workers.push(worker); return worker as unknown as Worker;
+        const worker = new FakeSearchWorker(); workers.push(worker); return worker as unknown as Worker;
     }, deadlineMs:50});
     index.setProviderEntries(provider,[{id:'one',entityKey:'one',title:'Design',onSelect(){}}]);
     return {index,client,workers};
@@ -67,6 +52,23 @@ test('worker uses Fuse substring matching and reflects renamed entries', async (
         index.setProviderEntries(provider, [{id: 'one', entityKey: 'one', title: 'Release', onSelect(){}}]);
         assert.deepEqual((await client.search('sign', new AbortController().signal)).scores, []);
         assert.equal((await client.search('lease', new AbortController().signal)).scores.length, 1);
+    } finally {client.dispose();}
+});
+
+test('prepare seeds the worker before the first query, and only once there is a corpus', () => {
+    const index = new SharedSearchIndex();
+    const workers: FakeSearchWorker[] = [];
+    const client = new SearchWorkerClient(index, {createWorker: () => {
+        const worker = new FakeSearchWorker(); workers.push(worker); return worker as unknown as Worker;
+    }});
+    try {
+        client.prepare();
+        assert.equal(workers.length, 0);
+        index.setProviderEntries(provider, [{id: 'one', entityKey: 'one', title: 'Design', onSelect(){}}]);
+        client.prepare();
+        client.prepare();
+        assert.equal(workers.length, 1);
+        assert.equal(workers[0].engine.size, 1);
     } finally {client.dispose();}
 });
 

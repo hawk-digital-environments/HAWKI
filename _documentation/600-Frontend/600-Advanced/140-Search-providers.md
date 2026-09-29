@@ -80,7 +80,7 @@ Optional `load({app, signal})` runs once per activation, after observation start
 
 Optional `enabled({app, signal})` is reactive. Disabling removes the provider's entries and cancels its work; re-enabling starts a new activation. Locale changes refresh translated getters and headings. User or connection changes discard the old search context.
 
-`matchIn` defaults to `'immediate'`. Set `matchIn: 'worker'` for a large text collection. Both modes share their indexes across SearchBars. Worker errors are retryable; the kernel does not silently move a large collection onto the main thread.
+Every static source is indexed and matched in one shared Web Worker (`search.worker.ts`). The main thread only observes the sources and sends the worker what changed; it never builds a Fuse index for static data, however large the corpus. The worker starts when the first bar opens and is shared by every SearchBar. While it answers a new query, a bar keeps its previous rows for up to 150 ms (`SEARCH_LOCAL_PENDING_DELAY_MS`) and only then reports `localPending`, so typing does not flash an empty list. Worker errors are retryable; the kernel does not fall back to matching on the main thread. An empty query needs no worker, because recents are resolved locally.
 
 Chat registers its existing actions and conversation titles. Module-specific persistence and background indexing belong to the module; SearchBar only reports query work and provider failures.
 
@@ -152,7 +152,7 @@ session.retry(providerId);
 session.dispose();
 ```
 
-`state.groups` contains group IDs, translated labels, kind, and rows. Rows have stable `entityKey` values and an `available` flag. `localPending` reports worker matching; `remotePending` reports dynamic query work. `providerErrors` identifies failed providers and their groups. `frozen` reports whether selection intent has fixed the displayed order.
+`state.groups` contains group IDs, translated labels, kind, and rows. Rows have stable `entityKey` values and an `available` flag. `localPending` reports worker matching that takes longer than the hold delay; `remotePending` reports dynamic query work. `providerErrors` identifies failed providers and their groups. `frozen` reports whether selection intent has fixed the displayed order.
 
 Call `freezeOrder()` on keyboard selection or actual pointer movement into a result row. Call `select(entityKey)` before executing an action; it resolves the live entry and records eligible history centrally. Do not execute callbacks from a cached row after the source may have changed. Suspend dispatch during IME composition with `suspend()`, submit the completed input with `setInput()`, and resume with `suspend(false)`.
 
@@ -160,7 +160,7 @@ Dispose the session on close or unmount. Its cancellation does not stop another 
 
 ## Ranking, freezing, and recents
 
-Fuse.js scores local and server results using title, keyword, and content weights of 2, 1.5, and 1. All search paths use the same incremental engine, including the worker. [Token search](https://www.fusejs.io/token-search.html) requires every query term to match somewhere across those fields, with typo tolerance, substring matching, and case and accent insensitivity. The fuzzy threshold is 0.3. The kernel inverts Fuse's lower-is-better scores for descending ranking, reserving zero for unmatched server results. Server results without a local text match remain eligible after scored results. Ties retain provider and item order. A current static copy wins when multiple providers return the same entity. Groups follow their best match, with at most five rows per group and 20 rows overall.
+Fuse.js scores local and server results using title, keyword, and content weights of 2, 1.5, and 1. The worker's static index and the per-session index over server results use the same incremental engine. Server results are few (at most 20 per provider), so they are scored on the main thread. [Token search](https://www.fusejs.io/token-search.html) requires every query term to match somewhere across those fields, with typo tolerance, substring matching, and case and accent insensitivity. The fuzzy threshold is 0.3. The kernel inverts Fuse's lower-is-better scores for descending ranking, reserving zero for unmatched server results. Server results without a local text match remain eligible after scored results. Ties retain provider and item order. A current static copy wins when multiple providers return the same entity. Groups follow their best match, with at most five rows per group and 20 rows overall.
 
 Once selection intent freezes the view, existing rows keep their positions. New groups append within the limits; new matches for visible groups wait for the next query or scope change. A removed entry leaves a disabled placeholder, and its action becomes unavailable immediately. Retry preserves the freeze.
 

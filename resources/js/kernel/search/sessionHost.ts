@@ -14,8 +14,8 @@ export interface SearchSessionHost {
     readonly providers: readonly {definition: SearchProviderDefinition; signal: AbortSignal}[];
     readonly errors: readonly SearchProviderError[];
     /**
-     * Overrides the dynamic scheduler's timers so tests can drive the
-     * debounce deterministically. Production hosts leave it out.
+     * Overrides the timers behind the dynamic debounce and the static hold so
+     * tests can drive both deterministically. Production hosts leave it out.
      */
     readonly schedulerTimers?: SchedulerTimers;
     groupLabel(groupId: string): string;

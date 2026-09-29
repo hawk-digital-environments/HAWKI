@@ -2,6 +2,7 @@ import {describe, it} from 'node:test';
 import assert from 'node:assert/strict';
 import {SharedSearchIndex, documentKey, type IndexDelta, type IndexedProvider} from '$lib/kernel/search/sharedIndex.js';
 import {UNRESTRICTED_SCOPE} from '$lib/kernel/search/scope.js';
+import {SearchEngine} from '$lib/kernel/search/searchEngine.js';
 import type {SearchEntry} from '$lib/kernel/search/types.js';
 
 function provider(overrides: Partial<IndexedProvider> = {}): IndexedProvider {
@@ -11,7 +12,6 @@ function provider(overrides: Partial<IndexedProvider> = {}): IndexedProvider {
         pluginId: 'core',
         moduleId: 'core:chat',
         kind: 'static',
-        matchIn: 'immediate',
         order: 0,
         ...overrides
     };
@@ -28,17 +28,25 @@ function sink(index: SharedSearchIndex): IndexDelta[] {
     return deltas;
 }
 
-function keys(index: SharedSearchIndex, query: string): string[] {
-    return index.searchScores(query).map(([key]) => key);
+/** Feeds an engine from the index's deltas, as the worker is fed, and returns a query function over it. */
+function matcher(index: SharedSearchIndex): (query: string) => string[] {
+    const engine = new SearchEngine();
+    index.setDeltaSink(delta => {
+        for (const document of delta.upserts) engine.upsert(document);
+        for (const key of delta.removals) engine.remove(key);
+    });
+    return query => engine.search(query).map(([key]) => key);
 }
 
 describe('SharedSearchIndex', () => {
     it('indexes a provider snapshot and scores it', () => {
         const index = new SharedSearchIndex();
+        const keys = matcher(index);
         assert.equal(index.setProviderEntries(provider(), [entry('a', 'Alpha release')]), true);
 
         assert.equal(index.revision, 1);
-        assert.deepEqual(keys(index, 'alpha'), [documentKey('core:chat.conversations', 'a')]);
+        assert.equal(index.size, 1);
+        assert.deepEqual(keys('alpha'), [documentKey('core:chat.conversations', 'a')]);
         assert.equal(index.has(documentKey('core:chat.conversations', 'a')), true);
     });
 
@@ -65,6 +73,7 @@ describe('SharedSearchIndex', () => {
 
     it('reindexes changed text and notifies once', () => {
         const index = new SharedSearchIndex();
+        const keys = matcher(index);
         index.setProviderEntries(provider(), [entry('a', 'Alpha')]);
         let notified = 0;
         index.subscribe(() => notified++);
@@ -72,8 +81,8 @@ describe('SharedSearchIndex', () => {
         assert.equal(index.setProviderEntries(provider(), [entry('a', 'Beta')]), true);
         assert.equal(index.revision, 2);
         assert.equal(notified, 1);
-        assert.deepEqual(keys(index, 'alpha'), []);
-        assert.deepEqual(keys(index, 'beta'), [documentKey('core:chat.conversations', 'a')]);
+        assert.deepEqual(keys('alpha'), []);
+        assert.deepEqual(keys('beta'), [documentKey('core:chat.conversations', 'a')]);
     });
 
     it('copies the fields it was handed', () => {
@@ -117,35 +126,42 @@ describe('SharedSearchIndex', () => {
         assert.equal(errors.count, 3);
     });
 
-    it('routes worker entries to the delta sink instead of the immediate engine', () => {
+    it('ships changed text to the delta sink, and nothing for a text-neutral change', () => {
         const index = new SharedSearchIndex();
         const deltas = sink(index);
-        const messages = provider({id: 'core:chat.messages', matchIn: 'worker', order: 1});
 
-        index.setProviderEntries(messages, [entry('m1', 'Encrypted message')]);
-
-        assert.equal(index.hasWorkerDocuments, true);
-        assert.deepEqual(keys(index, 'encrypted'), []);
+        index.setProviderEntries(provider(), [entry('a', 'Alpha'), entry('b', 'Beta')]);
         assert.equal(deltas.length, 2); // The initial replay plus this change.
-        assert.deepEqual(deltas[1].upserts.map(upsert => upsert.id), [documentKey('core:chat.messages', 'm1')]);
+        assert.deepEqual(deltas[1].upserts.map(upsert => upsert.id), [
+            documentKey('core:chat.conversations', 'a'),
+            documentKey('core:chat.conversations', 'b')
+        ]);
         assert.equal(deltas[1].revision, index.revision);
+
+        // A reorder changes rows, not indexed text: a new revision, no delta.
+        assert.equal(index.setProviderEntries(provider(), [entry('b', 'Beta'), entry('a', 'Alpha')]), true);
+        assert.equal(index.revision, 2);
+        assert.equal(deltas.length, 2);
     });
 
-    it('replays the worker corpus for a late sink', () => {
+    it('replays the whole corpus for a late sink', () => {
         const index = new SharedSearchIndex();
-        index.setProviderEntries(provider({id: 'core:chat.messages', matchIn: 'worker'}), [entry('m1', 'Encrypted message')]);
+        index.setProviderEntries(provider({id: 'core:chat.messages'}), [entry('m1', 'Encrypted message')]);
         index.setProviderEntries(provider({id: 'core:chat.conversations', order: 1}), [entry('a', 'Alpha')]);
 
         const deltas = sink(index);
 
         assert.equal(deltas.length, 1);
         assert.equal(deltas[0].revision, index.revision);
-        assert.deepEqual(deltas[0].upserts.map(upsert => upsert.id), [documentKey('core:chat.messages', 'm1')]);
+        assert.deepEqual(deltas[0].upserts.map(upsert => upsert.id), [
+            documentKey('core:chat.messages', 'm1'),
+            documentKey('core:chat.conversations', 'a')
+        ]);
     });
 
     it('reports removals to the worker and forgets the documents', () => {
         const index = new SharedSearchIndex();
-        const messages = provider({id: 'core:chat.messages', matchIn: 'worker'});
+        const messages = provider({id: 'core:chat.messages'});
         index.setProviderEntries(messages, [entry('m1', 'One'), entry('m2', 'Two')]);
         const deltas = sink(index);
 
@@ -154,7 +170,7 @@ describe('SharedSearchIndex', () => {
 
         assert.equal(index.removeProvider('core:chat.messages'), true);
         assert.deepEqual(deltas.at(-1)?.removals, [documentKey('core:chat.messages', 'm1')]);
-        assert.equal(index.hasWorkerDocuments, false);
+        assert.equal(index.size, 0);
         assert.equal(index.candidates(UNRESTRICTED_SCOPE).length, 0);
     });
 
@@ -174,7 +190,6 @@ describe('SharedSearchIndex', () => {
             index.candidates({pluginId: 'core', moduleId: 'core:chat'}).map(candidate => candidate.entry.id),
             ['a', 'b']
         );
-        assert.deepEqual(index.candidates(UNRESTRICTED_SCOPE, 'worker'), []);
     });
 
     it('finds every document behind one entity', () => {

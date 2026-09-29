@@ -90,7 +90,8 @@ export interface SearchEntry {
  *
  * `items` is a synchronous reactive getter, or returns a Svelte readable
  * store. It never receives the query — the kernel indexes what it returns and
- * does the matching. A plain, non-reactive array is a fixed snapshot; wrap the
+ * does the matching, both inside the shared search worker so neither a large
+ * corpus nor a keystroke ever builds a Fuse index on the main thread. A plain, non-reactive array is a fixed snapshot; wrap the
  * data in `$state` or emit from a store if it must change.
  *
  * The optional `load` runs **once per activation**, shared by every SearchBar,
@@ -108,13 +109,6 @@ export interface SearchEntry {
  * };
  */
 export interface StaticSource {
-    /**
-     * Where matching runs. `immediate` (the default) matches on the main
-     * thread without debounce; `worker` moves matching into the shared search
-     * worker, which suits a large corpus such as the chat message index at the
-     * cost of arriving a tick later.
-     */
-    matchIn?: 'immediate' | 'worker';
     /** Reactive. Disabling aborts the source's work, drops its entries and disposes its subscriptions. */
     enabled?(context: SearchRuntime): boolean;
     items(context: SearchRuntime): readonly SearchEntry[] | Readable<readonly SearchEntry[]>;
@@ -229,7 +223,11 @@ export interface SearchProviderError {
  */
 export interface SearchSessionState {
     groups: readonly SearchGroupView[];
-    /** Explicit worker matching is running. */
+    /**
+     * The worker has been matching the static corpus for longer than
+     * {@link SEARCH_LOCAL_PENDING_DELAY_MS}. Faster answers never flip it, so
+     * a bar does not flash a progress state on every keystroke.
+     */
     localPending: boolean;
     /** Dynamic query work is scheduled or in flight. */
     remotePending: boolean;
@@ -283,6 +281,12 @@ export const SEARCH_ROWS_TOTAL = 20;
 
 /** At most this many recent selections are remembered per user/connection. */
 export const SEARCH_RECENTS_LIMIT = 10;
+
+/**
+ * How long a session keeps showing its previous rows while the worker answers
+ * a new query, before it gives up on them and reports `localPending`.
+ */
+export const SEARCH_LOCAL_PENDING_DELAY_MS = 150;
 
 /** Dynamic providers are debounced by this much; static matching is never debounced. */
 export const SEARCH_DYNAMIC_DEBOUNCE_MS = 250;

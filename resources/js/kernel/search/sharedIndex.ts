@@ -6,19 +6,24 @@
  * second palette must not re-run a loader or rebuild an index, and a rename
  * in the chat store has to reach both bars from a single update.
  *
+ * The index holds rows, not a Fuse index. Fuse lives in `search.worker.ts`:
+ * the index only decides *what changed* and hands that to the worker as an
+ * {@link IndexDelta}, so building and updating the searchable index never
+ * costs main-thread time, however large the corpus.
+ *
  * Updates are **incremental and field-aware**. `setProviderEntries` diffs the
- * new snapshot against the previous one by entry id and only touches the
- * engine for entries whose *searchable or displayed* text actually changed.
- * Action callbacks are refreshed unconditionally (a re-created `onSelect`
- * closure must not cost a reindex, but it must not go stale either).
+ * new snapshot against the previous one by entry id and only ships entries
+ * whose *searchable or displayed* text actually changed. Action callbacks are
+ * refreshed unconditionally (a re-created `onSelect` closure must not cost a
+ * reindex, but it must not go stale either).
  *
  * Each change bumps {@link revision}. Sessions use it to re-derive rows, and
  * the worker path uses it to reject replies that were computed against an
- * older corpus. Note that a revision may advance without a worker delta: a
- * change to `immediate` entries alone concerns no worker.
+ * older corpus. Note that a revision may advance without a delta: a reorder or
+ * an icon change alters rows but no indexed text.
  */
 import type {SearchEntry, SearchGroupKind} from '$lib/kernel/search/types.js';
-import {SearchEngine, type SearchDocument, type SearchScores} from '$lib/kernel/search/searchEngine.js';
+import type {SearchDocument} from '$lib/kernel/search/searchEngine.js';
 import {scopeMatches, type ResolvedSearchScope} from '$lib/kernel/search/scope.js';
 
 /** Identity and ownership the index needs about a provider to file its entries. */
@@ -28,7 +33,6 @@ export interface IndexedProvider {
     readonly pluginId: string;
     readonly moduleId: string;
     readonly kind: SearchGroupKind;
-    readonly matchIn: 'immediate' | 'worker';
     readonly order: number;
 }
 
@@ -49,7 +53,7 @@ export interface IndexDelta {
     readonly removals: readonly string[];
 }
 
-/** Receives worker-bound deltas. Set by the extension; absent in tests and when no worker source exists. */
+/** Receives worker-bound deltas. Set by `SearchWorkerClient`; absent in tests that do not need matching. */
 export type IndexDeltaSink = (delta: IndexDelta) => void;
 
 export class SharedSearchIndex {
@@ -58,20 +62,18 @@ export class SharedSearchIndex {
     private readonly providerKeys = new Map<string, string[]>();
     /** Document key → the text signature it was last indexed with. */
     private readonly signatures = new Map<string, string>();
-    private readonly immediate = new SearchEngine();
     private readonly listeners = new Set<() => void>();
     private sink: IndexDeltaSink | null = null;
     private _revision = 0;
-    private _hasWorkerDocuments = false;
 
     /** Increases on every accepted change. Never decreases. */
     public get revision(): number {
         return this._revision;
     }
 
-    /** Whether any provider opted into worker matching, i.e. whether a worker is worth starting. */
-    public get hasWorkerDocuments(): boolean {
-        return this._hasWorkerDocuments;
+    /** How many documents are indexed; a worker is only worth starting when this is not zero. */
+    public get size(): number {
+        return this.documents.size;
     }
 
     /** Notified after every change, once per change. */
@@ -86,13 +88,7 @@ export class SharedSearchIndex {
         if (!sink) {
             return;
         }
-        const upserts: SearchDocument[] = [];
-        for (const document of this.documents.values()) {
-            if (document.provider.matchIn === 'worker') {
-                upserts.push(toSearchDocument(document));
-            }
-        }
-        sink({revision: this._revision, upserts, removals: []});
+        sink({revision: this._revision, upserts: [...this.documents.values()].map(toSearchDocument), removals: []});
     }
 
     /**
@@ -134,11 +130,7 @@ export class SharedSearchIndex {
             if (previousSignature !== signature) {
                 this.signatures.set(key, signature);
                 changed = true;
-                if (provider.matchIn === 'worker') {
-                    upserts.push(toSearchDocument(document));
-                } else {
-                    this.immediate.upsert(toSearchDocument(document));
-                }
+                upserts.push(toSearchDocument(document));
             } else if (!existing || existing.entryOrder !== entryOrder || existing.entry.icon !== entry.icon) {
                 changed = true;
             }
@@ -154,10 +146,6 @@ export class SharedSearchIndex {
             this.signatures.delete(key);
             removals.push(key);
             changed = true;
-            // Worker removals leave in the delta below, not through the engine.
-            if (provider.matchIn !== 'worker') {
-                this.immediate.remove(key);
-            }
         }
 
         this.providerKeys.set(provider.id, nextKeys);
@@ -166,8 +154,7 @@ export class SharedSearchIndex {
             return false;
         }
 
-        this.refreshWorkerFlag();
-        this.commit(provider.matchIn === 'worker' ? {upserts, removals} : null);
+        this.commit(upserts, removals);
         return true;
     }
 
@@ -182,20 +169,12 @@ export class SharedSearchIndex {
             return false;
         }
 
-        const workerRemovals: string[] = [];
         for (const key of keys) {
-            const document = this.documents.get(key);
             this.documents.delete(key);
             this.signatures.delete(key);
-            if (document?.provider.matchIn === 'worker') {
-                workerRemovals.push(key);
-            } else {
-                this.immediate.remove(key);
-            }
         }
 
-        this.refreshWorkerFlag();
-        this.commit(workerRemovals.length > 0 ? {upserts: [], removals: workerRemovals} : null);
+        this.commit([], keys);
         return true;
     }
 
@@ -210,31 +189,17 @@ export class SharedSearchIndex {
 
     /**
      * Every in-scope document, in provider declaration order and then in each
-     * provider's own order. `matchIn` selects the execution path: `immediate`
-     * documents are ranked synchronously, `worker` documents only once the
-     * worker has answered.
+     * provider's own order. Their scores come from `SearchWorkerClient`.
      */
-    public candidates(scope: ResolvedSearchScope, matchIn?: 'immediate' | 'worker'): IndexedDocument[] {
+    public candidates(scope: ResolvedSearchScope): IndexedDocument[] {
         const result: IndexedDocument[] = [];
         for (const document of this.documents.values()) {
-            if (matchIn && document.provider.matchIn !== matchIn) {
-                continue;
-            }
             if (!scopeMatches(scope, document.provider)) {
                 continue;
             }
             result.push(document);
         }
         return result.sort(byProviderThenEntry);
-    }
-
-    /**
-     * Engine scores for the `immediate` corpus, as document keys. Worker
-     * documents are not in this engine; their scores arrive from
-     * `SearchWorkerClient`, computed by the very same engine over there.
-     */
-    public searchScores(query: string): SearchScores {
-        return this.immediate.search(query);
     }
 
     /** Documents whose entity the given key identifies, newest provider first. Used to resolve recents. */
@@ -248,24 +213,14 @@ export class SharedSearchIndex {
         return result.sort(byProviderThenEntry);
     }
 
-    private commit(workerDelta: {upserts: readonly SearchDocument[]; removals: readonly string[]} | null): void {
+    private commit(upserts: readonly SearchDocument[], removals: readonly string[]): void {
         this._revision++;
-        if (workerDelta && this.sink && (workerDelta.upserts.length > 0 || workerDelta.removals.length > 0)) {
-            this.sink({revision: this._revision, ...workerDelta});
+        if (this.sink && (upserts.length > 0 || removals.length > 0)) {
+            this.sink({revision: this._revision, upserts, removals});
         }
         for (const listener of [...this.listeners]) {
             listener();
         }
-    }
-
-    private refreshWorkerFlag(): void {
-        for (const document of this.documents.values()) {
-            if (document.provider.matchIn === 'worker') {
-                this._hasWorkerDocuments = true;
-                return;
-            }
-        }
-        this._hasWorkerDocuments = false;
     }
 }
 

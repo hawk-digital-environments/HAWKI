@@ -3,7 +3,10 @@ import ChatAddIcon from '$lib/components/ui/icons/iconset/ChatAddIcon.svelte';
 import type {StaticSource} from '$lib/kernel/search/types.js';
 import type {ChatSummary} from '$plugins/core/modules/chat/types.js';
 
-/** Existing Chat actions and loaded titles, observed and indexed by the kernel. */
+/**
+ * Existing Chat actions and loaded titles, observed by the kernel and indexed
+ * and matched in the shared search worker.
+ */
 
 /** The new-chat action. Always available. */
 export const chatActionSource: StaticSource = {

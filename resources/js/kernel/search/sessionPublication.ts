@@ -2,7 +2,7 @@
  * Ranking and publication: how scored candidates become the list a SearchBar
  * renders, and what may change once the user has frozen it.
  *
- * Relevance uses the inverted Fuse score. The immediate engine scores static
+ * Relevance uses the inverted Fuse score. The search worker scores static
  * rows, a per-session engine scores what dynamic providers returned, and a remote row
  * the engine did not match stays eligible at score `0` in its provider's own
  * order. Ties fall back to registration order (provider first, then the

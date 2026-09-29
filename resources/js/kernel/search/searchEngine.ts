@@ -1,14 +1,15 @@
 /**
  * The lexical engine behind every search path, free of Svelte and of the DOM
- * so the exact same code runs on the main thread and inside
- * `search.worker.ts`.
+ * so the exact same code runs inside `search.worker.ts` (the static corpus)
+ * and on the main thread (the few rows a dynamic provider returned).
  *
  * It knows nothing about groups or providers: it maps plain
  * {@link SearchDocument}s to scores, and `SharedSearchIndex` maps those back
  * onto rows.
  *
- * Ranking uses Fuse's relevance score with the field weights below. Immediate,
- * worker and remote result indexes use the same scoring configuration.
+ * Ranking uses Fuse's relevance score with the field weights below. The
+ * worker index and the remote result indexes use the same scoring
+ * configuration.
  *
  * The index is **incremental**: `upsert`/`remove` keep an already-built index
  * current as entries are added or renamed, instead of

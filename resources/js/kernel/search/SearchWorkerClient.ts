@@ -2,9 +2,9 @@
  * The main thread's end of `search.worker.ts`.
  *
  * One client per app, owned by the search extension and alive for its whole
- * lifetime: the worker holds the corpus, so restarting it per palette would
- * mean re-shipping thousands of documents every time a bar opens. Sessions
- * borrow it through `SearchSessionHost.queryWorker`.
+ * lifetime: the worker holds the whole static corpus, so restarting it per
+ * palette would mean re-shipping thousands of documents every time a bar
+ * opens. Sessions borrow it through `SearchSessionHost.queryWorker`.
  *
  * Three rules shape the design:
  *
@@ -18,8 +18,8 @@
  *   session to wait on forever.
  * - **No main-thread fallback.** Matching a large corpus inline is exactly the
  *   jank the worker exists to avoid, so a failure is reported as a *retryable*
- *   error (the host offers "try again") and the immediate and dynamic groups
- *   carry the palette meanwhile.
+ *   error (the host offers "try again"); recents and the dynamic groups carry
+ *   the palette meanwhile.
  */
 import type {SearchScores} from './searchEngine.js';
 import type {SearchWorkerRequest, SearchWorkerResponse} from './search.worker.js';
@@ -89,8 +89,8 @@ export class SearchWorkerClient {
         this.deadlineMs = options.deadlineMs ?? SEARCH_WORKER_DEADLINE_MS;
         this.latestRevision = index.revision;
         this.sink = delta => this.send(delta);
-        // Revisions that carry no worker delta still matter: they tell the
-        // client that an unrelated (immediate) change happened, so a reply
+        // Revisions that carry no delta still matter: they tell the client
+        // that a text-neutral change (a reorder, an icon) happened, so a reply
         // computed now is current for *this* revision too.
         this.unsubscribe = index.subscribe(() => {
             this.latestRevision = this.index.revision;
@@ -117,6 +117,17 @@ export class SearchWorkerClient {
     }
 
     /**
+     * Starts and seeds the worker ahead of the first query, so the first
+     * keystroke pays for matching only. A no-op while nothing is indexed,
+     * while a failure stands, or once a worker runs.
+     */
+    public prepare(): void {
+        if (!this.disposed && this.index.size > 0) {
+            this.start();
+        }
+    }
+
+    /**
      * Scores for `query` over the worker corpus, with the revision they
      * describe. Rejects with a {@link SearchWorkerError} when the worker
      * cannot answer, and with an `AbortError` when `signal` fires; a reply
@@ -129,9 +140,9 @@ export class SearchWorkerClient {
         if (signal.aborted) {
             return Promise.reject(abortError());
         }
-        // Nothing to ask about: no round-trip, and above all no worker started
-        // for an app whose providers all match immediately.
-        if (query.trim() === '' || !this.index.hasWorkerDocuments) {
+        // Nothing to ask about: no round-trip, and no worker started for an
+        // app without a single static entry.
+        if (query.trim() === '' || this.index.size === 0) {
             return Promise.resolve({revision: this.latestRevision, scores: []});
         }
         if (this.failure) {

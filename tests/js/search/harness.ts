@@ -9,7 +9,8 @@ import {SharedSearchIndex} from '$lib/kernel/search/sharedIndex.js';
 import type {SearchSessionHost} from '$lib/kernel/search/sessionHost.js';
 import type {SchedulerTimers} from '$lib/kernel/search/sessionScheduler.js';
 import type {ModuleSearchRegistrar, SearchEntry, SearchProviderError, StaticSource} from '$lib/kernel/search/types.js';
-import type {SearchScores} from '$lib/kernel/search/searchEngine.js';
+import {SearchEngine, type SearchScores} from '$lib/kernel/search/searchEngine.js';
+import {handleSearchWorkerRequest, type SearchWorkerRequest} from '$lib/kernel/search/search.worker.js';
 
 export class MemoryStorage {
     public readonly items = new Map<string, string>();
@@ -105,11 +106,47 @@ export class TestSearchHost implements SearchSessionHost {
     public queryWorker(query: string, signal: AbortSignal): Promise<{revision: number; scores: SearchScores}> {
         return this.worker(query, signal);
     }
+
+    /**
+     * Answers `queryWorker` from a real engine fed by the index's deltas, the
+     * way the worker is fed. Replies settle on the next microtask.
+     */
+    public answerFromEngine(): void {
+        const engine = new SearchEngine();
+        this.index.setDeltaSink(delta => {
+            for (const document of delta.upserts) engine.upsert(document);
+            for (const key of delta.removals) engine.remove(key);
+        });
+        this.worker = query => Promise.resolve({revision: this.index.revision, scores: engine.search(query)});
+    }
+}
+
+/**
+ * A stand-in `Worker` that runs the real worker protocol in-process. `hold`
+ * parks search requests in `held`; `fail` makes posting throw.
+ */
+export class FakeSearchWorker extends EventTarget {
+    public engine = new SearchEngine();
+    public held: SearchWorkerRequest[] = [];
+    public hold = false;
+    public fail = false;
+    public terminated = false;
+
+    public postMessage(request: SearchWorkerRequest): void {
+        if (this.fail) throw new Error('Worker transport failed');
+        if (this.hold && request.type === 'search') {this.held.push(request); return;}
+        const response = handleSearchWorkerRequest(this.engine, request);
+        queueMicrotask(() => this.dispatchEvent(new MessageEvent('message', {data: response})));
+    }
+
+    public terminate(): void {
+        this.terminated = true;
+    }
 }
 
 /** A static source over a fixed list; `entries` may be mutated between reindexes. */
-export function staticSourceOf(entries: SearchEntry[], matchIn: 'immediate' | 'worker' = 'immediate'): StaticSource {
-    return {matchIn, items: () => entries};
+export function staticSourceOf(entries: SearchEntry[]): StaticSource {
+    return {items: () => entries};
 }
 
 export function entry(id: string, title: string, extra: Partial<SearchEntry> = {}): SearchEntry {

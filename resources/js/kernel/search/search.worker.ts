@@ -1,11 +1,10 @@
 /**
- * The search engine in a Web Worker, so that indexing a large static corpus —
- * the chat message index is the motivating case — and matching it per
- * keystroke never blocks typing.
+ * The search engine in a Web Worker. Every static source — chat titles and
+ * actions today, a chat message index tomorrow — is ingested, indexed and
+ * matched here, so neither building the index nor matching it per keystroke
+ * ever blocks typing.
  *
- * It runs the *same* {@link SearchEngine} as the immediate path, so a row
- * ranks identically no matter which side of the boundary matched it. The
- * message shapes below are the whole protocol; `SearchWorkerClient` is the
+ * The message shapes below are the whole protocol; `SearchWorkerClient` is the
  * only speaker on the other end.
  *
  * Mutations are acknowledged. The client could infer the worker's state from

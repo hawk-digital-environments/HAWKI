@@ -5,7 +5,7 @@ import type {HawkiApp, HawkiAppExtension, WithoutAppExtensionInternals} from '$l
 import type {SearchProviderDefinition, SearchRegistry} from './searchRegistry.js';
 import type {SearchEntry, SearchProviderError, SearchScopeOptions, SearchSession, SearchSessionOptions, StaticSource} from './types.js';
 import {SharedSearchIndex} from './sharedIndex.js';
-import {SearchWorkerClient} from './SearchWorkerClient.js';
+import {SearchWorkerClient, type SearchWorkerClientOptions} from './SearchWorkerClient.js';
 import {SearchSessionManager} from './SearchSessionManager.svelte.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -25,7 +25,7 @@ export class SearchExtension implements HawkiAppExtension {
     private app: HawkiApp | null = null;
     private registry: SearchRegistry | null = null;
     private readonly index = new SharedSearchIndex();
-    private worker = new SearchWorkerClient(this.index);
+    private readonly worker: SearchWorkerClient;
     private manager: SearchSessionManager | null = null;
     private readonly monitors = new Map<string, () => void>();
     private readonly active = new Map<string, Activation>();
@@ -38,6 +38,11 @@ export class SearchExtension implements HawkiAppExtension {
     private _scopeOptions = $state.raw<SearchScopeOptions>({plugins: [], modules: []});
     private cleanup: (() => void)[] = [];
 
+    /** `worker` is overridden in tests; production starts the bundled search worker. */
+    public constructor(options: {worker?: SearchWorkerClientOptions} = {}) {
+        this.worker = new SearchWorkerClient(this.index, options.worker);
+    }
+
     public get scopeOptions(): SearchScopeOptions {
         return this._scopeOptions;
     }
@@ -48,6 +53,8 @@ export class SearchExtension implements HawkiAppExtension {
 
     public createSession(options?: SearchSessionOptions): SearchSession {
         if (!this.manager) throw new Error('Search providers have not been activated yet.');
+        // Opening a bar is the cue to get the worker seeded before the first keystroke.
+        this.worker.prepare();
         return this.manager.createSession(options);
     }
 
