@@ -269,6 +269,8 @@
                 "input_max_tokens": "Max. Ausgabelänge",
                 "input_max_tokens_description": "Maximale Tokenanzahl pro Antwort.",
                 "input_max_tokens_hint": "Höhere Werte ermöglichen längere Antworten, kosten aber mehr Zeit.",
+                "advanced_title": "Erweiterte Einstellungen",
+                "advanced_description": "Temperature, Top_P und max. Ausgabelänge",
                 "conflict": {
                     "titleSingle": ":model unterstützt :tool nicht",
                     "titleMultiple": ":model unterstützt eines oder mehrere der ausgewählten Tools nicht",

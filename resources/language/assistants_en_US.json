@@ -269,6 +269,8 @@
                 "input_max_tokens": "Max. output length",
                 "input_max_tokens_description": "Maximum number of tokens per answer.",
                 "input_max_tokens_hint": "Higher values allow longer answers but take more time.",
+                "advanced_title": "Advanced settings",
+                "advanced_description": "Temperature, Top_P and max. output length",
                 "conflict": {
                     "titleSingle": ":model does not support :tool",
                     "titleMultiple": ":model does not support one or more of the selected tools",
