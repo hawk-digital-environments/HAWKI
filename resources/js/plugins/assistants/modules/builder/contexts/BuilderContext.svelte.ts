@@ -426,24 +426,6 @@ export class BuilderContext {
     return true;
   }
 
-  /**
-   * A field the creator asked the AI guide to fill (the star next to a field
-   * label). The builder test panel picks it up, opens the guide and asks it
-   * to fill that field — once the guide is free, if it is still answering.
-   */
-  guideFillRequest = $state<keyof Assistant | null>(null);
-
-  requestGuideFill(key: keyof Assistant): void {
-    this.guideFillRequest = key;
-  }
-
-  /** Whether `key` was asked to be filled by the guide; claims the request, so it is sent once. */
-  claimGuideFillRequest(key: keyof Assistant): boolean {
-    if (this.guideFillRequest !== key) return false;
-    this.guideFillRequest = null;
-    return true;
-  }
-
   /** Whether `key`'s latest fill still needs its reveal; claims it, so it plays once. */
   claimAiFill(key: keyof Assistant): boolean {
     const fill = this.aiFills[key];

@@ -191,6 +191,7 @@ let requiresReview = $derived(
                 label={__('assistants.builder.publish.input_version_note')}
                 name="versionshinweis"
                 placeholder={__('assistants.builder.publish.input_version_note_placeholder')}
+                hint={__('assistants.builder.publish.input_version_note_hint')}
                 assistantValueKey="submissionNote"
                 />
 

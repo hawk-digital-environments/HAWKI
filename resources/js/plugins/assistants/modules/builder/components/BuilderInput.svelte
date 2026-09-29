@@ -10,12 +10,10 @@
     import AddableItemList from "$plugins/assistants/components/itemList/AddableItemList.svelte";
     import FullWidthToggle from "$plugins/assistants/components/toggle/FullWidthToggle.svelte";
     import Slider from "$lib/components/ui/slider/Slider.svelte";
-    import Tooltip from "$lib/components/ui/tooltip/Tooltip.svelte";
-    import AlertCircleIcon from "$lib/components/ui/icons/iconset/AlertCircleIcon.svelte";
+    import InfoPopover from "$lib/components/ui/popover/InfoPopover.svelte";
     import type {IconComponent} from '$lib/components/ui/icons';
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
-    import AiFillButton from "$plugins/assistants/modules/builder/components/AiFillButton.svelte";
 
 
     const {__} = useTranslator();
@@ -159,20 +157,11 @@
                 <label for={name}>{label}</label>
             {/if}
             {#if hint}
-                <!-- Hint text is hidden until the trigger is hovered/focused. -->
-                <Tooltip tooltip={hint} side="top" delayDuration={150}>
-                    {#snippet children({props})}
-                        <button type="button" class="hint-trigger" aria-label={hint} {...props}>
-                            <AlertCircleIcon size="1em" />
-                        </button>
-                    {/snippet}
-                </Tooltip>
+                <InfoPopover {label} info={hint}/>
             {/if}
             <InputError message={error} />
             {#if type === 'slider'}
                 <span class="slider-value">{numberValue}</span>
-            {:else if label && !disabled}
-                <AiFillButton field={assistantValueKey} {label}/>
             {/if}
         </div>
     {/if}
@@ -253,20 +242,6 @@
 {/if}
 
 <style>
-    .hint-trigger {
-        display: inline-flex;
-        align-items: center;
-        padding: 0;
-        background: none;
-        border: none;
-        cursor: help;
-        color: var(--color-text-muted);
-        transition: color var(--duration-fast);
-    }
-    .hint-trigger:hover,
-    .hint-trigger:focus-visible {
-        color: var(--color-text);
-    }
     .slider-value {
         margin-inline-start: auto;
         font-size: var(--font-size-sm);

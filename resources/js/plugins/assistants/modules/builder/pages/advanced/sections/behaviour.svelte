@@ -37,12 +37,14 @@ const {__} = useTranslator();
             type="textarea"
             label={__('assistants.builder.behaviour.input_system_prompt')}
             placeholder={__('assistants.builder.behaviour.input_system_prompt_placeholder')}
+            hint={__('assistants.builder.behaviour.input_system_prompt_hint')}
             assistantValueKey="systemPrompt"/>
 
         <BuilderInput
             type="textarea"
             label={__('assistants.builder.behaviour.input_greeting')}
             placeholder={__('assistants.builder.behaviour.input_greeting_placeholder')}
+            hint={__('assistants.builder.behaviour.input_greeting_hint')}
             assistantValueKey="greeting"/>
 
 
@@ -50,6 +52,7 @@ const {__} = useTranslator();
                 type="itemList"
                 label={__('assistants.builder.behaviour.input_starter_prompts')}
                 addItemLabel={__('assistants.builder.behaviour.input_starter_prompts_add')}
+                hint={__('assistants.builder.behaviour.input_starter_prompts_hint')}
                 render="block"
                 assistantValueKey="starterPrompts"/>
 

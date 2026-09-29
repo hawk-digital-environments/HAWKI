@@ -58,21 +58,6 @@ const FIELD_LABELS: Record<BuilderGuideField | BuilderGuideSettingField | "handl
 
 type Staged = StagedUpload & { file?: UploadFile };
 
-/** A builder field the guide can fill. */
-export type GuideFillableField = keyof typeof FIELD_LABELS;
-
-/** Whether the guide can fill `key` (and so the field offers "fill with the guide"). */
-export const isGuideFillable = (key: string): key is GuideFillableField => key in FIELD_LABELS;
-
-/** Whether a field value counts as not filled in yet (so the guide fills it rather than revising it). */
-export const isFieldEmpty = (value: unknown): boolean =>
-    value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0);
-
-export type BuilderGuideChat = ChatStoreApi & {
-    /** Ask the guide to fill one field, or what to change if it's already filled. */
-    fillField: (key: GuideFillableField) => Promise<void>;
-};
-
 /**
  * # Builder guide chat
  *
@@ -94,9 +79,9 @@ export type BuilderGuideChat = ChatStoreApi & {
 export function createBuilderGuideChat(
     builder: BuilderContext,
     uploader: KnowledgeUploader,
-    __: (key: string, replacements?: Record<string, string>) => string,
+    __: (key: string) => string,
     router: Pick<ReturnType<typeof useRouter>, "goToRoute" | "isRouteActive">,
-): BuilderGuideChat {
+): ChatStoreApi {
     let messages = $state<ChatMessage[]>([]);
     let status = $state<ChatStatus>("idle");
     let error = $state<string | null>(null);
@@ -186,15 +171,6 @@ export function createBuilderGuideChat(
             .map((key, i) => ({ key, i }))
             .sort((a, b) => BUILDER_STEPS.indexOf(FIELD_STEPS[a.key]) - BUILDER_STEPS.indexOf(FIELD_STEPS[b.key]) || a.i - b.i)
             .map(({ key }) => ({ label: __(FIELD_LABELS[key]), open: () => void openField(key) }));
-    };
-
-    /**
-     * Ask the guide about one field, as a message from the creator: to fill
-     * it while it's empty, otherwise to ask what to change or explain it.
-     */
-    const fillField = (key: GuideFillableField): Promise<void> => {
-        const prompt = isFieldEmpty(builder.draft[key]) ? "assistants.builder.guide.fill_field_prompt" : "assistants.builder.guide.revise_field_prompt";
-        return send(__(prompt, {field: __(FIELD_LABELS[key])}));
     };
 
     const clear = (): void => {
@@ -301,6 +277,5 @@ export function createBuilderGuideChat(
         },
         clear,
         send,
-        fillField,
     };
 }

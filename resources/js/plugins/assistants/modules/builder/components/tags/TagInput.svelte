@@ -8,24 +8,25 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
     import {ApiError} from "$plugins/assistants/api/errors";
-    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
-    import AiFillButton from "$plugins/assistants/modules/builder/components/AiFillButton.svelte";
+    import InfoPopover from "$lib/components/ui/popover/InfoPopover.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
 
     interface Props {
         id?: string
         label?: string;
+        /** Explanation shown in an info popover next to the label. */
+        hint?: string;
         disabled?: boolean;
     }
     const {
         id,
         label,
+        hint,
         disabled = false,
     }: Props = $props();
 
     const builder = useBuilderContext();
     const toast = useToastContext();
-    const {__} = useTranslator();
 
     // eslint-disable-next-line svelte/state_referenced_locally
     let tags = $derived<TagType[]>(builder.draft.tags);
@@ -83,6 +84,9 @@
             {#if label}
                 <label for={id}>{label}</label>
             {/if}
+            {#if label && hint}
+                <InfoPopover {label} info={hint}/>
+            {/if}
             <InputError message={builder.validator.errorFor('tags')} />
         </div>
     {/if}
@@ -101,17 +105,13 @@
                 suggestions={assistantOptionsStore.tags.map(t=>t.text)}
                 onAdd={addTag}
                 disabled={disabled} />
-        {#if !disabled}
-            <!-- No header row here, so the star closes the tag row instead. -->
-            <AiFillButton field="tags" label={label ?? __('assistants.builder.general.input_tags')}/>
-        {/if}
     </div>
     </AiFillReveal>
 </div>
 
 
 <style>
-    /* Tags wrap into rows; "Add tag" and the star follow the last tag. */
+    /* Tags wrap into rows; "Add tag" follows the last tag. */
     .tags-container {
         display: flex;
         flex-wrap: wrap;
