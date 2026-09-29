@@ -14,6 +14,7 @@
     import AlertCircleIcon from "$lib/components/ui/icons/iconset/AlertCircleIcon.svelte";
     import type {IconComponent} from '$lib/components/ui/icons';
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    import {getScrollableParent} from "$plugins/assistants/components/testChat/textarea-resizer";
 
 
     const {__} = useTranslator();
@@ -129,6 +130,49 @@
     // Coerce to the entry list the Select primitive expects.
     let selectOptions = $derived((effectiveOptions ?? []).filter(o => o != null));
 
+    // Textareas grow with their content up to the CSS max-height, after which
+    // they scroll. Once the user drags the resize handle, auto-grow stops so
+    // the manually chosen height sticks.
+    let textareaRef = $state<HTMLTextAreaElement | null>(null);
+    let manuallyResized = false;
+
+    function autoGrow(el: HTMLTextAreaElement) {
+        if (manuallyResized || !el.offsetParent) return;
+        // Collapsing to 'auto' can clamp the surrounding scroll position; restore it.
+        const scrollParent = getScrollableParent(el);
+        const savedScrollTop = scrollParent?.scrollTop ?? window.scrollY;
+        const border = el.offsetHeight - el.clientHeight;
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + border + 'px';
+        if (scrollParent) {
+            scrollParent.scrollTop = savedScrollTop;
+        } else {
+            window.scrollTo({top: savedScrollTop, behavior: 'instant'});
+        }
+    }
+
+    $effect(() => {
+        if (type !== 'textarea' || !textareaRef) return;
+        void currentValue; // re-run on typing and on externally loaded drafts
+        autoGrow(textareaRef);
+    });
+
+    $effect(() => {
+        const el = textareaRef;
+        if (!el) return;
+        function onPointerDown() {
+            const heightBefore = el!.offsetHeight;
+            window.addEventListener('pointerup', () => {
+                if (el!.offsetHeight !== heightBefore) {
+                    manuallyResized = true;
+                    el!.style.maxHeight = 'none';
+                }
+            }, {once: true});
+        }
+        el.addEventListener('pointerdown', onPointerDown);
+        return () => el.removeEventListener('pointerdown', onPointerDown);
+    });
+
     // write to store, translating back into the field's stored shape
     function update(value: any) {
         if (isCategory) {
@@ -203,6 +247,7 @@
 
         {:else if type === 'textarea'}
             <Textarea
+                bind:ref={textareaRef}
                 id={name}
                 {placeholder}
                 {disabled}
@@ -244,6 +289,10 @@
 {/if}
 
 <style>
+    .input-container :global(.textarea) {
+        max-height: 15rem;
+        overflow-y: auto;
+    }
     .hint-trigger {
         display: inline-flex;
         align-items: center;
