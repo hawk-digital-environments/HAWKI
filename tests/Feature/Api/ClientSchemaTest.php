@@ -277,6 +277,65 @@ class ClientSchemaTest extends TestCase
         self::assertSame(1, $attrs['top_p']['constraints']['maximum']);
     }
 
+    public function testResourceJsonSchemaBlock(): void
+    {
+        $this->actingAsUser($this->user);
+
+        $response = $this->jsonApiRaw('get', '/api/hawki/v1/assistants/schema');
+        $schema = $response->json('resources.assistants.schema');
+
+        self::assertSame('object', $schema['type']);
+
+        $properties = $schema['properties'];
+
+        self::assertSame('string', $properties['name']['type']);
+        self::assertSame(255, $properties['name']['maxLength']);
+
+        self::assertSame('string', $properties['release_stage']['type']);
+        self::assertSame(
+            ['draft', 'private', 'organizational', 'federated'],
+            $properties['release_stage']['enum'],
+        );
+
+        self::assertSame('integer', $properties['max_tokens']['type']);
+        self::assertSame(0, $properties['max_tokens']['minimum']);
+
+        self::assertSame('number', $properties['temp']['type']);
+        self::assertSame(0, $properties['temp']['minimum']);
+        self::assertSame(1, $properties['temp']['maximum']);
+
+        self::assertSame('boolean', $properties['allow_remix']['type']);
+
+        // Relationships keep their resource-identifier write shape and stay out of the attribute schema.
+        self::assertArrayNotHasKey('assistant_category', $properties);
+        self::assertArrayNotHasKey('ai_tools', $properties);
+
+        // Assistant attributes are all optional, so no required list is emitted.
+        self::assertArrayNotHasKey('required', $schema);
+    }
+
+    public function testAttributeDefaults(): void
+    {
+        $this->actingAsUser($this->user);
+
+        $response = $this->jsonApiRaw('get', '/api/hawki/v1/assistants/schema');
+        $attrs = $response->json('resources.assistants.attributes');
+        $schema = $response->json('resources.assistants.schema');
+
+        // Defaults come from the model's declared attribute defaults.
+        self::assertSame('', $attrs['name']['default']);
+        self::assertFalse($attrs['allow_remix']['default']);
+        self::assertSame(AssistantReleaseStage::DRAFT->value, $attrs['release_stage']['default']);
+        self::assertSame(0, $attrs['max_tokens']['default']);
+
+        // Fields without a model default carry no default key.
+        self::assertArrayNotHasKey('default', $attrs['handle']);
+
+        // The JSON-Schema block mirrors the defaults.
+        self::assertSame('', $schema['properties']['name']['default']);
+        self::assertSame(0, $schema['properties']['max_tokens']['default']);
+    }
+
     public function testWritableOnResourceAttributes(): void
     {
         $this->actingAsUser($this->user);
@@ -603,7 +662,7 @@ class ClientSchemaTest extends TestCase
         $resources = $response->json('resources');
 
         // Resources without standalone CRUD routes (relationship-only).
-        $relationOnly = ['assistant-versions', 'organizations', 'attachments', 'assistant-attachments'];
+        $relationOnly = ['assistant-versions', 'ai-conv-messages', 'organizations', 'attachments', 'assistant-attachments'];
 
         foreach ($resources as $type => $resource) {
             self::assertArrayHasKey('type', $resource, "Type '{$type}' missing type field");
@@ -629,7 +688,7 @@ class ClientSchemaTest extends TestCase
         $response = $this->jsonApiRaw('get', '/api/hawki/v1/assistants/schema');
         $resources = $response->json('resources');
 
-        $relationOnly = ['assistant-versions', 'organizations', 'attachments', 'assistant-attachments'];
+        $relationOnly = ['assistant-versions', 'ai-conv-messages', 'organizations', 'attachments', 'assistant-attachments'];
 
         foreach ($relationOnly as $type) {
             self::assertArrayHasKey($type, $resources, "Missing resource: {$type}");
