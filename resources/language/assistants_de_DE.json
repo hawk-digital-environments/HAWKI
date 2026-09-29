@@ -366,7 +366,8 @@
                 },
                 "completeness": {
                     "title": "Vollständigkeitsprüfung",
-                    "description": "Pflicht für die Veröffentlichung."
+                    "description": "Pflicht für die Veröffentlichung.",
+                    "label": "Anforderungen"
                 },
                 "triggers": {
                     "title": "Prüfungsauslöser"

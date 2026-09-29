@@ -1,9 +1,8 @@
 <script lang="ts">
-import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte";
+import Notice from "$plugins/assistants/components/report/Notice.svelte";
 import BuilderInput from "$plugins/assistants/modules/builder/components/BuilderInput.svelte";
 import AlertCircleIcon from "$lib/components/ui/icons/iconset/AlertCircleIcon.svelte";
 import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte.js";
-import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
 import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
 
 /**
@@ -27,10 +26,10 @@ const {__} = useTranslator();
             <p class="page-description">{__('assistants.builder.behaviour.description')}</p>
         </div>
 
-        <StatusCard
+        <Notice
             label={__('assistants.builder.behaviour.warning_system_prompt')}
             icon={AlertCircleIcon}
-            type={ValidationState.WARNING}
+            tone="warning"
         />
 
         <BuilderInput

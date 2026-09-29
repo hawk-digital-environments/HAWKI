@@ -366,7 +366,8 @@
                 },
                 "completeness": {
                     "title": "Completeness check",
-                    "description": "Mandatory for publishing."
+                    "description": "Mandatory for publishing.",
+                    "label": "Requirements"
                 },
                 "triggers": {
                     "title": "Review triggers"

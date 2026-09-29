@@ -1,9 +1,8 @@
 <script lang="ts">
-    import StatusCard from '$plugins/assistants/components/report/StatusCard.svelte';
+    import Notice from '$plugins/assistants/components/report/Notice.svelte';
     import KnowledgeBases from "$plugins/assistants/modules/builder/components/KnowledgeBases.svelte";
     import FileUpload from "$plugins/assistants/modules/builder/components/FileUpload.svelte";
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
-    import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {useConfig} from "$lib/app/hooks/useConfig.svelte";
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
@@ -56,17 +55,17 @@
             <p class="page-description">{__('assistants.builder.knowledge.description')}</p>
         </div>
 
-        <StatusCard
+        <Notice
                 label={__('assistants.builder.knowledge.warning_knowledge_sources')}
                 icon={AlertCircleIcon}
-                type={ValidationState.WARNING}
+                tone="warning"
         />
 
         {#if ragEnabled && currentModel === null}
-            <StatusCard
+            <Notice
                     label={__('assistants.builder.knowledge.no_model_selected')}
                     icon={AlertCircleIcon}
-                    type={ValidationState.WARNING}
+                    tone="warning"
             />
         {/if}
 
