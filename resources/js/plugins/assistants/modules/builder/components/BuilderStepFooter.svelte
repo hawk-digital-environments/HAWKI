@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
     import Button from '$lib/components/ui/button/Button.svelte';
+    import StepDots from '$lib/components/ui/step-dots/StepDots.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import FloppyDiskIcon from '$lib/components/ui/icons/iconset/FloppyDiskIcon.svelte';
@@ -30,6 +31,9 @@
     const index = $derived(Math.max(0, BUILDER_STEPS.findIndex(step => router.isRouteActive(routeOf(step)))));
     const current = $derived(BUILDER_STEPS[index]);
     const isLast = $derived(index === BUILDER_STEPS.length - 1);
+    const continueText = $derived(isLast ? '' : __('assistants.builder.steps.continue_to', {step: __(`assistants.builder.sidebar.${BUILDER_STEPS[index + 1]}`)}));
+    let continueWidth = $state<number>();
+    const stepLabel = $derived(__('assistants.builder.steps.step_of', {current: String(index + 1), total: String(BUILDER_STEPS.length)}));
 
     // Last step: the release action (moved here from the publish page). A
     // permanently denied assistant can't be resubmitted, so no action then.
@@ -94,9 +98,7 @@
 <footer class="step-footer">
   <div class="bar">
     <div class="progress">
-        <span class="count">
-            {__('assistants.builder.steps.step_of', {current: String(index + 1), total: String(BUILDER_STEPS.length)})}
-        </span>
+        <StepDots current={index} total={BUILDER_STEPS.length} label={stepLabel}/>
     </div>
 
     <div class="actions">
@@ -107,11 +109,16 @@
             </Button>
         {/if}
         {#if !isLast}
-            <Button class="icon-end" variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
-                {__('assistants.builder.steps.continue_to', {step: __(`assistants.builder.sidebar.${BUILDER_STEPS[index + 1]}`)})}
+            <Button class="icon-end brand" variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
+                <!-- The slot eases to the new label's width; the keyed label fades in. -->
+                <span class="continue-label" style:width={continueWidth === undefined ? undefined : `${continueWidth}px`}>
+                    {#key continueText}
+                        <span class="continue-text" bind:offsetWidth={continueWidth}>{continueText}</span>
+                    {/key}
+                </span>
             </Button>
         {:else if canRelease}
-            <Button class="icon-start" variant="accent" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
+            <Button class="icon-start brand" variant="accent" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
                 {releaseText}
             </Button>
         {/if}
@@ -168,15 +175,9 @@
 
     .progress {
         display: flex;
-        flex-direction: column;
-        gap: var(--space-0_5);
+        align-items: center;
+        gap: var(--space-3);
         min-width: 0;
-    }
-
-    .count {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
-        font-variant-numeric: tabular-nums;
     }
 
     .actions {
@@ -197,6 +198,44 @@
     }
     .actions :global(.btn.icon-end) {
         padding-right: var(--space-3);
+    }
+
+    /* Primary step action: the brand ramp of the sidebar's create button
+       (SidebarButton), deepening on hover instead of a flat overlay. */
+    .actions :global(.btn.brand) {
+        background: linear-gradient(
+            135deg,
+            var(--gradient-brand-1),
+            var(--gradient-brand-2) 55%,
+            var(--gradient-brand-3)
+        );
+        /* Paint under the button's transparent border too; otherwise the ramp
+           tiles into the 1px border and shows a seam at the edges. */
+        background-origin: border-box;
+        color: var(--color-on-accent-fill);
+        transition: filter var(--duration-fast);
+    }
+    .actions :global(.btn.brand:hover) {
+        filter: brightness(0.92) saturate(1.08);
+    }
+
+    .continue-label {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        transition: width var(--duration-fast) var(--easing-out);
+    }
+    .continue-text {
+        display: inline-block;
+        width: max-content;
+        animation: continue-in var(--duration-fast) var(--easing-out);
+    }
+    @keyframes continue-in {
+        from { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .continue-label { transition: none; }
+        .continue-text { animation: none; }
     }
 
     @media (--bp-md-and-smaller) {
