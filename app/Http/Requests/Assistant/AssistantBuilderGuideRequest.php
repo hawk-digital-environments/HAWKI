@@ -43,6 +43,11 @@ class AssistantBuilderGuideRequest extends FormRequest
             'draft.answerStyle' => ['nullable', 'string'],
             'draft.tags' => ['nullable', 'array'],
             'draft.tags.*' => ['string'],
+            'draft.avatar' => ['nullable', 'array'],
+            'draft.avatar.emoji' => ['nullable', 'string', 'max:32'],
+            'draft.avatar.background' => ['nullable', 'string', 'max:64'],
+            'avatarBackgrounds' => ['sometimes', 'array', 'max:50'],
+            'avatarBackgrounds.*' => ['string', 'distinct', 'regex:/^[a-z0-9-]{1,64}$/'],
         ];
     }
 
@@ -65,6 +70,16 @@ class AssistantBuilderGuideRequest extends FormRequest
             static fn (array $m): array => ['role' => $m['role'], 'content' => $m['content']],
             $this->validated('messages'),
         ));
+    }
+
+    /**
+     * Ids of the avatar background presets the builder offers.
+     *
+     * @return list<string>
+     */
+    public function avatarBackgrounds(): array
+    {
+        return array_values($this->validated('avatarBackgrounds') ?? []);
     }
 
     /**

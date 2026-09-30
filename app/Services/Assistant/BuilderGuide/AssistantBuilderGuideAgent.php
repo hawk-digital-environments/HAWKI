@@ -28,6 +28,7 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
      * @param list<string> $categoryIds
      * @param list<string> $modelIds
      * @param array<string, list<string>> $settingOptions Option values per settings field, e.g. `formality`.
+     * @param list<string> $avatarBackgrounds Ids of the avatar background presets; none leaves the avatar out.
      */
     public function __construct(
         AgentRequestContext $context,
@@ -36,6 +37,7 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
         private readonly array $categoryIds,
         private readonly array $modelIds,
         private readonly array $settingOptions,
+        private readonly array $avatarBackgrounds = [],
     ) {
         parent::__construct(context: $context, instructions: $instructions, messages: $messages, tools: []);
     }
@@ -51,8 +53,24 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
                 ->required();
         }
 
+        $avatar = [];
+        if ([] !== $this->avatarBackgrounds) {
+            $avatar['avatar'] = $schema->object([
+                'emoji' => $schema->string()
+                    ->description('A single emoji that symbolises the assistant.')
+                    ->required(),
+                'background' => $schema->string()
+                    ->enum($this->avatarBackgrounds)
+                    ->description('Id of the background preset that suits the emoji and the assistant.')
+                    ->required(),
+            ])
+                ->description('The avatar: an emoji on a colored background. null to keep the current value.')
+                ->nullable()
+                ->required();
+        }
+
         return [
-            'reply' => $schema->string()
+            'reply' =>$schema->string()
                 ->description('The message shown to the creator in the chat. Markdown is allowed.')
                 ->required(),
             'updates' => $schema->object([
@@ -103,6 +121,7 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
                     ->nullable()
                     ->required(),
                 ...$settings,
+                ...$avatar,
             ])->required(),
         ];
     }

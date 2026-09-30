@@ -16,6 +16,7 @@ import type { AssistantTag } from "$plugins/assistants/types/assistant/Assistant
 import { BUILDER_STEPS, type BuilderStep } from "./builderValidationRules.js";
 import type { useRouter } from "$lib/components/ui/routing/index.js";
 import { assistantOptionsStore } from "$plugins/assistants/stores/AssistantOptionsStore.svelte";
+import { BACKGROUNDS } from "$plugins/assistants/presets/backgrounds";
 
 /** Builder step each field the guide can fill lives on. */
 const FIELD_STEPS: Record<keyof typeof FIELD_LABELS, BuilderStep> = {
@@ -26,6 +27,7 @@ const FIELD_STEPS: Record<keyof typeof FIELD_LABELS, BuilderStep> = {
     category: "general",
     language: "general",
     tags: "general",
+    avatar: "general",
     model: "model",
     systemPrompt: "behaviour",
     greeting: "behaviour",
@@ -35,7 +37,7 @@ const FIELD_STEPS: Record<keyof typeof FIELD_LABELS, BuilderStep> = {
 };
 
 /** Builder label of every field the guide can fill. */
-const FIELD_LABELS: Record<BuilderGuideField | BuilderGuideSettingField | "handle" | "category" | "model" | "tags", string> = {
+const FIELD_LABELS: Record<BuilderGuideField | BuilderGuideSettingField | "handle" | "category" | "model" | "tags" | "avatar", string> = {
     handle: "assistants.builder.general.input_handle",
     category: "assistants.builder.general.input_category",
     model: "assistants.builder.model.input_model",
@@ -49,6 +51,7 @@ const FIELD_LABELS: Record<BuilderGuideField | BuilderGuideSettingField | "handl
     formality: "assistants.settings.formality.label",
     answerStyle: "assistants.settings.answer_style.label",
     tags: "assistants.builder.general.input_tags",
+    avatar: "assistants.builder.general.avatar_title",
 };
 
 /**
@@ -174,6 +177,16 @@ export function createBuilderGuideChat(
         if (tags !== undefined && !valuesEqual(tags.map((t) => t.id), builder.draft.tags.map((t) => t.id))) {
             builder.set("tags", tags);
             filled.push("tags");
+        }
+        const background = BACKGROUNDS.find((bg) => bg.id === updates.avatar?.background);
+        const avatar = {
+            ...builder.draft.avatar,
+            name: updates.avatar?.emoji || builder.draft.avatar.name,
+            iconCss: background?.value ?? builder.draft.avatar.iconCss,
+        };
+        if (avatar.name !== builder.draft.avatar.name || avatar.iconCss !== builder.draft.avatar.iconCss) {
+            builder.set("avatar", avatar);
+            filled.push("avatar");
         }
         if (updates.model !== undefined && updates.model !== builder.draft.model) {
             builder.setModel(updates.model);

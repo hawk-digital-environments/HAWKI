@@ -68,7 +68,7 @@ class AssistantBuilderGuideService
     ];
 
     /** Every draft field the guide may read and fill. */
-    public const array FIELDS = [...self::TEXT_FIELDS, 'handle', 'categoryId', 'model', 'language', 'formality', 'answerStyle', 'tags'];
+    public const array FIELDS = [...self::TEXT_FIELDS, 'handle', 'categoryId', 'model', 'language', 'formality', 'answerStyle', 'tags', 'avatar'];
 
     /** Fields the builder requires before the assistant can be released (see `builderValidationRules.ts`). */
     private const array REQUIRED_FIELDS = ['name', 'handle', 'description', 'categoryId', 'systemPrompt', 'model'];
@@ -85,9 +85,10 @@ class AssistantBuilderGuideService
     /**
      * @param array<string, mixed> $draft The current builder draft, keyed by {@see self::FIELDS}.
      * @param list<array{role: string, content: string}> $messages The guide conversation; the last one is the creator's.
-     * @return array{reply: string, updates: array<string, string|list<string>>}
+     * @param list<string> $avatarBackgrounds Ids of the avatar background presets the builder offers (they live in the frontend); none leaves the avatar to the creator.
+     * @return array{reply: string, updates: array<string, string|list<string>|array<string, string>>}
      */
-    public function respond(Assistant $assistant, array $draft, array $messages, string $locale): array
+    public function respond(Assistant $assistant, array $draft, array $messages, string $locale, array $avatarBackgrounds = []): array
     {
         $categories = AssistantCategory::query()->orderBy('text')->pluck('text', 'id')->all();
         $models = $this->modelRepository->findAll()
@@ -98,11 +99,12 @@ class AssistantBuilderGuideService
 
         $agent = $this->agentFactory->createAgent([
             'model' => $this->resolveModel($assistant),
-            'instructions' => $this->buildInstructions($assistant, $draft, $locale, $categories, $models, $settingOptions),
+            'instructions' => $this->buildInstructions($assistant, $draft, $locale, $categories, $models, $settingOptions, $avatarBackgrounds),
             'messages' => $this->toMessages($messages),
             'categoryIds' => array_map(strval(...), array_keys($categories)),
             'modelIds' => array_map(strval(...), array_keys($models)),
             'settingOptions' => $settingOptions,
+            'avatarBackgrounds' => $avatarBackgrounds,
         ]);
 
         $response = $agent->send();
@@ -115,7 +117,7 @@ class AssistantBuilderGuideService
 
         return [
             'reply' => trim((string)($structured['reply'] ?? '')),
-            'updates' => $this->normalizeUpdates($structured['updates'] ?? [], $assistant, $categories, $models, $settingOptions),
+            'updates' => $this->normalizeUpdates($structured['updates'] ?? [], $assistant, $categories, $models, $settingOptions, $avatarBackgrounds),
         ];
     }
 
@@ -185,8 +187,9 @@ class AssistantBuilderGuideService
      * @param array<int|string, string> $categories Category text by id.
      * @param array<string, string> $models Model label by model_id.
      * @param array<string, list<string>> $settingOptions Option values per settings field.
+     * @param list<string> $avatarBackgrounds
      */
-    private function buildInstructions(Assistant $assistant, array $draft, string $locale, array $categories, array $models, array $settingOptions): string
+    private function buildInstructions(Assistant $assistant, array $draft, string $locale, array $categories, array $models, array $settingOptions, array $avatarBackgrounds): string
     {
         $current = [];
         foreach (self::FIELDS as $field) {
@@ -209,6 +212,10 @@ class AssistantBuilderGuideService
             static fn (array $values): string => implode(', ', $values),
             $settingOptions,
         ));
+        $avatarRule = [] === $avatarBackgrounds
+            ? ''
+            : "\n- `avatar` is the emoji and background shown on the assistant's card and detail page. Pick one single emoji that clearly symbolises the assistant's purpose and one of these background ids that suits it: " . implode(', ', $avatarBackgrounds) . '. Set it together with the first version of the assistant, or when the creator asks for a new look.';
+        $avatarNote = [] === $avatarBackgrounds ? 'the avatar, ' : '';
 
         return <<<PROMPT
             You are the setup guide of HAWKI's assistant builder. HAWKI is the AI chat platform of a university; its members build custom AI assistants (tutors, writing helpers, research aids, admin helpers, ...) that they and others can chat with.
@@ -231,11 +238,11 @@ class AssistantBuilderGuideService
             - `model` is the model_id of one of the available models below. Unless the creator wants a specific one, pick a capable general-purpose model.
             - `language`, `formality` and `answerStyle` set the language the assistant answers in, its tone and its answer length; each takes one of the values listed below. Set them when the creator states a preference or it clearly follows from the audience.
             - `tags` are at most {$maxTags} short, general keywords describing the assistant. Always send the complete list, not only the additions.
-            - Write field contents in the language the assistant's users will speak; if unclear, use the creator's language.
+            - Write field contents in the language the assistant's users will speak; if unclear, use the creator's language.{$avatarRule}
 
             Required fields: {$required}. Still empty: {$missingText}.
 
-            Other builder settings you cannot change, but can explain: the avatar, the model parameters (temperature, top-p, max tokens), tools, knowledge files and the release (private, shared, organisation-wide, ...). Knowledge files can also be added right here in this chat, with the paperclip button or by dropping them on the chat; they become part of the assistant's knowledge.
+            Other builder settings you cannot change, but can explain: {$avatarNote}the model parameters (temperature, top-p, max tokens), tools, knowledge files and the release (private, shared, organisation-wide, ...). Knowledge files can also be added right here in this chat, with the paperclip button or by dropping them on the chat; they become part of the assistant's knowledge.
 
             Reply in the language the creator writes in. The creator's interface language is `{$locale}`.
 
@@ -317,9 +324,10 @@ class AssistantBuilderGuideService
      * @param array<int|string, string> $categories
      * @param array<string, string> $models
      * @param array<string, list<string>> $settingOptions
-     * @return array<string, string|list<string>>
+     * @param list<string> $avatarBackgrounds
+     * @return array<string, string|list<string>|array<string, string>>
      */
-    private function normalizeUpdates(mixed $updates, Assistant $assistant, array $categories, array $models, array $settingOptions): array
+    private function normalizeUpdates(mixed $updates, Assistant $assistant, array $categories, array $models, array $settingOptions, array $avatarBackgrounds): array
     {
         if (!\is_array($updates)) {
             return [];
@@ -353,6 +361,11 @@ class AssistantBuilderGuideService
             $out['tags'] = $this->normalizeTags($updates['tags']);
         }
 
+        $avatar = \is_array($updates['avatar'] ?? null) ? $this->normalizeAvatar($updates['avatar'], $avatarBackgrounds) : [];
+        if ([] !== $avatar) {
+            $out['avatar'] = $avatar;
+        }
+
         foreach (self::TEXT_FIELDS as $field) {
             $value = $updates[$field] ?? null;
 
@@ -374,6 +387,32 @@ class AssistantBuilderGuideService
             }
 
             $out[$field] = 'name' === $field ? mb_substr(trim($value), 0, 255) : trim($value);
+        }
+
+        return $out;
+    }
+
+    /**
+     * The proposed avatar's usable parts: an emoji that is one grapheme and not
+     * plain text, and a background among the offered presets. Either may be
+     * missing; the frontend keeps the current value for that part.
+     *
+     * @param array<mixed> $proposal
+     * @param list<string> $backgrounds
+     * @return array{emoji?: string, background?: string}
+     */
+    private function normalizeAvatar(array $proposal, array $backgrounds): array
+    {
+        $out = [];
+
+        $emoji = \is_string($proposal['emoji'] ?? null) ? trim($proposal['emoji']) : '';
+        if (1 === preg_match('/^\X$/u', $emoji) && 0 === preg_match('/^[\p{L}\p{N}\p{P}\p{Z}]/u', $emoji)) {
+            $out['emoji'] = $emoji;
+        }
+
+        $background = $proposal['background'] ?? null;
+        if (\is_string($background) && \in_array($background, $backgrounds, true)) {
+            $out['background'] = $background;
         }
 
         return $out;

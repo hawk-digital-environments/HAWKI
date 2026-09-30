@@ -263,6 +263,7 @@ class AssistantController extends Controller
             $request->draft(),
             $request->guideMessages(),
             app()->getLocale(),
+            $request->avatarBackgrounds(),
         );
 
         // Cast so a reply that fills nothing still sends `updates` as `{}`,

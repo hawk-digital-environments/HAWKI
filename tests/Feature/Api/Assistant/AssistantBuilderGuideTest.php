@@ -181,6 +181,38 @@ class AssistantBuilderGuideTest extends TestCase
         static::assertSame(1, AssistantTag::query()->count());
     }
 
+    public function testAvatarKeepsOnlyAnEmojiAndAnOfferedBackground(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = $this->createAssistant($owner);
+        $this->actingAsUser($owner);
+
+        $gateway = new CapturingTextGateway([
+            ['reply' => 'New look.', 'updates' => ['avatar' => ['emoji' => ' 📊 ', 'background' => 'midnight']]],
+            ['reply' => 'New look.', 'updates' => ['avatar' => ['emoji' => 'Chart', 'background' => 'neon-pink']]],
+        ]);
+        $this->mockProviderInfrastructure($gateway);
+
+        $request = [
+            'messages' => [['role' => 'user', 'content' => 'Suggest an avatar']],
+            'draft' => ['avatar' => ['emoji' => '🤖', 'background' => 'aurora']],
+            'avatarBackgrounds' => ['aurora', 'midnight'],
+        ];
+        $headers = ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'];
+        $url = "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide";
+
+        $this->postJson($url, $request, $headers)->assertOk()->assertExactJson(['data' => [
+            'reply' => 'New look.',
+            'updates' => ['avatar' => ['emoji' => '📊', 'background' => 'midnight']],
+        ]]);
+        // Plain text is no emoji, and an unknown background is no preset.
+        $this->postJson($url, $request, $headers)->assertOk()->assertExactJson(['data' => ['reply' => 'New look.', 'updates' => []]]);
+
+        $instructions = $gateway->capturedSteps[0]['instructions'];
+        static::assertStringContainsString('background ids that suits it: aurora, midnight.', $instructions);
+        static::assertStringContainsString('"emoji": "🤖"', $instructions);
+    }
+
     public function testAReplyWithoutUpdatesStillSendsAnObject(): void
     {
         $owner = User::factory()->create();

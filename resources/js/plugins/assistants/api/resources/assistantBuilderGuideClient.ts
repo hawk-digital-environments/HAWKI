@@ -2,6 +2,7 @@ import z from "zod";
 import { logApiError } from "$plugins/assistants/api/errors";
 import { useApp } from "$lib/app/hooks/useApp.svelte";
 import type { Assistant } from "$plugins/assistants/types/assistant";
+import { BACKGROUNDS } from "$plugins/assistants/presets/backgrounds";
 
 const ASSISTANTS = "assistants";
 
@@ -54,6 +55,12 @@ const BuilderGuideResponseSchema = z.object({
             answerStyle: z.string().optional(),
             /** Tag names: existing tags spelled as stored, new ones still to be created. */
             tags: z.array(z.string()).optional(),
+            /** Either part may be missing when the guide's pick wasn't usable. */
+            avatar: z.object({
+                emoji: z.string().optional(),
+                /** Id of one of the {@link BACKGROUNDS}. */
+                background: z.string().optional(),
+            }).optional(),
         }),
     }),
 });
@@ -78,16 +85,36 @@ export async function requestBuilderGuide(
         categoryId: draft.category?.id ?? null,
         model: draft.model || null,
         tags: draft.tags.map((tag) => tag.text),
+        avatar: {
+            emoji: draft.avatar.name,
+            background: BACKGROUNDS.find((bg) => bg.value === draft.avatar.iconCss)?.id ?? null,
+        },
     };
     try {
         const response = await useApp().restApi.postToResourceAction(
             ASSISTANTS,
             `${draft.id}/actions/builder-guide`,
-            { messages, draft: draftFields },
+            { messages, draft: draftFields, avatarBackgrounds: BACKGROUNDS.map((bg) => bg.id) },
             { schema: BuilderGuideResponseSchema, signal },
         );
         return response.data;
     } catch (err) {
         throw logApiError("requestBuilderGuide", err, { assistantId: draft.id });
     }
+}
+
+/**
+ * The guide's avatar pick alone: a one-off guide turn outside the chat, asked
+ * for nothing but a fitting emoji and background. Anything else it proposes
+ * is dropped.
+ */
+export async function requestAvatarSuggestion(
+    draft: Assistant,
+    signal?: AbortSignal,
+): Promise<BuilderGuideUpdates["avatar"]> {
+    const { updates } = await requestBuilderGuide(draft, [{
+        role: "user",
+        content: "Suggest a fresh avatar for this assistant: one fitting emoji and background, different from the current one. Change no other field.",
+    }], signal);
+    return updates.avatar;
 }
