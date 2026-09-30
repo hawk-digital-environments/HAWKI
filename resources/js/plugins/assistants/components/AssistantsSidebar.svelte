@@ -25,6 +25,9 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
+    import BuilderStepTick from '$plugins/assistants/modules/builder/components/BuilderStepTick.svelte';
+    import {isBuilderStepDone} from '$plugins/assistants/modules/builder/contexts/builderProgress.svelte.js';
+    import {BUILDER_STEPS, type BuilderStep} from '$plugins/assistants/modules/builder/contexts/builderValidationRules.js';
 
     const router = useRouter();
     const {__} = useTranslator();
@@ -67,6 +70,12 @@
 
     /** The drill-down level: the builder's sections, in builder tab order. */
     const builderSections = $derived(menuEntries.filter(entry => entry.level === 'builder'));
+
+    /** The builder step a section's route points at (`assistants.builder.<step>`), if any. */
+    function stepOf(route?: string): BuilderStep | undefined {
+        const step = route?.split('.').pop() as BuilderStep | undefined;
+        return step && BUILDER_STEPS.includes(step) ? step : undefined;
+    }
 
     /**
      * Which level the sidebar shows. While a builder route is active the main
@@ -114,17 +123,30 @@
                     onoutrostart={beginNavTransition}
                 >
                     {#each builderSections as section (section.id)}
+                        {@const step = stepOf(section.route)}
+                        {@const active = section.active ?? (section.route ? router.isRouteActive(section.route) : false)}
                         {#if section.component}
                             {@const Row = section.component}
                             <Row />
                         {:else}
+                            <!-- A done builder step swaps its icon for a tick;
+                                 one row either way, so only the glyph changes. -->
+                            {@const done = !!step && isBuilderStepDone(step)}
+                            {@const Icon = section.icon}
                             <SidebarItem
-                                icon={section.icon}
                                 label={section.label}
-                                active={section.active ?? (section.route ? router.isRouteActive(section.route) : false)}
+                                {active}
                                 disabled={section.disabled}
                                 onclick={() => openEntry(section)}
-                            />
+                            >
+                                {#snippet media()}
+                                    {#if done}
+                                        <BuilderStepTick/>
+                                    {:else if Icon}
+                                        <Icon size={18} strokeWidth={2} aria-hidden="true"/>
+                                    {/if}
+                                {/snippet}
+                            </SidebarItem>
                         {/if}
                     {/each}
                 </div>

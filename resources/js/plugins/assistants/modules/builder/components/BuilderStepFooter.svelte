@@ -75,7 +75,23 @@
     $effect(() => {
         builderProgress.reachable = builder.validator.firstIncompleteStep;
     });
-    $effect(() => () => { builderProgress.reachable = BUILDER_STEPS.length; });
+    // Per-step completeness and the furthest step opened feed the sidebar's
+    // step checklist.
+    $effect(() => {
+        const complete: Partial<Record<BuilderStep, boolean>> = {};
+        for (const item of builder.validator.completeness) {
+            if (item.step) complete[item.step] = (complete[item.step] ?? true) && item.ok;
+        }
+        builderProgress.complete = complete;
+    });
+    $effect(() => {
+        if (index > builderProgress.furthest) builderProgress.furthest = index;
+    });
+    $effect(() => () => {
+        builderProgress.reachable = BUILDER_STEPS.length;
+        builderProgress.complete = {};
+        builderProgress.furthest = 0;
+    });
 
     // Only completed steps are navigable: a jump past the first incomplete
     // step (browser history, anything bypassing Continue) is vetoed and that step's missing
