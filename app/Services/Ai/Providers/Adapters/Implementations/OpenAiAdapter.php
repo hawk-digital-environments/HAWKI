@@ -8,7 +8,6 @@ namespace App\Services\Ai\Providers\Adapters\Implementations;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
-use App\Services\Ai\LaravelAi\Drivers\OpenAiExtended\ExtendedOpenAiGateway;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
@@ -19,6 +18,7 @@ use Illuminate\Support\Collection;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\OpenAi\Concerns\CreatesOpenAiClient;
+use Laravel\Ai\Gateway\OpenAi\OpenAiGateway;
 use Laravel\Ai\Providers\OpenAiProvider;
 use Laravel\Ai\Providers\Provider as Driver;
 use Laravel\Ai\Providers\Tools\WebSearch;
@@ -26,10 +26,8 @@ use Laravel\Ai\Providers\Tools\WebSearch;
 /**
  * Provider adapter for OpenAI (api.openai.com).
  *
- * Uses {@see ExtendedOpenAiGateway} instead of the default gateway so that HAWKI's
- * custom gateway extensions are active (e.g. reasoning-token tracking). The gateway
- * is injected via the container builder closure so the event dispatcher is resolved
- * automatically.
+ * Uses the Laravel AI {@see OpenAiGateway}, injected via the container builder closure
+ * so the event dispatcher is resolved automatically.
  *
  * Exposes OpenAI's native web-search tool via {@see getNativeToolFactoryForCapability()},
  * causing HAWKI to delegate web-search requests to OpenAI's built-in implementation
@@ -41,8 +39,7 @@ class OpenAiAdapter extends AbstractProviderAdapter
     use CreatesOpenAiClient;
 
     /**
-     * Creates an OpenAI driver using {@see ExtendedOpenAiGateway} so HAWKI's custom
-     * gateway logic is applied to every request sent through this provider.
+     * Creates an OpenAI driver backed by {@see OpenAiGateway}.
      */
     public function createDriver(AiProvider $provider, DriverFactory $factory): Driver
     {
@@ -53,7 +50,7 @@ class OpenAiAdapter extends AbstractProviderAdapter
             ],
             builder: function (Dispatcher $dispatcher, array $config) {
                 return new OpenAiProvider(
-                    gateway: new ExtendedOpenAiGateway($dispatcher),
+                    gateway: new OpenAiGateway($dispatcher),
                     config: $config,
                     events: $dispatcher
                 );

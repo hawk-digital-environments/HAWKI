@@ -50,8 +50,8 @@
     /** Past this many steps the stagger stops growing, so a long chain still lands promptly. */
     const STAGGER_CAP = 8;
 
-    /** A line that holds nothing but bold text — how models title a thinking step. */
-    const STEP_HEADING = /^[ \t]*\*\*([^*\n]+)\*\*[ \t]*$/gm;
+    /** Bold text opening a reasoning block — how models title a thinking step. */
+    const STEP_HEADING = /^\s*\*\*([^*\n]+)\*\*/;
 
     /** One row of the timeline: a titled block of thinking text, or one web search. */
     type Step =
@@ -165,26 +165,13 @@
     }
 
     /**
-     * Splits one block of thinking text into its titled sections. Models stream
-     * reasoning as "**Title**\n\nBody", often several sections per part, so each
-     * section becomes its own step; text before the first title keeps a `null`
-     * label and renders without one.
+     * Each reasoning block (one `reasoning_id`) is one step. A leading
+     * "**Title**" becomes its label; blocks without one render unlabelled.
      */
-    function splitSections(text: string): {label: string | null; body: string}[] {
-        const sections: {label: string | null; body: string}[] = [];
-        let label: string | null = null;
-        let start = 0;
-
-        for (const match of text.matchAll(STEP_HEADING)) {
-            const body = text.slice(start, match.index).trim();
-            if (label !== null || body) sections.push({label, body});
-            label = match[1].trim();
-            start = match.index + match[0].length;
-        }
-
-        const rest = text.slice(start).trim();
-        if (label !== null || rest) sections.push({label, body: rest});
-        return sections;
+    function splitHeading(text: string): {label: string | null; body: string} {
+        const match = STEP_HEADING.exec(text);
+        if (!match) return {label: null, body: text.trim()};
+        return {label: match[1].trim(), body: text.slice(match[0].length).trim()};
     }
 
     function actionLabel(action: string): string {
@@ -229,9 +216,7 @@
                 });
                 return;
             }
-            splitSections(part.text).forEach((section, sectionIndex) => {
-                list.push({kind: 'text', key: `t${index}-${sectionIndex}`, ...section});
-            });
+            list.push({kind: 'text', key: `t${index}`, ...splitHeading(part.text)});
         });
         return list;
     });
