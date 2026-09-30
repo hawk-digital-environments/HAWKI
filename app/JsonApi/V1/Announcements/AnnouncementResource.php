@@ -29,6 +29,7 @@ class AnnouncementResource extends JsonApiResource
         return [
             'title' => $this->resource->title,
             'type' => $this->resource->type,
+            'is_global' => $this->resource->isGlobal,
             'is_forced' => $this->resource->isForced,
             'anchor' => $this->resource->anchor,
             'starts_at' => $this->resource->startsAt?->toJSON(),

@@ -28,6 +28,7 @@ class AnnouncementSchema extends Schema
             ID::make(),
             Attribute::make('title'),
             Attribute::make('type'),
+            Attribute::make('is_global'),
             Attribute::make('is_forced'),
             Attribute::make('anchor'),
             Attribute::make('starts_at'),

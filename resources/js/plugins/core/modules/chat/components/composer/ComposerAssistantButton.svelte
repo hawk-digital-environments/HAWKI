@@ -21,6 +21,7 @@
 
     import BorderBeam from '$lib/components/ui/border-beam/BorderBeam.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
+    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ComponentProps} from 'svelte';
     import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
@@ -30,6 +31,7 @@
     const composerContext = useComposerContext();
     const {__} = useTranslator();
     const aiHandleStore = useStore('ai-handle');
+    const reducedMotion = useReducedMotion();
 
     let showsBurstOfInterest = $state(false);
 
@@ -63,6 +65,11 @@
     // This should trigger the border beam to do a little "burst of interest" animation, drawing the user's attention to the assistant button, without being too distracting.
     // Between every burst, there should be a random delay of between 30 and 60 seconds.
     $effect(() => {
+        if (reducedMotion.current) {
+            showsBurstOfInterest = false;
+            return;
+        }
+
         let timeout: NodeJS.Timeout;
 
         const queueNextBurstOfInterest = () => {
