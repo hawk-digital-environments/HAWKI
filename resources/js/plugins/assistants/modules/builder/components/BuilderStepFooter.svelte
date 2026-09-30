@@ -97,19 +97,21 @@
 
 <footer class="step-footer">
   <div class="bar">
-    <div class="progress">
-        <StepDots current={index} total={BUILDER_STEPS.length} label={stepLabel}/>
+    <!-- Pager layout: equal side columns keep the step pills dead center while
+         the Continue label changes width. -->
+    <div class="back">
+        {#if index > 0}
+            <Button class="press" variant="stroke" iconLeft={ArrowLeft01Icon}
+                    aria-label={__('assistants.builder.steps.back')} title={__('assistants.builder.steps.back')}
+                    onclick={() => goTo(BUILDER_STEPS[index - 1])}/>
+        {/if}
     </div>
 
+    <StepDots current={index} total={BUILDER_STEPS.length} label={stepLabel}/>
+
     <div class="actions">
-        {#if index > 0}
-            <Button class="icon-start" variant="ghost" iconLeft={ArrowLeft01Icon}
-                    onclick={() => goTo(BUILDER_STEPS[index - 1])}>
-                {__('assistants.builder.steps.back')}
-            </Button>
-        {/if}
         {#if !isLast}
-            <Button class="icon-end brand" variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
+            <Button class="icon-end brand press" variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
                 <!-- The slot eases to the new label's width; the keyed label fades in. -->
                 <span class="continue-label" style:width={continueWidth === undefined ? undefined : `${continueWidth}px`}>
                     {#key continueText}
@@ -118,7 +120,7 @@
                 </span>
             </Button>
         {:else if canRelease}
-            <Button class="icon-start brand" variant="accent" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
+            <Button class="icon-start brand press" variant="accent" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
                 {releaseText}
             </Button>
         {/if}
@@ -160,32 +162,37 @@
         -webkit-mask-image: var(--footer-fade);
     }
 
-    /* Aligned with the section page's content column (.page-content). */
+    /* Aligned with the section page's content column (.page-content). No
+       surface of its own: the blurred fade behind it already sets it apart. */
     .bar {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
         align-items: center;
         gap: var(--space-4);
         max-width: calc(48rem - 2 * var(--space-8));
         margin: 0 auto;
-        padding: var(--space-1_5) var(--space-1_5) var(--space-1_5) var(--space-5);
-        border-radius: var(--corner-full);
-        background: var(--color-surface-light);
         pointer-events: auto;
     }
 
-    .progress {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        min-width: 0;
+    /* Round Back button, same height as Continue. */
+    .back :global(.btn) {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: var(--corner-full);
     }
 
     .actions {
         display: flex;
-        flex-shrink: 0;
+        justify-content: flex-end;
         align-items: center;
-        gap: var(--space-1);
-        margin-left: auto;
+    }
+
+    /* A short press-down gives the step buttons a tactile click. */
+    .bar :global(.btn.press) {
+        transition: filter var(--duration-fast), background-color var(--duration-fast), scale var(--duration-extra-fast) var(--easing-out);
+    }
+    .bar :global(.btn.press:active) {
+        scale: 0.96;
     }
 
     /* Optical balance: tighter icon gap, and less padding on the icon side
@@ -213,7 +220,6 @@
            tiles into the 1px border and shows a seam at the edges. */
         background-origin: border-box;
         color: var(--color-on-accent-fill);
-        transition: filter var(--duration-fast);
     }
     .actions :global(.btn.brand:hover) {
         filter: brightness(0.92) saturate(1.08);
@@ -234,6 +240,7 @@
         from { opacity: 0; }
     }
     @media (prefers-reduced-motion: reduce) {
+        .bar :global(.btn.press:active) { scale: none; }
         .continue-label { transition: none; }
         .continue-text { animation: none; }
     }
