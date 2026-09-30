@@ -31,7 +31,7 @@ export interface ChatModeInterface<TData = any, TState = any> {
     exitAfterSend(context: ComposerContext, state: TState): boolean;
 
     /** Whether a second `enter()` call is allowed while this mode is active.
-     * Used by `ChatInThreadMode` to allow nested edit/regen inside a thread. */
+     * Used by `ChatInThreadMode` to allow a nested edit mode inside a thread. */
     allowsNestedModes(): boolean;
 
     /** Additional send-readiness check specific to this mode (e.g. edit mode

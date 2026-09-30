@@ -45,6 +45,7 @@ class AiModelSchema extends Schema
             Str::make('model_id'),
             Str::make('model_type'),
             Str::make('label'),
+            Str::make('documentation_url')->readOnly(),
             ArrayList::make('input')
                 ->serializeUsing(fn(AiModelIoMethods $methods) => $methods->toArray()),
             ArrayList::make('output')
