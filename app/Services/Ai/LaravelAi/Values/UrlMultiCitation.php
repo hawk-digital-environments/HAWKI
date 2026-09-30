@@ -76,7 +76,6 @@ class UrlMultiCitation extends UrlCitation
 
         foreach ($citations as $citation) {
             if (!$citation instanceof UrlCitation) {
-                $merged[] = $citation;
                 continue;
             }
 
