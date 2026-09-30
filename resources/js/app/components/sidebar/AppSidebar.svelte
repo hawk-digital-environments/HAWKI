@@ -12,24 +12,54 @@
     import ModuleSelector from '$lib/app/components/sidebar/ModuleSelector.svelte';
     import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
     import MobileNavCollapse from '$lib/app/components/sidebar/MobileNavCollapse.svelte';
+    import SearchDialog from '$lib/app/components/search/SearchDialog.svelte';
+    import AnnouncementsDialog from '$plugins/core/components/AnnouncementsDialog.svelte';
+    import ModelsDialog from '$plugins/core/components/ModelsDialog.svelte';
+    import SettingsDialog, {type SettingsSection} from '$lib/app/components/settings/SettingsDialog.svelte';
+    import AccessibilityIcon from '$lib/components/ui/icons/iconset/AccessibilityIcon.svelte';
+    import ExternalLinkIcon from '$lib/components/ui/icons/iconset/ExternalLinkIcon.svelte';
+    import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
+    import {onMount} from 'svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import {useConfig} from '$lib/app/hooks/useConfig.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
+    import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 
     const app = useApp();
     const router = useRouter();
     const sidebar = useSidebar();
     const chatStore = useStore('chat');
+    const config = useConfig();
     const {__} = useTranslator();
+    // Only rendered when an operator configured one (ACCESSIBILITY_STATEMENT_URL).
+    const accessibilityStatementUrl = $derived(config.accessibility?.statementUrl ?? null);
     const activeModule = $derived.by(() => app.modules.all.find(module =>
         router.isRouteActive(getModuleRouteGroupName(module.plugin.name, module.name))
     ) ?? null);
-    const ModuleSidebar = $derived(activeModule?.sidebar?.(app.localization.locale) ?? null);
+
+    // On routes that belong to no module (e.g. the announcements page) the
+    // module sidebar and the module selector stick to the last active module
+    // instead of vanishing, falling back to the first module for direct page loads.
+    let lastActiveModule = $state<HawkiModuleWithPlugin | null>(null);
+    $effect(() => {
+        if (activeModule) {
+            lastActiveModule = activeModule;
+        }
+    });
+    const visibleModules = $derived(app.modules.all.filter(module => module.visible?.(app) ?? true));
+    const sidebarModule = $derived([activeModule, lastActiveModule].find(module => module && visibleModules.includes(module)) ?? visibleModules[0] ?? null);
+    const ModuleSidebar = $derived(sidebarModule?.sidebar?.(app.localization.locale) ?? null);
 
     const chatPath = router.getPath('chat.index');
+    let searchOpen = $state(false);
+    let settingsOpen = $state(false);
+    let announcementsOpen = $state(false);
+    let modelsOpen = $state(false);
+    let settingsSection = $state<SettingsSection | null>(null);
 
     function startNewChat(event: MouseEvent) {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
@@ -38,25 +68,51 @@
         chatStore.requestNewChat();
         void router.goToRoute('chat.index');
     }
+
+    function openSettings(section: SettingsSection | null = null) {
+        settingsSection = section;
+        settingsOpen = true;
+    }
+
+    onMount(() => app.events.sync.on('settingsRequested', section => openSettings(section)));
+    onMount(() => app.events.sync.on('announcementsRequested', () => announcementsOpen = true));
+    onMount(() => app.events.sync.on('modelsRequested', () => modelsOpen = true));
 </script>
 
 <Sidebar label={__('ui.navigation.label')}>
     <MobileNavCollapse />
-    <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
+    <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat} onSearch={() => searchOpen = true}>
         <HawkLogo label={__('ui.navigation.newChat')} />
     </SidebarHeader>
-    <div class="module-selector">
-        <ModuleSelector />
-    </div>
+    <nav class="module-selector" aria-label={__('ui.navigation.mainLabel')}>
+        <ModuleSelector module={sidebarModule} />
+    </nav>
     <div class="module-sidebar">
         {#if ModuleSidebar}
             <ModuleSidebar />
         {/if}
     </div>
     <SidebarFooter>
-        <ProfileButton/>
+        {#if accessibilityStatementUrl}
+            {#snippet externalHint()}
+                <ExternalLinkIcon size={14} strokeWidth={2} />
+            {/snippet}
+            <SidebarItem
+                href={accessibilityStatementUrl}
+                target="_blank"
+                icon={AccessibilityIcon}
+                label={__('ui.navigation.accessibilityStatement')}
+                trailing={externalHint}
+            />
+        {/if}
+        <ProfileButton onOpenSettings={() => openSettings()}/>
     </SidebarFooter>
 </Sidebar>
+
+<SearchDialog bind:open={searchOpen} />
+<SettingsDialog bind:open={settingsOpen} section={settingsSection}/>
+<AnnouncementsDialog bind:open={announcementsOpen}/>
+<ModelsDialog bind:open={modelsOpen}/>
 
 <style>
     .module-sidebar {

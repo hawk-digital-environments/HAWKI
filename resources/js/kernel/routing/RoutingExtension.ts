@@ -1,8 +1,13 @@
-import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import {createRouterFromRegistrar, type RouteMiddleware, type Router, RouteRegistrar, type RouterHandle} from '$lib/components/ui/routing/index.js';
-import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
-import type {RestApi} from '$lib/kernel/api/RestApi.js';
-import {authMiddleware} from '$lib/kernel/routing/middlewares/AuthMiddleware.js';
+import type { HawkiApp, HawkiAppExtension, UnfinishedHawkiApp } from '$lib/kernel/HawkiApp.js';
+import {
+    createRouterFromRegistrar,
+    type Router,
+    RouteRegistrar,
+    type RouterHandle
+} from '$lib/components/ui/routing/index.js';
+import type { Bootstrapper } from '$lib/kernel/Bootstrapper.js';
+import type { RestApi } from '$lib/kernel/api/RestApi.js';
+import { authMetaGuards } from '$lib/kernel/routing/middlewares/AuthMiddleware.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
@@ -19,8 +24,10 @@ declare module '$lib/components/ui/routing/extendableTypes.js' {
         restApi: RestApi;
     }
 
-    interface GlobalMiddlewares {
-        auth: RouteMiddleware;
+    interface RouteMetaExtensions {
+        admin?: boolean;
+        access?: 'public' | 'server-session' | 'crypto-ready';
+        chrome?: 'none' | 'app';
     }
 }
 
@@ -56,7 +63,7 @@ declare module '$lib/components/ui/routing/extendableTypes.js' {
  * and renders it.
  */
 export class RoutingExtension implements HawkiAppExtension {
-    public readonly registrar = new RouteRegistrar();
+    public readonly registrar = new RouteRegistrar({ metaGuards: authMetaGuards });
     private _router: Router | null = null;
 
     /**
@@ -82,8 +89,6 @@ export class RoutingExtension implements HawkiAppExtension {
      * in the extension list of `resources/js/app.ts`.
      */
     public async init(app: UnfinishedHawkiApp) {
-        this.registrar.addGlobalMiddleware('auth', authMiddleware);
-
         await app.getOrFail('plugins').bootstrapper.runRoutes(this.registrar);
 
         for (const module of app.modules!.all) {
@@ -95,6 +100,11 @@ export class RoutingExtension implements HawkiAppExtension {
 
     public ready(app: HawkiApp, bootstrapper: Bootstrapper): void | Promise<void> {
         bootstrapper.onLateStage(() => {
+            this.registrar.lazyRoute(
+                '/*unmatched',
+                async () => import('$lib/components/ui/routing/RouteNotFound.svelte'),
+                { name: 'not-found', catchAll: true, meta: { title: 'ui.routing.notFoundTitle' } }
+            );
             // @todo we could read the base path from the config here
             this._router = createRouterFromRegistrar('app', this.registrar, {
                 // @todo this is a temporary construct, we should read the base path from the config instead of hardcoding it here
@@ -105,7 +115,7 @@ export class RoutingExtension implements HawkiAppExtension {
                 // block above adds to `RouteContextExtensions`, so every
                 // middleware, route action and `loadData` resolved by this
                 // router sees them on its context.
-                context: {app, restApi: app.restApi}
+                context: { app, restApi: app.restApi }
             });
         });
     }

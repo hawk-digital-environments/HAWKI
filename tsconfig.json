@@ -37,6 +37,7 @@
         "resources/js/**/*.svelte"
     ],
     "exclude": [
+        "resources/js/kernel/pwa/service-worker.ts",
         "node_modules",
         "vendor"
     ]

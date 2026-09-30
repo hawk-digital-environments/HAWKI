@@ -30,7 +30,7 @@ Providers that need extra capabilities implement one or more companion interface
 
 ## ChainedAuthService
 
-`ChainedAuthService` is the concrete implementation that the container registers as `AuthServiceInterface`. It holds an ordered list of provider instances and calls `authenticate()` on each in turn. When a provider throws `AuthFailedException`, the chain moves on to the next. If all providers fail, a final `AuthFailedException` is raised.
+`ChainedAuthService` is the concrete implementation that the container registers as `AuthServiceInterface`. It holds an ordered list of provider instances. Credential requests are sent only to credential providers; redirect requests are sent only to redirect providers. When a matching provider throws `AuthFailedException`, the chain moves on to the next one.
 
 The chain is assembled in `AuthServiceProvider::register()`. The active provider is driven by a single config key:
 
@@ -39,17 +39,17 @@ The chain is assembled in `AuthServiceProvider::register()`. The active provider
 AUTHENTICATION_METHOD=LDAP   # or: Shibboleth, OIDC, or a fully qualified class name
 ```
 
-Legacy string values (`LDAP`, `Shibboleth`, `OIDC`) are mapped to their service classes automatically. You can also set `AUTHENTICATION_METHOD` to any fully-qualified class name that implements `AuthServiceInterface`.
+Legacy string values (`LDAP`, `Shibboleth`, `OIDC`) are mapped to their service classes automatically. You can also set `AUTHENTICATION_METHOD` to any fully-qualified class name that implements `AuthServiceInterface`. `LocalAuthService` is always placed first, so accounts created in Administration can sign in without changing the external provider configuration.
 
 When `config/test_users.php` has test users enabled (`TEST_USERS_ACTIVE=true`) and the main service supports credentials, `ChainedAuthService` is automatically inserted to try the test service first, falling back to the configured real provider.
 
 ```
-chain order (test mode): TestAuthService → LdapService
-chain order (normal):    LdapService (or whichever is configured)
+chain order (test mode): LocalAuthService → TestAuthService → LdapService
+chain order (normal):    LocalAuthService → configured provider
 ```
 
 :::caution
-Do not use the old `AUTHENTICATION_METHOD=SomeClass` approach to configure multiple simultaneous providers. The chaining is only automatic for the test stub. Configuring custom chains requires a `AuthServiceProvider` override.
+`AUTHENTICATION_METHOD` still selects one external provider. Local accounts are the only automatically added production provider. Configuring any further provider chain requires an `AuthServiceProvider` override.
 :::
 
 ## AuthenticatedUserInfo

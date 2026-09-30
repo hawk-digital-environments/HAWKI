@@ -35,6 +35,7 @@
     import {fly} from 'svelte/transition';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
+    import {motionDuration, useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the detail panel is visible. False shows `children`; true shows `details`. */
@@ -43,31 +44,42 @@
         children: Snippet;
         /** Detail panel revealed when `open` is true, e.g. per-item configuration. */
         details: Snippet;
+        /**
+         * Tallest the viewport may get, in px. When the container caps the
+         * height, pass the available space so the height animation stays
+         * within what's visible; taller views scroll inside the viewport.
+         */
+        maxHeight?: number;
+        /** The viewport element, which is also the scroll container. Supports bind:ref. */
+        ref?: HTMLDivElement | null;
     }
 
-    const {
+    let {
         open,
         children,
         details,
+        maxHeight = Infinity,
+        ref = $bindable(null),
         ...restProps
     }: Props = $props();
 
     let defaultHeight = $state(0);
     let detailHeight = $state(0);
+    const reducedMotion = useReducedMotion();
 
     // Spring-animate the popover height so switching between the list and detail
     // views (which differ in height) eases instead of snapping.
     const viewportHeight = new Spring(0, {stiffness: 0.15, damping: 0.85});
 
     // Each view reports its natural height; the spring follows the active one.
-    const targetHeight = $derived(open ? detailHeight : defaultHeight);
+    const targetHeight = $derived(Math.min(open ? detailHeight : defaultHeight, maxHeight));
 
     // Snap to the natural height on first measurement so the popover doesn't
     // visibly grow from 0 on open; only spring on later list<->detail switches.
     let initialized = $state(false);
     $effect(() => {
         if (targetHeight <= 0) return;
-        if (!initialized) {
+        if (!initialized || reducedMotion.current) {
             viewportHeight.set(targetHeight, {instant: true});
             initialized = true;
         } else {
@@ -82,6 +94,7 @@
   on the list<->detail switch, not when the menu itself opens or closes.
 -->
 <div
+    bind:this={ref}
     style:height={`${viewportHeight.current}px`}
     {...mergeProps(
         {class: 'viewport'},
@@ -90,15 +103,15 @@
     {#if open}
         <div class="view"
              bind:clientHeight={detailHeight}
-             in:fly={{x: 16, duration: 150}}
-             out:fly={{x: 16, duration: 150}}>
+             in:fly={{x: 16, duration: motionDuration(150)}}
+             out:fly={{x: 16, duration: motionDuration(150)}}>
             {@render details?.()}
         </div>
     {:else}
         <div class="view"
              bind:clientHeight={defaultHeight}
-             in:fly={{x: -16, duration: 150}}
-             out:fly={{x: -16, duration: 150}}>
+             in:fly={{x: -16, duration: motionDuration(150)}}
+             out:fly={{x: -16, duration: motionDuration(150)}}>
             {@render children?.()}
         </div>
     {/if}

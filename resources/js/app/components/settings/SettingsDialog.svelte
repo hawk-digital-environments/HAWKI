@@ -5,8 +5,14 @@
   in a sidebar beside the page; below `md` it is a bottom sheet with the
   sections as a segmented control above the page.
 -->
+<script module lang="ts">
+    /** A settings section the dialog can be opened on. */
+    export type {SettingsSection} from '$plugins/core/modules/settings/SettingsModule.js';
+</script>
+
 <script lang="ts">
     import type {Attachment} from 'svelte/attachments';
+    import type {SettingsSection} from '$plugins/core/modules/settings/SettingsModule.js';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
@@ -14,6 +20,7 @@
     import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
     import RouterView from '$lib/components/ui/routing/RouterView.svelte';
     import {createRouter} from '$lib/components/ui/routing/index.js';
+    import {untrack} from 'svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
@@ -27,9 +34,17 @@
     interface Props {
         open?: boolean;
         onOpenChange?: (open: boolean) => void;
+        /**
+         * Section to show when the dialog opens (e.g. from the search
+         * palette). Only read at the moment `open` flips to true; the user
+         * can navigate freely afterwards. Defaults to the general page.
+         */
+        section?: SettingsSection | null;
     }
 
-    let {open = $bindable(false), onOpenChange}: Props = $props();
+    let {open = $bindable(false), onOpenChange, section = null}: Props = $props();
+    const uid = $props.id();
+    const titleId = `${uid}-title`;
     const {__} = useTranslator();
 
     const breakpoint = useBreakpoint();
@@ -88,6 +103,16 @@
         if (event.target === event.currentTarget) resizing = false;
     }
 
+    // Point the hash router at the requested section before the RouterView
+    // mounts; the strategy writes the hash, and the view resolves from it.
+    // `untrack` keeps the router's own state out of this effect's dependencies
+    // so only `open`/`section` re-run it.
+    $effect(() => {
+        if (open && section) {
+            untrack(() => void settingsRouter.handle.goTo(`/${section}`, {replace: true}));
+        }
+    });
+
     function handleOpenChange(isOpen: boolean): void {
         open = isOpen;
         onOpenChange?.(isOpen);
@@ -95,9 +120,13 @@
 </script>
 
 {#snippet panel()}
-    <div
+    <!-- Not a <main>: the page already has one; a labelled region is enough
+         inside the dialog. The sheet has no addressable title, so the region
+         is only labelled in the dialog layout. -->
+    <section
         class="settings-panel"
         class:resizing
+        aria-labelledby={compact ? undefined : titleId}
         style:--settings-content-height={contentHeight === null ? undefined : `${contentHeight}px`}
         ontransitionend={endResize}
         ontransitioncancel={endResize}
@@ -105,7 +134,7 @@
         <div {@attach measureContent}>
             <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
         </div>
-    </div>
+    </section>
 {/snippet}
 
 {#if compact}
@@ -121,6 +150,8 @@
         onOpenChange={handleOpenChange}
         contentProps={{class: 'settings-dialog-content'}}
         headerProps={{class: 'settings-dialog-header'}}
+        bodyProps={{class: 'settings-dialog-body'}}
+        titleProps={{id: titleId}}
     >
         {#snippet title()}
             <span class="settings-title">{__('ui.settings.title')}</span>
@@ -128,24 +159,28 @@
 
         <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
             <MenuList>
-                {#each navItems as item (item.path)}
-                    {@const Icon = item.icon}
-                    {@const active = activePath === item.path}
-                    <MenuListItem {active}>
-                        {#snippet children({attach})}
-                            <button
-                                type="button"
-                                {@attach attach}
-                                class:active
-                                aria-current={active ? 'page' : undefined}
-                                onclick={() => goTo(item.path)}
-                            >
-                                <Icon size={18} strokeWidth={2} aria-hidden="true"/>
-                                <span>{item.label}</span>
-                            </button>
-                        {/snippet}
-                    </MenuListItem>
-                {/each}
+                <ul class="settings-nav-list">
+                    {#each navItems as item (item.path)}
+                        {@const Icon = item.icon}
+                        {@const active = activePath === item.path}
+                        <li>
+                            <MenuListItem {active}>
+                                {#snippet children({attach})}
+                                    <button
+                                        type="button"
+                                        {@attach attach}
+                                        class:active
+                                        aria-current={active ? 'page' : undefined}
+                                        onclick={() => goTo(item.path)}
+                                    >
+                                        <Icon size={18} strokeWidth={2} aria-hidden="true"/>
+                                        <span>{item.label}</span>
+                                    </button>
+                                {/snippet}
+                            </MenuListItem>
+                        </li>
+                    {/each}
+                </ul>
             </MenuList>
         </nav>
 
@@ -155,8 +190,9 @@
 
 <style>
     /* One grid on a single surface: the nav on the left, the page scrolling on
-       its own on the right, both below a header row holding the title and the
-       dialog's close button (a 24px box inset by --space-4). Every edge — and
+       its own on the right (the dialog body is the grid), both below a header
+       row holding the title and the dialog's close button (a 24px box inset
+       by --space-4). Every edge — and
        the gap under the header — shares that one inset, and the corner radius
        is the frames' radius plus it, so the 8px fields inside sit concentric
        with it.
@@ -172,8 +208,6 @@
         width: min(48rem, calc(100vw - 2 * var(--space-4)));
         max-width: none;
         max-height: calc(100dvh - var(--settings-top) - var(--space-4));
-        grid-template-columns: 11rem minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr);
         overflow: hidden;
         padding: 0;
         gap: 0;
@@ -183,8 +217,14 @@
     /* A 24px title line under the shared inset centres the title on the close
        button; on the left it lines up with the nav icons below it. */
     :global(.settings-dialog-header.settings-dialog-header) {
-        grid-column: 1 / -1;
         padding: var(--space-4) var(--space-12) 0 calc(var(--space-4) + var(--space-2_5));
+    }
+
+    /* The panel scrolls on its own, so the body itself must not. */
+    :global(.settings-dialog-body.settings-dialog-body) {
+        display: grid;
+        grid-template-columns: 11rem minmax(0, 1fr);
+        overflow: hidden;
     }
 
     .settings-title {
@@ -199,8 +239,18 @@
         padding: var(--space-4) 0 var(--space-4) var(--space-4);
     }
 
+    .settings-nav-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
     .settings-nav button {
         position: relative;
+        width: 100%;
         /* Above the sliding highlight behind the nav rows. */
         --settings-nav-button-z: 1;
         z-index: var(--settings-nav-button-z);

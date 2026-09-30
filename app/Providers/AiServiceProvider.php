@@ -42,6 +42,7 @@ use App\Services\Ai\Providers\Adapters\Implementations\GwdgAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\MistralAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\OllamaAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\OpenAiAdapter;
+use App\Services\Ai\Providers\Adapters\Implementations\LiteLlmAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\OpenAiLikeAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\OpenRouterAdapter;
 use App\Services\Ai\Providers\Adapters\ProviderAdapterRegistry;
@@ -188,11 +189,13 @@ class AiServiceProvider extends ServiceProvider
             fn(ProviderAdapterRegistry $registry) => $registry
                 ->declare(WellKnownAdapterKeys::ANTHROPIC, AnthropicAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPENAI, OpenAiAdapter::class)
+                ->declare(WellKnownAdapterKeys::OPENAI_LIKE, OpenAiLikeAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPENAI_AZURE, AzureOpenAiAdapter::class)
                 ->declare(WellKnownAdapterKeys::OLLAMA, OllamaAdapter::class)
                 ->declare(WellKnownAdapterKeys::GEMINI, GeminiAdapter::class)
                 ->declare(WellKnownAdapterKeys::MISTRAL, MistralAdapter::class)
                 ->declare(WellKnownAdapterKeys::HUGGINGFACE, OpenAiLikeAdapter::class)
+                ->declare(WellKnownAdapterKeys::LITELLM, LiteLlmAdapter::class)
                 ->declare(WellKnownAdapterKeys::DEEPSEEK, DeepseekAdapter::class)
                 ->declare(WellKnownAdapterKeys::AWS_BEDROCK, AwsBedrockAdapter::class)
                 ->declare(WellKnownAdapterKeys::GWDG, GwdgAdapter::class)
@@ -253,13 +256,7 @@ class AiServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             self::MCP_CLIENT_LIST,
-            /**
-             * @return LazySingletonList<McpServer, HawkiMcpClient>
-             */
-            fn() => new LazySingletonList(
-                fn(McpServer $server) => 'mcp_client_' . $server->id,
-                fn(McpServer $server) => $this->app->get(McpClientFactory::class)->createForServer($server)
-            )
+            fn() => new \App\Services\Ai\Tools\Mcp\McpClientRegistry($this->app->get(McpClientFactory::class))
         );
 
         $this->app->singleton(

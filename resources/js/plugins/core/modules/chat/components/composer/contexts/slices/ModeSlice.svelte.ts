@@ -5,7 +5,6 @@ import {ChatDefaultMode} from '$plugins/core/modules/chat/components/composer/co
 import type {ChatModeInterface} from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/ChatModeInterface.js';
 import {ChatEditMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
 import {ChatInThreadMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
-import type {ChatRegenMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
@@ -25,11 +24,6 @@ export interface ComposerModeRegistry {
         mode: ChatInThreadMode;
         state: ReturnType<ChatInThreadMode['enter']>;
         data: string;
-    };
-    regen: {
-        mode: ChatRegenMode;
-        state: ReturnType<ChatRegenMode['enter']>;
-        data: ChatMessage;
     };
 }
 
@@ -79,7 +73,6 @@ export class ModeSlice implements CheckpointingInterface<ModeSliceCheckpoint> {
     public isDefault = $derived.by(() => this.is === 'default');
     public isEdit = $derived.by(() => this.is === 'edit');
     public isThread = $derived.by(() => this.is === 'thread');
-    public isRegen = $derived.by(() => this.is === 'regen');
 
     /** Whether the current mode should exit automatically after a message is sent. */
     public exitAfterSend = $derived.by(() => this._instance.exitAfterSend(this.contextResolver(), this._state));

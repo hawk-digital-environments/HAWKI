@@ -1,7 +1,7 @@
 /**
  * The `core` plugin — HAWKI's first-party feature bundle.
  *
- * This is the only plugin shipped with HAWKI by default and it wires together the
+ * This built-in plugin wires together the
  * foundational, always-on features of the frontend:
  *   - **Stores**: registers the core reactive stores ({@link KeychainStore},
  *     {@link AiHandleStore}, {@link AiModelStore}, {@link AiToolStore},
@@ -22,6 +22,7 @@ import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
 import {AiHandleStore} from '$plugins/core/stores/AiHandleStore.svelte.js';
+import {AnnouncementStore} from '$plugins/core/stores/AnnouncementStore.svelte.js';
 import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
 import {SystemPromptStore} from '$plugins/core/stores/SystemPromptStore.svelte.js';
@@ -33,12 +34,20 @@ import {ModelFavoritesStore} from '$plugins/core/stores/ModelFavoritesStore.svel
 import {ModelSelectionStore} from '$plugins/core/stores/ModelSelectionStore.svelte.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import {ChatModule} from '$plugins/core/modules/chat/ChatModule.js';
+import {SettingsModule} from '$plugins/core/modules/settings/SettingsModule.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
         core: CorePlugin;
+    }
+
+    interface HawkiSyncEvents {
+        /** Opens the announcements dialog owned by `AppSidebar`. */
+        announcementsRequested: void;
+        /** Opens the models dialog owned by `AppSidebar`. */
+        modelsRequested: void;
     }
 }
 
@@ -57,6 +66,7 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public modules({add}: ModuleRegistrar): void | Promise<void> {
         add(new ChatModule());
+        add(new SettingsModule());
     }
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {
@@ -65,6 +75,7 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public stores({add}: StoreRegistrar): void | Promise<void> {
         add(new KeychainStore());
+        add(new AnnouncementStore());
         add(new AiHandleStore());
         add(new AiModelStore());
         add(new AiToolStore());

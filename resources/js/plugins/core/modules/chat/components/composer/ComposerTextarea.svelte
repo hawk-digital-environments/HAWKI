@@ -59,6 +59,16 @@
             : __('chat.composer.textareaLabelRoom')
     );
 
+    // Screen-reader-only operating hint (Enter sends, Shift+Enter breaks the
+    // line, Escape leaves edit/thread mode) linked via aria-describedby.
+    const uid = $props.id();
+    const hintId = `${uid}-hint`;
+    const textareaHint = $derived(
+        composerContext.mode.isDefault
+            ? __('chat.composer.textareaHint')
+            : `${__('chat.composer.textareaHint')} ${__('chat.composer.textareaHintEscape')}`
+    );
+
     function handleKeyDown(e: KeyboardEvent) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -131,8 +141,10 @@
             class="chat-textarea"
             rows={1}
             ariaLabel={textareaLabel}
+            aria-describedby={hintId}
             placeholder={textareaPlaceholder}
         />
+        <span id={hintId} class="u-sr-only">{textareaHint}</span>
     </div>
 {/if}
 

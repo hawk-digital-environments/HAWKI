@@ -55,3 +55,34 @@ export function mergePaths(basePath: string, relativePath: string): string {
     }
     return basePath + relativePath;
 }
+
+/** The three parts of a location string as a routing strategy reports it: `/path?query#hash`. */
+export interface LocationParts {
+    /** The route path, normalized via {@link normalizePath}. */
+    path: string;
+    /** The query string without its leading `?`; empty when there is none. */
+    query: string;
+    /** The fragment without its leading `#`; empty when there is none. */
+    hash: string;
+}
+
+/**
+ * Splits `/path?query#hash` into its parts and normalizes the path. Only the
+ * path takes part in route matching; the query and the fragment ride along
+ * on the strategy's location and are read back through `RouterHandle.query`.
+ */
+export function splitLocation(location: string | null | undefined): LocationParts {
+    const raw = location ?? '';
+    const hashIndex = raw.indexOf('#');
+    const hash = hashIndex === -1 ? '' : raw.slice(hashIndex + 1);
+    const beforeHash = hashIndex === -1 ? raw : raw.slice(0, hashIndex);
+    const queryIndex = beforeHash.indexOf('?');
+    const query = queryIndex === -1 ? '' : beforeHash.slice(queryIndex + 1);
+    const path = normalizePath(queryIndex === -1 ? beforeHash : beforeHash.slice(0, queryIndex));
+    return {path, query, hash};
+}
+
+/** Inverse of {@link splitLocation}: re-attaches a non-empty query and fragment to the path. */
+export function joinLocation({path, query, hash}: LocationParts): string {
+    return path + (query ? '?' + query : '') + (hash ? '#' + hash : '');
+}

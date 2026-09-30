@@ -69,7 +69,8 @@ class ExtendedAiManager extends AiManager
         try {
             $this->instanceConfig = $config;
 
-            return $this->instance($name);
+            // Explicit provider configuration must never hit the manager cache keyed only by adapter name.
+            return $this->resolve($name ?: $this->getDefaultInstance());
         } finally {
             $this->instanceConfig = $instanceConfigBackup;
         }

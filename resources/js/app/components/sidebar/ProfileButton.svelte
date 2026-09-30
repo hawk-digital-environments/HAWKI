@@ -1,6 +1,8 @@
 <!--
   @component Sidebar profile control. Opens the account dropdown with the
-  settings dialog, a light/dark theme toggle and the logout action.
+  settings entry, a light/dark theme toggle and the logout action. The
+  settings dialog itself is owned by `AppSidebar` (it is also opened from the
+  search palette); this component only asks for it via `onOpenSettings`.
 -->
 <script lang="ts">
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
@@ -8,24 +10,32 @@
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
-    import SettingsDialog from '$lib/app/components/settings/SettingsDialog.svelte';
-    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
     import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
+    import Megaphone01Icon from '$lib/components/ui/icons/iconset/Megaphone01Icon.svelte';
+    import AiChipIcon from '$lib/components/ui/icons/iconset/AiChipIcon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
+
+    interface Props {
+        /** Called when the user picks "Settings" from the menu. */
+        onOpenSettings: () => void;
+    }
+
+    let {onOpenSettings}: Props = $props();
 
     const app = useApp();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
     const connection = useConnection();
     // The sidebar bumps its rows up a notch on small screens; the avatar and the
-    // settings glyph follow the same step so the footer row stays proportional.
+    // trailing glyph follow the same step so the footer row stays proportional.
     const breakpoint = useBreakpoint();
     const compact = $derived(breakpoint.is('bpMdAndSmaller'));
     const triggerAvatarSize = $derived(compact ? 24 : 22);
@@ -41,7 +51,6 @@
     const avatarUrl = $derived(app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined);
 
     let menuOpen = $state(false);
-    let settingsOpen = $state(false);
 
     function toggleTheme(): void {
         themeStore.theme = themeStore.isDark ? 'light' : 'dark';
@@ -49,15 +58,23 @@
 
     function openSettings(): void {
         menuOpen = false;
-        settingsOpen = true;
+        onOpenSettings();
+    }
+
+    function openAnnouncements(): void {
+        menuOpen = false;
+        app.events.sync.triggerVoid('announcementsRequested');
+    }
+
+    function openModels(): void {
+        menuOpen = false;
+        app.events.sync.triggerVoid('modelsRequested');
     }
 
     function logout(): void {
-        app.logout();
+        void app.logout().catch(() => { /* The root layout shows the retry action. */ });
     }
 </script>
-
-<SettingsDialog bind:open={settingsOpen}/>
 
 <DropdownMenu
     bind:open={menuOpen}
@@ -78,7 +95,7 @@
                 <Avatar src={avatarUrl} name={userName} label={userName} size={triggerAvatarSize}/>
             {/snippet}
             {#snippet trailing()}
-                <Settings03Icon size={triggerIconSize} strokeWidth={2}/>
+                <UnfoldMoreIcon size={triggerIconSize} strokeWidth={2}/>
             {/snippet}
         </SidebarItem>
     {/snippet}
@@ -97,6 +114,13 @@
     </DropdownMenuItem>
     <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
         {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
+    </DropdownMenuItem>
+    <DropdownMenuSeparator/>
+    <DropdownMenuItem iconLeft={Megaphone01Icon} onclick={openAnnouncements}>
+        {__('ui.profile.announcements')}
+    </DropdownMenuItem>
+    <DropdownMenuItem iconLeft={AiChipIcon} onclick={openModels}>
+        {__('ui.profile.models')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
     <DropdownMenuItem iconLeft={Logout02Icon} onclick={logout}>

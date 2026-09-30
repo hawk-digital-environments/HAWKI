@@ -1,6 +1,7 @@
 import type {HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 import {createModuleRegistrarFactory} from '$lib/kernel/modules/moduleRegistrar.js';
+import {SearchRegistry} from '$lib/kernel/search/searchRegistry.js';
 
 /**
  * Declaration merging that exposes this extension on the app object as
@@ -30,6 +31,7 @@ declare module '$lib/kernel/extendableTypes.js' {
  */
 export class ModuleExtension implements HawkiAppExtension {
     private readonly modules = new Map<string, HawkiModuleWithPlugin>();
+    public readonly searchRegistry = new SearchRegistry();
 
     public get names(): string[] {
         return Array.from(this.modules.keys());
@@ -52,7 +54,13 @@ export class ModuleExtension implements HawkiAppExtension {
     }
 
     public async init(app: UnfinishedHawkiApp) {
-        await app.plugins!.bootstrapper.runModules(createModuleRegistrarFactory(this.modules));
+        await app.plugins!.bootstrapper.runModules(createModuleRegistrarFactory(this.modules, this.searchRegistry));
+    }
+
+    /** Remove a module's search providers together with its registration. */
+    public remove(name: string): void {
+        this.searchRegistry.unregisterModule(name);
+        this.modules.delete(name);
     }
 
     public provideProperties(): Record<string, any> {
