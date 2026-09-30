@@ -4,6 +4,7 @@
     import {StatusIcon} from '$lib/components/ui/icons';
     import type {IconComponent} from '$lib/components/ui/icons';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
+    import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
     import type {Snippet} from 'svelte';
 
     let {
@@ -34,7 +35,7 @@
             <StatusIcon icon={IconCmp}/>
         {/if}
         <div class="text-wrapper">
-            <p class="label">{label}</p>
+            <p class="label"><OverflowTooltip value={label} focusable={false}/></p>
             {#if description}
                 <p class="description">{description}</p>
             {/if}
@@ -80,11 +81,11 @@
         height: 2rem;
         margin-left: auto;
     }
-    /* min-width lets the flex item shrink below its longest word, so long
-       unbroken names (URLs, file names) wrap instead of overflowing. */
+    /* min-width lets the flex item shrink below its content width, so a long
+       label is cut with an ellipsis (full text in the tooltip) instead of
+       overflowing and the row keeps a uniform height. */
     .text-wrapper{
         min-width: 0;
-        overflow-wrap: anywhere;
     }
     .content{
         display: flex;
@@ -108,6 +109,8 @@
     }
 
     .description{
+        /* Status/error text can contain long unbroken tokens; wrap them. */
+        overflow-wrap: anywhere;
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
         margin: 0;
