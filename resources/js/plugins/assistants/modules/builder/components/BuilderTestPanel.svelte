@@ -97,7 +97,7 @@
 <style>
     /* One surface, two shapes. The shell reserves the card's final box; the
        panel's real width, height and radius animate between the round
-       launcher and that box, anchored bottom-right, on a spring. The chat
+       launcher and that box, anchored bottom-right (top-right below xl), on a spring. The chat
        inside is laid out at the final size the whole time (container units),
        so the surface grows over it instead of reflowing it. The blue
        launcher layer is the surface's colour, not separate content. */
@@ -291,6 +291,26 @@
         background: transparent;
     }
 
+    /* Below the docked-column width the launcher floats top-right instead,
+       clear of the step footer at the bottom (the nav toggle sits top-left).
+       The card then grows down and left out of that corner. */
+    @media (--bp-lg-and-smaller) {
+        .test-shell {
+            top: var(--test-fab-inset);
+            bottom: auto;
+        }
+
+        .test-panel,
+        .inner {
+            top: 0;
+            bottom: auto;
+        }
+
+        .launcher {
+            place-items: start end;
+        }
+    }
+
     /* Mobile: takes over the whole builder area. */
     @media (--bp-md-and-smaller) {
         .test-shell {
@@ -300,13 +320,13 @@
         }
 
         .test-panel {
+            top: var(--test-fab-inset);
             right: var(--test-fab-inset);
-            bottom: var(--test-fab-inset);
         }
 
         .test-panel.open {
+            top: 0;
             right: 0;
-            bottom: 0;
             border-radius: 0;
         }
     }
