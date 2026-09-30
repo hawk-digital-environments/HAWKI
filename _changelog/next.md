@@ -3,7 +3,7 @@
 ### What's New
 
 [//]: # (- The main new features and changes in this version.)
-- The new **global search palette** (Ctrl/⌘+K, or the sidebar's search) finds chats by title plus chat and account actions — new chat, opening settings sections, toggling light/dark, logout. Matching is fuzzy: typos, partial words and accents are tolerated, and an empty palette lists the most recently opened chats. Searching inside message content is not part of this yet.
+- The new **global search palette** (Ctrl/⌘+K, or the sidebar's search) finds chats by title plus chat and account actions — new chat, opening settings sections, toggling light/dark, logout. Matching is fuzzy: typos, partial words and accents are tolerated, and an empty palette lists the newest chats and all actions, plus a separate "Recently used" group of your last picks. Searching inside message content is not part of this yet.
 - Updated list from [available GWDG models](https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html) now includes DeepSeek V4 Flash 0731
 - The new Svelte chat shows a **reasoning timeline** while an assistant answers: the model's thinking text streams in as it is produced, and native web searches appear as steps with the query and the sources that were consulted. OpenAI reasoning models (`reasoning.summary`), Anthropic Claude models with extended thinking (directly and via AWS Bedrock) and OpenAI/Anthropic native web search are covered; other providers keep the plain "thinking…" indicator.
 

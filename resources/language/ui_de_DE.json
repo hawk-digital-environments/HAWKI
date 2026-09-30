@@ -127,6 +127,7 @@
             "unavailable": "Nicht mehr verfügbar",
             "errorInGroup": "„:group“ konnte nicht durchsucht werden.",
             "retry": "Erneut versuchen",
+            "recents": "Zuletzt verwendet",
             "retryLabel": "„:group“ erneut durchsuchen",
             "noResults": "Nichts passt zu „:query“.",
             "empty": "Noch nichts zum Durchsuchen."

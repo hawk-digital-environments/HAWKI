@@ -80,7 +80,7 @@ Optional `load({app, signal})` runs once per activation, after observation start
 
 Optional `enabled({app, signal})` is reactive. Disabling removes the provider's entries and cancels its work; re-enabling starts a new activation. Locale changes refresh translated getters and headings. User or connection changes discard the old search context.
 
-Every static source is indexed and matched in one shared Web Worker (`search.worker.ts`). The main thread only observes the sources and sends the worker what changed; it never builds a Fuse index for static data, however large the corpus. The worker starts when the first bar opens and is shared by every SearchBar. While it answers a new query, a bar keeps its previous rows for up to 150 ms (`SEARCH_LOCAL_PENDING_DELAY_MS`) and only then reports `localPending`, so typing does not flash an empty list. Worker errors are retryable; the kernel does not fall back to matching on the main thread. An empty query needs no worker, because recents are resolved locally.
+Every static source is indexed and matched in one shared Web Worker (`search.worker.ts`). The main thread only observes the sources and sends the worker what changed; it never builds a Fuse index for static data, however large the corpus. The worker starts when the first bar opens and is shared by every SearchBar. While it answers a new query, a bar keeps its previous rows for up to 150 ms (`SEARCH_LOCAL_PENDING_DELAY_MS`) and only then reports `localPending`, so typing does not flash an empty list. Worker errors are retryable; the kernel does not fall back to matching on the main thread. An empty query needs no worker, because its list is resolved locally.
 
 Chat registers its existing actions and conversation titles. Module-specific persistence and background indexing belong to the module; SearchBar only reports query work and provider failures.
 
@@ -164,7 +164,7 @@ Fuse.js scores local and server results using title, keyword, and content weight
 
 Once selection intent freezes the view, existing rows keep their positions. New groups append within the limits; new matches for visible groups wait for the next query or scope change. A removed entry leaves a disabled placeholder, and its action becomes unavailable immediately. Retry preserves the freeze.
 
-An empty query shows up to ten distinct recent static selections, resolved against current enabled entries and filtered to the scope. Storage contains only entity IDs and timestamps, scoped to the user and connection. Dynamic selections never enter this history. Recents retain the five-per-group cap and do not fill spare slots with unrelated entries. If no recent entries resolve, the bar falls back to static group, provider, and item registration order. Empty queries never request server results.
+An empty query lists every static source in group, provider, and item registration order — chat actions, the newest conversations, account actions — and appends a **Recently used** group below it: the selections that still resolve to a live in-scope row, most recent first, at most three rows (`SEARCH_RECENT_ROWS`). A row may appear in both its own group and the recents group; the recents group deliberately repeats it instead of thinning the list. When nothing resolves, the group is absent. Storage contains only entity IDs and timestamps, scoped to the user and connection. Dynamic selections never enter this history. Empty queries never request server results.
 
 ## Privacy and persistence
 

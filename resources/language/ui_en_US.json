@@ -127,6 +127,7 @@
             "unavailable": "No longer available",
             "errorInGroup": "“:group” could not be searched.",
             "retry": "Retry",
+            "recents": "Recently used",
             "retryLabel": "Search “:group” again",
             "noResults": "Nothing matches “:query”.",
             "empty": "Nothing to search yet."

@@ -239,9 +239,26 @@
     );
     const rowCount = $derived(groups.reduce((total, group) => total + group.items.filter(row => row.available).length, 0));
 
+    /**
+     * The command value of one row: its group plus its entity, joined on a
+     * NUL. The same entity may sit in several groups at once (its own and
+     * "Recently used"); Command highlights every item whose value equals the
+     * current one, so rows sharing a bare entity key would all light up and
+     * share an `aria-activedescendant` target. Scoping by group keeps the
+     * value row-unique; {@link entityKeyOf} splits it back apart.
+     */
+    function commandValue(groupId: string, entityKey: string): string {
+        return `${groupId}\u0000${entityKey}`;
+    }
+
+    /** The entity key behind a {@link commandValue}; group ids cannot contain the NUL separator. */
+    function entityKeyOf(value: string): string {
+        return value.slice(value.indexOf('\u0000') + 1);
+    }
+
     /** Every selectable row's value; the command field keeps its highlight inside this set. */
     const selectableValues = $derived(
-        new Set(groups.flatMap(group => group.items.filter(row => row.available).map(row => row.entityKey)))
+        new Set(groups.flatMap(group => group.items.filter(row => row.available).map(row => commandValue(group.id, row.entityKey))))
     );
 
     /** Whether the kernel froze the row order; a frozen order keeps the user's highlight. */
@@ -252,7 +269,7 @@
             id: group.id,
             label: group.label,
             items: group.items.map(row => ({
-                value: row.entityKey,
+                value: commandValue(group.id, row.entityKey),
                 label: row.title,
                 // A row whose entity is gone keeps its slot so the list does
                 // not shift, and says why it can no longer be picked.
@@ -270,10 +287,10 @@
     // CommandSearch); this bar only validates the picked row against the
     // live session.
 
-    function choose(entityKey: string) {
+    function choose(value: string) {
         // The kernel re-checks the row and records the static history; a row
         // that has gone stale in the meantime yields nothing and does nothing.
-        const entry = session?.select(entityKey);
+        const entry = session?.select(entityKeyOf(value));
         if (!entry) return;
         onSelect(entry);
     }

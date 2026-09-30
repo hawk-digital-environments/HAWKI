@@ -15,8 +15,8 @@
  *    a Fuse index for it. While the answer is on its way the session keeps its
  *    previous rows on screen, for at most `SEARCH_LOCAL_PENDING_DELAY_MS`, so
  *    a keystroke swaps one list for the next instead of flashing an empty or
- *    pending state in between. A blank query needs no worker: recents are
- *    resolved locally.
+ *    pending state in between. A blank query needs no worker: the whole
+ *    list — every source plus the recents group — is resolved locally.
  * 2. **Dynamic**, after a 250 ms debounce: each group is published whole once
  *    all of its providers have settled, failures included.
  *
@@ -29,7 +29,9 @@ import {
     SEARCH_DYNAMIC_CANDIDATE_LIMIT,
     SEARCH_DYNAMIC_CONCURRENCY,
     SEARCH_DYNAMIC_MIN_QUERY_LENGTH,
-    SEARCH_LOCAL_PENDING_DELAY_MS
+    SEARCH_LOCAL_PENDING_DELAY_MS,
+    SEARCH_RECENT_GROUP_ID,
+    SEARCH_RECENT_ROWS
 } from '$lib/kernel/search/types.js';
 import type {SearchSessionHost} from '$lib/kernel/search/sessionHost.js';
 import type {SearchProviderDefinition} from '$lib/kernel/search/searchRegistry.js';
@@ -402,6 +404,12 @@ class SearchSessionImpl implements SearchSession {
         if (scope === null) {
             return [];
         }
+        if (this.query === '') {
+            const candidates = this.blankCandidates(scope, active);
+            const groups = candidates.length === 0 ? [] : rankGroups(candidates, this.rankingGroups(candidates));
+            const recent = this.recentGroupView(scope, active);
+            return recent === null ? groups : [...groups, recent];
+        }
         const local = this.staticCandidates(scope, active);
         const remote = this.dynamicCandidates(active).map(candidate => {
             const copy = this.host.index.documentsForEntity(candidate.row.entityKey, scope)
@@ -413,10 +421,6 @@ class SearchSessionImpl implements SearchSession {
     }
 
     private staticCandidates(scope: ResolvedSearchScope, active: ReadonlySet<string>): RankingCandidate[] {
-        if (this.query === '') {
-            return this.recentCandidates(scope, active);
-        }
-
         const scores = this.workerScores();
         if (scores === null) {
             return [];
@@ -432,31 +436,52 @@ class SearchSessionImpl implements SearchSession {
     }
 
     /**
-     * A blank query is answered from the recent selections that still resolve to
-     * a live in-scope row, most recent first. Only when none of them do does the
-     * list fall back to the sources' own order — unused recent slots are never
-     * padded with unrelated entries.
+     * A blank query lists every static source in its registration order —
+     * the "open the palette and see everything" view — and
+     * {@link recentGroupView} appends the user's last picks below it.
      */
-    private recentCandidates(scope: ResolvedSearchScope, active: ReadonlySet<string>): RankingCandidate[] {
-        const candidates: RankingCandidate[] = [];
-        const selections = this.recents.entries;
-        for (let index = 0; index < selections.length; index++) {
-            const recency = selections.length - index;
-            for (const document of this.host.index.documentsForEntity(selections[index].entityKey, scope)) {
-                if (document.provider.kind !== 'static' || !active.has(document.provider.id)) {
-                    continue;
-                }
-                candidates.push(staticCandidate(document, 0, recency));
-                break;
-            }
-        }
-        if (candidates.length > 0) {
-            return candidates;
-        }
-
+    private blankCandidates(scope: ResolvedSearchScope, active: ReadonlySet<string>): RankingCandidate[] {
         return this.host.index.candidates(scope)
             .filter(document => document.provider.kind === 'static' && active.has(document.provider.id))
             .map(document => staticCandidate(document, 0, 0));
+    }
+
+    /**
+     * The "Recently used" group of a blank query: the selections that still
+     * resolve to a live in-scope row, most recent first, at most
+     * {@link SEARCH_RECENT_ROWS} rows. A row may already sit in its natural
+     * group above — the recents group deliberately repeats it instead of
+     * thinning the list.
+     */
+    private recentGroupView(scope: ResolvedSearchScope, active: ReadonlySet<string>): SearchGroupView | null {
+        const rows: SearchRow[] = [];
+        for (const selection of this.recents.entries) {
+            if (rows.length >= SEARCH_RECENT_ROWS) {
+                break;
+            }
+            for (const document of this.host.index.documentsForEntity(selection.entityKey, scope)) {
+                if (document.provider.kind !== 'static' || !active.has(document.provider.id)) {
+                    continue;
+                }
+                rows.push({
+                    ...document.entry,
+                    providerId: document.provider.id,
+                    groupId: SEARCH_RECENT_GROUP_ID,
+                    kind: document.provider.kind,
+                    available: true
+                });
+                break;
+            }
+        }
+        if (rows.length === 0) {
+            return null;
+        }
+        return {
+            id: SEARCH_RECENT_GROUP_ID,
+            label: this.host.groupLabel(SEARCH_RECENT_GROUP_ID),
+            kind: 'static',
+            items: rows
+        };
     }
 
     /**

@@ -282,6 +282,16 @@ export const SEARCH_ROWS_TOTAL = 20;
 /** At most this many recent selections are remembered per user/connection. */
 export const SEARCH_RECENTS_LIMIT = 10;
 
+/** How many rows the blank-query "Recently used" group shows. */
+export const SEARCH_RECENT_ROWS = 3;
+
+/**
+ * The id of the synthetic "Recently used" group a blank query appends below
+ * the full source list. Module group ids always contain a `:` (`plugin:module.name`),
+ * so this cannot collide with a registered group.
+ */
+export const SEARCH_RECENT_GROUP_ID = 'kernel.recent';
+
 /**
  * How long a session keeps showing its previous rows while the worker answers
  * a new query, before it gives up on them and reports `localPending`.

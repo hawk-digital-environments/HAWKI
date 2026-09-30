@@ -4,6 +4,7 @@ import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {HawkiApp, HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {SearchProviderDefinition, SearchRegistry} from './searchRegistry.js';
 import type {SearchEntry, SearchProviderError, SearchScopeOptions, SearchSession, SearchSessionOptions, StaticSource} from './types.js';
+import {SEARCH_RECENT_GROUP_ID} from './types.js';
 import {SharedSearchIndex} from './sharedIndex.js';
 import {SearchWorkerClient, type SearchWorkerClientOptions} from './SearchWorkerClient.js';
 import {SearchSessionManager} from './SearchSessionManager.svelte.js';
@@ -118,10 +119,13 @@ export class SearchExtension implements HawkiAppExtension {
                 $effect(() => {
                     this.revision;
                     const groups = this.registry!.allGroups.map(group => [group.id, group.label(app.translator.translate)] as const);
+                    const recentLabel = app.translator.translate('ui.search.recents');
                     const options = this.buildScopeOptions(app);
                     untrack(() => {
                         this.labels.clear();
                         for (const [id, label] of groups) this.labels.set(id, label);
+                        // The synthetic recents group has no registry entry; its label lives here.
+                        this.labels.set(SEARCH_RECENT_GROUP_ID, recentLabel);
                         this._scopeOptions = options;
                         this.manager?.invalidate();
                     });
