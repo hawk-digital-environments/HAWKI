@@ -75,15 +75,25 @@
     let error = $state<Error | null>(null);
     let feedbacks = $state<AssistantFeedback[]>([]);
 
-    // The detailed description is capped at DESCRIPTION_COLLAPSED_REM with a
+    // The detailed description is capped at DESCRIPTION_COLLAPSED_LINES with a
     // bottom fade; when it is taller, a toggle expands it to its full height.
-    const DESCRIPTION_COLLAPSED_REM = 10;
+    // The cap is counted in lines (not rem) so it always ends on a line
+    // boundary: a line cut mid-glyph shows through a short fade as a hard edge.
+    const DESCRIPTION_COLLAPSED_LINES = 7;
     const descriptionId = $props.id();
     let descriptionExpanded = $state(false);
+    let descriptionTextEl = $state<HTMLParagraphElement | null>(null);
     /** Full content height of the description, kept current by bind:clientHeight. */
     let descriptionHeight = $state(0);
-    const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    const descriptionOverflows = $derived(descriptionHeight > DESCRIPTION_COLLAPSED_REM * rootFontSize + 1);
+    const descriptionLineHeight = $derived.by(() => {
+        if (!descriptionTextEl) return 0;
+        void descriptionHeight; // re-read when the text re-lays out
+        const style = getComputedStyle(descriptionTextEl);
+        return parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.5;
+    });
+    const descriptionOverflows = $derived(
+        descriptionLineHeight > 0 && descriptionHeight > DESCRIPTION_COLLAPSED_LINES * descriptionLineHeight + 1
+    );
 
     // CHECK AWAIT Syntax from Svelte
     $effect(() => {
@@ -371,10 +381,10 @@
                 class:clamped={descriptionOverflows}
                 class:expanded={descriptionExpanded}
                 style:max-height={descriptionOverflows
-                    ? (descriptionExpanded ? `${descriptionHeight}px` : `${DESCRIPTION_COLLAPSED_REM}rem`)
+                    ? (descriptionExpanded ? `${descriptionHeight}px` : `${DESCRIPTION_COLLAPSED_LINES}lh`)
                     : undefined}
             >
-                <p class="detailed-description-text" bind:clientHeight={descriptionHeight}>
+                <p class="detailed-description-text" bind:this={descriptionTextEl} bind:clientHeight={descriptionHeight}>
                     {assistant.detailDescription}
                 </p>
             </div>
@@ -580,7 +590,7 @@
        is a registered property (resources/css/properties.css) so it animates
        away on expand instead of snapping off. */
     .detailed-description-clip.clamped {
-        --description-fade: 5rem;
+        --description-fade: 2.5rem;
         --description-fade-mask: linear-gradient(
             to bottom,
             black 0,
