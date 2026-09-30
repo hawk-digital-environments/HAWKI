@@ -141,7 +141,7 @@ abstract class ResourceRepository
         unset($field);
         $create = $this->canCreate($user);
         // System roles carry a translation key so the client never has to recognize the seeded English name.
-        $extra = in_array(static::RESOURCE, ['users', 'mappings'], true) ? ['role_catalog' => DB::table('roles')->get(['id', 'display_name', 'name', 'is_system'])->map(static fn ($role) => ['id' => (int) $role->id, 'name' => $role->display_name, 'slug' => $role->name, 'is_system' => (bool) $role->is_system, 'title_label' => $role->is_system ? 'admin.role_labels.' . $role->name : null])->all()] : [];
+        $extra = in_array(static::RESOURCE, ['users', 'mappings', 'models'], true) ? ['role_catalog' => DB::table('roles')->get(['id', 'display_name', 'name', 'is_system'])->map(static fn ($role) => ['id' => (int) $role->id, 'name' => $role->display_name, 'slug' => $role->name, 'is_system' => (bool) $role->is_system, 'title_label' => $role->is_system ? 'admin.role_labels.' . $role->name : null])->all()] : [];
 
         return $extra + ['rows' => $rows, 'columns' => $columns, 'fields' => $fields, 'total' => $total, 'page' => $page, 'size' => $size, 'create' => $create, 'delete' => $definition['delete'] ?? true];
     }
@@ -208,7 +208,7 @@ abstract class ResourceRepository
     {
         [$table, $value, $label] = match ($key) {
             'roles' => ['roles', 'id', 'display_name'], 'providers' => ['ai_providers', 'id', 'name'],
-            'tools' => ['ai_tools', 'id', 'name'], 'model_keys' => ['ai_models', 'model_id', 'label'],
+            'tools' => ['ai_tools', 'id', 'name'], 'mcp_servers' => ['mcp_servers', 'id', 'server_label'], 'model_keys' => ['ai_models', 'model_id', 'label'],
             default => ['ai_models', 'id', 'label'],
         };
 

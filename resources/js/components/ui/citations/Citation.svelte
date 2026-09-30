@@ -31,14 +31,11 @@
     import UrlPreviewTooltip from '$lib/components/ui/tooltip/UrlPreviewTooltip.svelte';
     import {useCitationContext} from '$lib/components/ui/citations/CitationContext.js';
     import {citationElementId} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import FileAttachmentIcon from '$lib/components/ui/icons/iconset/FileAttachmentIcon.svelte';
     import {onMount} from 'svelte';
     import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const citationContext = useCitationContext();
     const reducedMotion = useReducedMotion();
-    const {__} = useTranslator();
 
     interface Props {
         /** The citation to display. */
@@ -50,8 +47,6 @@
     const {citation, number}: Props = $props();
 
     let container: HTMLDivElement | null = $state(null);
-
-    const isDocument = $derived(citation.document === true);
 
     const domain = $derived.by(() => {
         try {
@@ -89,46 +84,22 @@
     aria-labelledby={`${citationElementId(citation.identifier)}-label`}
     tabindex="-1"
 >
-    {#if isDocument}
-        {#if citation.url}
-            <Link href={citation.url} download title={citation.title ?? ''}>
-                {#snippet children()}
+    <UrlPreviewTooltip url={citation.url}>
+        {#snippet children({props})}
+            <Link {...props} href={citation.url} target="_blank" title={citation.url}>
+                {#snippet children({favicon})}
                     <span class="citation-tile__header">
                         <span class="citation-tile__number">{number}</span>
-                        <span class="citation-tile__file-icon"><FileAttachmentIcon size={14} /></span>
-                        <span class="citation-tile__title" id={`${citationElementId(citation.identifier)}-label`}>
-                            {citation.title ?? __('chat.message.document')}
-                        </span>
+                        {@render favicon()}
+                        <span class="citation-tile__title" id={`${citationElementId(citation.identifier)}-label`}>{title ?? domain}</span>
                     </span>
+                    {#if title}
+                        <span class="citation-tile__domain">{domain}</span>
+                    {/if}
                 {/snippet}
             </Link>
-        {:else}
-            <span class="citation-tile__header">
-                <span class="citation-tile__number">{number}</span>
-                <span class="citation-tile__file-icon"><FileAttachmentIcon size={14} /></span>
-                <span class="citation-tile__title" id={`${citationElementId(citation.identifier)}-label`}>
-                    {citation.title ?? __('chat.message.document')}
-                </span>
-            </span>
-        {/if}
-    {:else}
-        <UrlPreviewTooltip url={citation.url}>
-            {#snippet children({props})}
-                <Link {...props} href={citation.url} target="_blank" title={citation.url}>
-                    {#snippet children({favicon})}
-                        <span class="citation-tile__header">
-                            <span class="citation-tile__number">{number}</span>
-                            {@render favicon()}
-                            <span class="citation-tile__title" id={`${citationElementId(citation.identifier)}-label`}>{title ?? domain}</span>
-                        </span>
-                        {#if title}
-                            <span class="citation-tile__domain">{domain}</span>
-                        {/if}
-                    {/snippet}
-                </Link>
-            {/snippet}
-        </UrlPreviewTooltip>
-    {/if}
+        {/snippet}
+    </UrlPreviewTooltip>
 </div>
 
 <style>
@@ -203,12 +174,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-    }
-
-    .citation-tile__file-icon {
-        display: inline-flex;
-        flex-shrink: 0;
         color: var(--color-text-muted);
     }
 

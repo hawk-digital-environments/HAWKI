@@ -8,6 +8,7 @@ use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\AiService;
+use App\Services\Ai\Models\Access\Exceptions\ModelAccessException;
 use App\Services\Ai\Tools\Exceptions\ToolAccessException;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
@@ -280,9 +281,9 @@ class StreamController extends Controller
                     case $chunk instanceof Error:
                         $this->logger->error('Error chunk received from agent response', ['chunk' => $chunk]);
                         $code = $chunk->metadata['code'] ?? null;
-                        // Only a tool authorization failure ends the turn; ordinary provider errors are
+                        // Only an access authorization failure ends the turn; ordinary provider errors are
                         // reported in place so the rest of the stream (usage, completion) still arrives.
-                        if (in_array($code, ToolAccessException::ERROR_CODES, true)) {
+                        if (in_array($code, [...ToolAccessException::ERROR_CODES, ...ModelAccessException::ERROR_CODES], true)) {
                             yield $formatData(content: $chunk->message, type: 'error', isDone: true, additionalData: ['code' => $code]);
                             return;
                         }
@@ -330,7 +331,7 @@ class StreamController extends Controller
                 additionalData: ['usage' => $agent->getUsage()->toArray()]
             );
 
-        } catch (ToolAccessException $e) {
+        } catch (ToolAccessException|ModelAccessException $e) {
             yield $formatData(content: $e->getMessage(), type: 'error', isDone: true, additionalData: ['code' => $e->errorCode]);
             return;
         } catch (RequestException $e) {
@@ -357,8 +358,8 @@ class StreamController extends Controller
     {
         try {
             $res = $agent->send();
-        } catch (ToolAccessException $e) {
-            // Not redundant: ToolAccessException is a RuntimeException, so the \Throwable arm below would
+        } catch (ToolAccessException|ModelAccessException $e) {
+            // Not redundant: access exceptions are RuntimeExceptions, so the \Throwable arm below would
             // otherwise swallow it into a 200 response and drop the 403/422 plus its error code.
             throw $e;
         } catch (RequestException $e) {
@@ -379,16 +380,7 @@ class StreamController extends Controller
         $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
 
         try {
-            $content = ['text' => $res->text];
-
-            // Provider and RAG document citations ride the same encrypted
-            // content shape as the streaming paths.
-            $citations = $res->meta->citations->all();
-            if ($citations !== []) {
-                $content['citations'] = $citations;
-            }
-
-            return ['success' => true, 'content' => json_encode($content, JSON_THROW_ON_ERROR)];
+            return ['success' => true, 'content' => json_encode(['text' => $res->text], JSON_THROW_ON_ERROR)];
         } catch (\Throwable $e) {
             $this->logger->error('Error encoding message data to JSON', [
                 'exception' => $e
@@ -444,7 +436,7 @@ class StreamController extends Controller
                     'slug' => $room->slug,
                     'isGenerating' => false,
                     'error' => 'Failed to generate response. Please try again later.',
-                    'code' => $e instanceof ToolAccessException ? $e->errorCode : null,
+                    'code' => $e instanceof ToolAccessException || $e instanceof ModelAccessException ? $e->errorCode : null,
                     'model' => $validatedData['payload']['model']
                 ]
             ]));

@@ -119,10 +119,6 @@
                 "switchToLight": "Switch to light theme"
             }
         },
-        "common": {
-            "remove": "Remove",
-            "selectEmoji": "Select emoji"
-        },
         "navigation": {
             "skipToContent": "Skip to main content",
             "open": "Open navigation",
@@ -291,6 +287,10 @@
             "retryLabel": "Search “:group” again",
             "noResults": "Nothing matches “:query”.",
             "empty": "Nothing to search yet."
+        },
+        "common": {
+            "remove": "Remove",
+            "selectEmoji": "Select emoji"
         }
     },
     "admin": {
@@ -311,6 +311,7 @@
         },
         "form": {
             "replace_secret": "Leave these fields empty to keep the stored configuration. Entering values replaces the entire stored configuration.",
+            "allowed_roles_hint": "Leave empty to allow every user. Otherwise only users holding at least one selected role can see and use this model.",
             "unique_key": "Enter a unique property name.",
             "suggestions_empty": "No matching suggestions",
             "suggestions_more": ":count more suggestions. Keep typing to narrow the list.",
@@ -571,6 +572,11 @@
         "models_added": "Models added. Open Models to configure and enable them.",
         "add_models": "Add selected models",
         "view_models": "View models",
+        "view_tools": "View tools",
+        "tools": "Tools",
+        "allowed_roles_everyone": "All users",
+        "tools_of": "Tools of :server",
+        "show_all_tools": "Show all tools",
         "discovery_search": "Search models",
         "discovery_count": ":shown of :total models",
         "discovery_no_matches": "No models match your search.",
@@ -600,8 +606,7 @@
             "providers": "Providers",
             "models": "Models",
             "system-models": "System models",
-            "mcp": "MCP servers",
-            "tools": "Tools",
+            "mcp": "MCP servers and tools",
             "users": "Users",
             "roles": "Roles and permissions",
             "mappings": "Employee-type assignments",
@@ -609,14 +614,14 @@
             "usage": "Usage and statistics",
             "health": "Health monitor",
             "settings": "System settings",
-            "environment": "Environment"
+            "environment": "Environment",
+            "assistants": "Publishing Center"
         },
         "descriptions": {
             "providers": "Configure AI providers and their credentials.",
             "models": "Enable models and edit descriptions, capabilities, parameters, limits and tool assignments.",
             "system-models": "Choose the models used for default chats, titles, summaries and prompt improvements, and edit their system prompts.",
-            "mcp": "Configure server connections, test availability and discover tools.",
-            "tools": "Manage tool activation, capability mapping and model assignments.",
+            "mcp": "Configure server connections, test availability and discover tools. Select a server to see its tools; built-in HAWKI tools are listed too. Manage activation, capability mapping and model assignments per tool.",
             "users": "Create local accounts, find users, manage access and assign manual roles.",
             "roles": "Define what each role can view and manage.",
             "mappings": "Map each exact employee-type value to a role. Changes also update existing accounts.",
@@ -624,7 +629,8 @@
             "usage": "Explore request and token usage over time.",
             "health": "Check infrastructure, AI availability, queues and scheduler activity. Refreshes every 30 seconds.",
             "settings": "Manage runtime settings that override environment defaults.",
-            "environment": "Inspect effective settings and deployment information."
+            "environment": "Inspect effective settings and deployment information.",
+            "assistants": "Review, publish and manage assistants created across the platform."
         },
         "fields": {
             "name": "Name",
@@ -654,8 +660,11 @@
             "pricing": "Pricing",
             "flags": "Flags",
             "tools": "Tools",
+            "allowed_roles": "Allowed roles",
             "usage_rules": "Usage contexts",
             "server_label": "Server name",
+            "mcp_server_id": "MCP server",
+            "tools_count": "Tools",
             "type": "Type",
             "kind": "Type",
             "url": "URL or command path",
@@ -709,7 +718,18 @@
             "config_cached": "Configuration cached",
             "icon": "Provider icon",
             "access_rule": "User access",
-            "mapped_roles": "Derived roles"
+            "mapped_roles": "Derived roles",
+            "handle": "Handle",
+            "creator": "Creator",
+            "version": "Version",
+            "based_on": "Based on",
+            "origin": "Origin",
+            "created_at": "Created",
+            "updated_at": "Last update",
+            "review_status": "File review status"
+        },
+        "tool_sources": {
+            "builtin": "Built-in (HAWKI)"
         },
         "errors": {
             "translate_model": "No AI model is available for translation. Assign a system model of type \"translation\".",
@@ -722,6 +742,7 @@
             "immutable": "This identifier cannot be changed.",
             "adapter": "Choose an installed provider adapter.",
             "model_in_use": "This model is assigned to a system task. Reassign that task first.",
+            "model_restricted": "A model assigned to a system task must stay available to every user. Remove the role restriction or reassign the task first.",
             "invalid_value": "Enter a valid value.",
             "provider_in_use": "Remove or reassign this provider's models first.",
             "published_policy": "Published policies must remain available for consent history.",
@@ -836,6 +857,12 @@
                     "description": "Manage external application connections."
                 }
             },
+            "assistants": {
+                "manage": {
+                    "title": "Manage assistant publishing",
+                    "description": "Review, publish and manage assistants created across the platform."
+                }
+            },
             "tools": {
                 "use": {
                     "title": "Use tools",
@@ -869,12 +896,14 @@
                         }
                     }
                 }
-            }
+            },
+            "assistants_manage": "Manage assistant publishing"
         },
         "actions": {
             "test": "Test connection",
             "discover": "Discover",
             "refresh": "Refresh metadata",
+            "check-status": "Check model status",
             "revoke-tokens": "Revoke tokens",
             "tokens": "View tokens",
             "check-ai-status": "Check AI status",
@@ -898,7 +927,8 @@
         "groups": {
             "ai": "AI services",
             "people": "People and access",
-            "system": "System"
+            "system": "System",
+            "assistants": "Assistant System"
         },
         "grouping": {
             "day": "Day",
@@ -909,6 +939,8 @@
             "user": "User"
         },
         "values": {
+            "function": "Built-in",
+            "mcp": "MCP",
             "online": "Online",
             "offline": "Offline",
             "unknown": "Unknown",
@@ -917,7 +949,22 @@
             "warning": "Warning",
             "database": "Database override",
             "environment": "Environment / default",
-            "deployment": "Deployment"
+            "deployment": "Deployment",
+            "waiting_for_review": "Waiting for review",
+            "published": "Published",
+            "private": "Private",
+            "requires_revision": "Requires revision",
+            "remix": "Remix",
+            "original": "Original",
+            "draft": "Draft",
+            "organizational": "Organization",
+            "federated": "Federated",
+            "approved": "Approved",
+            "denied": "Denied",
+            "pending": "Pending",
+            "attachment_ok": "OK",
+            "corrupted": "Corrupted",
+            "inadequate": "Inadequate"
         },
         "icons": {
             "light": "Light",
@@ -986,7 +1033,60 @@
             "user": "User"
         },
         "editor_refreshed": "This record or its available settings changed. Reopen the editor to review the current values.",
-        "editor_unverified": "The editor closed because current data could not be loaded. Reload this section before editing."
+        "editor_unverified": "The editor closed because current data could not be loaded. Reload this section before editing.",
+        "detail": {
+            "general": "General",
+            "behaviour": "Behaviour",
+            "knowledge": "Knowledge",
+            "model": "Model",
+            "versions": "Version history",
+            "admin_log": "Administrative log",
+            "description": "Description",
+            "detail_description": "Detail description",
+            "category": "Category",
+            "language": "Language",
+            "tags": "Tags",
+            "allow_remix": "Remixing allowed",
+            "system_prompt": "System prompt",
+            "greeting": "Greeting",
+            "starter_prompts": "Starter prompts",
+            "formality": "Formality",
+            "answer_style": "Answer style",
+            "temperature": "Temperature",
+            "top_p": "Top P",
+            "max_tokens": "Max tokens",
+            "capabilities": "Capabilities",
+            "no_files": "No knowledge files attached.",
+            "no_versions": "No version history yet.",
+            "no_log": "No administrative actions yet.",
+            "unresolved_flags_warning": "This assistant has :count unresolved flag(s). Resolve them before accepting.",
+            "ask_for_edit": "Ask for edit",
+            "discard": "Deny",
+            "approve": "Accept",
+            "confirm": "Confirm",
+            "reason_label": "Note to the creator",
+            "reason_placeholder": "Explain the decision…",
+            "draft_in_progress": "An admin has started reviewing this — flags are saved but not yet sent, discarded, or decided.",
+            "exit_dialog_title": "Unsent review feedback",
+            "exit_dialog_description": "You've flagged :count item(s) on this assistant that haven't been sent to the creator, discarded, or acted on yet. What should happen to them?",
+            "exit_dialog_send": "Send to creator",
+            "exit_dialog_discard": "Discard flags",
+            "exit_dialog_draft": "Save as draft",
+            "exit_dialog_send_failed": "The feedback could not be sent.",
+            "exit_dialog_discard_failed": "The flags could not be discarded."
+        },
+        "flags": {
+            "flag_selection": "Flag selection",
+            "comment_label": "Comment",
+            "comment_placeholder": "Explain the problem to the creator…",
+            "submit": "Add flag",
+            "resolve": "Mark resolved",
+            "reopen": "Reopen",
+            "remove": "Remove",
+            "view": "View",
+            "download": "Download",
+            "preview_unsupported": "This file type can't be previewed here. Download it to view."
+        }
     },
     "admin.account_disabled": "This account has been disabled."
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Ai\AiModel;
+use App\Models\Ai\AiTool;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Admin\EmployeeTypeRoleSyncer;
@@ -20,6 +21,8 @@ use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\Limits\Values\ChatAiModelLimits;
+use App\Services\Ai\StatusCheck\ModelStatusUpdater;
+use App\Utils\JobMetrics;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -45,11 +48,11 @@ class AdminPanelTest extends TestCase
         foreach (ResourceCatalog::SECTIONS as $section => $permission) {
             $this->get('/api/hawki/v1/admin-' . $section)->assertForbidden();
 
-            if (!\in_array($section, ['tools', 'settings', 'usage', 'health', 'environment'], true)) {
+            if (!\in_array($section, ['tools', 'settings', 'usage', 'health', 'environment', 'assistants'], true)) {
                 $this->saveAdmin(['section' => $section, 'values' => ['name' => 'Forbidden']])->assertForbidden();
             }
 
-            if (!\in_array($section, ['users', 'tools', 'usage', 'health', 'environment'], true)) {
+            if (!\in_array($section, ['users', 'tools', 'usage', 'health', 'environment', 'assistants'], true)) {
                 $this->deleteAdmin(['section' => $section, 'id' => '1'])->assertForbidden();
             }
         }
@@ -529,6 +532,7 @@ class AdminPanelTest extends TestCase
         $row = $this->get('/api/hawki/v1/admin-models?filter[search]=admin-config-test')->assertSuccessful()->json('data.0');
         self::assertSame(['text'], $row['attributes']['input']);
         self::assertSame(['main'], $row['attributes']['usage_rules']);
+        self::assertSame('unknown', $row['attributes']['status']);
         DB::table('system_models')->where(['model_type' => 'summary', 'usage_type' => 'main'])->delete();
         $slot = ['section' => 'system-models', 'values' => [
             'model_type' => 'summary',
@@ -559,10 +563,12 @@ class AdminPanelTest extends TestCase
             'locale' => 'en_US',
             'prompt' => 'Updated summary prompt.',
         ]);
-        $this->assertDatabaseMissing('system_prompts', [
+        $this->assertDatabaseHas('system_prompts', [
             'prompt_type' => 'summary',
             'usage_type' => 'main',
             'locale' => 'de_DE',
+            'prompt' => '',
+            'admin_managed' => true,
         ]);
         unset($slot['id'], $slot['version']);
         $this->saveAdmin($slot)->assertUnprocessable();
@@ -687,6 +693,25 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseHas('admin_audit_log', ['resource_type' => 'providers', 'resource_id' => $providerId, 'action' => 'inspect']);
     }
 
+    public function testModelStatusCheckRunsSynchronously(): void
+    {
+        $this->app->instance(ModelStatusUpdater::class, new readonly class extends ModelStatusUpdater {
+            public function __construct()
+            {
+            }
+
+            public function run(): JobMetrics
+            {
+                return new JobMetrics('Test Model Status Update');
+            }
+        });
+        $this->actingAs($this->grant(['admin.access', 'models.manage']));
+
+        $this->postJson('/api/hawki/v1/admin-models/actions/check-status')->assertOk()
+            ->assertJsonPath('checked', true);
+        $this->assertDatabaseHas('admin_audit_log', ['resource_type' => 'models', 'action' => 'check-status']);
+    }
+
     public function testResourceUpdateRoutesRequireTheirOwnPermissions(): void
     {
         $this->actingAs($this->grant(['admin.access']));
@@ -695,7 +720,7 @@ class AdminPanelTest extends TestCase
             $this->patchAdminResource('/api/hawki/v1/admin-' . $resource . '/1', ['values' => ['name' => 'Forbidden']])->assertForbidden();
         }
 
-        foreach (['providers/1/actions/test', 'providers/1/actions/discover', 'providers/1/actions/inspect', 'providers/actions/import', 'models/1/actions/refresh', 'mcp/1/actions/test', 'mcp/1/actions/discover', 'users/1/actions/revoke-tokens', 'health/actions/check-ai-status', 'health/1/actions/retry-job', 'health/actions/flush-jobs'] as $path) {
+        foreach (['providers/1/actions/test', 'providers/1/actions/discover', 'providers/1/actions/inspect', 'providers/actions/import', 'models/1/actions/refresh', 'models/actions/check-status', 'mcp/1/actions/test', 'mcp/1/actions/discover', 'users/1/actions/revoke-tokens', 'health/actions/check-ai-status', 'health/1/actions/retry-job', 'health/actions/flush-jobs'] as $path) {
             $this->postJson('/api/hawki/v1/admin-' . $path)->assertForbidden();
         }
 
@@ -782,6 +807,29 @@ class AdminPanelTest extends TestCase
         self::assertSame('mcp-route-secret', \App\Models\Ai\McpServer::findOrFail($id)->api_key);
         $row = $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20MCP')->assertOk()->json('data.0');
         $this->deleteAdminResource('/api/hawki/v1/admin-mcp/' . $id, ['version' => $row['meta']['version']])->assertNoContent();
+    }
+
+    public function testMcpServersExposeTheirToolsAndToolServerIsReadOnly(): void
+    {
+        $this->actingAs($this->grant(Permission::values()));
+        $label = 'Route tools MCP';
+        $serverId = $this->postAdminResource('/api/hawki/v1/admin-mcp', ['values' => ['server_label' => $label, 'type' => 'http', 'url' => 'https://example.test/route-tools', 'require_approval' => 'never']])->assertCreated()->json('data.id');
+        $mcpTool = AiTool::create(['type' => 'mcp', 'name' => 'Route MCP tool', 'mcp_server_id' => $serverId, 'mcp_name' => 'route_mcp_tool', 'mcp_config' => ['inputSchema' => ['type' => 'object']], 'description' => 'MCP tool', 'active' => true, 'access_rule' => 'unavailable']);
+        AiTool::create(['type' => 'function', 'name' => 'Route function tool', 'description' => 'Function tool', 'active' => true, 'access_rule' => 'unavailable']);
+
+        $server = $this->get('/api/hawki/v1/admin-mcp?filter[search]=Route%20tools%20MCP')->assertOk()->json('data.0');
+        self::assertSame(1, $server['attributes']['tools_count']);
+
+        $tools = $this->get('/api/hawki/v1/admin-tools?filter[where][mcp_server_id]=' . $serverId)->assertOk()->assertJsonCount(1, 'data');
+        $tool = $tools->json('data.0');
+        self::assertSame((string) $mcpTool->id, $tool['id']);
+        self::assertSame((int) $serverId, $tool['attributes']['mcp_server_id']);
+        $field = collect($tools->json('meta.fields'))->firstWhere('key', 'mcp_server_id');
+        self::assertSame('select', $field['type']);
+        self::assertContains(['value' => (int) $serverId, 'label' => $label], $field['options']);
+
+        $this->patchAdminResource('/api/hawki/v1/admin-tools/' . $mcpTool->id, ['version' => $tool['meta']['version'], 'values' => ['description' => 'MCP tool', 'active' => true, 'mapped_capability' => null, 'access_rule' => 'unavailable', 'models' => [], 'mcp_server_id' => null]])->assertOk();
+        self::assertSame((int) $serverId, AiTool::findOrFail($mcpTool->id)->mcp_server_id);
     }
 
     private function grant(array $permissions): User

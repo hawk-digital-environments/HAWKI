@@ -29,7 +29,11 @@ import AssistantFeedbackSchema from '$plugins/assistants/api/schemas/resources/a
 import AssistantCategoriesSchema from '$plugins/assistants/api/schemas/resources/assistant-categories.schema';
 import AssistantTagsSchema from '$plugins/assistants/api/schemas/resources/assistant-tags.schema';
 import AssistantSettingsSchema from '$plugins/assistants/api/schemas/resources/assistant-settings.schema';
+import AssistantReviewLogSchema from '$plugins/assistants/api/schemas/resources/assistant-review-log.schema';
+import AssistantFieldFlagSchema from '$plugins/assistants/api/schemas/resources/assistant-field-flag.schema';
+import { AdminAssistantSchema } from '$plugins/assistants/admin/schemas/resources/admin-assistant.schema';
 import { BuilderModule } from '$plugins/assistants/modules/builder/BuilderModule';
+import { AssistantAdminModule } from '$plugins/assistants/modules/admin/AssistantAdminModule';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
@@ -41,11 +45,12 @@ export default class AssistantsPlugin implements HawkiPlugin {
     readonly name = 'assistants';
 
     /**
-     * Contributes the assistants feature's sidebar UI via the sidebar hooks:
-     * one module selector entry and one sidebar panel (both active while
-     * dashboard *or* builder routes are shown — the builder has no selector
-     * entry of its own), plus the assistants sidebar's standard nav rows
-     * (see `hooks/assistantMenuHooks.svelte.ts`).
+     * The module-selector entry, sidebar panel and pinned "create" action are
+     * now contributed directly by {@link DashboardModule}/{@link BuilderModule}
+     * (`title()`/`icon()`/`sidebar()`/`visible()`) rather than through hooks —
+     * see `AssistantsSidebar.svelte`. This hook only wires the assistants
+     * sidebar's standard nav rows (see `hooks/assistantMenuHooks.svelte.ts`)
+     * and the chat-integration hooks below.
      */
     public hooks(registrar: HookRegistrar): void {
         const dashboardGroup = getModuleRouteGroupName('assistants', 'dashboard');
@@ -201,10 +206,14 @@ export default class AssistantsPlugin implements HawkiPlugin {
         registrar.add('assistant-categories', AssistantCategoriesSchema);
         registrar.add('assistant-tags', AssistantTagsSchema);
         registrar.add('assistant-settings', AssistantSettingsSchema);
+        registrar.add('assistant-review-logs', AssistantReviewLogSchema);
+        registrar.add('assistant-field-flags', AssistantFieldFlagSchema);
+        registrar.add('admin-assistants', AdminAssistantSchema);
     }
     public modules({ add }: ModuleRegistrar): void | Promise<void> {
         add(new DashboardModule());
         add(new BuilderModule());
+        add(new AssistantAdminModule());
     }
 
     /**

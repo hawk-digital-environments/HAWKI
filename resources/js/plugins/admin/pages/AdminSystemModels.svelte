@@ -11,7 +11,7 @@
     const app = useApp();
     const { __ } = useTranslator();
     const columns: AdminColumn<AdminSystemModelResource>[] = [{ id: 'model_type' }, { id: 'usage_type' }, { id: 'model_id' }];
-    const workspace = useAdminWorkspace(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-system-models', { query, signal }),
         {
@@ -36,12 +36,12 @@
 </script>
 
 <AdminPage
-    section="system-models"
-    {workspace}
+    workspace="system-models"
+    recordSet={records}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.system-models')}
-        {workspace}
+        recordSet={records}
     />
 </AdminPage>

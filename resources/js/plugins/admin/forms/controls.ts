@@ -1,5 +1,5 @@
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
-import type { SectionId } from '../sections.js';
+import type { EditorSection } from './schemas.js';
 
 export interface Control {
     type:
@@ -114,23 +114,26 @@ const mimeTypes = [
     'video/mp4'
 ];
 
-export function isFieldVisible(section: SectionId, field: AdminField, values: Record<string, unknown>): boolean {
+export function isFieldVisible(section: EditorSection, field: AdminField, values: Record<string, unknown>): boolean {
     if (section !== 'providers') return true;
     // No built-in adapter reads model_status_url; status checks use model discovery.
     if (field.key === 'model_status_url') return false;
     if (field.key === 'api_url')
-        return ['openai_like', 'openai_azure', 'ollama', 'huggingface', 'gwdg'].includes(String(values.adapter_key));
+        return ['openai_like', 'openai_azure', 'ollama', 'huggingface', 'litellm', 'gwdg'].includes(
+            String(values.adapter_key)
+        );
     return true;
 }
 
 export function controlFor(
-    section: SectionId,
+    section: EditorSection,
     field: AdminField,
     values: Record<string, unknown>,
     row: AdminRow | null
 ): Control {
     const key = field.key;
     if (section === 'users' && key === 'roles') return { type: 'tags', options: field.options };
+    if (section === 'models' && key === 'allowed_roles') return { type: 'tags', options: field.options };
     if (section === 'roles' && key === 'permissions') return { type: 'permissions' };
     if (section === 'tools' && key === 'access_rule') return { type: 'access-rule' };
     if (section === 'models') {

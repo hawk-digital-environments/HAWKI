@@ -8,6 +8,7 @@ export const AdminMcpServerSchema = z.object({
     kind: z.enum(['http', 'sse', 'stdio']),
     url: z.string(),
     status: z.enum(['online', 'offline', 'unknown']),
+    tools_count: z.number(),
     api_key_set: z.boolean(),
     additional_config_set: z.boolean(),
     description: z.string().nullable(),

@@ -1,38 +1,36 @@
 import type { RouteRegistrar } from '$lib/components/ui/routing/index.js';
-import type { RouteComponentLoader } from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import { authMetaGuards } from '$lib/kernel/routing/middlewares/AuthMiddleware.js';
-import { sections, type SectionId } from './sections.js';
+import type { AdminRegistry } from './registry.js';
 
-const pages = {
-    'providers': () => import('./pages/AdminProviders.svelte'),
-    'models': () => import('./pages/AdminModels.svelte'),
-    'system-models': () => import('./pages/AdminSystemModels.svelte'),
-    'mcp': () => import('./pages/AdminMcp.svelte'),
-    'tools': () => import('./pages/AdminTools.svelte'),
-    'users': () => import('./pages/AdminUsers.svelte'),
-    'roles': () => import('./pages/AdminRoles.svelte'),
-    'mappings': () => import('./pages/AdminMappings.svelte'),
-    'announcements': () => import('./pages/AdminAnnouncements.svelte'),
-    'usage': () => import('./pages/AdminUsage.svelte'),
-    'health': () => import('./pages/AdminHealth.svelte'),
-    'settings': () => import('./pages/AdminSettings.svelte'),
-    'environment': () => import('./pages/AdminEnvironment.svelte')
-} satisfies Record<SectionId, RouteComponentLoader>;
-
-export function registerAdminRoutes(registrar: RouteRegistrar) {
+export function registerAdminRoutes(registrar: RouteRegistrar, registry: AdminRegistry) {
     registrar.lazyRoute('/', () => import('./pages/AdminHome.svelte'), {
         name: 'admin.index',
         meta: { title: 'admin.title', access: 'server-session', permission: 'admin.access' }
     });
-    for (const section of sections) {
-        registrar.lazyRoute(`/${section.id}`, pages[section.id], {
-            name: `admin.${section.id}`,
+    if (!registry.collected) {
+        throw new Error('Admin routes cannot be registered before the Admin Registry has collected Module Workspaces.');
+    }
+    for (const workspace of registry.workspaces) {
+        registrar.lazyRoute(workspace.path, workspace.page, {
+            name: workspace.routeName,
             middlewares: [authMetaGuards({ access: 'server-session', permission: 'admin.access' })],
             meta: {
-                title: `admin.sections.${section.id}`,
+                title: workspace.title,
                 access: 'server-session',
-                permission: section.permission
+                permission: workspace.permission
             }
         });
     }
+    // The Publishing Center's per-assistant detail page: a sub-route of the
+    // `assistants` Workspace, which a Workspace definition cannot express on
+    // its own (one `page` only), so it is registered directly here.
+    registrar.lazyRoute('/assistants/:id', () => import('$plugins/assistants/admin/pages/AssistantDetail.svelte'), {
+        name: 'admin.assistants.detail',
+        middlewares: [authMetaGuards({ access: 'server-session', permission: 'admin.access' })],
+        meta: {
+            title: 'admin.sections.assistants',
+            access: 'server-session',
+            permission: 'assistants.manage'
+        }
+    });
 }

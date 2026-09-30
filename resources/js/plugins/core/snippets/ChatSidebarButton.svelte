@@ -153,11 +153,7 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         padding-right: .5rem;
         border-radius: 5px;
         background-color: transparent;
-        transition: background-color var(--duration-fast);
-        cursor: pointer;
-        width: 100%;
-        text-align: left;
-        outline-offset: -2px;
+        transition: background-color var(--transition-fast);
 
         /* The trigger shows for the pointer, for keyboard focus anywhere in
            the row, and while its menu is open. */
@@ -169,23 +165,14 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
             }
         }
 
-        :global(#unread-msg-flag) {
-            display: none;
-        }
-
-        &:global(:not(.selected):hover) {
-            background-color: var(--color-hover);
-            /* border: var(--border); */
-        }
-
-        &:global(.selected) {
-            background-color: var(--color-active-surface);
-            border: var(--border);
+        &:not(.renaming):hover,
+        &:not(.renaming):focus-within {
+            background-color: var(--panel-main);
         }
     }
 
-    :global(.active) .sidebar-button {
-        background-color: var(--color-highlight);
+    :global(.active) .chat-row {
+        background-color: var(--highlight-color);
     }
 
     .sidebar-button {

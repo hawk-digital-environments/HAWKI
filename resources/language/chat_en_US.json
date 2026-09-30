@@ -52,7 +52,6 @@
             "requestFailed": "The AI request failed.",
             "welcomeTitle": "How can I help?",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
-            "starterPrompts": "Suggested opening messages",
             "disclaimer": "AI can make mistakes. Check important information."
         },
         "actions": {
@@ -112,7 +111,6 @@
         "message": {
             "sources": "Sources",
             "authorHeading": ":author wrote",
-            "document": "Document",
             "citationReference": {
                 "label": "Source :number: :domain",
                 "labelNoDomain": "Source :number",
@@ -145,6 +143,10 @@
                 "unsupported_file_type": "Files of type \":type\" cannot be attached.",
                 "file_too_large": "The file \":name\" is too large. The maximum allowed size is :maxSize.",
                 "unknown_file": "unknown"
+            },
+            "assistantButtonTooltip": {
+                "addHandle": "Talk to HAWKI",
+                "removeHandle": "Stop talking to HAWKI"
             },
             "systemPromptDialog": {
                 "title": "Edit system prompt",
@@ -228,28 +230,7 @@
                     "webSearchDescription": "This tool enables the AI to search the internet for current information. It can submit search queries and provide relevant results that feed into the AI's responses.",
                     "knowledgeBase": "HAWKI Knowledge",
                     "knowledgeBaseDescription": "This tool enables the AI to access an extensive knowledge base developed specifically for HAWKI. The data is provided by your university and contains information about courses, events, policies, and much more."
-                },
-                "searchPlaceholder": "Search tools",
-                "noResults": "No matching tools"
-            },
-            "assistantMenu": {
-                "title": "Tag an assistant",
-                "tagAssistant": "Tag an AI assistant (@)",
-                "backButton": "Assistants",
-                "tagAssistantAction": "Tag assistant",
-                "untagAssistantAction": "Remove tag",
-                "infoDefault": "Show more information about the assistant",
-                "hawkiLabel": "HAWKI",
-                "assistantsLabel": "Assistants",
-                "assistants": {
-                    "hawki": "HAWKI",
-                    "hawkiDescription": "The general HAWKI assistant for this room"
-                },
-                "searchPlaceholder": "Search assistants",
-                "noResults": "No matching assistants"
-            },
-            "mentionChips": {
-                "removeAriaLabel": "Remove :assistant from the message"
+                }
             },
             "modelPicker": {
                 "switchModel": "Switch current model",
@@ -326,11 +307,6 @@
             "sending": {
                 "responseError": "An error occurred while processing the response.",
                 "sendError": "An error occurred while sending the message."
-            },
-            "pin": {
-                "pinnedLabel": "Pinned",
-                "pin": "Pin to the top of this menu",
-                "unpin": "Remove from pinned"
             }
         },
         "tools": {
@@ -341,6 +317,9 @@
             "messageAccepted": "Your message was saved, but its response could not be generated. Check your selection before regenerating the response.",
             "offline": "A selected tool is temporarily offline.",
             "offlineHelp": "Wait for it to come back online, or remove the offline tool to send your message."
+        },
+        "models": {
+            "accessDenied": "Your access to the selected model has changed. Please choose another model."
         }
     }
 }

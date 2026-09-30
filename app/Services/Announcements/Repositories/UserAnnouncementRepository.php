@@ -1,6 +1,6 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\Announcements\Repositories;
 
@@ -9,6 +9,7 @@ use App\Models\Announcements\AnnouncementUser;
 use App\Models\User;
 use App\Services\Announcements\AnnouncementContentResolver;
 use App\Services\Announcements\Values\AnnouncementForUser;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -22,9 +23,7 @@ use Illuminate\Support\Collection;
  */
 readonly class UserAnnouncementRepository
 {
-    public function __construct(
-        private AnnouncementContentResolver $contentResolver
-    )
+    public function __construct(private AnnouncementContentResolver $contentResolver)
     {
     }
 
@@ -38,10 +37,10 @@ readonly class UserAnnouncementRepository
 
         return $this->queryVisibleForUser($user)
             ->get()
-            ->map(fn(Announcement $announcement) => $this->mapToValue(
+            ->map(fn (Announcement $announcement) => $this->mapToValue(
                 $announcement,
                 $pivots->get($announcement->id),
-                (int)($seenCounts[$announcement->id] ?? 0)
+                (int) ($seenCounts[$announcement->id] ?? 0),
             ))
             ->values();
     }
@@ -49,14 +48,15 @@ readonly class UserAnnouncementRepository
     public function findOneForUser(User $user, int $announcementId): ?AnnouncementForUser
     {
         $announcement = $this->queryVisibleForUser($user)->whereKey($announcementId)->first();
-        if ($announcement === null) {
+
+        if (null === $announcement) {
             return null;
         }
 
         return $this->mapToValue(
             $announcement,
             $this->findPivotsForUser($user)->get($announcement->id),
-            (int)($this->findSeenCounts()[$announcement->id] ?? 0)
+            (int) ($this->findSeenCounts()[$announcement->id] ?? 0),
         );
     }
 
@@ -66,7 +66,7 @@ readonly class UserAnnouncementRepository
      */
     public function markSeen(User $user, int $announcementId): ?AnnouncementForUser
     {
-        if ($this->findOneForUser($user, $announcementId) === null) {
+        if ($this->findActiveAnnouncementForUser($user, $announcementId) === null) {
             return null;
         }
 
@@ -81,7 +81,7 @@ readonly class UserAnnouncementRepository
      */
     public function markAccepted(User $user, int $announcementId): ?AnnouncementForUser
     {
-        if ($this->findOneForUser($user, $announcementId) === null) {
+        if ($this->findActiveAnnouncementForUser($user, $announcementId) === null) {
             return null;
         }
 
@@ -90,26 +90,66 @@ readonly class UserAnnouncementRepository
         return $this->findOneForUser($user, $announcementId);
     }
 
+    public function findActiveAnnouncementForUser(User $user, int $announcementId): ?Announcement
+    {
+        return $this->queryVisibleForUser($user, activeOnly: true, includePreviousRecipients: false)
+            ->whereKey($announcementId)
+            ->first();
+    }
+
+    /**
+     * @return Collection<int, Announcement>
+     */
+    public function findUnreadForUser(User $user): Collection
+    {
+        return $this->queryVisibleForUser($user, activeOnly: true, includePreviousRecipients: false)
+            ->whereDoesntHave('users', static function (Builder $query) use ($user): void {
+                $query->where('user_id', $user->id)->whereNotNull('accepted_at');
+            })
+            ->get();
+    }
+
     /**
      * @return \Illuminate\Database\Eloquent\Builder<Announcement>
      */
-    private function queryVisibleForUser(User $user)
-    {
-        return Announcement::query()->where('is_published', true)
-            ->where(function ($q) {
+    private function queryVisibleForUser(
+        User $user,
+        bool $activeOnly = false,
+        bool $includePreviousRecipients = true,
+    ): Builder {
+        $roleIds = $user->roles()
+            ->where('guard_name', 'web')
+            ->pluck('roles.id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+
+        return Announcement::query()
+            ->where('is_published', true)
+            ->where(static function ($q): void {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
-            ->where(function ($q) use ($user) {
+            ->when($activeOnly, static function (Builder $query): void {
+                $query->where(static function (Builder $query): void {
+                    $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                });
+            })
+            ->where(static function (Builder $q) use ($user, $roleIds, $includePreviousRecipients): void {
                 $q->where('is_global', true)
-                    ->orWhereJsonContains('target_users', $user->id)
-                    ->orWhereHas('users', fn($sub) => $sub->where('user_id', $user->id));
-                foreach (app(\App\Services\Admin\PermissionService::class)->roleIds($user) as $role) $q->orWhereJsonContains('target_roles', $role);
+                    ->orWhereJsonContains('target_users', $user->id);
+
+                foreach ($roleIds as $roleId) {
+                    $q->orWhereJsonContains('target_roles', $roleId);
+                }
+
+                if ($includePreviousRecipients) {
+                    $q->orWhereHas('users', static fn (Builder $query) => $query->where('user_id', $user->id));
+                }
             })
             ->orderByDesc('starts_at');
     }
 
     /**
-     * @return Collection<int, AnnouncementUser> Pivot rows of the user keyed by announcement id.
+     * @return Collection<int, AnnouncementUser> pivot rows of the user keyed by announcement id
      */
     private function findPivotsForUser(User $user): Collection
     {
@@ -120,7 +160,7 @@ readonly class UserAnnouncementRepository
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, int> Number of users that saw an announcement, keyed by announcement id.
+     * @return \Illuminate\Support\Collection<int, int> number of users that saw an announcement, keyed by announcement id
      */
     private function findSeenCounts(): Collection
     {
@@ -133,15 +173,15 @@ readonly class UserAnnouncementRepository
 
     private function mapToValue(Announcement $announcement, ?AnnouncementUser $pivot, int $seenCount): AnnouncementForUser
     {
-        $started = $announcement->starts_at === null || $announcement->starts_at->lte(now());
-        $expired = $announcement->expires_at !== null && $announcement->expires_at->lt(now());
+        $started = null === $announcement->starts_at || $announcement->starts_at->lte(now());
+        $expired = null !== $announcement->expires_at && $announcement->expires_at->lt(now());
 
         return new AnnouncementForUser(
             $announcement->id,
             $announcement->title,
             $announcement->type,
-            (bool)$announcement->is_global,
-            (bool)$announcement->is_forced,
+            (bool) $announcement->is_global,
+            (bool) $announcement->is_forced,
             $announcement->anchor,
             $announcement->starts_at,
             $announcement->expires_at,
@@ -149,7 +189,7 @@ readonly class UserAnnouncementRepository
             $this->resolveContent($announcement),
             $pivot?->seen_at,
             $pivot?->accepted_at,
-            $seenCount
+            $seenCount,
         );
     }
 

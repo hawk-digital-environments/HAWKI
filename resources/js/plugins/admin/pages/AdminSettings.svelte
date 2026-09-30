@@ -14,7 +14,7 @@
     const app = useApp();
     const { __ } = useTranslator();
     const columns: AdminColumn<AdminSettingResource>[] = [];
-    const workspace = useAdminWorkspace(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-settings', { query, signal }),
         {
@@ -57,8 +57,8 @@
 </script>
 
 <AdminPage
-    section="settings"
-    {workspace}
+    workspace="settings"
+    recordSet={records}
     hint={__('admin.settings_hint')}
 >
     <div class="settings-tabs">
@@ -73,7 +73,7 @@
             id={`${uid}-panel-${tab.key}`}
             role="tabpanel"
             aria-labelledby={`${uid}-tab-${tab.key}`}
-            aria-busy={workspace.loading}
+            aria-busy={records.loading}
             tabindex="0"
             hidden={activeTab !== tab.key}
         >
@@ -88,7 +88,7 @@
                     </div>
                     <ul class="settings-card">
                         {#each group.settings as key (key)}
-                            {@const row = workspace.rows.find((row) => row.key === key)}
+                            {@const row = records.rows.find((row) => row.key === key)}
                             {#if row}
                                 <li>
                                     <div class="setting-label">
@@ -103,23 +103,23 @@
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            disabled={workspace.loading || workspace.busy}
+                                            disabled={records.loading || records.busy}
                                             aria-label={__('admin.settings_edit', {
                                                 name: __('admin.settings_labels.' + key)
                                             })}
-                                            onclick={(event) => workspace.edit(row, event.currentTarget)}
+                                            onclick={(event) => records.edit(row, event.currentTarget)}
                                             >{__('admin.edit')}</Button
                                         >
                                         {#if row.source === 'database'}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                disabled={workspace.loading || workspace.busy}
+                                                disabled={records.loading || records.busy}
                                                 aria-label={__('admin.settings_reset', {
                                                     name: __('admin.settings_labels.' + key)
                                                 })}
                                                 onclick={(event) =>
-                                                    workspace.remove(
+                                                    records.remove(
                                                         row,
                                                         event.currentTarget.parentElement?.querySelector('button') ??
                                                             event.currentTarget

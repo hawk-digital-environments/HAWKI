@@ -1,39 +1,44 @@
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
-import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
-import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
-import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
-import type {Component} from 'svelte';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
+import type {Component} from 'svelte';
+import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
+import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
 
 /**
  * A HAWKI feature module — the unit registered with the {@link ModuleExtension}.
  *
- * A module's job is route bundling: everything one logical feature needs behind
- * a single `name`, auto-prefixed with the plugin's namespace by
- * `moduleRegistrar.ts`. The kernel stores modules under
- * `${pluginName}:${module.name}` (so two plugins can't collide).
+ * A module bundles everything one logical feature needs behind a single
+ * `name`: localisable title/description/icon, a set of routes, and an optional
+ * sidebar entry. The kernel stores modules under `${pluginName}:${module.name}`
+ * (so two plugins can't collide) and auto-prefixes any `routes()` the module
+ * declares with the plugin's namespace (see `moduleRegistrar.ts`).
  *
- * A module's *visible* presence (module selector entry, sidebar panel) is not
- * declared here — plugins contribute those via the sidebar collector events
- * (see `$lib/app/ui/sidebarHooks.ts`) from their `hooks()` lifecycle hook.
+ * All optional members receive the active {@link Locale} so a module can render
+ * its label/icon in the user's language. The `routes()` callback receives a
+ * {@link RouteRegistrar} scoped under the module's group; declare paths
+ * relative to the module, not the plugin.
  */
 export interface HawkiModule {
     readonly name: string;
     visible?(app: import('$lib/kernel/HawkiApp.js').HawkiApp): boolean;
 
     /**
-     * The visible title of the module, e.g. in search scope labels.
-     * If not provided, the title falls back to the module's raw name (e.g. `core:chat` → `chat`).
+     * The visible title of the module, for example in the sidebar.
+     * If not provided, the title will be inferred from the module's name (e.g. `core:chat` → `Chat`).
      */
     title?(translate: Translator['translate'], locale: Locale): string;
 
-    /** The visible description of the module. */
+    /**
+     * The visible description of the module, for example in the sidebar.
+     */
     description?(translate: Translator['translate'], locale: Locale): string;
 
     /**
-     * The icon of the module. Can be either a component or a base64-encoded
-     * image URL (e.g. `data:image/svg+xml;base64,...`).
+     * The icon of the module, for example in the sidebar.
+     * If not provided, a default icon will be used.
+     * Can be either a component or a base64-encoded Image URL (e.g. `data:image/svg+xml;base64,...`).
      */
     icon?(locale: Locale): string | IconComponent | Component;
 

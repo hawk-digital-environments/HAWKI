@@ -6,7 +6,9 @@ namespace App\JsonApi\V1\AssistantAttachments;
 
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Storage\Values\StoredFileIdentifier;
+use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
+use LaravelJsonApi\Eloquent\Fields\Number;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Schema;
 
@@ -38,6 +40,12 @@ class AssistantAttachmentSchema extends Schema
             Str::make('name'),
             Str::make('type'),
             Str::make('mime'),
+            Number::make('size')->readOnly(),
+            // Set only via the dedicated actions/attachment/review admin
+            // action (AssistantController::reviewAttachment) — never a plain
+            // attribute PATCH, since it's strictly an admin judgment.
+            Str::make('review_status')->readOnly(),
+            DateTime::make('created_at')->readOnly(),
             Str::make('rag_status'),
             Str::make('rag_error'),
             Str::make('identifier')->extractUsing(function (AssistantAttachment $assistantAttachment) {

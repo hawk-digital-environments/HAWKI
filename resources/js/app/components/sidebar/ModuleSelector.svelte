@@ -1,49 +1,82 @@
 <!--
-  @component Sidebar control that lists the collected module selector entries
-  in a `CommandPalette` and runs the selected entry's `onSelect`. The entries
-  are collected from other plugins via the `moduleSelectorEntries` hook
-  (see `useSidebarHooks.svelte.ts`).
+  @component Sidebar control that lists the registered app modules in a
+  `CommandPalette` and routes to the selected module's index route.
+
+  The highlighted entry is the `module` the parent resolved (so it stays in
+  sync with the module sidebar on routes that belong to no module, like the
+  announcements page); the first entry is only a fallback for an empty prop.
 -->
 <script lang="ts">
     import CommandPalette, {type CommandItemDefinition} from '$lib/components/ui/command/CommandPalette.svelte';
     import CommandPaletteTrigger from '$lib/components/ui/command/CommandPaletteTrigger.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte';
-    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useApp} from '$lib/app/hooks/useApp.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
     import {useRouter} from '$lib/components/ui/routing/index.js';
-    import {useModuleSelectorEntries} from '$lib/app/ui/useSidebarHooks.svelte.js';
+    import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import type {HawkiCoreModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
+
+    interface Props {
+        /** Module to show as selected; defaults to the first listed module. */
+        module?: HawkiModuleWithPlugin | null;
+    }
+
+    const {module = null}: Props = $props();
 
     const sidebar = useSidebar();
     const app = useApp();
     const router = useRouter();
-    const {translate} = useTranslator();
 
-    const selectorEntries = useModuleSelectorEntries();
-    const entries = $derived(selectorEntries.entries);
+    const modules = $derived(app.modules.all.filter(module => module.routes && (module.visible?.(app) ?? true)));
 
-    const moduleItems: CommandItemDefinition[] = $derived(entries.map((entry) => ({
-        label: entry.label,
-        value: entry.id,
-        // The palette renders icons as components; a string (URL) icon has no slot here.
-        icon: typeof entry.icon === 'string' ? undefined : entry.icon as IconComponent | undefined
-    })));
+    const { translate } = useTranslator();
+    const locale = $derived(app.localization.locale);
+
+    const moduleItems: CommandItemDefinition[] = $derived(modules.map((v) => {
+        const icon = v.icon?.(locale);
+        return {
+            label: v.title?.(translate, locale) ?? v.name,
+            value: `${v.plugin.name}:${v.name}`,
+            // The palette renders icons as components; a string (URL) icon has no slot here.
+            icon: typeof icon === 'string' ? undefined : icon as IconComponent | undefined
+        };
+    }));
 
     let open = $state(false);
 
-    const current = $derived(entries.find(entry => entry.active)?.id ?? moduleItems[0]?.value);
+    const current = $derived(module ? `${module.plugin.name}:${module.name}` : moduleItems[0]?.value);
 
-    function selectModule(value: string) {
-        const entry = entries.find(candidate => candidate.id === value);
-        entry?.onSelect({
-            locale: app.localization.locale,
-            translate,
-            router,
-            can: (permission: string) => app.can(permission)
-        });
+    // NOTE: the forth argument "(module as HawkiCoreModule).pluginNameInRoutes" was added to the function
+    // assistant/dashboard was landing in /dashboard
+    function selectModule(moduleId: string) {
+        const module = modules.find(candidate => `${candidate.plugin.name}:${candidate.name}` === moduleId);
+        if (!module) return;
+        const prefix = getModuleRoutePrefix(
+            module.plugin.name,
+            module.name,
+            module.plugin.isCorePlugin,
+            (module as HawkiCoreModule).pluginNameInRoutes
+        );
+        void router.goTo(router.p(prefix));
     }
 
-    const currentModuleItem = $derived(moduleItems.find(item => item.value === current));
+    function findModuleItem(value: string | undefined) {
+        return moduleItems.find(item => item.value === value);
+    }
+
+    // The `module` prop can be one that has no row of its own in the list
+    // (e.g. the assistants builder, hidden from the selector — see
+    // `BuilderModule.visible()`): it is still the active module, just not
+    // one you can *pick*. The trigger button must still show its own
+    // label/icon in that case, computed the same way `moduleItems` computes
+    // everyone else's — falling back to `current`'s raw value only if the
+    // module defines neither.
+    const currentModuleItem = $derived(findModuleItem(current) ?? (module ? {
+        label: module.title?.(translate, locale) ?? module.name,
+        value: current,
+        icon: (icon => typeof icon === 'string' ? undefined : icon as IconComponent | undefined)(module.icon?.(locale))
+    } : undefined));
 </script>
 
 <CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule} shortcut={false}>

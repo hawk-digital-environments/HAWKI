@@ -49,8 +49,8 @@ export type AdminColumn<Row extends AdminRow = AdminRow, Display extends string 
     AdminDataColumn<Row> | AdminDisplayColumn<Display>;
 
 /**
- * Reads the section content for the current table state. The page supplies
- * it, since every section has its own endpoint, and may
+ * Reads the Workspace page content for the current table state. The page supplies
+ * it, since every Workspace page has its own endpoint, and may
  * ignore `query` when the page filters through its own form instead.
  */
 export type AdminReader<Row extends AdminRow> = (
@@ -116,10 +116,10 @@ export interface AdminActionResult<Result> {
 type Translate = (label: string, replacements?: Record<string, string>) => string;
 
 /**
- * Everything one admin section page works with: the columns the page
+ * Everything one admin Workspace page works with: the columns the page
  * declared, the content of the last read, the table state that shapes each
  * read (search, pagination, sorting, value filters), the writes and actions of
- * the section and the dialogs they open (editor, confirmation, action result).
+ * the Workspace page and the dialogs they open (editor, confirmation, action result).
  *
  * A page creates it with {@link useAdminWorkspace} and passes it to
  * `AdminPage`, `AdminSearch`, `AdminTable` and `AdminResultDialog`; cells call
@@ -134,7 +134,7 @@ export class AdminWorkspace<
     readonly resettable: boolean;
 
     content = $state<AdminContent<Row> | null>(null);
-    /** `true` until the first response arrives, and during every later read. */
+    /** `true` until the first response arrives, and during every visible read. */
     loading = $state(true);
     /** Message of the last failed read, write or action; cleared when the next one starts. */
     error = $state('');
@@ -177,7 +177,7 @@ export class AdminWorkspace<
     private suspended = $state(false);
     private generation = 0;
 
-    /** Stop publishing reads while authorization is being checked. */
+    /** Stop publishing reads while changed or unverified authorization is handled. */
     suspend(): void {
         this.suspended = true;
         this.generation++;
@@ -196,7 +196,9 @@ export class AdminWorkspace<
         this.notice = '';
     }
 
-    /** Reload after authorization succeeds, retaining a draft only if its target and metadata are unchanged.
+    /**
+     * Reload visibly after changed or unverified authorization, retaining a draft only if its target and metadata
+     * are unchanged.
      * Returns whether a dialog closed, so the mounted page can restore focus after rendering.
      */
     async resume(): Promise<boolean> {
@@ -210,32 +212,22 @@ export class AdminWorkspace<
         const loaded = await this.loadContent();
         if (generation !== this.generation) return false;
         if (!loaded) this.content = null;
-        if (editor && this.editor === editor) {
-            const current = this.content;
-            const row = editor.row ? current?.rows.find((row) => row.id === editor.row?.id) : null;
-            const fields =
-                row && this.editFields ? this.editFields(row, current?.fields ?? []) : (current?.fields ?? []);
-            const metadata = (content: AdminContent<Row> | null, fields: AdminField[]) =>
-                JSON.stringify({
-                    fields,
-                    permission_catalog: content?.permission_catalog,
-                    access_rules: content?.access_rules,
-                    role_catalog: content?.role_catalog
-                });
-            const targetUnchanged =
-                editor.row ?
-                    !!row && !!editor.row._version && row._version === editor.row._version
-                :   !!current?.create && !!this.operations.save;
-            if (!loaded || !targetUnchanged || metadata(previous, editor.fields) !== metadata(current, fields)) {
-                this.editor = null;
-                this.notice = this.__(loaded ? 'admin.editor_refreshed' : 'admin.editor_unverified');
-                closed = true;
-            } else if (row) {
-                // Keep the editor instance (and its local form draft), but use the current row reference.
-                editor.row = row;
-            }
-        }
+        if (this.reconcileEditor(previous, editor, loaded)) closed = true;
         return closed;
+    }
+
+    /**
+     * Re-read silently after a routine connection refresh and reconcile an open editor.
+     * Pending confirmations stay open. Returns whether the editor closed.
+     */
+    async revalidate(): Promise<boolean> {
+        if (this.suspended) return false;
+        const generation = this.generation;
+        const previous = this.content;
+        const editor = this.editor;
+        const loaded = await this.loadContent({ silent: true });
+        if (generation !== this.generation || !loaded) return false;
+        return this.reconcileEditor(previous, editor, true);
     }
 
     constructor(
@@ -280,12 +272,12 @@ export class AdminWorkspace<
         await this.loadContent();
     }
 
-    private async loadContent(): Promise<boolean> {
+    private async loadContent(options: { silent?: boolean } = {}): Promise<boolean> {
         if (this.suspended) return false;
         this.request?.abort();
         const controller = new AbortController();
         this.request = controller;
-        this.loading = true;
+        if (!options.silent || !this.content) this.loading = true;
         this.error = '';
         try {
             const content = await this.read(controller.signal, this.query);
@@ -298,6 +290,38 @@ export class AdminWorkspace<
             else if (!controller.signal.aborted) this.error = this.message(failure, 'admin.errors.load');
         } finally {
             if (!controller.signal.aborted) this.loading = false;
+        }
+        return false;
+    }
+
+    private reconcileEditor(
+        previous: AdminContent<Row> | null,
+        editor: AdminEditorState<Row> | null,
+        verified: boolean
+    ): boolean {
+        if (!editor || this.editor !== editor) return false;
+        const current = this.content;
+        const row = editor.row ? current?.rows.find((row) => row.id === editor.row?.id) : null;
+        const fields = row && this.editFields ? this.editFields(row, current?.fields ?? []) : (current?.fields ?? []);
+        const metadata = (content: AdminContent<Row> | null, fields: AdminField[]) =>
+            JSON.stringify({
+                fields,
+                permission_catalog: content?.permission_catalog,
+                access_rules: content?.access_rules,
+                role_catalog: content?.role_catalog
+            });
+        const targetUnchanged =
+            editor.row ?
+                !!row && !!editor.row._version && row._version === editor.row._version
+            :   !!current?.create && !!this.operations.save;
+        if (!verified || !targetUnchanged || metadata(previous, editor.fields) !== metadata(current, fields)) {
+            this.editor = null;
+            this.notice = this.__(verified ? 'admin.editor_refreshed' : 'admin.editor_unverified');
+            return true;
+        }
+        if (row) {
+            // Keep the editor instance (and its local form draft), but use the current row reference.
+            editor.row = row;
         }
         return false;
     }
@@ -500,13 +524,13 @@ export class AdminWorkspace<
 }
 
 /**
- * Creates the {@link AdminWorkspace} of a section page, reads once on mount
+ * Creates the {@link AdminWorkspace} of a Workspace page, reads once on mount
  * and aborts on unmount. The row type is the resource type the reader
  * returns, so registering the section's resource schema types the whole page.
  * Call it once in the page's script:
  *
  *     const columns: AdminColumn<AdminProviderResource>[] = [{ id: 'name' }, { id: 'active', format: 'boolean' }];
- *     const workspace = useAdminWorkspace(columns, (signal, query) =>
+ *     const records = useAdminWorkspace(columns, (signal, query) =>
  *         app.restApi.getResourceCollection('admin-providers', { query, signal })
  *     );
  */
@@ -519,15 +543,15 @@ export function useAdminWorkspace<
     read: AdminReader<Row>,
     options: AdminWorkspaceOptions<Row, Results> = {}
 ): AdminWorkspace<Row, Columns[number]['id'], Results> {
-    const workspace = new AdminWorkspace<Row, Columns[number]['id'], Results>(
+    const records = new AdminWorkspace<Row, Columns[number]['id'], Results>(
         useTranslator().__,
         columns as ReadonlyArray<AdminColumn<Row, string> & { id: Columns[number]['id'] }>,
         read,
         options
     );
     onMount(() => {
-        void workspace.load();
-        return () => workspace.dispose();
+        void records.load();
+        return () => records.dispose();
     });
-    return workspace;
+    return records;
 }

@@ -13,5 +13,6 @@ class ResourceCatalog
         'users' => 'users.view', 'roles' => 'roles.manage', 'mappings' => 'roles.manage',
         'announcements' => 'announcements.manage', 'usage' => 'usage.view',
         'health' => 'health.view', 'settings' => 'settings.manage', 'environment' => 'settings.view',
+        'assistants' => 'assistants.manage',
     ];
 }

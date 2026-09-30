@@ -150,7 +150,9 @@
         "feedback": {
             "feedback_to": "Feedback to",
             "visible_to_creator": "Only visible to creator",
-            "send_feedback": "Send Feedback"
+            "send_feedback": "Send Feedback",
+            "received_feedbacks": "Received Feedbacks",
+            "empty_feedbacks": "Still no feedbacks received."
         },
         "remix": {
             "remix_from": "Remix from",

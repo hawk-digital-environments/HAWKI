@@ -11,13 +11,12 @@ use App\Services\Ai\Agents\Events\AgentSendingEvent;
 use App\Services\Ai\Agents\Events\AgentStreamCompletedEvent;
 use App\Services\Ai\Agents\Events\AgentStreamInitiatedEvent;
 use App\Services\Ai\Agents\Exceptions\AgentStateException;
-use App\Services\Ai\Agents\Responses\RagCitationAwareStreamableResponse;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
+use App\Services\Ai\Models\Access\ModelAuthorization;
 use App\Services\Ai\Tools\Exceptions\ToolAccessException;
 use App\Services\Ai\Tools\LaravelAi\AuthorizedTextGateway;
 use App\Services\Ai\Tools\LaravelAi\ToolExecutionState;
 use App\Services\Ai\Values\TokenUsage;
-use App\Services\Rag\Citations\RagCitationCollector;
 use Illuminate\Broadcasting\Channel;
 use Laravel\Ai\Approvals\Decisions;
 use Laravel\Ai\Contracts\Agent as LaravelAgentInterface;
@@ -137,12 +136,11 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
      *
      * Dispatches {@see AgentSendingEvent} before and {@see AgentResponseReceivedEvent} after
      * the provider call. Token usage is stored and becomes accessible via {@see getUsage()}.
-     * RAG document citations collected while tools executed are merged into the
-     * response meta, so consumers read them like provider citations.
      */
     public function send(): AgentResponse
     {
         $this->installAuthorizedGateway();
+        app(ModelAuthorization::class)->authorize($this->getContext());
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
         $response = $this->promptThroughSdk(
@@ -154,10 +152,6 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
 
         app(ToolExecutionState::class)->check($this->getContext());
         $this->usage = $response->usage;
-
-        foreach ($this->ragCitations()->drain() as $citation) {
-            $response->meta->citations->push($citation);
-        }
 
         AgentResponseReceivedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response, $response->usage);
 
@@ -171,13 +165,11 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
      * {@see AgentStreamInitiatedEvent} immediately after the stream object is created.
      * {@see AgentStreamCompletedEvent} is dispatched once the stream closes and token usage
      * is available.
-     *
-     * The returned stream surfaces RAG document citations as {@see \Laravel\Ai\Streaming\Events\Citation}
-     * chunks before the final StreamEnd, so consumers receive them like provider citations.
      */
     public function sendStreaming(): StreamableAgentResponse
     {
         $this->installAuthorizedGateway();
+        app(ModelAuthorization::class)->authorize($this->getContext());
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
         $response = $this->streamThroughSdk(
@@ -193,11 +185,6 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
 
             AgentStreamCompletedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response, $response->usage);
         });
-
-        $response = new RagCitationAwareStreamableResponse(
-            inner: $response,
-            drainCitations: fn () => $this->ragCitations()->drain(),
-        );
 
         AgentStreamInitiatedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response);
 
@@ -222,17 +209,9 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
                 AuthorizedTextGateway::class
             ));
         }
-        if (!$driver->textGateway() instanceof AuthorizedTextGateway) {
-            $driver->useTextGateway(new AuthorizedTextGateway($driver->textGateway()));
-        }
-    }
-
-    /**
-     * The request-scoped citation collector shared with the MCP tool-call
-     * listener. Resolved lazily to keep this adapter constructor-free.
-     */
-    private function ragCitations(): RagCitationCollector
-    {
-        return app(RagCitationCollector::class);
+        $gateway = $driver->textGateway();
+        $driver->useTextGateway($gateway instanceof AuthorizedTextGateway
+            ? $gateway->withContext($this->getContext())
+            : new AuthorizedTextGateway($gateway, $this->getContext()));
     }
 }

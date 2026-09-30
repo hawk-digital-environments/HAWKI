@@ -10,7 +10,7 @@
     } from '../../../../resources/js/plugins/admin/schemas/admin-actions.js';
 
     let { api, allowed = true }: { api: RestApi; allowed?: boolean } = $props();
-    const workspace = useAdminWorkspace(
+    const records = useAdminWorkspace(
         [{ id: 'name' }],
         (signal, query) => api.getResourceCollection('admin-providers', { signal, query }),
         {
@@ -43,16 +43,16 @@
     );
 
     function checkActions() {
-        type Response = NonNullable<typeof workspace.results.discover>['response'];
+        type Response = NonNullable<typeof records.results.discover>['response'];
         const response: Response = { models: [] };
         // @ts-expect-error One action's response cannot leak into another dialog.
         response.tools;
         // @ts-expect-error Required response fields cannot silently be omitted.
         const empty: Response = {};
         // @ts-expect-error Unknown action ids are rejected.
-        workspace.closeResult('missing');
+        records.closeResult('missing');
         // @ts-expect-error Results retain their response type by id.
-        workspace.results.tools = { response: { models: [] }, id: null, trigger: null };
+        records.results.tools = { response: { models: [] }, id: null, trigger: null };
     }
 
     function modelCount(response: ProviderDiscovery): number {
@@ -64,7 +64,7 @@
 </script>
 
 <AdminResultDialog
-    {workspace}
+    recordSet={records}
     action="discover"
 >
     {#snippet children(response, id)}
@@ -73,7 +73,7 @@
     {/snippet}
 </AdminResultDialog>
 <AdminResultDialog
-    {workspace}
+    recordSet={records}
     action="tools"
 >
     {#snippet children(response, id)}

@@ -35,6 +35,7 @@ class SpaAuthFlowTest extends TestCase
             '2026_08_19_130000_add_locale_to_users_table',
             '2025_01_16_121103_create_passkey_backups',
             '2025_08_21_175642_create_announcements',
+            '2025_08_21_175700_add_admin_fields_to_announcements',
             '2025_08_21_175841_create_announcement_user',
             '2025_10_09_090741_create_user_keychain_values_table',
             '2026_06_07_175604_create_frontend_migrations_table',

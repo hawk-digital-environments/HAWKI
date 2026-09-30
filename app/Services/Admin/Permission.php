@@ -20,6 +20,7 @@ enum Permission: string
     case SETTINGS_VIEW = 'settings.view';
     case SETTINGS_MANAGE = 'settings.manage';
     case EXTERNAL_APPS_MANAGE = 'external-apps.manage';
+    case ASSISTANTS_MANAGE = 'assistants.manage';
 
     case TOOLS_USE = 'tools.use';
     case WEB_SEARCH_USE = 'ai.capabilities.web_search.use';

@@ -34,9 +34,8 @@ class ProviderIconServiceTest extends TestCase
 
     public function testSelectionStoresBothSvgVariantsAndUnchangedValuesNeedNoNetwork(): void
     {
-        Cache::forget('admin.svgl.ai.v2');
+        $this->forgetSvglCache('https://svgl.app/library/light.svg', 'https://svgl.app/library/dark.svg');
         Http::preventStrayRequests();
-        Cache::forget('admin.svgl.all.v2');
         Http::fake([
             'https://api.svgl.app' => Http::response([
                 ['id' => 1, 'title' => 'Example', 'category' => 'AI', 'route' => [
@@ -54,10 +53,27 @@ class ProviderIconServiceTest extends TestCase
         Http::assertSentCount(3);
     }
 
+    public function testCatalogueAndDownloadsAreKeptForADay(): void
+    {
+        $this->forgetSvglCache('https://svgl.app/library/light.svg');
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.svgl.app' => Http::response([
+                ['id' => 1, 'title' => 'Example', 'category' => 'AI', 'route' => 'https://svgl.app/library/light.svg'],
+            ]),
+            'https://svgl.app/library/light.svg' => Http::response(self::SVG),
+        ]);
+        $service = app(ProviderIconService::class);
+        $service->resolve(['source' => 'svgl', 'svgl_id' => 1, 'title' => 'Example'], null);
+        $service->resolve(['source' => 'svgl', 'svgl_id' => 1, 'title' => 'Example'], null);
+        Http::assertSentCount(2);
+        self::assertSame(86400, ProviderIconService::CACHE_TTL);
+        self::assertSame(self::SVG, Cache::get('admin.svgl.svg.v1.' . sha1('https://svgl.app/library/light.svg')));
+    }
+
     public function testSearchIncludesOtherCategoriesAndClearingItRestoresAi(): void
     {
-        Cache::forget('admin.svgl.ai.v2');
-        Cache::forget('admin.svgl.all.v2');
+        $this->forgetSvglCache('https://svgl.app/library/browser.svg');
         Http::preventStrayRequests();
         $ai = ['id' => 1, 'title' => 'Example AI', 'category' => 'AI', 'route' => 'https://svgl.app/library/ai.svg'];
         $other = ['id' => 2, 'title' => 'Example Browser', 'category' => 'Browser', 'route' => 'https://svgl.app/library/browser.svg'];
@@ -138,6 +154,19 @@ class ProviderIconServiceTest extends TestCase
             yield 'inline ' . $style => ['<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24" style="' . $style . '"/></svg>'];
 
             yield 'stylesheet ' . $style => ['<svg xmlns="http://www.w3.org/2000/svg"><style>.line{' . $style . '}</style><path class="line" d="M0 0h24"/></svg>'];
+        }
+    }
+
+    /**
+     * Tests share the dev cache store, so cached svgl responses must not leak between runs.
+     */
+    private function forgetSvglCache(string ...$svgUrls): void
+    {
+        Cache::forget('admin.svgl.ai.v2');
+        Cache::forget('admin.svgl.all.v2');
+
+        foreach ($svgUrls as $url) {
+            Cache::forget('admin.svgl.svg.v1.' . sha1($url));
         }
     }
 }

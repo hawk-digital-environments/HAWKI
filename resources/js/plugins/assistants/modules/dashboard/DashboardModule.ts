@@ -1,9 +1,35 @@
 import {HawkiCoreModule, HawkiModule} from "$lib/kernel/modules/types";
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {Translator} from '$lib/kernel/localization/translator.js';
+import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
+import type {IconComponent} from '$lib/components/ui/icons/index.js';
+import type {Component} from 'svelte';
+import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
+import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
 
+/**
+ * The single module-selector entry for the whole assistants feature — the
+ * builder ({@link BuilderModule}) has none of its own (see its `visible()`).
+ * `sidebar()` returns the same drill-down sidebar the builder module also
+ * returns, so whichever of the two ends up resolved as the active module
+ * (see `AppSidebar.svelte`'s `sidebarModule`), the rendered panel is
+ * identical either way.
+ */
 export class DashboardModule implements HawkiCoreModule {
     public readonly name = 'dashboard';
     public readonly pluginNameInRoutes = true;
+
+    public title(translate: Translator['translate'], _locale: Locale): string {
+        return translate('assistants.assistants');
+    }
+
+    public icon(_locale: Locale): string | IconComponent | Component {
+        return BotIcon;
+    }
+
+    public sidebar(_locale: Locale): Component {
+        return AssistantsSidebar;
+    }
 
     routes(registrar: RouteRegistrar): void | Promise<void> {
         // Landing route for the module itself (the module selector navigates

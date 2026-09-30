@@ -24,7 +24,7 @@ class AssistantReleaseStatus
         // directly, and a real promotion only happens once the review is
         // APPROVED.
         if (AssistantReleaseStage::PRIVATE === $event->newStage || AssistantReleaseStage::DRAFT === $event->newStage) {
-            $this->reviewRepository->deleteReviewForAssistantUnlessDenied($event->assistant->id);
+            $this->reviewRepository->deleteReviewForAssistantUnlessTerminal($event->assistant->id);
         }
     }
 }

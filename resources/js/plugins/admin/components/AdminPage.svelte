@@ -1,9 +1,22 @@
 <!--
-  @component Shell of an admin section page: heading, description, feedback,
+  @component Shell of an Admin Workspace: heading, description, feedback,
   the page menu, the create button and the editor and confirmation dialogs of
-  the page's workspace. Pages compose AdminSearch, AdminTable or their own
+  its Record Sets. Pages compose AdminSearch, AdminTable or their own
   markup as children.
 -->
+<script module lang="ts">
+    import type { EditorSection } from '../forms/schemas.js';
+    import type { AdminWorkspace } from '../workspace.svelte.js';
+
+    export interface RelatedRecordSet {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recordSet: AdminWorkspace<any, any, any>;
+        editor: EditorSection;
+        /** Editor dialog title prefix, e.g. "Tools". */
+        title: string;
+    }
+</script>
+
 <script
     lang="ts"
     generics="Row extends AdminRow, ColumnId extends string, Results extends Record<string, unknown>"
@@ -19,37 +32,43 @@
     import AdminActionMenu, { type AdminMenuItem } from './AdminActionMenu.svelte';
     import AdminEditor from './AdminEditor.svelte';
     import { adminActionIcons } from '../actionIcons.js';
-    import { sections, type SectionId } from '../sections.js';
+    import type { WorkspaceId } from '../workspaces.js';
     import type { AdminRow } from '../schemas/admin-content.js';
-    import type { AdminAction, AdminWorkspace } from '../workspace.svelte.js';
+    import type { AdminAction } from '../workspace.svelte.js';
 
     let {
+        recordSet,
         workspace,
-        section,
         pageActions = [],
         menuItems = [],
         hint,
+        related = [],
         children
     }: {
-        workspace: AdminWorkspace<Row, ColumnId, Results>;
+        recordSet: AdminWorkspace<Row, ColumnId, Results>;
         /** Page identity for labels, access checks and editor controls. */
-        section: SectionId;
-        /** Section actions offered in the page menu after "reload"; run through `workspace.action(item, trigger)`. */
+        workspace: WorkspaceId | (string & {});
+        /** Workspace actions offered in the page menu after "reload"; run through `recordSet.action(item, trigger)`. */
         pageActions?: AdminAction[];
         /** Extra page menu entries after the page actions (pages compute them reactively themselves). */
         menuItems?: AdminMenuItem[];
-        /** Explanatory text under the section description. */
+        /** Explanatory text under the Workspace description. */
         hint?: string;
+        related?: RelatedRecordSet[];
         children?: Snippet;
     } = $props();
     const app = useApp();
     const { __ } = useTranslator();
     const breakpoint = useBreakpoint();
-    const title = $derived(__('admin.sections.' + section));
-    /** The user may see this section; checked reactively so revoked permissions hide the content. */
-    const allowed = $derived(
-        app.can('admin.access') && app.can(sections.find((item) => item.id === section)!.permission)
-    );
+    // The Workspace identity of a page never changes, so the registry lookup happens once.
+    // svelte-ignore state_referenced_locally
+    const entry = app.admin.workspace(workspace);
+    // svelte-ignore state_referenced_locally
+    if (!entry) throw new Error(`Unknown admin workspace "${workspace}"`);
+    const title = $derived(__(entry.title));
+    const all = $derived([recordSet, ...related.map((item) => item.recordSet)]);
+    /** Checked reactively so revoked permissions hide the Workspace content. */
+    const allowed = $derived(app.can('admin.access') && app.can(entry.permission));
     let toolbar = $state<HTMLDivElement>();
     let forbidden = $state<HTMLParagraphElement>();
     const permissionSignature = () => JSON.stringify(
@@ -57,26 +76,31 @@
     );
     let previousPermissions = untrack(permissionSignature);
     function invalidate() {
-        const hadDialog = workspace.dialogOpen;
-        workspace.invalidate();
-        if (hadDialog || !allowed) void tick().then(() => (allowed ? workspace.restoreFocus() : forbidden)?.focus());
+        const hadDialog = all.some((item) => item.dialogOpen);
+        for (const item of all) item.invalidate();
+        if (hadDialog || !allowed) void tick().then(() => (allowed ? recordSet.restoreFocus() : forbidden)?.focus());
     }
     $effect(() => {
         if (!allowed) untrack(invalidate);
     });
     onMount(() => {
         const disposers = [
-            app.events.async.on('connectionRefreshStarted', () => workspace.suspend()),
             app.events.async.on('connectionRefreshed', async () => {
                 const current = permissionSignature();
-                if (!allowed || current !== previousPermissions) {
+                const authorizationChanged = !allowed || current !== previousPermissions;
+                if (authorizationChanged) {
                     invalidate();
-                    if (allowed) workspace.notice = __('admin.authorization_changed');
+                    if (allowed) for (const item of all) item.notice = __('admin.authorization_changed');
                 }
                 previousPermissions = current;
-                if (allowed && await workspace.resume()) {
+                const closed =
+                    allowed &&
+                    (await Promise.all(
+                        all.map((item) => (authorizationChanged ? item.resume() : item.revalidate()))
+                    )).some(Boolean);
+                if (closed) {
                     await tick();
-                    if (!workspace.dialogOpen) workspace.restoreFocus()?.focus();
+                    if (!all.some((item) => item.dialogOpen)) recordSet.restoreFocus()?.focus();
                 }
             }),
             app.events.async.on('connectionRefreshFailed', () => invalidate()),
@@ -88,20 +112,22 @@
         {
             label: __('admin.reload'),
             icon: adminActionIcons.reload,
-            disabled: workspace.loading,
-            run: () => workspace.load()
+            disabled: all.some((item) => item.loading),
+            run: () => Promise.all(all.map((item) => item.load()))
         },
         ...pageActions.map((item) => ({
             label: __('admin.actions.' + item.id),
             icon: adminActionIcons[item.id],
             destructive: item.destructive,
-            run: (trigger: HTMLButtonElement | null) => workspace.action(item, trigger)
+            run: (trigger: HTMLButtonElement | null) => recordSet.action(item, trigger)
         })),
         ...menuItems
     ]);
 
     $effect(() => {
-        workspace.focusFallback = () => toolbar?.querySelector<HTMLElement>('button:not(:disabled)') ?? toolbar ?? forbidden ?? null;
+        for (const item of all)
+            item.focusFallback = () =>
+                toolbar?.querySelector<HTMLElement>('button:not(:disabled)') ?? toolbar ?? forbidden ?? null;
     });
 </script>
 
@@ -117,16 +143,16 @@
                     <AdminActionMenu
                         label={__('admin.page_actions', { name: title })}
                         items={toolbarItems}
-                        disabled={workspace.busy || app.authorizationRefreshing}
+                        disabled={all.some((item) => item.busy)}
                         compact={breakpoint.is('bpSmAndSmaller')}
-                        dialogOpen={workspace.dialogOpen}
+                        dialogOpen={all.some((item) => item.dialogOpen)}
                     />
-                    {#if workspace.canCreate}
+                    {#if recordSet.canCreate}
                         <Button
                             type="button"
                             variant="fill"
-                            disabled={workspace.busy || app.authorizationRefreshing}
-                            onclick={(event) => workspace.edit(null, event.currentTarget)}
+                            disabled={recordSet.busy}
+                            onclick={(event) => recordSet.edit(null, event.currentTarget)}
                         >
                             {__('admin.create')}
                         </Button>
@@ -135,46 +161,84 @@
             </PageHeaderBar>
         {/snippet}
         <div class="workspace">
-            <p class="description">{__('admin.descriptions.' + section)}</p>
+            <p class="description">{__(entry.description)}</p>
             {#if hint}<p class="hint">{hint}</p>{/if}
             <p
                 role="status"
                 class="feedback"
             >
-                {workspace.notice}
+                {recordSet.notice}
             </p>
-            {#if workspace.error || workspace.authorizationDenied}<p
+            {#if recordSet.error || recordSet.authorizationDenied}<p
                     role="alert"
                     class="error"
                 >
-                    {workspace.authorizationDenied ? __('admin.forbidden') : workspace.error}
+                    {recordSet.authorizationDenied ? __('admin.forbidden') : recordSet.error}
                 </p>{/if}
+            {#each related as item}
+                <p
+                    role="status"
+                    class="feedback"
+                >
+                    {item.recordSet.notice}
+                </p>
+                {#if item.recordSet.error || item.recordSet.authorizationDenied}<p
+                        role="alert"
+                        class="error"
+                    >
+                        {item.recordSet.authorizationDenied ? __('admin.forbidden') : item.recordSet.error}
+                    </p>{/if}
+            {/each}
             {@render children?.()}
         </div>
     </Page>
 
-    {#if workspace.editor}
+    {#if recordSet.editor}
         <AdminEditor
-            {section}
-            fields={workspace.editor.fields}
-            content={workspace.content}
-            row={workspace.editor.row}
-            title={title + ' · ' + __(workspace.editor.row ? 'admin.edit' : 'admin.create')}
-            onSave={(values) => workspace.save(values)}
-            onClose={() => (workspace.editor = null)}
-            restoreFocus={() => workspace.restoreFocus()}
+            section={workspace}
+            fields={recordSet.editor.fields}
+            content={recordSet.content}
+            row={recordSet.editor.row}
+            title={title + ' · ' + __(recordSet.editor.row ? 'admin.edit' : 'admin.create')}
+            onSave={(values) => recordSet.save(values)}
+            onClose={() => (recordSet.editor = null)}
+            restoreFocus={() => recordSet.restoreFocus()}
         />
     {/if}
     <ConfirmDialog
-        open={!!workspace.confirmation}
-        title={workspace.confirmation?.title}
-        description={workspace.confirmation?.description}
+        open={!!recordSet.confirmation}
+        title={recordSet.confirmation?.title}
+        description={recordSet.confirmation?.description}
         onOpenChange={(open) => {
-            if (!open) workspace.confirmation = null;
+            if (!open) recordSet.confirmation = null;
         }}
-        restoreFocusTo={() => workspace.restoreFocus()}
-        onConfirm={() => workspace.confirm()}
+        restoreFocusTo={() => recordSet.restoreFocus()}
+        onConfirm={() => recordSet.confirm()}
     />
+    {#each related as item}
+        {#if item.recordSet.editor}
+            <AdminEditor
+                section={item.editor}
+                fields={item.recordSet.editor.fields}
+                content={item.recordSet.content}
+                row={item.recordSet.editor.row}
+                title={item.title + ' · ' + __(item.recordSet.editor.row ? 'admin.edit' : 'admin.create')}
+                onSave={(values) => item.recordSet.save(values)}
+                onClose={() => (item.recordSet.editor = null)}
+                restoreFocus={() => item.recordSet.restoreFocus()}
+            />
+        {/if}
+        <ConfirmDialog
+            open={!!item.recordSet.confirmation}
+            title={item.recordSet.confirmation?.title}
+            description={item.recordSet.confirmation?.description}
+            onOpenChange={(open) => {
+                if (!open) item.recordSet.confirmation = null;
+            }}
+            restoreFocusTo={() => item.recordSet.restoreFocus()}
+            onConfirm={() => item.recordSet.confirm()}
+        />
+    {/each}
 {:else}
     <Page title={__('admin.forbidden_title')}><p bind:this={forbidden} tabindex="-1" role="alert">{__('admin.forbidden')}</p></Page>
 {/if}

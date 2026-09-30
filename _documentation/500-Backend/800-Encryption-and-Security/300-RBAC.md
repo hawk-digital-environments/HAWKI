@@ -39,11 +39,9 @@ Use `RoleAssignmentService` for membership changes and the guarded admin reposit
 
 ## Migration and rollback
 
-Deploy this migration with application traffic and queue workers paused. The role column rename requires the new application code and migrated schema to become active together. Run `bin/env php artisan migrate --force`, rebuild any deployment config cache, then restart workers.
+A single migration, `2026_09_10_120000_create_administration_tables`, creates the Spatie tables (`roles` with HAWKI's `display_name`, `description` and `is_system` columns, `permissions`, `role_has_permissions`, `model_has_roles`, `model_has_permissions`), the assignment-source table `role_user`, `employee_type_role_mappings`, the admin tables, and the admin columns on `users` and the AI configuration tables. It seeds the built-in `admin` and `user` roles, registers every permission name frozen inside the migration, grants the administrator role every registered permission including the tool and AI-capability names, and gives every user with `employeetype = admin` a manual administrator assignment. Because MySQL commits DDL outside the transaction, `up()` and `down()` guard every schema step and use ignore-on-conflict inserts, so a run that failed midway can simply be repeated.
 
-The migration preserves role IDs, employee-type mappings, announcement targets, and assignment sources. It imports the administration permission names frozen inside the migration and deduplicates effective memberships; the tool and AI-capability permission names are registered by the later `add_tool_access_rules` and `add_web_fetch_permission` migrations. The migration reads `role_user` but never writes to it. Because MySQL commits DDL outside the transaction, `up()` and `down()` guard every schema step and use ignore-on-conflict inserts, so a run that failed during the backfill can simply be repeated. `role_permissions` remains a legacy snapshot with no runtime readers or writers. A later cleanup can remove it once the migration is verified.
-
-The migration's `down()` method merges current Spatie role grants back into `role_permissions`: it replaces only rows naming a permission the migration imported and leaves legacy rows with unregistered or retired names intact, then restores the old role column names. Assignment sources remain intact. Roll back application code and schema together while traffic and workers are paused.
+Run `bin/env php artisan migrate --force`, rebuild any deployment config cache, then restart workers. `down()` removes every table and column the migration added, including all role memberships; roll back application code and schema together while traffic and workers are paused.
 
 ## Verification
 
@@ -74,7 +72,7 @@ Tool administration still requires `admin.access` and `mcp.manage`. Tool use req
 | `image_generation` | `tools.use`, `ai.capabilities.image_generation.use` |
 | `internal_search` | `tools.use`, `tools.internal_search.use` |
 
-Every newly discovered tool and every existing tool starts with `access_rule=unavailable`. Migration does not assign new permissions to existing roles. On a fresh installation, the original administration migration gives the built-in administrator the complete registered permission set; tools still start unavailable.
+Every newly discovered tool and every existing tool starts with `access_rule=unavailable`. The migration grants the built-in administrator every registered permission, including tool and capability permissions; tools remain unavailable until an administrator publishes an access rule.
 
 For an existing installation, an operator explicitly bootstraps each grant the administrator should be able to delegate:
 
@@ -105,3 +103,17 @@ Public tool queries filter authorization before pagination, relationship linkage
 HTTP denial returns `403` with `{code: "TOOL_ACCESS_DENIED", message}`. Unavailable selections return `422` with `TOOL_UNAVAILABLE`. Tool authorization failures during a stream use `{type: "error", content, isDone: true, code}` and end the turn. Ordinary provider error chunks carry no tool code, are delivered in place, and do not terminate the stream. Selection resolution happens before a stream opens; later revocation terminates the stream with the same code. The frontend refreshes authorization once and does not replay the operation. Remote provider-native operations already running cannot be recalled.
 
 Rollback must restore application code and schema together. Returning to an older backend removes tool enforcement; do not leave a frontend advertising tool restrictions while such a backend serves traffic.
+
+## Model access
+
+Administration can restrict a model to roles through `admin-models.attributes.allowed_roles`. The value is an array of role IDs stored in `ai_model_roles`. An empty array permits everyone. A non-empty array requires an eligible user to hold at least one listed `web` role. Disabled and removed users cannot use restricted models, and administrator status does not bypass the role check.
+
+The `role_access` contextual scope hides restricted models from users without a matching role. This also removes tools that are discoverable only through those models. The chat request factory distinguishes a forbidden model from an unknown or otherwise unavailable model. Agent dispatch reloads the initiating actor and the model-role rows before contacting the provider. Tool dispatch checks the model again. An unauthenticated HTTP request sees only unrestricted models. Console queries without an actor do not apply the filter.
+
+Model access denial returns HTTP `403` with `{code: "MODEL_ACCESS_DENIED", message}`. Streaming requests send the same code in the terminal error packet. A model assigned to any system slot cannot have allowed roles, and a model with allowed roles cannot be assigned to a system slot, because system tasks must remain available to every user.
+
+Rollback must remove the model-access code and the `ai_model_roles` schema together. Rolling back only one side either breaks model queries or removes the enforced restriction.
+
+## Installation after the Admin Panel
+
+Run `php artisan migrate` when adding the Permission System. The separate `2026_09_15_120000_create_permission_system_tables` migration adds role storage, tool access rules and announcement role targeting. It preserves the Admin Panel tables and settings and grants existing accounts with employee type `admin` the administrator role. The following migration adds model role restrictions.

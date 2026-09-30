@@ -9,6 +9,7 @@ use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\KnownUsersAccessScope;
 use App\Policies\UserPolicy;
 use App\Services\Announcements\RegistrationPolicyService;
+use App\Services\Announcements\Repositories\UserAnnouncementRepository;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use App\Services\Users\Events\UserCreatedEvent;
@@ -182,24 +183,7 @@ class User extends Authenticatable
      */
     public function unreadAnnouncements(): Collection
     {
-        $now = now();
-
-        return Announcement::query()->where('is_published', true)
-            ->where(function ($q) use ($now) {
-                $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
-            })
-            ->where(function ($q) use ($now) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>=', $now);
-            })
-            ->where(function ($q) {
-                $q->where('is_global', true)
-                    ->orWhereJsonContains('target_users', $this->id);
-                foreach (app(\App\Services\Admin\PermissionService::class)->roleIds($this) as $role) $q->orWhereJsonContains('target_roles', $role);
-            })
-            ->whereDoesntHave('users', function ($q) {
-                $q->where('user_id', $this->id)->whereNotNull('accepted_at');
-            })
-            ->get();
+        return app(UserAnnouncementRepository::class)->findUnreadForUser($this);
     }
 
     public function markAnnouncementAsSeen($announcementId): void

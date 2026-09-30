@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Assistant;
 
+use App\Models\Assistants\AssistantFieldFlag;
 use App\Models\Assistants\AssistantReview;
+use App\Models\Assistants\AssistantReviewLog;
 use App\Models\User;
 use App\Services\Assistant\Values\AssistantReviewStatus;
 use Illuminate\Container\Attributes\Singleton;
@@ -80,6 +82,12 @@ readonly class AssistantReviewService
                 abort(422 ,"The requested review does not exist.");
             }
 
+            abort_if(
+                AssistantFieldFlag::where('assistant_id', $locked->assistant_id)->where('resolved', false)->exists(),
+                422,
+                'Unresolved review flags must be cleared before approving.',
+            );
+
             // Re-apply the audit fields onto the locked row directly so the
             // update is consistent with the latest persisted state.
             $locked->status = AssistantReviewStatus::APPROVED;
@@ -90,6 +98,7 @@ readonly class AssistantReviewService
             $review->setRawAttributes($locked->getAttributes()); # TODO: use orm
 
             $this->assistantService->promoteRequested($locked->assistant);
+            $this->log($locked, $reviewer);
         });
     }
 
@@ -124,7 +133,17 @@ readonly class AssistantReviewService
             $review->setRawAttributes($locked->getAttributes());
 
             $this->assistantService->revokeRelease($locked->assistant);
+            $this->log($locked, $reviewer);
         });
+    }
+
+    private function log(AssistantReview $review, User $reviewer): void
+    {
+        $review->assistant->assistantReviewLogs()->create([
+            'admin_user_id' => $reviewer->id,
+            'action' => $review->status,
+            'reason' => $review->reason,
+        ]);
     }
 }
 

@@ -65,6 +65,7 @@ class AssistantAttachmentRepository extends AbstractRepository
                 'uuid' => $file->getUuid(),
                 'name' => $file->getOriginalFilename(),
                 'mime' => $file->getMimeType(),
+                'size' => $file->getSize(),
                 'type' => AttachmentType::fromFileType($file->getFileType())->value,
                 'user_id' => $user->id,
             ]);

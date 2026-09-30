@@ -25,6 +25,13 @@ class SpatiePermissionsTest extends TestCase
 {
     use DatabaseTransactions;
 
+    public function testSeededAdministratorHasEveryRegisteredPermission(): void
+    {
+        $admin = Role::query()->where('name', 'admin')->where('guard_name', 'web')->firstOrFail();
+
+        self::assertEqualsCanonicalizing(Permission::values(), $admin->permissions()->pluck('name')->all());
+    }
+
     public function testManualAndMappedSourcesProjectToOneMembership(): void
     {
         $user = User::factory()->create(['employeetype' => 'overlap']);

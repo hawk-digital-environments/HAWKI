@@ -29,6 +29,7 @@ interface WellKnownAdapterKeys
     public const MISTRAL = 'mistral';
     public const ZAI = 'zai';
     public const HUGGINGFACE = 'huggingface';
+    public const LITELLM = 'litellm';
     public const DEEPSEEK = 'deepseek';
     public const XAI = 'xai';
     public const AWS_BEDROCK = 'aws_bedrock';

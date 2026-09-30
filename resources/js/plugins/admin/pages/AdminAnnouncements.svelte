@@ -19,7 +19,7 @@
         { id: 'seen_count', sortable: false },
         { id: 'accepted_count', sortable: false }
     ];
-    const workspace = useAdminWorkspace(
+    const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-announcements', { query, signal }),
         {
@@ -44,12 +44,12 @@
 </script>
 
 <AdminPage
-    section="announcements"
-    {workspace}
+    workspace="announcements"
+    recordSet={records}
 >
-    <AdminSearch {workspace} />
+    <AdminSearch recordSet={records} />
     <AdminTable
         caption={__('admin.sections.announcements')}
-        {workspace}
+        recordSet={records}
     />
 </AdminPage>

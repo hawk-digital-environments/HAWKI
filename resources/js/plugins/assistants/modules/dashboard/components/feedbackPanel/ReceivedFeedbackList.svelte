@@ -7,7 +7,9 @@
     import MessageMultiple01Icon from '$lib/components/ui/icons/iconset/MessageMultiple01Icon.svelte';
     import Badge from '$lib/components/ui/badge/Badge.svelte';
     import type { AssistantFeedback } from '$plugins/assistants/types/assistant/AssistantFeedback';
+    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
 
+    const {__} = useTranslator();
     let { feedback }: { feedback: AssistantFeedback[] } = $props();
 
     /** Two-letter monogram for the author's avatar tile. */
@@ -29,7 +31,7 @@
 
 <section class="section">
     <div class="section-head">
-        <h3 class="section-title">Erhaltenes Feedback</h3>
+        <h3 class="section-title">{__('assistants.feedback.received_feedbacks')}</h3>
         {#if feedback.length > 0}
             <Badge variant="secondary">{feedback.length}</Badge>
         {/if}
@@ -38,7 +40,7 @@
     {#if feedback.length === 0}
         <p class="empty">
             <span class="empty-icon"><MessageMultiple01Icon size={18} /></span>
-            <span>Noch kein Feedback erhalten.</span>
+            <span>{__('assistants.feedback.empty_feedback')}</span>
         </p>
     {:else}
         <ul class="list">

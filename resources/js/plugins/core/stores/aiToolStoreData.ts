@@ -109,7 +109,7 @@ function modelHasTool(model: AiModel, tool: AiTool): boolean {
  * can't be relied on to still carry the wrapper's methods.
  */
 export function isAiToolAvailableFor(tool: AiTool, model: AiModel, withOffline?: boolean): boolean {
-    if ((withOffline !== true && tool.status === 'offline') || model.settings?.tool_calling === false) {
+    if ((withOffline !== true && tool.status === 'offline') || model.settings?.tool_calling !== true) {
         return false;
     }
     return modelHasTool(model, tool);
