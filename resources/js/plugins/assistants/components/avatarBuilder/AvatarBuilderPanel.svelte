@@ -208,7 +208,6 @@ async function suggest(): Promise<void> {
         <p class="u-label">{__('assistants.builder.general.avatar_title')}</p>
         <InputError message={error} />
     </div>
-    <p class="description">{__('assistants.builder.general.avatar_description')}</p>
 
     <div class="bento-host">
     <div class="bento">

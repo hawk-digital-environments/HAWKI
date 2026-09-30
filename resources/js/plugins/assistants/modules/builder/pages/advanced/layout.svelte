@@ -178,7 +178,7 @@
     .wrapper-grid :global(.page-content) {
         display: flex;
         flex-direction: column;
-        gap: var(--space-5);
+        gap: var(--space-6);
         max-width: 48rem;
         margin: 0 auto;
         padding: var(--space-8);
@@ -187,7 +187,7 @@
     .wrapper-grid :global(.page-header) {
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
+        gap: var(--space-1);
         margin-bottom: var(--space-2);
     }
 
@@ -208,6 +208,6 @@
     .wrapper-grid :global(.grid-2) {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: var(--space-4);
+        gap: var(--space-6) var(--space-4);
     }
 </style>
