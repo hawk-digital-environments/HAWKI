@@ -157,21 +157,18 @@
         autoGrow(textareaRef);
     });
 
-    $effect(() => {
-        const el = textareaRef;
-        if (!el) return;
-        function onPointerDown() {
-            const heightBefore = el!.offsetHeight;
-            window.addEventListener('pointerup', () => {
-                if (el!.offsetHeight !== heightBefore) {
-                    manuallyResized = true;
-                    el!.style.maxHeight = 'none';
-                }
-            }, {once: true});
+    // Height at pointerdown on the textarea; a different height at pointerup
+    // means the user dragged the resize handle.
+    let resizeStartHeight: number | null = null;
+
+    function handleResizePointerUp() {
+        if (resizeStartHeight === null || !textareaRef) return;
+        if (textareaRef.offsetHeight !== resizeStartHeight) {
+            manuallyResized = true;
+            textareaRef.style.maxHeight = 'none';
         }
-        el.addEventListener('pointerdown', onPointerDown);
-        return () => el.removeEventListener('pointerdown', onPointerDown);
-    });
+        resizeStartHeight = null;
+    }
 
     // write to store, translating back into the field's stored shape
     function update(value: any) {
@@ -218,6 +215,8 @@
     {/if}
 {/snippet}
 
+<svelte:window onpointerup={handleResizePointerUp}/>
+
 {#if type === 'fullWidthToggle'}
     <FullWidthToggle
         label={label}
@@ -248,6 +247,7 @@
         {:else if type === 'textarea'}
             <Textarea
                 bind:ref={textareaRef}
+                onpointerdown={() => (resizeStartHeight = textareaRef?.offsetHeight ?? null)}
                 id={name}
                 {placeholder}
                 {disabled}
