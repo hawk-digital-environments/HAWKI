@@ -29,6 +29,9 @@
         key: string;
         /** Visible label. */
         label: string;
+        /** Optional association with a tab panel. */
+        id?: string;
+        panelId?: string;
     }
 </script>
 
@@ -120,6 +123,8 @@
         <button
             type="button"
             role={mode === 'radio' ? 'radio' : 'tab'}
+            id={item.id}
+            aria-controls={mode === 'tabs' ? item.panelId : undefined}
             bind:this={tabEls[i]}
             class="tab"
             aria-selected={mode === 'tabs' ? value === item.key : undefined}

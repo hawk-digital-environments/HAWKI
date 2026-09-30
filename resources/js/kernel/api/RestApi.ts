@@ -8,6 +8,8 @@ import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js
 import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
 
 export type FetchOptions = RequestInit & {
+    /** Forward raw response streams to legacy consumers through the shared transport. */
+    responseType?: 'json' | 'stream';
     /**
      * Optional locale to send with the request. If provided, it will be added as a query parameter to the URL.
      * If not provided, the default locale from the connection will be used.
@@ -151,7 +153,7 @@ export class RestApi {
         id: string | number,
         options?: GetResourceOptions
     ): Promise<any> {
-        const url = this.uriBuilder.jsonApiUri(resourceType, id.toString()) + buildQueryString(options?.query);
+        const url = this.uriBuilder.jsonApiUri(resourceType, encodeURIComponent(id.toString())) + buildQueryString(options?.query);
         const fetchOptions: FetchOptions = {
             ...options,
             beforeSchema: decodeJsonApiResourceResponse
@@ -233,7 +235,7 @@ export class RestApi {
         attributes: Record<string, unknown>,
         options?: CommonGetResourceOptions
     ): Promise<any> {
-        return this.writeResource('PATCH', this.uriBuilder.jsonApiUri(resourceType, id.toString()), resourceType, {
+        return this.writeResource('PATCH', this.uriBuilder.jsonApiUri(resourceType, encodeURIComponent(id.toString())), resourceType, {
             data: {type: resourceType, id: id.toString(), attributes}
         }, options);
     }
@@ -242,7 +244,7 @@ export class RestApi {
      * Deletes a resource via a JSON:API `DELETE /{resourceType}/{id}` request.
      */
     public async deleteResource(resourceType: string, id: string | number, options?: RequestInit): Promise<void> {
-        await this.fetch(this.uriBuilder.jsonApiUri(resourceType, id.toString()), {
+        await this.fetch(this.uriBuilder.jsonApiUri(resourceType, encodeURIComponent(id.toString())), {
             method: 'DELETE',
             ...options
         });

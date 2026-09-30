@@ -5,6 +5,7 @@ import type {HawkiRoute, RouteComponentOrLoader, RouteResultBody} from '$lib/com
 import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
 import {redirect, routeError, RouteHttpError, RouteRedirect, RouteResolutionError} from '$lib/components/ui/routing/logistics/signals.js';
 import type {RouteError} from 'universal-router';
+import {splitLocation} from '$lib/components/ui/routing/logistics/normalizePath.js';
 
 // Backstop for a redirect chain that never repeats a path, which
 // `redirectChain`'s cycle check cannot catch on its own.
@@ -21,11 +22,17 @@ const routeResultSchema = z.object({
 
 export async function resolveRoute(
     state: RouterState,
-    path: string,
+    location: string,
     redirectChain: string[] = [],
     getHandle: () => RouterHandle,
     getPath: RouterHandle['getPath']
 ): Promise<void> {
+    // Callers may hand in a whole location — `goTo()` forwards what it was
+    // given, a redirect target may carry `?next=…` — but everything the
+    // router matches, stores and exposes as "the path" is the path alone.
+    // The query and the fragment stay on the strategy's location, where
+    // `RouterHandle.query` reads them.
+    const path = splitLocation(location).path;
     // Claims the router for this run and supersedes any older one still in
     // flight. Held in a local, not re-read from `state`, so that once a newer
     // run has taken over this one still sees *its own* signal as aborted.
@@ -48,7 +55,7 @@ export async function resolveRoute(
         // ride along into every middleware's context — `options.context` is
         // built once per *router* and so cannot carry them.
         const routeResult = await state.innerRouter.resolve({
-            pathname: path.split(/[?#]/, 1)[0],
+            pathname: path,
             ownerRouter: getHandle(),
             onCleanup
         });

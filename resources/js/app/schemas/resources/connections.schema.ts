@@ -10,6 +10,7 @@ export const AuthenticatedUserInfoSchema = z.object({
     email: z.string(),
     avatar: z.string().nullable(),
     bio: z.string().nullable(),
+    isAdmin: z.boolean().default(false),
     /**
      * A hash derived by the user id and public key, which can be used to detect if
      * the user profile has been reset on the server. If this hash changes,

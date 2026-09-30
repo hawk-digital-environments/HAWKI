@@ -170,10 +170,11 @@
              scoped `.sidebar-item` styles. -->
         <Link {href} target={target ?? undefined} active={active && !isPopupTrigger}>
             {#snippet child({props: linkProps, hints})}
+                <!-- Run the sidebar handler before Link prevents the default navigation event. -->
                 <a
                     {@attach attach}
                     {@attach attachRef}
-                    {...(mergeProps(linkProps, rowProps) as Record<string, unknown>)}
+                    {...(mergeProps(rowProps, linkProps) as Record<string, unknown>)}
                 >
                     {@render rowContent()}{@render hints()}
                 </a>

@@ -8,6 +8,7 @@
             "history": "Chatverlauf",
             "loading": "Chats werden geladen…",
             "generating": "Antwort wird generiert",
+            "branch": "Branch",
             "empty": "Deine Unterhaltungen erscheinen hier.",
             "unreadMessages": "ungelesene Nachrichten",
             "groups": {
@@ -63,6 +64,10 @@
             "edit": "Nachricht bearbeiten",
             "regenerate": "Antwort neu generieren",
             "thread": "Im Thread antworten",
+            "branch": "In neuem Chat verzweigen",
+            "branchName": ":name – Branch",
+            "branchError": "Die Unterhaltung konnte nicht verzweigt werden.",
+            "branchAttachmentError": "Der Anhang „:name“ konnte nicht in den neuen Chat übernommen werden.",
             "delete": "Nachricht löschen",
             "deleteAttachment": "Anhang löschen",
             "deleteConfirmTitle": "Nachricht löschen?",
@@ -210,6 +215,10 @@
                     "offlineLabel": "Nicht verfügbar (offline)"
                 }
             },
+            "contextUsage": {
+                "tooltip": "Kontextfenster: :used von :max Tokens belegt (:percent %)",
+                "ariaLabel": "Auslastung des Kontextfensters: :percent %"
+            },
             "toolMenu": {
                 "backButton": "Tools",
                 "deactivateTool": "Tool deaktivieren",
@@ -308,6 +317,18 @@
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
                 "sendError": "Fehler beim Senden der Nachricht."
             }
+        },
+        "tools": {
+            "accessChanged": "Dein Werkzeugzugriff hat sich geändert. Eine Auswahl wurde entfernt.",
+            "accessDenied": "Du hast keinen Zugriff mehr auf ein ausgewähltes Werkzeug. Prüfe deine Auswahl und versuche es erneut.",
+            "unavailable": "Ein ausgewähltes Werkzeug ist für dieses Modell derzeit nicht verfügbar. Prüfe deine Auswahl.",
+            "authorizationRefreshing": "Der Werkzeugzugriff wird geprüft. Bitte warte, bevor du mit Werkzeugen sendest.",
+            "messageAccepted": "Deine Nachricht wurde gespeichert, aber die Antwort konnte nicht erstellt werden. Prüfe deine Auswahl, bevor du die Antwort neu erstellst.",
+            "offline": "Ein ausgewähltes Werkzeug ist vorübergehend offline.",
+            "offlineHelp": "Warte, bis es wieder online ist, oder entferne es, um deine Nachricht zu senden."
+        },
+        "models": {
+            "accessDenied": "Du hast keinen Zugriff mehr auf das gewählte Modell. Wähle ein anderes Modell."
         }
     }
 }

@@ -76,6 +76,15 @@ registerHooks({
     },
 
     load(url, context, nextLoad) {
+        // Dependencies ship uncompiled rune modules too. Keep dev comparisons
+        // enabled so regression tests can catch proxy identity warnings.
+        if (url.startsWith('file:') && url.endsWith('.svelte.js')) {
+            const file = fileURLToPath(url);
+            const source = compileModule(readFileSync(file, 'utf8'), {
+                filename: file, generate: 'client', dev: true
+            }).js.code;
+            return {format: 'module', source, shortCircuit: true};
+        }
         if (!url.startsWith('file:') || !url.endsWith('.ts')) {
             return nextLoad(url, context);
         }
@@ -84,6 +93,7 @@ registerHooks({
             loader: 'ts',
             format: 'esm',
             target: 'es2022',
+            define: {'import.meta.env.MODE': '"test"'},
             sourcefile: file
         }).code;
         if (file.endsWith('.svelte.ts')) {

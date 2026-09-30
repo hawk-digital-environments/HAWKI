@@ -25,6 +25,9 @@
         padding: 0 var(--space-3);
         font: inherit;
     }
+    .input[aria-invalid='true'] {
+        border-color: var(--color-error);
+    }
     .input:focus-visible {
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;

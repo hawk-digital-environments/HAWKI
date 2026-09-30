@@ -1,0 +1,112 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Admin\Repositories;
+
+use App\Models\Ai\McpServer;
+use App\Services\Ai\Tools\Mcp\McpClientFactory;
+use App\Services\Ai\Tools\Repositories\AiToolRepository;
+use App\Services\Ai\Tools\Repositories\McpServerRepository as AiMcpServerRepository;
+use App\Services\Ai\Values\OnlineStatus;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * @extends ConfigurationRepository<McpServer>
+ */
+class McpServerRepository extends ConfigurationRepository
+{
+    public const RESOURCE = 'mcp';
+
+    public function __construct(
+        private McpClientFactory $clients,
+        private AiMcpServerRepository $servers,
+        private AiToolRepository $tools,
+    ) {
+    }
+
+    public function mcp(?string $id, bool $discover): array
+    {
+        $server = McpServer::findOrFail($id);
+
+        try {
+            $client = $this->clients->createForServer($server);
+            $online = $client->ping();
+            $this->servers->setOnlineStatus($server, $online ? OnlineStatus::ONLINE : OnlineStatus::OFFLINE);
+            abort_unless($online, 502);
+
+            if (!$discover) {
+                return ['online' => true];
+            }
+
+            $definitions = $client->listToolDefinitions();
+
+            return DB::transaction(function () use ($server, $definitions) {
+                $ids = [];
+                $names = [];
+
+                foreach ($definitions as $definition) {
+                    $tool = $this->tools->upsertMcp($definition, $server);
+                    $ids[] = $tool->id;
+                    $names[] = $definition->name;
+                }
+
+                $this->tools->removeAllMcpToolsOf($server, $ids);
+
+                return ['tools' => $names];
+            });
+        } catch (\Throwable $exception) {
+            report($exception);
+            abort(502, __('admin.errors.connection'));
+        }
+    }
+
+    protected function definition(): array
+    {
+        $fields = new \App\Services\Admin\ResourceFields();
+
+        return ['model' => McpServer::class, 'columns' => ['server_label', 'type', 'url', 'status', 'api_key_set'], 'fields' => [
+            $fields->text('server_label', true), $fields->select('type', ['http', 'sse', 'stdio']), $fields->text('url', true),
+            $fields->field('description', 'textarea', 'nullable|string|max:10000'),
+            $fields->select('require_approval', ['never', 'always']), ...$fields->secrets(), $fields->json('timeouts'),
+        ]];
+    }
+
+    protected function identity(Model $model): ?string
+    {
+        return (string) $model->getRawOriginal('url');
+    }
+
+    protected function rules(?int $id, array $values): array
+    {
+        $rules = parent::rules($id, $values);
+
+        if ('stdio' !== ($values['type'] ?? null)) {
+            $rules['url'] = 'required|url:http,https|max:2000';
+        }
+
+        foreach (['read', 'connect', 'sse_idle'] as $key) {
+            $rules['timeouts.' . $key] = 'nullable|numeric|min:0.1|max:120';
+        }
+
+        return $rules;
+    }
+
+    protected function prepare(Model $model, array &$data): void
+    {
+        parent::prepare($model, $data);
+        $data['timeouts'] ??= [];
+        $model->setAttribute('added_by_file', false);
+    }
+
+    protected function deleting(Model $model): void
+    {
+        $this->tools->removeAllMcpToolsOf($model);
+    }
+
+    protected function rowAttributes(array $row): array
+    {
+        return ['tools_count' => DB::table('ai_tools')->where('mcp_server_id', $row['id'])->count()];
+    }
+}

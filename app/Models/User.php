@@ -8,6 +8,7 @@ use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\KnownUsersAccessScope;
 use App\Policies\UserPolicy;
 use App\Services\Announcements\RegistrationPolicyService;
+use App\Services\Announcements\Repositories\UserAnnouncementRepository;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use App\Services\Users\Events\UserCreatedEvent;
@@ -43,13 +44,24 @@ class User extends Authenticatable
         'registration_fingerprint',
     ];
 
+    protected $hidden = [
+        'local_password',
+    ];
+
     protected $casts = [
         'isRemoved' => 'boolean',
+        'admin_disabled' => 'boolean',
+        'last_login_at' => 'datetime',
     ];
 
     protected static function registerScopes(ScopeRegistrar $registrar): void
     {
         $registrar
+            ->setDefaultDisablingGuard(function (#[\Illuminate\Container\Attributes\CurrentUser] ?User $user) {
+                return $user
+                    ? \App\Services\Users\UserCondition::isAdmin($user)
+                    : app()->runningInConsole();
+            })
             ->addScope('access', new KnownUsersAccessScope())
             ->addScope('active', new ActiveFilterScope('isRemoved', '0'));
     }
@@ -93,7 +105,6 @@ class User extends Authenticatable
         $this->update(['isRemoved' => 1]);
     }
 
-
     // SECTION: ANNOUNCEMENTS
 
     /**
@@ -107,29 +118,12 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-
     /**
      * @return Collection<int, Announcement>
      */
     public function unreadAnnouncements(): Collection
     {
-        $now = now();
-
-        return Announcement::query()
-            ->where(function ($q) use ($now) {
-                $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
-            })
-            ->where(function ($q) use ($now) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>=', $now);
-            })
-            ->where(function ($q) {
-                $q->where('is_global', true)
-                    ->orWhereJsonContains('target_users', $this->id);
-            })
-            ->whereDoesntHave('users', function ($q) {
-                $q->where('user_id', $this->id)->whereNotNull('accepted_at');
-            })
-            ->get();
+        return app(UserAnnouncementRepository::class)->findUnreadForUser($this);
     }
 
     public function markAnnouncementAsSeen($announcementId): void
