@@ -80,6 +80,8 @@ const HawkiCoreSchema = z.object({
         statementUrl: z.string().nullable()
     }).optional(),
     security: z.object({
+        /** Generate a random passkey during registration and show only its backup code. */
+        passkeyAutoGenerate: z.boolean().default(false),
         /** Whether users are allowed to paste text into passkey/PIN input fields (paste is sometimes blocked to force manual entry/reduce clipboard leakage). */
         passkeyAllowPaste: z.boolean(),
         /** Whether passkey/PIN input should restrict which characters are accepted while typing. */
