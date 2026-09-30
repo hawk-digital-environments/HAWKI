@@ -77,7 +77,7 @@
 
     // The detailed description is capped at DESCRIPTION_COLLAPSED_REM with a
     // bottom fade; when it is taller, a toggle expands it to its full height.
-    const DESCRIPTION_COLLAPSED_REM = 15;
+    const DESCRIPTION_COLLAPSED_REM = 10;
     const descriptionId = $props.id();
     let descriptionExpanded = $state(false);
     /** Full content height of the description, kept current by bind:clientHeight. */
