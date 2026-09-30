@@ -157,17 +157,32 @@
         autoGrow(textareaRef);
     });
 
-    // Height at pointerdown on the textarea; a different height at pointerup
-    // means the user dragged the resize handle.
-    let resizeStartHeight: number | null = null;
+    // Height and inline height at pointerdown on the textarea; a different
+    // height at pointerup means the user dragged the resize handle.
+    let resizeStart: {height: number; styleHeight: string} | null = null;
+
+    // Lift the max-height for the duration of a possible drag so the handle can
+    // pull the field past it. The current height is pinned first, otherwise a
+    // field whose content exceeds the cap would jump to its full height.
+    function handleResizePointerDown() {
+        const el = textareaRef;
+        if (!el || manuallyResized) return;
+        resizeStart = {height: el.offsetHeight, styleHeight: el.style.height};
+        el.style.height = el.offsetHeight + 'px';
+        el.style.maxHeight = 'none';
+    }
 
     function handleResizePointerUp() {
-        if (resizeStartHeight === null || !textareaRef) return;
-        if (textareaRef.offsetHeight !== resizeStartHeight) {
+        const el = textareaRef;
+        if (!resizeStart || !el) return;
+        if (el.offsetHeight !== resizeStart.height) {
             manuallyResized = true;
-            textareaRef.style.maxHeight = 'none';
+        } else {
+            // Plain click, not a resize: restore the cap and auto-grow height.
+            el.style.maxHeight = '';
+            el.style.height = resizeStart.styleHeight;
         }
-        resizeStartHeight = null;
+        resizeStart = null;
     }
 
     // write to store, translating back into the field's stored shape
@@ -215,7 +230,7 @@
     {/if}
 {/snippet}
 
-<svelte:window onpointerup={handleResizePointerUp}/>
+<svelte:window onpointerup={handleResizePointerUp} onpointercancel={handleResizePointerUp}/>
 
 {#if type === 'fullWidthToggle'}
     <FullWidthToggle
@@ -247,7 +262,7 @@
         {:else if type === 'textarea'}
             <Textarea
                 bind:ref={textareaRef}
-                onpointerdown={() => (resizeStartHeight = textareaRef?.offsetHeight ?? null)}
+                onpointerdown={handleResizePointerDown}
                 id={name}
                 {placeholder}
                 {disabled}
