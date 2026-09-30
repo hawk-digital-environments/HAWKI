@@ -23,6 +23,7 @@
     import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
     import Clock01Icon from "$lib/components/ui/icons/iconset/Clock01Icon.svelte";
     import ArrowLeft01Icon from "$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte";
+    import ArrowDown01Icon from "$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte";
     import {ActionIcon} from "$lib/components/ui/icons";
     import Page from "$lib/components/ui/page/Page.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
@@ -73,6 +74,16 @@
     let loading = $state(true);
     let error = $state<Error | null>(null);
     let feedbacks = $state<AssistantFeedback[]>([]);
+
+    // The detailed description is capped at DESCRIPTION_COLLAPSED_REM with a
+    // bottom fade; when it is taller, a toggle expands it to its full height.
+    const DESCRIPTION_COLLAPSED_REM = 15;
+    const descriptionId = $props.id();
+    let descriptionExpanded = $state(false);
+    /** Full content height of the description, kept current by bind:clientHeight. */
+    let descriptionHeight = $state(0);
+    const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const descriptionOverflows = $derived(descriptionHeight > DESCRIPTION_COLLAPSED_REM * rootFontSize + 1);
 
     // CHECK AWAIT Syntax from Svelte
     $effect(() => {
@@ -352,7 +363,33 @@
         </div>
 
         <div class="detailed-description">
-            <OverflowTooltip value={assistant.detailDescription} lines={8} truncate="clamp"/>
+            <!-- max-height is animated between the collapsed cap and the measured
+                 content height (a transition can't target `none`). -->
+            <div
+                id={descriptionId}
+                class="detailed-description-clip"
+                class:clamped={descriptionOverflows}
+                class:expanded={descriptionExpanded}
+                style:max-height={descriptionOverflows
+                    ? (descriptionExpanded ? `${descriptionHeight}px` : `${DESCRIPTION_COLLAPSED_REM}rem`)
+                    : undefined}
+            >
+                <p class="detailed-description-text" bind:clientHeight={descriptionHeight}>
+                    {assistant.detailDescription}
+                </p>
+            </div>
+            {#if descriptionOverflows}
+                <ActionIcon
+                        icon={ArrowDown01Icon}
+                        label={__(descriptionExpanded
+                            ? 'assistants.detail.description_collapse'
+                            : 'assistants.detail.description_expand')}
+                        class="description-toggle"
+                        aria-expanded={descriptionExpanded}
+                        aria-controls={descriptionId}
+                        onclick={() => (descriptionExpanded = !descriptionExpanded)}
+                />
+            {/if}
         </div>
 
         <div class="tags">
@@ -522,6 +559,52 @@
         font-size: var(--font-size-sm);
         line-height: var(--line-height-normal);
         color: var(--color-text-muted);
+    }
+
+    /* Detailed description: capped with a bottom fade until expanded. */
+    .detailed-description {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-1);
+    }
+    .detailed-description-clip {
+        width: 100%;
+        overflow: hidden;
+        transition:
+            max-height var(--duration-medium) ease,
+            --description-fade var(--duration-medium) ease;
+    }
+    /* Same eased ramp as the chat panel's --header-fade (PageHeaderBar),
+       applied over the last --description-fade of the clip. The fade length
+       is a registered property (resources/css/properties.css) so it animates
+       away on expand instead of snapping off. */
+    .detailed-description-clip.clamped {
+        --description-fade: 5rem;
+        --description-fade-mask: linear-gradient(
+            to bottom,
+            black 0,
+            black calc(100% - var(--description-fade)),
+            rgba(0, 0, 0, 0.86) calc(100% - var(--description-fade) * 0.727),
+            rgba(0, 0, 0, 0.55) calc(100% - var(--description-fade) * 0.509),
+            rgba(0, 0, 0, 0.25) calc(100% - var(--description-fade) * 0.291),
+            rgba(0, 0, 0, 0.08) calc(100% - var(--description-fade) * 0.145),
+            transparent 100%
+        );
+        mask-image: var(--description-fade-mask);
+        -webkit-mask-image: var(--description-fade-mask);
+    }
+    .detailed-description-clip.clamped.expanded {
+        --description-fade: 0rem;
+    }
+    .detailed-description-text {
+        margin: 0;
+    }
+    .detailed-description :global(.description-toggle svg) {
+        transition: transform var(--duration-medium) ease;
+    }
+    .detailed-description :global(.description-toggle[aria-expanded='true'] svg) {
+        transform: rotate(180deg);
     }
 
     /* Badge row (release stage + risk pill). */

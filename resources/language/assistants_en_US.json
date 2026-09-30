@@ -134,6 +134,8 @@
             "remix": "Remix",
             "remix_disabled": "Remixing is not allowed for this assistant",
             "try_out": "Try it out",
+            "description_expand": "Show full description",
+            "description_collapse": "Show less",
             "meta_creator": "Creator",
             "meta_version": "Version",
             "meta_usage": "Usage",
