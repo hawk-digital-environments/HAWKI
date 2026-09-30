@@ -24,7 +24,7 @@
 import type {SearchScores} from './searchEngine.js';
 import type {SearchWorkerRequest, SearchWorkerResponse} from './search.worker.js';
 import type {IndexDelta, SharedSearchIndex} from './sharedIndex.js';
-import {createModuleWorker} from '$lib/utils/crossOriginWorker.js';
+import {createModuleWorker} from '$lib/utils/moduleWorker.js';
 import searchWorkerUrl from './search.worker.ts?worker&url';
 
 /** A worker answer: the scores plus the index revision they describe. */
