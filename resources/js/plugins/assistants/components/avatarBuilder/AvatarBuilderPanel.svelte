@@ -205,7 +205,7 @@ async function suggest(): Promise<void> {
 
 <div class="input-container renderBlock">
     <div class="field-header">
-        <p class="label">{__('assistants.builder.general.avatar_title')}</p>
+        <p class="u-label">{__('assistants.builder.general.avatar_title')}</p>
         <InputError message={error} />
     </div>
     <p class="description">{__('assistants.builder.general.avatar_description')}</p>
