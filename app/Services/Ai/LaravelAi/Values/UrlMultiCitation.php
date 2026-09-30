@@ -63,7 +63,6 @@ class UrlMultiCitation extends UrlCitation
     /**
      * Collapses all {@see UrlCitation}s pointing at the same URL into one {@see UrlMultiCitation}
      * that carries every range. Laravel AI reports character offsets, so `$isByteOffset` is false.
-     * Other citation types pass through unchanged, and the first-seen order is kept.
      *
      * @param iterable<Citation> $citations
      * @return list<Citation>
