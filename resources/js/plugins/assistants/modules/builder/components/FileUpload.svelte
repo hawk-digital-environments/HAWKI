@@ -2,7 +2,7 @@
     import FileUploadIcon from '$lib/components/ui/icons/iconset/FileUploadIcon.svelte';
     import File01Icon from '$lib/components/ui/icons/iconset/File01Icon.svelte';
     import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
-    import DragDropOverlay from '$plugins/assistants/components/dragDropOverlay/DragDropOverlay.svelte';
+    import FileDropHint from '$lib/components/ui/file-drop/FileDropHint.svelte';
     import { useBuilderContext } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
     import type { UploadFile } from '$plugins/assistants/types/UploadFile';
     import GenericItemList from '$plugins/assistants/components/itemList/GenericItemList.svelte';
@@ -45,12 +45,19 @@
     );
 
     let currentFiles = $derived(uploader.files);
-    let uploadProgress = $derived(uploader.uploadProgress);
+    /**
+     * The upload transport reports no byte progress (0, then 100 right before
+     * the file is added), so the ring would vanish unfilled. On success it
+     * stays at 100% for `FILLED_HOLD_MS` so the fill is seen before it goes.
+     */
+    const FILLED_HOLD_MS = 600;
+    let filledProgress = $state<number | undefined>();
+    let uploadProgress = $derived(uploader.uploadProgress ?? filledProgress);
 
     let fileInput = $state<HTMLInputElement | null>(null);
 
-    /** Active drag-over state for the drop zone; drives the overlay badge. */
-    let dragState = $state<'idle' | 'valid' | 'invalid'>('idle');
+    /** Files are dragged over the drop zone; swaps its content for the chat's drop hint. */
+    let isDragging = $state(false);
 
     /**
      * RAG mode: uploads continue into the knowledge-base ingestion pipeline
@@ -210,7 +217,16 @@
     // Watching a fresh upload's RAG ingestion needs nothing here: the uploader
     // leaves it in `ragStatus: 'pending'`, which the effect above tracks.
     async function addFiles(fileList: FileList): Promise<void> {
-        await uploader.addFiles(fileList);
+        // Set on the 100% tick, before the uploader marks the files complete,
+        // so the ring stays mounted and animates its fill.
+        const uploaded = await uploader.addFiles(fileList, (_file, progress) => {
+            if (progress === 100) filledProgress = 100;
+        });
+        if (uploaded.length === 0) {
+            filledProgress = undefined;
+            return;
+        }
+        setTimeout(() => (filledProgress = undefined), FILLED_HOLD_MS);
     }
 
     async function removeFile(index: number): Promise<void> {
@@ -243,6 +259,7 @@
     <div
         class="upload-container"
         class:isDisabled={disabled}
+        class:isDragging
         role="button"
         tabindex={disabled || uploadProgress !== undefined ? -1 : 0}
         aria-disabled={disabled || uploadProgress !== undefined}
@@ -255,8 +272,7 @@
         }}
         use:dragDrop={{
             onDrop: handleDrop,
-            accept: allowedMimeTypes,
-            onDragState: (s) => (dragState = s)
+            onDragState: (s) => (isDragging = s !== 'idle')
         }}
     >
         <input
@@ -269,7 +285,7 @@
             onchange={handleFileChange}
         />
 
-        <div class="content-box" aria-busy={uploadProgress !== undefined}>
+        <div class="content-box" class:content-box--hidden={isDragging} aria-busy={uploadProgress !== undefined}>
             {#if uploadProgress !== undefined}
                 <div class="upload-progress-box">
                     <div class="upload-progress-ring">
@@ -315,11 +331,8 @@
             {/if}
         </div>
 
-        {#if dragState !== 'idle'}
-            <DragDropOverlay
-                status={dragState}
-                files={currentFiles}
-            />
+        {#if isDragging}
+            <FileDropHint label={__('assistants.builder.guide.drop_label')}/>
         {/if}
     </div>
 
@@ -397,7 +410,8 @@
             background-color var(--duration-fast);
     }
     .upload-container:hover,
-    .upload-container:focus-visible {
+    .upload-container:focus-visible,
+    .upload-container.isDragging {
         border-color: var(--color-accent-300);
         background-color: var(--color-hover);
     }
@@ -438,6 +452,9 @@
         height: 100%;
         justify-content: center;
         align-items: center;
+    }
+    .content-box--hidden {
+        visibility: hidden; /* keeps the dropzone's size while the drop hint shows */
     }
     .text-wrapper {
         margin-bottom: var(--space-2);
