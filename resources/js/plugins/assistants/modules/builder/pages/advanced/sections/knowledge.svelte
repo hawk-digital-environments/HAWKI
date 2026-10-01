@@ -70,7 +70,6 @@
             <h3 class="page-title">{__('assistants.builder.knowledge.title')}</h3>
             <p class="page-description">{__('assistants.builder.knowledge.description')}</p>
         </div>
-
         <StatusCard
                 label={__('assistants.builder.knowledge.warning_knowledge_sources')}
                 icon={AlertCircleIcon}
@@ -84,17 +83,22 @@
                     type={ValidationState.WARNING}
             />
         {/if}
-
         <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
-
-        <!-- Mock mode (VITE_MOCK_VECTOR_DATABASES): the mocked list fully
-             replaces the real knowledge-databases component; see
-             mocks/mockVectorDatabases.svelte.ts. -->
-        {#if mockVectorDatabasesEnabled}
-            <MockedVectorDatabases/>
-        {:else if attachableKnowledgeTools.length > 0}
+        {#if attachableKnowledgeTools.length > 0}
             <KnowledgeBases tools={attachableKnowledgeTools}/>
+        {#if ragEnabled && knowledgeToolAvailable}
+            <StatusCard
+                    label={__('assistants.builder.knowledge.rag_active')}
+                    icon={Database01Icon}
+                    type={ValidationState.INFO}
+            />
+        {:else}
+            <StatusCard
+                label={__('assistants.builder.knowledge.load_files_in_context')}
+                icon={Database01Icon}
+                type={ValidationState.INFO}
+            />
         {/if}
-
+        <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
     </div>
 </div>

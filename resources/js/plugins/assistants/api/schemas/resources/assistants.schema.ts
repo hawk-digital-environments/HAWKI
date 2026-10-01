@@ -212,15 +212,23 @@ function settingValue(
 /** Server attachments carry no size or timestamps, so those stay undefined and render empty. */
 function toUploadFiles(attachments: AssistantResource['assistant_attachments']): UploadFile[] {
     if (!attachments?.length) return [];
-    return attachments.map(attachment => ({
-        uuid: attachment.uuid ?? undefined,
-        name: attachment.name ?? '',
-        mimeType: attachment.mime ?? undefined,
-        status: 'complete' as const,
-        progress: 100,
-        ragStatus: attachment.rag_status ?? null,
-        ragError: attachment.rag_error ?? null
-    }));
+    return attachments.map(attachment => {
+        const ragStatus = attachment.rag_status ?? null;
+        return {
+            uuid: attachment.uuid ?? undefined,
+            name: attachment.name ?? '',
+            mimeType: attachment.mime ?? undefined,
+            // A failed/skipped ingestion leaves the row disabled with its
+            // error tooltip; pending/ingesting files keep the plain
+            // "complete" upload state until the watcher reports a change.
+            status: ragStatus === 'failed' || ragStatus === 'skipped'
+                ? ('error' as const)
+                : ('complete' as const),
+            progress: 100,
+            ragStatus,
+            ragError: attachment.rag_error ?? null
+        };
+    });
 }
 
 /**

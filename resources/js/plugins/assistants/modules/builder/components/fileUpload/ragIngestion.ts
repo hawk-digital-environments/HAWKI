@@ -8,12 +8,13 @@ import { getAssistant } from "$plugins/assistants/api/resources/assistantsClient
  * enabled, ingestion into the knowledge base continues server-side (queued
  * job → RAG pipeline). The file only counts as "uploaded" once that pipeline
  * reports `ingested` — until then the UI shows it as "ingesting", and a
- * `failed`/`skipped` outcome makes the caller delete the attachment again.
+ * `failed`/`skipped` outcome disables the row with the failure reason in
+ * its tooltip (the attachment itself stays persisted).
  *
  * This module owns the data plane: it polls the assistant's
  * `assistant_attachments` include (which carries `rag_status`/`rag_error`)
  * and reports state changes per attachment uuid. UI decisions (statuses,
- * toasts, deletion) stay in `FileUpload.svelte`.
+ * toasts, row removal) stay in `FileUpload.svelte`.
  */
 
 /** Server-side RAG ingestion state of an attachment (`assistant_attachments.rag_status`). */
@@ -32,6 +33,8 @@ export interface RagIngestionUpdate {
 export interface RagIngestionWatcher {
     /** Watch another attachment (e.g. right after its upload). Idempotent per uuid. */
     track(uuid: string, state: RagFileState): void;
+    /** Forget one attachment (e.g. it was deleted) so polling can settle without it. */
+    untrack(uuid: string): void;
     /** Stop polling and forget all tracked uuids (component teardown). */
     stop(): void;
 }
@@ -107,6 +110,15 @@ export function watchRagIngestion(
             if (tracked.has(uuid)) return;
             tracked.set(uuid, state);
             schedule();
+        },
+        untrack(uuid: string): void {
+            tracked.delete(uuid);
+            if (tracked.size === 0 && timer !== null) {
+                // Nothing left to watch — drop the scheduled poll instead of
+                // firing one last request for nothing.
+                clearTimeout(timer);
+                timer = null;
+            }
         },
         stop(): void {
             if (timer !== null) {

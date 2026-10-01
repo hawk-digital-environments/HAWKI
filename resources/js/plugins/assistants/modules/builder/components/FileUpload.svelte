@@ -23,9 +23,16 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
     import { useConfig } from '$lib/app/hooks/useConfig.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
-    import {StatusIcon} from '$lib/components/ui/icons';
+    import {ActionIcon, StatusIcon} from '$lib/components/ui/icons';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
     import RadialProgress from '$lib/components/ui/radial-progress/RadialProgress.svelte';
+    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
+    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
+    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+    import MoreVerticalSquare02Icon from '$lib/components/ui/icons/iconset/MoreVerticalSquare02Icon.svelte';
+    import ArchiveOff04Icon from '$lib/components/ui/icons/iconset/ArchiveOff04Icon.svelte';
+    import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
+    import {mergeProps} from 'bits-ui';
     import { onDestroy } from 'svelte';
 
     const { __ } = useTranslator();
@@ -71,19 +78,13 @@
     /**
      * RAG mode: uploads continue into the knowledge-base ingestion pipeline
      * after the HTTP upload finishes. The UI workflow (ingesting state,
-     * polling, auto-delete on failure) lives in
+     * polling, disabled row with an error tooltip on failure) lives in
      * `./fileUpload/ragIngestion.js` + the handlers below and is skipped
      * entirely when RAG is disabled — the plain upload path stays as is.
      */
     const ragEnabled = $derived(config.rag?.enabled === true);
 
     let watcher: RagIngestionWatcher | null = null;
-
-    /**
-     * Attachment uuids whose ingestion failure has already been handled —
-     * de-duplicates the reactive scan below against the poll callback.
-     */
-    const handledFailures = new Set<string>();
 
     function ensureWatcher(assistantId: string): RagIngestionWatcher {
         watcher ??= watchRagIngestion(assistantId, handleRagUpdate);
@@ -94,15 +95,78 @@
         builder.set('files', (builder.draft.files ?? []).map(f => (f.uuid === uuid ? { ...f, ...patch } : f)));
     }
 
+    /** A row whose ingestion failed — kept, but rendered disabled with the error in its tooltip. */
+    function isRagFailed(file: UploadFile): boolean {
+        return file.ragStatus === 'failed' || file.ragStatus === 'skipped';
+    }
+
+    /** Persisted rows — what the manage menu's bulk deletes act on. */
+    let persistedFiles = $derived(currentFiles.filter((f) => f.uuid));
+    /** Whether the "delete failed files" menu item applies (RAG failures present). */
+    let hasFailedFiles = $derived(ragEnabled && currentFiles.some(isRagFailed));
+
+    /** Manage-menu state: confirm dialogs for the two bulk deletes + in-flight guard. */
+    let deleteAllOpen = $state(false);
+    let deleteFailedOpen = $state(false);
+    let batchDeleting = $state(false);
+
+    /**
+     * Deletes the given rows server-side and drops the succeeded ones from
+     * the draft in one update. Rows whose delete fails stay put so they can
+     * be retried individually (where the per-file reason is toasted); here
+     * one aggregate toast reports that something failed.
+     */
+    async function deleteFiles(targets: UploadFile[]): Promise<void> {
+        if (batchDeleting || deleting) return;
+        const assistantId = builder.draft.id;
+        if (!assistantId) return;
+
+        batchDeleting = true;
+        const deleted = new Set<string>();
+        let failedCount = 0;
+        try {
+            for (const file of targets) {
+                if (!file.uuid) continue;
+                try {
+                    await deleteAssistantAttachment(assistantId, file.uuid);
+                    deleted.add(file.uuid);
+                } catch {
+                    failedCount++;
+                }
+            }
+        } finally {
+            batchDeleting = false;
+        }
+
+        if (deleted.size > 0) {
+            for (const uuid of deleted) watcher?.untrack(uuid);
+            builder.set('files', (builder.draft.files ?? []).filter(f => !f.uuid || !deleted.has(f.uuid)));
+        }
+        if (failedCount > 0) {
+            toast.error(__('assistants.builder.knowledge.delete_all_error'));
+        }
+    }
+
     /**
      * Poll outcome for one watched attachment: `ingested` completes the file,
      * interim states keep it "ingesting", and a `failed`/`skipped` pipeline
-     * result deletes the attachment again — a file only stays when its
-     * content actually reached the knowledge base.
+     * result disables the row and surfaces the server's failure reason via
+     * toast and tooltip — the attachment itself stays persisted, so the
+     * failure survives a builder reload.
      */
     function handleRagUpdate({ uuid, state, error }: { uuid: string; state: RagFileState; error: string | null }): void {
         if (state === 'failed' || state === 'skipped') {
-            void handleFailedIngestion(uuid, error);
+            const name = (builder.draft.files ?? []).find(f => f.uuid === uuid)?.name ?? uuid;
+            toast.error(__('assistants.builder.knowledge.ingestion_failed', {
+                name,
+                reason: error ?? __('assistants.builder.knowledge.ingestion_failed_unknown_reason')
+            }));
+            patchByUuid(uuid, {
+                ragStatus: state,
+                ragError: error,
+                status: 'error',
+                error: undefined
+            });
             return;
         }
         patchByUuid(uuid, {
@@ -113,34 +177,11 @@
         });
     }
 
-    async function handleFailedIngestion(uuid: string, reason: string | null): Promise<void> {
-        if (handledFailures.has(uuid)) return;
-        handledFailures.add(uuid);
-
-        const name = (builder.draft.files ?? []).find(f => f.uuid === uuid)?.name ?? uuid;
-        toast.error(__('assistants.builder.knowledge.ingestion_failed', {
-            name,
-            reason: reason ?? __('assistants.builder.knowledge.ingestion_failed_unknown_reason')
-        }));
-
-        const assistantId = builder.draft.id;
-        if (assistantId) {
-            try {
-                await deleteAssistantAttachment(assistantId, uuid);
-            } catch {
-                // Could not delete server-side — keep the row as an error so
-                // the user can retry the removal via the trash icon.
-                patchByUuid(uuid, { status: 'error', error: reason ?? undefined });
-                return;
-            }
-        }
-        builder.set('files', (builder.draft.files ?? []).filter(f => f.uuid !== uuid));
-    }
-
     // Watch attachments whose ingestion is still running — fresh uploads
     // (tracked in addFiles) as well as files restored from the server when
-    // the builder (re)opens — and clean up ones that already failed while it
-    // was closed. Idempotent: tracking and failure handling are de-duplicated.
+    // the builder (re)opens. Files that already failed while it was closed
+    // need no handling here: they arrive with their final `ragStatus`/
+    // `ragError` and simply render as disabled rows.
     $effect(() => {
         if (!ragEnabled) return;
         const assistantId = builder.draft.id;
@@ -150,8 +191,6 @@
             if (!file.uuid || !file.ragStatus) continue;
             if (file.ragStatus === 'pending' || file.ragStatus === 'ingesting') {
                 ensureWatcher(assistantId).track(file.uuid, file.ragStatus);
-            } else if (file.ragStatus === 'failed' || file.ragStatus === 'skipped') {
-                void handleFailedIngestion(file.uuid, file.ragError ?? null);
             }
         }
     });
@@ -199,6 +238,8 @@
         label: string;
         /** Semantic color class for the knowledge-database icon. */
         cls: 'success' | 'pending' | 'failed';
+        /** Server-side failure reason (`rag_error`), shown below the status line in the tooltip. */
+        error?: string;
     }
 
     /**
@@ -217,7 +258,11 @@
                 return { label: __('assistants.builder.knowledge.rag_status_pending'), cls: 'pending' };
             case 'failed':
             case 'skipped':
-                return { label: __('assistants.builder.knowledge.rag_status_failed'), cls: 'failed' };
+                return {
+                    label: __('assistants.builder.knowledge.rag_status_failed'),
+                    cls: 'failed',
+                    error: file.ragError ?? undefined
+                };
             default:
                 return undefined;
         }
@@ -233,6 +278,9 @@
             case 'ingesting':
                 return __('assistants.builder.knowledge.upload_ingesting');
             case 'error':
+                // Rag failures carry their reason in the indicator tooltip —
+                // the description only shows the localized status word.
+                if (isRagFailed(file)) return __('assistants.builder.knowledge.rag_status_failed');
                 return file.error ?? 'error';
             default:
                 return '';
@@ -364,6 +412,7 @@
             deleting = true;
             try {
                 await deleteAssistantAttachment(assistantId, target.uuid);
+                watcher?.untrack(target.uuid);
             } catch (err) {
                 const apiErr = ApiError.from(err);
                 const reason = apiErr.errors[0]?.detail ?? apiErr.fieldErrors[0]?.message ?? apiErr.userMessage;
@@ -499,10 +548,69 @@
         </div>
     {/if}
 
-    {#if currentFiles.length > 0}
-        <div class="attachments-container">
-            <div class="attachments-list">
-            <GenericItemList label={__('assistants.builder.knowledge.attached_files')}>
+    <div class="attachments-container">
+        <div class="attachments-list">
+        <GenericItemList label={__('assistants.builder.knowledge.attached_files')}>
+            {#snippet actions()}
+                {#if currentFiles.length === 0}
+                    <!-- Nothing to manage — a disabled placeholder keeps the
+                         header slot aligned with the rows' delete icons. -->
+                    <Tooltip focusable={false} hiddenLabel={__('assistants.builder.knowledge.no_files')}>
+                        {#snippet children({props})}
+                            <ActionIcon
+                                {...props}
+                                icon={ArchiveOff04Icon}
+                                label={__('assistants.builder.knowledge.no_files')}
+                                size="md"
+                                disabled
+                            />
+                        {/snippet}
+                        {#snippet tooltip()}
+                            {__('assistants.builder.knowledge.no_files')}
+                        {/snippet}
+                    </Tooltip>
+                {:else if uploadProgress === undefined}
+                    <ConfirmDialog
+                        bind:open={deleteAllOpen}
+                        title={__('assistants.builder.knowledge.delete_all_confirm_title')}
+                        description={__('assistants.builder.knowledge.delete_all_confirm_description')}
+                        okLabel={__('assistants.builder.knowledge.delete_all_files')}
+                        onConfirm={() => deleteFiles(persistedFiles)}
+                    />
+                    {#if hasFailedFiles}
+                        <ConfirmDialog
+                            bind:open={deleteFailedOpen}
+                            title={__('assistants.builder.knowledge.delete_failed_confirm_title')}
+                            description={__('assistants.builder.knowledge.delete_failed_confirm_description')}
+                            okLabel={__('assistants.builder.knowledge.delete_failed_files')}
+                            onConfirm={() => deleteFiles(currentFiles.filter(isRagFailed))}
+                        />
+                    {/if}
+                    <DropdownMenu align="end" disabled={batchDeleting}>
+                        {#snippet trigger({props})}
+                            <Tooltip focusable={false} hiddenLabel={__('assistants.builder.knowledge.manage_files')}>
+                                {#snippet children({props: tooltipProps})}
+                                    <ActionIcon
+                                        {...mergeProps(props, tooltipProps)}
+                                        icon={MoreVerticalSquare02Icon}
+                                        label={__('assistants.builder.knowledge.manage_files')}
+                                        size="md"
+                                    />
+                                {/snippet}
+                            </Tooltip>
+                        {/snippet}
+                        <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => (deleteAllOpen = true)}>
+                            {__('assistants.builder.knowledge.delete_all_files')}
+                        </DropdownMenuItem>
+                        {#if hasFailedFiles}
+                            <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => (deleteFailedOpen = true)}>
+                                {__('assistants.builder.knowledge.delete_failed_files')}
+                            </DropdownMenuItem>
+                        {/if}
+                    </DropdownMenu>
+                {/if}
+            {/snippet}
+            {#if currentFiles.length >= 0}
                 {#each currentFiles as file, index (index)}
                     {@const indicator = ragIndicator(file)}
                     {@const indicatorTooltip = indicator
@@ -514,6 +622,7 @@
                             .filter(Boolean)
                             .join(' · ')}
                         icon={File01Icon}
+                        disabled={isRagFailed(file)}
                         onDelete={() => removeFile(index)}
                     >
                         {#snippet trailing()}
@@ -530,17 +639,21 @@
                                         />
                                     {/snippet}
                                     {#snippet tooltip()}
-                                        {indicatorTooltip}
+                                        <div>{indicatorTooltip}</div>
+                                        {#if indicator.error}
+                                            <div class="restriction-divider" aria-hidden="true"></div>
+                                            <div class="rag-error">{indicator.error}</div>
+                                        {/if}
                                     {/snippet}
                                 </Tooltip>
                             {/if}
                         {/snippet}
                     </Item>
                 {/each}
-            </GenericItemList>
-            </div>
+            {/if}
+        </GenericItemList>
         </div>
-    {/if}
+    </div>
 </div>
 
 <style>
@@ -639,6 +752,14 @@
     }
     :global(.rag-status){
         cursor: help;
+    }
+    .rag-error {
+        color: var(--color-text-muted);
+    }
+    .empty-message {
+        margin: 0;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
     }
     .restriction-label {
         font-weight: var(--font-weight-medium);

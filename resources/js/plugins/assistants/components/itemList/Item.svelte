@@ -11,6 +11,7 @@
         description,
         icon,
         highlighted = false,
+        disabled = false,
         onDelete,
         trailing,
     } = $props<{
@@ -18,6 +19,8 @@
         description?: string,
         icon?: IconComponent,
         highlighted?: boolean,
+        /** Visually disables the row (e.g. a file whose ingestion failed); the delete button stays usable. */
+        disabled?: boolean,
         onDelete?: () => void,
         /** Optional element rendered at the row's right edge, before the delete button (e.g. a status indicator). */
         trailing?: Snippet,
@@ -28,6 +31,7 @@
 <div class="item">
     <div class="content"
         class:highlight={highlighted}
+        class:disabled={disabled}
     >
         {#if icon}
             {@const IconCmp = icon}
@@ -92,6 +96,9 @@
     }
     .content.highlight{
         animation: highlight 200ms ease-in-out;
+    }
+    .content.disabled{
+        opacity: .6;
     }
     @keyframes highlight {
         0% { transform: translateX(0) }
