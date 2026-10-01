@@ -29,6 +29,27 @@
   before passing it as `message` — see `MessageBody.svelte` for the full
   pattern with `CitationRoot`/`CitationList`.
 -->
+<script lang="ts" module>
+    import {setMermaidLoader} from 'markstream-svelte';
+
+    // markstream's MermaidBlockNode derives render ids from a per-block counter,
+    // so every diagram on a page renders as `markstream-svelte-mermaid-1`.
+    // Mermaid looks render targets up by id document-wide: a duplicate id
+    // removes another block's finished SVG (blank preview) or draws into it
+    // (sequence diagrams: "Mermaid rendered empty SVG"). Suffixing a global
+    // counter keeps every render id unique. Module-level so it runs once —
+    // setMermaidLoader resets markstream's cached instance.
+    let mermaidRenderCount = 0;
+    setMermaidLoader(async () => {
+        const {default: mermaid} = await import('mermaid');
+        return {
+            render: (id: string, source: string) => mermaid.render(`${id}-${++mermaidRenderCount}`, source),
+            parse: (source: string) => mermaid.parse(source),
+            initialize: (config?: Record<string, unknown>) =>
+                mermaid.initialize((config ?? {}) as Parameters<typeof mermaid.initialize>[0]),
+        };
+    });
+</script>
 <script lang="ts">
     // Own copy of the package worker: renders MathML alongside the HTML so
     // formulas are readable by screen readers (see the worker file).
@@ -324,6 +345,10 @@
 
         /* Collapsed, the header would stack its divider on the outline. */
         :global(.code-block-header:last-child) { border-bottom: none; }
+
+        /* mermaid-preview has default overflow:clip, which clips the edge of the diagram.
+        This element is the one that moves when dragging the diagram.*/
+        :global(.mermaid-preview) { overflow: visible; }
 
         :global(:is(.code-block-header__label, .mermaid-title__text)) {
             font: var(--font-weight-medium) var(--font-size-xs) / var(--line-height-tight) var(--font-family-base);
