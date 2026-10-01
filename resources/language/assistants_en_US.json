@@ -144,7 +144,16 @@
             "changed_fields": "Fields:",
             "version_note": "Note:",
             "creation": "Creation",
-            "feedback_sent": "Feedback sent."
+            "feedback_sent": "Feedback sent.",
+            "publish": "Publish",
+            "release_draft": "Draft",
+            "release_private": "Private",
+            "release_organizational": "University-wide",
+            "release_federated": "Federated",
+            "release_pending": "In review",
+            "release_updated": "Release status updated.",
+            "release_submitted": "Assistant submitted for review.",
+            "release_failed": "The release status could not be changed."
         },
 
         "feedback": {

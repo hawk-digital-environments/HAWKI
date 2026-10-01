@@ -22,7 +22,7 @@
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
     import ThreadIcon from '$lib/components/ui/icons/iconset/ThreadIcon.svelte';
-    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -50,7 +50,7 @@
 
     const PanelIcon = $derived.by(() => {
         if (composerContext.mode.isEdit) {
-            return PencilEdit01Icon;
+            return Edit02Icon;
         }
         if (composerContext.mode.isThread) {
             return ThreadIcon;

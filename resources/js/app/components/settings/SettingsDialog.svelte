@@ -23,7 +23,7 @@
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
-    import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
+    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import GeneralSettings from '$lib/app/components/settings/pages/GeneralSettings.svelte';
     import ProfileSettings from '$lib/app/components/settings/pages/ProfileSettings.svelte';
     import ExperimentsSettings from '$lib/app/components/settings/pages/ExperimentsSettings.svelte';
@@ -60,7 +60,7 @@
 
     // $derived so the labels follow runtime locale switches from the general settings page.
     const navItems: Array<{path: string; label: string; icon: IconComponent}> = $derived([
-        {path: '/general', label: __('ui.settings.nav.general'), icon: Settings05Icon},
+        {path: '/general', label: __('ui.settings.nav.general'), icon: Settings03Icon},
         {path: '/profile', label: __('ui.settings.nav.profile'), icon: UserIcon},
         {path: '/experiments', label: __('ui.settings.nav.experiments'), icon: FlaskConicalIcon}
     ]);

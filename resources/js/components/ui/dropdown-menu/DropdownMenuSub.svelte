@@ -30,12 +30,15 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Whether the submenu is open. Supports bind:open. */
         open?: boolean;
         /** Label of the trigger row. */
         label: Snippet | string;
+        /** An optional icon before the trigger row's label, aligned like `DropdownMenuItem`'s `iconLeft`. */
+        iconLeft?: IconComponent;
         /** Optional summary of the current selection, shown muted on the right of the row. */
         value?: Snippet | string | null;
         /** When true, the row cannot be interacted with and the submenu cannot open. */
@@ -51,6 +54,7 @@
     let {
         open = $bindable(false),
         label,
+        iconLeft: IconLeft,
         value = null,
         disabled = false,
         openDelay = 100,
@@ -77,6 +81,9 @@
     <DropdownMenuPrimitive.SubTrigger {disabled} {openDelay}>
         {#snippet child({props})}
             <div {...mergeProps({class: `dropdown-sub-trigger${className ? ` ${className}` : ''}`}, restProps, props)}>
+                {#if IconLeft}
+                    <IconLeft size="14"/>
+                {/if}
                 <span class="dropdown-sub-trigger-label">
                     <SnippetOrString value={label}/>
                 </span>

@@ -19,7 +19,7 @@
     </Txt>
 
   Usage — rich content via a snippet, custom icon and side:
-    <InfoPopover popoverSide="right" icon={Settings01Icon} ariaLabel="About Top P">
+    <InfoPopover popoverSide="right" icon={Settings03Icon} ariaLabel="About Top P">
         {#snippet info()}
             <strong>Top P</strong> controls nucleus sampling.
         {/snippet}

@@ -4,12 +4,12 @@
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
     import Button from "$lib/components/ui/button/Button.svelte";
     import ButtonWithTooltip from "$lib/components/ui/button/ButtonWithTooltip.svelte";
-    import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte";
     import FeedbackPanel from "$plugins/assistants/modules/dashboard/components/feedbackPanel/FeedbackPanel.svelte";
     import ReceivedFeedbackList from "$plugins/assistants/modules/dashboard/components/feedbackPanel/ReceivedFeedbackList.svelte";
     import type { AssistantFeedback } from "$plugins/assistants/types/assistant/AssistantFeedback"
     import VersionTimeline from "$plugins/assistants/modules/dashboard/components/versionTimeline/VersionTimeline.svelte";
     import VersionCard from "$plugins/assistants/modules/dashboard/components/versionTimeline/VersionCard.svelte";
+    import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte";
     import AssistantBanner from "$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte";
     import AssistantAvatarIcon from "$plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte";
     import {submitAssistantFeedbacks} from "$plugins/assistants/api/resources/assistantFeedbackClient";
@@ -23,16 +23,17 @@
     import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
     import Clock01Icon from "$lib/components/ui/icons/iconset/Clock01Icon.svelte";
     import ArrowLeft01Icon from "$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte";
-    import {ActionIcon} from "$lib/components/ui/icons";
     import Page from "$lib/components/ui/page/Page.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {
         ASSISTANT_DETAIL_INCLUDES,
         deleteAssistant,
         getAssistant,
+        requestAssistantRelease,
         toggleAssistantFavorite
     } from "$plugins/assistants/api/resources/assistantsClient";
     import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
+    import {ReleaseMode} from "$plugins/assistants/types/assistant/ReleaseMode";
     import RemixDetails from "$plugins/assistants/modules/dashboard/components/assistantBrowser/RemixDetails.svelte";
 
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
@@ -46,11 +47,18 @@
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import DropdownMenu from "$lib/components/ui/dropdown-menu/DropdownMenu.svelte";
     import DropdownMenuItem from "$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte";
+    import DropdownMenuSub from "$lib/components/ui/dropdown-menu/DropdownMenuSub.svelte";
+    import DropdownMenuRadioGroup from "$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte";
+    import DropdownMenuRadioItem from "$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte";
+    import DropdownMenuSeparator from "$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte";
     import ConfirmDialog from "$lib/components/ui/dialog/ConfirmDialog.svelte";
-    import Tooltip from "$lib/components/ui/tooltip/Tooltip.svelte";
-    import PencilEdit01Icon from "$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte";
+    import Edit02Icon from "$lib/components/ui/icons/iconset/Edit02Icon.svelte";
     import Delete02Icon from "$lib/components/ui/icons/iconset/Delete02Icon.svelte";
-    import {mergeProps} from "bits-ui";
+    import SentIcon from "$lib/components/ui/icons/iconset/SentIcon.svelte";
+    import TaskEdit01Icon from "$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte";
+    import SquareLock02Icon from "$lib/components/ui/icons/iconset/SquareLock02Icon.svelte";
+    import CheckmarkBadge01Icon from "$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte";
+    import GlobeIcon from "$lib/components/ui/icons/iconset/GlobeIcon.svelte";
 
     /**
      * The kernel's route renderer hands each matched page its route params
@@ -180,6 +188,51 @@
         goToRoute("assistants.dashboard.store");
     }
 
+    /** The menu's publish submenu: the release stages, iconed like the
+     *  builder's `ReleaseStage` picker. */
+    const releaseOptions = [
+        {stage: ReleaseMode.DRAFT, icon: TaskEdit01Icon, label: __('assistants.detail.release_draft')},
+        {stage: ReleaseMode.PRIVATE, icon: SquareLock02Icon, label: __('assistants.detail.release_private')},
+        {stage: ReleaseMode.ORGANIZATIONAL, icon: CheckmarkBadge01Icon, label: __('assistants.detail.release_organizational')},
+        {stage: ReleaseMode.FEDERATED, icon: GlobeIcon, label: __('assistants.detail.release_federated')},
+    ];
+
+    /** A requested public stage that review hasn't granted yet. */
+    const pendingStage = $derived(
+        assistant?.requested_release_stage && assistant.requested_release_stage !== assistant.releaseStage
+            ? assistant.requested_release_stage
+            : null,
+    );
+
+    const releaseValueLabel = $derived(
+        pendingStage
+            ? __('assistants.detail.release_pending')
+            : releaseOptions.find(option => option.stage === assistant?.releaseStage)?.label,
+    );
+
+    async function onReleaseStageChange(value: string): Promise<void> {
+        if (!assistant?.id || value === assistant.releaseStage) return;
+        const id = assistant.id;
+        const stage = value as ReleaseMode;
+        try {
+            await requestAssistantRelease({...assistant, releaseStage: stage});
+        } catch (err) {
+            toast.error(`${__('assistants.detail.release_failed')} ${ApiError.from(err).userMessage}`);
+            return;
+        }
+        // The server decides the outcome: a move up to a public stage only
+        // opens a review (stage unchanged, `requested_release_stage` set),
+        // everything else applies right away — so show its answer.
+        try {
+            assistant = await getAssistant(id, {include: [...ASSISTANT_DETAIL_INCLUDES]});
+        } catch (err) {
+            console.error('Failed to reload assistant after release:', err);
+        }
+        toast.success(assistant?.requested_release_stage === stage
+            ? __('assistants.detail.release_submitted')
+            : __('assistants.detail.release_updated'));
+    }
+
     /** Toggles the inline test chat (see `assistants.components.testChat`). */
     let chatOpen = $state(false);
     const startTryOut = () => {
@@ -231,42 +284,86 @@
         {/if}
 
         <div class="cover">
-            <ActionIcon
-                    icon={ArrowLeft01Icon}
-                    label={__('assistants.detail.back')}
-                    variant="frosted"
-                    class="back"
-                    style="--action-icon-bg: oklch(100% 0 0 / 0.9); --action-icon-color: oklch(20% 0 0); --action-icon-hover-bg: oklch(100% 0 0 / 0.9)"
-                    onclick={backToStore}
-            />
-            {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.delete === true}
-                <DropdownMenu align="end">
-                    {#snippet trigger({props})}
-                        <Tooltip tooltip={__('assistants.detail.menu_aria')}>
-                            {#snippet children(t)}
-                                <ActionIcon
-                                        {...mergeProps(props, t.props)}
-                                        icon={Settings03Icon}
-                                        label={__('assistants.detail.menu_aria')}
-                                        variant="frosted"
-                                        class="edit"
-                                        style="--action-icon-bg: oklch(100% 0 0 / 0.9); --action-icon-color: oklch(20% 0 0); --action-icon-hover-bg: oklch(100% 0 0 / 0.9)"
+            <div class="topbar">
+                <ButtonWithTooltip
+                        variant="ghost"
+                        iconLeft={ArrowLeft01Icon}
+                        tooltip={__('assistants.detail.back')}
+                        class="back"
+                        onclick={backToStore}
+                />
+                <div class="controls">
+                    <FavButton
+                        id="favBtn"
+                        variant="stroke"
+                        isActive={assistant.isFavorite}
+                        onchange={onFavoriteChange}
+                    />
+
+                    <ButtonWithTooltip
+                        variant="stroke"
+                        size="md"
+                        iconLeft={SplitIcon}
+                        tooltip={assistant.allowRemix
+                            ? __('assistants.detail.remix')
+                            : __('assistants.detail.remix_disabled')}
+                        disabled={!assistant.allowRemix}
+                        onclick={startRemix}
+                    >{__('assistants.detail.remix')}</ButtonWithTooltip>
+                    <Button
+                        variant="fill"
+                        size="md"
+                        iconLeft={LinkSquare01Icon}
+                        highlight={chatOpen}
+                        onclick={startTryOut}
+                    >{__('assistants.detail.try_out')}</Button>
+
+                    {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.delete === true}
+                        <DropdownMenu align="end">
+                            {#snippet trigger({props})}
+                                <ButtonWithTooltip
+                                    {...props}
+                                    variant="stroke"
+                                    iconLeft={Settings03Icon}
+                                    tooltip={__('assistants.detail.menu_aria')}
+                                    highlight={props['data-state']}
                                 />
                             {/snippet}
-                        </Tooltip>
-                    {/snippet}
-                    {#if assistant.actionPermissions?.update === true}
-                        <DropdownMenuItem iconLeft={PencilEdit01Icon} onclick={startEdit}>
-                            {__('assistants.detail.edit')}
-                        </DropdownMenuItem>
+                            {#if assistant.actionPermissions?.update === true}
+                                <DropdownMenuItem iconLeft={Edit02Icon} onclick={startEdit}>
+                                    {__('assistants.detail.edit')}
+                                </DropdownMenuItem>
+                            {/if}
+                            {#if assistant.actionPermissions?.release === true}
+                                <DropdownMenuSub
+                                    iconLeft={SentIcon}
+                                    label={__('assistants.detail.publish')}
+                                    value={releaseValueLabel}
+                                >
+                                    <DropdownMenuRadioGroup value={assistant.releaseStage} onValueChange={onReleaseStageChange}>
+                                        {#each releaseOptions as option (option.stage)}
+                                            <DropdownMenuRadioItem
+                                                value={option.stage}
+                                                indicator="check"
+                                                iconLeft={option.icon}
+                                                iconRight={option.stage === pendingStage ? Clock01Icon : undefined}
+                                            >{option.label}</DropdownMenuRadioItem>
+                                        {/each}
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuSub>
+                            {/if}
+                            {#if assistant.actionPermissions?.delete === true}
+                                {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true}
+                                    <DropdownMenuSeparator/>
+                                {/if}
+                                <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => deleteConfirmOpen = true}>
+                                    {__('assistants.detail.delete')}
+                                </DropdownMenuItem>
+                            {/if}
+                        </DropdownMenu>
                     {/if}
-                    {#if assistant.actionPermissions?.delete === true}
-                        <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => deleteConfirmOpen = true}>
-                            {__('assistants.detail.delete')}
-                        </DropdownMenuItem>
-                    {/if}
-                </DropdownMenu>
-            {/if}
+                </div>
+            </div>
             <AssistantBanner assistantAvatar={avatar} />
         </div>
 
@@ -276,41 +373,11 @@
             </div>
 
             <div class="head">
-                <div class="title-row">
-                    <div class="name-wrapper">
-                        <h2 class="name">
-                            <OverflowTooltip value={assistant.name} truncate="clamp" lines={1} />
-                        </h2>
-                        <p class="handle">@{assistant.handle}</p>
-                    </div>
-
-                    <div class="controls">
-                        <FavButton
-                            id="favBtn"
-                            isActive={assistant.isFavorite}
-                            color="var(--color-text)"
-                            background="transparent"
-                            onchange={onFavoriteChange}
-                        />
-
-                        <ButtonWithTooltip
-                            variant="stroke"
-                            size="md"
-                            iconLeft={SplitIcon}
-                            tooltip={assistant.allowRemix
-                                ? __('assistants.detail.remix')
-                                : __('assistants.detail.remix_disabled')}
-                            disabled={!assistant.allowRemix}
-                            onclick={startRemix}
-                        >{__('assistants.detail.remix')}</ButtonWithTooltip>
-                        <Button
-                            variant="fill"
-                            size="md"
-                            iconLeft={LinkSquare01Icon}
-                            highlight={chatOpen}
-                            onclick={startTryOut}
-                        >{__('assistants.detail.try_out')}</Button>
-                    </div>
+                <div class="name-wrapper">
+                    <h2 class="name">
+                        <OverflowTooltip value={assistant.name} truncate="clamp" lines={1} />
+                    </h2>
+                    <p class="handle">@{assistant.handle}</p>
                 </div>
 
                 <p class="description">{assistant.description}</p>
@@ -395,8 +462,8 @@
             onsend={onFeedbackSend}
         />
 
-        <hr>
         {#if assistant.actionPermissions?.viewAssistantFeedback && feedbacks.length > 0}
+            <hr>
             <ReceivedFeedbackList
                 feedback={feedbacks}
             />
@@ -436,13 +503,28 @@
         padding: var(--space-6);
     }
 
+    /* Top bar, overlaid on the cover: back on the left, the assistant's
+       actions on the right. */
+    .topbar {
+        position: absolute;
+        top: var(--space-2);
+        left: var(--space-2);
+        right: var(--space-2);
+        z-index: 1;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4);
+    }
     /* Cover: the avatar banner (gradient + symbol) as a wide hero. Height is
        lifted from the card default via :global so the shared component still
        drives the look. */
     .cover {
         position: relative;
         width: 100%;
-        border-radius: var(--corner-md);
+        /* Concentric with the round 2.5rem top-bar buttons inset by
+           --space-2: their 1.25rem radius + the inset. */
+        border-radius: calc(1.25rem + var(--space-2));
         overflow: hidden;
         border: var(--border);
     }
@@ -452,41 +534,24 @@
     .cover :global(.banner-container .symbol) {
         font-size: 5rem;
     }
-    .cover :global(.back),
-    .cover :global(.edit) {
-        position: absolute;
-        top: var(--space-3);
-        z-index: 1;
-    }
-    .cover :global(.back) {
-        left: var(--space-3);
-    }
-    .cover :global(.edit) {
-        right: var(--space-3);
-    }
 
-    /* Overview: avatar tile beside the name/handle, controls, description. */
+    /* Overview: avatar tile beside the name/handle and description. */
     .overview {
         display: grid;
         grid-template-columns: auto 1fr;
         gap: var(--space-4);
         align-items: start;
     }
+    /* Same corner as the store cards' avatar, scaled to this size: the
+       small (3rem) avatar's --corner-sm is a quarter of its edge. */
     .overview .avatar :global(.icon-container) {
-        border: var(--border);
+        border-radius: calc(7rem / 4);
     }
     .head {
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
         min-width: 0;
-    }
-    .title-row {
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: var(--space-4);
     }
     .name-wrapper {
         display: flex;
@@ -513,6 +578,24 @@
         gap: var(--space-2);
         flex-shrink: 0;
     }
+    /* Icon-only buttons (back, favourite, menu) match the md buttons' height. */
+    .topbar :global(.btn--iconOnly) {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    /* Over the banner's imagery the back and outline buttons get a solid
+       white fill with dark ink in both themes (like the store cards' tags);
+       the filled "Ausprobieren" button keeps its own colours. */
+    .topbar :global(.btn:is(.back, .btn--stroke)) {
+        --btn-bg: oklch(100% 0 0 / 0.9);
+        --btn-color: oklch(20% 0 0);
+        border-color: transparent;
+    }
+    .topbar :global(.btn:is(.back, .btn--stroke):not(:disabled):hover),
+    .topbar :global(.btn:is(.back, .btn--stroke).btn--active) {
+        --btn-bg: oklch(88% 0 0);
+        --btn-color: oklch(20% 0 0);
+    }
     .description {
         margin: 0;
         font-size: var(--font-size-sm);
@@ -527,6 +610,11 @@
         align-items: center;
         gap: var(--space-2);
     }
+    /* Without badges the empty row would still add a second page gap
+       between the avatar row and the metadata cards. */
+    .badges:not(:has(*)) {
+        display: none;
+    }
 
     /* Metadata cards. */
     .metadata {
@@ -539,6 +627,10 @@
        this is a page-level override rather than a StatusCard variant. */
     .metadata :global(.status-card .icon) {
         color: var(--color-accent-text);
+    }
+    /* Same corner as the form fields (Input/Textarea: --corner-md). */
+    .metadata :global(.status-card) {
+        border-radius: var(--corner-md);
     }
     /* Tag pills — neutral surface pills with an accent-filled category, echoing
        the sidebar's accent-100 highlight language. */
@@ -627,17 +719,13 @@
         .overview {
             grid-template-columns: 1fr;
         }
-        /* The row is too narrow for name and controls side by side: controls
-           drop below the name and stretch to fill the row. */
-        .title-row {
+        /* Too narrow for back and all actions in one line: the actions wrap
+           under the back button. */
+        .topbar {
             flex-wrap: wrap;
         }
         .controls {
-            width: 100%;
             flex-wrap: wrap;
-        }
-        .controls :global(.button) {
-            flex: 1 1 8rem;
         }
     }
 </style>
