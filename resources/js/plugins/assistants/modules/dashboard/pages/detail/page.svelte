@@ -311,7 +311,7 @@
                         onclick={startRemix}
                     >{__('assistants.detail.remix')}</ButtonWithTooltip>
                     <Button
-                        variant="fill"
+                        variant="stroke"
                         size="md"
                         iconLeft={LinkSquare01Icon}
                         highlight={chatOpen}
@@ -584,8 +584,7 @@
         height: 2.5rem;
     }
     /* Over the banner's imagery the back and outline buttons get a solid
-       white fill with dark ink in both themes (like the store cards' tags);
-       the filled "Ausprobieren" button keeps its own colours. */
+       white fill with dark ink in both themes (like the store cards' tags). */
     .topbar :global(.btn:is(.back, .btn--stroke)) {
         --btn-bg: oklch(100% 0 0 / 0.9);
         --btn-color: oklch(20% 0 0);
