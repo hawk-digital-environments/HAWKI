@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Assistant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Assistant\AddFavoriteAssistantRequest;
+use App\Http\Requests\Assistant\AssistantBuilderGuideRequest;
 use App\Http\Requests\Assistant\DeleteAssistantAttachmentRequest;
 use App\Http\Requests\Assistant\RemixAssistantRequest;
 use App\Http\Requests\Assistant\RemoveFavoriteAssistantRequest;
@@ -16,11 +17,13 @@ use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
 use App\Models\Assistants\Assistant;
 use App\Policies\Traits\AuthorizesSensitiveIncludesTrait;
 use App\Services\Assistant\AssistantService;
+use App\Services\Assistant\BuilderGuide\AssistantBuilderGuideService;
 use App\Services\Assistant\Events\AssistantCreatedEvent;
 use App\Services\Assistant\Events\AssistantUpdatedEvent;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Storage\Values\FileReference;
 use Illuminate\Contracts\Support\Responsable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use LaravelJsonApi\Contracts\Routing\Route;
 use LaravelJsonApi\Contracts\Store\Store as StoreContract;
@@ -242,6 +245,30 @@ class AssistantController extends Controller
         }
 
         return $this->refetchedResponse($route, $store, $assistant);
+    }
+
+    /**
+     * One turn of the builder's guide chat: an LLM that walks the creator
+     * through the setup and proposes field values via structured output. The
+     * result is not persisted here; the builder applies `updates` to its draft
+     * and saves them through the regular update flow.
+     */
+    public function builderGuide(
+        AssistantBuilderGuideRequest $request,
+        AssistantBuilderGuideService $guide,
+        Assistant $assistant,
+    ): JsonResponse {
+        $result = $guide->respond(
+            $assistant,
+            $request->draft(),
+            $request->guideMessages(),
+            app()->getLocale(),
+            $request->avatarBackgrounds(),
+        );
+
+        // Cast so a reply that fills nothing still sends `updates` as `{}`,
+        // not the `[]` an empty PHP array encodes to.
+        return response()->json(['data' => [...$result, 'updates' => (object)$result['updates']]]);
     }
 
     /**

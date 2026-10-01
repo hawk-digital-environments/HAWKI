@@ -6,6 +6,8 @@
     import ModelToolConflictPanel from "$plugins/assistants/modules/builder/components/modelSelector/ModelToolConflictPanel.svelte";
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import ToolSelector from "$plugins/assistants/modules/builder/components/aiToolComponents/ToolSelector.svelte";
+    import ToolGroupCard from "$plugins/assistants/modules/builder/components/aiToolComponents/ToolGroupCard.svelte";
+    import SlidersHorizontalIcon from "$lib/components/ui/icons/iconset/SlidersHorizontalIcon.svelte";
     import {getMaxOutputTokensLimit} from "$plugins/assistants/modules/builder/contexts/builderUtils.js";
     import {useStore} from "$lib/app/hooks/useStore.svelte.js";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
@@ -63,35 +65,41 @@
 <!--        />-->
 
 
-        <BuilderInput
-                type="slider"
-                label={__('assistants.builder.model.input_temperature')}
-                min={0}
-                max={1}
-                description={__('assistants.builder.model.input_temperature_description')}
-                hint={__('assistants.builder.model.input_temperature_hint')}
-                assistantValueKey="temp"
-        />
+        <ToolGroupCard
+            label={__('assistants.builder.model.advanced_title')}
+            description={__('assistants.builder.model.advanced_description')}
+            icon={SlidersHorizontalIcon}
+        >
+            <BuilderInput
+                    type="slider"
+                    label={__('assistants.builder.model.input_temperature')}
+                    min={0}
+                    max={1}
+                    description={__('assistants.builder.model.input_temperature_description')}
+                    hint={__('assistants.builder.model.input_temperature_hint')}
+                    assistantValueKey="temp"
+            />
 
-        <BuilderInput
-                type="slider"
-                label={__('assistants.builder.model.input_top_p')}
-                min={0}
-                max={1}
-                description={__('assistants.builder.model.input_top_p_description')}
-                hint={__('assistants.builder.model.input_top_p_hint')}
-                assistantValueKey="topP"
-        />
-        <BuilderInput
-                type="slider"
-                label={__('assistants.builder.model.input_max_tokens')}
-                min={maxTokensMin}
-                max={maxTokensMax}
-                isInteger={true}
-                description={__('assistants.builder.model.input_max_tokens_description')}
-                hint={__('assistants.builder.model.input_max_tokens_hint')}
-                assistantValueKey="maxTokens"
-        />
+            <BuilderInput
+                    type="slider"
+                    label={__('assistants.builder.model.input_top_p')}
+                    min={0}
+                    max={1}
+                    description={__('assistants.builder.model.input_top_p_description')}
+                    hint={__('assistants.builder.model.input_top_p_hint')}
+                    assistantValueKey="topP"
+            />
+            <BuilderInput
+                    type="slider"
+                    label={__('assistants.builder.model.input_max_tokens')}
+                    min={maxTokensMin}
+                    max={maxTokensMax}
+                    isInteger={true}
+                    description={__('assistants.builder.model.input_max_tokens_description')}
+                    hint={__('assistants.builder.model.input_max_tokens_hint')}
+                    assistantValueKey="maxTokens"
+            />
+        </ToolGroupCard>
 
 
         <div class="page-header">

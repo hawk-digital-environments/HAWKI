@@ -253,6 +253,11 @@
         color: var(--color-active-text);
     }
 
+    .sidebar-item:disabled {
+        color: var(--color-text-disabled);
+        cursor: default;
+    }
+
     /* The --drill-stop-* properties are registered in resources/css/properties.css;
        a gradient can't be interpolated, but registered color properties can. */
 

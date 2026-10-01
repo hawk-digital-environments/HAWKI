@@ -48,6 +48,65 @@
         isDark = !!document.querySelector(".darkMode");
     });
 
+    /**
+     * What the web component's CSS variables can't reach (its search field
+     * shares `--background` with the whole picker, the dividers are fixed),
+     * injected into its shadow root the way the library documents. Colours
+     * still come from the app tokens, which inherit through the shadow root.
+     */
+    const SHADOW_CSS = `
+        /* One inset for every edge: the search pill sits --inset from the
+           top, left and right, and the emoji glyphs line up with it (their
+           buttons already pad them by --emoji-padding). --inset and
+           --search-height come from the popover, which derives its corner
+           radius from them. */
+        .picker { font-family: inherit; }
+        /* The library's own spacer above the search would double its top
+           inset. */
+        .pad-top { display: none; }
+        .search-row { padding: var(--inset) var(--inset) calc(var(--inset) / 2); }
+        /* The skin-tone toggle pads the right edge unevenly; the default
+           tones are kept. */
+        .skintone-button-wrapper { display: none; }
+        .nav,
+        .tabpanel { padding-inline: calc(var(--inset) - var(--emoji-padding)); }
+        /* A reserved scrollbar gutter would widen the right edge only. */
+        .tabpanel { scrollbar-gutter: auto; scrollbar-width: none; }
+        .tabpanel::-webkit-scrollbar { display: none; }
+        input.search {
+            box-sizing: border-box;
+            height: var(--search-height);
+            background: var(--color-surface-light);
+            border: none;
+            border-radius: calc(var(--search-height) / 2);
+            padding: 0 0.875rem;
+        }
+        input.search:focus { outline: 2px solid var(--color-focus-ring); outline-offset: 0; }
+        .indicator-wrapper { border-bottom: none; }
+        .indicator { border-radius: 9999px; }
+        .nav-button { border-radius: 9999px; }
+        .nav-button:hover { background: var(--button-hover-background); }
+        .category {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            padding: 0.75rem var(--emoji-padding) 0.25rem;
+        }
+        /* No favourites bar: most-used emojis add a second, redundant row. */
+        .favorites { display: none; }
+        button.emoji { transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1); }
+        button.emoji:hover { transform: scale(1.15); }
+        button.emoji:active { transform: scale(0.9); }
+    `;
+
+    function styleShadow(node: HTMLElement): void {
+        const root = node.shadowRoot;
+        if (!root || root.querySelector('style[data-hawki]')) return;
+        const style = document.createElement('style');
+        style.dataset.hawki = '';
+        style.textContent = SHADOW_CSS;
+        root.appendChild(style);
+    }
+
     function handleEmojiClick(e: CustomEvent<{ unicode?: string }>) {
         const unicode = e.detail?.unicode;
         if (!unicode) return;
@@ -81,7 +140,7 @@
 
         {#snippet popover()}
             {#if loaded}
-                <emoji-picker class={isDark ? "dark" : "light"} onemoji-click={handleEmojiClick}></emoji-picker>
+                <emoji-picker class={isDark ? "dark" : "light"} onemoji-click={handleEmojiClick} use:styleShadow></emoji-picker>
             {/if}
         {/snippet}
     </Popover>
@@ -107,22 +166,37 @@
         cursor: pointer;
     }
 
-    /* Neutralize the shared Popover's fixed-width card chrome: the
-       emoji-picker web component brings its own surface, border and size. */
+    /* The shared Popover supplies a flat card (hairline border, no shadow);
+       the web component sits flush inside it. The corners are concentric
+       with the search pill: its radius plus the inset between them, plus
+       the border the inset is measured inside of. */
     :global(.popover-content.emoji-popover) {
+        --inset: 0.625rem;
+        --search-height: 2.25rem;
         width: auto;
         padding: 0;
-        border: none;
-        background: transparent;
+        border-radius: calc(var(--search-height) / 2 + var(--inset) + var(--divider-width));
         box-shadow: none;
         overflow: hidden;
     }
 
+    /* Mapped onto the app tokens so both themes follow the app. */
     :global(.popover-content.emoji-popover) emoji-picker {
-        --border-radius: var(--corner-sm);
-        --input-border-radius: var(--corner-xs);
-        --input-padding: 0.375rem 0.75rem;
-        --input-border-color: var(--color-border);
-        --input-border-size: 1.5px;
+        --background: var(--color-surface-raised);
+        --border-size: 0;
+        --border-radius: 0;
+        --input-font-color: var(--color-text);
+        --input-placeholder-color: var(--color-text-muted);
+        --input-font-size: var(--font-size-xs);
+        --category-font-color: var(--color-text-muted);
+        --indicator-color: var(--color-text);
+        --indicator-height: 2px;
+        --button-hover-background: var(--color-hover);
+        --button-active-background: var(--color-highlight);
+        --outline-color: var(--color-focus-ring);
+        --emoji-size: 1.5rem;
+        --emoji-padding: 0.375rem;
+        --num-columns: 8;
+        height: 22rem;
     }
 </style>

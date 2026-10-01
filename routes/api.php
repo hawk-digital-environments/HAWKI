@@ -328,6 +328,7 @@ JsonApiRoute::server('v1')
                 $actions->withId()->delete('actions/favorite', 'removeFavorite');
                 $actions->withId()->post('actions/attachment', 'uploadAttachment');
                 $actions->withId()->delete('actions/attachment', 'deleteAttachment');
+                $actions->withId()->post('actions/builder-guide', 'builderGuide');
             });
 
         $server->resource('assistant-avatars', AssistantAvatarController::class)

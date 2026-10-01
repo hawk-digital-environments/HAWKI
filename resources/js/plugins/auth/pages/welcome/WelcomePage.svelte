@@ -12,6 +12,7 @@
 -->
 <script lang="ts">
     import Button from '$lib/components/ui/button/Button.svelte';
+    import StepDots from '$lib/components/ui/step-dots/StepDots.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import {useRouter, type RouteProps} from '$lib/components/ui/routing/index.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -57,11 +58,8 @@
 <!-- Wrapped in a box that animates to the measured content height, so a step with more text grows smoothly. -->
 <div class="welcome-size" style:height={contentHeight === undefined ? undefined : `${contentHeight}px`}>
 <div class="welcome" bind:offsetHeight={contentHeight}>
-    <ol class="welcome-progress" aria-label={__('ui.auth.register.welcome.progress', {current: String(meta.index + 1), total: String(meta.total)})}>
-        {#each {length: meta.total}, i (i)}
-            <li class="welcome-dot" class:done={i < meta.index} class:active={i === meta.index} aria-current={i === meta.index ? 'step' : undefined}></li>
-        {/each}
-    </ol>
+    <StepDots class="welcome-progress" current={meta.index} total={meta.total}
+              label={__('ui.auth.register.welcome.progress', {current: String(meta.index + 1), total: String(meta.total)})}/>
     {#key meta.step}
         <div class="auth-intro welcome-slide">
             <span class="welcome-emoji" aria-hidden="true">{welcomeStepEmoji[meta.step]}</span>
@@ -95,45 +93,9 @@
     .welcome :global(.auth-intro) {
         align-content: start;
     }
-    /* Steps as pills, bottom left on the button row: done ones fill in, the current one stretches with a springy overshoot. */
-    .welcome-progress {
+    /* Step pills, bottom left on the button row. */
+    .welcome :global(.welcome-progress) {
         grid-area: progress;
-        display: flex;
-        gap: var(--space-2);
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-    .welcome-dot {
-        position: relative;
-        overflow: hidden;
-        width: 0.5rem;
-        height: 0.5rem;
-        border-radius: 999px;
-        background: var(--color-border);
-        transition: width var(--duration-fast) var(--easing-spring);
-    }
-    .welcome-dot::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        background: var(--color-accent-fill);
-        transform: translateX(-100%);
-        transition: transform var(--duration-extra-fast) var(--easing-out);
-    }
-    .welcome-dot.active {
-        width: 1.75rem;
-    }
-    .welcome-dot.done::after,
-    .welcome-dot.active::after {
-        transform: none;
-    }
-    .welcome-dot.done {
-        animation: welcome-pop var(--duration-extra-fast) var(--easing-spring);
-    }
-    @keyframes welcome-pop {
-        50% { scale: 1.4; }
     }
     /* Emoji on a soft accent ellipse; pops in with a spring whenever the step changes. */
     .welcome-emoji {
@@ -208,7 +170,7 @@
         .welcome {
             grid-template: 'slide' 1fr 'progress' auto 'actions' auto / 1fr;
         }
-        .welcome-progress {
+        .welcome :global(.welcome-progress) {
             justify-self: center;
         }
         /* Center the step content in the free space between progress and buttons, with a larger emoji, instead of leaving a gap below the text. */

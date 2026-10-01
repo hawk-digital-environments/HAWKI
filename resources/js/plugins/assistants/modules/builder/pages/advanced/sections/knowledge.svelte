@@ -1,9 +1,8 @@
 <script lang="ts">
-    import StatusCard from '$plugins/assistants/components/report/StatusCard.svelte';
+    import Notice from '$plugins/assistants/components/report/Notice.svelte';
     import KnowledgeBases from "$plugins/assistants/modules/builder/components/KnowledgeBases.svelte";
     import FileUpload from "$plugins/assistants/modules/builder/components/FileUpload.svelte";
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
-    import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {useConfig} from "$lib/app/hooks/useConfig.svelte";
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
@@ -30,8 +29,8 @@
     // RAG mode decides where uploaded files go: ingested into the assistant's
     // preassembled knowledge-base dataset (rag on) or injected into the
     // conversation context per request (rag off). Ingestion is an upload-time
-    // workflow, so with rag on the model must already be decided; context
-    // injection happens per request, so uploads are always allowed with rag off.
+    // workflow, so with rag on the model must already be decided (FileUpload
+    // gates itself, see `knowledgeUploader.svelte.ts`).
     const ragEnabled = $derived(config.rag?.enabled === true);
 
     // Same model resolution as the model page's conflict panel: the draft
@@ -47,17 +46,6 @@
             : []
     );
 
-    // With rag on, uploading requires a model whose knowledge-base tool the
-    // assistant can use — the files are preassembled into that dataset.
-    const uploadDisabled = $derived(
-        ragEnabled && (currentModel === null || availableKnowledgeTools.length === 0)
-    );
-    const uploadDisabledHint = $derived(
-        ragEnabled && currentModel !== null && availableKnowledgeTools.length === 0
-            ? __('assistants.builder.knowledge.upload_disabled_model_not_configured')
-            : undefined
-    );
-
 </script>
 
 <div class="page-wrapper">
@@ -67,21 +55,21 @@
             <p class="page-description">{__('assistants.builder.knowledge.description')}</p>
         </div>
 
-        <StatusCard
+        <Notice
                 label={__('assistants.builder.knowledge.warning_knowledge_sources')}
                 icon={AlertCircleIcon}
-                type={ValidationState.WARNING}
+                tone="neutral"
         />
 
         {#if ragEnabled && currentModel === null}
-            <StatusCard
+            <Notice
                     label={__('assistants.builder.knowledge.no_model_selected')}
                     icon={AlertCircleIcon}
-                    type={ValidationState.WARNING}
+                    tone="warning"
             />
         {/if}
 
-        <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
+        <FileUpload/>
         <!-- Mock mode (VITE_MOCK_VECTOR_DATABASES): the mocked list fully
              replaces the real knowledge-databases component; see
              mocks/mockVectorDatabases.svelte.ts. -->

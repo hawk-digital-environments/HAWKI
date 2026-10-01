@@ -45,6 +45,7 @@ return [
         'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
         'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
         'translator' => env('TRANSLATOR_MODEL', 'gpt-4.1-nano'),
+        'assistant_guide' => env('ASSISTANT_GUIDE_MODEL', 'gpt-5.6-luna'),
     ],
 
     /*
@@ -57,6 +58,7 @@ return [
 //        'prompt_improver' => null,
 //        'summarizer' => null,
 //        'translator' => null,
+//        'assistant_guide' => null,
     ],
 
     /*

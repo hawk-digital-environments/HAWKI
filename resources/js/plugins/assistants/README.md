@@ -30,7 +30,7 @@ plugins/assistants/
 │   ├── report/               #   shared (dashboard + builder)
 │   ├── status/               #   StatusPill — semantic status badge
 │   ├── tags/                 #   Tag + AddButton (generic tag chip + add input)
-│   └── closeBtn/, dragDropOverlay/, emojiPicker/, inputError/,
+│   └── closeBtn/, emojiPicker/, inputError/,
 │       itemList/, radioSwitch/, select/, textInputs/, toggle/
 │                             #   generic UI primitives
 ├── presets/                  # shared presets (avatar backgrounds)

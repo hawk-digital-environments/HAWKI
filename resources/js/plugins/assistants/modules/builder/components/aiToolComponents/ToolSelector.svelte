@@ -226,6 +226,5 @@
     .tool-selector{
         display: flex;
         flex-direction: column;
-        gap: .5rem;
     }
 </style>

@@ -144,9 +144,11 @@
     /** Half the row gap — the slack that keeps the gaps between rows "on-row". */
     const GAP_SLACK = 4;
 
-    /** Whether the pointer is over a row, or in a gap directly between two. */
+    /** Whether the pointer is over an enabled row, or in a gap directly
+     *  between two. Disabled rows get no hover highlight. */
     function nearRow(event: MouseEvent) {
         for (const row of itemElements.values()) {
+            if (row.matches(':disabled')) continue;
             const r = row.getBoundingClientRect();
             if (r.height === 0) continue;
             if (event.clientY >= r.top - GAP_SLACK && event.clientY <= r.bottom + GAP_SLACK) {

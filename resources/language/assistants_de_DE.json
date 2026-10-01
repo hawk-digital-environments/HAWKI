@@ -54,7 +54,7 @@
             "private": "Privat",
             "favourites": "Favoriten",
             "shared": "Freigegeben",
-            "create": "Erstellen",
+            "create": "Assistent erstellen",
             "switch_case": "Bereich wechseln",
             "back": "Zurück"
         },
@@ -167,6 +167,15 @@
                 "test": "Testen",
                 "publish": "Veröffentlichen"
             },
+            "steps": {
+                "progress": "Fortschritt",
+                "back": "Zurück",
+                "continue": "Weiter",
+                "continue_to": "Weiter zu :step",
+                "step_of": "Schritt :current von :total",
+                "required": "Dieses Feld ist erforderlich.",
+                "incomplete": "Bitte fülle die Pflichtfelder aus."
+            },
             "exit_dialog": {
                 "title": "Entwurf behalten?",
                 "description": "Dein Assistent ist noch nicht veröffentlicht. Möchtest du den Entwurf behalten oder endgültig verwerfen?",
@@ -185,19 +194,26 @@
                 "description": "Grundlegende Angaben zu deinem Assistenten.",
                 "input_name": "Name des Assistenten",
                 "input_handle": "Eindeutiger @Handle",
+                "input_handle_hint": "Eine eindeutige Adresse für deinen Assistenten, genutzt in Links und Erwähnungen. Nur Buchstaben, Zahlen, Binde- und Unterstriche.",
                 "input_description": "Kurzbeschreibung",
+                "input_description_hint": "Ein Satz, der auf der Karte des Assistenten im App Store angezeigt wird.",
                 "input_short_description": "Ausführliche Beschreibung",
+                "input_detail_description_hint": "Wird auf der Detailseite angezeigt. Erkläre, was der Assistent macht, für wen er gedacht ist und wie man ihn nutzt.",
                 "input_category": "Kategorie",
                 "input_category_not_set": "Nicht festgelegt",
                 "input_allow_remix": "Remixen erlauben",
                 "input_allow_remix_description": "Andere können eine eigene Version erstellen.",
                 "avatar_title": "Erscheinungsbild",
-                "avatar_description": "Wähle einen Hintergrund und ein Symbol – verwendet im App-Store und als Titelbild der Detailseite.",
-                "avatar_symbol": "Symbol",
                 "avatar_symbol_change": "Emoji ändern",
                 "avatar_background": "Hintergrund",
-                "avatar_preview_name": "Dein Assistent",
-                "avatar_preview_handle": "@dein-handle",
+                "avatar_ai": "Mit KI vorschlagen",
+                "avatar_ai_loading": "Suche passenden Avatar…",
+                "avatar_ai_error": "Gerade kein Vorschlag möglich. Bitte versuche es erneut.",
+                "avatar_random": "Zufall",
+                "avatar_backgrounds_prev": "Vorherige Hintergründe",
+                "avatar_backgrounds_next": "Weitere Hintergründe",
+                "input_tags": "Tags",
+                "input_tags_hint": "Schlagwörter, mit denen andere deinen Assistenten im App Store finden.",
                 "tag_add": "Tag hinzufügen",
                 "tag_input_aria": "Tag eingeben",
                 "tag_confirm_aria": "Tag bestätigen"
@@ -207,11 +223,14 @@
                 "description": "Lege fest, wie dein Assistent kommuniziert.",
                 "warning_system_prompt": "Änderungen am System-Prompt beeinflussen die Vertrauensprüfung.",
                 "input_system_prompt": "System-Prompt",
+                "input_system_prompt_hint": "Anweisungen, denen das Modell in jedem Gespräch folgt: Rolle, Aufgaben, Tonfall und Grenzen. Nutzer*innen sehen ihn nicht.",
                 "input_system_prompt_placeholder": "System-Prompt schreiben",
                 "input_greeting": "Begrüßungsnachricht",
+                "input_greeting_hint": "Die erste Nachricht, die Nutzer*innen in einem neuen Chat mit dem Assistenten sehen.",
                 "input_greeting_placeholder": "Begrüßungsnachricht schreiben",
                 "input_starter_prompts": "Vorgeschlagene Starter-Prompts",
-                "input_starter_prompts_add": "Prompt hinzufügen"
+                "input_starter_prompts_add": "Prompt hinzufügen",
+                "input_starter_prompts_hint": "Beispielnachrichten, die in einem leeren Chat als Buttons erscheinen, damit Nutzer*innen mit einem Klick starten können."
             },
             "knowledge": {
                 "title": "Wissen & Daten",
@@ -239,6 +258,7 @@
                 "title": "Modelleinstellungen",
                 "description": "Wähle und konfiguriere das KI-Modell.",
                 "input_model": "Empfohlenes Modell",
+                "input_model_hint": "Das Modell, mit dem neue Chats mit diesem Assistenten starten.",
                 "select_model_placeholder": "Modell auswählen",
                 "input_allow_model_select": "Endnutzer darf Modell wählen",
                 "input_allow_model_select_description": "Nutzer können zwischen freigegebenen Modellen wählen.",
@@ -251,6 +271,8 @@
                 "input_max_tokens": "Max. Ausgabelänge",
                 "input_max_tokens_description": "Maximale Tokenanzahl pro Antwort.",
                 "input_max_tokens_hint": "Höhere Werte ermöglichen längere Antworten, kosten aber mehr Zeit.",
+                "advanced_title": "Erweiterte Einstellungen",
+                "advanced_description": "Temperature, Top_P und max. Ausgabelänge",
                 "conflict": {
                     "titleSingle": ":model unterstützt :tool nicht",
                     "titleMultiple": ":model unterstützt eines oder mehrere der ausgewählten Tools nicht",
@@ -274,7 +296,38 @@
             },
             "test": {
                 "title": "Private Testumgebung",
-                "description": "Teste und verfeinere deinen Assistenten."
+                "description": "Teste und verfeinere deinen Assistenten.",
+                "open": "Testchat öffnen",
+                "close": "Testchat schließen",
+                "reset": "Unterhaltung neu starten",
+                "no_model": "Wähle zuerst ein Modell",
+                "mode": "Chat-Modus",
+                "mode_test": "Testen",
+                "mode_guide": "KI-Guide"
+            },
+            "guide": {
+                "placeholder": "Frag den Guide…",
+                "empty_title": "Gemeinsam einrichten",
+                "empty_hint": "Beschreib dein Ziel oder zieh Material hinein – der Guide füllt die Felder aus.",
+                "applied": "Ausgefüllt",
+                "open_field": ":field anzeigen",
+                "error": "Der Guide konnte nicht antworten. Bitte versuche es erneut.",
+                "attach": "Dateien zur Wissensbasis hinzufügen",
+                "drop_label": "Dateien ablegen, um sie zur Wissensbasis hinzuzufügen",
+                "ingest": {
+                    "uploading": "Wird zur Wissensbasis hinzugefügt…",
+                    "done": "Zur Wissensbasis hinzugefügt",
+                    "failed": "Dateien konnten nicht hinzugefügt werden",
+                    "file_failed": "Fehlgeschlagen"
+                },
+                "upload_needs_model": "Wähle zuerst ein Modell, um Wissensdateien hinzuzufügen.",
+                "starters": {
+                    "label": "Beispielanfragen",
+                    "build": "Bau mir einen Schreibcoach für Hausarbeiten",
+                    "prompt": "Was macht einen guten System-Prompt aus?",
+                    "model": "Welches Modell sollte ich wählen?",
+                    "knowledge": "Wie funktionieren Wissensdateien?"
+                }
             },
             "publish": {
                 "title": "Veröffentlichen",
@@ -298,6 +351,14 @@
                     "denied": "Abgelehnt",
                     "needs_revision": "Überarbeitung erforderlich"
                 },
+                "status_hint": {
+                    "draft": "Noch nicht veröffentlicht",
+                    "private": "Nur für dich sichtbar",
+                    "organizational": "Prüfung durch deine Hochschule",
+                    "federated": "Prüfung im Verbund",
+                    "denied": "Wende dich an die Administration",
+                    "needs_revision": "Setze das Feedback der Review um"
+                },
                 "denied": {
                     "description": "Dein Assistent wurde dauerhaft abgelehnt. Bitte wende dich an die Systemverwaltung.",
                     "reason_label": "Grund:"
@@ -311,11 +372,15 @@
                     "description": "Die Risikostufe ergibt sich aus Wissensdateien und Tools.",
                     "label_status": "Status",
                     "label_risk_level": "Risikostufe",
-                    "risk_level_low": "Niedriges Risiko"
+                    "risk_level_low": "Niedriges Risiko",
+                    "hint": "Basierend auf Dateien und Tools"
                 },
                 "completeness": {
                     "title": "Vollständigkeitsprüfung",
-                    "description": "Pflicht für die Veröffentlichung."
+                    "description": "Pflicht für die Veröffentlichung.",
+                    "label": "Anforderungen",
+                    "ready": "Bereit zur Veröffentlichung",
+                    "open": ":count noch offen"
                 },
                 "triggers": {
                     "title": "Prüfungsauslöser"
@@ -326,6 +391,7 @@
                     "note": "MCP-Konfigurationen werden von uns eigenständig überprüft."
                 },
                 "input_version_note": "Versionshinweis",
+                "input_version_note_hint": "Beschreibe, was sich in dieser Version geändert hat. Reviewer*innen sehen diesen Hinweis.",
                 "input_version_note_placeholder": "Was hat sich geändert?",
                 "save_as_private_assistant": "Als privaten Assistenten speichern",
                 "save_as_review": "Zur Prüfung einreichen",
@@ -336,7 +402,20 @@
             }
         },
         "testChat": {
-            "empty_hint": "Starte eine Unterhaltung, um den Assistenten zu testen."
+            "status": {
+                "sending": "Sendet deine Nachricht…",
+                "reading": "Liest deine Nachricht…",
+                "reviewing": "Sieht sich deinen Assistenten an…",
+                "reading_files": "Liest deine Dateien…",
+                "planning_files": "Überlegt, wie sie sich nutzen lassen…",
+                "thinking": "Denkt nach…",
+                "writing": "Schreibt die Antwort…"
+            },
+            "empty_hint": "Schreib eine Nachricht, um ihn auszuprobieren. Änderungen wirken sofort, ohne Speichern.",
+            "no_model_hint": "Wähle ein Modell, um mit dem Testen zu beginnen.",
+            "unnamed": "Dein Assistent",
+            "placeholder": "Nachricht an deinen Assistenten…",
+            "send": "Senden"
         }
     }
 }

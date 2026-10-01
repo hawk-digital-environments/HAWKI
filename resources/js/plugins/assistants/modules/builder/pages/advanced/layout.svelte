@@ -9,7 +9,10 @@
     import {createBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import BuilderStepFooter from "$plugins/assistants/modules/builder/components/BuilderStepFooter.svelte";
     import ConfirmBuilderExit from "$plugins/assistants/modules/builder/components/ConfirmBuilderExit.svelte";
+    import {breakpointsQueries} from '$lib/components/util/breakpoints/breakpoints.js';
+    import BuilderTestPanel from "$plugins/assistants/modules/builder/components/BuilderTestPanel.svelte";
 
     let { children } = $props();
 
@@ -19,6 +22,11 @@
     // it up via useBuilderContext), and released when the layout unmounts.
     const builder = createBuilderContext(useToastContext(), __);
 
+    // The test chat floats over every step (docked as a column on wide
+    // viewports). Open by default, except on small screens where it would
+    // cover the whole builder — there it starts as the chat button.
+    let testOpen = $state(!window.matchMedia(breakpointsQueries.bpMdAndSmaller).matches);
+
     onMount(() => {
         assistantOptionsStore.load();
         builder.init();
@@ -27,10 +35,12 @@
 
 
 
-<div class="wrapper-grid">
+<div class="wrapper-grid" class:test-open={testOpen}>
     <div class="content-col">
         {@render children()}
     </div>
+    <BuilderStepFooter />
+    <BuilderTestPanel bind:open={testOpen} />
     <!-- Draft keep/discard decision when leaving the builder: registers its
          own router navigation guard and dialog for exactly as long as this
          layout (and therefore the builder session) is mounted. -->
@@ -56,17 +66,63 @@
         box-sizing: border-box;
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(0, 1fr);
+        grid-template-areas: 'main';
         overflow: hidden;
+        --test-panel-w: 26rem;
+        --test-fab-inset: var(--space-4);
+    }
+
+    /* Wide viewports: the open test chat docks as a right-hand column. The
+       track opens in step with the panel's morph (BuilderTestPanel), so the
+       content makes room while the button grows into the column. */
+    @media (--bp-xl) {
+        .wrapper-grid {
+            grid-template-columns: minmax(0, 1fr) 0rem;
+            grid-template-areas: 'main .';
+            transition: grid-template-columns 360ms cubic-bezier(0.3, 0, 0.2, 1) 30ms;
+        }
+
+        .wrapper-grid.test-open {
+            grid-template-columns: minmax(0, 1fr) var(--test-panel-w);
+            transition: grid-template-columns 480ms cubic-bezier(0.3, 0, 0.2, 1);
+        }
+    }
+
+    @media (--bp-xl) and (prefers-reduced-motion: reduce) {
+        .wrapper-grid, .wrapper-grid.test-open {
+            transition: none;
+        }
     }
 
     /* Sole scroll region of the builder. `min-height: 0` lets it shrink inside
        the grid row so its own `overflow-y` engages instead of overflowing the
        shell (and the parent AppContent). */
     .content-col {
+        grid-area: main;
         height: 100%;
+        box-sizing: border-box;
+        /* Room to scroll the last content out from under the step footer. */
+        padding-bottom: 8rem;
         min-height: 0;
         min-width: 0;
         overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .content-col :global(textarea) {
+        scrollbar-width: none;
+    }
+
+    .content-col::-webkit-scrollbar,
+    .content-col :global(textarea::-webkit-scrollbar) {
+        display: none;
+    }
+
+    /* The step footer floats over the bottom of the content column. */
+    .wrapper-grid > :global(.step-footer) {
+        grid-area: main;
+        align-self: end;
+        z-index: 1;
     }
 
     /* Mobile: the floating nav toggle overlays the content top.
@@ -122,7 +178,7 @@
     .wrapper-grid :global(.page-content) {
         display: flex;
         flex-direction: column;
-        gap: var(--space-5);
+        gap: var(--space-6);
         max-width: 48rem;
         margin: 0 auto;
         padding: var(--space-8);
@@ -131,7 +187,7 @@
     .wrapper-grid :global(.page-header) {
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
+        gap: var(--space-1);
         margin-bottom: var(--space-2);
     }
 
@@ -152,6 +208,6 @@
     .wrapper-grid :global(.grid-2) {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: var(--space-4);
+        gap: var(--space-6) var(--space-4);
     }
 </style>

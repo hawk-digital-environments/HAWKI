@@ -1,8 +1,10 @@
 <!--
   @component Prominent action row for the sidebar, carrying the brand gradient
-  (e.g. "New chat"). Follows the nav row metrics of SidebarItem: in the
-  collapsed rail it shrinks to an icon-only square and shows its label as a
-  tooltip anchored to the icon instead.
+  (e.g. "New chat"), or — with `variant="stroke"` — an outlined neutral
+  counterpart for secondary actions (e.g. the builder's "Back"). Follows the
+  nav row metrics of SidebarItem: in the collapsed rail it shrinks to an
+  icon-only square and shows its label as a tooltip anchored to the icon
+  instead.
 -->
 <script lang="ts">
     import type {HTMLButtonAttributes} from 'svelte/elements';
@@ -16,9 +18,11 @@
         icon: IconComponent;
         /** Text label; doubles as the rail tooltip and accessible name. */
         label: string;
+        /** `gradient` (default) for the primary action, `stroke` for a neutral outlined one. */
+        variant?: 'gradient' | 'stroke';
     }
 
-    const {icon: Icon, label, class: className, ...rest}: Props = $props();
+    const {icon: Icon, label, variant = 'gradient', class: className, ...rest}: Props = $props();
 
     const sidebar = useSidebar();
     const collapsed = $derived(!sidebar.navOpen);
@@ -41,6 +45,7 @@
             aria-label={label}
             {...mergeProps(props, rest, {class: ['sidebar-button', className]})}
             class:collapsed
+            class:stroke={variant === 'stroke'}
         >
             <span class="icon-wrap" bind:this={iconEl}>
                 <Icon size={18} strokeWidth={2} aria-hidden="true" />
@@ -80,6 +85,19 @@
     /* The ramp deepens on hover rather than being washed out by a flat overlay. */
     .sidebar-button:hover {
         filter: brightness(0.92) saturate(1.08);
+    }
+
+    /* Neutral outlined variant, matching Button's `stroke` style. */
+    .sidebar-button.stroke {
+        border: var(--border);
+        background: transparent;
+        color: var(--color-text);
+        transition: background-color var(--duration-fast);
+    }
+
+    .sidebar-button.stroke:hover {
+        filter: none;
+        background: var(--color-highlight);
     }
 
     .sidebar-button:focus-visible {

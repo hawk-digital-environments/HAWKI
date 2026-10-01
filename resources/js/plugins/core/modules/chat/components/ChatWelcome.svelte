@@ -11,6 +11,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
 -->
 <script lang="ts">
     import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
+    import StarterPrompts from '$lib/components/ui/starter-prompts/StarterPrompts.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
@@ -70,13 +71,10 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
             <p>{section.description}</p>
         {/if}
         {#if section.starterPrompts.length > 0}
-            <ul class="starter-prompts" aria-label={__('chat.page.starterPrompts')}>
-                {#each section.starterPrompts as prompt}
-                    <li>
-                        <button type="button" class="starter-prompt" onclick={() => selectPrompt(prompt)}>{prompt}</button>
-                    </li>
-                {/each}
-            </ul>
+            <div class="starter-prompts">
+                <StarterPrompts prompts={section.starterPrompts} onselect={selectPrompt}
+                                aria-label={__('chat.page.starterPrompts')}/>
+            </div>
         {/if}
     </div>
 {:else}
@@ -126,27 +124,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }
 
     .starter-prompts {
-        display: flex;
         max-width: 40rem;
-        margin: var(--space-6) 0 0;
-        padding: 0;
-        flex-wrap: wrap;
-        gap: var(--space-2);
-        justify-content: center;
-        list-style: none;
+        margin-top: var(--space-6);
     }
-
-    .starter-prompt {
-        padding: var(--space-2) var(--space-4);
-        border: var(--divider);
-        border-radius: var(--corner-full);
-        background: var(--color-surface-raised);
-        color: var(--color-text);
-        font-size: var(--font-size-sm);
-        cursor: pointer;
-        transition: border-color 120ms ease, background-color 120ms ease;
-    }
-
-    .starter-prompt:hover { border-color: var(--color-interactive); }
-    .starter-prompt:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
 </style>

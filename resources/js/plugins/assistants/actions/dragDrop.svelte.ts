@@ -37,12 +37,20 @@ export function dragDrop(node: HTMLElement, options: DragDropOptions) {
         return types.every((t) => allowed.has(t)) ? "valid" : "invalid";
     }
 
+    /** Only OS file drags count; text or element drags pass through untouched
+     *  (e.g. moving selected text inside a textarea). */
+    function hasFiles(e: DragEvent): boolean {
+        return Array.from(e.dataTransfer?.types ?? []).includes("Files");
+    }
+
     function onDragOver(e: DragEvent) {
+        if (!hasFiles(e)) return;
         e.preventDefault();
         e.stopPropagation();
     }
 
     function onDragEnter(e: DragEvent) {
+        if (!hasFiles(e)) return;
         e.preventDefault();
         e.stopPropagation();
         if (++dragCounter === 1) {
@@ -51,6 +59,7 @@ export function dragDrop(node: HTMLElement, options: DragDropOptions) {
     }
 
     function onDragLeave(e: DragEvent) {
+        if (!hasFiles(e)) return;
         e.preventDefault();
         e.stopPropagation();
         if (--dragCounter === 0) {
@@ -59,6 +68,7 @@ export function dragDrop(node: HTMLElement, options: DragDropOptions) {
     }
 
     function onDrop(e: DragEvent) {
+        if (!hasFiles(e)) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounter = 0;
