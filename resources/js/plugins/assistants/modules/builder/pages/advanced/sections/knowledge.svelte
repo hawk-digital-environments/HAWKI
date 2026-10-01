@@ -8,6 +8,7 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useStore} from '$lib/app/hooks/useStore.svelte';
     import {isAiToolAvailableFor, knowledgeToolsOf} from "$plugins/core/stores/aiToolStoreData.js";
+    import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
     /**
      * The kernel's route renderer instantiates page components without passing
      * any props (see core's ChatIndex.svelte), so this interface is intentionally
@@ -44,6 +45,16 @@
                 .filter(t => isAiToolAvailableFor(t, currentModel))
             : []
     );
+
+    // Mode display only (uploads themselves stay model-independent — see the
+    // comment above): with rag on and the selected model able to use a
+    // knowledge-base tool, uploads land in the knowledge base; otherwise they
+    // are loaded into the conversation context per request.
+    const ragEnabled = $derived(config.rag?.enabled === true);
+    const knowledgeToolAvailable = $derived(
+        currentModel !== null
+            && knowledgeToolsOf(toolStore.tools).some(t => isAiToolAvailableFor(t, currentModel))
+    );
 </script>
 
 <div class="page-wrapper">
@@ -52,7 +63,6 @@
             <h3 class="page-title">{__('assistants.builder.knowledge.title')}</h3>
             <p class="page-description">{__('assistants.builder.knowledge.description')}</p>
         </div>
-
         <Alert
                 size="small"
                 description={__('assistants.builder.knowledge.warning_knowledge_sources')}
@@ -60,10 +70,32 @@
                 tone="neutral"
         />
 
+        {#if ragEnabled && currentModel === null}
+            <Alert
+                    size="small"
+                    description={__('assistants.builder.knowledge.no_model_selected')}
+                    icon={AlertCircleIcon}
+                    tone="warning"
+            />
+        {/if}
+        {#if ragEnabled && knowledgeToolAvailable}
+            <Alert
+                    size="small"
+                    description={__('rag.mode_active')}
+                    icon={Database01Icon}
+                    tone="info"
+            />
+        {:else}
+            <Alert
+                    size="small"
+                    description={__('assistants.builder.knowledge.load_files_in_context')}
+                    icon={Database01Icon}
+                    tone="info"
+            />
+        {/if}
         <FileUpload/>
         {#if attachableKnowledgeTools.length > 0}
             <KnowledgeBases tools={attachableKnowledgeTools}/>
         {/if}
-
     </div>
 </div>

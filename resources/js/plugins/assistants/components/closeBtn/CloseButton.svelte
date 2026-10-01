@@ -12,11 +12,13 @@
         onClick,
         icon: Icon = Cancel01Icon,
         label,
+        disabled = false,
     } = $props<{
         size?: "small" | "medium" | "large",
         onClick: () => void,
         icon?: IconComponent,
         label?: string,
+        disabled?: boolean,
     }>();
 
     const actionSize = $derived(size === 'medium' ? 'md' : size === 'large' ? 'lg' : 'xs');
@@ -26,5 +28,6 @@
         icon={Icon}
         label={label ?? __('ui.common.remove')}
         size={actionSize}
+        disabled={disabled}
         onclick={() => onClick()}
 />

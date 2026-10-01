@@ -37,7 +37,7 @@
     const openField = createOpenField(builder, router);
 
     const testChat = createChatStore(createChatConfig(() => builder.draft));
-    const guideChat = createBuilderGuideChat(builder, new KnowledgeUploader(), __, router);
+    const guideChat = createBuilderGuideChat(builder, new KnowledgeUploader(uid), __, router);
 
     let mode = $state<ChatVariant>('guide');
     const chat = $derived(mode === 'guide' ? guideChat : testChat);

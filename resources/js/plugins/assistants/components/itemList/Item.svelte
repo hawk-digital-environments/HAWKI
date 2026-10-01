@@ -5,6 +5,7 @@
     import type {IconComponent} from '$lib/components/ui/icons';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
+    import LoadingBeam from '$lib/components/ui/loading-beam/LoadingBeam.svelte';
     import type {Snippet} from 'svelte';
 
     let {
@@ -12,6 +13,9 @@
         description,
         icon,
         highlighted = false,
+        disabled = false,
+        busy = false,
+        deleteDisabled = false,
         onDelete,
         trailing,
     } = $props<{
@@ -19,6 +23,12 @@
         description?: string,
         icon?: IconComponent,
         highlighted?: boolean,
+        /** Visually disables the row (e.g. a file whose ingestion failed); the delete button stays usable. */
+        disabled?: boolean,
+        /** Shows the LoadingBeam ring around the text card while a background action on this row runs (e.g. its delete is being confirmed). */
+        busy?: boolean,
+        /** Disables the delete button (e.g. while an upload batch is in flight — deleting then races the batch reconcile). */
+        deleteDisabled?: boolean,
         onDelete?: () => void,
         /** Optional element rendered at the row's right edge, before the delete button (e.g. a status indicator). */
         trailing?: Snippet,
@@ -29,7 +39,12 @@
 <div class="item">
     <div class="content"
         class:highlight={highlighted}
+        class:disabled={disabled}
+        class:busy={busy}
     >
+        {#if busy}
+            <LoadingBeam/>
+        {/if}
         {#if icon}
             {@const IconCmp = icon}
             <StatusIcon icon={IconCmp}/>
@@ -51,6 +66,7 @@
             <CloseButton
                 icon={Delete02Icon}
                 size="medium"
+                disabled={deleteDisabled}
                 onClick={() => onDelete?.()}/>
         </div>
     {/if}
@@ -99,6 +115,15 @@
     }
     .content.highlight{
         animation: highlight 200ms ease-in-out;
+    }
+    .content.disabled{
+        opacity: .6;
+    }
+    /* Hosts the LoadingBeam overlay (busy state); the ring hugs the card's
+       own corner radius. */
+    .content.busy{
+        position: relative;
+        --loading-beam-radius: var(--corner-md);
     }
     @keyframes highlight {
         0% { transform: translateX(0) }
