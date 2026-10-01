@@ -146,6 +146,7 @@ class ClientSchemaGenerator
 
         $actionRoutes = $this->discoverActionRoutes($type);
         $isAuthorizable = method_exists($schema, 'authorizable') ? $schema->authorizable() : true;
+        $defaults = $this->modelAttributeDefaults($schemaClass);
 
         $resource = [
             'type' => $type,
@@ -156,7 +157,8 @@ class ClientSchemaGenerator
             $resource['endpoints'] = $this->buildEndpoints($type, $schemaClass, $isAuthorizable, $user);
         }
 
-        $resource['attributes'] = $this->buildAttributes($attributeFields, $validatedFields, $actionRoutes, $fieldConstraints, $requiredFields, $type);
+        $resource['attributes'] = $this->buildAttributes($attributeFields, $validatedFields, $actionRoutes, $fieldConstraints, $requiredFields, $defaults, $type);
+        $resource['schema'] = $this->buildJsonSchema($attributeFields, $fieldConstraints, $requiredFields, $defaults, $type);
         $resource['relationships'] = $this->buildRelationships($relationshipFields, $validatedFields, $actionRoutes, $type);
         $resource['actions'] = $this->buildActions($type, $actionRoutes, $user);
         $resource['filters'] = $this->buildFilters($schema);
@@ -189,6 +191,7 @@ class ClientSchemaGenerator
         array $actionRoutes,
         array $fieldConstraints,
         array $requiredFields,
+        array $defaults,
         string $resourceType,
     ): array {
         $attributes = [];
@@ -221,10 +224,124 @@ class ClientSchemaGenerator
                 $attr['writable_on'] = $writableOn;
             }
 
+            if (\array_key_exists($name, $defaults)) {
+                $attr['default'] = $defaults[$name];
+            }
+
             $attributes[$name] = $attr;
         }
 
         return $attributes;
+    }
+
+    /**
+     * Assemble the per-resource JSON-Schema document used for form rendering: the
+     * attribute contract expressed with JSON-Schema keywords (type, enum, bounds,
+     * maxLength) plus the required list and model-derived defaults. Attributes
+     * only — relationships keep their resource-identifier write shape and are
+     * described by the relationships map.
+     *
+     * @param list<object> $fields
+     * @param array<string, array> $fieldConstraints
+     * @param list<string> $requiredFields
+     * @param array<string, mixed> $defaults
+     *
+     * @return array<string, mixed>
+     */
+    private function buildJsonSchema(
+        array $fields,
+        array $fieldConstraints,
+        array $requiredFields,
+        array $defaults,
+        string $resourceType,
+    ): array {
+        $properties = [];
+
+        foreach ($fields as $field) {
+            $name = $field->name();
+            $mergedConstraints = $this->mergeDbEnums($fieldConstraints[$name] ?? [], $resourceType, $name);
+            $property = $this->jsonSchemaProperty($field, $mergedConstraints);
+
+            if (\array_key_exists($name, $defaults)) {
+                $property['default'] = $defaults[$name];
+            }
+
+            $properties[$name] = $property;
+        }
+
+        $required = array_values(array_intersect($requiredFields, array_keys($properties)));
+
+        $schema = ['type' => 'object', 'properties' => $properties];
+
+        if ([] !== $required) {
+            $schema['required'] = $required;
+        }
+
+        return $schema;
+    }
+
+    /**
+     * @param array<string, mixed> $constraints
+     *
+     * @return array<string, mixed>
+     */
+    private function jsonSchemaProperty(object $field, array $constraints): array
+    {
+        $property = [];
+
+        if ($field instanceof DateTime) {
+            $property['type'] = 'string';
+            $property['format'] = 'date-time';
+        } elseif ($field instanceof Boolean) {
+            $property['type'] = 'boolean';
+        } elseif ($field instanceof Number) {
+            $property['type'] = 'integer' === ($constraints['type'] ?? null) ? 'integer' : 'number';
+        } else {
+            $openApiType = $this->schemaBuilder->mapFieldType($field);
+            $property['type'] = $openApiType['type'] ?? 'string';
+        }
+
+        if (isset($constraints['enum'])) {
+            $property['enum'] = $constraints['enum'];
+        }
+
+        if (isset($constraints['minimum'])) {
+            $property['minimum'] = $constraints['minimum'];
+        }
+
+        if (isset($constraints['maximum'])) {
+            $property['maximum'] = $constraints['maximum'];
+        }
+
+        if (isset($constraints['maxLength'])) {
+            $property['maxLength'] = $constraints['maxLength'];
+        }
+
+        return $property;
+    }
+
+    /**
+     * Raw attribute defaults a fresh model instance carries, so editors can
+     * pre-fill create forms. Models without declared attribute defaults — and
+     * schema classes without a model — yield an empty map.
+     *
+     * @param class-string $schemaClass
+     *
+     * @return array<string, mixed>
+     */
+    private function modelAttributeDefaults(string $schemaClass): array
+    {
+        $modelClass = $schemaClass::$model ?? null;
+
+        if (null === $modelClass || !class_exists($modelClass)) {
+            return [];
+        }
+
+        try {
+            return (new $modelClass())->getAttributes();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     private function buildRelationships(

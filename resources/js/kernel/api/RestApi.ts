@@ -2,6 +2,7 @@ import type {ApiTransport} from '$lib/kernel/api/transport.js';
 import z from 'zod';
 import {decodeJsonApiIndexResponse, decodeJsonApiResourceResponse, extendResourceCollection, extendResourceSchema, type JsonApiCollection} from '$lib/kernel/api/jsonApiEncoding.js';
 import {buildQueryString, type FetchCollectionQuery, type FetchResourceQuery} from '$lib/kernel/api/buildQueryString.js';
+import {ClientSchemaDocumentSchema, type ClientSchemaDocument} from '$lib/kernel/clientSchema/clientSchemaDocument.js';
 import type {HawkiResourceSchemas} from '$lib/kernel/extendableTypes.js';
 import type {UriBuilder} from '$lib/kernel/api/UriBuilder.js';
 import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
@@ -163,6 +164,20 @@ export class RestApi {
             if (schema) fetchOptions.schema = extendResourceSchema(schema);
         }
         return await this.fetch(url, {method: 'GET', ...fetchOptions});
+    }
+
+    /**
+     * Fetches the machine-readable client schema describing every JSON:API
+     * resource: endpoints (with policy-derived `allowed` flags), attributes with
+     * constraints and writable paths, relationships, actions, and the
+     * per-resource JSON-Schema block used for form rendering. Validated against
+     * {@link ClientSchemaDocumentSchema}.
+     */
+    public async getClientSchema(): Promise<ClientSchemaDocument> {
+        return await this.fetch(this.uriBuilder.jsonApiUri('assistants', 'schema'), {
+            method: 'GET',
+            schema: ClientSchemaDocumentSchema
+        });
     }
 
     /**
