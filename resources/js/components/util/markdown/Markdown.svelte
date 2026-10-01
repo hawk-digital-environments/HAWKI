@@ -27,7 +27,7 @@
     import katexWorkerUrl from 'markstream-svelte/workers/katexRenderer.worker?worker&url';
     import mermaidWorkerUrl from 'markstream-svelte/workers/mermaidParser.worker?worker&url';
     import {MarkdownRender, setDefaultI18nMap, setKaTeXWorker, setMermaidWorker} from 'markstream-svelte';
-    import type {CodeBlockMonacoOptions, NodeRendererCodeBlockProps} from 'markstream-svelte';
+    import type {CodeBlockOptions, NodeRendererCodeBlockProps} from 'markstream-svelte';
     import ExtendedLinkNode from '$lib/components/util/markdown/extension/ExtendedLinkNode.svelte';
     import 'katex/dist/katex.min.css';
     import 'monaco-editor/min/vs/editor/editor.main.css';
@@ -64,13 +64,9 @@
     setMermaidWorker(loadWorker(mermaidWorkerUrl));
     setDefaultI18nMap(getTranslationsFlat('markdown.markstream'));
 
-    // Snippets are read-only: no current-line highlight or cursor mark in the
-    // overview ruler, and an even inset (--space-3) above and below the code.
-    const codeBlockMonacoOptions: CodeBlockMonacoOptions = {
-        renderLineHighlight: 'none',
-        hideCursorInOverviewRuler: true,
-        overviewRulerBorder: false,
-        padding: {top: 12, bottom: 12}
+    // An even inset (--space-3) above and below the code.
+    const codeBlockOptions: CodeBlockOptions = {
+        padding: 12
     };
 
     // Copy, expand and collapse are enough; the font-size stepper is noise.
@@ -82,8 +78,8 @@
     isDark={themeStore.theme === 'dark'}
     final={!isStreaming}
     showTooltips={false}
-    customComponents={{link: ExtendedLinkNode}}
-    codeBlockMonacoOptions={codeBlockMonacoOptions}
+    customComponents={{link: ExtendedLinkNode, heading: HeadingNode, table: TableNode}}
+    codeBlockOptions={codeBlockOptions}
     codeBlockProps={codeBlockProps}
     typewriter={!!isStreaming}
 />
