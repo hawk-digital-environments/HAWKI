@@ -23,7 +23,6 @@
     import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
     import Clock01Icon from "$lib/components/ui/icons/iconset/Clock01Icon.svelte";
     import ArrowLeft01Icon from "$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte";
-    import ArrowDown01Icon from "$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte";
     import {ActionIcon} from "$lib/components/ui/icons";
     import Page from "$lib/components/ui/page/Page.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
@@ -75,25 +74,26 @@
     let error = $state<Error | null>(null);
     let feedbacks = $state<AssistantFeedback[]>([]);
 
-    // The detailed description is capped at DESCRIPTION_COLLAPSED_LINES with a
-    // bottom fade; when it is taller, a toggle expands it to its full height.
-    // The cap is counted in lines (not rem) so it always ends on a line
-    // boundary: a line cut mid-glyph shows through a short fade as a hard edge.
+    // The detailed description is clamped to DESCRIPTION_COLLAPSED_LINES; when
+    // that cuts it off, a "Read more" button reveals the rest (one-way).
     const DESCRIPTION_COLLAPSED_LINES = 7;
     const descriptionId = $props.id();
     let descriptionExpanded = $state(false);
     let descriptionTextEl = $state<HTMLParagraphElement | null>(null);
-    /** Full content height of the description, kept current by bind:clientHeight. */
+    let descriptionWidth = $state(0);
     let descriptionHeight = $state(0);
-    const descriptionLineHeight = $derived.by(() => {
-        if (!descriptionTextEl) return 0;
-        void descriptionHeight; // re-read when the text re-lays out
-        const style = getComputedStyle(descriptionTextEl);
-        return parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.5;
+    let descriptionTruncated = $state(false);
+
+    // Re-measured after the DOM updates: on a new text and whenever the
+    // paragraph resizes (bind:clientWidth/clientHeight).
+    $effect(() => {
+        const el = descriptionTextEl;
+        if (!el) return;
+        void assistant?.detailDescription;
+        void descriptionWidth;
+        void descriptionHeight;
+        descriptionTruncated = el.scrollHeight > el.clientHeight + 1;
     });
-    const descriptionOverflows = $derived(
-        descriptionLineHeight > 0 && descriptionHeight > DESCRIPTION_COLLAPSED_LINES * descriptionLineHeight + 1
-    );
 
     // CHECK AWAIT Syntax from Svelte
     $effect(() => {
@@ -373,32 +373,30 @@
         </div>
 
         <div class="detailed-description">
-            <!-- max-height is animated between the collapsed cap and the measured
-                 content height (a transition can't target `none`). -->
-            <div
+            <p
                 id={descriptionId}
-                class="detailed-description-clip"
-                class:clamped={descriptionOverflows}
-                class:expanded={descriptionExpanded}
-                style:max-height={descriptionOverflows
-                    ? (descriptionExpanded ? `${descriptionHeight}px` : `${DESCRIPTION_COLLAPSED_LINES}lh`)
-                    : undefined}
+                class="detailed-description-text"
+                class:clamped={!descriptionExpanded}
+                tabindex="-1"
+                style:--description-lines={DESCRIPTION_COLLAPSED_LINES}
+                bind:this={descriptionTextEl}
+                bind:clientWidth={descriptionWidth}
+                bind:clientHeight={descriptionHeight}
             >
-                <p class="detailed-description-text" bind:this={descriptionTextEl} bind:clientHeight={descriptionHeight}>
-                    {assistant.detailDescription}
-                </p>
-            </div>
-            {#if descriptionOverflows}
-                <ActionIcon
-                        icon={ArrowDown01Icon}
-                        label={__(descriptionExpanded
-                            ? 'assistants.detail.description_collapse'
-                            : 'assistants.detail.description_expand')}
-                        class="description-toggle"
-                        aria-expanded={descriptionExpanded}
-                        aria-controls={descriptionId}
-                        onclick={() => (descriptionExpanded = !descriptionExpanded)}
-                />
+                {assistant.detailDescription}
+            </p>
+            {#if descriptionTruncated}
+                <button
+                    type="button"
+                    class="read-more"
+                    aria-expanded="false"
+                    aria-controls={descriptionId}
+                    onclick={() => {
+                        descriptionExpanded = true;
+                        // The button disappears; keep keyboard focus on the text it revealed.
+                        descriptionTextEl?.focus();
+                    }}
+                >{__('assistants.detail.read_more')}</button>
             {/if}
         </div>
 
@@ -571,50 +569,42 @@
         color: var(--color-text-muted);
     }
 
-    /* Detailed description: capped with a bottom fade until expanded. */
+    /* Detailed description: clamped to --description-lines (ending in an
+       ellipsis) until "Read more" is clicked. */
     .detailed-description {
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
         gap: var(--space-1);
-    }
-    .detailed-description-clip {
-        width: 100%;
-        overflow: hidden;
-        transition:
-            max-height var(--duration-medium) ease,
-            --description-fade var(--duration-medium) ease;
-    }
-    /* Same eased ramp as the chat panel's --header-fade (PageHeaderBar),
-       applied over the last --description-fade of the clip. The fade length
-       is a registered property (resources/css/properties.css) so it animates
-       away on expand instead of snapping off. */
-    .detailed-description-clip.clamped {
-        --description-fade: 2.5rem;
-        --description-fade-mask: linear-gradient(
-            to bottom,
-            black 0,
-            black calc(100% - var(--description-fade)),
-            rgba(0, 0, 0, 0.86) calc(100% - var(--description-fade) * 0.727),
-            rgba(0, 0, 0, 0.55) calc(100% - var(--description-fade) * 0.509),
-            rgba(0, 0, 0, 0.25) calc(100% - var(--description-fade) * 0.291),
-            rgba(0, 0, 0, 0.08) calc(100% - var(--description-fade) * 0.145),
-            transparent 100%
-        );
-        mask-image: var(--description-fade-mask);
-        -webkit-mask-image: var(--description-fade-mask);
-    }
-    .detailed-description-clip.clamped.expanded {
-        --description-fade: 0rem;
     }
     .detailed-description-text {
         margin: 0;
+        outline: none; /* focus target only (tabindex="-1"), not interactive */
     }
-    .detailed-description :global(.description-toggle svg) {
-        transition: transform var(--duration-medium) ease;
+    .detailed-description-text.clamped {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: var(--description-lines);
+        line-clamp: var(--description-lines);
+        overflow: hidden;
     }
-    .detailed-description :global(.description-toggle[aria-expanded='true'] svg) {
-        transform: rotate(180deg);
+    .read-more {
+        padding: 0;
+        border: none;
+        background: none;
+        font: inherit;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-accent-text);
+        cursor: pointer;
+    }
+    .read-more:hover {
+        text-decoration: underline;
+    }
+    .read-more:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+        border-radius: var(--corner-sm);
     }
 
     /* Badge row (release stage + risk pill). */

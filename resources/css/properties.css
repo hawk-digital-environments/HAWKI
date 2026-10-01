@@ -29,14 +29,6 @@
     initial-value: transparent;
 }
 
-/* Length of the bottom fade on the assistant detail page's collapsed
-   description. Registered as <length> so the fade animates away on expand. */
-@property --description-fade {
-    syntax: '<length>';
-    inherits: false;
-    initial-value: 0rem;
-}
-
 /* Sidebar column widths. Registered as <length> so they animate; inherited so
    nested rows can read the track they sit in. */
 @property --nav-track {
