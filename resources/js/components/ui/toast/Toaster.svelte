@@ -27,7 +27,6 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
-    import {shortenLongTokens} from '$lib/utils/strings.js';
 
     const toastContext = useToastContext();
     const {__} = useTranslator();
@@ -132,7 +131,7 @@
             bind:clientHeight={heights[toast.id]}
         >
             <Icon class="toast-icon" size={18}/>
-            <span class="toast-message">{shortenLongTokens(toast.message)}</span>
+            <span class="toast-message">{toast.message}</span>
             <button
                 type="button"
                 class="toast-close"
