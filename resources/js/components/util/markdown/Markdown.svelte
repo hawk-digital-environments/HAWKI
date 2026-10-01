@@ -34,6 +34,7 @@
     import 'markstream-svelte/index.css';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {loadWorker} from "$lib/components/util/markdown/workers/workerLoader";
 
     const themeStore = useStore('theme');
     const {getTranslationsFlat} = useTranslator();
@@ -58,16 +59,6 @@
     }: Props = $props();
 
     // @see https://github.com/vitejs/vite/issues/13680
-    function loadWorker(url: string) {
-        const blob = new Blob(
-            [`import ${JSON.stringify(new URL(url, import.meta.url))}`],
-            {type: 'application/javascript'}
-        );
-        const objURL = URL.createObjectURL(blob);
-        const worker = new Worker(objURL, {type: 'module'});
-        worker.addEventListener('error', () => URL.revokeObjectURL(objURL));
-        return worker;
-    }
 
     setKaTeXWorker(loadWorker(katexWorkerUrl));
     setMermaidWorker(loadWorker(mermaidWorkerUrl));
