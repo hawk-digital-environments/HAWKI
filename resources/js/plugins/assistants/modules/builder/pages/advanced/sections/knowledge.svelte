@@ -9,6 +9,7 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useStore} from '$lib/app/hooks/useStore.svelte';
     import {isAiToolAvailableFor, knowledgeToolsOf} from "$plugins/core/stores/aiToolStoreData.js";
+    import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
     /**
      * The kernel's route renderer instantiates page components without passing
      * any props (see core's ChatIndex.svelte), so this interface is intentionally
@@ -67,7 +68,6 @@
             <h3 class="page-title">{__('assistants.builder.knowledge.title')}</h3>
             <p class="page-description">{__('assistants.builder.knowledge.description')}</p>
         </div>
-
         <StatusCard
                 label={__('assistants.builder.knowledge.warning_knowledge_sources')}
                 icon={AlertCircleIcon}
@@ -81,12 +81,22 @@
                     type={ValidationState.WARNING}
             />
         {/if}
-
+        {#if ragEnabled && knowledgeToolAvailable}
+            <StatusCard
+                    label={__('rag.mode_active')}
+                    icon={Database01Icon}
+                    type={ValidationState.INFO}
+            />
+        {:else}
+            <StatusCard
+                label={__('assistants.builder.knowledge.load_files_in_context')}
+                icon={Database01Icon}
+                type={ValidationState.INFO}
+            />
+        {/if}
         <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
-
         {#if attachableKnowledgeTools.length > 0}
             <KnowledgeBases tools={attachableKnowledgeTools}/>
         {/if}
-
     </div>
 </div>

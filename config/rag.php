@@ -38,8 +38,13 @@ return [
     // What is sent to the RAG server for assistant attachments:
     // "text" — HAWKI uses extractions from the file converter (ExtractTextCollector)
     // "file" — the original file is uploaded to POST /documents and the RAG
-    // server's own converter pipeline runs.
+    // server's own converter pipeline runs. Normalization (anything
+    // other than "file" is text) lives in RagAttachmentIngestion.
     'attachment_ingestion' => env('HAWKI_RAG_ATTACHMENT_INGESTION', 'text'),
+
+    // How long an ingestion job may keep retrying (its retryUntil
+    // window), in minutes; expiry afterwards funnels into failed().
+    'ingest_retry_until_minutes' => (int) env('HAWKI_RAG_INGEST_RETRY_UNTIL_MINUTES', 30),
 
     // Local tool identities (ai_tools.name) of the MCP tools the
     // hawki-rag server exposes — wire contracts the seeder, the assistant

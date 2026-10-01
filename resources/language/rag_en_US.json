@@ -1,0 +1,21 @@
+{
+    "rag": {
+        "mode_active": "Files are uploaded to the RAG knowledge base for answering questions.",
+        "ingesting": "Adding to knowledge database…",
+        "ingestion_failed": ":name could not be added to the knowledge database: :reason",
+        "status": "RAG status",
+        "status_pending": "Pending",
+        "status_success": "Success",
+        "status_failed": "Failed",
+        "delete_failed_files": "Delete failed files",
+        "delete_failed_confirm_title": "Delete failed files?",
+        "delete_failed_confirm_description": "All files whose ingestion into the knowledge database failed are removed from the assistant.",
+        "ingestion": {
+            "dataset_error": "Dataset creation failed. Please contact your system administrator.",
+            "file_error": "File could not be saved in the knowledge base.",
+            "timeout_error": "Saving the file to the knowledge base timed out. Please try again or contact your system administrator.",
+            "stored_file_missing_error": "The stored file is no longer available. Please upload it again.",
+            "no_extractable_text_error": "The file contains no extractable text and cannot be added to the knowledge base."
+        }
+    }
+}
