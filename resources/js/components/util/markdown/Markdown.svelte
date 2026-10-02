@@ -29,13 +29,34 @@
   before passing it as `message` — see `MessageBody.svelte` for the full
   pattern with `CitationRoot`/`CitationList`.
 -->
+<script lang="ts" module>
+    import {setMermaidLoader} from 'markstream-svelte';
+
+    // markstream's MermaidBlockNode derives render ids from a per-block counter,
+    // so every diagram on a page renders as `markstream-svelte-mermaid-1`.
+    // Mermaid looks render targets up by id document-wide: a duplicate id
+    // removes another block's finished SVG (blank preview) or draws into it
+    // (sequence diagrams: "Mermaid rendered empty SVG"). Suffixing a global
+    // counter keeps every render id unique. Module-level so it runs once —
+    // setMermaidLoader resets markstream's cached instance.
+    let mermaidRenderCount = 0;
+    setMermaidLoader(async () => {
+        const {default: mermaid} = await import('mermaid');
+        return {
+            render: (id: string, source: string) => mermaid.render(`${id}-${++mermaidRenderCount}`, source),
+            parse: (source: string) => mermaid.parse(source),
+            initialize: (config?: Record<string, unknown>) =>
+                mermaid.initialize((config ?? {}) as Parameters<typeof mermaid.initialize>[0]),
+        };
+    });
+</script>
 <script lang="ts">
     // Own copy of the package worker: renders MathML alongside the HTML so
     // formulas are readable by screen readers (see the worker file).
     import katexWorkerUrl from '$lib/components/util/markdown/workers/katexRenderer.worker?worker&url';
     import mermaidWorkerUrl from 'markstream-svelte/workers/mermaidParser.worker?worker&url';
     import {MarkdownRender, setDefaultI18nMap, setKaTeXWorker, setMermaidWorker} from 'markstream-svelte';
-    import type {CodeBlockMonacoOptions, NodeRendererCodeBlockProps} from 'markstream-svelte';
+    import type {CodeBlockOptions, NodeRendererCodeBlockProps} from 'markstream-svelte';
     import ExtendedLinkNode from '$lib/components/util/markdown/extension/ExtendedLinkNode.svelte';
     import HeadingNode from '$lib/components/util/markdown/extension/HeadingNode.svelte';
     import TableNode from '$lib/components/util/markdown/extension/TableNode.svelte';
@@ -45,6 +66,7 @@
     import 'markstream-svelte/index.css';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {loadWorker} from "$lib/components/util/markdown/workers/workerLoader";
 
     const themeStore = useStore('theme');
     const {getTranslationsFlat} = useTranslator();
@@ -77,28 +99,14 @@
     provideMarkdownHeadingBaseLevel(() => headingBaseLevel);
 
     // @see https://github.com/vitejs/vite/issues/13680
-    function loadWorker(url: string) {
-        const blob = new Blob(
-            [`import ${JSON.stringify(new URL(url, import.meta.url))}`],
-            {type: 'application/javascript'}
-        );
-        const objURL = URL.createObjectURL(blob);
-        const worker = new Worker(objURL, {type: 'module'});
-        worker.addEventListener('error', () => URL.revokeObjectURL(objURL));
-        return worker;
-    }
 
     setKaTeXWorker(loadWorker(katexWorkerUrl));
     setMermaidWorker(loadWorker(mermaidWorkerUrl));
     setDefaultI18nMap(getTranslationsFlat('markdown.markstream'));
 
-    // Snippets are read-only: no current-line highlight or cursor mark in the
-    // overview ruler, and an even inset (--space-3) above and below the code.
-    const codeBlockMonacoOptions: CodeBlockMonacoOptions = {
-        renderLineHighlight: 'none',
-        hideCursorInOverviewRuler: true,
-        overviewRulerBorder: false,
-        padding: {top: 12, bottom: 12}
+    // An even inset (--space-3) above and below the code.
+    const codeBlockOptions: CodeBlockOptions = {
+        padding: 12
     };
 
     // Copy, expand and collapse are enough; the font-size stepper is noise.
@@ -111,7 +119,7 @@
     final={!isStreaming}
     showTooltips={false}
     customComponents={{link: ExtendedLinkNode, heading: HeadingNode, table: TableNode}}
-    codeBlockMonacoOptions={codeBlockMonacoOptions}
+    codeBlockOptions={codeBlockOptions}
     codeBlockProps={codeBlockProps}
     typewriter={!!isStreaming}
 />
@@ -337,6 +345,10 @@
 
         /* Collapsed, the header would stack its divider on the outline. */
         :global(.code-block-header:last-child) { border-bottom: none; }
+
+        /* mermaid-preview has default overflow:clip, which clips the edge of the diagram.
+        This element is the one that moves when dragging the diagram.*/
+        :global(.mermaid-preview) { overflow: visible; }
 
         :global(:is(.code-block-header__label, .mermaid-title__text)) {
             font: var(--font-weight-medium) var(--font-size-xs) / var(--line-height-tight) var(--font-family-base);
