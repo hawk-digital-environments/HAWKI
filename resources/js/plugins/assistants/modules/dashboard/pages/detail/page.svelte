@@ -44,6 +44,7 @@
     import Chatbox from "$plugins/assistants/components/testChat";
     import {growTransition} from "$lib/utils/transitions/growTransition";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
+    import FadeText from "$lib/components/ui/text/FadeText.svelte";
     import DropdownMenu from "$lib/components/ui/dropdown-menu/DropdownMenu.svelte";
     import DropdownMenuItem from "$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte";
     import ConfirmDialog from "$lib/components/ui/dialog/ConfirmDialog.svelte";
@@ -73,6 +74,10 @@
     let loading = $state(true);
     let error = $state<Error | null>(null);
     let feedbacks = $state<AssistantFeedback[]>([]);
+
+    // The detailed description is clamped to DESCRIPTION_COLLAPSED_LINES with
+    // a bottom fade; FadeText expands it to the full text (one-way).
+    const DESCRIPTION_COLLAPSED_LINES = 7;
 
     // CHECK AWAIT Syntax from Svelte
     $effect(() => {
@@ -350,6 +355,12 @@
                 icon={Clock01Icon}
                 type={ValidationState.UNKNOWN} />
         </div>
+
+        <FadeText
+            value={assistant.detailDescription}
+            lines={DESCRIPTION_COLLAPSED_LINES}
+            expandLabel={__('assistants.detail.read_more')}
+        />
 
         <div class="tags">
             {#if assistant.category}
