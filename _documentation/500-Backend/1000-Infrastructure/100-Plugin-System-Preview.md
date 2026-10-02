@@ -15,6 +15,7 @@ service provider in any package or overlay without modifying HAWKI core code.
 | Extension point | How to use | Stability |
 |---|---|---|
 | `ProviderAdapterRegistry::declare()` | `$r->declare('my_key', MyAdapter::class)` in `ServiceProvider::boot()` | `@api` |
+| `AgentToolRegistry::declare()` | `$app->extend(AgentToolRegistry::class, fn($r) => $r->declare('my_capability', MyAgentTool::class))` in `ServiceProvider::register()` | `@api` |
 | Container tag `'ai.tool'` | `$app->tag([MyTool::class], 'ai.tool')` in `ServiceProvider::register()` | Stable |
 | `AgentRegistry::declare(before/after)` | `$r->declare(MyFactory::class, before: 'chat')` in `ServiceProvider::boot()` | Stable |
 | `AiModelSettingRegistry` | `$app->extend(AiModelSettingRegistry::class, fn($r) => $r->register(...))` | Stable |
@@ -23,7 +24,7 @@ service provider in any package or overlay without modifying HAWKI core code.
 | `HealthCheckEvent::addResult()` | Add a listener to `HealthCheckEvent` in any auto-discovered `Listeners/` directory | Stable |
 | `DecoratorTrait` + `$app->extend()` | Wrap any `@api`-marked service class | `@api` |
 | Filter events (`DispatchableFilter`) | Add a listener to any filter event class | `@api` varies per event |
-| Event auto-discovery | Place listeners in `app/Services/*/Listeners/` (or any registered discovery path) | Stable |
+| Event auto-discovery | Place listeners in `app/Services/*/Listeners/` or `app/Services/*/*/Listeners/` (nested slice domains, e.g. `Rag/AssistantKnowledge/Listeners`) — or any registered discovery path | Stable |
 
 ### Notes on specific points
 
@@ -37,6 +38,19 @@ $this->app->extend(ProviderAdapterRegistry::class, function (ProviderAdapterRegi
 ```
 No core code changes required. See [Provider Adapters](../500-AI-Service-Layer/100-Provider-Adapters.md)
 for the full adapter contract.
+
+**`AgentToolRegistry::declare()`** — the hook for granting an assistant an *ambient
+capability*: a tool the assistant holds automatically whenever the declaring module
+can serve it, never attached by the assistant creator. Implement
+`App\Services\Assistant\Contracts\AgentTool` (capability key, availability check,
+tool-transfer strings — typically a HAWKI tool addressed by name with server-side
+settings the model never sees — and an optional usage-instruction prompt module)
+and declare it for a `WellKnownCapabilities` key; the `AssistantRunComposer` merges
+active tools into every assistant run, supersedes explicitly attached tools with
+the same effective capability (persisted capability strings pass through
+untouched), and appends contributed usage instructions to the system prompt. The
+Rag slice's knowledge-base tool (`Rag\AssistantKnowledge\AgentTools`, backed by the
+`hawki-rag-query-search` MCP tool) is the built-in example — see `RagServiceProvider`.
 
 **Container tag `'ai.tool'`** — the `FunctionToolSyncer` discovers tools via container tag.
 Register a custom function tool:
@@ -84,8 +98,9 @@ application on install. Works similarly to `vendor:publish` but plugin-aware.
 ### Plugin Route and Event Registration
 
 **`PluginRouteBuilder`** — registers each plugin's routes, adds its `Listeners/` directory to
-the event auto-discovery paths (reusing the same `app/Services/*/Listeners` glob already in
-`bootstrap/app.php`), and wires any custom middleware.
+the event auto-discovery paths (reusing the same `app/Services/*/Listeners` and
+`app/Services/*/*/Listeners` globs already in `bootstrap/app.php`), and wires any custom
+middleware.
 
 ### Composer Lifecycle Hooks
 
@@ -161,4 +176,4 @@ the v3 plugin system, not over-engineering:
 | `IntuitiveTopSorter` | `AgentRegistry` ordering | Plugin load-order resolution |
 | Filter events | ExternalContent, AI tools | Primary data-interception hook for plugins |
 | `DecoratorTrait` | Manual service wrapping | Designated mechanism for plugins to extend `@api` services |
-| Event auto-discovery | `app/Services/*/Listeners` | Plugin listener directories added to the same glob |
+| Event auto-discovery | `app/Services/*/Listeners` + `app/Services/*/*/Listeners` (nested slice domains) | Plugin listener directories added to the same globs |

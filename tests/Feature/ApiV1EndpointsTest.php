@@ -12,7 +12,7 @@ use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
@@ -22,14 +22,14 @@ use Tests\TestCase;
 #[CoversNothing()]
 class ApiV1EndpointsTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         // The attachment tests write real files through the configured file-storage disk. Swap it for a
-        // fake disk that is emptied before every test: DatabaseTransactions rolls the rows back, but
+        // fake disk that is emptied before every test: RefreshDatabase rolls the rows back, but
         // nothing rolls files back, so otherwise these tests would depend on - and litter - the
         // developer's data repository.
         Storage::fake(Config::string('filesystems.file_storage'));

@@ -278,7 +278,7 @@ class AiToolSeeder extends Seeder
                         ],
                     ],
                     // `dataset_id` is intentionally absent: it is injected
-                    // server-side (AssistantRunComposer -> LaravelMcpTool
+                    // server-side (RagKnowledgeAgentTool -> LaravelMcpTool
                     // settings) and must stay invisible to the model.
                     'required' => ['query'],
                 ],

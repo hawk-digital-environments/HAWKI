@@ -27,6 +27,7 @@
     import CitationList from '$lib/components/ui/citations/CitationList.svelte';
     import Citation from '$lib/components/ui/citations/Citation.svelte';
     import {injectCitationsIntoMarkdown} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
+    import {rewriteDocumentCitationMarkers} from '$plugins/core/modules/chat/components/message/rewriteDocumentCitationMarkers.js';
 
     interface Props {
         /** The message body as markdown. Citations are injected into this string. */
@@ -85,11 +86,16 @@
     });
 
     const message = $derived.by(() => {
-        if (isStreaming || citations.length === 0) {
-            return givenMessage;
-        }
+        // Provider-citation injection places its markers by offsets into the
+        // final text, so it stays off while streaming. Document markers are
+        // rewritten regardless: mid-stream the citations array is empty, so
+        // `[[…]]` tokens degrade to plain [name]s instead of showing raw
+        // brackets, and resolve into chips once the stream completes.
+        const injected = !isStreaming && citations.length > 0
+            ? injectCitationsIntoMarkdown(givenMessage, citations)
+            : givenMessage;
 
-        return injectCitationsIntoMarkdown(givenMessage, citations);
+        return rewriteDocumentCitationMarkers(injected, citations);
     });
 </script>
 

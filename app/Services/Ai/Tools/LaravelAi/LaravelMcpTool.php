@@ -32,9 +32,10 @@ use Throwable;
  * When the AI model invokes the tool via `__invoke()`:
  *  1. Returns an error immediately if the backing MCP server is marked OFFLINE.
  *  2. Merges the tool's settings over the model-supplied arguments (settings win) —
- *     settings are composed server-side (e.g. {@see \App\Services\Assistant\AssistantRunComposer}
- *     injects the assistant's RAG `dataset_id`) and are trusted, unlike model
- *     arguments, which must never control server-side scoping.
+ *     settings are composed server-side (e.g. the RAG agent tool injects the
+ *     assistant's dataset_id, see {@see \App\Services\Rag\AssistantKnowledge\AgentTools\RagKnowledgeAgentTool})
+ *     and are trusted, unlike model arguments, which must never control
+ *     server-side scoping.
  *  3. Fires {@see BeforeCallingMcpToolFilterEvent}, allowing listeners to short-circuit the
  *     call and inject a synthetic result.
  *  4. Calls the MCP server via {@see HawkiMcpClient::callTool()} if no short-circuit occurred.

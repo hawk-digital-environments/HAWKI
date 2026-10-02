@@ -359,8 +359,10 @@ export class BuilderContext {
   /**
    * The `ai_tools` the server is allowed to hold right now: the draft's tools
    * filtered by what the currently selected model can actually fulfil
-   * (knowledge-base tools are exempt — the Knowledge page owns them). The
-   * draft itself keeps every selection, so rows stay visible, toggled, and
+   * (knowledge-base tools are exempt — the Knowledge page owns them; the
+   * internal file-knowledge tool itself is never attachable, see the
+   * Knowledge page's ASSISTANT_FILE_KNOWLEDGE_TOOL). The draft itself keeps
+   * every selection, so rows stay visible, toggled, and
    * covered by `ModelToolConflictPanel`'s warnings; unsupported attachments
    * merely never leave the builder — and become eligible for saving again
    * the moment a compatible model is chosen (`setModel` always schedules a

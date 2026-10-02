@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Observers;
+namespace App\Services\Assistant\Observers;
 
 use App\Models\Assistants\AssistantFeedback;
 use App\Models\User;

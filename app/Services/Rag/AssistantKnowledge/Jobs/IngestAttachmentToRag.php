@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Jobs;
+namespace App\Services\Rag\AssistantKnowledge\Jobs;
 
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Ai\Agents\Utils\ExtractTextCollector;
 use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
+use App\Services\Rag\AssistantKnowledge\Repositories\RagIngestionStateRepository;
 use App\Services\Rag\Contracts\RagIngesterInterface;
+use App\Services\Rag\Config\RagConfig;
 use App\Services\Rag\Exceptions\RagIngestionRequestException;
 use App\Services\Rag\Values\FileIngestionPayload;
 use App\Services\Rag\Values\RagIngestionOutcome;
@@ -18,7 +20,6 @@ use App\Services\Storage\Values\StoredFile;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -80,13 +81,11 @@ class IngestAttachmentToRag implements ShouldQueue
 
     public function handle(
         AssistantAttachmentRepository $assistantAttachmentRepository,
+        RagIngestionStateRepository $ragState,
         RagIngesterInterface $ingester,
         FileStorageService $fileStorage,
         ExtractTextCollector $extractTextCollector,
-        #[Config('rag.dataset_prefix')]
-        string $datasetPrefix,
-        #[Config('rag.attachment_ingestion')]
-        string $attachmentIngestion,
+        RagConfig $config,
         LoggerInterface $logger,
     ): void {
         $attachment = $assistantAttachmentRepository->findOne($this->assistantAttachmentId);
@@ -103,12 +102,12 @@ class IngestAttachmentToRag implements ShouldQueue
             return;
         }
 
-        $ingestsFiles = self::FILE_INGESTION_MODE === $attachmentIngestion;
-        $datasetId = $datasetPrefix . $this->assistantId;
+        $ingestsFiles = self::FILE_INGESTION_MODE === $config->attachmentIngestion;
+        $datasetId = $config->datasetPrefix . $this->assistantId;
 
         try {
             if (RagIngestionStatus::INGESTING === $status) {
-                $this->resolveCheck($assistantAttachmentRepository, $ingester, (string)$attachment->rag_task_id);
+                $this->resolveCheck($ragState, $ingester, (string)$attachment->rag_task_id);
 
                 return;
             }
@@ -116,7 +115,7 @@ class IngestAttachmentToRag implements ShouldQueue
             $file = $fileStorage->retrieve(StoredFileIdentifier::fromAssistantAttachment($attachment));
 
             if (null === $file) {
-                $assistantAttachmentRepository->updateRagState(
+                $ragState->updateState(
                     $this->assistantAttachmentId,
                     RagIngestionStatus::SKIPPED,
                     error: 'Stored file is no longer available.',
@@ -133,7 +132,7 @@ class IngestAttachmentToRag implements ShouldQueue
                 $text = $extractTextCollector->collect($file);
 
                 if ('' === $text) {
-                    $assistantAttachmentRepository->updateRagState(
+                    $ragState->updateState(
                         $this->assistantAttachmentId,
                         RagIngestionStatus::SKIPPED,
                         error: 'File has no extractable text.',
@@ -144,7 +143,7 @@ class IngestAttachmentToRag implements ShouldQueue
             }
 
             if (!$ingester->ensureDataset($datasetId)) {
-                $assistantAttachmentRepository->updateRagState(
+                $ragState->updateState(
                     $this->assistantAttachmentId,
                     RagIngestionStatus::FAILED,
                     error: \sprintf('The RAG backend refused to provide dataset "%s".', $datasetId),
@@ -173,7 +172,7 @@ class IngestAttachmentToRag implements ShouldQueue
             }
 
             if ('' === $handle) {
-                $assistantAttachmentRepository->updateRagState(
+                $ragState->updateState(
                     $this->assistantAttachmentId,
                     RagIngestionStatus::FAILED,
                     error: 'The configured RAG ingester returned no ingestion handle.',
@@ -182,14 +181,14 @@ class IngestAttachmentToRag implements ShouldQueue
                 return;
             }
 
-            $assistantAttachmentRepository->updateRagState(
+            $ragState->updateState(
                 $this->assistantAttachmentId,
                 RagIngestionStatus::INGESTING,
                 taskId: $handle,
                 documentId: $documentId,
             );
 
-            $this->resolveCheck($assistantAttachmentRepository, $ingester, $handle);
+            $this->resolveCheck($ragState, $ingester, $handle);
         } catch (RagIngestionRequestException $e) {
             if ($e->isTransient()) {
                 $logger->warning('Transient RAG backend failure, retrying ingestion later', ['exception' => $e]);
@@ -198,7 +197,7 @@ class IngestAttachmentToRag implements ShouldQueue
                 return;
             }
 
-            $assistantAttachmentRepository->updateRagState(
+            $ragState->updateState(
                 $this->assistantAttachmentId,
                 RagIngestionStatus::FAILED,
                 error: $e->getMessage(),
@@ -218,7 +217,7 @@ class IngestAttachmentToRag implements ShouldQueue
     public function failed(?\Throwable $e = null): void
     {
         try {
-            app(AssistantAttachmentRepository::class)->updateRagState(
+            app(RagIngestionStateRepository::class)->updateState(
                 $this->assistantAttachmentId,
                 RagIngestionStatus::FAILED,
                 error: 'Ingestion job expired or failed permanently: ' . ($e?->getMessage() ?? 'unknown error'),
@@ -241,12 +240,12 @@ class IngestAttachmentToRag implements ShouldQueue
      * failed, anything else re-releases the job for the next poll.
      */
     private function resolveCheck(
-        AssistantAttachmentRepository $assistantAttachmentRepository,
+        RagIngestionStateRepository $ragState,
         RagIngesterInterface $ingester,
         string $handle,
     ): void {
         if ('' === $handle) {
-            $assistantAttachmentRepository->updateRagState(
+            $ragState->updateState(
                 $this->assistantAttachmentId,
                 RagIngestionStatus::FAILED,
                 error: 'Ingestion is marked running but no ingestion handle is stored.',
@@ -258,13 +257,13 @@ class IngestAttachmentToRag implements ShouldQueue
         $check = $ingester->checkIngestion($handle);
 
         if (RagIngestionOutcome::SUCCEEDED === $check->outcome) {
-            $assistantAttachmentRepository->updateRagState($this->assistantAttachmentId, RagIngestionStatus::INGESTED);
+            $ragState->updateState($this->assistantAttachmentId, RagIngestionStatus::INGESTED);
 
             return;
         }
 
         if (RagIngestionOutcome::FAILED === $check->outcome) {
-            $assistantAttachmentRepository->updateRagState(
+            $ragState->updateState(
                 $this->assistantAttachmentId,
                 RagIngestionStatus::FAILED,
                 error: $check->reason ?? 'The RAG backend reported a terminal ingestion failure.',
@@ -304,6 +303,11 @@ class IngestAttachmentToRag implements ShouldQueue
     private function metadata(AssistantAttachment $attachment): array
     {
         return [
+            // The clean source name: the RAG indexer prefers a caller-provided
+            // title over deriving one from converter artifact paths (which
+            // carry chunk suffixes), so retrieval hits and the tool result's
+            // documents list name the document like the attachment does.
+            'title' => \mb_substr($attachment->name, 0, 255),
             'assistant_id' => $this->assistantId,
             'attachment_uuid' => $attachment->uuid,
             'mime' => $attachment->mime,

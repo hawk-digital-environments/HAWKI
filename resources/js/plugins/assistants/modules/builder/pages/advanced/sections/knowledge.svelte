@@ -5,12 +5,21 @@
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
     import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
-    import {useConfig} from "$lib/app/hooks/useConfig.svelte";
+    import {useConfig} from '$lib/app/hooks/useConfig.svelte';
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
-    import {useStore} from "$lib/app/hooks/useStore.svelte";
+    import {useStore} from '$lib/app/hooks/useStore.svelte';
     import {isAiToolAvailableFor, knowledgeToolsOf} from "$plugins/core/stores/aiToolStoreData.js";
     import {mockVectorDatabasesEnabled} from "$plugins/assistants/mocks/mockVectorDatabases.svelte.js";
     import MockedVectorDatabases from "$plugins/assistants/mocks/MockedVectorDatabases.svelte";
+
+    /**
+     * The internal HAWKI file-knowledge tool: ambient for assistants — the
+     * server grants the capability automatically whenever its knowledge
+     * module can serve it (uploaded files are searched in the background),
+     * so it is never attachable and never appears in the toggle list. Other
+     * knowledge-base tools remain manually attachable.
+     */
+    const ASSISTANT_FILE_KNOWLEDGE_TOOL = 'hawki-rag-query-search';
 
     /**
      * The kernel's route renderer instantiates page components without passing
@@ -38,22 +47,32 @@
     // stores the provider-side model_id (legacy numeric ids resolve too).
     const currentModel = $derived(modelStore.getOneById(builder.draft.model));
 
-    // Only tools the selected model can actually use are assignable — the
-    // same check the conflict panel runs (model's assigned tools, online
-    // status, tool-calling enabled).
-    const availableKnowledgeTools = $derived(
+    // Whether a model-resolvable knowledge-base tool exists — the upload gate
+    // below. The internal file-knowledge tool counts here: uploaded files are
+    // searched through it (ambiently), so uploads need a model it resolves
+    // for even though it is not attachable.
+    const knowledgeToolAvailable = $derived(
+        currentModel !== null
+            && knowledgeToolsOf(toolStore.tools).some(t => isAiToolAvailableFor(t, currentModel))
+    );
+
+    // Attachable knowledge-base tools: every KB tool the selected model can
+    // actually use (the same check the conflict panel runs — model's assigned
+    // tools, online status, tool-calling enabled), minus the ambient
+    // file-knowledge tool.
+    const attachableKnowledgeTools = $derived(
         currentModel
-            ? knowledgeToolsOf(toolStore.tools).filter(t => isAiToolAvailableFor(t, currentModel))
+            ? knowledgeToolsOf(toolStore.tools)
+                .filter(t => t.name !== ASSISTANT_FILE_KNOWLEDGE_TOOL)
+                .filter(t => isAiToolAvailableFor(t, currentModel))
             : []
     );
 
     // With rag on, uploading requires a model whose knowledge-base tool the
     // assistant can use — the files are preassembled into that dataset.
-    const uploadDisabled = $derived(
-        ragEnabled && (currentModel === null || availableKnowledgeTools.length === 0)
-    );
+    const uploadDisabled = $derived(ragEnabled && !knowledgeToolAvailable);
     const uploadDisabledHint = $derived(
-        ragEnabled && currentModel !== null && availableKnowledgeTools.length === 0
+        ragEnabled && currentModel !== null && !knowledgeToolAvailable
             ? __('assistants.builder.knowledge.upload_disabled_model_not_configured')
             : undefined
     );
@@ -82,15 +101,15 @@
         {/if}
 
         <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
+
         <!-- Mock mode (VITE_MOCK_VECTOR_DATABASES): the mocked list fully
              replaces the real knowledge-databases component; see
              mocks/mockVectorDatabases.svelte.ts. -->
         {#if mockVectorDatabasesEnabled}
             <MockedVectorDatabases/>
-        {:else if availableKnowledgeTools.length > 0}
-            <KnowledgeBases tools={availableKnowledgeTools}/>
+        {:else if attachableKnowledgeTools.length > 0}
+            <KnowledgeBases tools={attachableKnowledgeTools}/>
         {/if}
-
 
     </div>
 </div>

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Rag\Listeners;
+namespace App\Services\Rag\AssistantKnowledge\Listeners;
 
 use App\Services\Assistant\Events\AssistantAttachmentDeletingEvent;
 use Illuminate\Support\Facades\Bus;

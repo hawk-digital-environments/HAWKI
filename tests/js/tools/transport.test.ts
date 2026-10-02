@@ -134,13 +134,13 @@ test('regeneration uses the validated historical tool/settings snapshot', async 
     assert.deepEqual(f.writes.at(-1).metadata.tools, f.streams[0].tools);
 });
 
-for (const code of ['TOOL_ACCESS_DENIED', 'TOOL_UNAVAILABLE']) {
+for (const [code, key] of [['TOOL_ACCESS_DENIED', 'chat.tools.accessDenied'], ['TOOL_UNAVAILABLE', 'chat.tools.unavailable'], ['TOOL_OFFLINE', 'chat.tools.requiredOffline']] as const) {
     test(`stream ${code} is translated and never retried`, async () => {
         const f = fixture();
         f.setPacket({type: 'error', code, content: 'Do not show server text'});
         await f.transport.sendMessage(f.options);
         await f.finish();
-        assert.deepEqual(f.errors, [code === 'TOOL_ACCESS_DENIED' ? 'chat.tools.accessDenied' : 'chat.tools.unavailable']);
+        assert.deepEqual(f.errors, [key]);
         assert.equal(f.streams.length, 1);
         assert.equal(f.refreshes(), code === 'TOOL_ACCESS_DENIED' ? 1 : 0);
         assert.equal(f.writes.length, 1);
@@ -170,14 +170,14 @@ test('the legacy transport rejects stale tool choices before forwarding and pres
 
 test('HTTP tool error codes use translated messages without returning server prose or retrying', async () => {
     const {ApiTransportError} = await import('../../../resources/js/kernel/api/errors.js');
-    for (const code of ['TOOL_ACCESS_DENIED', 'TOOL_UNAVAILABLE']) {
+    for (const [code, key] of [['TOOL_ACCESS_DENIED', 'chat.tools.accessDenied'], ['TOOL_UNAVAILABLE', 'chat.tools.unavailable'], ['TOOL_OFFLINE', 'chat.tools.requiredOffline']] as const) {
         const f = fixture();
         f.app.aiApi.stream = async function* () {
             throw new ApiTransportError(code === 'TOOL_ACCESS_DENIED' ? 403 : 422, [], {code, message: 'Server detail'}, 'Server detail');
         };
         await f.transport.sendMessage(f.options);
         await f.finish();
-        assert.deepEqual(f.errors, [code === 'TOOL_ACCESS_DENIED' ? 'chat.tools.accessDenied' : 'chat.tools.unavailable']);
+        assert.deepEqual(f.errors, [key]);
         assert.equal(f.writes.length, 1);
     }
 });
@@ -188,7 +188,7 @@ test('real AiApi HTTP wrappers preserve denial codes and the client refreshes on
     const previous = {window: globalThis.window, document: globalThis.document, fetch: globalThis.fetch};
     Object.assign(globalThis, {window: {location: {origin: 'https://hawki.test'}}, document: {cookie: '', querySelector: () => null}});
     try {
-        for (const code of ['TOOL_ACCESS_DENIED', 'TOOL_UNAVAILABLE']) {
+        for (const [code, key] of [['TOOL_ACCESS_DENIED', 'chat.tools.accessDenied'], ['TOOL_UNAVAILABLE', 'chat.tools.unavailable'], ['TOOL_OFFLINE', 'chat.tools.requiredOffline']] as const) {
             const f = fixture();
             const client = new ClientExtension(new EventExtension().events);
             (client as any).connectionHandle.currentConnection = f.app.connection;
@@ -200,7 +200,7 @@ test('real AiApi HTTP wrappers preserve denial codes and the client refreshes on
             globalThis.fetch = async () => {requests++; return new Response(JSON.stringify({code, message: 'Server prose must stay hidden'}), {status: code === 'TOOL_ACCESS_DENIED' ? 403 : 422});};
             await f.transport.sendMessage(f.options);
             await f.finish();
-            assert.deepEqual(f.errors, [code === 'TOOL_ACCESS_DENIED' ? 'chat.tools.accessDenied' : 'chat.tools.unavailable']);
+            assert.deepEqual(f.errors, [key]);
             assert.equal(requests, 1);
             assert.equal(refreshes, code === 'TOOL_ACCESS_DENIED' ? 1 : 0);
         }

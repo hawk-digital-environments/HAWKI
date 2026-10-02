@@ -19,11 +19,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Feature\Api\Assistant\Fixtures\Assistant as AssistantFixture;
 use Tests\TestCase;
 
 #[CoversNothing()]
 class AssistantPolicyTest extends TestCase
 {
+    use AssistantFixture;
     use RefreshDatabase;
 
     /**
@@ -74,6 +76,11 @@ class AssistantPolicyTest extends TestCase
         $this->seedChildren($assistant);
 
         $url = "/api/hawki/v1/assistants/{$assistant->id}?include={$include}";
+
+        // Content-asserting viewers must see the attached ai_tools through
+        // the discovery scope.
+        $this->grantInternalToolAccess($users['owner']);
+        $this->grantInternalToolAccess($users['admin']);
 
         $this->actingAsUser($users['owner']);
         $ownerResp = $this->jsonApiRaw('get', $url)->assertOk();
@@ -137,6 +144,12 @@ class AssistantPolicyTest extends TestCase
         [$assistant, $users] = $this->stakeholderAssistant();
         $tool = $this->createAiTool();
 
+        // Every stakeholder can see the tool, so the outcome is decided by
+        // the ownership policy alone (403), not by tool discovery (404).
+        foreach ($users as $user) {
+            $this->grantInternalToolAccess($user);
+        }
+
         $this->actingAsUser($users[$role]);
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/relationships/ai-tools", [
@@ -181,6 +194,7 @@ class AssistantPolicyTest extends TestCase
         // With the sensitive include, the collection narrows to assistants the
         // owner is privileged for (their own), excluding the other public one,
         // and the included section surfaces the requested relationship type.
+        $this->grantInternalToolAccess($owner);
         $response = $this->jsonApiRaw('get', "/api/hawki/v1/assistants?include={$include}")->assertOk();
         $ids = collect($response->json('data'))->pluck('id');
         self::assertContains((string) $owned->id, $ids);
@@ -278,26 +292,6 @@ class AssistantPolicyTest extends TestCase
             'type' => 'document',
             'mime' => 'application/pdf',
             'user_id' => $assistant->creator_id,
-        ]);
-    }
-
-    private function createAiTool(): AiTool
-    {
-        $serverId = DB::table('mcp_servers')->insertGetId([
-            'url' => 'https://example.com/mcp/' . uniqid(),
-            'server_label' => 'Test Server ' . uniqid(),
-            'api_key' => 'test-key',
-            'timeouts' => '[]',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return AiTool::create([
-            'type' => 'function',
-            'name' => 'test_tool_' . uniqid(),
-            'description' => 'A test tool',
-            'active' => true,
-            'mcp_server_id' => $serverId,
         ]);
     }
 }
