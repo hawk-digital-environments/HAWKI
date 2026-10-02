@@ -44,6 +44,7 @@
     import Chatbox from "$plugins/assistants/components/testChat";
     import {growTransition} from "$lib/utils/transitions/growTransition";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
+    import FadeText from "$lib/components/ui/text/FadeText.svelte";
     import DropdownMenu from "$lib/components/ui/dropdown-menu/DropdownMenu.svelte";
     import DropdownMenuItem from "$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte";
     import ConfirmDialog from "$lib/components/ui/dialog/ConfirmDialog.svelte";
@@ -74,26 +75,9 @@
     let error = $state<Error | null>(null);
     let feedbacks = $state<AssistantFeedback[]>([]);
 
-    // The detailed description is clamped to DESCRIPTION_COLLAPSED_LINES; when
-    // that cuts it off, a "Read more" button reveals the rest (one-way).
+    // The detailed description is clamped to DESCRIPTION_COLLAPSED_LINES with
+    // a bottom fade; FadeText expands it to the full text (one-way).
     const DESCRIPTION_COLLAPSED_LINES = 7;
-    const descriptionId = $props.id();
-    let descriptionExpanded = $state(false);
-    let descriptionTextEl = $state<HTMLParagraphElement | null>(null);
-    let descriptionWidth = $state(0);
-    let descriptionHeight = $state(0);
-    let descriptionTruncated = $state(false);
-
-    // Re-measured after the DOM updates: on a new text and whenever the
-    // paragraph resizes (bind:clientWidth/clientHeight).
-    $effect(() => {
-        const el = descriptionTextEl;
-        if (!el) return;
-        void assistant?.detailDescription;
-        void descriptionWidth;
-        void descriptionHeight;
-        descriptionTruncated = el.scrollHeight > el.clientHeight + 1;
-    });
 
     // CHECK AWAIT Syntax from Svelte
     $effect(() => {
@@ -372,33 +356,11 @@
                 type={ValidationState.UNKNOWN} />
         </div>
 
-        <div class="detailed-description">
-            <p
-                id={descriptionId}
-                class="detailed-description-text"
-                class:clamped={!descriptionExpanded}
-                tabindex="-1"
-                style:--description-lines={DESCRIPTION_COLLAPSED_LINES}
-                bind:this={descriptionTextEl}
-                bind:clientWidth={descriptionWidth}
-                bind:clientHeight={descriptionHeight}
-            >
-                {assistant.detailDescription}
-            </p>
-            {#if descriptionTruncated}
-                <button
-                    type="button"
-                    class="read-more"
-                    aria-expanded="false"
-                    aria-controls={descriptionId}
-                    onclick={() => {
-                        descriptionExpanded = true;
-                        // The button disappears; keep keyboard focus on the text it revealed.
-                        descriptionTextEl?.focus();
-                    }}
-                >{__('assistants.detail.read_more')}</button>
-            {/if}
-        </div>
+        <FadeText
+            value={assistant.detailDescription}
+            lines={DESCRIPTION_COLLAPSED_LINES}
+            expandLabel={__('assistants.detail.read_more')}
+        />
 
         <div class="tags">
             {#if assistant.category}
@@ -567,44 +529,6 @@
         font-size: var(--font-size-sm);
         line-height: var(--line-height-normal);
         color: var(--color-text-muted);
-    }
-
-    /* Detailed description: clamped to --description-lines (ending in an
-       ellipsis) until "Read more" is clicked. */
-    .detailed-description {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-1);
-    }
-    .detailed-description-text {
-        margin: 0;
-        outline: none; /* focus target only (tabindex="-1"), not interactive */
-    }
-    .detailed-description-text.clamped {
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: var(--description-lines);
-        line-clamp: var(--description-lines);
-        overflow: hidden;
-    }
-    .read-more {
-        padding: 0;
-        border: none;
-        background: none;
-        font: inherit;
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-accent-text);
-        cursor: pointer;
-    }
-    .read-more:hover {
-        text-decoration: underline;
-    }
-    .read-more:focus-visible {
-        outline: 2px solid var(--color-focus-ring);
-        outline-offset: 2px;
-        border-radius: var(--corner-sm);
     }
 
     /* Badge row (release stage + risk pill). */

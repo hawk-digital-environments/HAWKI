@@ -19,10 +19,9 @@
   selectors targeting it from the consumer still need `:global()` since the
   span is rendered inside this component.
 
-  Overflow is detected by comparing scrollWidth/scrollHeight against
-  clientWidth/clientHeight, re-measured on content change and on element resize
-  (e.g. a card grid track narrowing); the 1px tolerance keeps fractional layout
-  rounding from counting as truncation.
+  Overflow is detected by `observeOverflow` (`$lib/utils/overflow`):
+  re-measured on content change and on element resize (e.g. a card grid track
+  narrowing).
 
   @example Single-line ellipsis (default):
   ```svelte
@@ -36,6 +35,7 @@
 -->
 <script lang="ts">
     import Tooltip from './Tooltip.svelte';
+    import {observeOverflow} from '$lib/utils/overflow';
     import {untrack} from 'svelte';
     import type {ComponentProps} from 'svelte';
 
@@ -64,23 +64,13 @@
     let textEl = $state<HTMLSpanElement | null>(null);
     let truncated = $state(false);
 
-    /* Re-measure when the text changes (effects run after the DOM update) and
-       when the element resizes (e.g. its card grid track narrows). The 1px
-       tolerance keeps fractional layout rounding from counting as truncation. */
+    /* Re-measure when the text changes (effects run after the DOM update);
+       resize-driven re-measurement lives in observeOverflow. */
     $effect(() => {
         const text = value;
         const el = untrack(() => textEl);
         if (!el || !text) return;
-
-        const measure = () => {
-            truncated = el.scrollWidth > el.clientWidth + 1
-                || el.scrollHeight > el.clientHeight + 1;
-        };
-        measure();
-
-        const observer = new ResizeObserver(measure);
-        observer.observe(el);
-        return () => observer.disconnect();
+        return observeOverflow(el, ({x, y}) => truncated = x || y);
     });
 </script>
 
