@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenApi\Builders;
 
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Validation\Rules\Enum as EnumRule;
 use LaravelJsonApi\Contracts\Auth\Authorizer;
 use LaravelJsonApi\Contracts\Routing\Route as RouteContract;
@@ -36,6 +37,11 @@ use LaravelJsonApi\Laravel\Http\Requests\ResourceRequest;
  */
 class SchemaBuilder
 {
+    public function __construct(
+        private readonly Container $container,
+    ) {
+    }
+
     /**
      * Database-only enum values that are not enforced in PHP validation rules.
      * Keys are JSON:API resource types; values map field names to allowed values.
@@ -289,8 +295,13 @@ class SchemaBuilder
      */
     public function buildActionRequestSchema(string $requestClass): array
     {
+        // Instantiated directly (NOT via the container: resolving a
+        // FormRequest through it triggers ValidatesWhenResolved and would
+        // validate the spec request itself), while rules() is invoked via
+        // Container::call so method-injected rules() dependencies — e.g.
+        // UploadAvatarRequest — are resolved.
         $request = new $requestClass();
-        $rules = $request->rules();
+        $rules = $this->container->call([$request, 'rules']);
 
         return $this->parseRulesToSchema($rules);
     }
@@ -424,8 +435,12 @@ class SchemaBuilder
             // afterwards and avoid leaking the mock into other consumers of
             // RouteContract during the same request lifecycle.
             $boundLocally = $this->bindMockRoute($schema);
+            // Direct instantiation + Container::call, mirroring
+            // {@see buildActionRequestSchema()}: container resolution would
+            // trigger ValidatesWhenResolved, and the call injects rules()
+            // dependencies.
             $request = new $requestClass();
-            $rules = $request->rules();
+            $rules = $this->container->call([$request, 'rules']);
         } catch (\Throwable) {
             return ['constraints' => [], 'required' => [], 'validated' => []];
         } finally {

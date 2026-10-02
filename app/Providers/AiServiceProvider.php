@@ -6,7 +6,6 @@ use App\Models\Ai\McpServer;
 use App\Services\Ai\Agents\AgentRegistry;
 use App\Services\Ai\Agents\Contracts\AgentFactoryInterface;
 use App\Services\Ai\Agents\Implementations\AbstractAgentFactory;
-use App\Services\Ai\Agents\Implementations\Chat\AssistantChatAgentFactory;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
 use App\Services\Ai\Config\AiConfig;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
@@ -16,7 +15,6 @@ use App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemPromptSyncer;
 use App\Services\Ai\Exceptions\InvalidProviderAdapterException;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
-use App\Services\Rag\Config\RagConfig;
 use App\Services\Ai\ModelInformation\Enrichment\AiModelInfoEnrichmentPipeline;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\LiteLlmDriverNameProviderNameMapping;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlmApiEnricher;
@@ -85,8 +83,7 @@ class AiServiceProvider extends ServiceProvider
             PublicConfigRegistry::class,
             function (PublicConfigRegistry $registry) {
                 return $registry
-                    ->declare(AiConfig::class)
-                    ->declare(RagConfig::class);
+                    ->declare(AiConfig::class);
             }
         );
 
@@ -230,10 +227,6 @@ class AiServiceProvider extends ServiceProvider
         $this->app->extend(
             AgentRegistry::class,
             fn(AgentRegistry $registry) => $registry
-                ->declare(
-                    AssistantChatAgentFactory::class,
-                    before: ChatAgentFromLegacyRequestFactory::class
-                )
                 ->declare(ChatAgentFromLegacyRequestFactory::class)
         );
 

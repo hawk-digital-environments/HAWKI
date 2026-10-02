@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Rag\Listeners;
+namespace App\Services\Rag\AssistantKnowledge\Listeners;
 
-use App\Jobs\IngestAttachmentToRag;
+use App\Services\Rag\AssistantKnowledge\Jobs\IngestAttachmentToRag;
 use App\Services\Assistant\Events\AssistantAttachmentStoredEvent;
-use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
+use App\Services\Rag\Config\RagConfig;
 use App\Services\Rag\Contracts\RagIngesterInterface;
+use App\Services\Rag\AssistantKnowledge\Repositories\RagIngestionStateRepository;
 use App\Services\Rag\Values\RagIngestionStatus;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Support\Facades\Bus;
 use Psr\Log\LoggerInterface;
 
@@ -28,22 +28,19 @@ class QueueRagIngestionOnAssistantAttachmentStored
 {
     public function __construct(
         private readonly RagIngesterInterface $ingester,
-        private readonly AssistantAttachmentRepository $assistantAttachmentRepository,
+        private readonly RagIngestionStateRepository $ragState,
+        private readonly RagConfig $config,
         private readonly LoggerInterface $logger,
-        #[Config('rag.enabled')]
-        private readonly bool $enabled,
-        #[Config('rag.dataset_prefix')]
-        private readonly string $datasetPrefix,
     ) {
     }
 
     public function handle(AssistantAttachmentStoredEvent $event): void
     {
-        if (!$this->enabled) {
+        if (!$this->config->enabled) {
             return;
         }
 
-        $datasetId = $this->datasetPrefix . $event->assistant->id;
+        $datasetId = $this->config->datasetPrefix . $event->assistant->id;
 
         try {
             if (!$this->ingester->ensureDataset($datasetId)) {
@@ -59,7 +56,7 @@ class QueueRagIngestionOnAssistantAttachmentStored
             );
         }
 
-        $this->assistantAttachmentRepository->updateRagState(
+        $this->ragState->updateState(
             $event->assistantAttachment->id,
             RagIngestionStatus::PENDING,
         );
@@ -82,7 +79,7 @@ class QueueRagIngestionOnAssistantAttachmentStored
             ))
             ->dispatch();
 
-        $this->assistantAttachmentRepository->updateRagState(
+        $this->ragState->updateState(
             $event->assistantAttachment->id,
             RagIngestionStatus::PENDING,
             batchId: $batch->id,

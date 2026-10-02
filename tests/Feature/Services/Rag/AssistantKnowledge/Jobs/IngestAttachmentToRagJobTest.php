@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Services\Rag;
+namespace Tests\Feature\Services\Rag\AssistantKnowledge\Jobs;
 
-use App\Jobs\IngestAttachmentToRag;
+use App\Services\Rag\AssistantKnowledge\Jobs\IngestAttachmentToRag;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Ai\Agents\Utils\ExtractTextCollector;
@@ -135,6 +135,7 @@ class IngestAttachmentToRagJobTest extends TestCase
                         && 'rag-job-uuid' === $payload->externalDocumentId
                         && '# Knowledge' === $payload->text
                         && 'knowledge.pdf' === $payload->displayName
+                        && 'knowledge.pdf' === ($payload->metadata['title'] ?? null)
                         && \str_starts_with($idempotencyKey, 'attachment-rag-job-uuid-');
                 },
             )->andReturn(new TextIngestionResult('task-1', $sourceId));

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Services\Rag\Listeners;
+namespace Tests\Feature\Services\Rag\AssistantKnowledge\Listeners;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Rag\Contracts\RagIngesterInterface;
-use App\Services\Rag\Listeners\DeleteRagDocumentOnAssistantAttachmentDeletion;
+use App\Services\Rag\AssistantKnowledge\Listeners\DeleteRagDocumentOnAssistantAttachmentDeletion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -85,6 +85,10 @@ class DeleteRagDocumentOnAssistantAttachmentDeletionTest extends TestCase
         $attachment = $this->createAttachment('ingested');
 
         Log::shouldReceive('warning')->once();
+        // The bare attachment row has no on-disk file, so the storage
+        // deletion listener separately logs an error — unrelated to the
+        // RAG behavior under test, but it must not break the strict mock.
+        Log::shouldReceive('error')->zeroOrMoreTimes();
 
         $this->mock(RagIngesterInterface::class)
             ->shouldReceive('deleteDocument')

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Rag\Listeners;
+namespace App\Services\Rag\AssistantKnowledge\Listeners;
 
 use App\Services\Assistant\Events\AssistantAttachmentDeletingEvent;
+use App\Services\Rag\Config\RagConfig;
 use App\Services\Rag\Contracts\RagIngesterInterface;
-use Illuminate\Container\Attributes\Config;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -22,17 +22,14 @@ class DeleteRagDocumentOnAssistantAttachmentDeletion
 {
     public function __construct(
         private readonly RagIngesterInterface $ingester,
+        private readonly RagConfig $config,
         private readonly LoggerInterface $logger,
-        #[Config('rag.enabled')]
-        private readonly bool $enabled,
-        #[Config('rag.dataset_prefix')]
-        private readonly string $datasetPrefix,
     ) {
     }
 
     public function handle(AssistantAttachmentDeletingEvent $event): void
     {
-        if (!$this->enabled) {
+        if (!$this->config->enabled) {
             return;
         }
 
@@ -49,7 +46,7 @@ class DeleteRagDocumentOnAssistantAttachmentDeletion
             // for text ones); the uuid fallback only covers legacy text
             // rows ingested before handles were stored.
             $deleted = $this->ingester->deleteDocument(
-                $this->datasetPrefix . (string)$assistantAttachment->assistant_id,
+                $this->config->datasetPrefix . (string)$assistantAttachment->assistant_id,
                 $assistantAttachment->rag_document_id ?? $assistantAttachment->uuid,
             );
 

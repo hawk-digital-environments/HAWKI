@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withEvents([
+        // Slices may nest domains one level deep (e.g. Rag/AssistantKnowledge)
+        // — listener discovery covers both layouts uniformly.
+        __DIR__ . '/../app/Services/*/*/Listeners',
         __DIR__ . '/../app/Services/*/Listeners'
     ])
     ->withMiddleware(function (Middleware $middleware) {

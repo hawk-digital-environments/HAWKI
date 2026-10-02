@@ -1,0 +1,108 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit\Services\Rag\AssistantKnowledge\AgentTools;
+
+use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantAttachment;
+use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
+use App\Providers\RagServiceProvider;
+use App\Services\Assistant\AgentToolRegistry;
+use App\Services\Rag\AssistantKnowledge\AgentTools\RagKnowledgeAgentTool;
+use App\Services\Rag\Config\RagConfig;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
+
+#[CoversClass(RagKnowledgeAgentTool::class)]
+#[CoversClass(RagServiceProvider::class)]
+class RagKnowledgeAgentToolTest extends TestCase
+{
+    public function testItConstructs(): void
+    {
+        config(['rag.enabled' => true, 'rag.dataset_prefix' => 'assistant_']);
+
+        static::assertInstanceOf(RagKnowledgeAgentTool::class, $this->sut());
+    }
+
+    public function testItServesTheKnowledgeBaseCapabilityKey(): void
+    {
+        static::assertSame(WellKnownCapabilities::KNOWLEDGE_BASE, $this->sut()->key());
+    }
+
+    public function testItIsAvailableWhenRagIsEnabledAndTheAssistantCarriesKnowledgeFiles(): void
+    {
+        config(['rag.enabled' => true, 'rag.dataset_prefix' => 'assistant_']);
+
+        static::assertTrue($this->sut()->isAvailable($this->assistant(attachments: 1)));
+        static::assertFalse($this->sut()->isAvailable($this->assistant(attachments: 0)));
+    }
+
+    public function testItIsUnavailableWhenRagIsDisabled(): void
+    {
+        config(['rag.enabled' => false, 'rag.dataset_prefix' => 'assistant_']);
+
+        static::assertFalse($this->sut()->isAvailable($this->assistant(attachments: 1)));
+    }
+
+    public function testItsTransferStringAddressesTheHawkiToolByNameAndCarriesTheAssistantDataset(): void
+    {
+        config(['rag.enabled' => true, 'rag.dataset_prefix' => 'assistant_']);
+
+        static::assertSame(
+            ['hawki-rag-query-search:{"dataset_id":"assistant_42"}'],
+            $this->sut()->toolTransferStrings($this->assistant(attachments: 1)),
+        );
+    }
+
+    public function testItRespectsAConfiguredDatasetPrefix(): void
+    {
+        config(['rag.enabled' => true, 'rag.dataset_prefix' => 'kb-']);
+
+        static::assertSame(
+            ['hawki-rag-query-search:{"dataset_id":"kb-42"}'],
+            $this->sut()->toolTransferStrings($this->assistant(attachments: 1)),
+        );
+    }
+
+    public function testTheProviderDeclaresItForTheKnowledgeBaseCapability(): void
+    {
+        $tool = app(AgentToolRegistry::class)->get(WellKnownCapabilities::KNOWLEDGE_BASE);
+
+        static::assertInstanceOf(RagKnowledgeAgentTool::class, $tool);
+    }
+
+    public function testItsUsageInstructionsReferenceTheFileKnowledgeToolByName(): void
+    {
+        config(['rag.enabled' => true, 'rag.dataset_prefix' => 'assistant_']);
+
+        $instructions = $this->sut()->usageInstructions($this->assistant(attachments: 1));
+
+        static::assertStringContainsString('[KNOWLEDGE TOOL MODULE]', $instructions);
+        static::assertStringContainsString('Search ' . RagKnowledgeAgentTool::TOOL_NAME . ' FIRST', $instructions);
+        static::assertStringContainsString('knowledge_tool: ' . RagKnowledgeAgentTool::TOOL_NAME, $instructions);
+        static::assertStringContainsString('### No-Evidence Rule', $instructions);
+        static::assertStringNotContainsString('{{tool_name}}', $instructions);
+    }
+
+    private function sut(): RagKnowledgeAgentTool
+    {
+        return new RagKnowledgeAgentTool(
+            RagConfig::fromArray([
+                'enabled' => (bool) config('rag.enabled'),
+                'datasetPrefix' => (string) config('rag.dataset_prefix'),
+            ]),
+        );
+    }
+
+    private function assistant(int $attachments, string $model = 'gpt-4.1'): Assistant
+    {
+        $assistant = new Assistant;
+        $assistant->forceFill(['id' => 42, 'model' => $model]);
+
+        return $assistant->setRelation(
+            'assistantAttachments',
+            collect(array_fill(0, $attachments, new AssistantAttachment)),
+        );
+    }
+}

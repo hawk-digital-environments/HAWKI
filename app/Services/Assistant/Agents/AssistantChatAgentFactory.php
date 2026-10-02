@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Ai\Agents\Implementations\Chat;
+namespace App\Services\Assistant\Agents;
 
 use App\Models\Assistants\Assistant;
 use App\Models\User;
 use App\Services\Ai\Agents\Contracts\AgentFactoryInterface;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
+use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
+use App\Services\Ai\Agents\Implementations\Chat\LegacyChatRequestPayload;
 use App\Services\Assistant\AssistantRunComposer;
 use App\Services\Assistant\Repositories\AssistantRepository;
 use Illuminate\Container\Attributes\Singleton;

@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\Ai\Agents\Implementations\Chat;
+namespace Tests\Unit\Services\Assistant\Agents;
 
 use App\Models\Assistants\Assistant;
 use App\Models\User;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
-use App\Services\Ai\Agents\Implementations\Chat\AssistantChatAgentFactory;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
+use App\Services\Assistant\Agents\AssistantChatAgentFactory;
 use App\Services\Assistant\AssistantRunComposer;
 use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Assistant\Values\ComposedAssistantRun;
