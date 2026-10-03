@@ -39,7 +39,7 @@
         closeOnSelect?: boolean;
         /** Item content. */
         children?: Snippet;
-        /** An optional icon before the item's content, e.g. `Settings05Icon`. */
+        /** An optional icon before the item's content, e.g. `Settings03Icon`. */
         iconLeft?: IconComponent;
         /** An optional icon after the item's content; pushed to the row's end edge. */
         iconRight?: IconComponent;

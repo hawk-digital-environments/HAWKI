@@ -3,7 +3,7 @@ import type { ModuleRegistrar } from '$lib/kernel/modules/moduleRegistrar.js';
 import type { ResourceSchemaRegistrar } from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
 import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
-import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
+import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
 import AdminSidebar from './components/AdminSidebar.svelte';
 import { AdminModule } from './AdminModule.js';
 
@@ -35,7 +35,7 @@ export default class AdminPlugin implements HawkiPlugin {
             return [...entries, {
                 id: 'admin:admin',
                 label: ctx.translate('admin.title'),
-                icon: Settings01Icon,
+                icon: Settings03Icon,
                 onSelect: (selectCtx) => {
                     void selectCtx.router.goToRoute('admin.index');
                 },

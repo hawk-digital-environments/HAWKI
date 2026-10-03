@@ -141,4 +141,11 @@
     .dropdown-radio-item :global(.dropdown-item-icon-end) {
         margin-inline-start: auto;
     }
+
+    /* With the check indicator, an unchecked row's end icon takes the empty
+       check column, so it lines up with the sibling rows' check marks. */
+    .indicator--check[data-state="unchecked"] :global(.dropdown-item-icon-end) {
+        position: absolute;
+        right: var(--space-2, calc(0.25rem * 2));
+    }
 </style>
