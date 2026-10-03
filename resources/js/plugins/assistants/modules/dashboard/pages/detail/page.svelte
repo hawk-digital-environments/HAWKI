@@ -47,6 +47,9 @@
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import DropdownMenu from "$lib/components/ui/dropdown-menu/DropdownMenu.svelte";
     import DropdownMenuItem from "$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte";
+    import ArrowDown01Icon from "$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte";
+    import ArrowUp01Icon from "$lib/components/ui/icons/iconset/ArrowUp01Icon.svelte";
+    import {useBreakpoint} from "$lib/components/util/breakpoints/useBreakpoint.svelte.js";
     import DropdownMenuSub from "$lib/components/ui/dropdown-menu/DropdownMenuSub.svelte";
     import DropdownMenuRadioGroup from "$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte";
     import DropdownMenuRadioItem from "$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte";
@@ -75,6 +78,7 @@
     const {goToRoute} = router;
 
     const toast = useToastContext();
+    const breakpoint = useBreakpoint();
 
     const {__} = useTranslator();
     let assistant = $state<Assistant | undefined>(undefined);
@@ -210,6 +214,14 @@
             : releaseOptions.find(option => option.stage === assistant?.releaseStage)?.label,
     );
 
+    /** Mobile sheet only: whether the publish row's options are unfolded.
+     *  Folds back whenever the menu closes, so it always opens collapsed. */
+    let menuOpen = $state(false);
+    let publishOpen = $state(false);
+    $effect(() => {
+        if (!menuOpen) publishOpen = false;
+    });
+
     async function onReleaseStageChange(value: string): Promise<void> {
         if (!assistant?.id || value === assistant.releaseStage) return;
         const id = assistant.id;
@@ -272,6 +284,19 @@
         <p>Error: {error.message}</p>
     {:else if assistant}
 
+    {#snippet releaseStages()}
+        <DropdownMenuRadioGroup value={assistant?.releaseStage ?? ''} onValueChange={onReleaseStageChange}>
+            {#each releaseOptions as option (option.stage)}
+                <DropdownMenuRadioItem
+                    value={option.stage}
+                    indicator="check"
+                    iconLeft={option.icon}
+                    iconRight={option.stage === pendingStage ? Clock01Icon : undefined}
+                >{option.label}</DropdownMenuRadioItem>
+            {/each}
+        </DropdownMenuRadioGroup>
+    {/snippet}
+
     <div class="page-content">
 
         {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.delete === true}
@@ -309,17 +334,17 @@
                             : __('assistants.detail.remix_disabled')}
                         disabled={!assistant.allowRemix}
                         onclick={startRemix}
-                    >{__('assistants.detail.remix')}</ButtonWithTooltip>
+                    ><span class="btn-label">{__('assistants.detail.remix')}</span></ButtonWithTooltip>
                     <Button
                         variant="stroke"
                         size="md"
                         iconLeft={LinkSquare01Icon}
                         highlight={chatOpen}
                         onclick={startTryOut}
-                    >{__('assistants.detail.try_out')}</Button>
+                    ><span class="btn-label">{__('assistants.detail.try_out')}</span></Button>
 
                     {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.delete === true}
-                        <DropdownMenu align="end">
+                        <DropdownMenu align="end" bind:open={menuOpen}>
                             {#snippet trigger({props})}
                                 <ButtonWithTooltip
                                     {...props}
@@ -335,22 +360,35 @@
                                 </DropdownMenuItem>
                             {/if}
                             {#if assistant.actionPermissions?.release === true}
+                            {#if breakpoint.is('bpSmallerThanMd')}
+                                <!-- In the mobile sheet the row works as a dropdown:
+                                     tapping it unfolds the options below it, so the
+                                     sheet grows to fit them instead of a panel floating
+                                     over it. -->
+                                <DropdownMenuItem
+                                    iconLeft={SentIcon}
+                                    iconRight={publishOpen ? ArrowUp01Icon : ArrowDown01Icon}
+                                    closeOnSelect={false}
+                                    aria-expanded={publishOpen}
+                                    onSelect={() => publishOpen = !publishOpen}
+                                >
+                                    <span class="menu-label">{__('assistants.detail.publish')}</span>
+                                    <span class="menu-value">{releaseValueLabel}</span>
+                                </DropdownMenuItem>
+                                {#if publishOpen}
+                                    <div class="menu-nested" transition:growTransition>
+                                        {@render releaseStages()}
+                                    </div>
+                                {/if}
+                            {:else}
                                 <DropdownMenuSub
                                     iconLeft={SentIcon}
                                     label={__('assistants.detail.publish')}
                                     value={releaseValueLabel}
                                 >
-                                    <DropdownMenuRadioGroup value={assistant.releaseStage} onValueChange={onReleaseStageChange}>
-                                        {#each releaseOptions as option (option.stage)}
-                                            <DropdownMenuRadioItem
-                                                value={option.stage}
-                                                indicator="check"
-                                                iconLeft={option.icon}
-                                                iconRight={option.stage === pendingStage ? Clock01Icon : undefined}
-                                            >{option.label}</DropdownMenuRadioItem>
-                                        {/each}
-                                    </DropdownMenuRadioGroup>
+                                    {@render releaseStages()}
                                 </DropdownMenuSub>
+                            {/if}
                             {/if}
                             {#if assistant.actionPermissions?.delete === true}
                                 {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true}
@@ -631,6 +669,20 @@
     .metadata :global(.status-card) {
         border-radius: var(--corner-md);
     }
+    /* Mobile sheet's publish dropdown: current value, muted, pushed to the
+       row's end before the chevron; the unfolded options sit indented under
+       their row. (Both render inside the menu's sheet, outside .page-content.) */
+    .menu-label {
+        flex: 1;
+    }
+    .menu-value {
+        color: var(--color-text-muted);
+    }
+    .menu-nested {
+        overflow: hidden;
+        padding-inline-start: var(--space-4);
+    }
+
     /* Tag pills — neutral surface pills with an accent-filled category, echoing
        the sidebar's accent-100 highlight language. */
     .tags {
@@ -718,13 +770,22 @@
         .overview {
             grid-template-columns: 1fr;
         }
-        /* Too narrow for back and all actions in one line: the actions wrap
-           under the back button. */
-        .topbar {
-            flex-wrap: wrap;
+        /* Too narrow for the labelled buttons: "Remixen" and "Ausprobieren"
+           become round icon buttons like the others, so the whole top bar
+           stays on one line. The labels stay readable for screen readers. */
+        /* Specific enough to beat Button's icon-side padding (its :has rule). */
+        .topbar .controls :global(.btn.btn--md) {
+            min-width: 0;
+            width: 2.5rem;
+            padding: 0;
         }
-        .controls {
-            flex-wrap: wrap;
+        .btn-label {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
         }
     }
 </style>
