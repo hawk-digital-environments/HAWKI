@@ -361,7 +361,7 @@ export class BuilderContext {
    * filtered by what the currently selected model can actually fulfil
    * (knowledge-base tools are exempt — the Knowledge page owns them; the
    * internal file-knowledge tool itself is never attachable, see the
-   * Knowledge page's ASSISTANT_FILE_KNOWLEDGE_TOOL). The draft itself keeps
+   * Knowledge page's file-knowledge tool from the public rag config). The draft itself keeps
    * every selection, so rows stay visible, toggled, and
    * covered by `ModelToolConflictPanel`'s warnings; unsupported attachments
    * merely never leave the builder — and become eligible for saving again

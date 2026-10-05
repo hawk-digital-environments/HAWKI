@@ -6,6 +6,7 @@ namespace App\Services\Rag\Config;
 
 use App\Services\Config\AbstractConfig;
 use App\Services\Config\Contracts\PublicConfigInterface;
+use App\Services\Rag\AssistantKnowledge\AgentTools\RagKnowledgeAgentTool;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 
@@ -19,10 +20,12 @@ use Illuminate\Http\Request;
  * DB-backed plugin configuration arrives (plugin system, §4.7), only
  * {@see make()} changes its source — every consumer stays untouched.
  *
- * The public API exposes only the `enabled` flag under the `rag` key: it
- * decides how the assistant builder's knowledge page treats uploaded files
- * (RAG ingestion vs. per-request context injection). Secrets like the API
- * key never reach the frontend.
+ * The public API exposes the `enabled` flag and the ambient file-knowledge
+ * tool's name under the `rag` key: they decide how the assistant builder's
+ * knowledge page treats uploaded files (RAG ingestion vs. per-request
+ * context injection) and which knowledge tool it must keep out of its
+ * attachable-tools list (that tool is granted automatically, never picked
+ * manually). Secrets like the API key never reach the frontend.
  */
 class RagConfig extends AbstractConfig implements PublicConfigInterface
 {
@@ -68,6 +71,7 @@ class RagConfig extends AbstractConfig implements PublicConfigInterface
         if ($request->user()) {
             return [
                 'enabled' => $this->enabled,
+                'fileKnowledgeTool' => RagKnowledgeAgentTool::TOOL_NAME,
             ];
         }
 

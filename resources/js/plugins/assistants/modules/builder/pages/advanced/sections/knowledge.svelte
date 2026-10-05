@@ -13,15 +13,6 @@
     import MockedVectorDatabases from "$plugins/assistants/mocks/MockedVectorDatabases.svelte";
 
     /**
-     * The internal HAWKI file-knowledge tool: ambient for assistants — the
-     * server grants the capability automatically whenever its knowledge
-     * module can serve it (uploaded files are searched in the background),
-     * so it is never attachable and never appears in the toggle list. Other
-     * knowledge-base tools remain manually attachable.
-     */
-    const ASSISTANT_FILE_KNOWLEDGE_TOOL = 'hawki-rag-query-search';
-
-    /**
      * The kernel's route renderer instantiates page components without passing
      * any props (see core's ChatIndex.svelte), so this interface is intentionally
      * empty.
@@ -37,33 +28,27 @@
     const toolStore = useStore('ai-tools');
 
     // RAG mode decides where uploaded files go: ingested into the assistant's
-    // preassembled knowledge-base dataset (rag on) or injected into the
-    // conversation context per request (rag off). Ingestion is an upload-time
-    // workflow, so with rag on the model must already be decided; context
-    // injection happens per request, so uploads are always allowed with rag off.
+    // knowledge-base dataset (rag on) or injected into the conversation context per request (rag off)
     const ragEnabled = $derived(config.rag?.enabled === true);
+
+    // The file-knowledge tool's name, published by the Rag slice through the public config
+    const fileKnowledgeTool = $derived(config.rag?.fileKnowledgeTool ?? null);
 
     // Same model resolution as the model page's conflict panel: the draft
     // stores the provider-side model_id (legacy numeric ids resolve too).
     const currentModel = $derived(modelStore.getOneById(builder.draft.model));
 
-    // Whether a model-resolvable knowledge-base tool exists — the upload gate
-    // below. The internal file-knowledge tool counts here: uploaded files are
-    // searched through it (ambiently), so uploads need a model it resolves
-    // for even though it is not attachable.
+    // Whether a model-resolvable knowledge-base tool exists
     const knowledgeToolAvailable = $derived(
         currentModel !== null
             && knowledgeToolsOf(toolStore.tools).some(t => isAiToolAvailableFor(t, currentModel))
     );
 
-    // Attachable knowledge-base tools: every KB tool the selected model can
-    // actually use (the same check the conflict panel runs — model's assigned
-    // tools, online status, tool-calling enabled), minus the ambient
-    // file-knowledge tool.
+    // Attachable knowledge-base tools: every KB tool the selected model can actually use
     const attachableKnowledgeTools = $derived(
         currentModel
             ? knowledgeToolsOf(toolStore.tools)
-                .filter(t => t.name !== ASSISTANT_FILE_KNOWLEDGE_TOOL)
+                .filter(t => t.name !== fileKnowledgeTool)
                 .filter(t => isAiToolAvailableFor(t, currentModel))
             : []
     );
