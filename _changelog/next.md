@@ -16,6 +16,7 @@
 - The `s3` disk in `config/filesystems.php` now fails loudly on storage errors and works on s3 servers without ACL support (see Internals section for details).
 - The `check:storage` artisan command now respects the configured `S3_ENDPOINT` and path-style addressing instead of always probing `amazonaws.com`.
 - Tool-call progress never reached the UI during streaming because the stream handler matched the tool-call *data* class instead of the stream *event*. Tool calls are now reported for every provider as `tool_call`/`tool_result` packets.
+- MCP tools failed because processes were decoupled using `autoSse=true` (the default). New default is `autoSse=false`. 
 
 ### Internals
 
