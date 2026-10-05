@@ -51,6 +51,7 @@
         overflow: hidden;
         background-color: var(--color-surface-raised);
         border: var(--border);
+        /* Same corner as the store card it mirrors (AssistantCard). */
         border-radius: var(--corner-lg);
     }
 

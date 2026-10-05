@@ -11,7 +11,7 @@ import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
 import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
 import Share02Icon from '$lib/components/ui/icons/iconset/Share02Icon.svelte';
 import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
-import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
+import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
 import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
 import ComputerIcon from '$lib/components/ui/icons/iconset/ComputerIcon.svelte';
@@ -147,7 +147,7 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 id: 'builder.general',
                 level: 'builder',
                 label: ctx.translate('assistants.builder.sidebar.general'),
-                icon: Settings01Icon,
+                icon: Settings03Icon,
                 route: 'assistants.builder.general',
                 active: ctx.router.isRouteActive('assistants.builder.general')
             },

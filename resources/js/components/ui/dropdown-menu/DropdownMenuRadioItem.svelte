@@ -59,18 +59,18 @@
             <span class="dropdown-item-indicator">
                 {#if isChecked}
                     {#if indicator === 'check'}
-                        <Tick02Icon size={12}/>
+                        <Tick02Icon size={12} aria-hidden="true"/>
                     {:else}
                         <span class="dropdown-radio-dot"></span>
                     {/if}
                 {/if}
             </span>
             {#if IconLeft}
-                <IconLeft size="14" class="dropdown-item-icon-start"/>
+                <IconLeft size="14" class="dropdown-item-icon-start" aria-hidden="true"/>
             {/if}
             {@render children?.()}
             {#if IconRight}
-                <IconRight size="14" class="dropdown-item-icon-end"/>
+                <IconRight size="14" class="dropdown-item-icon-end" aria-hidden="true"/>
             {/if}
         </div>
     {/snippet}
@@ -140,5 +140,12 @@
 
     .dropdown-radio-item :global(.dropdown-item-icon-end) {
         margin-inline-start: auto;
+    }
+
+    /* With the check indicator, an unchecked row's end icon takes the empty
+       check column, so it lines up with the sibling rows' check marks. */
+    .indicator--check[data-state="unchecked"] :global(.dropdown-item-icon-end) {
+        position: absolute;
+        right: var(--space-2, calc(0.25rem * 2));
     }
 </style>
