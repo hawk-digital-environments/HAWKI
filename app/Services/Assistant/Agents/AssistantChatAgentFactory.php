@@ -96,7 +96,8 @@ class AssistantChatAgentFactory implements AgentFactoryInterface
      * assistant-composed instructions replace the first system message (one
      * is prepended when absent), the model follows the assistant's selection
      * policy, its sampling parameters merge over the client's, its tools
-     * merge with the client's, and the mention token is stripped.
+     * merge with the client's, the mention token is stripped, and history
+     * attributions to this assistant are elided.
      *
      * @return array{payload: array<string, mixed>}
      */
@@ -107,7 +108,7 @@ class AssistantChatAgentFactory implements AgentFactoryInterface
 
         $inner['model'] = $this->resolveModelId($payload->modelId(), $assistant);
         $inner['messages'] = $this->stripHandleFromUserMessages(
-            $this->applySystemInstructions($payload->messages(), $run->systemPrompt),
+            $this->applySystemInstructions($this->elideOwnHistoryAttributions($payload->messages(), $assistant->handle), $run->systemPrompt),
             $assistant->handle,
         );
         $inner['params'] = array_merge($payload->params(), $run->params);
@@ -119,6 +120,35 @@ class AssistantChatAgentFactory implements AgentFactoryInterface
         unset($inner['hawkiExtensions']);
 
         return ['payload' => $inner];
+    }
+
+    /**
+     * Drops the message-level assistant attribution from history messages
+     * written by THIS assistant: in a conversation the assistant is the
+     * current responder of, its own earlier answers need no
+     * answer-source disambiguation — and every attribution would become a
+     * `[HKI_META_ANSWER_SOURCE]` block small models tend to echo verbatim
+     * (the system-wide {@see MessageMetaBlocks::wrapInstructions()} preamble
+     * already prohibits that; removing the blocks entirely is the robust
+     * guard). Attributions to OTHER assistants survive: those conversations
+     * really did switch mid-way, and the blocks carry meaning there.
+     *
+     * @param list<array<string, mixed>> $messages
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function elideOwnHistoryAttributions(array $messages, string $handle): array
+    {
+        foreach ($messages as $index => $message) {
+            if (($message['role'] ?? null) !== 'assistant'
+                || ($message['hawkiExtensions']['assistant_handle'] ?? null) !== $handle) {
+                continue;
+            }
+
+            unset($messages[$index]['hawkiExtensions']);
+        }
+
+        return $messages;
     }
 
     /**

@@ -79,9 +79,10 @@ class RagKnowledgeAgentToolTest extends TestCase
         $instructions = $this->sut()->usageInstructions($this->assistant(attachments: 1));
 
         static::assertStringContainsString('[KNOWLEDGE TOOL MODULE]', $instructions);
-        static::assertStringContainsString('Search ' . RagKnowledgeAgentTool::TOOL_NAME . ' FIRST', $instructions);
+        static::assertStringContainsString('MUST always call the ' . RagKnowledgeAgentTool::TOOL_NAME . ' tool before answering', $instructions);
         static::assertStringContainsString('knowledge_tool: ' . RagKnowledgeAgentTool::TOOL_NAME, $instructions);
         static::assertStringContainsString('### No-Evidence Rule', $instructions);
+        static::assertStringContainsString('Copy the document name character-for-character', $instructions);
         static::assertStringNotContainsString('{{tool_name}}', $instructions);
     }
 

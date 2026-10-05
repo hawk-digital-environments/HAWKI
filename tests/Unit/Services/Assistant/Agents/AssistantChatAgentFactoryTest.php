@@ -251,6 +251,54 @@ class AssistantChatAgentFactoryTest extends TestCase
         static::assertSame('user-model', $captured[0]['payload']['model']);
     }
 
+    public function testItElidesOwnHistoryAttributionsSoNoAnswerSourceBlocksRemain(): void
+    {
+        $this->givenVisibleAssistant();
+        $captured = $this->expectDelegation();
+
+        $this->sut->createAgent($this->makeRequest(
+            [
+                ['role' => 'user', 'content' => ['text' => 'Question']],
+                ['role' => 'assistant', 'content' => ['text' => 'Own earlier answer'], 'hawkiExtensions' => ['assistant_handle' => 'math-tutor']],
+                ['role' => 'user', 'content' => ['text' => 'Follow-up']],
+            ],
+            ['hawkiExtensions' => ['assistant_handle' => 'math-tutor']],
+        ));
+
+        $messages = $captured[0]['payload']['messages'];
+
+        // The assistant's own earlier answer carries no attribution — the
+        // chat factory registers it without an ANSWER_SOURCE meta block, so
+        // weak models have nothing to echo.
+        static::assertSame('Own earlier answer', $messages[2]['content']['text']);
+        static::assertArrayNotHasKey('hawkiExtensions', $messages[2]);
+        // No foreign attributions remain: the system prompt stays clean.
+        static::assertSame('Composed assistant prompt.', $messages[0]['content']['text']);
+    }
+
+    public function testItKeepsForeignHistoryAttributionsWithoutExtraPromptRules(): void
+    {
+        $this->givenVisibleAssistant();
+        $captured = $this->expectDelegation();
+
+        $this->sut->createAgent($this->makeRequest(
+            [
+                ['role' => 'user', 'content' => ['text' => 'Question']],
+                ['role' => 'assistant', 'content' => ['text' => 'Foreign earlier answer'], 'hawkiExtensions' => ['assistant_handle' => 'other-assistant']],
+                ['role' => 'user', 'content' => ['text' => 'Follow-up']],
+            ],
+            ['hawkiExtensions' => ['assistant_handle' => 'math-tutor']],
+        ));
+
+        $messages = $captured[0]['payload']['messages'];
+
+        // A genuinely mixed history keeps its disambiguation …
+        static::assertSame('other-assistant', $messages[2]['hawkiExtensions']['assistant_handle']);
+        // … and relies on the system-wide MessageMetaBlocks preamble: the
+        // composed prompt carries no extra meta-block rules of its own.
+        static::assertSame('Composed assistant prompt.', $messages[0]['content']['text']);
+    }
+
     public function testItMergesPayloadParamsAndToolsWithTheAssistantRun(): void
     {
         $this->givenVisibleAssistant();

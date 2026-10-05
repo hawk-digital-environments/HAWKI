@@ -86,16 +86,18 @@ class ChatAgentAssistantPayloadTransformationTest extends TestCase
         // The @handle token is stripped from every user turn.
         static::assertSame('hello', $messages[2]->content);
 
-        // Attributed assistant turn from the first assistant.
+        // Attributed assistant turn from the first assistant — the assistant
+        // this run belongs to: its attribution is elided, no answer-source
+        // block is injected for its own earlier answer.
         static::assertSame('assistant', $messages[3]->role->value);
-        static::assertStringContainsString('[HKI_META_ANSWER_SOURCE]', $messages[3]->content);
-        static::assertStringContainsString('@' . self::INVENTORE_HANDLE, $messages[3]->content);
-        static::assertStringContainsString('1 + 5 = 6', $messages[3]->content);
+        static::assertSame('1 + 5 = 6', $messages[3]->content);
 
         static::assertSame('hello', $messages[4]->content);
 
-        // Attributed assistant turn from the second assistant.
+        // Attributed assistant turn from the second assistant — foreign here:
+        // the disambiguation block survives.
         static::assertSame('assistant', $messages[5]->role->value);
+        static::assertStringContainsString('[HKI_META_ANSWER_SOURCE]', $messages[5]->content);
         static::assertStringContainsString('@' . self::ELIGENDI_HANDLE, $messages[5]->content);
         static::assertStringContainsString('Hello! How can I help you today?', $messages[5]->content);
 
