@@ -79,11 +79,11 @@
             ]
         }, restProps, props)}>
             {#if IconLeft}
-                <IconLeft size="14"/>
+                <IconLeft size="14" aria-hidden="true"/>
             {/if}
             {@render children?.()}
             {#if IconRight}
-                <IconRight size="14" class="dropdown-item-icon-end"/>
+                <IconRight size="14" class="dropdown-item-icon-end" aria-hidden="true"/>
             {/if}
         </div>
     {/snippet}

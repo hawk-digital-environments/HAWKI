@@ -59,18 +59,18 @@
             <span class="dropdown-item-indicator">
                 {#if isChecked}
                     {#if indicator === 'check'}
-                        <Tick02Icon size={12}/>
+                        <Tick02Icon size={12} aria-hidden="true"/>
                     {:else}
                         <span class="dropdown-radio-dot"></span>
                     {/if}
                 {/if}
             </span>
             {#if IconLeft}
-                <IconLeft size="14" class="dropdown-item-icon-start"/>
+                <IconLeft size="14" class="dropdown-item-icon-start" aria-hidden="true"/>
             {/if}
             {@render children?.()}
             {#if IconRight}
-                <IconRight size="14" class="dropdown-item-icon-end"/>
+                <IconRight size="14" class="dropdown-item-icon-end" aria-hidden="true"/>
             {/if}
         </div>
     {/snippet}

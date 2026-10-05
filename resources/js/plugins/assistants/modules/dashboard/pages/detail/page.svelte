@@ -285,14 +285,14 @@
     {:else if assistant}
 
     {#snippet releaseStages()}
-        <DropdownMenuRadioGroup value={assistant?.releaseStage ?? ''} onValueChange={onReleaseStageChange}>
+        <DropdownMenuRadioGroup value={assistant?.releaseStage} onValueChange={onReleaseStageChange}>
             {#each releaseOptions as option (option.stage)}
                 <DropdownMenuRadioItem
                     value={option.stage}
                     indicator="check"
                     iconLeft={option.icon}
                     iconRight={option.stage === pendingStage ? Clock01Icon : undefined}
-                >{option.label}</DropdownMenuRadioItem>
+                >{option.label}{#if option.stage === pendingStage}<span class="u-sr-only">{__('assistants.detail.release_pending')}</span>{/if}</DropdownMenuRadioItem>
             {/each}
         </DropdownMenuRadioGroup>
     {/snippet}

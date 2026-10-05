@@ -82,7 +82,7 @@
         {#snippet child({props})}
             <div {...mergeProps({class: `dropdown-sub-trigger${className ? ` ${className}` : ''}`}, restProps, props)}>
                 {#if IconLeft}
-                    <IconLeft size="14"/>
+                    <IconLeft size="14" aria-hidden="true"/>
                 {/if}
                 <span class="dropdown-sub-trigger-label">
                     <SnippetOrString value={label}/>
@@ -92,7 +92,7 @@
                         <SnippetOrString value={value}/>
                     </span>
                 {/if}
-                <ArrowRight01Icon size={14} class="dropdown-sub-trigger-chevron"/>
+                <ArrowRight01Icon size={14} class="dropdown-sub-trigger-chevron" aria-hidden="true"/>
             </div>
         {/snippet}
     </DropdownMenuPrimitive.SubTrigger>
