@@ -9,7 +9,9 @@
             "expand": "Seitenleiste ausklappen",
             "search": "Suchen",
             "newChat": "Neuer Chat",
-            "label": "Navigation"
+            "label": "Seitenleiste",
+            "mainLabel": "Hauptnavigation",
+            "accessibilityStatement": "Barrierefreiheitserklärung"
         },
         "dialog": {
             "closeLabel": "Schließen",
@@ -19,8 +21,40 @@
         "sheet": {
             "menuTitle": "Menü"
         },
+        "alert": {
+            "notePrefix": "Hinweis:",
+            "warningPrefix": "Warnung:"
+        },
+        "infoPopover": {
+            "triggerLabel": "Weitere Informationen zu :label"
+        },
         "commandPalette": {
             "label": "Befehle"
+        },
+        "toast": {
+            "close": "Benachrichtigung schließen"
+        },
+        "link": {
+            "opensInNewTab": "(öffnet in neuem Tab)",
+            "download": "(Datei herunterladen)"
+        },
+        "routing": {
+            "errorTitle": "Etwas ist schiefgelaufen",
+            "retry": "Erneut versuchen",
+            "notFoundTitle": "Seite nicht gefunden",
+            "notFoundDescription": "Die angeforderte Seite existiert nicht (Fehler 404)."
+        },
+        "pageTitles": {
+            "chat": {
+                "index": "Chat",
+                "conversation": "Chat"
+            },
+            "models": {
+                "index": "Modelle"
+            },
+            "announcements": {
+                "index": "Ankündigungen"
+            }
         },
         "statusDot": {
             "ariaLabel": "Statusanzeige",

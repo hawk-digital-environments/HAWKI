@@ -38,6 +38,7 @@
     const nameId = `${uid}-name`;
     const bioId = `${uid}-bio`;
     const bioCountId = `${uid}-bio-count`;
+    const nameErrorId = `${uid}-name-error`;
 
     const info = $derived(connection.isAuthenticated ? connection.userinfo : undefined);
 
@@ -52,6 +53,9 @@
     let saving = $state(false);
     let uploading = $state(false);
     let fileInput = $state<HTMLInputElement | null>(null);
+    let nameInput = $state<HTMLInputElement | null>(null);
+    /** Inline validation message for the name field; null when valid. */
+    let nameError = $state<string | null>(null);
 
     const dirty = $derived(name.trim() !== savedName.trim() || bio.trim() !== savedBio.trim());
     const canUploadAvatar = $derived(Boolean(config.storage_avatars));
@@ -60,13 +64,17 @@
 
     async function save(event: SubmitEvent): Promise<void> {
         event.preventDefault();
+        // The submit button stays enabled while saving (disabling the focused
+        // button would drop focus to <body>), so re-entrancy is guarded here.
         if (!info || !dirty || saving) return;
 
         const trimmedName = name.trim();
         if (!trimmedName) {
-            toast.error(__('ui.settings.profile.errorNameRequired'));
+            nameError = __('ui.settings.profile.errorNameRequired');
+            nameInput?.focus();
             return;
         }
+        nameError = null;
         const trimmedBio = bio.trim();
 
         saving = true;
@@ -183,17 +191,25 @@
         </div>
     </div>
 
-    <form onsubmit={save}>
+    <!-- novalidate: validation is reported inline (aria-invalid + message) instead of browser bubbles. -->
+    <form onsubmit={save} novalidate>
         <div class="field-group">
             <label for={nameId}>{__('ui.settings.profile.nameLabel')}</label>
             <input
                 id={nameId}
                 class="field"
+                bind:this={nameInput}
                 bind:value={name}
                 maxlength={NAME_MAX_LENGTH}
                 autocomplete="name"
                 required
+                aria-invalid={nameError ? 'true' : undefined}
+                aria-describedby={nameError ? nameErrorId : undefined}
+                oninput={() => (nameError = null)}
             />
+            {#if nameError}
+                <p id={nameErrorId} class="field-error" role="alert">{nameError}</p>
+            {/if}
         </div>
 
         <div class="field-group">
@@ -210,7 +226,7 @@
         </div>
 
         <div class="form-footer">
-            <Button type="submit" size="xs" disabled={!dirty || saving}>
+            <Button type="submit" size="xs" disabled={!dirty} aria-busy={saving}>
                 {saving ? __('ui.settings.common.saving') : __('ui.settings.common.save')}
             </Button>
         </div>
@@ -318,6 +334,12 @@
         font-weight: var(--font-weight-medium);
     }
 
+    .field-error {
+        margin: 0;
+        color: var(--color-error);
+        font-size: var(--font-size-xs);
+    }
+
     /* Mirrors the Textarea primitive so both fields read as one set. */
     .field {
         width: 100%;
@@ -336,6 +358,10 @@
         border-color: var(--color-focus-ring);
         box-shadow: 0 0 0 2px var(--color-focus-ring);
         outline: none;
+    }
+
+    .field[aria-invalid='true'] {
+        border-color: var(--color-error);
     }
 
     .counter {

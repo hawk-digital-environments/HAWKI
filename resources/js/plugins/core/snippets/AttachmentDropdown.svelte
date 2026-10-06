@@ -68,7 +68,11 @@ Usage (embedded in the legacy attachment template — see
 
 <DropdownMenu>
     {#snippet trigger({props})}
-        <button class="burger-btn btn-xs" {...props}>
+        <button
+            type="button"
+            class="burger-btn btn-xs"
+            aria-label={__('chat.attachmentDropdown.actionsFor', {name: fileData.name})}
+            {...props}>
             <EllipsisIcon size="12"/>
         </button>
     {/snippet}

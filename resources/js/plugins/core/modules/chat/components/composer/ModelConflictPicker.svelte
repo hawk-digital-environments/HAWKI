@@ -97,7 +97,8 @@
                 <div class="conflict-icon-wrapper">
                     <Alert02Icon size={12} class="conflict-icon"/>
                 </div>
-                <div class="conflict-content">
+                <!-- role="alert": the warning is announced as soon as the panel appears. -->
+                <div class="conflict-content" role="alert">
                     <p class="conflict-title">
                         {#if missingTools.length === 1}
                             {__('chat.composer.modelConflict.conflictTitleSingle', {model: currentModel.label, tool: missingTools[0].displayName})}

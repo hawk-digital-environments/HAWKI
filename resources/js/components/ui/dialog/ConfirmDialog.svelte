@@ -1,8 +1,10 @@
 <!--
   @component Blocking confirmation dialog with OK and Cancel actions.
 
-  Non-closable — Escape and outside clicks are suppressed so the user must
-  explicitly confirm or cancel. The confirm button receives autofocus.
+  Rendered as `role="alertdialog"` without a close button. Outside clicks are
+  suppressed so the user must explicitly confirm or cancel; Escape cancels.
+  The cancel button is first in DOM order and therefore receives initial
+  focus, so a destructive confirm action is never pre-focused.
 
   Usage — pair `bind:open` with a trigger elsewhere (e.g. a "Delete" menu
   item) and destroy on confirm:
@@ -40,6 +42,8 @@
         onConfirm?: () => unknown | Promise<unknown>;
         /** Called when the user clicks the cancel button. */
         onCancel?: () => void;
+        /** Receives focus after closing when it returns an element. */
+        restoreFocusTo?: () => HTMLElement | null;
         /** Prevents duplicate actions while an async confirmation is running. */
         busy?: boolean;
         /** Visual treatment for the confirmation action. */
@@ -55,6 +59,7 @@
         cancelLabel = __('ui.dialog.cancelLabel'),
         onConfirm,
         onCancel,
+        restoreFocusTo,
         busy = false,
         confirmVariant = 'fill'
     }: Props = $props();
@@ -83,6 +88,13 @@
         handleOpenChange(false);
         onCancel?.();
     }
+
+    function handleCloseAutoFocus(event: Event) {
+        const target = restoreFocusTo?.();
+        if (!target) return;
+        event.preventDefault();
+        target.focus({preventScroll: true});
+    }
 </script>
 
 <Dialog
@@ -91,15 +103,18 @@
     {title}
     {description}
     closable={false}
+    role="alertdialog"
     contentProps={{
         class: 'confirm-dialog-content',
-        onEscapeKeydown: (e) => e.preventDefault(),
-        onInteractOutside: (e) => e.preventDefault()
+        // bits-ui closes the dialog afterwards (via onOpenChange); Escape means cancel.
+        onEscapeKeydown: () => onCancel?.(),
+        onInteractOutside: (e) => e.preventDefault(),
+        onCloseAutoFocus: handleCloseAutoFocus
     }}
 >
     {#snippet footer()}
         <Button variant="stroke" size="sm" disabled={isBusy} onclick={handleCancel}>{cancelLabel}</Button>
-        <Button variant={confirmVariant} size="sm" disabled={isBusy} autofocus onclick={handleConfirm}>{okLabel}</Button>
+        <Button variant={confirmVariant} size="sm" disabled={isBusy} onclick={handleConfirm}>{okLabel}</Button>
     {/snippet}
 </Dialog>
 
