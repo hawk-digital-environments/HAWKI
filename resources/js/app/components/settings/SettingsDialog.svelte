@@ -5,8 +5,14 @@
   in a sidebar beside the page; below `md` it is a bottom sheet with the
   sections as a segmented control above the page.
 -->
+<script module lang="ts">
+    /** A settings section the dialog can be opened on. */
+    export type {SettingsSection} from '$plugins/core/modules/settings/SettingsModule.js';
+</script>
+
 <script lang="ts">
     import type {Attachment} from 'svelte/attachments';
+    import type {SettingsSection} from '$plugins/core/modules/settings/SettingsModule.js';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
@@ -14,6 +20,7 @@
     import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
     import RouterView from '$lib/components/ui/routing/RouterView.svelte';
     import {createRouter} from '$lib/components/ui/routing/index.js';
+    import {untrack} from 'svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
@@ -27,9 +34,15 @@
     interface Props {
         open?: boolean;
         onOpenChange?: (open: boolean) => void;
+        /**
+         * Section to show when the dialog opens (e.g. from the search
+         * palette). Only read at the moment `open` flips to true; the user
+         * can navigate freely afterwards. Defaults to the general page.
+         */
+        section?: SettingsSection | null;
     }
 
-    let {open = $bindable(false), onOpenChange}: Props = $props();
+    let {open = $bindable(false), onOpenChange, section = null}: Props = $props();
     const {__} = useTranslator();
 
     const breakpoint = useBreakpoint();
@@ -87,6 +100,16 @@
     function endResize(event: TransitionEvent): void {
         if (event.target === event.currentTarget) resizing = false;
     }
+
+    // Point the hash router at the requested section before the RouterView
+    // mounts; the strategy writes the hash, and the view resolves from it.
+    // `untrack` keeps the router's own state out of this effect's dependencies
+    // so only `open`/`section` re-run it.
+    $effect(() => {
+        if (open && section) {
+            untrack(() => void settingsRouter.handle.goTo(`/${section}`, {replace: true}));
+        }
+    });
 
     function handleOpenChange(isOpen: boolean): void {
         open = isOpen;

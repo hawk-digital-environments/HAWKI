@@ -13,6 +13,9 @@
   contenteditable element has focus, so plain letter shortcuts don't fire
   while typing.
 
+  The keycap shows `key` as typed (single letters upper-cased); pass `label`
+  to abbreviate it, e.g. `label="Esc"` for `key="Escape"`.
+
   Without `children` the keycap renders in place. Pass a `children` snippet to
   place it yourself: the snippet receives the keycap as an `Indicator`
   component, while `Kbd` keeps handling the listening and visibility.
@@ -48,6 +51,9 @@
         /** Always render the keycap instead of only while the modifiers are
          * held. */
         alwaysVisible?: boolean;
+        /** Text shown for the key on the keycap instead of `key` itself, e.g.
+         * `Esc` for `Escape`. Matching still uses `key`. */
+        label?: string;
         /** Called when the full combination is pressed. */
         onPress?: () => void;
         /** Custom placement of the keycap: receives it as an `Indicator`
@@ -62,6 +68,7 @@
         shift = false,
         alt = false,
         alwaysVisible = false,
+        label: keyText,
         onPress,
         children,
         ...restProps
@@ -125,7 +132,7 @@
     }
 
     const label = $derived.by(() => {
-        const keyLabel = key.length === 1 ? key.toUpperCase() : key;
+        const keyLabel = keyText ?? (key.length === 1 ? key.toUpperCase() : key);
         const parts: string[] = [];
         if (ctrl) parts.push(isApple ? '⌘' : 'Ctrl');
         if (alt) parts.push('Alt');

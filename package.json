@@ -6,9 +6,11 @@
         "dev": "npm install && vite",
         "build": "vite build",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
-        "test": "echo \"Heads up: no test specified\" && exit 0",
+        "test": "npm run test:search",
+        "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test \"tests/js/**/*.test.ts\" \"tests/js/**/*.test.svelte.ts\"",
         "tsc": "tsc -p ./tsconfig.json",
-        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json"
+        "check:tests": "tsc -p ./tsconfig.test.json",
+        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json && tsc -p ./tsconfig.test.json"
     },
     "devDependencies": {
         "@antv/infographic": "^0.2.19",
@@ -18,12 +20,13 @@
         "@sveltejs/vite-plugin-svelte": "^7.2.0",
         "@tsconfig/svelte": "^5.0.8",
         "@types/node": "^26.1.2",
-        "bits-ui": "^2.18.1",
+        "bits-ui": "2.18.1",
         "class-variance-authority": "^0.7.1",
         "cropperjs": "^2.1.1",
         "docx": "^9.7.1",
         "docx-preview": "^0.4.0",
         "esbuild": "^0.28.1",
+        "fuse.js": "^7.5.0",
         "jsona": "^1.14.0",
         "jspdf": "^4.2.1",
         "katex": "^0.18.1",
