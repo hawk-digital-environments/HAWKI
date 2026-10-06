@@ -12,9 +12,9 @@ import { getAssistant } from "$plugins/assistants/api/resources/assistantsClient
  * its tooltip (the attachment itself stays persisted).
  *
  * This module owns the data plane: it polls the assistant's
- * `assistant_attachments` include (which carries `rag_status`/`rag_error`)
- * and reports state changes per attachment uuid. UI decisions (statuses,
- * toasts, row removal) stay in `FileUpload.svelte`.
+ * `assistant_attachments` include (which carries `rag_status`/`rag_error`/
+ * `rag_user_error`) and reports state changes per attachment uuid. UI
+ * decisions (statuses, toasts, row removal) stay in `FileUpload.svelte`.
  */
 
 /** Server-side RAG ingestion state of an attachment (`assistant_attachments.rag_status`). */
@@ -26,8 +26,10 @@ export interface RagIngestionUpdate {
     /** The attachment's `uuid` — the id the attachment delete action expects. */
     uuid: string;
     state: RagFileState;
-    /** Server-side failure reason (`rag_error`); `null` unless failed. */
+    /** Server-side failure reason (`rag_error`, technical); `null` unless failed. Never render this. */
     error: string | null;
+    /** Translation key for the user-facing failure reason (`rag_user_error`); `null` unless failed/skipped. */
+    userError: string | null;
 }
 
 export interface RagIngestionWatcher {
@@ -78,7 +80,7 @@ export function watchRagIngestion(
     async function run(): Promise<void> {
         if (tracked.size === 0 || inFlight) return;
         inFlight = true;
-        let files: { uuid?: string; ragStatus?: string | null; ragError?: string | null }[] = [];
+        let files: { uuid?: string; ragStatus?: string | null; ragError?: string | null; ragUserError?: string | null }[] = [];
         try {
             const assistant = await getAssistant(assistantId, { include: ["assistant_attachments"] });
             files = assistant.files ?? [];
@@ -95,7 +97,7 @@ export function watchRagIngestion(
             if (tracked.get(uuid) === state) continue;
 
             tracked.set(uuid, state);
-            onUpdate({ uuid, state, error: file.ragError ?? null });
+            onUpdate({ uuid, state, error: file.ragError ?? null, userError: file.ragUserError ?? null });
 
             if (isSettled(state)) {
                 tracked.delete(uuid);

@@ -1,0 +1,11 @@
+{
+    "rag": {
+        "ingestion": {
+            "dataset_error": "Dataset creation failed. Please contact your system administrator.",
+            "file_error": "File could not be saved in the knowledge base.",
+            "timeout_error": "Saving the file to the knowledge base timed out. Please try again or contact your system administrator.",
+            "stored_file_missing_error": "The stored file is no longer available. Please upload it again.",
+            "no_extractable_text_error": "The file contains no extractable text and cannot be added to the knowledge base."
+        }
+    }
+}

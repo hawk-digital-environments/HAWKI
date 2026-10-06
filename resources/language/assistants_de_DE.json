@@ -242,7 +242,6 @@
                 "rag_status_success": "Erfolgreich",
                 "rag_status_failed": "Fehlgeschlagen",
                 "ingestion_failed": ":name konnte nicht zur Wissensdatenbank hinzugefügt werden: :reason",
-                "ingestion_failed_unknown_reason": "unbekannter Grund",
                 "no_model_selected": "Noch kein Modell ausgewählt.",
                 "upload_disabled_model_not_configured": "Das aktuell ausgewählte Modell ist nicht für die Wissensdatenbank konfiguriert."
             },

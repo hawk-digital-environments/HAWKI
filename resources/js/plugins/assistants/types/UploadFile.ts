@@ -49,8 +49,14 @@ export const UploadFileSchema = z.object({
      * when it never landed. `null` when RAG doesn't apply to this file.
      */
     ragStatus: z.string().nullable().optional(),
-    /** Server-side ingestion failure reason (`assistant_attachments.rag_error`). */
+    /** Server-side ingestion failure reason (`assistant_attachments.rag_error`); technical detail, never rendered. */
     ragError: z.string().nullable().optional(),
+    /**
+     * Translation key for the user-facing failure reason
+     * (`assistant_attachments.rag_user_error`, e.g. `rag.ingestion.file_error`)
+     * when the RAG pipeline failed or skipped the file; `null` otherwise.
+     */
+    ragUserError: z.string().nullable().optional(),
     /** Last user-facing error message for this file (upload failure, etc.). */
     error: z.string().optional(),
     /** Abort controller for cancelling an in-flight upload. */

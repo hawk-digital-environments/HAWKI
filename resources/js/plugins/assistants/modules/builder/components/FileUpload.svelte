@@ -35,7 +35,7 @@
     import {mergeProps} from 'bits-ui';
     import { onDestroy } from 'svelte';
 
-    const { __ } = useTranslator();
+    const { __, hasLabel } = useTranslator();
     const toast = useToastContext();
     const builder = useBuilderContext();
 
@@ -100,6 +100,23 @@
         return file.ragStatus === 'failed' || file.ragStatus === 'skipped';
     }
 
+    /**
+     * Display rank for `visibleFiles`: 0 = failed ingestion, 1 = still in
+     * flight (uploading or ingesting), 2 = settled.
+     */
+    function displayRank(file: UploadFile): number {
+        if (isRagFailed(file)) return 0;
+        return file.status === 'pending' || file.status === 'uploading' || file.status === 'ingesting' ? 1 : 2;
+    }
+
+    /**
+     * Rows in display order: failed ingestions first (disabled rows that
+     * need attention), then files still uploading or ingesting, then the
+     * settled ones — each group in draft order. View-only — the draft
+     * itself keeps the server/upload order.
+     */
+    let visibleFiles = $derived([...currentFiles].sort((a, b) => displayRank(a) - displayRank(b)));
+
     /** Persisted rows — what the manage menu's bulk deletes act on. */
     let persistedFiles = $derived(currentFiles.filter((f) => f.uuid));
     /** Whether the "delete failed files" menu item applies (RAG failures present). */
@@ -148,22 +165,35 @@
     }
 
     /**
+     * User-facing ingestion failure text: the stored translation key
+     * (`rag_user_error`) when it resolves, otherwise the generic failure
+     * message (legacy rows written before codes existed). The technical
+     * `ragError` detail is never rendered.
+     */
+    function ragUserMessage(userError: string | null | undefined): string {
+        return (userError !== null && userError !== undefined && hasLabel(userError))
+            ? __(userError)
+            : __('rag.ingestion.file_error');
+    }
+
+    /**
      * Poll outcome for one watched attachment: `ingested` completes the file,
      * interim states keep it "ingesting", and a `failed`/`skipped` pipeline
-     * result disables the row and surfaces the server's failure reason via
-     * toast and tooltip — the attachment itself stays persisted, so the
+     * result disables the row and surfaces the user-facing failure reason
+     * via toast and tooltip — the attachment itself stays persisted, so the
      * failure survives a builder reload.
      */
-    function handleRagUpdate({ uuid, state, error }: { uuid: string; state: RagFileState; error: string | null }): void {
+    function handleRagUpdate({ uuid, state, error, userError }: { uuid: string; state: RagFileState; error: string | null; userError: string | null }): void {
         if (state === 'failed' || state === 'skipped') {
             const name = (builder.draft.files ?? []).find(f => f.uuid === uuid)?.name ?? uuid;
             toast.error(__('assistants.builder.knowledge.ingestion_failed', {
                 name,
-                reason: error ?? __('assistants.builder.knowledge.ingestion_failed_unknown_reason')
+                reason: ragUserMessage(userError)
             }));
             patchByUuid(uuid, {
                 ragStatus: state,
                 ragError: error,
+                ragUserError: userError,
                 status: 'error',
                 error: undefined
             });
@@ -172,6 +202,7 @@
         patchByUuid(uuid, {
             ragStatus: state,
             ragError: null,
+            ragUserError: null,
             status: state === 'ingested' ? 'complete' : 'ingesting',
             progress: 100
         });
@@ -238,7 +269,7 @@
         label: string;
         /** Semantic color class for the knowledge-database icon. */
         cls: 'success' | 'pending' | 'failed';
-        /** Server-side failure reason (`rag_error`), shown below the status line in the tooltip. */
+        /** Resolved user-facing failure reason, shown below the status line in the tooltip. */
         error?: string;
     }
 
@@ -261,7 +292,7 @@
                 return {
                     label: __('assistants.builder.knowledge.rag_status_failed'),
                     cls: 'failed',
-                    error: file.ragError ?? undefined
+                    error: ragUserMessage(file.ragUserError)
                 };
             default:
                 return undefined;
@@ -401,11 +432,14 @@
      * Unify with hawki frontend function `requestAtchDelete` when migrating to
      * hawki frontend. Ported from HAWKI/public/js/attachment_handler.js:68.
      */
-    async function removeFile(index: number): Promise<void> {
+    async function removeFile(target: UploadFile): Promise<void> {
         if (deleting) return;
         const files = builder.draft.files ?? [];
-        const target = files[index];
-        if (!target) return;
+        // The rendered list is failed-first (`visibleFiles`), so resolve the
+        // row back to its draft index — by uuid for persisted files, by
+        // identity for fresh uploads that have none yet.
+        const index = target.uuid ? files.findIndex((f) => f.uuid === target.uuid) : files.indexOf(target);
+        if (index === -1) return;
 
         const assistantId = builder.draft.id;
         if (assistantId && target.uuid) {
@@ -611,7 +645,7 @@
                 {/if}
             {/snippet}
             {#if currentFiles.length >= 0}
-                {#each currentFiles as file, index (index)}
+                {#each visibleFiles as file, index (index)}
                     {@const indicator = ragIndicator(file)}
                     {@const indicatorTooltip = indicator
                         ? `${__('assistants.builder.knowledge.rag_status')}: ${indicator.label}`
@@ -623,7 +657,7 @@
                             .join(' · ')}
                         icon={File01Icon}
                         disabled={isRagFailed(file)}
-                        onDelete={() => removeFile(index)}
+                        onDelete={() => removeFile(file)}
                     >
                         {#snippet trailing()}
                             {#if indicator}

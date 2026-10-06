@@ -6,6 +6,7 @@ namespace App\Services\Rag\AssistantKnowledge\Repositories;
 
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Rag\Values\RagIngestionStatus;
+use App\Services\Rag\Values\RagIngestionUserError;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
 use Psr\Clock\ClockInterface;
@@ -29,8 +30,8 @@ class RagIngestionStateRepository extends AbstractRepository
 
     /**
      * Sets the ingest timestamp automatically when the status becomes
-     * INGESTED; passing null for taskId/documentId/batchId/error leaves
-     * the stored values untouched.
+     * INGESTED; passing null for taskId/documentId/batchId/error/userError
+     * leaves the stored values untouched.
      */
     public function updateState(
         int $assistantAttachmentId,
@@ -39,6 +40,7 @@ class RagIngestionStateRepository extends AbstractRepository
         ?string $error = null,
         ?string $documentId = null,
         ?string $batchId = null,
+        ?RagIngestionUserError $userError = null,
     ): void {
         $update = ['rag_status' => $status->value];
 
@@ -48,6 +50,10 @@ class RagIngestionStateRepository extends AbstractRepository
 
         if (null !== $error) {
             $update['rag_error'] = $error;
+        }
+
+        if (null !== $userError) {
+            $update['rag_user_error'] = $userError->value;
         }
 
         if (null !== $documentId) {

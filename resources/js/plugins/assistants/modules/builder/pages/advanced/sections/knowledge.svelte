@@ -9,8 +9,7 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useStore} from '$lib/app/hooks/useStore.svelte';
     import {isAiToolAvailableFor, knowledgeToolsOf} from "$plugins/core/stores/aiToolStoreData.js";
-    import {mockVectorDatabasesEnabled} from "$plugins/assistants/mocks/mockVectorDatabases.svelte.js";
-    import MockedVectorDatabases from "$plugins/assistants/mocks/MockedVectorDatabases.svelte";
+    import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
 
     /**
      * The kernel's route renderer instantiates page components without passing
@@ -75,7 +74,6 @@
                 icon={AlertCircleIcon}
                 type={ValidationState.WARNING}
         />
-
         {#if ragEnabled && currentModel === null}
             <StatusCard
                     label={__('assistants.builder.knowledge.no_model_selected')}
@@ -83,9 +81,6 @@
                     type={ValidationState.WARNING}
             />
         {/if}
-        <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
-        {#if attachableKnowledgeTools.length > 0}
-            <KnowledgeBases tools={attachableKnowledgeTools}/>
         {#if ragEnabled && knowledgeToolAvailable}
             <StatusCard
                     label={__('assistants.builder.knowledge.rag_active')}
@@ -100,5 +95,8 @@
             />
         {/if}
         <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
+        {#if attachableKnowledgeTools.length > 0}
+            <KnowledgeBases tools={attachableKnowledgeTools}/>
+        {/if}
     </div>
 </div>

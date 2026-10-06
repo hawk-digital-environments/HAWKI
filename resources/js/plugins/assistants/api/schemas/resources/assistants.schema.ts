@@ -92,8 +92,10 @@ const WireAttachmentSchema = z.object({
     mime: z.string().nullable().optional(),
     /** Server-side RAG ingestion state; `null` when RAG doesn't apply. */
     rag_status: z.string().nullable().optional(),
-    /** Server-side ingestion failure reason, when `rag_status` is `failed`. */
-    rag_error: z.string().nullable().optional()
+    /** Server-side ingestion failure reason (technical, admin-only — never rendered). */
+    rag_error: z.string().nullable().optional(),
+    /** Translation key for the user-facing failure reason, when ingestion failed/skipped. */
+    rag_user_error: z.string().nullable().optional()
 });
 
 const WireFeedbackSchema = z.object({
@@ -226,7 +228,8 @@ function toUploadFiles(attachments: AssistantResource['assistant_attachments']):
                 : ('complete' as const),
             progress: 100,
             ragStatus,
-            ragError: attachment.rag_error ?? null
+            ragError: attachment.rag_error ?? null,
+            ragUserError: attachment.rag_user_error ?? null
         };
     });
 }

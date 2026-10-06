@@ -14,7 +14,9 @@ use LaravelJsonApi\Eloquent\Schema;
  * Knowledge files owned by an assistant. Serialised only as an include of
  * the assistants resource (no top-level routes); the storage identifier is
  * derived from the fixed ASSISTANT storage category. `rag_status` lets the
- * frontend poll ingestion progress (null = RAG not applicable).
+ * frontend poll ingestion progress (null = RAG not applicable);
+ * `rag_user_error` is the translation key the UI resolves for failures
+ * (technical `rag_error` detail is admin-only and never rendered).
  */
 class AssistantAttachmentSchema extends Schema
 {
@@ -40,6 +42,7 @@ class AssistantAttachmentSchema extends Schema
             Str::make('mime'),
             Str::make('rag_status'),
             Str::make('rag_error'),
+            Str::make('rag_user_error'),
             Str::make('identifier')->extractUsing(function (AssistantAttachment $assistantAttachment) {
                 return (string)StoredFileIdentifier::fromAssistantAttachment($assistantAttachment);
             }),
