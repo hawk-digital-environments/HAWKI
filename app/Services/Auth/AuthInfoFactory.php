@@ -53,12 +53,18 @@ readonly class AuthInfoFactory
     public function createHawkiAuthInfo(): AuthInfo
     {
         $acceptsCredentials = $this->loginHandler->requiresCredentials();
+        $acceptsRedirect = $this->loginHandler->supportsRedirect();
+        $mode = match (true) {
+            $acceptsCredentials && $acceptsRedirect => AuthMode::MIXED,
+            $acceptsCredentials => AuthMode::CREDENTIALS,
+            default => AuthMode::REDIRECT,
+        };
 
         return new AuthInfo(
             id: 'hawki',
-            mode: $acceptsCredentials ? AuthMode::CREDENTIALS : AuthMode::REDIRECT,
-            startUrl: $acceptsCredentials ? null : self::REDIRECT_START_URL,
-            capabilities: new AuthCapabilities(credentials: $acceptsCredentials),
+            mode: $mode,
+            startUrl: $acceptsRedirect ? self::REDIRECT_START_URL : null,
+            capabilities: new AuthCapabilities(credentials: $acceptsCredentials, redirect: $acceptsRedirect),
             lastError: $this->handoff->pullLastError($this->request)
         );
     }

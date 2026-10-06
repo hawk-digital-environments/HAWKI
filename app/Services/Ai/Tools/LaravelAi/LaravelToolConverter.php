@@ -16,7 +16,6 @@ use App\Services\Ai\Tools\LaravelAi\Events\McpToolCalledFilterEvent;
 use App\Services\Ai\Tools\Mcp\HawkiMcpClient;
 use App\Services\Ai\Tools\Values\ToolType;
 use App\Services\System\Container\ServiceLocator;
-use App\Utils\Lists\LazySingletonList;
 use Illuminate\Container\Attributes\Give;
 use Illuminate\Container\Attributes\Singleton;
 use Psr\Log\LoggerInterface;
@@ -43,11 +42,8 @@ readonly class LaravelToolConverter
 {
     public function __construct(
         private LoggerInterface   $logger,
-        /**
-         * @var LazySingletonList<McpServer, HawkiMcpClient>
-         */
         #[Give(AiServiceProvider::MCP_CLIENT_LIST)]
-        private LazySingletonList $mcpClientList,
+        private \App\Services\Ai\Tools\Mcp\McpClientRegistry $mcpClientList,
         private ServiceLocator    $serviceLocator
     )
     {
@@ -90,7 +86,7 @@ readonly class LaravelToolConverter
             throw InvalidToolConfigurationException::forClassNotImplementingInterface($toolClass, $tool->name);
         }
 
-        return $this->serviceLocator->get($toolClass);
+        return clone $this->serviceLocator->get($toolClass);
     }
 
     /**

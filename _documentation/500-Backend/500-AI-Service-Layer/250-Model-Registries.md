@@ -93,6 +93,8 @@ Model usage rules answer the question: "in which contexts does this model appear
 
 This is a distinct access-control layer from flags (what a model *is*) and capabilities (what a model *can do*). Usage rules control *where* a model is visible.
 
+The `role_access` contextual scope applies a separate access check to model queries. Models without rows in `ai_model_roles` remain visible to everyone. Models with role rows require an eligible authenticated user to hold at least one listed `web` role. HTTP queries without a user see only unrestricted models, while console queries without a user skip this scope. Agent dispatch performs the same check again against current database state.
+
 **`WellKnownModelTypes`** defines the built-in usage types:
 
 | Constant | Key | Context |

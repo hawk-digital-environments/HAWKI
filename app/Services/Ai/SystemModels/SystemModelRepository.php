@@ -24,6 +24,9 @@ use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
  */
 class SystemModelRepository extends AbstractRepositoryWithContextualScopes
 {
+    public function __construct(private readonly SystemModelAssignmentGuard $assignmentGuard)
+    {
+    }
     /**
      * Returns all system-model assignments, optionally narrowed by usage type and/or model type.
      *
@@ -79,6 +82,8 @@ class SystemModelRepository extends AbstractRepositoryWithContextualScopes
         AiModel $model
     ): SystemModel
     {
+        $this->assignmentGuard->assertAssignable($model, $usageType);
+
         return $this->getQueryWithoutContextualScopes()->updateOrCreate(
             [
                 'model_type' => $modelType,

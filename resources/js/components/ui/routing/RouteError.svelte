@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {RouteHttpError} from './logistics/signals.js';
 
     interface Props {
         /** The failure that got us here. Not necessarily an `Error`. */
@@ -24,10 +25,10 @@
     const message = $derived(error instanceof Error ? error.message : error ? String(error) : '');
 </script>
 
-<h1>{__('ui.routing.errorTitle')}</h1>
+<h1>{__(error instanceof RouteHttpError && error.status === 403 ? 'admin.forbidden_title' : 'ui.routing.errorTitle')}</h1>
 
 {#if message}
-    <p class="message">{message}</p>
+    <p class="message">{error instanceof RouteHttpError && error.status === 403 ? __('admin.forbidden') : message}</p>
 {/if}
 
 {#if reset}

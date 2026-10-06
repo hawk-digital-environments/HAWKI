@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Users;
-
 
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -38,7 +36,7 @@ class UserCondition
         if (!$user) {
             return false;
         }
-        return $user->employeetype === 'admin';
+        return $user->employeetype === 'admin' && !$user->admin_disabled && !$user->isRemoved;
     }
 
     /**

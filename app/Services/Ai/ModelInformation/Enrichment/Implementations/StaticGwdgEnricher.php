@@ -112,6 +112,25 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING
             ],
         ],
+        'glm-5.3-flash' => [
+            'max_tokens' => 1000000,
+            'documentation_url' => 'https://huggingface.co/zai-org/GLM-5.3-Flash',
+            'description' => 'GLM-5.3-Flash is the first natively multimodal model in the GLM-5 series. It is a hybrid-architecture MoE model with 320B total parameters and 18B active, combining sparse and linear attention to deliver precise long-context capabilities at significantly reduced serving cost. It offers strong coding and agentic performance and supports a context window of one million tokens.',
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::MULTI_MODAL,
+                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
+                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
+                WellKnownModelFlags::FEATURE_STREAMING
+            ],
+            'parameters' => [
+                WellKnownModelParams::TEMPERATURE => 1.0,
+                WellKnownModelParams::TOP_P => 0.95,
+            ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING
+            ],
+        ],
         'meta-llama-3.1-8b-instruct' => [
             'max_tokens' => 128000,
             'documentation_url' => 'https://huggingface.co/nvidia/Llama-3.1-8B-Instruct-FP8',

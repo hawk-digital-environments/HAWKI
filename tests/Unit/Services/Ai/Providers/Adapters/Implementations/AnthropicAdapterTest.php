@@ -7,20 +7,24 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use App\Services\Ai\Models\Access\ModelAuthorization;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Flags\Values\WellKnownModelFlags;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
+use App\Services\Ai\Providers\Adapters\DriverFactoryFactory;
 use App\Services\Ai\Providers\Adapters\Implementations\AnthropicAdapter;
 use App\Services\Ai\Providers\Adapters\ModelList\ModelListClient;
 use App\Services\Ai\Providers\Adapters\ModelList\ModelListResponse;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Providers\Provider as Driver;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 #[CoversClass(AnthropicAdapter::class)]
@@ -382,6 +386,99 @@ class AnthropicAdapterTest extends TestCase
         $result = $this->makeAdapter()->getAdditionalDriverOptions($this->makeTextAgent($context), $context);
 
         static::assertArrayNotHasKey('top_p', $result);
+    }
+
+    public static function thinkingModels(): iterable
+    {
+        yield 'Sonnet 5' => ['claude-sonnet-5', 'adaptive'];
+        yield 'adaptive ignores manual budget' => ['claude-sonnet-5', 'adaptive', false, 512];
+        yield 'adaptive neutralises sampling' => ['claude-sonnet-5', 'adaptive', true];
+        yield 'Opus 5' => ['claude-opus-5', 'adaptive'];
+        yield 'Opus 4.8' => ['claude-opus-4-8', 'adaptive'];
+        yield 'Opus 4.7' => ['claude-opus-4-7', 'adaptive'];
+        yield 'Opus 4.6' => ['claude-opus-4-6', 'adaptive'];
+        yield 'Sonnet 4.6' => ['claude-sonnet-4-6', 'adaptive'];
+        yield 'dated Sonnet 5' => ['claude-sonnet-5-20260901', 'adaptive'];
+        yield 'Mythos preview' => ['claude-mythos-preview', 'adaptive'];
+        yield 'Fable 5' => ['claude-fable-5', 'adaptive'];
+        yield 'Mythos 5.1' => ['claude-mythos-5-1', 'adaptive'];
+        yield 'Sonnet 4.5' => ['claude-sonnet-4-5-20250929', 'enabled'];
+        yield 'Opus 4.5 with effort support' => ['claude-opus-4-5', 'enabled'];
+        yield 'Haiku 4.5' => ['claude-haiku-4-5', 'enabled'];
+        yield 'Sonnet 3.7' => ['claude-3-7-sonnet-latest', 'enabled'];
+    }
+
+    #[DataProvider('thinkingModels')]
+    public function testChatRequestUsesThinkingSupportedByModel(
+        string $modelId,
+        string $thinkingType,
+        bool $hasSampling = false,
+        int $thinkingBudget = 2_048,
+    ): void
+    {
+        Http::preventStrayRequests();
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'id' => 'msg_test',
+            'type' => 'message',
+            'role' => 'assistant',
+            'model' => $modelId,
+            'content' => [['type' => 'text', 'text' => 'Hello.']],
+            'stop_reason' => 'end_turn',
+            'usage' => ['input_tokens' => 10, 'output_tokens' => 2],
+        ])]);
+
+        $adapter = $this->makeAdapter();
+        $provider = new AiProvider(['provider_id' => 'anthropic-thinking-test', 'api_key' => 'test-key']);
+        $driver = $adapter->createDriver($provider, app(DriverFactoryFactory::class)->createFactoryForProvider($provider));
+        $flags = [WellKnownModelFlags::FEATURE_REASONING, WellKnownModelFlags::FEATURE_REASONING_MEDIUM];
+        if ($hasSampling) {
+            $flags[] = WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS;
+        }
+        $model = new AiModel([
+            'model_id' => $modelId,
+            'flags' => AiModelFlags::fromArray($flags),
+        ]);
+        $context = new AgentRequestContext(
+            new AiProviderProxy($provider, $adapter, $driver),
+            $model,
+            (new AiModelParameters())->setMaxThinkingTokens($thinkingBudget)->setTemperature(0.7)->setTopP(0.5),
+        );
+
+        $agent = $this->getMockBuilder(ChatAgent::class)
+            ->setConstructorArgs([$context, 'Be helpful.', [], [], 'Hello AI'])
+            ->onlyMethods(['middleware'])
+            ->getMock();
+        $agent->method('middleware')->willReturn([]);
+        // The model above is never persisted, so the dispatch-time role check would deny it.
+        $this->app->instance(ModelAuthorization::class, new class() extends ModelAuthorization {
+            public function authorize(AgentRequestContext $context): void
+            {
+            }
+        });
+
+        static::assertSame('Hello.', $agent->send()->text);
+        Http::assertSentCount(1);
+        Http::assertSent(function (\Illuminate\Http\Client\Request $request) use ($modelId, $thinkingType, $hasSampling): bool {
+            $body = $request->data();
+            static::assertSame($modelId, $body['model']);
+            static::assertSame($thinkingType, $body['thinking']['type']);
+            if ($thinkingType === 'adaptive') {
+                static::assertArrayNotHasKey('budget_tokens', $body['thinking']);
+                static::assertSame('medium', $body['output_config']['effort']);
+                if ($hasSampling) {
+                    static::assertEquals(1.0, $body['temperature']);
+                    static::assertEquals(1.0, $body['top_p']);
+                } else {
+                    static::assertArrayNotHasKey('temperature', $body);
+                    static::assertArrayNotHasKey('top_p', $body);
+                }
+            } else {
+                static::assertSame(2_048, $body['thinking']['budget_tokens']);
+                static::assertArrayNotHasKey('output_config', $body);
+            }
+
+            return true;
+        });
     }
 
     // =========================================================================

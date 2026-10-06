@@ -26,13 +26,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(
             append: [
                 LocaleSettingMiddleware::class,
-                SystemContextBootingMiddleware::class
+                SystemContextBootingMiddleware::class,
+                \App\Http\Middleware\RejectDisabledAccount::class,
             ]
         );
         $middleware->api(
             append: [
                 LocaleSettingMiddleware::class,
                 SystemContextBootingMiddleware::class,
+                \App\Http\Middleware\RejectDisabledAccount::class,
             ]
         );
     })

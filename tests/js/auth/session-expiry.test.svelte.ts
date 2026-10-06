@@ -199,3 +199,37 @@ test('exhausted refresh retries lock an established session and retain next', as
     assert.equal(fixture.clears(), 1);
     assert.deepEqual(destinations, ['/new/auth/login?next=%2Fnew%2Fchat%3Fthread%3D1&reason=session_expired']);
 });
+
+test('a protected 403 refreshes authorization once without replay, key clearing or navigation', async () => {
+    const destinations = installBrowser('/new/chat');
+    const {client, clears} = clientFixture(authenticated);
+    let refreshes = 0;
+    let mutations = 0;
+    client.refreshConnection = async () => {refreshes++; return authenticated as any;};
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = async () => {mutations++; return new Response(JSON.stringify({errors: [{code: 'TOOL_ACCESS_DENIED'}]}), {status: 403});};
+    try {
+        await assert.rejects(client.client.restApi.fetch('/protected', {method: 'POST'}), error => error instanceof ApiTransportError && error.status === 403);
+        assert.equal(refreshes, 1);
+        assert.equal(mutations, 1);
+        assert.equal(clears(), 0);
+        assert.deepEqual(destinations, []);
+    } finally {globalThis.fetch = previousFetch;}
+});
+
+test('permission refresh never enters the connectionChanged authentication handler', async () => {
+    const destinations = installBrowser('/new/chat');
+    const {client, app, handlers, clears} = clientFixture(authenticated);
+    client.init(app, {onPreparationStage: () => {}} as any);
+    let refreshed = 0;
+    const handle = (client as any).connectionHandle;
+    handle.restApi.getResource = async () => ({...authenticated, userinfo: {...authenticated.userinfo, isAdmin: false}});
+    handle.events.async.triggerVoid = async (name: string, payload: unknown) => {
+        if (name === 'connectionRefreshed') refreshed++;
+        await handlers.get(name)?.(payload);
+    };
+    await client.refreshConnection();
+    assert.equal(refreshed, 1);
+    assert.equal(clears(), 0);
+    assert.deepEqual(destinations, []);
+});

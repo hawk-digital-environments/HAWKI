@@ -29,7 +29,7 @@ test('session rejection drops the old identity immediately', async () => {
     await handle.refreshConnection();
     reject = true;
     assert.equal((await handle.refreshConnection()).isAuthenticated, false);
-    assert.deepEqual(events, ['connected', 'connectionChanged']);
+    assert.deepEqual(events, ['connected', 'connectionRefreshStarted', 'connectionChanged']);
     assert.equal('userinfo' in handle.connection, false);
 });
 
@@ -42,7 +42,7 @@ test('another authenticated user triggers an identity change despite an unchange
     await handle.refreshConnection();
     username = 'bob';
     await handle.refreshConnection();
-    assert.deepEqual(events, ['connected', 'connectionChanged']);
+    assert.deepEqual(events, ['connected', 'connectionRefreshStarted', 'connectionChanged']);
 });
 
 test('public-key hash changes do not change account identity', async () => {
@@ -54,5 +54,46 @@ test('public-key hash changes do not change account identity', async () => {
     await handle.refreshConnection();
     hash = 'rotated-public-key';
     await handle.refreshConnection();
-    assert.deepEqual(events, ['connected']);
+    assert.deepEqual(events, ['connected', 'connectionRefreshStarted', 'connectionRefreshed']);
+});
+
+test('admin access refresh preserves connection identity and awaits one coalesced notification', async () => {
+    const events: string[] = [];
+    let calls = 0;
+    let isAdmin = true;
+    let release!: () => void;
+    const listener = new Promise<void>(resolve => {release = resolve;});
+    const api: any = {getResource: async () => {calls++; return {...connection(), userinfo: {id: 1, hash: 'same', isAdmin}};}};
+    const eventBus: any = {async: {triggerVoid: async (name: string) => {
+        events.push(name);
+        if (name === 'connectionRefreshed') await listener;
+    }}};
+    const handle = new ConnectionHandle(api, eventBus);
+    const previous = await handle.refreshConnection();
+    isAdmin = false;
+    const first = handle.refreshConnection();
+    const second = handle.refreshConnection();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(handle.refreshing, true);
+    assert.equal(calls, 2);
+    assert.equal(handle.connection, previous);
+    assert.equal((handle.connection as any).userinfo.isAdmin, false);
+    release();
+    await Promise.all([first, second]);
+    assert.equal(handle.refreshing, false);
+    assert.deepEqual(events, ['connected', 'connectionRefreshStarted', 'connectionRefreshed']);
+});
+
+test('a connection read completing after logout cannot publish an old identity', async () => {
+    const events: string[] = [];
+    let complete!: (value: unknown) => void;
+    const api: any = {getResource: () => new Promise(resolve => {complete = resolve;})};
+    const handle = new ConnectionHandle(api, {async: {triggerVoid: async (name: string) => {events.push(name);}}} as any);
+    const request = handle.refreshConnection();
+    await new Promise(resolve => setImmediate(resolve));
+    handle.invalidate();
+    complete(connection());
+    await assert.rejects(request, /invalidated/);
+    assert.equal(handle.tryGetConnection(), null);
+    assert.deepEqual(events, []);
 });
