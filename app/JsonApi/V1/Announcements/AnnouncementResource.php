@@ -36,6 +36,7 @@ class AnnouncementResource extends JsonApiResource
             'expires_at' => $this->resource->expiresAt?->toJSON(),
             'is_active' => $this->resource->isActive,
             'content' => $this->resource->content,
+            'excerpt' => $this->resource->excerpt,
             'seen_at' => $this->resource->seenAt?->toJSON(),
             'accepted_at' => $this->resource->acceptedAt?->toJSON(),
             'seen_count' => $this->resource->seenCount,

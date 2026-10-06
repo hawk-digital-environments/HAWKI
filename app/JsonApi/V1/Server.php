@@ -14,11 +14,13 @@ use App\JsonApi\V1\AiToolCapabilities\AiToolCapabilitySchema;
 use App\JsonApi\V1\AiTools\AiToolSchema;
 use App\JsonApi\V1\Announcements\AnnouncementSchema;
 use App\JsonApi\V1\Attachments\AttachmentSchema;
+use App\JsonApi\V1\Auths\AuthSchema;
 use App\JsonApi\V1\Configs\ConfigSchema;
 use App\JsonApi\V1\Connections\ConnectionSchema;
 use App\JsonApi\V1\ExtApps\ExtAppSchema;
 use App\JsonApi\V1\McpServers\McpServerSchema;
 use App\JsonApi\V1\Migrations\MigrationSchema;
+use App\JsonApi\V1\PasskeyBackups\PasskeyBackupSchema;
 use App\JsonApi\V1\RoomMember\RoomMemberSchema;
 use App\JsonApi\V1\RoomMessages\RoomMessagesSchema;
 use App\JsonApi\V1\Rooms\RoomSchema;
@@ -59,11 +61,13 @@ class Server extends BaseServer
             AiToolSchema::class,
             AnnouncementSchema::class,
             AttachmentSchema::class,
+            AuthSchema::class,
             ConfigSchema::class,
             ConnectionSchema::class,
             ExtAppSchema::class,
             McpServerSchema::class,
             MigrationSchema::class,
+            PasskeyBackupSchema::class,
             RoomMemberSchema::class,
             RoomMessagesSchema::class,
             RoomSchema::class,

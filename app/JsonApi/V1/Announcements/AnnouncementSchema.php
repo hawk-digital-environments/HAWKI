@@ -35,6 +35,7 @@ class AnnouncementSchema extends Schema
             Attribute::make('expires_at'),
             Attribute::make('is_active'),
             Attribute::make('content'),
+            Attribute::make('excerpt'),
             Attribute::make('seen_at'),
             Attribute::make('accepted_at'),
             Attribute::make('seen_count'),

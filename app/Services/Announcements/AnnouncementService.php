@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Session;
 readonly class AnnouncementService
 {
     public function __construct(
-        private LocaleService $localeService
+        private LocaleService              $localeService,
+        private RegistrationPolicyPublishService $policyPublisher
     )
     {
     }
@@ -24,6 +25,12 @@ readonly class AnnouncementService
      *
      * Example:
      * $service->createAnnouncement('announcements.terms_update', 'info', true);
+     *
+     * @param array<string, string>|null $excerpt Optional list teaser keyed by locale code (e.g.
+     *        `['de_DE' => '…']`); without one the frontend derives it from the content. Not used
+     *        for policies, which are not listed in the announcements feed.
+     * @throws \App\Services\Announcements\Exceptions\OverlappingPolicyException when publishing a
+     *         policy whose validity window overlaps an already published one.
      */
     public function createAnnouncement(
         string  $title,
@@ -34,9 +41,24 @@ readonly class AnnouncementService
         ?array  $targetUsers = null,
         ?string $anchor = null,
         ?string $startsAt = null,
-        ?string $expiresAt = null
+        ?string $expiresAt = null,
+        ?array  $excerpt = null
     ): Announcement
     {
+        // A policy is the one document users consent to, so two of them may never be in effect at
+        // the same time. Catching that here means the operator sees it while publishing, instead
+        // of users consenting to whichever policy the tie-break happened to pick.
+        if ($type === 'policy' && $isGlobal) {
+            return $this->policyPublisher->publish(
+                $title,
+                $view,
+                $isForced,
+                $anchor,
+                $startsAt,
+                $expiresAt,
+            );
+        }
+
         return Announcement::create([
             'title' => $title,
             'view' => $view,
@@ -47,6 +69,7 @@ readonly class AnnouncementService
             'anchor' => $anchor,
             'starts_at' => $startsAt,
             'expires_at' => $expiresAt,
+            'excerpt' => $excerpt ?: null,
         ]);
     }
 

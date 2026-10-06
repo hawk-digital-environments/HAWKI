@@ -3,6 +3,7 @@
   theme, and the danger zone (delete all data).
 -->
 <script lang="ts">
+    import {useLocaleSwitch} from '$lib/app/hooks/useLocaleSwitch.svelte.js';
     import z from 'zod';
     import Button from '$lib/components/ui/button/Button.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
@@ -41,29 +42,8 @@
         label: locale.nameInLanguage
     }));
 
-    let localeValue = $state(app.localization.locale.lang);
-    let localeSaving = $state(false);
-    const localeLabel = $derived(localeItems.find((item) => item.value === localeValue)?.label ?? localeValue);
-
-    async function changeLocale(lang: string): Promise<void> {
-        // Guarded here instead of disabling the select: disabling the focused
-        // trigger mid-request would drop keyboard focus to <body>.
-        if (localeSaving || !lang || lang === app.localization.locale.lang) return;
-
-        localeSaving = true;
-        try {
-            await restApi.postToResourceAction('users', 'actions/locale', {locale: lang});
-            await app.localization.setLocale(lang);
-            // Keep subsequent API requests sending the new locale header.
-            app.connection.locale = lang;
-        } catch (error) {
-            console.error('Failed to change the locale', error);
-            localeValue = app.localization.locale.lang;
-            toast.error(__('ui.settings.general.languageError'));
-        } finally {
-            localeSaving = false;
-        }
-    }
+    const locale = useLocaleSwitch(() => toast.error(__('ui.settings.general.languageError')));
+    const localeLabel = $derived(localeItems.find((item) => item.value === locale.value)?.label ?? locale.value);
 
     // $derived so the labels follow runtime locale switches.
     const themeItems = $derived([
@@ -106,13 +86,13 @@
                             size="xs"
                             iconRight={UnfoldMoreIcon}
                             aria-labelledby="{labelId} {localeValueId}"
-                            aria-busy={localeSaving}
+                            aria-busy={locale.saving}
                         >
                             <span id={localeValueId}>{localeLabel}</span>
                         </Button>
                     {/snippet}
 
-                    <DropdownMenuRadioGroup bind:value={localeValue} onValueChange={changeLocale}>
+                    <DropdownMenuRadioGroup bind:value={locale.value} onValueChange={locale.change}>
                         {#each localeItems as item (item.value)}
                             <DropdownMenuRadioItem value={item.value} indicator="check">
                                 {item.label}

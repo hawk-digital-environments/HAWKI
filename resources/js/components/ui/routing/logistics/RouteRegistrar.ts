@@ -57,7 +57,7 @@ export type RouteLayoutOrLoader = ComponentOrLoader<RouteLayout>;
  * {@link RouteOptions.layout}) deliberately live outside of it, so they can
  * never collide with — or leak into — a plugin's own meta.
  */
-export type RouteMeta = Record<string, unknown>;
+export type RouteMeta = Record<string, unknown> & import('../extendableTypes.js').RouteMetaExtensions;
 
 /**
  * The `universal-router` {@link Route} plus the extra fields this router
@@ -324,7 +324,14 @@ function buildRouteNode(kind: RouteNodeKind, componentOrLoader: ComponentOrLoade
  *     }, {middlewares: [requireAdmin]});
  * }
  */
+export interface RouteRegistrarOptions {
+    /** Application-owned access policy, applied before route loaders, including fallbacks. */
+    metaGuards?: (meta: RouteMeta) => RouteMiddleware | RouteMiddleware[];
+}
+
 export class RouteRegistrar {
+    public constructor(private readonly options: RouteRegistrarOptions = {}) {}
+
     private readonly routes = new Map<string, RegisteredRouteOptions>();
     private readonly groups = new Map<string, RegisteredRouteGroupOptions>();
     /**
@@ -412,8 +419,9 @@ export class RouteRegistrar {
     public group(path: string, callback: RouteRegistrationCallback, options?: RouteGroupOptions) {
         if (this.groups.has(path)) {
             const existingGroup = this.groups.get(path)!;
+            const existingChildren = existingGroup.children;
             existingGroup.children = (registrar) => {
-                existingGroup.children(registrar);
+                existingChildren(registrar);
                 callback(registrar);
             };
             return this;
@@ -467,7 +475,7 @@ export class RouteRegistrar {
      * list) would silently scope the guard to that group's subtree.
      */
     public createNestedRegistrar() {
-        const nestedRegistrar = new RouteRegistrar();
+        const nestedRegistrar = new RouteRegistrar(this.options);
         nestedRegistrar.globalMiddlewares = this.globalMiddlewares;
         return nestedRegistrar;
     }
@@ -536,7 +544,11 @@ export class RouteRegistrar {
             children: options.catchAll ? [] : undefined
         };
 
-        return buildRouteMiddlewareStack(innerRoute, this.globalMiddlewares, options);
+        const guards = this.options.metaGuards?.(options.meta ?? {}) ?? [];
+        return buildRouteMiddlewareStack(innerRoute, this.globalMiddlewares, {
+            ...options,
+            middlewares: [...(Array.isArray(guards) ? guards : [guards]), ...(options.middlewares ?? [])]
+        });
     }
 
     /**
