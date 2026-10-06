@@ -12,6 +12,7 @@ use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
 use App\Services\Users\Repositories\UserRepository;
+use App\Services\Users\Settings\UserSettingsService;
 use Cookie;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Http\JsonResponse;
@@ -195,6 +196,7 @@ class AuthenticationController extends Controller
         Request             $request,
         UserRepository      $userRepository,
         AnnouncementService $announcementService,
+        UserSettingsService $userSettingsService,
         AuthManager         $auth
     )
     {
@@ -226,6 +228,11 @@ class AuthenticationController extends Controller
             $session->put('authenticatedUserInfo', null);
             $session->put('registration_access', false);
             $auth->login($user);
+
+            // The user is authenticated now — convert the guest's session-backed
+            // settings (e.g. a locale chosen before registering) into their
+            // database rows.
+            $userSettingsService->persistSessionSettings();
 
             return response()->json([
                 'success' => true,

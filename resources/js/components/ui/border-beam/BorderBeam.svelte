@@ -20,10 +20,10 @@
     import {untrack} from 'svelte';
     import type {BorderBeamSize, BorderBeamTheme} from './types';
     import {generateBeamCSS, sizePresets, sizeThemePresets} from './styles';
-    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
-    import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
+    import {useTheme} from '$lib/app/hooks/useTheme.svelte.js';
+    import type {AppTheme} from '$lib/app/hooks/useTheme.svelte.js';
 
-    const themeStore = useStore('theme');
+    const {theme: activeTheme} = useTheme();
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Content to wrap with the border beam effect. */
@@ -96,7 +96,7 @@
     // ── System theme tracking (only meaningful when theme="auto") ──────────────
     let systemTheme = $derived.by(() => {
         if (theme === 'auto') {
-            return themeStore.theme;
+            return activeTheme;
         }
         return theme;
     });

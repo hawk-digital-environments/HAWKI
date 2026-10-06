@@ -20,7 +20,7 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
+    import type {ThemePreference} from '$lib/kernel/theme/ThemeExtension.svelte.js';
     import type {RouteProps} from '$lib/components/ui/routing/index.js';
 
     const {}: RouteProps = $props();
@@ -28,7 +28,6 @@
     const app = useApp();
     const config = useConfig();
     const restApi = useRestApi();
-    const themeStore = useStore('theme');
     const keychainStore = useStore('keychain');
     const toast = useToastContext();
     const {__} = useTranslator();
@@ -41,22 +40,23 @@
         label: locale.nameInLanguage
     }));
 
-    let localeValue = $state(app.localization.locale.lang);
+    let localeValue = $state(app.userSettings.get().core.locale ?? app.localization.locale.lang);
     let localeSaving = $state(false);
     const localeLabel = $derived(localeItems.find((item) => item.value === localeValue)?.label ?? localeValue);
 
     async function changeLocale(lang: string): Promise<void> {
-        if (!lang || lang === app.localization.locale.lang) return;
+        if (!lang || lang === app.userSettings.get().core.locale) return;
 
         localeSaving = true;
         try {
-            await restApi.postToResourceAction('users', 'actions/locale', {locale: lang});
-            await app.localization.setLocale(lang);
-            // Keep subsequent API requests sending the new locale header.
-            app.connection.locale = lang;
+            // Persist first, then notify — the localeChanged listeners refresh
+            // the connection (which provides the locale to the restApi) and
+            // swap the translation labels, in that order.
+            await app.userSettings.save('hawki-core', 'core', {locale: lang});
+            await app.events.async.triggerVoid('localeChanged');
         } catch (error) {
             console.error('Failed to change the locale', error);
-            localeValue = app.localization.locale.lang;
+            localeValue = app.userSettings.get().core.locale ?? app.localization.locale.lang;
             toast.error(__('ui.settings.general.languageError'));
         } finally {
             localeSaving = false;
@@ -65,6 +65,7 @@
 
     // $derived so the labels follow runtime locale switches.
     const themeItems = $derived([
+        {key: 'auto', label: __('ui.settings.general.themeAuto')},
         {key: 'light', label: __('ui.settings.general.themeLight')},
         {key: 'dark', label: __('ui.settings.general.themeDark')}
     ]);
@@ -121,22 +122,22 @@
             {/snippet}
         </SettingsRow>
 
-        <SettingsRow
-            label={__('ui.settings.general.themeLabel')}
-            description={__('ui.settings.general.themeHint')}
-        >
-            {#snippet control()}
-                <div class="theme-switch">
-                    <Tabs
-                        items={themeItems}
-                        value={themeStore.theme}
-                        onChange={(key) => (themeStore.theme = key as AppTheme)}
-                        aria-label={__('ui.settings.general.themeLabel')}
-                    />
-                </div>
-            {/snippet}
-        </SettingsRow>
-    </SettingsGroup>
+    <SettingsRow
+        label={__('ui.settings.general.themeLabel')}
+        description={__('ui.settings.general.themeHint')}
+    >
+        {#snippet control()}
+            <div class="theme-switch">
+                <Tabs
+                    items={themeItems}
+                    value={app.userSettings.get().core.theme ?? 'auto'}
+                    onChange={(key) => app.theme.setTheme(key as ThemePreference)}
+                    aria-label={__('ui.settings.general.themeLabel')}
+                />
+            </div>
+        {/snippet}
+    </SettingsRow>
+</SettingsGroup>
 
     <SettingsGroup>
         <SettingsRow

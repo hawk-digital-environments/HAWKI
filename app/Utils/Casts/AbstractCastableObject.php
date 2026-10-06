@@ -201,6 +201,7 @@ use App\Utils\Casts\Values\ResolvedCaster;
  *
  * @see CastedValue
  * @see CastsValue
+ *
  * @api
  */
 abstract class AbstractCastableObject
@@ -238,8 +239,11 @@ abstract class AbstractCastableObject
      * Null values are stored as-is without casting.
      *
      * @param array<string, mixed> $attributes flat key → value map
-     * @param self::SOURCE_* $sourceType SOURCE_STRING_ARRAY — values are raw stored strings and will be
-     *                                         cast via {@see valueFromString}. SOURCE_ARRAY — values are
+     * @param self::SOURCE_*       $sourceType SOURCE_STRING_ARRAY — values are raw stored strings and will be
+     *                                         cast via {@see valueFromString}. Non-string values are first
+     *                                         serialized through the property's cast ({@see valueToString}),
+     *                                         so already-typed values (ints, bools, enum instances, arrays,
+     *                                         nested castables) hydrate as well. SOURCE_ARRAY — values are
      *                                         already typed PHP values and are assigned directly.
      */
     final private function __construct(array $attributes, string $sourceType = self::SOURCE_STRING_ARRAY)
@@ -256,6 +260,14 @@ abstract class AbstractCastableObject
                 if (null === $value) {
                     continue;
                 }
+
+                // Juggle non-string values (e.g. typed request data) through the
+                // property's cast first, so both stored strings and typed values
+                // hydrate through the same pipeline.
+                if (!\is_string($value)) {
+                    $value = $this->valueToString($name, $value);
+                }
+
                 $prop->setValue($this, $this->valueFromString($name, $value));
             } else {
                 $prop->setValue($this, $value);
@@ -275,14 +287,24 @@ abstract class AbstractCastableObject
      * declared on the corresponding property. Properties missing from the map retain their
      * declared PHP default values.
      *
+     * **Non-string values are juggled through the property's cast**: a typed value (int,
+     * bool, float, array, enum instance, nested castable) is first serialized via the
+     * property's cast and then hydrated back — so the factory accepts both raw stored
+     * strings and already-typed values. This is what lets validated request data hydrate
+     * through the same pipeline as database rows. Values that are *indistinguishable from*
+     * stored strings cannot be detected as typed — most notably plaintext intended for an
+     * `encrypted:` cast is out of scope here (this factory stays the stored-format factory).
+     *
      * ```php
      * $config = AiConfig::fromStringArray([
      *     'max_tokens' => '8192',
      *     'stream'     => '1',
      * ]);
+     * // or, equivalently, with typed values:
+     * $config = AiConfig::fromStringArray(['max_tokens' => 8192, 'stream' => true]);
      * ```
      *
-     * @param array<string, null|string> $rawStringAttributes flat key → stored-string map
+     * @param array<string, mixed> $rawStringAttributes flat key → stored-string (or castable typed value) map
      */
     final public static function fromStringArray(array $rawStringAttributes): static
     {
@@ -368,19 +390,31 @@ abstract class AbstractCastableObject
     }
 
     /**
+     * Testing helper to clear all internal caches. Not intended for production use.
+     */
+    final public static function reset(): void
+    {
+        self::$castsCache = [];
+        self::$casterCache = [];
+        self::$propertyReflectionsCache = [];
+    }
+
+    /**
      * Converts a raw stored string to the PHP value for the given property.
      *
      * @param string $property the property name (used to look up the cast type)
-     * @param string $stored the raw string value as read from the database
+     * @param string $stored   the raw string value as read from the database
      *
      * @return mixed the PHP-typed value
      */
     private function valueFromString(string $property, string $stored): mixed
     {
         $cast = $this->getCasts()[$property] ?? null;
+
         if (null === $cast) {
             return $stored;
         }
+
         return self::getCasterInstance($cast->caster)->get($this, $stored, $property);
     }
 
@@ -388,16 +422,18 @@ abstract class AbstractCastableObject
      * Converts a PHP property value to its stored string representation.
      *
      * @param string $property the property name (used to look up the cast type)
-     * @param mixed $value the current PHP value of the property
+     * @param mixed  $value    the current PHP value of the property
      *
      * @return string the serialized string for database storage
      */
     private function valueToString(string $property, mixed $value): string
     {
         $cast = $this->getCasts()[$property] ?? null;
+
         if (null === $cast) {
-            return (string)$value;
+            return (string) $value;
         }
+
         return self::getCasterInstance($cast->caster)->set($this, $value, $property);
     }
 
@@ -410,7 +446,7 @@ abstract class AbstractCastableObject
      */
     private static function getCasterInstance(ResolvedCaster $caster): CastsValue
     {
-        return self::$casterCache[(string)$caster] ??= new $caster->casterClass(...$caster->args);
+        return self::$casterCache[(string) $caster] ??= new $caster->casterClass(...$caster->args);
     }
 
     /**
@@ -439,16 +475,5 @@ abstract class AbstractCastableObject
         }
 
         return self::$propertyReflectionsCache[$class] = $props;
-    }
-
-    /**
-     * Testing helper to clear all internal caches. Not intended for production use.
-     * @return void
-     */
-    public static function reset(): void
-    {
-        self::$castsCache = [];
-        self::$casterCache = [];
-        self::$propertyReflectionsCache = [];
     }
 }
