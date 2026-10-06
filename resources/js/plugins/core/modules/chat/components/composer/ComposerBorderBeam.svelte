@@ -51,9 +51,33 @@
     });
 </script>
 <BorderBeam
+    class="chat-composer-border-beam"
     size="md"
     active={isActive}
     duration={3}
 >
     {@render children()}
 </BorderBeam>
+
+<style>
+    /* Preserve the active-state cue without the continuous orbit for people
+       who request reduced motion. Scoped to the composer; other beam uses
+       keep their own motion policy. */
+    @media (prefers-reduced-motion: reduce) {
+        :global(.chat-composer-border-beam),
+        :global(.chat-composer-border-beam::before),
+        :global(.chat-composer-border-beam::after),
+        :global(.chat-composer-border-beam [data-beam-bloom]) {
+            animation: none !important;
+        }
+
+        :global(.chat-composer-border-beam[data-active]::before),
+        :global(.chat-composer-border-beam[data-active]::after),
+        :global(.chat-composer-border-beam[data-fading]::before),
+        :global(.chat-composer-border-beam[data-fading]::after),
+        :global(.chat-composer-border-beam[data-active] [data-beam-bloom]),
+        :global(.chat-composer-border-beam[data-fading] [data-beam-bloom]) {
+            opacity: 1 !important;
+        }
+    }
+</style>

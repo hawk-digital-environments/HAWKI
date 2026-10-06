@@ -8,7 +8,9 @@
             "history": "Chat history",
             "loading": "Loading chats…",
             "generating": "Generating response",
+            "branch": "Branch",
             "empty": "Your conversations will appear here.",
+            "unreadMessages": "unread messages",
             "groups": {
                 "today": "Today",
                 "yesterday": "Yesterday",
@@ -29,6 +31,9 @@
             "webSearchMore": "+:count more",
             "generating": "Generating response…",
             "responseReady": "The response is complete.",
+            "regenerating": "Regenerating response…",
+            "responseAborted": "The response was cancelled.",
+            "responseFailed": "The response failed: :error",
             "messageHistory": "Message history",
             "skipToComposer": "Skip to message input",
             "loadError": "The conversation could not be loaded.",
@@ -52,14 +57,26 @@
         },
         "actions": {
             "copy": "Copy message",
+            "copied": "Message copied",
+            "copyFailed": "The message could not be copied.",
+            "groupLabel": "Actions for message from :author",
             "speak": "Read message aloud",
             "edit": "Edit message",
             "regenerate": "Regenerate response",
             "thread": "Reply in thread",
+            "branch": "Branch in new chat",
+            "branchName": ":name – Branch",
+            "branchError": "The conversation could not be branched.",
+            "branchAttachmentError": "The attachment “:name” could not be carried over to the new chat.",
             "delete": "Delete message",
             "deleteAttachment": "Delete attachment",
             "deleteConfirmTitle": "Delete message?",
             "deleteConfirmDescription": "This message will be permanently removed."
+        },
+        "regenerate": {
+            "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
+            "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
+            "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
         },
         "thread": {
             "title": "Thread",
@@ -78,12 +95,15 @@
             "deleteConfirmTitle": "Delete chat :name",
             "newNameAriaLabel": "New chat name",
             "actionsTooltip": "Chat actions",
+            "actionsForChat": "Actions for chat :name",
+            "renameAriaLabel": "Rename chat: :name",
             "rename": "Rename",
             "manageRoom": "Manage room",
             "markAsRead": "Mark as read"
         },
         "attachmentDropdown": {
             "deleteTitle": "Delete file",
+            "actionsFor": "Actions for file :name",
             "deleteDescription": "Are you sure you want to delete the file \":name\"?",
             "preview": "Show",
             "download": "Download",
@@ -95,7 +115,10 @@
         },
         "message": {
             "sources": "Sources",
+            "authorHeading": ":author wrote",
             "citationReference": {
+                "label": "Source :number: :domain",
+                "labelNoDomain": "Source :number",
                 "contextError": "Something was coded wrong. This reference is not inside a CitationContext. Please report this bug to the developers."
             }
         },
@@ -117,6 +140,8 @@
             "textareaLabelRoom": "Group message",
             "textareaPlaceholder": "Enter your message here…",
             "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
+            "textareaHint": "Enter sends the message, Shift+Enter inserts a line break.",
+            "textareaHintEscape": "Escape leaves the current mode.",
             "attachFileTooltip": "Attach file",
             "pastedTextFileName": "Pasted text",
             "error": {
@@ -137,13 +162,12 @@
             },
             "modePanel": {
                 "editTitle": "Edit message",
-                "regenTitle": "Regenerate AI response",
                 "threadTitle": "Write message in thread",
                 "defaultTitle": "Mode",
                 "cancelEdit": "Exit edit mode",
-                "cancelRegen": "Cancel regeneration",
                 "cancelThread": "Leave thread view",
                 "cancelDefault": "Exit mode",
+                "modeExited": "Back in normal writing mode.",
                 "actionBusy": "You can not do this right now. Please wait until the current action is finished."
             },
             "settings": {
@@ -191,6 +215,10 @@
                     "offlineLabel": "Not available (offline)"
                 }
             },
+            "contextUsage": {
+                "tooltip": "Context window: :used of :max tokens used (:percent %)",
+                "ariaLabel": "Context window usage: :percent %"
+            },
             "toolMenu": {
                 "backButton": "Tools",
                 "deactivateTool": "Deactivate tool",
@@ -221,16 +249,19 @@
                 "otherProvider": "Other",
                 "providerTab": "Show :provider models",
                 "noResults": "No models found.",
-                "favorites": "Favorites",
-                "addFavorite": "Add :model to favorites",
-                "removeFavorite": "Remove :model from favorites",
-                "listAriaLabel": "Available models"
+                "favorites": "Pinned models",
+                "addFavorite": "Pin :model",
+                "removeFavorite": "Unpin :model",
+                "listAriaLabel": "Available models",
+                "switchModelCurrent": "Switch model, current: :model",
+                "allModelsLink": "Explore all models"
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
                 "listAriaLabel": "Attached files, use the arrow keys to browse",
                 "removeFileAriaLabel": "Remove file :file",
-                "uploadError": "Upload error: :issue"
+                "uploadError": "Upload error: :issue",
+                "uploadProgress": "Uploading: :percent %"
             },
             "fileDrop": {
                 "dropLabel": "Drop files here"
@@ -259,10 +290,12 @@
                 "invalidModelTooltip": "Please select a different model or remove incompatible tools/files",
                 "emptyMessageTooltip": "Please enter a message",
                 "sendTooltip": "Send message",
+                "actionInProgressTooltip": "An action is already in progress",
+                "noWriteAccessTooltip": "You do not have write access to this chat",
+                "sendingInProgressTooltip": "Sending is already in progress",
+                "modeCannotSendTooltip": "Sending is not possible in the current mode",
                 "saveLabel": "Save",
-                "regenerateLabel": "Regenerate",
                 "sendLabel": "Send",
-                "cancelRegeneration": "Cancel regeneration",
                 "leaveThread": "Leave thread",
                 "cancelEdit": "Cancel editing",
                 "cancelResponse": "Cancel AI response",
@@ -280,16 +313,22 @@
                 "highTooltip": "High load — responses delayed",
                 "ariaLabel": "Load: :label"
             },
-            "regen": {
-                "onlyAssistantMessages": "Only assistant messages can be regenerated",
-                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
-                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
-                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
-            },
             "sending": {
                 "responseError": "An error occurred while processing the response.",
                 "sendError": "An error occurred while sending the message."
             }
+        },
+        "tools": {
+            "accessChanged": "Your tool access changed. A selection was removed.",
+            "accessDenied": "You no longer have access to a selected tool. Review your selection and try again.",
+            "unavailable": "A selected tool is currently unavailable for this model. Review your selection.",
+            "authorizationRefreshing": "Tool access is being checked. Please wait before sending with tools.",
+            "messageAccepted": "Your message was saved, but its response could not be generated. Check your selection before regenerating the response.",
+            "offline": "A selected tool is temporarily offline.",
+            "offlineHelp": "Wait for it to come back online, or remove the offline tool to send your message."
+        },
+        "models": {
+            "accessDenied": "Your access to the selected model has changed. Please choose another model."
         }
     }
 }

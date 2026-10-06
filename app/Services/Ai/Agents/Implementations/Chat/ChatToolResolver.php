@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-
 namespace App\Services\Ai\Agents\Implementations\Chat;
-
 
 use App\Services\Ai\Agents\Exceptions\InvalidToolTransferStringException;
 use App\Services\Ai\Agents\Implementations\Chat\Values\ToolTransferData;

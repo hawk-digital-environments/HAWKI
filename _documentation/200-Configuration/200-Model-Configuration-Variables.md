@@ -326,6 +326,7 @@ DEFAULT_VISION_MODEL=qwen3-omni-30b-a3b-instruct
 TITLE_GENERATOR_MODEL=gpt-4.1-nano
 PROMPT_IMPROVEMENT_MODEL=gpt-4.1-nano
 SUMMARIZER_MODEL=gpt-4.1-nano
+TRANSLATOR_MODEL=gpt-4.1-nano
 ```
 
 For deployments that use external app access you can set separate defaults that apply only to the ext-app context (falls back to the user-facing defaults when not set):

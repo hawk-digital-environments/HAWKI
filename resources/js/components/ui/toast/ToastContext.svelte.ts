@@ -40,8 +40,16 @@ export interface Toast {
     variant: ToastVariant;
 }
 
-/** How long a toast stays on screen before auto-dismissing. */
-const DEFAULT_DURATION = 5000;
+/**
+ * How long a success/info toast stays on screen before auto-dismissing.
+ * Error toasts never auto-dismiss (see {@link PERSISTENT}): a message the
+ * user has to act on must not vanish before they had a chance to read it
+ * (WCAG 2.2.1 Timing Adjustable).
+ */
+const DEFAULT_DURATION = 8000;
+
+/** Pass as `duration` to keep a toast until the user closes it. */
+export const PERSISTENT = Infinity;
 
 /**
  * Holds the reactive list of currently-visible toasts and schedules their
@@ -60,10 +68,20 @@ export class ToastContext {
     /** When the current pause started (for computing elapsed time on resume). */
     private pausedAt: number | null = null;
 
-    /** Shows a toast and schedules its auto-dismissal. */
-    public push(message: string, variant: ToastVariant = 'info', duration = DEFAULT_DURATION): number {
+    /**
+     * Shows a toast and schedules its auto-dismissal. `duration` defaults to
+     * {@link DEFAULT_DURATION} for success/info and to {@link PERSISTENT} for
+     * errors; pass {@link PERSISTENT} explicitly to keep any toast until the
+     * user closes it.
+     */
+    public push(message: string, variant: ToastVariant = 'info', duration?: number): number {
         const id = this.nextId++;
         this.toasts = [...this.toasts, {id, message, variant}];
+        duration ??= variant === 'error' ? PERSISTENT : DEFAULT_DURATION;
+        if (!Number.isFinite(duration)) {
+            // Stays until dismissed — no timer, nothing to pause or resume.
+            return id;
+        }
         if (this.pausedAt !== null) {
             // Stack is hovered — store the full duration for later.
             this.remaining.set(id, duration);

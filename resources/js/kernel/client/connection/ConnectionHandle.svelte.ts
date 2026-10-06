@@ -1,6 +1,8 @@
 import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
 import type {RestApi} from '$lib/kernel/api/RestApi.js';
 import type {HawkiEvents} from '$lib/kernel/events/EventExtension.js';
+import {InternalConnectionSchema} from '$lib/app/schemas/resources/connections.schema.js';
+import {ApiTransportError} from '$lib/kernel/api/errors.js';
 import {updateObject} from '$lib/utils/objects.js';
 
 
@@ -17,6 +19,10 @@ declare module '$lib/kernel/extendableTypes.js' {
         connected: Connection;
         /** Fired when an already-loaded connection's `type` changes (e.g. `internal_registering_user` → `internal_authenticated`). */
         connectionChanged: Connection;
+        /** Successful refresh of the same authenticated identity, including unchanged grants. */
+        connectionRefreshed: Connection;
+        /** Catalog users block selected-tool requests until refresh completes. */
+        connectionRefreshStarted: void;
         /** Fired for each failed refresh that will be retried; carries the backoff so listeners can surface "reconnecting…". */
         connectionRefreshRetry: { error: Error, retryCount: number, delay: number };
         /** Fired once the retry budget is exhausted (or no prior connection exists to retry against); the handle drops its connection. */
@@ -56,6 +62,8 @@ export class ConnectionHandle {
     private currentConnection = $state<Connection | null>(null);
     /** In-flight refresh, used to coalesce concurrent `refreshConnection()` calls into one request. */
     private refreshPromise: Promise<Connection> | null = null;
+    public refreshing = $state(false);
+    private generation = 0;
     private retryCount = 0;
     private retryRefreshTimeout: number | null = null;
 
@@ -108,8 +116,17 @@ export class ConnectionHandle {
             return this.refreshPromise;
         }
 
-        return this.refreshPromise = this.doRefreshConnection()
+        this.refreshing = true;
+        const generation = this.generation;
+        return this.refreshPromise = Promise.resolve()
+            .then(async () => {
+                if (this.currentConnection?.isAuthenticated) {
+                    await this.events.async.triggerVoid('connectionRefreshStarted');
+                }
+                return this.doRefreshConnection(generation);
+            })
             .then(async (res) => {
+                if (generation !== this.generation) throw new Error('Connection refresh invalidated');
                 async function logErrorsInCallback(callback: () => Promise<void>, eventName: string) {
                     try {
                         return await callback();
@@ -137,7 +154,14 @@ export class ConnectionHandle {
                 }
 
                 if (res.type === 'connectionUnchanged') {
-                    return this.storeConnection(res.connection);
+                    const connection = this.storeConnection(res.connection);
+                    if (connection.isAuthenticated) {
+                        await logErrorsInCallback(
+                            () => this.events.async.triggerVoid('connectionRefreshed', connection),
+                            'connectionRefreshed'
+                        );
+                    }
+                    return connection;
                 }
 
                 if (res.type === 'connectionRefreshRetry') {
@@ -162,10 +186,17 @@ export class ConnectionHandle {
             })
             .finally(() => {
                 this.refreshPromise = null;
+                this.refreshing = false;
             });
     }
 
-    private async doRefreshConnection(): Promise<DoRefreshConnectionResult> {
+    /** Prevent a request begun before logout/session rejection from restoring the session. */
+    public invalidate(): void {
+        this.generation++;
+        clearTimeout(this.retryRefreshTimeout ?? undefined);
+    }
+
+    private async doRefreshConnection(generation: number): Promise<DoRefreshConnectionResult> {
         clearTimeout(this.retryRefreshTimeout ?? undefined);
 
         const previousType = this.currentConnection?.type;
@@ -173,7 +204,10 @@ export class ConnectionHandle {
             const connection = await this.restApi.getResource('connections', 'hawki');
             this.retryCount = 0;
 
-            if (previousType !== connection.type) {
+            const previous = this.currentConnection;
+            const identityChanged = previous?.isAuthenticated && connection.isAuthenticated &&
+                previous.userinfo.id !== connection.userinfo.id;
+            if (previousType !== connection.type || identityChanged) {
                 return {
                     type: previousType === undefined ? 'connected' : 'connectionChanged',
                     connection: connection
@@ -185,6 +219,16 @@ export class ConnectionHandle {
                 connection: connection
             };
         } catch (error) {
+            if (generation !== this.generation) throw error;
+            if (error instanceof ApiTransportError && (error.status === 401 || error.status === 403)) {
+                this.retryCount = 0;
+                const connection = InternalConnectionSchema.parse({
+                    id: 'hawki', type: 'internal',
+                    version: this.currentConnection?.version ?? '',
+                    locale: this.currentConnection?.locale ?? document.documentElement.lang ?? 'en'
+                });
+                return {type: previousType === undefined ? 'connected' : previousType === 'internal' ? 'connectionUnchanged' : 'connectionChanged', connection};
+            }
             // Only retry when there is a connection the app is already
             // running on: a failure during the initial load is a hard error
             // (nothing to fall back to), while a failure mid-session keeps the

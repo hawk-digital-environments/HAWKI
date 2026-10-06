@@ -106,6 +106,7 @@
     "LeaveRoom": "Raum verlassen",
     "LeftRoom": "hat den Raum verlassen",
     "Login": "Anmelden",
+    "LoginWithProvider": "Mit Identitätsanbieter anmelden",
     "LoginFailedMSG": "Anmelden fehlgeschlagen",
     "MarkAllRead": "Alle als gelesen markieren",
     "MemberInvite": "Mitglieder einladen",

@@ -79,27 +79,13 @@
         doFocus();
     }
 
-    function focusFromKey(e: KeyboardEvent) {
-        if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) {
-            return;
-        }
-
-        if (e.code.startsWith('Key') || e.code.startsWith('Digit')) {
-            if (e.target != textareaEl) {
-                doFocus();
-                composerContext.message = composerContext.message + e.key;
-            }
-        }
-    }
-
     $effect(() => composerContext.onFocusInput(doFocus));
 </script>
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -- click on spare card space focuses the composer. -->
+<!-- svelte-ignore a11y_click_events_have_key_events -- keyboard activation would steal button/menu focus. -->
 <div
     class={cssClass}
     onclick={focusTextareaFromComposer}
-    onkeydown={focusFromKey}
 >
     {@render children()}
 </div>

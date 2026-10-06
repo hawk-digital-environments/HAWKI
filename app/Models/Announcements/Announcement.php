@@ -12,17 +12,24 @@ class Announcement extends Model
     protected $fillable = [
         'title',
         'view',
+        'excerpt',
         'type',
         'is_forced',
         'is_global',
         'target_users',
         'anchor',
         'starts_at',
+        'content', 'is_published',
         'expires_at'
     ];
 
     protected $casts = [
+        'excerpt' => 'array',
         'target_users' => 'array',
+        'content' => 'array',
+        'is_published' => 'boolean',
+        'is_global' => 'boolean',
+        'is_forced' => 'boolean',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
     ];
@@ -34,7 +41,7 @@ class Announcement extends Model
     {
         return $this->belongsToMany(User::class, 'announcement_user')
                     ->using(AnnouncementUser::class) // use custom pivot model
-                    ->withPivot(['seen_at', 'accepted_at'])
+                    ->withPivot(['seen_at', 'accepted_at', 'locale', 'content_hash'])
                     ->withTimestamps();
     }
 

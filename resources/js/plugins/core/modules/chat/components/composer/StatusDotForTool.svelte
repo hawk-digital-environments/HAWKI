@@ -45,9 +45,11 @@
         showLabel?: boolean;
         /** An optional suffix to add to all tooltip texts, e.g. to indicate the context for the status */
         tooltipSuffix?: string;
+        /** Set to false when the dot sits inside another focusable control, so it does not add a tab stop. */
+        focusable?: boolean;
     }
 
-    const {tool, size, supported, tooltipSuffix, showLabel = false}: Props = $props();
+    const {tool, size, supported, tooltipSuffix, showLabel = false, focusable = true}: Props = $props();
 
     const status = $derived.by(() => {
         if (supported === false && tool.status !== 'offline') {
@@ -76,6 +78,7 @@
 <StatusDot
     status={status}
     size={size}
+    {focusable}
     labelOnline={showLabel ? __('chat.composer.statusDot.onlineLabel') : undefined}
     tooltipOnline={__('chat.composer.statusDot.onlineTooltip') + wrappedTooltipSuffix}
     labelUnknown={showLabel ? unknownLabel : undefined}

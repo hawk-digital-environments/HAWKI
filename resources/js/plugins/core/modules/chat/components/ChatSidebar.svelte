@@ -8,6 +8,7 @@
     import ChatHistoryItem from '$plugins/core/modules/chat/components/ChatHistoryItem.svelte';
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
     import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
+    import GitBranchIcon from '$lib/components/ui/icons/iconset/GitBranchIcon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -20,6 +21,9 @@
     interface Props extends HTMLAttributes<HTMLDivElement> {}
 
     const {class: className, ...restProps}: Props = $props();
+
+    // Prefix for the per-group label ids the nested lists point at.
+    const uid = $props.id();
 
     const store = useStore('chat');
     const router = useRouter();
@@ -101,7 +105,7 @@
 
 <div {...restProps} class={["chat-sidebar", className]}>
     {#if expanded}
-        <div
+        <nav
             class="history"
             class:fade-top={fadeTop}
             class:fade-bottom={fadeBottom}
@@ -115,38 +119,54 @@
                 <p class="hint">{__('chat.sidebar.empty')}</p>
             {:else}
                 <SidebarItems>
-                    {#each groups as group (group.bucket)}
-                        <!-- Non-interactive age divider; opts out of the list's
-                             proximity hover so the highlight does not reach for
-                             a neighbouring row while the pointer rests here. -->
-                        <h3 class="group-label" data-list-no-hover>
-                            {__(`chat.sidebar.groups.${group.bucket}`)}
-                        </h3>
-                        {#each group.conversations as conversation (conversation.slug)}
-                            {@const generating = store.isGenerating(conversation.slug)}
-                            <!-- History rows are label-only: with every row carrying
-                                 the same message icon it added no information. The
-                                 leading slot is used solely to mark a conversation
-                                 that is still generating. -->
-                            {#snippet generatingIndicator()}
-                                <span class="generation-indicator" aria-hidden="true"></span>
-                            {/snippet}
-                            <ChatHistoryItem
-                                media={generating ? generatingIndicator : undefined}
-                                name={conversation.name}
-                                active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
-                                rowLabel={generating
-                                    ? `${conversation.name}, ${__('chat.sidebar.generating')}`
-                                    : conversation.name}
-                                onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
-                                onRename={name => renameConversation(conversation.slug, name)}
-                                onDelete={() => removeConversation(conversation.slug)}
-                            />
+                    <!-- One list of age groups, each holding its own list of
+                         conversations. The group label is not a heading (the page
+                         owns the heading outline); the nested list is named after it
+                         instead, so a screen reader announces "Today, list, 3 items". -->
+                    <ul class="groups">
+                        {#each groups as group (group.bucket)}
+                            {@const labelId = `${uid}-${group.bucket}`}
+                            <li class="group">
+                                <!-- Non-interactive age divider; opts out of the list's
+                                     proximity hover so the highlight does not reach for
+                                     a neighbouring row while the pointer rests here. -->
+                                <span class="group-label" id={labelId} data-list-no-hover>
+                                    {__(`chat.sidebar.groups.${group.bucket}`)}
+                                </span>
+                                <ul class="group-items" aria-labelledby={labelId}>
+                                    {#each group.conversations as conversation (conversation.slug)}
+                                        {@const generating = store.isGenerating(conversation.slug)}
+                                        {@const isBranch = Boolean(conversation.branched_from_slug)}
+                                        <!-- History rows are label-only: with every row carrying
+                                             the same message icon it added no information. The
+                                             leading slot only marks the exceptions — a chat that
+                                             is still generating, or one branched off another
+                                             chat. The generating indicator takes precedence. -->
+                                        {#snippet generatingIndicator()}
+                                            <span class="generation-indicator" aria-hidden="true"></span>
+                                        {/snippet}
+                                        {#snippet branchIndicator()}
+                                            <span class="branch-indicator" aria-hidden="true"><GitBranchIcon size={14} /></span>
+                                        {/snippet}
+                                        <ChatHistoryItem
+                                            media={generating ? generatingIndicator : (isBranch ? branchIndicator : undefined)}
+                                            name={conversation.name}
+                                            href={{name: 'chat.conversation', params: {slug: conversation.slug}}}
+                                            active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
+                                            rowLabel={generating
+                                                ? `${conversation.name}, ${__('chat.sidebar.generating')}`
+                                                : (isBranch ? `${conversation.name}, ${__('chat.sidebar.branch')}` : conversation.name)}
+                                            onRename={name => renameConversation(conversation.slug, name)}
+                                            onDelete={() => removeConversation(conversation.slug)}
+                                        />
+                                    {/each}
+                                </ul>
+                            </li>
                         {/each}
-                    {/each}
+                    </ul>
                 </SidebarItems>
             {/if}
-        </div>
+        </nav>
     {/if}
 
     <!-- Pinned to the bottom of the column, directly above the profile
@@ -210,8 +230,20 @@
         margin-top: auto;
     }
 
-    .group-label {
+    /* Plain lists: the rows carry their own metrics, the list adds none. Both
+       levels keep the MenuList row gap so the rows read as one column. */
+    .groups,
+    .group-items {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
         margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .group-label {
+        display: block;
         /* Matches the horizontal rhythm of the rows (SidebarItem) so the label
            aligns with the row text; the top margin separates it from the
            previous group without touching the list's own row gap. */
@@ -224,9 +256,7 @@
         color: var(--color-text-muted);
     }
 
-    /* Not :first-child — the MenuList container renders its sliding highlight
-       spans before the rows, so the first label is never the first child. */
-    .group-label:first-of-type {
+    .group:first-child .group-label {
         margin-top: 0;
     }
 
@@ -245,6 +275,11 @@
         border-right-color: var(--color-interactive);
         border-radius: 50%;
         animation: generation-spin 700ms linear infinite;
+    }
+
+    .branch-indicator {
+        display: inline-flex;
+        color: var(--color-text-muted);
     }
 
     @keyframes generation-spin { to { transform: rotate(360deg); } }

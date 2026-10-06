@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AiCapabilityController;
 use App\Http\Controllers\Api\V1\AiConvController;
 use App\Http\Controllers\Api\V1\AiModelController;
@@ -7,11 +8,16 @@ use App\Http\Controllers\Api\V1\AiModelDescriptionController;
 use App\Http\Controllers\Api\V1\AiModelFlagController;
 use App\Http\Controllers\Api\V1\AiProviderController;
 use App\Http\Controllers\Api\V1\AiToolController;
+use App\Http\Controllers\Api\V1\AnnouncementController;
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
 use App\Http\Controllers\Api\V1\McpServerController;
 use App\Http\Controllers\Api\V1\MigrationController;
+use App\Http\Controllers\Api\V1\PasskeyBackupController;
+use App\Http\Controllers\Api\V1\RegistrationController;
+use App\Http\Controllers\Api\V1\RegistrationPolicyController;
 use App\Http\Controllers\Api\V1\RoomMemberController;
 use App\Http\Controllers\Api\V1\RoomMessageController;
 use App\Http\Controllers\Api\V1\SystemModelController;
@@ -76,13 +82,97 @@ JsonApiRoute::server('v1')
     )
     ->withoutMiddleware(ConvertEmptyStringsToNull::class)
     ->resources(function (ResourceRegistrar $server) {
+        Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () use ($server) {
+            $server->resource('admin-providers', Admin\ProviderController::class)
+                ->only('index', 'store', 'update', 'destroy')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->withId()->post('actions/test', 'test');
+                    $actions->withId()->post('actions/discover', 'discover');
+                    $actions->withId()->post('actions/inspect', 'inspect');
+                    $actions->post('actions/import', 'import');
+                    $actions->get('actions/icons', 'icons');
+                    $actions->post('actions/icon-upload', 'uploadIcon');
+                });
+
+            $server->resource('admin-models', Admin\ModelController::class)
+                ->only('index', 'store', 'update', 'destroy')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->withId()->post('actions/refresh', 'refresh');
+                    $actions->post('actions/check-status', 'checkStatus');
+                });
+
+            $server->resource('admin-mcp', Admin\McpServerController::class)
+                ->only('index', 'store', 'update', 'destroy')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->withId()->post('actions/test', 'test');
+                    $actions->withId()->post('actions/discover', 'discover');
+                });
+
+            $server->resource('admin-tools', Admin\ToolController::class)
+                ->only('index', 'update');
+
+            $server->resource('admin-system-models', Admin\SystemModelController::class)
+                ->only('index', 'store', 'update', 'destroy');
+
+            $server->resource('admin-announcements', Admin\AnnouncementController::class)
+                ->only('index', 'store', 'update', 'destroy');
+
+            $server->resource('admin-users', Admin\UserController::class)
+                ->only('index', 'store', 'update')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->withId()->post('actions/revoke-tokens', 'revokeTokens');
+                    $actions->withId()->get('actions/tokens', 'tokens');
+                });
+
+            $server->resource('admin-settings', Admin\SettingController::class)
+                ->only('index', 'update', 'destroy');
+
+            $server->resource('admin-usage', Admin\UsageController::class)
+                ->only('index');
+
+            $server->resource('admin-environment', Admin\EnvironmentController::class)
+                ->only('index');
+
+            $server->resource('admin-health', Admin\HealthController::class)
+                ->only('index')
+                ->actions(function (ActionRegistrar $actions) {
+                    $actions->post('actions/check-ai-status', 'checkAiStatus');
+                    // This ID identifies a failed job, not a health resource.
+                    $actions->post('{id}/actions/retry-job', 'retryJob');
+                    $actions->post('actions/flush-jobs', 'flushJobs');
+                });
+        });
+
         $server->resource('connections', ConnectionController::class)
             ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
+            ->only('show');
+
+        $server->resource('auth', AuthController::class)
+            ->only('show')
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/login', 'login');
+                $actions->post('actions/logout', 'logout');
+                $actions->post('actions/complete-registration', 'complete')
+                    ->uses(RegistrationController::class . '@complete');
+            });
+
+        $server->resource('passkey-backups', PasskeyBackupController::class)
+            ->middleware('auth:sanctum')
             ->only('show');
 
         $server->resource('migrations', MigrationController::class)
             ->actions(function (ActionRegistrar $actions) {
                 $actions->post('actions/apply', 'markMigrationAsApplied');
+            })
+            ->only('index', 'show');
+
+        $server->resource('announcements', AnnouncementController::class)
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/seen', 'markSeen');
+                $actions->post('actions/accept', 'markAccepted');
+                $actions->get('actions/registration-policy', 'show')
+                    ->name('registrationPolicy')
+                    ->uses(RegistrationPolicyController::class . '@show');
             })
             ->only('index', 'show');
 

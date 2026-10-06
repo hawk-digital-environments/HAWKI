@@ -34,8 +34,7 @@
  * |-----------|--------------------|---------------------------------------------------------|
  * | `default` | `ChatDefaultMode`  | Normal compose; stays active after send                 |
  * | `edit`    | `ChatEditMode`     | Edit a past user message; locks model/tools/settings UI |
- * | `thread`  | `ChatInThreadMode` | Compose inside a thread; allows nested edit/regen modes |
- * | `regen`   | `ChatRegenMode`    | Regenerate an assistant reply; pre-fills model + params |
+ * | `thread`  | `ChatInThreadMode` | Compose inside a thread; allows a nested edit mode       |
  *
  * ## Checkpointing
  *
@@ -87,7 +86,6 @@ import {ModeSlice} from '$plugins/core/modules/chat/components/composer/contexts
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import {ChatEditMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
 import {ChatInThreadMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
-import {ChatRegenMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
 import {GuardSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
 import {MessageSender} from '$plugins/core/modules/chat/components/composer/contexts/sending/MessageSender.js';
 import {OldUiBridgeTransport} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/OldUiBridgeTransport.js';
@@ -366,8 +364,8 @@ export class ComposerContext {
      * @param withCheckpoint
      */
     // Note: the model itself is intentionally NOT reset here — only when `withCheckpoint`
-    // restores a snapshot does the model revert. Modes such as `ChatRegenMode` rely on this:
-    // they call `reset()` first and then set their own model/parameters on the clean slate.
+    // restores a snapshot does the model revert. Modes rely on this: they may call `reset()`
+    // first and then set their own model/parameters on the clean slate.
     public reset(withCheckpoint?: boolean): void {
         if (withCheckpoint) {
             this.checkpointer.restoreCheckpoint();
@@ -495,8 +493,6 @@ export function createComposerContext(
                     return new ChatEditMode();
                 case 'thread':
                     return new ChatInThreadMode();
-                case 'regen':
-                    return new ChatRegenMode(aiModelStore, toastContext, app.translator);
                 default:
                     throw new Error(`Unsupported mode ${mode}`);
             }
@@ -571,6 +567,12 @@ export function createComposerContext(
             context.model.set(model);
         }),
         oldUiBridge.onEnterMode((mode, data) => {
+            // The legacy UI still requests modes this composer no longer has (`regen` is a
+            // plain per-message action now) — ignore those instead of throwing.
+            if (mode !== 'edit' && mode !== 'thread') {
+                console.warn(`Ignoring request to enter the unsupported composer mode "${String(mode)}".`);
+                return;
+            }
             context.mode.enter(mode, data);
         }),
         oldUiBridge.onExitThread(() => {

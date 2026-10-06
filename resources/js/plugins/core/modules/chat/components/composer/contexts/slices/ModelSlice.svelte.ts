@@ -23,7 +23,7 @@ interface ModelSliceCheckpoint {
  * `onUpdateCurrentModel` callback, and resets sampling parameters on the
  * {@link ModelParameterSlice} when the user hadn't customised them.
  *
- * Implements {@link CheckpointingInterface} so a mode (e.g. edit/regen) can
+ * Implements {@link CheckpointingInterface} so a mode (e.g. edit) can
  * snapshot the selected model and restore it on exit.
  */
 export class ModelSlice implements CheckpointingInterface<ModelSliceCheckpoint> {

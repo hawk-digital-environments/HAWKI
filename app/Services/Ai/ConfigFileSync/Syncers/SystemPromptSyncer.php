@@ -55,13 +55,15 @@ readonly class SystemPromptSyncer implements ConfigSyncerInterface
     {
         foreach ($this->getAvailablePrompts() as $k => $content) {
             [$type, $locale] = $k;
-            $this->systemPromptRepository->upsert(
+            $prompt = $this->systemPromptRepository->upsertFromConfiguration(
                 promptType: $type,
                 usageType: WellKnownUsageTypes::MAIN_APP,
                 locale: $locale,
                 content: $content
             );
-            $metrics->increment('System prompt');
+            if (null !== $prompt) {
+                $metrics->increment('System prompt');
+            }
         }
     }
 
