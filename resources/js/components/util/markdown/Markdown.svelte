@@ -77,8 +77,6 @@
 
     provideMarkdownHeadingBaseLevel(() => headingBaseLevel);
 
-    // @see https://github.com/vitejs/vite/issues/13680
-
     setKaTeXWorker(loadWorker(katexWorkerUrl));
     setMermaidWorker(loadWorker(mermaidWorkerUrl));
     setDefaultI18nMap(getTranslationsFlat('markdown.markstream'));

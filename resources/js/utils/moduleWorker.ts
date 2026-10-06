@@ -22,25 +22,25 @@
 export function createModuleWorker(url: string, base: string): Worker {
     const resolved = new URL(url, base);
     if (resolved.origin === location.origin) {
-        return new Worker(resolved, {type: 'module'});
+        return new Worker(resolved, { type: 'module' });
     }
 
-    const blob = new Blob(
-        [`import ${JSON.stringify(resolved)}`],
-        {type: 'application/javascript'}
-    );
+    const blob = new Blob([`import ${JSON.stringify(resolved)}`], { type: 'application/javascript' });
     const objectUrl = URL.createObjectURL(blob);
     let worker: Worker;
     try {
-        worker = new Worker(objectUrl, {type: 'module'});
+        worker = new Worker(objectUrl, { type: 'module' });
     } catch (error) {
         URL.revokeObjectURL(objectUrl);
         throw error;
     }
     const release = () => URL.revokeObjectURL(objectUrl);
-    worker.addEventListener('message', release, {once: true});
-    worker.addEventListener('error', release, {once: true});
+    worker.addEventListener('message', release, { once: true });
+    worker.addEventListener('error', release, { once: true });
     const terminate = worker.terminate.bind(worker);
-    worker.terminate = () => {release(); terminate();};
+    worker.terminate = () => {
+        release();
+        terminate();
+    };
     return worker;
 }
