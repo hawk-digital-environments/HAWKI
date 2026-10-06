@@ -7,7 +7,7 @@
   changes through `composerContext.model.set(newModelId)`, which resets sampling parameters
   to the new model's defaults unless the user had already customised them (see
   `ModelSlice.set`). Disabled whenever `composerContext.guard.disablesFeature('models')`
-  is true (e.g. during edit/regen mode or while a message is sending).
+  is true (e.g. during edit mode or while a message is sending).
 
   Takes no props — it is a self-contained composer feature component, not a reusable primitive.
 
