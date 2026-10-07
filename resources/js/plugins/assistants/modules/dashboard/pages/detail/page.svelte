@@ -3,6 +3,7 @@
 
     import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
+    import Button from "$lib/components/ui/button/Button.svelte";
     import ButtonWithTooltip from "$lib/components/ui/button/ButtonWithTooltip.svelte";
     import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte";
     import FeedbackPanel from "$plugins/assistants/modules/dashboard/components/feedbackPanel/FeedbackPanel.svelte";
@@ -17,6 +18,7 @@
     import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import {resolveAssistantAvatar} from "$plugins/assistants/utils/resolveAssistantAvatar";
     import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
+    import LinkSquare01Icon from "$lib/components/ui/icons/iconset/LinkSquare01Icon.svelte";
     import UserIcon from "$lib/components/ui/icons/iconset/UserIcon.svelte";
     import HashtagIcon from "$lib/components/ui/icons/iconset/HashtagIcon.svelte";
     import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
@@ -307,6 +309,12 @@
                             disabled={!assistant.allowRemix}
                             onclick={startRemix}
                         >{__('assistants.detail.remix')}</ButtonWithTooltip>
+                        <Button
+                            variant="fill"
+                            size="md"
+                            iconLeft={LinkSquare01Icon}
+                            onclick={() => chatOpen = !chatOpen}
+                        >{__('assistants.detail.try_out')}</Button>
                     </div>
                 </div>
 
