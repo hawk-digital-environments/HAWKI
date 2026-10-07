@@ -43,7 +43,7 @@
     {#snippet trigger({props})}
         <ButtonWithTooltip
             variant="stroke"
-            size="xs"
+            size="sm"
             iconLeft={FileExportIcon}
             tooltip={__('chat.export.tooltip')}
             aria-label={__('chat.export.title')}

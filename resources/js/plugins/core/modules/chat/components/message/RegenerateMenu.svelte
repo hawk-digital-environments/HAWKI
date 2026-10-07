@@ -99,7 +99,7 @@
         <ButtonWithTooltip
             {...props}
             variant="iconGhost"
-            size="xs"
+            size="sm"
             iconLeft={ArrowReloadHorizontalIcon}
             tooltip={__('chat.actions.regenerate')}
             highlight={props['data-state']}

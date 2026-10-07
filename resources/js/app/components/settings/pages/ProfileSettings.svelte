@@ -224,7 +224,7 @@
         </div>
 
         <div class="form-footer">
-            <Button type="submit" size="xs" disabled={!dirty} aria-busy={saving}>
+            <Button type="submit" size="sm" disabled={!dirty} aria-busy={saving}>
                 {saving ? __('ui.settings.common.saving') : __('ui.settings.common.save')}
             </Button>
         </div>

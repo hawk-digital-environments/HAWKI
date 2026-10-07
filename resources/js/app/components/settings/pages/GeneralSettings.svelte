@@ -101,7 +101,7 @@
                         <Button
                             {...props}
                             variant="stroke"
-                            size="xs"
+                            size="sm"
                             iconRight={UnfoldMoreIcon}
                             disabled={localeSaving}
                             aria-labelledby="{labelId} {localeValueId}"
@@ -145,7 +145,7 @@
             description={__('ui.settings.general.deleteDataHint')}
         >
             {#snippet control()}
-                <Button size="xs" variant="delete" onclick={() => (confirmDeleteOpen = true)}>
+                <Button size="sm" variant="delete" onclick={() => (confirmDeleteOpen = true)}>
                     {__('ui.settings.general.deleteDataButton')}
                 </Button>
             {/snippet}

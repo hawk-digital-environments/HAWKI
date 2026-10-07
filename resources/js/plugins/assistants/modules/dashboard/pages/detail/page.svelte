@@ -339,7 +339,7 @@
 
                     <ButtonWithTooltip
                         variant="stroke"
-                        size="md"
+                        size="sm"
                         iconLeft={SplitIcon}
                         tooltip={assistant.allowRemix
                             ? __('assistants.detail.remix')
@@ -349,7 +349,7 @@
                     ><span class="btn-label">{__('assistants.detail.remix')}</span></ButtonWithTooltip>
                     <Button
                         variant="stroke"
-                        size="md"
+                        size="sm"
                         iconLeft={LinkSquare01Icon}
                         onclick={() => chatOpen = !chatOpen}
                     ><span class="btn-label">{__('assistants.detail.try_out')}</span></Button>
@@ -635,9 +635,9 @@
     .cover {
         position: relative;
         width: 100%;
-        /* Concentric with the round 2.5rem top-bar buttons inset by
-           --space-2: their 1.25rem radius + the inset. */
-        border-radius: calc(1.25rem + var(--space-2));
+        /* Concentric with the round 2rem top-bar buttons inset by
+           --space-2: their 1rem radius + the inset. */
+        border-radius: calc(1rem + var(--space-2));
         overflow: hidden;
         border: var(--border);
     }
@@ -690,11 +690,6 @@
         align-items: center;
         gap: var(--space-2);
         flex-shrink: 0;
-    }
-    /* Icon-only buttons (back, favourite, menu) match the md buttons' height. */
-    .topbar :global(.btn--iconOnly) {
-        width: 2.5rem;
-        height: 2.5rem;
     }
     /* Over the banner's imagery the back and outline buttons get a solid
        white fill with dark ink in both themes (like the store cards' tags). */
@@ -842,9 +837,8 @@
            become round icon buttons like the others, so the whole top bar
            stays on one line. The labels stay readable for screen readers. */
         /* Specific enough to beat Button's icon-side padding (its :has rule). */
-        .topbar .controls :global(.btn.btn--md) {
-            min-width: 0;
-            width: 2.5rem;
+        .topbar .controls :global(.btn.btn--sm) {
+            width: 2rem;
             padding: 0;
         }
         .btn-label {
