@@ -693,8 +693,8 @@
     }
     /* Icon-only buttons (back, favourite, menu) match the md buttons' height. */
     .topbar :global(.btn--iconOnly) {
-        width: 2.25rem;
-        height: 2.25rem;
+        width: 2.5rem;
+        height: 2.5rem;
     }
     /* Over the banner's imagery the back and outline buttons get a solid
        white fill with dark ink in both themes (like the store cards' tags). */
@@ -844,7 +844,7 @@
         /* Specific enough to beat Button's icon-side padding (its :has rule). */
         .topbar .controls :global(.btn.btn--md) {
             min-width: 0;
-            width: 2.25rem;
+            width: 2.5rem;
             padding: 0;
         }
         .btn-label {

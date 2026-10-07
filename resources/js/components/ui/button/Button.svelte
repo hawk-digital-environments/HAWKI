@@ -301,22 +301,22 @@
     }
 
     .btn--md {
-        --btn-icon-size: 16px;
+        --btn-icon-size: 18px;
         position: relative;
-        column-gap: var(--space-2);
-        height: 2.25rem;
-        min-width: 5rem;
-        padding: var(--space-2) var(--space-4);
+        column-gap: var(--space-3);
+        height: 2.5rem;
+        min-width: 6rem;
+        padding: var(--space-2) calc(var(--space-4) + var(--space-1));
         overflow: hidden;
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-md);
         border-radius: var(--corner-full);
 
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-3);
+            padding-inline-start: var(--space-4);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-3);
+            padding-inline-end: var(--space-4);
         }
     }
 
