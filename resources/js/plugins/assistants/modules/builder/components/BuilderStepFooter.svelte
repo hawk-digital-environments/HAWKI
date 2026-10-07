@@ -1,14 +1,12 @@
 <!--
-  @component Pinned footer of the builder flow: the current step's position (step
-  navigation itself lives in the sidebar) plus Back /
-  Continue. A navigation guard only lets the user move to steps whose
+  @component Pinned footer of the builder flow: Back / Continue (step
+  navigation itself lives in the sidebar). A navigation guard only lets the user move to steps whose
   predecessors are complete; a blocked jump marks the missing fields inline
   (`validator.validateStep`) and shows an error toast. On the last step (publish) Continue is replaced by
   the release action.
 -->
 <script lang="ts">
     import Button from '$lib/components/ui/button/Button.svelte';
-    import StepDots from '$lib/components/ui/step-dots/StepDots.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import FloppyDiskIcon from '$lib/components/ui/icons/iconset/FloppyDiskIcon.svelte';
@@ -33,7 +31,6 @@
     const isLast = $derived(index === BUILDER_STEPS.length - 1);
     const continueText = $derived(isLast ? '' : __('assistants.builder.steps.continue_to', {step: __(`assistants.builder.sidebar.${BUILDER_STEPS[index + 1]}`)}));
     let continueWidth = $state<number>();
-    const stepLabel = $derived(__('assistants.builder.steps.step_of', {current: String(index + 1), total: String(BUILDER_STEPS.length)}));
 
     // Last step: the release action (moved here from the publish page). A
     // permanently denied assistant can't be resubmitted, so no action then.
@@ -113,8 +110,6 @@
 
 <footer class="step-footer">
   <div class="bar">
-    <!-- Pager layout: equal side columns keep the step pills dead center while
-         the Continue label changes width. -->
     <div class="back">
         {#if index > 0}
             <Button class="press" variant="stroke" iconLeft={ArrowLeft01Icon}
@@ -122,8 +117,6 @@
                     onclick={() => goTo(BUILDER_STEPS[index - 1])}/>
         {/if}
     </div>
-
-    <StepDots current={index} total={BUILDER_STEPS.length} label={stepLabel}/>
 
     <div class="actions">
         {#if !isLast}
@@ -181,8 +174,8 @@
     /* Aligned with the section page's content column (.page-content). No
        surface of its own: the blurred fade behind it already sets it apart. */
     .bar {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
+        display: flex;
+        justify-content: space-between;
         align-items: center;
         gap: var(--space-4);
         max-width: calc(48rem - 2 * var(--space-8));

@@ -172,7 +172,6 @@
                 "back": "Back",
                 "continue": "Continue",
                 "continue_to": "Continue to :step",
-                "step_of": "Step :current of :total",
                 "required": "This field is required.",
                 "incomplete": "Please fill in the required fields."
             },
