@@ -39,7 +39,7 @@
         closeOnSelect?: boolean;
         /** Item content. */
         children?: Snippet;
-        /** An optional icon before the item's content, e.g. `Settings05Icon`. */
+        /** An optional icon before the item's content, e.g. `Settings03Icon`. */
         iconLeft?: IconComponent;
         /** An optional icon after the item's content; pushed to the row's end edge. */
         iconRight?: IconComponent;
@@ -79,11 +79,11 @@
             ]
         }, restProps, props)}>
             {#if IconLeft}
-                <IconLeft size="14"/>
+                <IconLeft size="14" aria-hidden="true"/>
             {/if}
             {@render children?.()}
             {#if IconRight}
-                <IconRight size="14" class="dropdown-item-icon-end"/>
+                <IconRight size="14" class="dropdown-item-icon-end" aria-hidden="true"/>
             {/if}
         </div>
     {/snippet}

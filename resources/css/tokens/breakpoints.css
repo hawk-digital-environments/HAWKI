@@ -13,47 +13,50 @@
    "and bigger" / "and smaller" variants that cover the full range (i.e.
    always match) are omitted — use no media query in those cases:
      bpXxsAndBigger, bpXsAndBigger, bpXlAndSmaller
-   ========================================================================== */
+
+   Boundary convention: the boundary pixel belongs to the upper range
+   (e.g. md starts at 768px, so "below md" is max-width: 767px).
+    ========================================================================== */
 
 /* XXS (0 – 300px)
    ========================================================================== */
 @custom-media --bp-xxs              (max-width: 300px);
-@custom-media --bp-bigger-than-xxs  (min-width: 300px);
+@custom-media --bp-bigger-than-xxs  (min-width: 301px);
 
 /* XS (0 – 549px)
    Note: since xs-min = 0, --bp-xs and --bp-xs-and-smaller are identical.
    ========================================================================== */
 @custom-media --bp-xs               (max-width: 549px);
 @custom-media --bp-xs-and-smaller   (max-width: 549px);
-@custom-media --bp-bigger-than-xs   (min-width: 549px);
+@custom-media --bp-bigger-than-xs   (min-width: 550px);
 
 /* SM (550px – 767px)
    ========================================================================== */
-@custom-media --bp-smaller-than-sm  (max-width: 550px);
+@custom-media --bp-smaller-than-sm  (max-width: 549px);
 @custom-media --bp-sm               (min-width: 550px) and (max-width: 767px);
 @custom-media --bp-sm-and-smaller   (max-width: 767px);
 @custom-media --bp-sm-and-bigger    (min-width: 550px);
-@custom-media --bp-bigger-than-sm   (min-width: 767px);
+@custom-media --bp-bigger-than-sm   (min-width: 768px);
 
 /* MD (768px – 991px)
    ========================================================================== */
-@custom-media --bp-smaller-than-md  (max-width: 768px);
+@custom-media --bp-smaller-than-md  (max-width: 767px);
 @custom-media --bp-md               (min-width: 768px) and (max-width: 991px);
 @custom-media --bp-md-and-smaller   (max-width: 991px);
 @custom-media --bp-md-and-bigger    (min-width: 768px);
-@custom-media --bp-bigger-than-md   (min-width: 991px);
+@custom-media --bp-bigger-than-md   (min-width: 992px);
 
 /* LG (992px – 1199px)
    ========================================================================== */
-@custom-media --bp-smaller-than-lg  (max-width: 992px);
+@custom-media --bp-smaller-than-lg  (max-width: 991px);
 @custom-media --bp-lg               (min-width: 992px) and (max-width: 1199px);
 @custom-media --bp-lg-and-smaller   (max-width: 1199px);
 @custom-media --bp-lg-and-bigger    (min-width: 992px);
-@custom-media --bp-bigger-than-lg   (min-width: 1199px);
+@custom-media --bp-bigger-than-lg   (min-width: 1200px);
 
 /* XL (1200px+)
    ========================================================================== */
-@custom-media --bp-smaller-than-xl  (max-width: 1200px);
+@custom-media --bp-smaller-than-xl  (max-width: 1199px);
 @custom-media --bp-xl               (min-width: 1200px);
 
 /* Mode switch (≤ 850px)

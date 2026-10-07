@@ -76,6 +76,7 @@ import { ApiError } from "$plugins/assistants/api/errors";
 import type {ToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
 import {useStore} from "$lib/app/hooks/useStore.svelte";
 import {useApp} from "$lib/app/hooks/useApp.svelte";
+import {valueToSlug} from "$lib/utils/strings.js";
 
 export type BuilderMode = "init" | "create" | "edit" | "remix";
 
@@ -435,10 +436,41 @@ export class BuilderContext {
   }
 
   set<K extends keyof Assistant>(key: K, value: Assistant[K]): void {
+    if (key === 'name') {
+      this.setName(value as Assistant['name']);
+      return;
+    }
     this.draft = { ...this.draft, [key]: value };
     this.validator.clearError(key);
     this.setToSession();
     this.scheduleUpdate();
+  }
+
+  /**
+   * Set the name and, while the handle is still untouched, derive it from the
+   * name. "Untouched" means empty or equal to the slug of the previous name —
+   * so the handle follows the name until the user edits it by hand, and picks
+   * the sync back up when they clear it. Only drafts are derived: a released
+   * assistant's handle is already addressed from chats and must not move
+   * because of a rename.
+   */
+  private setName(name: Assistant['name']): void {
+    const patch: Partial<Assistant> = { name };
+    const handle = this.draft.handle ?? '';
+    const followsName = handle === '' || handle === this.handleFromName(this.draft.name);
+    if (followsName && this.draft.releaseStage === ReleaseMode.DRAFT) {
+      patch.handle = this.handleFromName(name);
+    }
+
+    this.draft = { ...this.draft, ...patch };
+    this.validator.clearError(...(Object.keys(patch) as (keyof Assistant)[]));
+    this.setToSession();
+    this.scheduleUpdate();
+  }
+
+  /** Slug within the server's handle rules (`[a-zA-Z0-9_-]`, max 255). */
+  private handleFromName(name: string | null | undefined): string {
+    return valueToSlug(name ?? '').slice(0, 255).replace(/-+$/, '');
   }
 
   /**

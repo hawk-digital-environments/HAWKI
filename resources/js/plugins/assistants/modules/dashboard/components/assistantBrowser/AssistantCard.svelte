@@ -108,7 +108,7 @@
         <div class="info">
             <div class="header">
                 <OverflowTooltip value={assistant.name} focusable={false} />
-                <span class="handle">@ {assistant.handle}</span>
+                <span class="handle">@{assistant.handle}</span>
             </div>
             <div class="tags">
                 {#if assistant.release_stage}
@@ -169,7 +169,9 @@
         min-width: 0;
         overflow: hidden;
         border: var(--border);
-        border-radius: var(--corner-md);
+        /* Concentric with the round 2rem corner controls (favourite, remix):
+           their 1rem radius + their --space-2 inset = --corner-lg. */
+        border-radius: var(--corner-lg);
         background-color: var(--color-surface-raised);
         transition:
             transform var(--duration-fast) var(--easing-spring),
@@ -198,13 +200,19 @@
         z-index: 2;
         padding: 3px;
         background: var(--color-surface-raised);
-        border-radius: calc(var(--corner-md) + 3px);
+        /* Concentric with the avatar inside: its radius + the 3px ring. */
+        border-radius: calc(var(--corner-sm) + 3px);
         box-shadow: var(--elevation-1);
+    }
+    /* Avatar corner: a quarter of its 3rem edge (the detail page scales the
+       same ratio to its larger avatar). */
+    .avatar-wrap :global(.icon-container) {
+        border-radius: var(--corner-sm);
     }
     .favourite-btn{
         position: absolute;
-        top: var(--space-3);
-        left: var(--space-3);
+        top: var(--space-2);
+        left: var(--space-2);
         z-index: 1;
     }
     .tag{
@@ -230,8 +238,8 @@
 
     .remix-tag{
         position: absolute;
-        top: var(--space-3);
-        right: var(--space-3);
+        top: var(--space-2);
+        right: var(--space-2);
         /* Match the favourite button's height. */
         height: 2rem;
         cursor: pointer;
@@ -256,8 +264,8 @@
 
     .category{
         position: absolute;
-        bottom: var(--space-3);
-        right: var(--space-3);
+        bottom: var(--space-2);
+        right: var(--space-2);
         z-index: 1;
     }
 
@@ -277,8 +285,10 @@
         display: flex;
         flex-direction: column;
         row-gap: var(--space-2);
-        /* Extra top padding clears the avatar overlapping from the banner. */
-        padding: var(--space-6) var(--space-4) var(--space-4);
+        /* Top padding clears the avatar hanging below the banner (half its
+           3rem edge + the 2×3px ring, see .avatar-wrap), then leaves a
+           --space-3 gap before the name. */
+        padding: calc(1.5rem + 6px + var(--space-3)) var(--space-4) var(--space-4);
     }
     .header{
         display: flex;
@@ -290,8 +300,15 @@
         --overflow-text-font-size: var(--font-size-base);
         --overflow-text-font-weight: var(--font-weight-medium);
         --overflow-text-color: var(--color-text);
+        /* Tight lines so name and handle read as one block. */
+        --overflow-text-line-height: var(--line-height-tight);
+    }
+    /* An empty tag row would add a second row-gap above the description. */
+    .tags:not(:has(*)){
+        display: none;
     }
     .header .handle{
+        line-height: var(--line-height-tight);
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }

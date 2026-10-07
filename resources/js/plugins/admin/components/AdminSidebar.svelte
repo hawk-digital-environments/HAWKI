@@ -5,7 +5,7 @@
     import Home01Icon from '$lib/components/ui/icons/iconset/Home01Icon.svelte';
     import AiBrainIcon from '$lib/components/ui/icons/iconset/AiBrainIcon.svelte';
     import UserGroupIcon from '$lib/components/ui/icons/iconset/UserGroupIcon.svelte';
-    import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
+    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     const router = useRouter();
@@ -30,7 +30,7 @@
         />
         <AdminSidebarGroup
             group="system"
-            icon={Settings01Icon}
+            icon={Settings03Icon}
         />
     </SidebarItems>
 </nav>

@@ -134,6 +134,7 @@
             "remix": "Remixen",
             "remix_disabled": "Remixen ist für diesen Assistenten nicht erlaubt",
             "try_out": "Ausprobieren",
+            "read_more": "Weiterlesen",
             "meta_creator": "Ersteller",
             "meta_version": "Version",
             "meta_usage": "Nutzung",
@@ -144,7 +145,16 @@
             "changed_fields": "Felder:",
             "version_note": "Hinweis:",
             "creation": "Erstellung",
-            "feedback_sent": "Feedback gesendet."
+            "feedback_sent": "Feedback gesendet.",
+            "publish": "Veröffentlichen",
+            "release_draft": "Entwurf",
+            "release_private": "Privat",
+            "release_organizational": "Hochschulintern",
+            "release_federated": "Föderiert",
+            "release_pending": "In Prüfung",
+            "release_updated": "Veröffentlichungsstatus geändert.",
+            "release_submitted": "Assistent zur Prüfung eingereicht.",
+            "release_failed": "Der Veröffentlichungsstatus konnte nicht geändert werden."
         },
         "feedback": {
             "feedback_to": "Feedback an",

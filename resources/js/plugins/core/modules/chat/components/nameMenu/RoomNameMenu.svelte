@@ -24,7 +24,7 @@
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
     import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
-    import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
+    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import ViewIcon from '$lib/components/ui/icons/iconset/ViewIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -74,7 +74,7 @@
     {#if !!slug}
         {#if oldUiMessageHistory.canAdministrate}
             <DropdownMenuItem
-                iconLeft={Settings05Icon}
+                iconLeft={Settings03Icon}
                 onclick={() => oldUiBridge.triggerOpenRoomControlPanel(slug ?? '')}>
                 {__('chat.nameMenu.manageRoom')}
             </DropdownMenuItem>

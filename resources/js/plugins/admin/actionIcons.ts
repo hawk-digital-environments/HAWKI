@@ -1,6 +1,6 @@
 import type { IconComponent } from '$lib/components/ui/icons/index.js';
 import RefreshIcon from '$lib/components/ui/icons/iconset/RefreshIcon.svelte';
-import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
+import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
 import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
 import UndoIcon from '$lib/components/ui/icons/iconset/UndoIcon.svelte';
 import FileExportIcon from '$lib/components/ui/icons/iconset/FileExportIcon.svelte';
@@ -20,7 +20,7 @@ import ReloadIcon from '$lib/components/ui/icons/iconset/ReloadIcon.svelte';
  */
 export const adminActionIcons: Record<string, IconComponent> = {
     'reload': RefreshIcon,
-    'edit': PencilEdit01Icon,
+    'edit': Edit02Icon,
     'delete': Delete02Icon,
     'reset': UndoIcon,
     'export': FileExportIcon,

@@ -260,6 +260,8 @@
         flex: 1;
         min-width: 0;
         line-height: 1.4;
+        /* Break long unbroken strings (URLs, paths) instead of overflowing. */
+        overflow-wrap: anywhere;
     }
 
     .toast-close {

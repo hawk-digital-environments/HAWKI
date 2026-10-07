@@ -10,7 +10,7 @@
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import SystemPromptDialog from '$plugins/core/modules/chat/components/composer/SystemPromptDialog.svelte';
     import SettingsMenuSectionHeader from '$plugins/core/modules/chat/components/composer/SettingsMenuSectionHeader.svelte';
-    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -32,7 +32,7 @@
         onReset={() => (composerContext.systemPrompt = defaultSystemPrompt)}
     />
     <button type="button" class="system-prompt-preview" onclick={() => (dialogOpen = true)}>
-        <PencilEdit01Icon size={14} class="system-prompt-icon"/>
+        <Edit02Icon size={14} class="system-prompt-icon"/>
         <span class="system-prompt-text">
             {composerContext.systemPrompt?.trim() ? composerContext.systemPrompt : __('chat.composer.settings.noSystemPrompt')}
         </span>

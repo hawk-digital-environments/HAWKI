@@ -41,7 +41,7 @@
     import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const toastContext = useToastContext();
@@ -228,7 +228,7 @@
                 )}/>
             {/snippet}
             {#if allowRename && !!slug}
-                <DropdownMenuItem onclick={() => isRenaming = true} iconLeft={PencilEdit01Icon}>
+                <DropdownMenuItem onclick={() => isRenaming = true} iconLeft={Edit02Icon}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
             {/if}

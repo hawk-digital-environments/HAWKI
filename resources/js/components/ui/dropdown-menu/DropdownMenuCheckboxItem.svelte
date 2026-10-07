@@ -60,15 +60,15 @@
         <div bind:this={ref} {...mergeProps({class: `dropdown-checkbox-item${className ? ` ${className}` : ''}`}, restProps, props)}>
             <span class="dropdown-item-indicator">
                 {#if isChecked}
-                    <Tick02Icon size={12}/>
+                    <Tick02Icon size={12} aria-hidden="true"/>
                 {/if}
             </span>
             {#if IconLeft}
-                <IconLeft size="14" class="dropdown-item-icon-start"/>
+                <IconLeft size="14" class="dropdown-item-icon-start" aria-hidden="true"/>
             {/if}
             {@render children?.(isChecked)}
             {#if IconRight}
-                <IconRight size="14" class="dropdown-item-icon-end"/>
+                <IconRight size="14" class="dropdown-item-icon-end" aria-hidden="true"/>
             {/if}
         </div>
     {/snippet}

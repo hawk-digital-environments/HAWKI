@@ -26,7 +26,7 @@
 <script lang="ts">
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
+    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import SettingsMenuSectionHeader from '$plugins/core/modules/chat/components/composer/SettingsMenuSectionHeader.svelte';
     import SettingsMenuSystemPrompt from '$plugins/core/modules/chat/components/composer/SettingsMenuSystemPrompt.svelte';
@@ -77,7 +77,7 @@
         <ButtonWithTooltip
             tooltip={__('chat.composer.settings.adjustSettingsTooltip')}
             variant="ghost"
-            iconLeft={Settings01Icon}
+            iconLeft={Settings03Icon}
             highlight={settingsOpen}
             {...props}/>
     {/snippet}
