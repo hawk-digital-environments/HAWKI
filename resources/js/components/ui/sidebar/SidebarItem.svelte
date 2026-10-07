@@ -17,7 +17,8 @@
     import type {HTMLAnchorAttributes, HTMLButtonAttributes} from 'svelte/elements';
     import type {ComponentProps} from 'svelte';
     import {mergeProps} from 'bits-ui';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {cubicInOut} from 'svelte/easing';
+    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
     import Link from '$lib/components/util/link/Link.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
@@ -111,6 +112,33 @@
             ref = null;
         };
     };
+
+    // Timing of the sub-tree's staggered close; mirrored by `--stagger-out`
+    // and the `subtree-row-out` duration in the styles below.
+    const STAGGER_OUT = 18;
+    const ROW_OUT = 100;
+
+    // Numbers the sub-tree's rows so the styles can cascade them: `--i` is a
+    // row's position, `--n` the row count (the close runs bottom-up).
+    const staggerRows: Attachment<HTMLElement> = (element) => {
+        const rows = Array.from(element.children) as HTMLElement[];
+        element.style.setProperty('--n', String(rows.length));
+        rows.forEach((row, i) => row.style.setProperty('--i', String(i)));
+    };
+
+    /** Folds the sub-tree's height away underneath its rows' staggered exit,
+        lasting exactly as long as that cascade. Deliberately unclipped: the
+        rows leave by their own fade, and cutting them off at the shrinking
+        edge would read as a mask wiping over them. */
+    function collapseSubtree(node: Element) {
+        const height = node.scrollHeight;
+        const rows = Math.max(1, node.childElementCount);
+        return {
+            duration: motionDuration(STAGGER_OUT * (rows - 1) + ROW_OUT),
+            easing: cubicInOut,
+            css: (t: number) => `height: ${t * height}px;`
+        };
+    }
 
     function handleClick(event: MouseEvent & {currentTarget: EventTarget & HTMLElement}) {
         // Expandable rows toggle their sub-tree inline (only when not collapsed)
@@ -212,10 +240,11 @@
 </MenuListItem>
 
 {#if showChildren}
-    <!-- Only the collapse runs through growTransition. Opening takes its space
-         at once and fades in via CSS (see `.subtree`): the measured grow kept
-         the rows hidden for its whole duration here, so they popped in late. -->
-    <div class="subtree" out:growTransition>
+    <!-- Opening takes its space at once and the rows spring in one after the
+         other, purely in CSS (see `.subtree`): a measured grow kept the rows
+         hidden for its whole duration here, so they popped in late. Closing
+         cascades them back out bottom-up while the height folds away. -->
+    <div class="subtree" {@attach staggerRows} out:collapseSubtree>
         {@render children?.()}
     </div>
 {/if}
@@ -231,7 +260,7 @@
         gap: var(--space-2_5);
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
+        padding: 0 var(--nav-item-pad-x);
         border: none;
         background: transparent;
         /* Rows recede at rest and come forward on hover — the same treatment as
@@ -296,7 +325,9 @@
         --drill-stop-3: var(--gradient-brand-hover-3);
     }
 
-    /* Child rows sit indented under their parent, aligning with the label. */
+    /* Child rows sit indented under their parent, aligning with the label. The
+       list insets their highlight by the icon column plus the row gap (see
+       SidebarItems), which leaves the same --nav-item-pad-x inside it. */
     .sidebar-item.indent {
         padding-left: calc(var(--nav-item-pad-x) + var(--nav-icon-size) + var(--space-2_5));
     }
@@ -371,13 +402,49 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
-        transition: opacity var(--duration-extra-fast) var(--easing-out);
+        --stagger-in: 22ms;
+        --stagger-out: 18ms;
     }
 
-    /* The sub-tree's reveal: present on the frame of the click, fading in. */
-    @starting-style {
-        .subtree {
+    /* The cascade moves each row's contents, never the row itself: the list
+       measures the row boxes to place its highlights, and a row in mid-flight
+       would hand it a position that is off by the travel. */
+    .subtree > :global(* > *) {
+        animation:
+            subtree-row-drop 240ms cubic-bezier(0.3, 1.7, 0.5, 1) both,
+            subtree-row-fade 90ms var(--easing-out) both;
+        animation-delay: calc(var(--i, 0) * var(--stagger-in));
+    }
+
+    /* Svelte marks an element inert for the length of its outro, and lifts it
+       again should the sub-tree be reopened mid-close. */
+    .subtree:global([inert]) > :global(* > *) {
+        animation: subtree-row-out 100ms var(--easing-in) both;
+        animation-delay: calc((var(--n, 1) - 1 - var(--i, 0)) * var(--stagger-out));
+    }
+
+    @keyframes subtree-row-drop {
+        from {
+            transform: translateY(-8px);
+        }
+    }
+
+    @keyframes subtree-row-fade {
+        from {
             opacity: 0;
+        }
+    }
+
+    @keyframes subtree-row-out {
+        to {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .subtree > :global(* > *) {
+            animation: none;
         }
     }
 
