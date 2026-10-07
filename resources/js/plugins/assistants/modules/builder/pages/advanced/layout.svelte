@@ -72,6 +72,13 @@
         --test-fab-inset: var(--space-4);
     }
 
+    /* While the test chat is collapsed its launcher sits in the bottom-right
+       corner, on the step footer's row: the footer keeps its actions clear
+       of it (launcher inset + 2.5rem launcher + gap). */
+    .wrapper-grid:not(.test-open) {
+        --step-footer-end-reserve: calc(var(--test-fab-inset) + 2.5rem + var(--space-3));
+    }
+
     /* Wide viewports: the open test chat docks as a right-hand column. The
        track opens in step with the panel's morph (BuilderTestPanel), so the
        content makes room while the button grows into the column. */

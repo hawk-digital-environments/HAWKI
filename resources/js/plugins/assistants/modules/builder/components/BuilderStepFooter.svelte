@@ -145,7 +145,10 @@
         position: relative;
         box-sizing: border-box;
         width: 100%;
-        padding: var(--space-6) var(--space-8) var(--space-4);
+        --footer-pad-x: var(--space-8);
+        /* Bottom inset matches the test chat launcher's, which shares this
+           row (see layout.svelte). */
+        padding: var(--space-6) var(--footer-pad-x) var(--space-4);
         pointer-events: none;
     }
 
@@ -171,15 +174,22 @@
         -webkit-mask-image: var(--footer-fade);
     }
 
-    /* Aligned with the section page's content column (.page-content). No
-       surface of its own: the blurred fade behind it already sets it apart. */
+    /* Aligned with the section page's content column (.page-content), but
+       never reaching into `--step-footer-end-reserve` (the host's launcher
+       corner). No surface of its own: the blurred fade behind it already
+       sets it apart. */
     .bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: var(--space-4);
         max-width: calc(48rem - 2 * var(--space-8));
-        margin: 0 auto;
+        margin-left: auto;
+        margin-right: max(
+            0px,
+            calc(var(--step-footer-end-reserve, 0px) - var(--footer-pad-x)),
+            calc((100% - (48rem - 2 * var(--space-8))) / 2)
+        );
         pointer-events: auto;
     }
 
@@ -256,7 +266,7 @@
 
     @media (--bp-md-and-smaller) {
         .step-footer {
-            padding: var(--space-6) var(--space-4) var(--space-3);
+            --footer-pad-x: var(--space-4);
         }
     }
 </style>

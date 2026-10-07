@@ -25,9 +25,6 @@
         description?: string;
         /** The conversation currently shown; enables the reset action. */
         chat?: ChatStoreApi;
-        /** Corner the launcher floats in below the docked-column width:
-         *  `top` keeps it clear of a footer at the bottom of the host. */
-        narrowAnchor?: 'top' | 'bottom';
         onLauncherDragEnter?: (e: DragEvent) => void;
         /** Centred header content, e.g. a mode switch. */
         header?: Snippet;
@@ -39,7 +36,6 @@
         title,
         description,
         chat,
-        narrowAnchor = 'top',
         onLauncherDragEnter,
         header,
         children,
@@ -48,7 +44,10 @@
     const {__} = useTranslator();
 </script>
 
-<div class="test-shell" class:open class:anchor-top={narrowAnchor === 'top'}>
+<!-- Open on mobile the dock covers the whole content area, header included:
+     opt out of the content column's top fade (see SidebarContent), which
+     would otherwise veil the header actions. The fade only exists there. -->
+<div class="test-shell" class:open data-content-fade={open ? 'none' : undefined}>
 <aside class="test-panel" class:open aria-label={title}>
     <button type="button" class="launcher" inert={open}
             aria-label={__('assistants.builder.test.open')}
@@ -88,14 +87,16 @@
 <style>
     /* One surface, two shapes. The shell reserves the card's final box; the
        panel's real width, height and radius animate between the round
-       launcher and that box, anchored bottom-right (top-right below xl), on a spring. The chat
+       launcher and that box, anchored bottom-right, on a spring. The chat
        inside is laid out at the final size the whole time (container units),
        so the surface grows over it instead of reflowing it. The blue
        launcher layer is the surface's colour, not separate content. */
     .test-shell {
         --spring: linear(0, 0.034, 0.116, 0.224, 0.341, 0.456, 0.563, 0.658, 0.739, 0.807, 0.862, 0.905, 0.938, 0.963, 0.981, 0.994, 1.002, 1.007, 1.01, 1.011, 1.011, 1.01, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1);
         --settle: cubic-bezier(0.3, 0, 0.2, 1);
-        --fab: 3rem;
+        /* Launcher: size and icon size of a default Button. */
+        --fab: 2.5rem;
+        --fab-icon: 18px;
         --card-radius: 1.5rem;
         position: absolute;
         right: var(--test-fab-inset);
@@ -114,7 +115,7 @@
         width: var(--fab);
         height: var(--fab);
         overflow: hidden;
-        /* Same radius as the card (the circle is 3rem, so 1.5rem is round):
+        /* Same radius as the card (the circle is 2.5rem, so 1.5rem is round):
            corners stay continuous through the whole morph. */
         border-radius: var(--card-radius);
         background: var(--color-bg);
@@ -148,35 +149,33 @@
         place-items: end;
         padding: 0;
         border: none;
-        background: var(--color-accent-fill);
-        color: var(--color-on-interactive);
+        /* Brand ramp of the builder's primary step action
+           (BuilderStepFooter) and the sidebar's create button. */
+        background: linear-gradient(
+            135deg,
+            var(--gradient-brand-1),
+            var(--gradient-brand-2) 55%,
+            var(--gradient-brand-3)
+        );
+        color: var(--color-on-accent-fill);
         cursor: pointer;
         /* Blue returns only as the surface nears the circle. */
-        transition: opacity 160ms var(--settle) 190ms, background-color 150ms;
-    }
-
-    /* Same dark-mode foreground as the accent Button (Button.svelte). */
-    :global(html.darkMode) .launcher {
-        color: var(--color-active-text);
-    }
-
-    :global(html.darkMode) .launcher:focus-visible {
-        outline-color: var(--color-active-text);
+        transition: opacity 160ms var(--settle) 190ms, filter 150ms;
     }
 
     /* The icon stays pinned in the corner the button came from. */
     .launcher :global(svg) {
-        width: 1.375rem;
-        height: 1.375rem;
-        margin: calc((var(--fab) - 1.375rem) / 2);
+        width: var(--fab-icon);
+        height: var(--fab-icon);
+        margin: calc((var(--fab) - var(--fab-icon)) / 2);
     }
 
     .launcher:hover {
-        background: var(--color-accent-fill-hover);
+        filter: brightness(0.92) saturate(1.08);
     }
 
     .launcher:focus-visible {
-        outline: 2px solid var(--color-on-interactive);
+        outline: 2px solid currentColor;
         outline-offset: -4px;
         border-radius: inherit;
     }
@@ -282,31 +281,9 @@
         background: transparent;
     }
 
-    /* Below the docked-column width a top-anchored launcher floats
-       top-right instead, clear of the step footer at the bottom (the nav
-       toggle sits top-left). The card then grows down and left out of that
-       corner. */
-    @media (--bp-lg-and-smaller) {
-        .test-shell.anchor-top {
-            top: var(--test-fab-inset);
-            bottom: auto;
-        }
-
-        .anchor-top .test-panel,
-        .anchor-top .inner {
-            top: 0;
-            bottom: auto;
-        }
-
-        .anchor-top .launcher {
-            place-items: start end;
-        }
-    }
-
     /* Mobile: takes over the whole host area. */
     @media (--bp-md-and-smaller) {
-        .test-shell,
-        .test-shell.anchor-top {
+        .test-shell {
             inset: 0;
             width: auto;
             height: auto;
@@ -314,27 +291,13 @@
 
         .test-panel {
             right: var(--test-fab-inset);
+            bottom: var(--test-fab-inset);
         }
 
         .test-panel.open {
             right: 0;
-            border-radius: 0;
-        }
-
-        .anchor-top .test-panel {
-            top: var(--test-fab-inset);
-        }
-
-        .anchor-top .test-panel.open {
-            top: 0;
-        }
-
-        .test-shell:not(.anchor-top) .test-panel {
-            bottom: var(--test-fab-inset);
-        }
-
-        .test-shell:not(.anchor-top) .test-panel.open {
             bottom: 0;
+            border-radius: 0;
         }
     }
 </style>

@@ -425,7 +425,7 @@
 {/if}
 </div>
 {#if assistant}
-    <ChatDock bind:open={chatOpen} chat={testChat} narrowAnchor="bottom"
+    <ChatDock bind:open={chatOpen} chat={testChat}
               title={__('assistants.detail.try_out')}>
         <Chatbox assistant={assistant} chat={testChat}/>
     </ChatDock>

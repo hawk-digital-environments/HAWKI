@@ -126,15 +126,15 @@
 </div>
 
 <style>
-    /* Mirrors the builder's step footer bar: same bottom inset, height,
-       fill and pill shape, so both columns end on one line. */
+    /* Mirrors the builder's step footer bar: same bottom inset and pill
+       shape, so both columns end on one line. */
     .chatlog-input-container {
         padding: 0 var(--space-4) var(--space-4);
     }
 
     .composer {
         --composer-inset: var(--space-1_5);
-        --composer-control: 2.5rem;
+        --composer-control: 2.25rem;
         display: flex;
         align-items: flex-end;
         gap: var(--space-2);
@@ -168,7 +168,7 @@
            share a centre line; grows up to max-height from there. */
         min-height: var(--composer-control);
         max-height: 10rem;
-        padding: var(--space-2) 0;
+        padding: calc((var(--composer-control) - 1lh) / 2) 0;
         border: none;
         outline: none;
         resize: none;
