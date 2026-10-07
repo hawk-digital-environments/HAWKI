@@ -1,4 +1,5 @@
 <script lang="ts">
+    import {untrack} from "svelte";
 
     import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
@@ -85,6 +86,8 @@
         const id = Array.isArray(rawId) ? rawId[0] : rawId;
         if (!id) return;
 
+        // A conversation belongs to the assistant it was held with.
+        untrack(() => testChat.clear());
         loading = true;
         getAssistant(id, {
             include: [...new Set([...ASSISTANT_DETAIL_INCLUDES])],
