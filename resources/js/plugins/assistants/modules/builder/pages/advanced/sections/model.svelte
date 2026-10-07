@@ -70,35 +70,37 @@
             description={__('assistants.builder.model.advanced_description')}
             icon={SlidersHorizontalIcon}
         >
-            <BuilderInput
-                    type="slider"
-                    label={__('assistants.builder.model.input_temperature')}
-                    min={0}
-                    max={1}
-                    description={__('assistants.builder.model.input_temperature_description')}
-                    hint={__('assistants.builder.model.input_temperature_hint')}
-                    assistantValueKey="temp"
-            />
+            <div class="advanced-fields">
+                <BuilderInput
+                        type="slider"
+                        label={__('assistants.builder.model.input_temperature')}
+                        min={0}
+                        max={1}
+                        description={__('assistants.builder.model.input_temperature_description')}
+                        hint={__('assistants.builder.model.input_temperature_hint')}
+                        assistantValueKey="temp"
+                />
 
-            <BuilderInput
-                    type="slider"
-                    label={__('assistants.builder.model.input_top_p')}
-                    min={0}
-                    max={1}
-                    description={__('assistants.builder.model.input_top_p_description')}
-                    hint={__('assistants.builder.model.input_top_p_hint')}
-                    assistantValueKey="topP"
-            />
-            <BuilderInput
-                    type="slider"
-                    label={__('assistants.builder.model.input_max_tokens')}
-                    min={maxTokensMin}
-                    max={maxTokensMax}
-                    isInteger={true}
-                    description={__('assistants.builder.model.input_max_tokens_description')}
-                    hint={__('assistants.builder.model.input_max_tokens_hint')}
-                    assistantValueKey="maxTokens"
-            />
+                <BuilderInput
+                        type="slider"
+                        label={__('assistants.builder.model.input_top_p')}
+                        min={0}
+                        max={1}
+                        description={__('assistants.builder.model.input_top_p_description')}
+                        hint={__('assistants.builder.model.input_top_p_hint')}
+                        assistantValueKey="topP"
+                />
+                <BuilderInput
+                        type="slider"
+                        label={__('assistants.builder.model.input_max_tokens')}
+                        min={maxTokensMin}
+                        max={maxTokensMax}
+                        isInteger={true}
+                        description={__('assistants.builder.model.input_max_tokens_description')}
+                        hint={__('assistants.builder.model.input_max_tokens_hint')}
+                        assistantValueKey="maxTokens"
+                />
+            </div>
         </ToolGroupCard>
 
 
@@ -112,3 +114,14 @@
 
     </div>
 </div>
+
+<style>
+    /* The group card's content slot has no layout of its own: space the
+       sliders like the page's other fields and set them off from the header. */
+    .advanced-fields {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+        padding-block: var(--space-4) var(--space-2);
+    }
+</style>
