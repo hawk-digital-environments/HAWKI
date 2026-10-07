@@ -98,7 +98,7 @@
         >
             <div class="advanced-fields">
                 {#if samplingDisabled}
-                    <Alert quiet tone="warning" description={__('chat.composer.settings.samplingDisabled')} icon={Alert01Icon}/>
+                    <Alert size="small" tone="warning" description={__('chat.composer.settings.samplingDisabled')} icon={Alert01Icon}/>
                 {:else}
                     <Tabs
                         items={presetItems}

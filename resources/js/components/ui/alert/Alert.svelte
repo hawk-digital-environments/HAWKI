@@ -3,16 +3,15 @@
   summary or a destructive-action warning. Renders nothing when both `title` and `description`
   are omitted except the icon.
 
-  Exposed as a live region (`role="status"`, or `role="alert"` for the `destructive` variant)
-  so dynamically inserted alerts are announced, with a visually hidden "Note:"/"Warning:" prefix
+  Exposed as a live region (`role="status"`, or `role="alert"` for the `error` tone) so
+  dynamically inserted alerts are announced, with a visually hidden "Note:"/"Warning:" prefix
   so the severity isn't conveyed by color alone.
 
-  `quiet` is the low-key form for a contextual caveat above a form section
-  (e.g. "changes here affect the review"): no outline, a flat light fill, and
-  one fixed compact type scale (`size` and `surface` are ignored).
+  Alerts are flat fills without an outline. `size="small"` is the low-key form for a
+  contextual caveat above a form section (e.g. "changes here affect the review"): compact
+  type on a lighter fill.
 
-  `tone` colors the icon; the colored tones (info, warning, error) also tint
-  the fill and, on the outlined form, the border.
+  `tone` colors the icon; the colored tones (info, warning, error) also tint the fill.
 -->
 <script lang="ts">
     import type { IconComponent } from '$lib/components/ui/icons';
@@ -30,22 +29,18 @@
         description?: string;
         /** Leading icon of the Alert */
         icon?: IconComponent;
-        /** Visual style variant of the Alert */
-        variant?: "default" | "destructive";
         /** Size variant of the Alert */
         size?: Size;
-        /** Background variant */
-        surface?: "surface" | "surface-raised" | "surface-inverted"
-        /** Borderless, flat inline hint instead of the outlined banner. */
-        quiet?: boolean;
-        /** Colors the icon; info/warning/error also tint the fill and the outline. The text keeps its color. */
+        /** Background variant; defaults to the lighter fill for the small size. Replaced by a colored tone's tint. */
+        surface?: "surface" | "surface-light" | "surface-raised" | "surface-inverted"
+        /** Colors the icon; info/warning/error also tint the fill. The text keeps its color. */
         tone?: "neutral" | "info" | "warning" | "error";
     }
 
-    const { title, description, icon: Icon, variant = "default", size = "default", surface = "surface", quiet = false, tone }: Props = $props();
+    const { title, description, icon: Icon, size = "default", surface, tone }: Props = $props();
 
     const sizeMapping = {
-        "small": ["xs", "xxs"],
+        "small": ["sm", "xs"],
         "default": ["xl", "base"],
         "large": ["2xl", "xl"],
     } as const;
@@ -56,30 +51,28 @@
         "large": 48,
     } as const;
 
-    const textSizes = $derived(quiet ? (["sm", "xs"] as const) : sizeMapping[size]);
-    const iconSize = $derived(quiet ? 14 : iconSizeMapping[size]);
-    const isWarning = $derived(variant === 'destructive' || tone === 'warning' || tone === 'error');
+    const fill = $derived(surface ?? (size === 'small' ? 'surface-light' : 'surface'));
+    const isWarning = $derived(tone === 'warning' || tone === 'error');
 </script>
 
 <div
-    class="alert-card variant-{variant} size-{size}"
-    class:quiet
+    class="alert-card size-{size}"
     data-tone={tone}
-    style="--bg-color: var(--color-{surface}); --first-line-size: var(--font-size-{textSizes[title ? 0 : 1]})"
-    role={variant === 'destructive' ? 'alert' : 'status'}
+    style="--bg-color: var(--color-{fill}); --first-line-size: var(--font-size-{sizeMapping[size][title ? 0 : 1]})"
+    role={tone === 'error' ? 'alert' : 'status'}
 >
     {#if Icon}
         <div class="alert-icon" aria-hidden="true">
-            <Icon size={iconSize} />
+            <Icon size={iconSizeMapping[size]} />
         </div>
     {/if}
     <div class="alert-content">
         <span class="u-sr-only">{isWarning ? __('ui.alert.warningPrefix') : __('ui.alert.notePrefix')}</span>
         {#if title}
-            <Txt size={textSizes[0]} weight="medium">{title}</Txt>
+            <Txt size={sizeMapping[size][0]} weight="medium">{title}</Txt>
         {/if}
         {#if description}
-            <Txt size={textSizes[1]}>{description}</Txt>
+            <Txt size={sizeMapping[size][1]}>{description}</Txt>
         {/if}
     </div>
 </div>
@@ -87,25 +80,15 @@
 <style>
     .alert-card {
         gap: var(--space-1_5);
-        border: var(--border);
         border-radius: var(--corner-md);
         display: flex;
         padding: var(--space-2);
         background-color: var(--bg-color);
     }
 
-    /* The small alert is shorter than a form control; the shared radius
-       would round it into a pill, so it steps down to stay visually equal. */
     .alert-card.size-small {
-        border-radius: var(--corner-sm);
-    }
-
-    .alert-card.quiet {
         gap: var(--space-2);
         padding: var(--space-2_5) var(--space-4);
-        border: none;
-        border-radius: var(--corner-md);
-        background-color: var(--color-surface-light);
     }
 
     .alert-icon {
@@ -120,10 +103,6 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-0_5, 0.125rem);
-    }
-
-    .variant-destructive {
-        color: var(--color-error)
     }
 
     [data-tone='neutral'] .alert-icon { color: var(--color-text-muted); }
@@ -148,11 +127,6 @@
 
     :global(html.darkMode) .alert-card {
         --tint-l: 28%;
-    }
-
-    /* The outlined form draws its border in the tone as well. */
-    .alert-card:not(.quiet):is([data-tone='info'], [data-tone='warning'], [data-tone='error']) {
-        border-color: color-mix(in oklab, var(--tone-color) 35%, transparent);
     }
 </style>
 

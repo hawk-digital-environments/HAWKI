@@ -27,7 +27,7 @@ const {__} = useTranslator();
         </div>
 
         <Alert
-            quiet
+            size="small"
             description={__('assistants.builder.behaviour.warning_system_prompt')}
             icon={AlertCircleIcon}
             tone="neutral"

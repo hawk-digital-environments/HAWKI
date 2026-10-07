@@ -56,7 +56,7 @@
         </div>
 
         <Alert
-                quiet
+                size="small"
                 description={__('assistants.builder.knowledge.warning_knowledge_sources')}
                 icon={AlertCircleIcon}
                 tone="neutral"
@@ -64,7 +64,7 @@
 
         {#if ragEnabled && currentModel === null}
             <Alert
-                    quiet
+                    size="small"
                     description={__('assistants.builder.knowledge.no_model_selected')}
                     icon={AlertCircleIcon}
                     tone="warning"
