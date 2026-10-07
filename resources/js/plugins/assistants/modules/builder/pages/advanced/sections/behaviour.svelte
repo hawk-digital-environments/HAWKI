@@ -1,5 +1,5 @@
 <script lang="ts">
-import Notice from "$plugins/assistants/components/report/Notice.svelte";
+import Alert from "$lib/components/ui/alert/Alert.svelte";
 import BuilderInput from "$plugins/assistants/modules/builder/components/BuilderInput.svelte";
 import AlertCircleIcon from "$lib/components/ui/icons/iconset/AlertCircleIcon.svelte";
 import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte.js";
@@ -26,8 +26,9 @@ const {__} = useTranslator();
             <p class="page-description">{__('assistants.builder.behaviour.description')}</p>
         </div>
 
-        <Notice
-            label={__('assistants.builder.behaviour.warning_system_prompt')}
+        <Alert
+            quiet
+            description={__('assistants.builder.behaviour.warning_system_prompt')}
             icon={AlertCircleIcon}
             tone="neutral"
         />

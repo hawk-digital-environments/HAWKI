@@ -177,15 +177,14 @@
         pointer-events: none;
     }
 
-    :global(*[data-disabled]) {
-        .slider-track {
-            cursor: not-allowed;
-            background-color: var(--color-disabled-bg);
-        }
-        :global(.slider-range) {
-            background-color: var(--color-text-disabled);
-        }
+    /* Disabled: the enabled look, faded. No darker fill — a grey range reads
+       as *more* filled than the light enabled one — and no lifted thumb. */
+    :global(.slider-root[data-disabled]) {
+        opacity: 0.4;
+        cursor: not-allowed;
+
         :global(.slider-thumb) {
+            box-shadow: none;
             cursor: not-allowed;
         }
     }

@@ -33,6 +33,8 @@
         min?: number;
         max?: number;
         isInteger?: boolean;
+        /** Slider step; defaults to 1 for integer sliders. */
+        step?: number;
         assistantValueKey: keyof Assistant;
         // style vars
         render?: 'block' | 'inline';
@@ -53,6 +55,7 @@
         min,
         max,
         isInteger = false,
+        step,
         render = 'block',
         addItemLabel
 
@@ -182,6 +185,7 @@
     <div class="input-container"
          class:renderBlock={render === 'block'}
          class:renderInline={render === 'inline'}
+         class:sliderDisabled={type === 'slider' && disabled}
     >
         {@render fieldHeader()}
 
@@ -193,7 +197,7 @@
                 value={numberValue}
                 min={min}
                 max={max}
-                step={isInteger ? 1 : undefined}
+                step={step ?? (isInteger ? 1 : undefined)}
                 {disabled}
                 onValueChange={update}
             />
@@ -247,6 +251,12 @@
         font-size: var(--font-size-sm);
         color: var(--color-text-muted);
         font-variant-numeric: tabular-nums;
+    }
+    /* A disabled slider mutes its whole field, not just the track. */
+    .sliderDisabled label,
+    .sliderDisabled .slider-value,
+    .sliderDisabled .field-note {
+        color: var(--color-text-disabled);
     }
     .field-note {
         margin: 0;

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Notice from '$plugins/assistants/components/report/Notice.svelte';
+    import Alert from '$lib/components/ui/alert/Alert.svelte';
     import KnowledgeBases from "$plugins/assistants/modules/builder/components/KnowledgeBases.svelte";
     import FileUpload from "$plugins/assistants/modules/builder/components/FileUpload.svelte";
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
@@ -55,15 +55,17 @@
             <p class="page-description">{__('assistants.builder.knowledge.description')}</p>
         </div>
 
-        <Notice
-                label={__('assistants.builder.knowledge.warning_knowledge_sources')}
+        <Alert
+                quiet
+                description={__('assistants.builder.knowledge.warning_knowledge_sources')}
                 icon={AlertCircleIcon}
                 tone="neutral"
         />
 
         {#if ragEnabled && currentModel === null}
-            <Notice
-                    label={__('assistants.builder.knowledge.no_model_selected')}
+            <Alert
+                    quiet
+                    description={__('assistants.builder.knowledge.no_model_selected')}
                     icon={AlertCircleIcon}
                     tone="warning"
             />
