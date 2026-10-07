@@ -2,7 +2,6 @@
 
     import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
-    import Button from "$lib/components/ui/button/Button.svelte";
     import ButtonWithTooltip from "$lib/components/ui/button/ButtonWithTooltip.svelte";
     import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte";
     import FeedbackPanel from "$plugins/assistants/modules/dashboard/components/feedbackPanel/FeedbackPanel.svelte";
@@ -17,7 +16,6 @@
     import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import {resolveAssistantAvatar} from "$plugins/assistants/utils/resolveAssistantAvatar";
     import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
-    import LinkSquare01Icon from "$lib/components/ui/icons/iconset/LinkSquare01Icon.svelte";
     import UserIcon from "$lib/components/ui/icons/iconset/UserIcon.svelte";
     import HashtagIcon from "$lib/components/ui/icons/iconset/HashtagIcon.svelte";
     import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
@@ -42,7 +40,10 @@
     import Settings03Icon from "$lib/components/ui/icons/iconset/Settings03Icon.svelte";
     import WindowsOldIcon from "$lib/components/ui/icons/iconset/WindowsOldIcon.svelte";
     import Chatbox from "$plugins/assistants/components/testChat";
-    import {growTransition} from "$lib/utils/transitions/growTransition";
+    import {breakpointsQueries} from "$lib/components/util/breakpoints/breakpoints.js";
+    import ChatDock from "$plugins/assistants/components/testChat/ChatDock.svelte";
+    import {createChatStore} from "$plugins/assistants/components/testChat/stream/chatStore.svelte.js";
+    import {createChatConfig} from "$plugins/assistants/components/testChat/stream/chatConfig.svelte.js";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import DropdownMenu from "$lib/components/ui/dropdown-menu/DropdownMenu.svelte";
     import DropdownMenuItem from "$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte";
@@ -180,11 +181,13 @@
         goToRoute("assistants.dashboard.store");
     }
 
-    /** Toggles the inline test chat (see `assistants.components.testChat`). */
-    let chatOpen = $state(false);
-    const startTryOut = () => {
-        chatOpen = !chatOpen;
-    };
+    /** Open state of the docked test chat (see `ChatDock.svelte`). The chat is
+     *  owned here so the dock's header can offer a reset; it only reads the
+     *  assistant once the chatbox is rendered, i.e. after it has loaded.
+     *  Open by default, except on small screens where it would cover the
+     *  whole page — there it starts as the chat button (as in the builder). */
+    let chatOpen = $state(!window.matchMedia(breakpointsQueries.bpMdAndSmaller).matches);
+    const testChat = createChatStore(createChatConfig(() => assistant!));
 
     async function onFeedbackSend(value: string) {
         if (!assistant) return;
@@ -208,6 +211,9 @@
 
 </script>
 <Page fade="short">
+{#snippet body()}
+<div class="detail-shell" class:test-open={chatOpen}>
+<div class="detail-scroll">
     {#if loading}
         <p>Loading...</p>
     {:else if error}
@@ -298,13 +304,6 @@
                             disabled={!assistant.allowRemix}
                             onclick={startRemix}
                         >{__('assistants.detail.remix')}</ButtonWithTooltip>
-                        <Button
-                            variant="fill"
-                            size="md"
-                            iconLeft={LinkSquare01Icon}
-                            highlight={chatOpen}
-                            onclick={startTryOut}
-                        >{__('assistants.detail.try_out')}</Button>
                     </div>
                 </div>
 
@@ -377,12 +376,6 @@
             </section>
         {/if}
 
-        {#if chatOpen}
-            <div class="test-chat" transition:growTransition>
-                <Chatbox assistant={assistant}/>
-            </div>
-        {/if}
-
         <hr>
 
         <FeedbackPanel
@@ -419,9 +412,73 @@
     </div>
 
 {/if}
+</div>
+{#if assistant}
+    <ChatDock bind:open={chatOpen} chat={testChat} narrowAnchor="bottom"
+              title={__('assistants.detail.try_out')}>
+        <Chatbox assistant={assistant} chat={testChat}/>
+    </ChatDock>
+{/if}
+</div>
+{/snippet}
 </Page>
 
 <style>
+    /* Fixed frame for the page: the content column is the only scroll
+       region, the test chat floats over it (docked as a right-hand column
+       on wide viewports, see ChatDock). */
+    .detail-shell {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        height: 100%;
+        overflow: hidden;
+        --test-panel-w: 26rem;
+        --test-fab-inset: var(--space-4);
+    }
+
+    .detail-scroll {
+        min-width: 0;
+        /* Room to scroll the last content out from under the chat button. */
+        padding-bottom: calc(var(--test-fab-inset) + 3rem);
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+    }
+
+    .detail-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Wide viewports: the track opens in step with the dock's morph, so the
+       content makes room for the column. */
+    @media (--bp-xl) {
+        .detail-shell {
+            grid-template-columns: minmax(0, 1fr) 0rem;
+            transition: grid-template-columns 360ms cubic-bezier(0.3, 0, 0.2, 1) 30ms;
+        }
+
+        .detail-shell.test-open {
+            grid-template-columns: minmax(0, 1fr) var(--test-panel-w);
+            transition: grid-template-columns 480ms cubic-bezier(0.3, 0, 0.2, 1);
+        }
+    }
+
+    @media (--bp-xl) and (prefers-reduced-motion: reduce) {
+        .detail-shell, .detail-shell.test-open {
+            transition: none;
+        }
+    }
+
+    /* Same scroll-away reserve as Page's default scroll region, which this
+       page replaces: at-rest content clears the floating nav trigger. */
+    @media (--bp-md-and-smaller) {
+        .detail-scroll {
+            padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+        }
+    }
+
     .page-content {
         display: flex;
         flex-direction: column;
@@ -529,8 +586,7 @@
         grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
         gap: var(--space-3);
     }
-    /* Accent-blue leading icons — same label colour as the filled "Ausprobieren"
-       button. The cards themselves stay neutral (ValidationState.UNKNOWN), so
+    /* Accent-blue leading icons. The cards themselves stay neutral (ValidationState.UNKNOWN), so
        this is a page-level override rather than a StatusCard variant. */
     .metadata :global(.status-card .icon) {
         color: var(--color-accent-text);
@@ -568,12 +624,6 @@
         gap: var(--space-3);
     }
 
-    /* Inline test chat: Chatbox fills its container (100% height), and the
-       page is flow layout, so it needs a definite height both for layout
-       and for growTransition's scrollHeight measurement. */
-    .test-chat {
-        height: 30rem;
-    }
     .section-head {
         display: flex;
         flex-wrap: wrap;
