@@ -9,7 +9,9 @@
   `ModelSlice.set`). Disabled whenever `composerContext.guard.disablesFeature('models')`
   is true (e.g. during edit mode or while a message is sending).
 
-  Takes no props — it is a self-contained composer feature component, not a reusable primitive.
+  Without props it is the self-contained composer feature. Passing `onSelect` detaches it
+  from the composer context: the selection then comes from `model` (may be empty) and
+  changes are reported to the callback — used by the assistant builder's `ModelSelector`.
 
   ## Usage
   Rendered once by `ChatComposer.svelte` in the top-left of the composer card:
@@ -27,10 +29,29 @@
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
     import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
 
-    const composerContext = useComposerContext();
+    interface Props {
+        /** Selected model when used outside the composer (requires `onSelect`). */
+        model?: AiModel | null;
+        /** Receives the picked `model_id`. When set, the composer context is not used. */
+        onSelect?: (modelId: string) => void;
+        /** Disables the trigger; outside the composer this replaces the composer guard. */
+        disabled?: boolean;
+        /** Id for the trigger button, e.g. to associate a `<label>`. */
+        id?: string;
+        /** `pill` is the compact composer chip; `field` a full-width trigger styled like a form input. */
+        variant?: 'pill' | 'field';
+    }
+
+    const {model, onSelect, disabled = false, id, variant = 'pill'}: Props = $props();
+
+    // svelte-ignore state_referenced_locally
+    const composerContext = onSelect ? null : useComposerContext();
+    const current = $derived(composerContext ? composerContext.model.current : (model ?? null));
+    const isDisabled = $derived(disabled || (composerContext?.guard.disablesFeature('models') ?? false));
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
 
@@ -44,7 +65,11 @@
     });
 
     function handleModelChange(newModelId: string) {
-        composerContext.model.set(newModelId);
+        if (onSelect) {
+            onSelect(newModelId);
+            return;
+        }
+        composerContext?.model.set(newModelId);
     }
 
 </script>
@@ -65,27 +90,30 @@
 {/snippet}
 
 {#snippet triggerValue()}
-    <span>{composerContext.model.current.label}</span>
+    <span>{current?.label}</span>
 {/snippet}
 
 <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>
     {#snippet children(a)}
         <SingleSelect
             bind:value={
-                () => composerContext.model.current.model_id,
+                () => current?.model_id ?? '',
                 (newValue) => handleModelChange(newValue)
                 }
-            disabled={composerContext.guard.disablesFeature('models')}
+            disabled={isDisabled}
             items={selectItems}
             itemSnippet={itemSnippet}
             triggerValue={triggerValue}
             placeholder={__('chat.composer.modelPicker.placeholder')}
             onValueChange={handleModelChange}
             triggerProps={mergeProps(a.props, {
-                class: 'chat-model-trigger',
-                'aria-label': __('chat.composer.modelPicker.switchModelCurrent', {model: composerContext.model.current.label})
+                id,
+                class: ['chat-model-trigger', variant === 'field' && 'chat-model-trigger--field'],
+                'aria-label': current
+                    ? __('chat.composer.modelPicker.switchModelCurrent', {model: current.label})
+                    : __('chat.composer.modelPicker.placeholder')
             })}
-            contentProps={{class: 'chat-model-content'}}
+            contentProps={{class: ['chat-model-content', variant === 'field' && 'chat-model-content--field']}}
         />
     {/snippet}
 </Tooltip>
@@ -108,6 +136,40 @@
     :global(.select-trigger.chat-model-trigger:hover),
     :global(.select-trigger.chat-model-trigger[data-state='open']) {
         background: var(--color-hover);
+    }
+
+    /* `field` variant: sized and outlined like the form inputs/selects it sits
+       next to, label left and chevron right. */
+    :global(.select-trigger.chat-model-trigger.chat-model-trigger--field) {
+        flex-direction: row-reverse;
+        width: 100%;
+        height: auto;
+        min-height: 2.5rem;
+        padding: var(--space-2) var(--space-2_5);
+        border: var(--border);
+        border-radius: var(--corner-md);
+        background: transparent;
+        font-size: var(--font-size-sm);
+    }
+
+    :global(.select-trigger.chat-model-trigger.chat-model-trigger--field:hover),
+    :global(.select-trigger.chat-model-trigger.chat-model-trigger--field[data-state='open']) {
+        background: transparent;
+    }
+
+    :global(.select-trigger.chat-model-trigger.chat-model-trigger--field:focus-visible) {
+        border-color: var(--color-focus-ring);
+        outline: 1px solid var(--color-focus-ring);
+        outline-offset: 0;
+    }
+
+    :global(.select-trigger.chat-model-trigger.chat-model-trigger--field[disabled]) {
+        opacity: 0.5;
+    }
+
+    /* The dropdown spans the field instead of hugging its longest label. */
+    :global(.select-content.chat-model-content.chat-model-content--field.select-content--dropdown) {
+        width: var(--bits-floating-anchor-width, max-content);
     }
 
     :global(.select-content.chat-model-content.select-content--dropdown) {

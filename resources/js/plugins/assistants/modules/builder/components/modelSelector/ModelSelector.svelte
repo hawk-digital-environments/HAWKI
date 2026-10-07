@@ -4,7 +4,8 @@
     import {useApp} from "$lib/app/hooks/useApp.svelte";
     import {useStore} from "$lib/app/hooks/useStore.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
-    import Select, {type SelectOption} from "$plugins/assistants/components/select/Select.svelte";
+    import ModelPicker from "$plugins/core/modules/chat/components/composer/ModelPicker.svelte";
+    import ModelPickerV2 from "$plugins/core/modules/chat/components/composer/ModelPickerV2.svelte";
 
     const {
         disabled = false,
@@ -20,25 +21,29 @@
     const modelStore = useStore('ai-models');
     modelStore.loadData(useApp());
 
-    const options = $derived<SelectOption[]>([
-        {value: '', label: __('assistants.builder.model.select_model_placeholder'), disabled: true},
-        // The assistant stores the provider-side model identifier (`model_id`,
-        // e.g. "gpt-4.1-nano"), not the model's numeric row id.
-        ...modelStore.models.map((model) => ({value: model.model_id, label: model.label})),
-    ]);
+    const experiments = useStore('experiments');
+
+    // The assistant stores the provider-side model identifier (`model_id`,
+    // e.g. "gpt-4.1-nano"); `getOneById` also resolves legacy drafts that
+    // still store the model's numeric row id.
+    const model = $derived(modelStore.getOneById(builder.draft.model ?? ''));
+
+    function handleSelect(modelId: string): void {
+        onchange?.(modelId);
+    }
 
 </script>
 
 
 
-<div class="input-container renderBlock">
+<!-- `data-model-picker-anchor`: the V2 popover spans this field instead of its small trigger. -->
+<div class="input-container renderBlock" data-model-picker-anchor>
     <label for="modelSelector">{__('assistants.builder.model.input_model')}</label>
 
-    <Select
-        id="modelSelector"
-        {options}
-        value={builder.draft.model ?? ''}
-        {disabled}
-        onchange={(e) => onchange?.(e.currentTarget.value)}
-    />
+    <!-- Same picker (and experiment switch) as the chat composer. -->
+    {#if experiments.isEnabled('modelPickerV2')}
+        <ModelPickerV2 id="modelSelector" variant="field" {model} {disabled} onSelect={handleSelect}/>
+    {:else}
+        <ModelPicker id="modelSelector" variant="field" {model} {disabled} onSelect={handleSelect}/>
+    {/if}
 </div>
