@@ -5,6 +5,7 @@ import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js
 import type {RouterNodeTree} from '$lib/components/ui/routing/logistics/nodeTree.js';
 import type {RouteDataCache} from '$lib/components/ui/routing/logistics/dataCache.js';
 import {splitLocation} from '$lib/components/ui/routing/logistics/normalizePath.js';
+import {untrack} from 'svelte';
 
 export class RouterState {
     public currentState: Router['state'] = $state('loading');
@@ -57,7 +58,12 @@ export class RouterState {
             if (newPath === this.resolvePath) {
                 return;
             }
-            runResolve(newPath);
+            // Untracked: resolving runs navigation guards and loaders
+            // synchronously up to their first `await`. Whatever reactive
+            // state they read must not become a dependency of this effect —
+            // a guard that marks fields before vetoing would otherwise
+            // re-trigger its own navigation endlessly.
+            untrack(() => runResolve(newPath));
         });
 
         // Teardown of the whole router, not of one resolution: whatever the
