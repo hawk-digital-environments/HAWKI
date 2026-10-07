@@ -212,7 +212,10 @@
 </MenuListItem>
 
 {#if showChildren}
-    <div class="subtree" transition:growTransition>
+    <!-- Only the collapse runs through growTransition. Opening takes its space
+         at once and fades in via CSS (see `.subtree`): the measured grow kept
+         the rows hidden for its whole duration here, so they popped in late. -->
+    <div class="subtree" out:growTransition>
         {@render children?.()}
     </div>
 {/if}
@@ -368,6 +371,14 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
+        transition: opacity var(--duration-extra-fast) var(--easing-out);
+    }
+
+    /* The sub-tree's reveal: present on the frame of the click, fading in. */
+    @starting-style {
+        .subtree {
+            opacity: 0;
+        }
     }
 
     /* Bump rows up a notch for easier tapping on small screens. */

@@ -100,7 +100,17 @@
         {/each}
     </DropdownMenu>
 {:else}
-    <SidebarItem {label} icon={Icon} bind:expanded>
+    <!-- Collapsed around its active entry, the heading carries the selection:
+         the list's highlight glides from the child row up into it on close and
+         back out on open. `aria-current="true"` because the heading holds the
+         current page rather than being it. -->
+    <SidebarItem
+        {label}
+        icon={Icon}
+        active={anyActive && !expanded}
+        aria-current={anyActive && !expanded ? 'true' : undefined}
+        bind:expanded
+    >
         {#each items as item (item.id)}
             <SidebarItem
                 indent
