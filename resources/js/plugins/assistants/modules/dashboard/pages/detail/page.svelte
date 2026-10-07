@@ -203,12 +203,7 @@
             : '—',
     );
     const backToStore = () => {
-        if(window.history.state && window.history.length>1){
-            window.history.back();
-        } else {
-            // Fallback to store
-            goToRoute("assistants.dashboard.store");
-        }
+        goToRoute("assistants.dashboard.store");
     }
 
 </script>
