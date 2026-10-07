@@ -4,6 +4,7 @@ import type {IconComponent} from '$lib/components/ui/icons/index.js';
 import type {Component} from 'svelte';
 import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
+import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
 
 /**
  * A HAWKI feature module — the unit registered with the {@link ModuleExtension}.
@@ -46,6 +47,9 @@ export interface HawkiModule {
      * relative to the module, not the plugin.
      */
     routes?(registrar: RouteRegistrar): void | Promise<void>;
+
+    /** Declare search providers synchronously. Runtime callbacks run after stores load. */
+    search?(registrar: ModuleSearchRegistrar): void;
 
     /**
      * Each module can optionally provide a sidebar component that will be rendered in the app's sidebar.

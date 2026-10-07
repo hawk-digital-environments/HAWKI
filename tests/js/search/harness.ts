@@ -1,0 +1,210 @@
+/**
+ * A minimal stand-in for everything the session manager's host provides: a
+ * registry, a real shared index, an in-memory local storage and controllable
+ * worker replies. Deliberately not a mock framework — the tests assert on
+ * observable session output, and this only supplies the inputs.
+ */
+import {SearchRegistry, type SearchProviderDefinition} from '$lib/kernel/search/searchRegistry.js';
+import {SharedSearchIndex} from '$lib/kernel/search/sharedIndex.js';
+import type {SearchSessionHost} from '$lib/kernel/search/sessionHost.js';
+import type {SchedulerTimers} from '$lib/kernel/search/sessionScheduler.js';
+import type {ModuleSearchRegistrar, SearchEntry, SearchProviderError, StaticSource} from '$lib/kernel/search/types.js';
+import {SearchEngine, type SearchScores} from '$lib/kernel/search/searchEngine.js';
+import {handleSearchWorkerRequest, type SearchWorkerRequest} from '$lib/kernel/search/search.worker.js';
+
+export class MemoryStorage {
+    public readonly items = new Map<string, string>();
+
+    public getItem(key: string): string | null {
+        return this.items.get(key) ?? null;
+    }
+
+    public setItem(key: string, value: string): void {
+        this.items.set(key, value);
+    }
+
+    public removeItem(key: string): void {
+        this.items.delete(key);
+    }
+}
+
+export interface WorkerReply {
+    revision: number;
+    scores: SearchScores;
+}
+
+export class TestSearchHost implements SearchSessionHost {
+    public readonly registry = new SearchRegistry();
+    public readonly index = new SharedSearchIndex();
+    public readonly storage = new MemoryStorage();
+    public readonly schedulerTimers = new FakeTimers();
+    public readonly app: any;
+    public identity: string | null = 'user-1@connection-a';
+    public errors: SearchProviderError[] = [];
+
+    /** Answers `queryWorker`. Replace per test; the default never resolves on its own. */
+    public worker: (query: string, signal: AbortSignal) => Promise<WorkerReply> =
+        () => new Promise<WorkerReply>(() => undefined);
+
+    public readonly retriedStatic: string[] = [];
+    public retriedWorker = 0;
+
+    private readonly active = new Map<string, {definition: SearchProviderDefinition; controller: AbortController}>();
+
+    public constructor() {
+        this.app = {localStorage: this.storage};
+
+    }
+
+    public get providers(): readonly {definition: SearchProviderDefinition; signal: AbortSignal}[] {
+        return [...this.active.values()].map(({definition, controller}) => ({definition, signal: controller.signal}));
+    }
+
+    /** Registers one module's declarations and activates every provider it declared. */
+    public register(moduleId: string, pluginId: string, declare: (registrar: ModuleSearchRegistrar) => void): void {
+        const definitions = this.registry.registerModule(moduleId, {plugin: {name: pluginId}, search: declare} as any);
+        for (const definition of definitions?.providers ?? []) {
+            this.active.set(definition.id, {definition, controller: new AbortController()});
+            this.reindex(definition.id);
+        }
+    }
+
+    /** Re-reads a static provider's items, the way the extension's observation would. */
+    public reindex(providerId: string): void {
+        const entry = this.active.get(providerId);
+        if (!entry || entry.definition.kind !== 'static') {
+            return;
+        }
+        const items = (entry.definition.source as StaticSource).items({app: this.app, signal: entry.controller.signal});
+        this.index.setProviderEntries(entry.definition, items as readonly SearchEntry[]);
+    }
+
+    /** Disables a provider: aborts its work and drops its entries, as deactivation does. */
+    public deactivate(providerId: string): void {
+        const entry = this.active.get(providerId);
+        if (!entry) {
+            return;
+        }
+        entry.controller.abort();
+        this.active.delete(providerId);
+        this.index.removeProvider(providerId);
+    }
+
+    public groupLabel(groupId: string): string {
+        const group = this.registry.group(groupId);
+        return group === null ? groupId : group.label(((label: string) => label) as any);
+    }
+
+    public retryStatic(providerId: string): void {
+        this.retriedStatic.push(providerId);
+    }
+
+    public retryWorker(): void {
+        this.retriedWorker++;
+    }
+
+    public queryWorker(query: string, signal: AbortSignal): Promise<{revision: number; scores: SearchScores}> {
+        return this.worker(query, signal);
+    }
+
+    /**
+     * Answers `queryWorker` from a real engine fed by the index's deltas, the
+     * way the worker is fed. Replies settle on the next microtask.
+     */
+    public answerFromEngine(): void {
+        const engine = new SearchEngine();
+        this.index.setDeltaSink(delta => {
+            for (const document of delta.upserts) engine.upsert(document);
+            for (const key of delta.removals) engine.remove(key);
+        });
+        this.worker = query => Promise.resolve({revision: this.index.revision, scores: engine.search(query)});
+    }
+}
+
+/**
+ * A stand-in `Worker` that runs the real worker protocol in-process. `hold`
+ * parks search requests in `held`; `fail` makes posting throw.
+ */
+export class FakeSearchWorker extends EventTarget {
+    public engine = new SearchEngine();
+    public held: SearchWorkerRequest[] = [];
+    public hold = false;
+    public fail = false;
+    public terminated = false;
+
+    public postMessage(request: SearchWorkerRequest): void {
+        if (this.fail) throw new Error('Worker transport failed');
+        if (this.hold && request.type === 'search') {this.held.push(request); return;}
+        const response = handleSearchWorkerRequest(this.engine, request);
+        queueMicrotask(() => this.dispatchEvent(new MessageEvent('message', {data: response})));
+    }
+
+    public terminate(): void {
+        this.terminated = true;
+    }
+}
+
+/** A static source over a fixed list; `entries` may be mutated between reindexes. */
+export function staticSourceOf(entries: SearchEntry[]): StaticSource {
+    return {items: () => entries};
+}
+
+export function entry(id: string, title: string, extra: Partial<SearchEntry> = {}): SearchEntry {
+    return {id, entityKey: `entity/${id}`, title, onSelect: () => undefined, ...extra};
+}
+
+/** Lets pending promise callbacks and microtasks run. */
+export function tick(ms = 0): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Lets every already-scheduled promise callback run. */
+async function flushPromises(rounds = 8): Promise<void> {
+    for (let round = 0; round < rounds; round++) {
+        await new Promise(resolve => setImmediate(resolve));
+    }
+}
+
+/**
+ * A deterministic clock for the dynamic scheduler: timers only fire when
+ * time is advanced, and every firing is followed by a promise flush so
+ * dispatch chains settle between timers.
+ */
+export class FakeTimers implements SchedulerTimers {
+    private readonly pending = new Map<number, {due: number; handler: () => void}>();
+    private nextHandle = 1;
+    private now = 0;
+
+    public setTimeout(handler: () => void, ms: number): number {
+        const handle = this.nextHandle++;
+        this.pending.set(handle, {due: this.now + ms, handler});
+        return handle;
+    }
+
+    public clearTimeout(handle: number): void {
+        this.pending.delete(handle);
+    }
+
+    /** Fires everything due within `ms`, in order, flushing promises in between. */
+    public async advance(ms: number): Promise<void> {
+        const target = this.now + ms;
+        for (;;) {
+            const due = [...this.pending.entries()]
+                .filter(([, timer]) => timer.due <= target)
+                .sort((a, b) => a[1].due - b[1].due)[0];
+            if (!due) {
+                break;
+            }
+            this.pending.delete(due[0]);
+            this.now = due[1].due;
+            due[1].handler();
+            await flushPromises();
+        }
+        this.now = target;
+        await flushPromises();
+    }
+}
+
+export function rowTitles(groups: readonly {items: readonly {title: string}[]}[]): string[] {
+    return groups.flatMap(group => group.items.map(item => item.title));
+}
