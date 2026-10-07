@@ -639,7 +639,6 @@
            --space-2: their 1rem radius + the inset. */
         border-radius: calc(1rem + var(--space-2));
         overflow: hidden;
-        border: var(--border);
     }
     .cover :global(.banner-container) {
         height: 13rem;
@@ -655,10 +654,9 @@
         gap: var(--space-4);
         align-items: start;
     }
-    /* Same corner as the store cards' avatar, scaled to this size: the
-       small (3rem) avatar's --corner-sm is a quarter of its edge. */
+    /* Same corner as the cover above. */
     .overview .avatar :global(.icon-container) {
-        border-radius: calc(7rem / 4);
+        border-radius: calc(1rem + var(--space-2));
     }
     .head {
         display: flex;
