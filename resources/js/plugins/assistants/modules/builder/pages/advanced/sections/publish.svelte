@@ -72,6 +72,13 @@ let requiresReview = $derived(
 
         {#if !permanentlyDenied}
             <ReleaseStage/>
+
+            <BuilderInput
+                type="fullWidthToggle"
+                label={__('assistants.builder.publish.input_allow_remix')}
+                description={__('assistants.builder.publish.input_allow_remix_description')}
+                assistantValueKey="allowRemix"
+                />
         {/if}
 
         <!--  ------------------------------------   -->

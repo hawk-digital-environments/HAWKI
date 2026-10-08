@@ -7,6 +7,7 @@
     import Select, {type SelectOption} from "$plugins/assistants/components/select/Select.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
     import InfoPopover from "$lib/components/ui/popover/InfoPopover.svelte";
+    import RequiredMark from "$plugins/assistants/modules/builder/components/RequiredMark.svelte";
 
     const {
         disabled = false,
@@ -35,7 +36,7 @@
 
 <div class="input-container renderBlock">
     <div class="field-header">
-        <label for="modelSelector">{__('assistants.builder.model.input_model')}</label>
+        <label for="modelSelector">{__('assistants.builder.model.input_model')}<RequiredMark field="model"/></label>
         <InfoPopover label={__('assistants.builder.model.input_model')}
                      info={__('assistants.builder.model.input_model_hint')}/>
     </div>

@@ -72,13 +72,6 @@
         <TagInput
                 label={__('assistants.builder.general.input_tags')}
                 hint={__('assistants.builder.general.input_tags_hint')}/>
-
-        <BuilderInput
-                type="fullWidthToggle"
-                label={__('assistants.builder.general.input_allow_remix')}
-                description={__('assistants.builder.general.input_allow_remix_description')}
-                assistantValueKey="allowRemix"
-                />
     </div>
 
 </div>

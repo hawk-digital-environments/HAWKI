@@ -14,6 +14,7 @@
     import type {IconComponent} from '$lib/components/ui/icons';
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
+    import RequiredMark from "$plugins/assistants/modules/builder/components/RequiredMark.svelte";
     import {getScrollableParent} from "$plugins/assistants/components/testChat/textarea-resizer";
 
 
@@ -213,7 +214,7 @@
     {#if label || error || hint || type === 'slider'}
         <div class="field-header">
             {#if label}
-                <label for={name}>{label}</label>
+                <label for={name}>{label}<RequiredMark field={assistantValueKey}/></label>
             {/if}
             {#if hint}
                 <InfoPopover {label} info={hint}/>

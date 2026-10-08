@@ -209,8 +209,6 @@
                 "input_detail_description_hint": "Wird auf der Detailseite angezeigt. Erkläre, was der Assistent macht, für wen er gedacht ist und wie man ihn nutzt.",
                 "input_category": "Kategorie",
                 "input_category_not_set": "Nicht festgelegt",
-                "input_allow_remix": "Remixen erlauben",
-                "input_allow_remix_description": "Andere können eine eigene Version erstellen.",
                 "avatar_title": "Erscheinungsbild",
                 "avatar_symbol_change": "Emoji ändern",
                 "avatar_background": "Hintergrund",
@@ -398,6 +396,8 @@
                     "description": "Sobald du den Assistenten von „Privat“ auf „Hochschulintern“ oder „Föderiert“ stellst, wird eine Prüfung ausgelöst.",
                     "note": "MCP-Konfigurationen werden von uns eigenständig überprüft."
                 },
+                "input_allow_remix": "Remixen erlauben",
+                "input_allow_remix_description": "Andere können eine eigene Version erstellen.",
                 "input_version_note": "Versionshinweis",
                 "input_version_note_hint": "Beschreibe, was sich in dieser Version geändert hat. Reviewer*innen sehen diesen Hinweis.",
                 "input_version_note_placeholder": "Was hat sich geändert?",

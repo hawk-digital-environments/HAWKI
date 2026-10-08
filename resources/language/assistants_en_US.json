@@ -209,8 +209,6 @@
                 "input_detail_description_hint": "Shown on the detail page. Explain what the assistant does, who it is for and how to use it.",
                 "input_category": "Category",
                 "input_category_not_set": "Not set",
-                "input_allow_remix": "Allow remixing",
-                "input_allow_remix_description": "Others can create their own version.",
                 "avatar_title": "Appearance",
                 "avatar_symbol_change": "Change emoji",
                 "avatar_background": "Background",
@@ -398,6 +396,8 @@
                     "description": "As soon as you move the assistant from “Private” to “University-wide” or “Federated”, a review is triggered.",
                     "note": "MCP configurations are reviewed by us separately."
                 },
+                "input_allow_remix": "Allow remixing",
+                "input_allow_remix_description": "Others can create their own version.",
                 "input_version_note": "Version note",
                 "input_version_note_hint": "Describe what changed in this version. Reviewers see this note.",
                 "input_version_note_placeholder": "What has changed?",
