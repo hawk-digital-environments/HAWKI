@@ -14,7 +14,7 @@ When the RAG module is enabled and the assistant carries at least one attachment
 
 - **Tool**: `hawki-rag-query-search` (the configured `rag.query_tool`), attached to every tool-calling model by the `RagToolSeeder`.
 - **Scope**: the dataset `assistant_<id>` — derived exactly like the ingestion pipeline's dataset naming, injected as a server-side setting the model never sees or chooses.
-- **Prompt**: the `[KNOWLEDGE TOOL MODULE]` is appended to the system prompt (search-first rule, query rule, no-evidence rule, citation rule, language rule). The module scopes itself to the granted tool; any other tools the creator attached ride along un-prompted.
+- **Prompt**: the `[KNOWLEDGE TOOL MODULE]` is appended to the system prompt (search-first rule, query rule with decomposition into distinct atomic queries and a 5-calls-per-answer budget, re-search rule for new conversational directions and evidence-directed refinement, no-evidence rule, citation rule, language rule). The module scopes itself to the granted tool; any other tools the creator attached ride along un-prompted.
 
 Availability is deliberately minimal (module enabled + files exist). Grant and linkage are **not** pre-checked: a model without tool calling, a missing model↔tool attachment, or an offline RAG MCP server fails the request loudly with a typed `TOOL_*` error instead of silently answering without knowledge. See [Operations](#operations--troubleshooting).
 

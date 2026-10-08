@@ -39,26 +39,7 @@ $this->app->extend(ProviderAdapterRegistry::class, function (ProviderAdapterRegi
 No core code changes required. See [Provider Adapters](../500-AI-Service-Layer/100-Provider-Adapters.md)
 for the full adapter contract.
 
-**`AgentToolRegistry::declare()`** — the hook for granting an assistant an *ambient
-capability*: a tool the assistant holds automatically whenever the declaring module
-can serve it, never attached by the assistant creator. Implement
-`App\Services\Assistant\Contracts\AgentTool` (capability key, availability check,
-tool-transfer strings — typically a HAWKI tool addressed by name with server-side
-settings the model never sees — and an optional usage-instruction prompt module)
-and declare it for a `WellKnownCapabilities` key; the `AssistantRunComposer`
-merges active tools into every assistant run and appends their usage
-instructions to the system prompt. The supersede semantics (which attached
-tools an active grant shadows, and what is logged when) are documented with
-the [Assistant run composition](../650-Assistants/100-Assistant-Runs.md).
-The built-in example is the knowledge-base tool in the `AssistantKnowledge`
-composition slice (see `AssistantKnowledgeServiceProvider`).
-
-**Documentation follows slice ownership.** Each module's documentation lives
-in its own section of the docs tree, named after the slice — core concerns
-stay in the core sections, and a module's section moves with it at plugin
-extraction. The first examples are [650-Assistants](../650-Assistants/index.md)
-(the Assistant slice) and [675-AssistantKnowledge](../675-AssistantKnowledge/index.md)
-(the composition slice above).
+**`AgentToolRegistry::declare()`** — the hook for granting an plugin extensibility
 
 **Composition slices extend multiple modules.** Some features belong to no
 single module: they combine several modules' published APIs — a contract

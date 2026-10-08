@@ -91,6 +91,8 @@ class RagKnowledgeAgentToolTest extends TestCase
         static::assertStringContainsString('[KNOWLEDGE TOOL MODULE]', $instructions);
         static::assertStringContainsString('MUST always call the hawki-rag-query-search tool before answering', $instructions);
         static::assertStringContainsString('knowledge_tool: hawki-rag-query-search', $instructions);
+        static::assertStringContainsString('at most 5 times per answer', $instructions);
+        static::assertStringContainsString('### Re-Search Rule', $instructions);
         static::assertStringContainsString('### No-Evidence Rule', $instructions);
         static::assertStringContainsString('Copy the document name character-for-character', $instructions);
         static::assertStringNotContainsString('{{tool_name}}', $instructions);
