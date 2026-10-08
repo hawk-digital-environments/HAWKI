@@ -14,6 +14,8 @@
     import type {IconComponent} from '$lib/components/ui/icons';
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
+    import CheckmarkCircle02Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle02Icon.svelte';
+    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import RequiredMark from "$plugins/assistants/modules/builder/components/RequiredMark.svelte";
     import {getScrollableParent} from "$plugins/assistants/components/testChat/textarea-resizer";
 
@@ -88,6 +90,9 @@
                         builder.draft[assistantValueKey] as any
     );
     let booleanValue = $derived(Boolean(currentValue));
+
+    // The handle field confirms a handle the server accepted as free.
+    let handleAvailable = $derived(assistantValueKey === 'handle' && builder.handleAvailable);
 
 
 
@@ -266,13 +271,27 @@
             <!-- Blue reveal when the AI guide fills this field. -->
             <AiFillReveal field={assistantValueKey}>
                 {#if type === 'input'}
-                    <Input
-                        id={name}
-                        {placeholder}
-                        {disabled}
-                        value={currentValue ?? ''}
-                        oninput={(e) => update(e.currentTarget.value)}
-                    />
+                    <div class="input-wrap" class:hasStatus={handleAvailable}>
+                        <Input
+                            id={name}
+                            {placeholder}
+                            {disabled}
+                            value={currentValue ?? ''}
+                            oninput={(e) => update(e.currentTarget.value)}
+                        />
+                        {#if handleAvailable}
+                            <Tooltip tooltip={__('assistants.builder.general.handle_available')}
+                                     delayDuration={300} focusable={false}>
+                                {#snippet children({props})}
+                                    <span class="input-status" role="img"
+                                          aria-label={__('assistants.builder.general.handle_available')}
+                                          {...props}>
+                                        <CheckmarkCircle02Icon size="1.125rem"/>
+                                    </span>
+                                {/snippet}
+                            </Tooltip>
+                        {/if}
+                    </div>
 
                 {:else if type === 'textarea'}
                     <Textarea
@@ -313,6 +332,24 @@
     .input-container :global(.textarea) {
         max-height: 15rem;
         overflow-y: auto;
+    }
+    .input-wrap {
+        position: relative;
+    }
+    /* The check sits centred in a square as tall as the field, so its gap to
+       the top, bottom and end edge is the same; the text keeps clear of it. */
+    .input-wrap.hasStatus :global(.input) {
+        padding-inline-end: var(--space-10);
+    }
+    .input-status {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-end: 0;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-success);
     }
     .slider-value {
         margin-inline-start: auto;

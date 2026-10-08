@@ -960,6 +960,15 @@ export class BuilderContext {
   }
 
   readonly isDirty = $derived(this.changedKeys.size > 0);
+
+  /** Whether the handle in the input is one the server accepted as free:
+   *  saved as it stands, with no check pending and no error on it. */
+  get handleAvailable(): boolean {
+    return !!this.draft.handle
+      && this.draft.handle === this.baseline.handle
+      && !this.handleChecking
+      && !this.validator.errorFor('handle');
+  }
   STORAGE_KEY = "assistant_draft";
   private setToSession(): void {
     try {
