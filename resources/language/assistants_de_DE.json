@@ -385,7 +385,7 @@
                     "hint": "Basierend auf Dateien und Tools"
                 },
                 "completeness": {
-                    "title": "Vollständigkeitsprüfung",
+                    "title": "Checkliste",
                     "description": "Pflicht für die Veröffentlichung.",
                     "label": "Anforderungen",
                     "ready": "Bereit zur Veröffentlichung",

@@ -385,7 +385,7 @@
                     "hint": "Based on files and tools"
                 },
                 "completeness": {
-                    "title": "Completeness check",
+                    "title": "Checklist",
                     "description": "Mandatory for publishing.",
                     "label": "Requirements",
                     "ready": "Ready to publish",
