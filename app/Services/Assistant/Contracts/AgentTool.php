@@ -16,13 +16,17 @@ use App\Models\User;
  * the same way the file converter enriches uploads in the background
  * without any per-assistant wiring.
  *
- * Implementations live in the serving module (the Rag slice provides the
- * knowledge_base agent tool) and are declared in
- * {@see \App\Services\Assistant\AgentToolRegistry} from the module's
- * service provider. An active tool supersedes the assistant's explicit
- * selections for its capability key: attached tools and persisted
- * capability strings for that key are dropped from the run and the
- * tool's own transfer strings are injected instead.
+ * Implementations live in composition slices (the AssistantKnowledge slice
+ * provides the knowledge_base agent tool) and are declared in
+ * {@see \App\Services\Assistant\AgentToolRegistry} from the composition's
+ * service provider. An active tool supersedes attached tools under the
+ * tool names it grants (the `name:` prefix of its transfer strings) — the
+ * grant is the authoritative instance carrying the server-side settings.
+ * Other attached tools, including others serving the same capability,
+ * coexist with the grant; their usage is up to the model. Persisted
+ * capability strings (`assistant.capabilities`) are NOT filtered — they
+ * pass through verbatim, so a stale `capability:<key>:…` entry fails loudly
+ * at tool resolution rather than being silently stripped.
  */
 interface AgentTool
 {

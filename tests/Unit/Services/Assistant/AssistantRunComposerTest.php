@@ -12,6 +12,8 @@ use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 use App\Services\Assistant\AgentToolRegistry;
 use App\Services\Assistant\AssistantPromptComposer;
 use App\Services\Assistant\AssistantRunComposer;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
@@ -27,6 +29,7 @@ class AssistantRunComposerTest extends TestCase
             new AssistantRunComposer(
                 $this->createMock(AssistantPromptComposer::class),
                 new AgentToolRegistry($this->app),
+                new NullLogger(),
             ),
         );
     }
@@ -48,6 +51,48 @@ class AssistantRunComposerTest extends TestCase
                 'some-uncategorized-tool',
                 'hawki-rag-query-search:{"dataset_id":"assistant_12"}',
             ],
+            $run->toolTransferStrings,
+        );
+    }
+
+    public function testAnAttachedKnowledgeToolWithADifferentNameCoexistsWithTheAmbientGrant(): void
+    {
+        // Another knowledge_base tool the creator attached: not superseded —
+        // its usage is up to the model and its own description.
+        $run = $this->composerWithKnowledgeAgentTool(
+            available: true,
+            transferStrings: ['hawki-rag-query-search:{"dataset_id":"assistant_12"}'],
+        )->compose($this->assistantWithTools([
+            $this->tool('external-kb-search', WellKnownCapabilities::KNOWLEDGE_BASE),
+        ]));
+
+        static::assertSame(
+            [
+                'external-kb-search',
+                'hawki-rag-query-search:{"dataset_id":"assistant_12"}',
+            ],
+            $run->toolTransferStrings,
+        );
+    }
+
+    public function testASameNameAttachmentIsSupersededAndLoggedAsAConfigurationOverlap(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('warning')->with(
+            'Attached ai_tool is superseded by an active agent tool with the same name — the ambient grant wins; rename the attached tool or remove the attachment',
+            static::callback(static fn (array $context): bool => $context['tool_name'] === 'hawki-rag-query-search'),
+        );
+
+        $run = $this->composerWithKnowledgeAgentTool(
+            available: true,
+            transferStrings: ['hawki-rag-query-search:{"dataset_id":"assistant_12"}'],
+            logger: $logger,
+        )->compose($this->assistantWithTools([
+            $this->tool('hawki-rag-query-search', WellKnownCapabilities::KNOWLEDGE_BASE),
+        ]));
+
+        static::assertSame(
+            ['hawki-rag-query-search:{"dataset_id":"assistant_12"}'],
             $run->toolTransferStrings,
         );
     }
@@ -110,7 +155,7 @@ class AssistantRunComposerTest extends TestCase
         );
 
         $stub = new StubAgentTool();
-        $composer = new AssistantRunComposer($promptComposer, $this->registry($stub));
+        $composer = new AssistantRunComposer($promptComposer, $this->registry($stub), new NullLogger());
 
         $stub->available = true;
         $composer->compose($this->assistantWithTools([]));
@@ -137,7 +182,7 @@ class AssistantRunComposerTest extends TestCase
         $stub = new StubAgentTool();
         $stub->available = true;
         $stub->usageInstructions = '[KNOWLEDGE TOOL MODULE]' . "\n\n" . 'Search the knowledge tool FIRST.';
-        $composer = new AssistantRunComposer($promptComposer, $this->registry($stub));
+        $composer = new AssistantRunComposer($promptComposer, $this->registry($stub), new NullLogger());
 
         $composer->compose($this->assistantWithTools([]));
 
@@ -173,13 +218,13 @@ class AssistantRunComposerTest extends TestCase
         );
     }
 
-    private function composerWithKnowledgeAgentTool(bool $available, array $transferStrings): AssistantRunComposer
+    private function composerWithKnowledgeAgentTool(bool $available, array $transferStrings, ?LoggerInterface $logger = null): AssistantRunComposer
     {
         $stub = new StubAgentTool();
         $stub->available = $available;
         $stub->transferStrings = $transferStrings;
 
-        return new AssistantRunComposer($this->stubPromptComposer(), $this->registry($stub));
+        return new AssistantRunComposer($this->stubPromptComposer(), $this->registry($stub), $logger ?? new NullLogger());
     }
 
     private function stubPromptComposer(): AssistantPromptComposer&MockObject

@@ -11,6 +11,7 @@ use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 use App\Services\Assistant\Contracts\AgentTool;
 use App\Services\Assistant\Values\ComposedAssistantRun;
 use Illuminate\Container\Attributes\Singleton;
+use Psr\Log\LoggerInterface;
 
 /**
  * Composes the AI run parameters for a chat exchange driven by an assistant:
@@ -19,7 +20,14 @@ use Illuminate\Container\Attributes\Singleton;
  * strings — the persisted capability selections (`capabilities`), the
  * concrete `ai_tools` attachments, and the transfer strings injected by
  * active {@see AgentTool}s (ambient capabilities granted by modules, e.g.
- * the Rag slice's knowledge-base tool).
+ * the knowledge-base tool of the AssistantKnowledge slice).
+ *
+ * An active agent tool supersedes attached tools under the tool names it
+ * grants (the `name:` prefix of its transfer strings): the grant is the
+ * authoritative instance of that tool, carrying the server-side settings
+ * the model must not choose. Other attached tools — including others
+ * serving the same capability — coexist with the grant; their usage is up
+ * to the model and their own descriptions.
  *
  * This is the single assembly source for every assistant-driven surface —
  * both the agent factory for legacy-payload surfaces (private chat, group
@@ -34,6 +42,7 @@ class AssistantRunComposer
     public function __construct(
         private readonly AssistantPromptComposer $promptComposer,
         private readonly AgentToolRegistry $agentTools,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -44,6 +53,7 @@ class AssistantRunComposer
         $activeAgentTools = $this->activeAgentTools($assistant, $actor);
         $activeKeys = array_map(static fn (AgentTool $tool): string => $tool->key(), $activeAgentTools);
         $usageInstructions = $this->usageInstructions($activeAgentTools, $assistant, $actor);
+        $agentToolStrings = $this->agentToolTransferStrings($activeAgentTools, $assistant, $actor);
 
         return new ComposedAssistantRun(
             systemPrompt: $this->promptComposer->compose(
@@ -62,19 +72,19 @@ class AssistantRunComposer
             toolTransferStrings: [
                 ...($assistant->capabilities ?? []),
                 ...$assistant->ai_tools
-                    ->reject(fn (AiTool $tool): bool => in_array((string) $tool->getEffectiveCapability(), $activeKeys, true))
+                    ->reject(fn (AiTool $tool): bool => $this->isSupersededByGrant($tool, $assistant, $agentToolStrings))
                     ->map(fn (AiTool $tool): string => $tool->name)
                     ->values()
                     ->all(),
-                ...$this->agentToolTransferStrings($activeAgentTools, $assistant, $actor),
+                ...$agentToolStrings,
             ],
         );
     }
 
     /**
      * The declared agent tools that can serve their capability for this
-     * run. An active tool supersedes the assistant's explicit selections
-     * for its capability key — ambient capability beats manual wiring.
+     * run. An active tool supersedes same-named attached tools — the
+     * ambient grant beats manual wiring.
      *
      * @return list<AgentTool>
      */
@@ -89,6 +99,55 @@ class AssistantRunComposer
         }
 
         return $active;
+    }
+
+    /**
+     * Whether the attached tool collides with a name an active agent tool
+     * grants — the grant wins (it carries the server-side settings), and
+     * the collision is logged: an attachable tool shadowed by an ambient
+     * grant is an admin-side configuration overlap, not something the
+     * assistant creator can fix from the builder.
+     *
+     * @param list<string> $agentToolStrings
+     */
+    private function isSupersededByGrant(AiTool $tool, Assistant $assistant, array $agentToolStrings): bool
+    {
+        if (!in_array($tool->name, $this->grantedToolNames($agentToolStrings), true)) {
+            return false;
+        }
+
+        $this->logger->warning(
+            'Attached ai_tool is superseded by an active agent tool with the same name — the ambient grant wins; rename the attached tool or remove the attachment',
+            ['tool_name' => $tool->name, 'assistant_id' => $assistant->id],
+        );
+
+        return true;
+    }
+
+    /**
+     * The tool names the active agent tools grant, derived from their
+     * transfer strings (`name:{"…settings…"}`): everything before the
+     * first colon of each non-capability string. Capability-form strings
+     * grant no concrete tool name.
+     *
+     * @param list<string> $agentToolStrings
+     *
+     * @return list<string>
+     */
+    private function grantedToolNames(array $agentToolStrings): array
+    {
+        $names = [];
+
+        foreach ($agentToolStrings as $string) {
+            if (str_starts_with($string, 'capability:')) {
+                continue;
+            }
+
+            $separator = strpos($string, ':');
+            $names[] = false === $separator ? $string : substr($string, 0, $separator);
+        }
+
+        return $names;
     }
 
     /**
