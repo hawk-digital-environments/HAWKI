@@ -37,6 +37,7 @@
             <BuilderInput
                     type="input"
                     label={__('assistants.builder.general.input_handle')}
+                    hint={__('assistants.builder.general.input_handle_hint')}
                     assistantValueKey="handle"/>
         </div>
 
@@ -45,11 +46,13 @@
         <BuilderInput
                 type="input"
                 label={__('assistants.builder.general.input_description')}
+                hint={__('assistants.builder.general.input_description_hint')}
                 assistantValueKey="description"/>
 
         <BuilderInput
                 type="textarea"
                 label={__('assistants.builder.general.input_short_description')}
+                hint={__('assistants.builder.general.input_detail_description_hint')}
                 assistantValueKey="detailDescription"/>
 
 
@@ -66,14 +69,9 @@
                 assistantValueKey="language"/>
         </div>
 
-        <TagInput/>
-
-        <BuilderInput
-                type="fullWidthToggle"
-                label={__('assistants.builder.general.input_allow_remix')}
-                description={__('assistants.builder.general.input_allow_remix_description')}
-                assistantValueKey="allowRemix"
-                />
+        <TagInput
+                label={__('assistants.builder.general.input_tags')}
+                hint={__('assistants.builder.general.input_tags_hint')}/>
     </div>
 
 </div>

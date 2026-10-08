@@ -8,7 +8,7 @@
  *
  * Session storage rather than state on `BuilderContext`, and its own module
  * rather than living next to that context, because the two readers sit on
- * opposite sides of the builder: the sidebar's "Zurück" row is part of the
+ * opposite sides of the builder: the sidebar's "Zurück" button is part of the
  * *app* sidebar, outside the builder layout's subtree, so it can reach
  * neither the context nor (without dragging the builder's whole dependency
  * graph into the sidebar's bundle) the module that defines it.

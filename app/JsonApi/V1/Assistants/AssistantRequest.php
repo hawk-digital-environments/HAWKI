@@ -46,7 +46,7 @@ class AssistantRequest extends ResourceRequest
             'model' => ['string'],
             'capabilities' => ['array', 'distinct', $this->capabilityEntryRule()],
             'max_tokens' => ['integer', 'min:0'],
-            'temp' => ['numeric', 'min:0', 'max:1'],
+            'temp' => ['numeric', 'min:0', 'max:2'],
             'top_p' => ['numeric', 'min:0', 'max:1'],
             'ai_tools' => [JsonApiRule::toMany()],
             'assistant_tags' => [JsonApiRule::toMany()],

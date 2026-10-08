@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tick, untrack } from "svelte";
+    import { untrack } from "svelte";
     import Tag from '$plugins/assistants/components/tags/Tag.svelte';
     import type { AssistantTag as TagType } from '$plugins/assistants/types/assistant/AssistantTag'
     import AddButton from "$plugins/assistants/components/tags/AddButton.svelte";
@@ -8,15 +8,20 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
     import {ApiError} from "$plugins/assistants/api/errors";
+    import InfoPopover from "$lib/components/ui/popover/InfoPopover.svelte";
+    import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
 
     interface Props {
         id?: string
         label?: string;
+        /** Explanation shown in an info popover next to the label. */
+        hint?: string;
         disabled?: boolean;
     }
     const {
         id,
         label,
+        hint,
         disabled = false,
     }: Props = $props();
 
@@ -25,7 +30,6 @@
 
     // eslint-disable-next-line svelte/state_referenced_locally
     let tags = $derived<TagType[]>(builder.draft.tags);
-    let tagsEl = $state<HTMLElement | null>(null);
     let highlightedTag = $state<string | null>(null);
 
     async function addTag(value: string): Promise<void> {
@@ -55,13 +59,6 @@
 
             tags = [...tags, newTag];
             builder.set('tags', tags)
-
-            tick().then(() => {
-                tagsEl?.scrollTo({
-                    left: tagsEl.scrollWidth,
-                    behavior: 'smooth'
-                });
-            });
         } catch (err) {
             // A unique-name conflict (or any other field-scoped validation
             // failure) belongs on the field itself; anything else (dropped
@@ -82,17 +79,21 @@
 </script>
 
 <div class="input-container renderBlock">
-    {#if label || builder.validator.errorFor('tags')}
+    {#if label}
         <div class="field-header">
             {#if label}
                 <label for={id}>{label}</label>
             {/if}
-            <InputError message={builder.validator.errorFor('tags')} />
+            {#if label && hint}
+                <InfoPopover {label} info={hint}/>
+            {/if}
         </div>
     {/if}
 
+    <!-- Blue reveal when the AI guide fills the tags. -->
+    <AiFillReveal field="tags">
     <div class="tags-container" id={id}>
-        <div class="tags" bind:this={tagsEl}>
+        <div class="tags">
             {#each tags as tag}
                 <Tag value={tag.text}
                      highlighted={highlightedTag === tag.text}
@@ -104,32 +105,22 @@
                 onAdd={addTag}
                 disabled={disabled} />
     </div>
+    </AiFillReveal>
+    <InputError message={builder.validator.errorFor('tags')} />
 </div>
 
 
 <style>
+    /* Tags wrap into rows; "Add tag" follows the last tag. */
     .tags-container {
         display: flex;
-        flex-direction: row;
+        flex-wrap: wrap;
         align-items: center;
         max-width: 100%;
         gap: var(--space-2);
         padding: var(--space-1) 0;
     }
-    .tags:empty {
-        display: none;
-    }
     .tags {
-        display: flex;
-        flex-direction: row;
-        flex: 0 1 auto;
-        min-width: 0;
-        align-items: center;
-        gap: var(--space-2);
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-    .tags::-webkit-scrollbar {
-        display: none;
+        display: contents;
     }
 </style>

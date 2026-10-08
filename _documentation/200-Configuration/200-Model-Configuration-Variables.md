@@ -327,6 +327,7 @@ TITLE_GENERATOR_MODEL=gpt-4.1-nano
 PROMPT_IMPROVEMENT_MODEL=gpt-4.1-nano
 SUMMARIZER_MODEL=gpt-4.1-nano
 TRANSLATOR_MODEL=gpt-4.1-nano
+ASSISTANT_GUIDE_MODEL=gpt-5.6-luna   # AI guide in the assistant builder
 ```
 
 For deployments that use external app access you can set separate defaults that apply only to the ext-app context (falls back to the user-facing defaults when not set):

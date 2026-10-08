@@ -159,6 +159,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             'prompt_improver' => WellKnownSystemModelTypes::PROMPT_IMPROVEMENT,
             'summarizer' => WellKnownSystemModelTypes::SUMMARY,
             'translator' => WellKnownSystemModelTypes::TRANSLATION,
+            'assistant_guide' => WellKnownSystemModelTypes::ASSISTANT_GUIDE,
             // I did not bother to implement a custom exception class for this, as this is only used internally and will be removed soon anyway.
             default => throw new \InvalidArgumentException("Invalid legacy key: $oldModelType")
         };

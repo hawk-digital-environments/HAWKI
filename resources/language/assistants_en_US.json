@@ -54,7 +54,7 @@
             "private": "Private",
             "favourites": "Favourites",
             "shared": "Shared",
-            "create": "Create",
+            "create": "Create assistant",
             "switch_case": "Switch Section",
             "back": "Back"
         },
@@ -122,7 +122,7 @@
         },
 
         "detail": {
-            "back": "Back to the store",
+            "back": "Back",
             "edit": "Edit",
             "menu_aria": "Open assistant menu",
             "favourite_aria": "Toggle favourite",
@@ -132,7 +132,6 @@
             "deleted": "Assistant deleted.",
             "delete_failed": "The assistant could not be deleted.",
             "remix": "Remix",
-            "remix_disabled": "Remixing is not allowed for this assistant",
             "try_out": "Try it out",
             "read_more": "Read more",
             "meta_creator": "Creator",
@@ -170,12 +169,24 @@
         },
         "builder":{
             "sidebar": {
+                "new_assistant": "New assistant",
                 "general": "General",
                 "behaviour": "Behaviour",
                 "knowledge": "Knowledge & data",
                 "model": "Model",
                 "test": "Test",
                 "publish": "Publish"
+            },
+            "steps": {
+                "progress": "Progress",
+                "step_current": "Step :current",
+                "step_total": "of :total",
+                "back": "Back",
+                "continue": "Continue",
+                "continue_to": "Continue to :step",
+                "required": "This field is required.",
+                "incomplete": "Please fill in the required fields.",
+                "invalid": "Please correct the marked fields."
             },
             "exit_dialog": {
                 "title": "Keep draft?",
@@ -195,19 +206,27 @@
                 "description": "Basic details about your assistant.",
                 "input_name": "Assistant name",
                 "input_handle": "Unique @handle",
+                "input_handle_hint": "A unique address for your assistant, used in links and mentions. Only letters, numbers, hyphens and underscores.",
+                "handle_taken": "This handle is already taken. Please choose another one.",
+                "handle_available": "This handle is available.",
+                "handle_checking": "Checking availability…",
                 "input_description": "Short description",
+                "input_description_hint": "One sentence shown on the assistant's card in the app store.",
                 "input_short_description": "Detailed description",
+                "input_detail_description_hint": "Shown on the detail page. Explain what the assistant does, who it is for and how to use it.",
                 "input_category": "Category",
                 "input_category_not_set": "Not set",
-                "input_allow_remix": "Allow remixing",
-                "input_allow_remix_description": "Others can create their own version.",
                 "avatar_title": "Appearance",
-                "avatar_description": "Choose a background and a symbol – used in the app store and as the cover image of the detail page.",
-                "avatar_symbol": "Symbol",
                 "avatar_symbol_change": "Change emoji",
                 "avatar_background": "Background",
-                "avatar_preview_name": "Your assistant",
-                "avatar_preview_handle": "@your-handle",
+                "avatar_ai": "Suggest with AI",
+                "avatar_ai_loading": "Finding an avatar…",
+                "avatar_ai_error": "No suggestion right now. Please try again.",
+                "avatar_random": "Shuffle",
+                "avatar_backgrounds_prev": "Previous backgrounds",
+                "avatar_backgrounds_next": "More backgrounds",
+                "input_tags": "Tags",
+                "input_tags_hint": "Keywords that help others find your assistant in the app store.",
                 "tag_add": "Add tag",
                 "tag_input_aria": "Enter tag",
                 "tag_confirm_aria": "Confirm tag"
@@ -217,11 +236,14 @@
                 "description": "Define how your assistant communicates.",
                 "warning_system_prompt": "Changes to the system prompt affect the trust review.",
                 "input_system_prompt": "System prompt",
+                "input_system_prompt_hint": "Instructions the model follows in every conversation: role, tasks, tone and limits. Users don't see it.",
                 "input_system_prompt_placeholder": "Write a system prompt",
                 "input_greeting": "Greeting message",
+                "input_greeting_hint": "The first message users see when they open a new chat with the assistant.",
                 "input_greeting_placeholder": "Write a greeting message",
                 "input_starter_prompts": "Suggested starter prompts",
-                "input_starter_prompts_add": "Add prompt"
+                "input_starter_prompts_add": "Add prompt",
+                "input_starter_prompts_hint": "Example messages shown as buttons in an empty chat, so users can start with one click."
             },
             "knowledge": {
                 "title": "Knowledge & data",
@@ -249,6 +271,7 @@
                 "title": "Model settings",
                 "description": "Choose and configure the AI model.",
                 "input_model": "Recommended model",
+                "input_model_hint": "The model new chats with this assistant start with.",
                 "select_model_placeholder": "Select a model",
                 "input_allow_model_select": "End users may choose the model",
                 "input_allow_model_select_description": "Users can pick between the approved models.",
@@ -261,6 +284,8 @@
                 "input_max_tokens": "Max. output length",
                 "input_max_tokens_description": "Maximum number of tokens per answer.",
                 "input_max_tokens_hint": "Higher values allow longer answers but take more time.",
+                "advanced_title": "Advanced settings",
+                "advanced_description": "Temperature, Top_P and max. output length",
                 "conflict": {
                     "titleSingle": ":model does not support :tool",
                     "titleMultiple": ":model does not support one or more of the selected tools",
@@ -284,7 +309,38 @@
             },
             "test": {
                 "title": "Private test environment",
-                "description": "Test and refine your assistant."
+                "description": "Test and refine your assistant.",
+                "open": "Open test chat",
+                "close": "Close test chat",
+                "reset": "Restart conversation",
+                "no_model": "Choose a model first",
+                "mode": "Chat mode",
+                "mode_test": "Test",
+                "mode_guide": "AI guide"
+            },
+            "guide": {
+                "placeholder": "Ask the guide…",
+                "empty_title": "Build it together",
+                "empty_hint": "Describe your goal or drop in material – the guide fills in the fields.",
+                "applied": "Filled in",
+                "open_field": "Show :field",
+                "error": "The guide could not answer. Please try again.",
+                "attach": "Add files to the knowledge base",
+                "drop_label": "Drop files to add them to the knowledge base",
+                "ingest": {
+                    "uploading": "Adding to the knowledge base…",
+                    "done": "Added to the knowledge base",
+                    "failed": "Couldn't add the files",
+                    "file_failed": "Failed"
+                },
+                "upload_needs_model": "Choose a model first to add knowledge files.",
+                "starters": {
+                    "label": "Example requests",
+                    "build": "Build me a writing coach for student essays",
+                    "prompt": "What makes a good system prompt?",
+                    "model": "Which model should I choose?",
+                    "knowledge": "How do knowledge files work?"
+                }
             },
             "publish": {
                 "title": "Publish",
@@ -308,6 +364,14 @@
                     "denied": "Denied",
                     "needs_revision": "Needs revision"
                 },
+                "status_hint": {
+                    "draft": "Not published yet",
+                    "private": "Visible only to you",
+                    "organizational": "Reviewed by your university",
+                    "federated": "Reviewed across the federation",
+                    "denied": "Contact your administrator",
+                    "needs_revision": "Address the reviewer's feedback"
+                },
                 "denied": {
                     "description": "Your assistant has been permanently denied. Please contact your system administrator.",
                     "reason_label": "Reason:"
@@ -321,11 +385,15 @@
                     "description": "The risk level results from knowledge files and tools.",
                     "label_status": "Status",
                     "label_risk_level": "Risk level",
-                    "risk_level_low": "Low risk"
+                    "risk_level_low": "Low risk",
+                    "hint": "Based on files and tools"
                 },
                 "completeness": {
-                    "title": "Completeness check",
-                    "description": "Mandatory for publishing."
+                    "title": "Checklist",
+                    "description": "Mandatory for publishing.",
+                    "label": "Requirements",
+                    "ready": "Ready to publish",
+                    "open": ":count still open"
                 },
                 "triggers": {
                     "title": "Review triggers"
@@ -335,7 +403,10 @@
                     "description": "As soon as you move the assistant from “Private” to “University-wide” or “Federated”, a review is triggered.",
                     "note": "MCP configurations are reviewed by us separately."
                 },
+                "input_allow_remix": "Allow remixing",
+                "input_allow_remix_description": "Others can create their own version.",
                 "input_version_note": "Version note",
+                "input_version_note_hint": "Describe what changed in this version. Reviewers see this note.",
                 "input_version_note_placeholder": "What has changed?",
                 "save_as_private_assistant": "Save as private assistant",
                 "save_as_review": "Submit for review",
@@ -346,7 +417,20 @@
             }
         },
         "testChat": {
-            "empty_hint": "Start a conversation to test the assistant."
+            "status": {
+                "sending": "Sending your message…",
+                "reading": "Reading your message…",
+                "reviewing": "Looking at your assistant…",
+                "reading_files": "Reading your files…",
+                "planning_files": "Working out how to use them…",
+                "thinking": "Thinking…",
+                "writing": "Writing a reply…"
+            },
+            "empty_hint": "Send a message to try it out. Your changes apply instantly, no need to save.",
+            "no_model_hint": "Pick a model to start testing.",
+            "unnamed": "Your assistant",
+            "placeholder": "Message your assistant…",
+            "send": "Send"
         }
 
 

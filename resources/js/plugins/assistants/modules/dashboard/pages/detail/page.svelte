@@ -1,8 +1,8 @@
 <script lang="ts">
+    import {untrack} from "svelte";
 
     import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
-    import Button from "$lib/components/ui/button/Button.svelte";
     import ButtonWithTooltip from "$lib/components/ui/button/ButtonWithTooltip.svelte";
     import FeedbackPanel from "$plugins/assistants/modules/dashboard/components/feedbackPanel/FeedbackPanel.svelte";
     import ReceivedFeedbackList from "$plugins/assistants/modules/dashboard/components/feedbackPanel/ReceivedFeedbackList.svelte";
@@ -17,7 +17,6 @@
     import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import {resolveAssistantAvatar} from "$plugins/assistants/utils/resolveAssistantAvatar";
     import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
-    import LinkSquare01Icon from "$lib/components/ui/icons/iconset/LinkSquare01Icon.svelte";
     import UserIcon from "$lib/components/ui/icons/iconset/UserIcon.svelte";
     import HashtagIcon from "$lib/components/ui/icons/iconset/HashtagIcon.svelte";
     import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
@@ -37,6 +36,7 @@
     import RemixDetails from "$plugins/assistants/modules/dashboard/components/assistantBrowser/RemixDetails.svelte";
 
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {detailReturnPath} from '$plugins/assistants/modules/dashboard/contexts/detailReturn.js';
     import type {RouteParams} from '$lib/components/ui/routing/index.js';
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
     import {requestBuilderIntent} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte";
@@ -44,6 +44,10 @@
     import WindowsOldIcon from "$lib/components/ui/icons/iconset/WindowsOldIcon.svelte";
     import Chatbox from "$plugins/assistants/components/testChat";
     import {growTransition} from "$lib/utils/transitions/growTransition";
+    import {breakpointsQueries} from "$lib/components/util/breakpoints/breakpoints.js";
+    import ChatDock from "$plugins/assistants/components/testChat/ChatDock.svelte";
+    import {createChatStore} from "$plugins/assistants/components/testChat/stream/chatStore.svelte.js";
+    import {createChatConfig} from "$plugins/assistants/components/testChat/stream/chatConfig.svelte.js";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import FadeText from "$lib/components/ui/text/FadeText.svelte";
     import DropdownMenu from "$lib/components/ui/dropdown-menu/DropdownMenu.svelte";
@@ -101,6 +105,8 @@
         const id = Array.isArray(rawId) ? rawId[0] : rawId;
         if (!id) return;
 
+        // A conversation belongs to the assistant it was held with.
+        untrack(() => testChat.clear());
         loading = true;
         getAssistant(id, {
             include: [...new Set([...ASSISTANT_DETAIL_INCLUDES])],
@@ -194,7 +200,7 @@
             throw err;
         }
         toast.success(__('assistants.detail.deleted'));
-        goToRoute("assistants.dashboard.store");
+        goBack();
     }
 
     /** The menu's publish submenu: the release stages, iconed like the
@@ -250,11 +256,13 @@
             : __('assistants.detail.release_updated'));
     }
 
-    /** Toggles the inline test chat (see `assistants.components.testChat`). */
-    let chatOpen = $state(false);
-    const startTryOut = () => {
-        chatOpen = !chatOpen;
-    };
+    /** Open state of the docked test chat (see `ChatDock.svelte`). The chat is
+     *  owned here so the dock's header can offer a reset; it only reads the
+     *  assistant once the chatbox is rendered, i.e. after it has loaded.
+     *  Open by default, except on small screens where it would cover the
+     *  whole page — there it starts as the chat button (as in the builder). */
+    let chatOpen = $state(!window.matchMedia(breakpointsQueries.bpMdAndSmaller).matches);
+    const testChat = createChatStore(createChatConfig(() => assistant!));
 
     async function onFeedbackSend(value: string) {
         if (!assistant) return;
@@ -272,17 +280,17 @@
             ? `${assistant.usageCount.toLocaleString('de-DE')} ${__('assistants.detail.meta_usage_unit')}`
             : '—',
     );
-    const backToStore = () => {
-        if(window.history.state && window.history.length>1){
-            window.history.back();
-        } else {
-            // Fallback to store
-            goToRoute("assistants.dashboard.store");
-        }
+    // Back to the page the assistant was opened from; the store when there is
+    // none (a direct URL, a reload).
+    const goBack = () => {
+        router.goTo(detailReturnPath() ?? router.getPath("assistants.dashboard.store"));
     }
 
 </script>
 <Page fade="short">
+{#snippet body()}
+<div class="detail-shell" class:test-open={chatOpen}>
+<div class="detail-scroll">
     {#if loading}
         <p>Loading...</p>
     {:else if error}
@@ -320,7 +328,7 @@
                         iconLeft={ArrowLeft01Icon}
                         tooltip={__('assistants.detail.back')}
                         class="back"
-                        onclick={backToStore}
+                        onclick={goBack}
                 />
                 <div class="controls">
                     <FavButton
@@ -330,23 +338,15 @@
                         onchange={onFavoriteChange}
                     />
 
-                    <ButtonWithTooltip
-                        variant="stroke"
-                        size="md"
-                        iconLeft={SplitIcon}
-                        tooltip={assistant.allowRemix
-                            ? __('assistants.detail.remix')
-                            : __('assistants.detail.remix_disabled')}
-                        disabled={!assistant.allowRemix}
-                        onclick={startRemix}
-                    ><span class="btn-label">{__('assistants.detail.remix')}</span></ButtonWithTooltip>
-                    <Button
-                        variant="stroke"
-                        size="md"
-                        iconLeft={LinkSquare01Icon}
-                        highlight={chatOpen}
-                        onclick={startTryOut}
-                    ><span class="btn-label">{__('assistants.detail.try_out')}</span></Button>
+                    {#if assistant.allowRemix}
+                        <ButtonWithTooltip
+                            variant="stroke"
+                            size="sm"
+                            iconLeft={SplitIcon}
+                            tooltip={__('assistants.detail.remix')}
+                            onclick={startRemix}
+                        ><span class="btn-label">{__('assistants.detail.remix')}</span></ButtonWithTooltip>
+                    {/if}
 
                     {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.delete === true}
                         <DropdownMenu align="end" bind:open={menuOpen}>
@@ -498,12 +498,6 @@
             </section>
         {/if}
 
-        {#if chatOpen}
-            <div class="test-chat" transition:growTransition>
-                <Chatbox assistant={assistant}/>
-            </div>
-        {/if}
-
         <hr>
 
         <FeedbackPanel
@@ -540,9 +534,73 @@
     </div>
 
 {/if}
+</div>
+{#if assistant}
+    <ChatDock bind:open={chatOpen} chat={testChat}
+              title={__('assistants.detail.try_out')}>
+        <Chatbox assistant={assistant} chat={testChat}/>
+    </ChatDock>
+{/if}
+</div>
+{/snippet}
 </Page>
 
 <style>
+    /* Fixed frame for the page: the content column is the only scroll
+       region, the test chat floats over it (docked as a right-hand column
+       on wide viewports, see ChatDock). */
+    .detail-shell {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        height: 100%;
+        overflow: hidden;
+        --test-panel-w: 26rem;
+        --test-fab-inset: var(--space-4);
+    }
+
+    .detail-scroll {
+        min-width: 0;
+        /* Room to scroll the last content out from under the chat button. */
+        padding-bottom: calc(var(--test-fab-inset) + 3rem);
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+    }
+
+    .detail-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Wide viewports: the track opens in step with the dock's morph, so the
+       content makes room for the column. */
+    @media (--bp-xl) {
+        .detail-shell {
+            grid-template-columns: minmax(0, 1fr) 0rem;
+            transition: grid-template-columns 360ms cubic-bezier(0.3, 0, 0.2, 1) 30ms;
+        }
+
+        .detail-shell.test-open {
+            grid-template-columns: minmax(0, 1fr) var(--test-panel-w);
+            transition: grid-template-columns 480ms cubic-bezier(0.3, 0, 0.2, 1);
+        }
+    }
+
+    @media (--bp-xl) and (prefers-reduced-motion: reduce) {
+        .detail-shell, .detail-shell.test-open {
+            transition: none;
+        }
+    }
+
+    /* Same scroll-away reserve as Page's default scroll region, which this
+       page replaces: at-rest content clears the floating nav trigger. */
+    @media (--bp-md-and-smaller) {
+        .detail-scroll {
+            padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+        }
+    }
+
     .page-content {
         display: flex;
         flex-direction: column;
@@ -571,11 +629,10 @@
     .cover {
         position: relative;
         width: 100%;
-        /* Concentric with the round 2.5rem top-bar buttons inset by
-           --space-2: their 1.25rem radius + the inset. */
-        border-radius: calc(1.25rem + var(--space-2));
+        /* Concentric with the round 2rem top-bar buttons inset by
+           --space-2: their 1rem radius + the inset. */
+        border-radius: calc(1rem + var(--space-2));
         overflow: hidden;
-        border: var(--border);
     }
     .cover :global(.banner-container) {
         height: 13rem;
@@ -591,10 +648,9 @@
         gap: var(--space-4);
         align-items: start;
     }
-    /* Same corner as the store cards' avatar, scaled to this size: the
-       small (3rem) avatar's --corner-sm is a quarter of its edge. */
+    /* Same corner as the cover above. */
     .overview .avatar :global(.icon-container) {
-        border-radius: calc(7rem / 4);
+        border-radius: calc(1rem + var(--space-2));
     }
     .head {
         display: flex;
@@ -626,11 +682,6 @@
         align-items: center;
         gap: var(--space-2);
         flex-shrink: 0;
-    }
-    /* Icon-only buttons (back, favourite, menu) match the md buttons' height. */
-    .topbar :global(.btn--iconOnly) {
-        width: 2.5rem;
-        height: 2.5rem;
     }
     /* Over the banner's imagery the back and outline buttons get a solid
        white fill with dark ink in both themes (like the store cards' tags). */
@@ -670,8 +721,7 @@
         grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
         gap: var(--space-3);
     }
-    /* Accent-blue leading icons — same label colour as the filled "Ausprobieren"
-       button. The cards themselves stay neutral (ValidationState.UNKNOWN), so
+    /* Accent-blue leading icons. The cards themselves stay neutral (ValidationState.UNKNOWN), so
        this is a page-level override rather than a StatusCard variant. */
     .metadata :global(.status-card .icon) {
         color: var(--color-accent-text);
@@ -727,12 +777,6 @@
         gap: var(--space-3);
     }
 
-    /* Inline test chat: Chatbox fills its container (100% height), and the
-       page is flow layout, so it needs a definite height both for layout
-       and for growTransition's scrollHeight measurement. */
-    .test-chat {
-        height: 30rem;
-    }
     .section-head {
         display: flex;
         flex-wrap: wrap;
@@ -785,9 +829,8 @@
            become round icon buttons like the others, so the whole top bar
            stays on one line. The labels stay readable for screen readers. */
         /* Specific enough to beat Button's icon-side padding (its :has rule). */
-        .topbar .controls :global(.btn.btn--md) {
-            min-width: 0;
-            width: 2.5rem;
+        .topbar .controls :global(.btn.btn--sm) {
+            width: 2rem;
             padding: 0;
         }
         .btn-label {
