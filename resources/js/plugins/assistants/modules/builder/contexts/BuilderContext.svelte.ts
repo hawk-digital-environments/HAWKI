@@ -163,6 +163,15 @@ export class BuilderContext {
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly DEBOUNCE_MS = 1000;
+  /** Highest `-N` tried for a taken handle before the user has to pick one. */
+  private readonly MAX_HANDLE_SUFFIX = 20;
+  /** Set once the handle input was edited directly; such a handle is the
+   *  user's own and is neither re-derived from the name nor suffixed. */
+  private handleEdited = false;
+  /** True while a handle derived from the name still awaits the server's
+   *  verdict; the handle input stays empty until then and reveals the handle
+   *  that was actually free. */
+  handleChecking = $state(false);
 
   private isNewDraft = false;
 
@@ -301,6 +310,8 @@ export class BuilderContext {
     this.baseline = clone(assistant);
     this.sessionOrigin = clone(assistant);
     this.lastSyncedAiToolIds = (assistant.aiTools ?? []).map(t => t.id).sort();
+    this.handleEdited = false;
+    this.handleChecking = false;
     this.setToSession();
     this.validator.init(this.draft);
   }
@@ -440,6 +451,10 @@ export class BuilderContext {
       this.setName(value as Assistant['name']);
       return;
     }
+    if (key === 'handle') {
+      this.handleEdited = true;
+      this.handleChecking = false;
+    }
     this.draft = { ...this.draft, [key]: value };
     this.validator.clearError(key);
     this.setToSession();
@@ -448,18 +463,16 @@ export class BuilderContext {
 
   /**
    * Set the name and, while the handle is still untouched, derive it from the
-   * name. "Untouched" means empty or equal to the slug of the previous name —
-   * so the handle follows the name until the user edits it by hand, and picks
-   * the sync back up when they clear it. Only drafts are derived: a released
-   * assistant's handle is already addressed from chats and must not move
-   * because of a rename.
+   * name. "Untouched" means empty or still the slug of the previous name
+   * (see {@link handleFollowsName}) — so the handle follows the name until the
+   * user edits it by hand, and picks the sync back up when they clear it.
    */
   private setName(name: Assistant['name']): void {
     const patch: Partial<Assistant> = { name };
-    const handle = this.draft.handle ?? '';
-    const followsName = handle === '' || handle === this.handleFromName(this.draft.name);
-    if (followsName && this.draft.releaseStage === ReleaseMode.DRAFT) {
+    if (this.handleFollowsName()) {
       patch.handle = this.handleFromName(name);
+      this.handleEdited = false;
+      this.handleChecking = patch.handle !== '';
     }
 
     this.draft = { ...this.draft, ...patch };
@@ -471,6 +484,30 @@ export class BuilderContext {
   /** Slug within the server's handle rules (`[a-zA-Z0-9_-]`, max 255). */
   private handleFromName(name: string | null | undefined): string {
     return valueToSlug(name ?? '').slice(0, 255).replace(/-+$/, '');
+  }
+
+  /**
+   * Whether the handle is still the one derived from the name: empty, or —
+   * unless the user edited it directly — the name's slug, with or without the
+   * `-2`, `-3`, ... suffix it got because the slug was taken (see
+   * {@link patchWithSuffixedHandle}). Only drafts are derived: a released
+   * assistant's handle is already addressed from chats and must not move
+   * because of a rename.
+   */
+  private handleFollowsName(): boolean {
+    if (this.draft.releaseStage !== ReleaseMode.DRAFT) {
+      return false;
+    }
+    const handle = this.draft.handle ?? '';
+    if (handle === '') {
+      return true;
+    }
+    if (this.handleEdited) {
+      return false;
+    }
+    const base = this.handleFromName(this.draft.name);
+    return handle === base
+      || (handle.startsWith(base) && /^-\d+$/.test(handle.slice(base.length)));
   }
 
   /**
@@ -659,6 +696,12 @@ export class BuilderContext {
       this.reportSaveError(err, currentField);
     } finally {
       this.saving = false;
+      // Settled either way — unless a newer edit is still waiting to be sent.
+      if (this.handleChecking && !this.saveAgain && this.debounceTimer === null) {
+        this.handleChecking = false;
+        // Same reveal as a field the guide filled in (`AiFillReveal`).
+        this.markAiFilled(['handle']);
+      }
       // Flush any change that arrived while this cycle was in flight.
       if (this.saveAgain) {
         this.saveAgain = false;
@@ -672,9 +715,11 @@ export class BuilderContext {
    * request down with it — the server validates the whole body, so one taken
    * handle would otherwise leave name, description etc. unsaved too.
    *
-   * The handle then gets its inline error and is dropped from `changedKeys`,
-   * so it stays unsaved (and dirty) while the remaining fields are saved
-   * without it. The error keeps the General step from being left (see
+   * A taken handle that was derived from the name is retried with a suffix
+   * (see {@link patchWithSuffixedHandle}). Any other rejected handle gets its
+   * inline error and is dropped from `changedKeys`, so it stays unsaved (and
+   * dirty) while the remaining fields are saved without it. The error keeps
+   * the General step from being left (see
    * `BuilderValidatorContext.firstIncompleteStep`) until the user picks a
    * handle the server accepts.
    */
@@ -702,6 +747,10 @@ export class BuilderContext {
         throw err;
       }
 
+      if (await this.patchWithSuffixedHandle(draftId, changedKeys, aiTools)) {
+        return;
+      }
+
       this.validator.recordServerErrors(err);
       // The server's message is untranslated. A handle within its format
       // rules (see `AssistantRequest`) can only have failed on uniqueness.
@@ -714,6 +763,65 @@ export class BuilderContext {
         await updateAssistant(draftId, body());
       }
     }
+  }
+
+  /**
+   * Re-sends the assistant PATCH with `-2`, `-3`, ... appended to a handle the
+   * server rejected as taken — the same scheme the builder guide uses
+   * (`AssistantBuilderGuideService::uniqueHandle`). Only a handle derived from
+   * the name is suffixed; one the user typed is theirs to change, so it keeps
+   * its inline error instead.
+   *
+   * Returns whether the PATCH went through. The free handle is only written
+   * to the draft once the server accepted it, so the input doesn't cycle
+   * through the taken candidates.
+   */
+  private async patchWithSuffixedHandle(
+    draftId: string,
+    changedKeys: Set<keyof Assistant>,
+    aiTools: Assistant['aiTools'],
+  ): Promise<boolean> {
+    const taken = this.draft.handle ?? '';
+    const base = this.handleFromName(this.draft.name);
+    if (base === '' || taken === '' || !this.handleFollowsName()) {
+      return false;
+    }
+
+    for (let suffix = 2; suffix <= this.MAX_HANDLE_SUFFIX; suffix++) {
+      // Renamed or edited by hand while a candidate was in flight: that newer
+      // handle is saved (and judged) by the queued re-run.
+      if (this.draft.handle !== taken) {
+        changedKeys.delete('handle');
+        if (changedKeys.size) {
+          await updateAssistant(draftId, assistantToApi({...this.draft, aiTools}, changedKeys));
+        }
+        return true;
+      }
+      const handle = `${base.slice(0, 255 - `-${suffix}`.length)}-${suffix}`;
+      if (handle === taken) {
+        continue;
+      }
+      try {
+        await updateAssistant(draftId, assistantToApi({...this.draft, aiTools, handle}, changedKeys));
+      } catch (err) {
+        const apiErr = ApiError.from(err);
+        if (apiErr.isValidation && apiErr.fieldErrors.some(fieldError => fieldError.field === 'handle')) {
+          continue;
+        }
+        throw err;
+      }
+
+      if (this.draft.handle === taken) {
+        this.draft = {...this.draft, handle};
+        this.setToSession();
+      } else {
+        // Keep the newer handle dirty for the queued re-run.
+        changedKeys.delete('handle');
+      }
+      return true;
+    }
+
+    return false;
   }
 
   /**

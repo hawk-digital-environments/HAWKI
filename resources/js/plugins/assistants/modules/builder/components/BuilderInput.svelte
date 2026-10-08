@@ -77,7 +77,10 @@
     // Inline server validation error for this field, if any.
     let error = $derived(builder.validator.errorFor(assistantValueKey));
 
+    // A handle derived from the name is held back until the server confirmed
+    // it (or picked a free suffix for it), then shown in one go.
     let currentValue = $derived(
+        assistantValueKey === 'handle' && builder.handleChecking ? '' :
         isCategory ? builder.draft?.category?.id :
             isFormality ? builder.draft.formality :
                 isLanguage ? builder.draft.language:
