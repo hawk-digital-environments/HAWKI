@@ -116,9 +116,23 @@ export async function deriveKey(
     }
 }
 
-/** Converts an ArrayBuffer to a Base64 string. */
-export function arrayBufferToBase64(buffer: ArrayBuffer) {
-    const binary = String.fromCharCode.apply(null, [...new Uint8Array(buffer)]);
+/**
+ * Converts an ArrayBuffer to a Base64 string.
+ *
+ * The conversion is chunked: spreading the whole buffer into a single
+ * `String.fromCharCode` call would place every byte on the call stack as a
+ * separate argument, and engines throw a `RangeError` beyond roughly 100k
+ * arguments — which client-side encryption of large messages (e.g. generated
+ * images embedded as base64 data URIs) regularly exceeds. 32k per chunk stays
+ * safely below every engine's limit.
+ */
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
     return btoa(binary);
 }
 
