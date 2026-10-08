@@ -3,9 +3,9 @@
   label — with neither, the row is label-only — and
   registers itself as a MenuListItem so the enclosing SidebarItems can track it with
   its proximity-hover and active highlights. When given `children` (its
-  sub-items) it owns its own chevron and toggles the sub-tree inline — the
-  layout never injects a trailing icon. In the collapsed rail it shrinks to an
-  icon with a tooltip.
+  sub-tree) it owns its own chevron and toggles the sub-tree inline — the
+  layout never injects a trailing icon. In the collapsed rail it shrinks to
+  an icon with a tooltip.
 
   Rows that lead somewhere are links: pass `href` (a path or a named route, see
   `Link`) and the row renders as `<a>` with `aria-current="page"` while active.
@@ -17,7 +17,8 @@
     import type {HTMLAnchorAttributes, HTMLButtonAttributes} from 'svelte/elements';
     import type {ComponentProps} from 'svelte';
     import {mergeProps} from 'bits-ui';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {cubicInOut} from 'svelte/easing';
+    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
     import Link from '$lib/components/util/link/Link.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
@@ -26,7 +27,10 @@
     import ChevronRightIcon from '$lib/components/ui/icons/iconset/ChevronRightIcon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
 
-    interface Props extends HTMLButtonAttributes {
+    type RowElement = HTMLAnchorElement | HTMLButtonElement;
+    type RowClickEvent = MouseEvent & {currentTarget: EventTarget & RowElement};
+
+    interface Props extends Omit<HTMLButtonAttributes, 'children'> {
         /** Navigation target. When set, the row renders as a `Link` (`<a>`)
             instead of a `<button>`; accepts everything `Link`'s `href` does,
             including a named route `{name, params}`. */
@@ -63,6 +67,18 @@
         children?: Snippet;
     }
 
+    // Timing of the sub-tree's cascading rows: `staggerIn` staggers their
+    // entry, `staggerOut`/`rowOut` their bottom-up exit (which also sizes
+    // `collapseSubtree`'s height fold). Injected into the styles as
+    // `--stagger-in` / `--stagger-out` / `--row-out` by `staggerSubtreeRows`,
+    // so the CSS cascade and the fold share these as their single source of
+    // truth.
+    const SUBTREE_MOTION = {
+        staggerIn: 22,
+        staggerOut: 18,
+        rowOut: 100
+    } as const;
+
     let {
         href,
         target,
@@ -73,9 +89,9 @@
         active = false,
         indent = false,
         drill = false,
-        trailing,
         defaultExpanded = false,
         expanded = $bindable(defaultExpanded),
+        trailing,
         children,
         onclick,
         class: className,
@@ -83,39 +99,81 @@
     }: Props = $props();
 
     const sidebar = useSidebar();
-    const collapsed = $derived(!sidebar.navOpen);
+    const menuList = useMenuList();
 
+    const collapsed = $derived(!sidebar.navOpen);
     // Optional: rows used outside a list container (e.g. a footer) have no
     // sliding highlight behind them, so they paint their own hover surface.
-    const standalone = !useMenuList();
-
-    // The rail row still spans the full panel width, so a tooltip anchored to the
-    // button would open a row's width away from the icon it describes. Anchor it
-    // to the icon instead.
-    let iconEl = $state<HTMLElement | null>(null);
-
+    const standalone = $derived(!menuList);
+    const isBranch = $derived(children !== undefined);
+    // Children never render in the rail; the chevron and sub-tree are hidden there.
+    const showSubtree = $derived(isBranch && expanded && !collapsed);
     // A row wired up as a popup trigger is marked active while its surface is
     // showing, which is a pressed state — not "this is the current page". Let
     // the trigger's own aria-expanded carry it instead of claiming aria-current.
-    const isPopupTrigger = $derived(!!rest['aria-haspopup']);
+    const isPopupTrigger = $derived(Boolean(rest['aria-haspopup']));
+    const showDrill = $derived(!isBranch && drill);
+    const showTrailing = $derived(!isBranch && !drill && trailing !== undefined);
 
-    const hasChildren = $derived(!!children);
-    // Children never render in the rail; the chevron and sub-tree are hidden there.
-    const showChildren = $derived(hasChildren && expanded && !collapsed);
+    // The rail row still spans the full panel width, so a tooltip anchored to
+    // the button would open a row's width away from the icon it describes.
+    // Anchor it to the icon instead.
+    let iconEl = $state<HTMLElement | null>(null);
 
     // Hands the rendered element out through `ref`, next to the list's own
-    // registration attachment.
+    // registration attachment. The teardown guard keeps a newer mount's `ref`
+    // from being cleared by an older element's cleanup.
     const attachRef: Attachment<HTMLElement> = (element) => {
         ref = element;
+
         return () => {
-            ref = null;
+            if (ref === element) ref = null;
         };
     };
 
-    function handleClick(event: MouseEvent & {currentTarget: EventTarget & HTMLElement}) {
+    // Numbers the sub-tree's rows so the styles can cascade them: `--i` is a
+    // row's position, `--n` the row count (the close runs bottom-up), and the
+    // timing properties hand the CSS the `SUBTREE_MOTION` values above.
+    const staggerSubtreeRows: Attachment<HTMLElement> = (element) => {
+        const rows = Array.from(element.children) as HTMLElement[];
+
+        element.style.setProperty('--n', String(rows.length));
+        element.style.setProperty('--stagger-in', `${SUBTREE_MOTION.staggerIn}ms`);
+        element.style.setProperty('--stagger-out', `${SUBTREE_MOTION.staggerOut}ms`);
+        element.style.setProperty('--row-out', `${SUBTREE_MOTION.rowOut}ms`);
+
+        rows.forEach((row, index) => row.style.setProperty('--i', String(index)));
+
+        return () => {
+            element.style.removeProperty('--n');
+            element.style.removeProperty('--stagger-in');
+            element.style.removeProperty('--stagger-out');
+            element.style.removeProperty('--row-out');
+
+            rows.forEach((row) => row.style.removeProperty('--i'));
+        };
+    };
+
+    /** Folds the sub-tree's height away underneath its rows' staggered exit,
+        lasting exactly as long as that cascade. Deliberately unclipped: the
+        rows leave by their own fade, and cutting them off at the shrinking
+        edge would read as a mask wiping over them. */
+    function collapseSubtree(node: Element) {
+        const rowCount = Math.max(1, node.childElementCount);
+        const duration = SUBTREE_MOTION.staggerOut * (rowCount - 1) + SUBTREE_MOTION.rowOut;
+        const height = node.scrollHeight;
+
+        return {
+            duration: motionDuration(duration),
+            easing: cubicInOut,
+            css: (t: number) => `height: ${t * height}px;`
+        };
+    }
+
+    function handleClick(event: RowClickEvent) {
         // Expandable rows toggle their sub-tree inline (only when not collapsed)
         // and never navigate, so the off-canvas nav stays open for them.
-        if (hasChildren && !collapsed) {
+        if (isBranch && !collapsed) {
             expanded = !expanded;
         } else if (sidebar.mobile) {
             // Tapping a leaf row navigates; collapse the off-canvas overlay so it
@@ -139,28 +197,31 @@
             {/if}
         </span>
     {/if}
+
     <span class="label">{label}</span>
-    {#if hasChildren}
+
+    {#if isBranch}
         <span class="caret" class:open={expanded} aria-hidden="true">
             <ChevronRightIcon size={16} strokeWidth={2} />
         </span>
-    {:else if drill}
+    {:else if showDrill}
         <span class="caret" aria-hidden="true">
             <ChevronRightIcon size={16} strokeWidth={2} />
         </span>
-    {:else if trailing}
+    {:else if showTrailing}
         <span class="caret trailing" aria-hidden="true">
-            {@render trailing()}
+            {@render trailing?.()}
         </span>
     {/if}
 {/snippet}
 
-{#snippet row(attach: Attachment<HTMLElement>, triggerProps: Record<string, unknown> = {})}
+{#snippet interactiveRow(attach: Attachment<HTMLElement>, triggerProps: Record<string, unknown> = {})}
     {@const rowProps = mergeProps(triggerProps, rest, {
         class: ['sidebar-item', className, {active, indent, collapsed, drill, standalone}],
         onclick: handleClick,
-        'aria-expanded': hasChildren ? expanded : undefined
+        'aria-expanded': isBranch ? expanded : undefined
     })}
+
     {#if href}
         <!-- A link row: `Link` computes navigation, rel, aria-current and the
              screen-reader hints, but the anchor itself is rendered here — an
@@ -202,17 +263,21 @@
                 customAnchor={iconEl}
             >
                 {#snippet children({props})}
-                    {@render row(attach, props)}
+                    {@render interactiveRow(attach, props)}
                 {/snippet}
             </Tooltip>
         {:else}
-            {@render row(attach)}
+            {@render interactiveRow(attach)}
         {/if}
     {/snippet}
 </MenuListItem>
 
-{#if showChildren}
-    <div class="subtree" transition:growTransition>
+{#if showSubtree}
+    <!-- Opening takes its space at once and the rows spring in one after the
+         other, purely in CSS (see `.subtree`): a measured grow kept the rows
+         hidden for its whole duration here, so they popped in late. Closing
+         cascades them back out bottom-up while the height folds away. -->
+    <div class="subtree" {@attach staggerSubtreeRows} out:collapseSubtree>
         {@render children?.()}
     </div>
 {/if}
@@ -228,7 +293,7 @@
         gap: var(--space-2_5);
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
+        padding: 0 var(--nav-item-pad-x);
         border: none;
         background: transparent;
         /* Rows recede at rest and come forward on hover — the same treatment as
@@ -298,7 +363,9 @@
         --drill-stop-3: var(--gradient-brand-hover-3);
     }
 
-    /* Child rows sit indented under their parent, aligning with the label. */
+    /* Child rows sit indented under their parent, aligning with the label. The
+       list insets their highlight by the icon column plus the row gap (see
+       SidebarItems), which leaves the same --nav-item-pad-x inside it. */
     .sidebar-item.indent {
         padding-left: calc(var(--nav-item-pad-x) + var(--nav-icon-size) + var(--space-2_5));
     }
@@ -373,6 +440,51 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
+    }
+
+    /* The cascade moves each row's contents, never the row itself: the list
+       measures the row boxes to place its highlights, and a row in mid-flight
+       would hand it a position that is off by the travel. */
+    .subtree > :global(* > *) {
+        animation:
+            subtree-row-drop 240ms cubic-bezier(0.3, 1.7, 0.5, 1) both,
+            subtree-row-fade 90ms var(--easing-out) both;
+        animation-delay: calc(var(--i, 0) * var(--stagger-in));
+    }
+
+    /* Svelte marks an element inert for the length of its outro, and lifts it
+       again should the sub-tree be reopened mid-close. */
+    .subtree:global([inert]) > :global(* > *) {
+        animation: subtree-row-out var(--row-out, 100ms) var(--easing-in) both;
+        animation-delay: calc((var(--n, 1) - 1 - var(--i, 0)) * var(--stagger-out, 18ms));
+    }
+
+    @keyframes subtree-row-drop {
+        from {
+            transform: translateY(-8px);
+        }
+    }
+
+    @keyframes subtree-row-fade {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @keyframes subtree-row-out {
+        to {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        /* Covers the outro variant too: its `[inert]` selector outranks the
+           plain rule above, so it needs the same override spelled out. */
+        .subtree > :global(* > *),
+        .subtree:global([inert]) > :global(* > *) {
+            animation: none;
+        }
     }
 
     /* Bump rows up a notch for easier tapping on small screens. */
