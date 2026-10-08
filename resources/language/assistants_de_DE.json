@@ -122,7 +122,7 @@
         },
 
         "detail": {
-            "back": "Zurück zum Store",
+            "back": "Zurück",
             "edit": "Bearbeiten",
             "menu_aria": "Assistenten-Menü öffnen",
             "favourite_aria": "Favoritenstatus umschalten",

@@ -36,6 +36,7 @@
     import RemixDetails from "$plugins/assistants/modules/dashboard/components/assistantBrowser/RemixDetails.svelte";
 
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {detailReturnPath} from '$plugins/assistants/modules/dashboard/contexts/detailReturn.js';
     import type {RouteParams} from '$lib/components/ui/routing/index.js';
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
     import {requestBuilderIntent} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte";
@@ -279,8 +280,10 @@
             ? `${assistant.usageCount.toLocaleString('de-DE')} ${__('assistants.detail.meta_usage_unit')}`
             : '—',
     );
-    const backToStore = () => {
-        goToRoute("assistants.dashboard.store");
+    // Back to the page the assistant was opened from; the store when there is
+    // none (a direct URL, a reload).
+    const goBack = () => {
+        router.goTo(detailReturnPath() ?? router.getPath("assistants.dashboard.store"));
     }
 
 </script>
@@ -325,7 +328,7 @@
                         iconLeft={ArrowLeft01Icon}
                         tooltip={__('assistants.detail.back')}
                         class="back"
-                        onclick={backToStore}
+                        onclick={goBack}
                 />
                 <div class="controls">
                     <FavButton
