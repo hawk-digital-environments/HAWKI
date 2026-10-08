@@ -26,10 +26,11 @@ class AnnouncementsApiTest extends TestCase
             ->assertOk();
 
         $item = collect($response->json('data'))
-            ->firstWhere('id', (string)$announcement->id);
+            ->firstWhere('id', (string) $announcement->id);
 
         self::assertNotNull($item);
         self::assertSame('policy', $item['attributes']['type']);
+        self::assertTrue($item['attributes']['is_global']);
         self::assertTrue($item['attributes']['is_forced']);
         self::assertTrue($item['attributes']['is_active']);
         self::assertNotSame('', $item['attributes']['content']);
@@ -54,11 +55,30 @@ class AnnouncementsApiTest extends TestCase
             $this->actingAs($user)
                 ->getJson('/api/hawki/v1/announcements', $this->jsonApiHeaders())
                 ->assertOk()
-                ->json('data')
+                ->json('data'),
         )->pluck('id');
 
-        self::assertNotContains((string)$targetedAtOther->id, $ids);
-        self::assertNotContains((string)$notStarted->id, $ids);
+        self::assertNotContains((string) $targetedAtOther->id, $ids);
+        self::assertNotContains((string) $notStarted->id, $ids);
+    }
+
+    public function testItListsAnnouncementsTargetedAtTheCurrentUser(): void
+    {
+        $user = User::factory()->create();
+        // Int ids — string ids would not match the JSON visibility query on MySQL.
+        $targeted = $this->createAnnouncement([
+            'is_global' => false,
+            'target_users' => [$user->id],
+        ]);
+
+        $ids = collect(
+            $this->actingAs($user)
+                ->getJson('/api/hawki/v1/announcements', $this->jsonApiHeaders())
+                ->assertOk()
+                ->json('data'),
+        )->pluck('id');
+
+        self::assertContains((string) $targeted->id, $ids);
     }
 
     public function testItStillListsExpiredAnnouncementsAsInactiveForTheHistory(): void
@@ -73,11 +93,46 @@ class AnnouncementsApiTest extends TestCase
             $this->actingAs($user)
                 ->getJson('/api/hawki/v1/announcements', $this->jsonApiHeaders())
                 ->assertOk()
-                ->json('data')
-        )->firstWhere('id', (string)$expired->id);
+                ->json('data'),
+        )->firstWhere('id', (string) $expired->id);
 
         self::assertNotNull($item);
         self::assertFalse($item['attributes']['is_active']);
+    }
+
+    public function testItOrdersNewestFirstWithUndatedLastAndStableTies(): void
+    {
+        $user = User::factory()->create();
+
+        $older = $this->createAnnouncement(['starts_at' => now()->subDays(3)]);
+        // Both share the exact same `starts_at`; the later-created one wins the tie.
+        $sharedStart = now()->subDay();
+        $firstWithSharedStart = $this->createAnnouncement(['starts_at' => $sharedStart]);
+        $secondWithSharedStart = $this->createAnnouncement(['starts_at' => $sharedStart]);
+        $undated = $this->createAnnouncement(['starts_at' => null]);
+
+        $ids = collect(
+            $this->actingAs($user)
+                ->getJson('/api/hawki/v1/announcements', $this->jsonApiHeaders())
+                ->assertOk()
+                ->json('data'),
+        )->pluck('id');
+
+        // Compare only the created rows — seeded announcements may be interleaved.
+        self::assertSame(
+            [
+                (string) $secondWithSharedStart->id,
+                (string) $firstWithSharedStart->id,
+                (string) $older->id,
+                (string) $undated->id,
+            ],
+            $ids->intersect([
+                (string) $secondWithSharedStart->id,
+                (string) $firstWithSharedStart->id,
+                (string) $older->id,
+                (string) $undated->id,
+            ])->values()->all(),
+        );
     }
 
     public function testItMarksAnAnnouncementAsSeenForTheCurrentUser(): void
@@ -86,9 +141,9 @@ class AnnouncementsApiTest extends TestCase
         $announcement = $this->createAnnouncement();
 
         $this->actingAs($user)
-            ->postJson(
-                '/api/hawki/v1/announcements/actions/seen',
-                ['announcement_id' => $announcement->id],
+            ->patchJson(
+                "/api/hawki/v1/announcements/{$announcement->id}",
+                $this->patchDocument($announcement, ['seen' => true]),
                 $this->jsonApiHeaders(),
             )
             ->assertOk()
@@ -105,9 +160,9 @@ class AnnouncementsApiTest extends TestCase
         $announcement = $this->createAnnouncement();
 
         $this->actingAs($user)
-            ->postJson(
-                '/api/hawki/v1/announcements/actions/accept',
-                ['announcement_id' => $announcement->id],
+            ->patchJson(
+                "/api/hawki/v1/announcements/{$announcement->id}",
+                $this->patchDocument($announcement, ['accepted' => true]),
                 $this->jsonApiHeaders(),
             )
             ->assertOk();
@@ -116,7 +171,23 @@ class AnnouncementsApiTest extends TestCase
         self::assertNotNull($pivot?->accepted_at);
     }
 
-    public function testItRejectsMarkingAnnouncementsInvisibleToTheCurrentUser(): void
+    public function testItAppliesSeenAndAcceptedInOnePatch(): void
+    {
+        $user = User::factory()->create();
+        $announcement = $this->createAnnouncement();
+
+        $this->actingAs($user)
+            ->patchJson(
+                "/api/hawki/v1/announcements/{$announcement->id}",
+                $this->patchDocument($announcement, ['seen' => true, 'accepted' => true]),
+                $this->jsonApiHeaders(),
+            )
+            ->assertOk()
+            ->assertJsonPath('data.attributes.seen_at', static fn ($seenAt) => null !== $seenAt)
+            ->assertJsonPath('data.attributes.accepted_at', static fn ($acceptedAt) => null !== $acceptedAt);
+    }
+
+    public function testItRejectsPatchingAnnouncementsInvisibleToTheCurrentUser(): void
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
@@ -126,9 +197,9 @@ class AnnouncementsApiTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->postJson(
-                '/api/hawki/v1/announcements/actions/accept',
-                ['announcement_id' => $targetedAtOther->id],
+            ->patchJson(
+                "/api/hawki/v1/announcements/{$targetedAtOther->id}",
+                $this->patchDocument($targetedAtOther, ['accepted' => true]),
                 $this->jsonApiHeaders(),
             )
             ->assertNotFound();
@@ -139,7 +210,75 @@ class AnnouncementsApiTest extends TestCase
         ]);
     }
 
+    public function testItRejectsPatchingWithoutSeenOrAccepted(): void
+    {
+        $user = User::factory()->create();
+        $announcement = $this->createAnnouncement();
+
+        // An empty attributes object is rejected by the JSON:API spec validation.
+        $this->actingAs($user)
+            ->patchJson(
+                "/api/hawki/v1/announcements/{$announcement->id}",
+                $this->patchDocument($announcement, []),
+                $this->jsonApiHeaders(),
+            )
+            ->assertStatus(400);
+
+        // Attributes without a transition flag are rejected by the request rules.
+        $this->actingAs($user)
+            ->patchJson(
+                "/api/hawki/v1/announcements/{$announcement->id}",
+                $this->patchDocument($announcement, ['title' => 'nope']),
+                $this->jsonApiHeaders(),
+            )
+            ->assertStatus(422);
+
+        self::assertDatabaseMissing('announcement_user', [
+            'announcement_id' => $announcement->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function testItRejectsNonBooleanTransitionFlags(): void
+    {
+        $user = User::factory()->create();
+        $announcement = $this->createAnnouncement();
+
+        $this->actingAs($user)
+            ->patchJson(
+                "/api/hawki/v1/announcements/{$announcement->id}",
+                $this->patchDocument($announcement, ['seen' => 'yes']),
+                $this->jsonApiHeaders(),
+            )
+            ->assertStatus(422);
+    }
+
+    public function testItRequiresAuthenticationForPatching(): void
+    {
+        $announcement = $this->createAnnouncement();
+
+        $this->patchJson(
+            "/api/hawki/v1/announcements/{$announcement->id}",
+            $this->patchDocument($announcement, ['accepted' => true]),
+            $this->jsonApiHeaders(),
+        )->assertUnauthorized();
+    }
+
     // =========================================================================
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    private function patchDocument(Announcement $announcement, array $attributes): array
+    {
+        return [
+            'data' => [
+                'type' => 'announcements',
+                'id' => (string) $announcement->id,
+                'attributes' => $attributes,
+            ],
+        ];
+    }
 
     /**
      * @param array<string, mixed> $overrides

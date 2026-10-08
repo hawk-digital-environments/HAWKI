@@ -1,6 +1,6 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\Announcements\Repositories;
 
@@ -22,9 +22,7 @@ use Illuminate\Support\Collection;
  */
 readonly class UserAnnouncementRepository
 {
-    public function __construct(
-        private LocaleService $localeService
-    )
+    public function __construct(private LocaleService $localeService)
     {
     }
 
@@ -38,10 +36,10 @@ readonly class UserAnnouncementRepository
 
         return $this->queryVisibleForUser($user)
             ->get()
-            ->map(fn(Announcement $announcement) => $this->mapToValue(
+            ->map(fn (Announcement $announcement) => $this->mapToValue(
                 $announcement,
                 $pivots->get($announcement->id),
-                (int)($seenCounts[$announcement->id] ?? 0)
+                (int) ($seenCounts[$announcement->id] ?? 0),
             ))
             ->values();
     }
@@ -49,14 +47,15 @@ readonly class UserAnnouncementRepository
     public function findOneForUser(User $user, int $announcementId): ?AnnouncementForUser
     {
         $announcement = $this->queryVisibleForUser($user)->whereKey($announcementId)->first();
-        if ($announcement === null) {
+
+        if (null === $announcement) {
             return null;
         }
 
         return $this->mapToValue(
             $announcement,
             $this->findPivotsForUser($user)->get($announcement->id),
-            (int)($this->findSeenCounts()[$announcement->id] ?? 0)
+            (int) ($this->findSeenCounts()[$announcement->id] ?? 0),
         );
     }
 
@@ -91,24 +90,33 @@ readonly class UserAnnouncementRepository
     }
 
     /**
+     * Ordering contract (documented in
+     * _documentation/500-Backend/1000-Infrastructure/300-Announcements.md — the
+     * frontend dialog queue relies on it): newest first, undated
+     * (`starts_at IS NULL`) last, id as the stable tiebreaker. The raw `IS NULL`
+     * sort pins NULLs last on every database — a plain `ORDER BY starts_at DESC`
+     * leaves their placement DB-dependent.
+     *
      * @return \Illuminate\Database\Eloquent\Builder<Announcement>
      */
     private function queryVisibleForUser(User $user)
     {
         return Announcement::query()
-            ->where(function ($q) {
+            ->where(static function ($q): void {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
-            ->where(function ($q) use ($user) {
+            ->where(static function ($q) use ($user): void {
                 $q->where('is_global', true)
                     ->orWhereJsonContains('target_users', $user->id)
-                    ->orWhereHas('users', fn($sub) => $sub->where('user_id', $user->id));
+                    ->orWhereHas('users', static fn ($sub) => $sub->where('user_id', $user->id));
             })
-            ->orderByDesc('starts_at');
+            ->orderByRaw('starts_at IS NULL')
+            ->orderByDesc('starts_at')
+            ->orderByDesc('id');
     }
 
     /**
-     * @return Collection<int, AnnouncementUser> Pivot rows of the user keyed by announcement id.
+     * @return Collection<int, AnnouncementUser> pivot rows of the user keyed by announcement id
      */
     private function findPivotsForUser(User $user): Collection
     {
@@ -119,7 +127,7 @@ readonly class UserAnnouncementRepository
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, int> Number of users that saw an announcement, keyed by announcement id.
+     * @return \Illuminate\Support\Collection<int, int> number of users that saw an announcement, keyed by announcement id
      */
     private function findSeenCounts(): Collection
     {
@@ -132,14 +140,15 @@ readonly class UserAnnouncementRepository
 
     private function mapToValue(Announcement $announcement, ?AnnouncementUser $pivot, int $seenCount): AnnouncementForUser
     {
-        $started = $announcement->starts_at === null || $announcement->starts_at->lte(now());
-        $expired = $announcement->expires_at !== null && $announcement->expires_at->lt(now());
+        $started = null === $announcement->starts_at || $announcement->starts_at->lte(now());
+        $expired = null !== $announcement->expires_at && $announcement->expires_at->lt(now());
 
         return new AnnouncementForUser(
             $announcement->id,
             $announcement->title,
             $announcement->type,
-            (bool)$announcement->is_forced,
+            (bool) $announcement->is_global,
+            (bool) $announcement->is_forced,
             $announcement->anchor,
             $announcement->starts_at,
             $announcement->expires_at,
@@ -147,7 +156,7 @@ readonly class UserAnnouncementRepository
             $this->resolveContent($announcement),
             $pivot?->seen_at,
             $pivot?->accepted_at,
-            $seenCount
+            $seenCount,
         );
     }
 
@@ -163,9 +172,10 @@ readonly class UserAnnouncementRepository
         ];
 
         foreach ($candidates as $lang) {
-            $file = resource_path("announcements/{$announcement->view}/$lang.md");
+            $file = resource_path("announcements/{$announcement->view}/{$lang}.md");
+
             if (is_file($file)) {
-                return (string)file_get_contents($file);
+                return (string) file_get_contents($file);
             }
         }
 

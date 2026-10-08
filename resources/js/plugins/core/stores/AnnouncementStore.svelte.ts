@@ -73,20 +73,19 @@ export class AnnouncementStore implements DataStore {
         return newestNonForced ? [...forced, newestNonForced] : forced;
     }
 
-    /** Marks the announcement as seen on the server and mirrors the timestamp locally. */
+    /**
+     * Marks the announcement as seen on the server and mirrors the server-stamped
+     * timestamp locally.
+     */
     public async markSeen(announcement: Announcement): Promise<void> {
-        this.patch(announcement.id, {seen_at: announcement.seen_at ?? new Date().toISOString()});
-        await this.getApp().restApi.postToResourceAction('announcements', 'actions/seen', {
-            announcement_id: Number(announcement.id)
-        });
+        const updated = await this.getApp().restApi.updateResource('announcements', announcement.id, {seen: true});
+        this.patch(announcement.id, updated);
     }
 
     /** Accepts the announcement on the server, then removes it from the display queue. */
     public async accept(announcement: Announcement): Promise<void> {
-        await this.getApp().restApi.postToResourceAction('announcements', 'actions/accept', {
-            announcement_id: Number(announcement.id)
-        });
-        this.patch(announcement.id, {accepted_at: new Date().toISOString()});
+        const updated = await this.getApp().restApi.updateResource('announcements', announcement.id, {accepted: true});
+        this.patch(announcement.id, updated);
         this.dequeue(announcement.id);
     }
 

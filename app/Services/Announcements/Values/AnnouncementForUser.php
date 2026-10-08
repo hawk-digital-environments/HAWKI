@@ -1,6 +1,6 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\Announcements\Values;
 
@@ -20,22 +20,25 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 class AnnouncementForUser
 {
     public function __construct(
-        public int              $id,
-        public string           $title,
-        public string           $type,
-        public bool             $isForced,
-        public ?string          $anchor,
+        public int $id,
+        public string $title,
+        public string $type,
+        public bool $isGlobal,
+        public bool $isForced,
+        public ?string $anchor,
         public ?CarbonInterface $startsAt,
         public ?CarbonInterface $expiresAt,
-        /** True while the announcement is inside its `starts_at`/`expires_at` window. */
-        public bool             $isActive,
-        /** Localized markdown body, resolved from `resources/announcements/{view}/{lang}.md`. */
-        public string           $content,
+        /**
+         * True while the announcement is inside its `starts_at`/`expires_at` window.
+         */
+        public bool $isActive,
+        /**
+         * Localized markdown body, resolved from `resources/announcements/{view}/{lang}.md`.
+         */
+        public string $content,
         public ?CarbonInterface $seenAt,
         public ?CarbonInterface $acceptedAt,
-        /** How many users have seen this announcement, across all users. */
-        public int              $seenCount
-    )
-    {
+        public int $seenCount,
+    ) {
     }
 }
