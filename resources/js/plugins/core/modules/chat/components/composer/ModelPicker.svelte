@@ -47,6 +47,12 @@
         composerContext.model.set(newModelId);
     }
 
+    function handleModelSelect() {
+        // Hand the cursor back to the input so typing can continue right away,
+        // also when the already active model was picked again.
+        composerContext.autoFocusInput();
+    }
+
 </script>
 
 {#snippet itemSnippet({item, selected}: ItemSnippetProps)}
@@ -81,6 +87,7 @@
             triggerValue={triggerValue}
             placeholder={__('chat.composer.modelPicker.placeholder')}
             onValueChange={handleModelChange}
+            onSelect={handleModelSelect}
             triggerProps={mergeProps(a.props, {class: 'chat-model-trigger'})}
             contentProps={{class: 'chat-model-content'}}
         />

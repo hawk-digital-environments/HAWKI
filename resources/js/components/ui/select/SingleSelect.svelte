@@ -76,6 +76,9 @@
         contentProps?: ComponentProps<typeof SelectPrimitive.Content>;
         /** Text shown when nothing is selected. */
         placeholder?: string;
+        /** Called whenever the user picks an item, also when it is the already selected one
+         *  (unlike `onValueChange`, which only fires when the value actually changes). */
+        onSelect?: (value: string) => void;
     }>
 
     let {
@@ -88,8 +91,36 @@
         triggerValue,
         contentProps = {},
         placeholder,
+        onSelect,
+        onOpenChange,
         ...restProps
     }: Props = $props();
+
+    // bits-ui closes the select without touching the value when the already selected item
+    // is picked again, so a pick is detected as "the select closed while handling an
+    // Enter/Space/pointer interaction on an item" instead of via the value.
+    let highlightedValue: string | null = null;
+    let pendingSelection: string | null = null;
+
+    function markPendingSelection(itemValue: string | null) {
+        pendingSelection = itemValue;
+        // Only valid for the interaction that is being handled right now.
+        setTimeout(() => (pendingSelection = null));
+    }
+
+    function handleTriggerKeydown(e: KeyboardEvent) {
+        if (open && (e.key === 'Enter' || e.key === ' ')) {
+            markPendingSelection(highlightedValue);
+        }
+    }
+
+    function handleOpenChange(isOpen: boolean) {
+        onOpenChange?.(isOpen);
+        if (!isOpen && pendingSelection !== null) {
+            onSelect?.(pendingSelection);
+        }
+        pendingSelection = null;
+    }
 
     let triggerElement = $state<HTMLButtonElement>();
     let contentAlign: 'start' | 'end' = $state('start');
@@ -144,6 +175,12 @@
         disabled={item.disabled}
         label={item.label}
         class={{'select-item': true, 'select-item-grouped': hasGroups}}
+        onHighlight={() => (highlightedValue = item.value)}
+        onUnhighlight={() => {
+            if (highlightedValue === item.value) highlightedValue = null;
+        }}
+        onpointerup={() => markPendingSelection(item.value)}
+        onclick={() => markPendingSelection(item.value)}
     >
         {#snippet children({selected})}
             {#if itemSnippet}
@@ -184,8 +221,9 @@
     bind:value={value as never}
     items={items}
     {...mergeProps({type: 'single'}, restProps) as any}
+    onOpenChange={handleOpenChange}
 >
-    <SelectPrimitive.Trigger {...triggerProps}>
+    <SelectPrimitive.Trigger {...mergeProps({onkeydown: handleTriggerKeydown}, triggerProps)}>
         {#snippet child({props})}
             {#if trigger}
                 <SnippetOrStringTrigger value={trigger} snippetArgs={{props, Value: SelectPrimitive.Value}}/>

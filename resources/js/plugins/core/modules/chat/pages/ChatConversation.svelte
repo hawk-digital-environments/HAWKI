@@ -68,6 +68,13 @@ exists; a generation started there keeps streaming through the store.
     // each `ChatMessage` renders its own thread.
     const threadGroups = $derived(store.active ? groupMessagesIntoThreads(store.active.messages) : []);
 
+    // Land the cursor in the input whenever a conversation is opened (the
+    // composer is recreated per conversation), so typing can start right away.
+    $effect(() => {
+        if (!composer) return;
+        setTimeout(() => composer?.autoFocusInput());
+    });
+
     $effect(() => {
         const requestedSlug = slug;
         if (!requestedSlug) return;

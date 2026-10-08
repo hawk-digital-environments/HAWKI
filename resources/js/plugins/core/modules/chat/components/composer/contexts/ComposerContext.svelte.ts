@@ -93,6 +93,7 @@ import {MessageSender} from '$plugins/core/modules/chat/components/composer/cont
 import {OldUiBridgeTransport} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/OldUiBridgeTransport.js';
 import type {SendMessageStatus} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageStatus.svelte.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
+import {breakpointsQueries} from '$lib/components/util/breakpoints/breakpoints.js';
 import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte';
@@ -293,6 +294,16 @@ export class ComposerContext {
      *  pre-filling the message so the cursor lands in the input without a user click. */
     public focusInput(): void {
         this.sync.trigger(FOCUS_INPUT_PIPELINE);
+    }
+
+    /** Like {@link focusInput}, but for focus the user did not explicitly ask for (opening
+     *  a chat, picking a model). Skipped on small screens, where focusing the textarea
+     *  would pop up the on-screen keyboard. */
+    public autoFocusInput(): void {
+        if (window.matchMedia(breakpointsQueries.bpSmallerThanMd).matches) {
+            return;
+        }
+        this.focusInput();
     }
 
     /** Registers a handler that fires whenever {@link focusInput} is called.
