@@ -8,8 +8,9 @@
   `BuilderContext.ownsDraftRecord`:
 
   - **create / remix** mint a brand-new record. Leaving without a decision
-    would strand it in the user's drafts, so the exit is always confirmed and
-    discarding *deletes* the record.
+    would strand it in the user's drafts, so the exit is confirmed and
+    discarding *deletes* the record. A record the user never touched holds
+    nothing to decide about: it is deleted without asking.
   - **edit** opened an assistant that already existed (possibly a published
     one), so deleting it is never on the table. The exit is only confirmed
     when this session actually changed something, and discarding *reverts*
@@ -55,10 +56,9 @@
         return path === builderBasePath || path.startsWith(builderBasePath + '/');
     }
 
-    /** Whether the builder session has something undecided whose exit needs
-     *  confirming — the state half of the decision; the router guard adds the
-     *  path-aware half. */
-    function shouldConfirmExit(): boolean {
+    /** Whether the builder session still holds an open draft — the state
+     *  half of the exit decision; the router guard adds the path-aware half. */
+    function hasOpenSession(): boolean {
         // Nothing left to decide: the record is already gone, or the user
         // committed this session's outcome from the Publish tab.
         if (builder.isDiscarded || builder.isCommitted) {
@@ -70,17 +70,7 @@
             return false;
         }
         // Not a session still initializing.
-        if (builder.loading || builder.mode === "init" || !builder.draft.id) {
-            return false;
-        }
-        // create / remix minted the record; leaving without a decision would
-        // strand it in the user's drafts.
-        if (builder.ownsDraftRecord) {
-            return true;
-        }
-        // edit opened an assistant that already existed — only worth asking
-        // about when this session actually changed it.
-        return builder.hasSessionChanges;
+        return !(builder.loading || builder.mode === "init" || !builder.draft.id);
     }
 
     /** Which decision the user is being asked to make — see the component
@@ -192,10 +182,18 @@
             if (!isBuilderPath(from) || isBuilderPath(to)) {
                 return true;
             }
-            if (shouldConfirmExit()) {
-                const decision = await askUser();
-                if (decision === 'stay') {
-                    return false;
+            if (hasOpenSession()) {
+                if (builder.hasSessionChanges) {
+                    if (await askUser() === 'stay') {
+                        return false;
+                    }
+                } else if (builder.ownsDraftRecord) {
+                    // create / remix minted a record the user never touched:
+                    // nothing to ask about, but leaving it behind would
+                    // strand an empty entry in their drafts.
+                    if (await discardSession() === 'stay') {
+                        return false;
+                    }
                 }
             }
             // The session is over. Just return to the page the builder was opened from.
