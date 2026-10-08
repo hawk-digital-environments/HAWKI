@@ -11,8 +11,11 @@
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import type {RouteProps} from '$lib/components/ui/routing/index.js';
     import {announcementDisplayTitle, parseAnnouncementContent, stripLeadingHeading} from '$lib/app/components/announcements/announcementContent.js';
     import type {Announcement} from '$plugins/core/schemas/resources/announcements.schema.js';
+
+    const {}: RouteProps = $props();
 
     // Policies and system notices (e.g. upload conditions) are acknowledgement
     // flows, not news — they don't belong in the feed.

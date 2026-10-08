@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\JsonApi\V1\Announcements;
 
 use App\Services\Announcements\Values\AnnouncementForUser;
@@ -12,15 +14,11 @@ class AnnouncementSchema extends Schema
 {
     /**
      * The model the schema corresponds to.
-     *
-     * @var string
      */
     public static string $model = AnnouncementForUser::class;
 
     /**
      * Get the resource fields.
-     *
-     * @return array
      */
     public function fields(): array
     {
@@ -28,6 +26,7 @@ class AnnouncementSchema extends Schema
             ID::make(),
             Attribute::make('title'),
             Attribute::make('type'),
+            Attribute::make('is_global'),
             Attribute::make('is_forced'),
             Attribute::make('anchor'),
             Attribute::make('starts_at'),
@@ -37,13 +36,15 @@ class AnnouncementSchema extends Schema
             Attribute::make('seen_at'),
             Attribute::make('accepted_at'),
             Attribute::make('seen_count'),
+            // Write-only transition attributes; never serialized by
+            // {@see AnnouncementResource}.
+            Attribute::make('seen'),
+            Attribute::make('accepted'),
         ];
     }
 
     /**
      * Get the resource filters.
-     *
-     * @return array
      */
     public function filters(): array
     {
@@ -51,7 +52,7 @@ class AnnouncementSchema extends Schema
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function repository(): ?Repository
     {

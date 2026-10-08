@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\JsonApi\V1\Announcements;
 
 use App\Services\Announcements\Values\AnnouncementForUser;
@@ -12,23 +14,24 @@ use LaravelJsonApi\Core\Resources\JsonApiResource;
 class AnnouncementResource extends JsonApiResource
 {
     /**
-     * Returns a unique id to identify this resource
+     * Returns a unique id to identify this resource.
      */
     public function id(): string
     {
-        return (string)$this->resource->id;
+        return (string) $this->resource->id;
     }
 
     /**
      * Get the resource's attributes.
      *
-     * @param Request|null $request
+     * @param null|Request $request
      */
     public function attributes($request): iterable
     {
-        return [
+        yield from [
             'title' => $this->resource->title,
             'type' => $this->resource->type,
+            'is_global' => $this->resource->isGlobal,
             'is_forced' => $this->resource->isForced,
             'anchor' => $this->resource->anchor,
             'starts_at' => $this->resource->startsAt?->toJSON(),
@@ -44,11 +47,10 @@ class AnnouncementResource extends JsonApiResource
     /**
      * Get the resource's relationships.
      *
-     * @param Request|null $request
+     * @param null|Request $request
      */
     public function relationships($request): iterable
     {
-        return [
-        ];
+        yield from [];
     }
 }
