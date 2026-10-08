@@ -169,6 +169,7 @@
 
         "builder":{
             "sidebar": {
+                "new_assistant": "Neuer Assistent",
                 "general": "Allgemein",
                 "behaviour": "Verhalten",
                 "knowledge": "Wissen & Daten",
@@ -178,6 +179,8 @@
             },
             "steps": {
                 "progress": "Fortschritt",
+                "step_current": "Schritt :current",
+                "step_total": "von :total",
                 "back": "Zurück",
                 "continue": "Weiter",
                 "continue_to": "Weiter zu :step",

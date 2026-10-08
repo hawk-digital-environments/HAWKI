@@ -43,9 +43,10 @@ export default class AssistantsPlugin implements HawkiPlugin {
 
     /**
      * Contributes the assistants feature's sidebar UI via the sidebar hooks:
-     * one module selector entry and one sidebar panel (both active while
-     * dashboard *or* builder routes are shown — the builder has no selector
-     * entry of its own), plus the assistants sidebar's standard nav rows
+     * one module selector entry and one sidebar panel (the panel is active
+     * while dashboard *or* builder routes are shown; inside the builder the
+     * module selector is removed entirely, the sidebar is the wizard's step
+     * list there), plus the assistants sidebar's standard nav rows
      * (see `hooks/assistantMenuHooks.svelte.ts`).
      */
     public hooks(registrar: HookRegistrar): void {
@@ -61,9 +62,19 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 onSelect: (selectCtx) => {
                     void selectCtx.router.goToRoute('assistants.dashboard.index');
                 },
-                active: ctx.router.isRouteActive(dashboardGroup) || ctx.router.isRouteActive(builderGroup)
+                active: ctx.router.isRouteActive(dashboardGroup)
             }
         ]);
+
+        // The builder is a wizard: its sidebar only holds the steps and the
+        // way back, so the module selector is emptied (which hides it, see
+        // AppSidebar) for as long as a builder route is shown. Runs last so
+        // it also covers entries of plugins registered after this one.
+        registrar.add(
+            'moduleSelectorEntries',
+            (entries, ctx) => ctx.router.isRouteActive(builderGroup) ? [] : entries,
+            { order: 1000 }
+        );
 
         registrar.add('sidebarSlots', (slots, ctx) => [
             ...slots,

@@ -5,6 +5,7 @@ import {BUILDER_STEPS, COMPLETENESS_RULES, type BuilderStep} from "./builderVali
  * - `reachable`: index of the first step with an unfilled required field (see
  *   `BuilderValidatorContext.firstIncompleteStep`); later steps are locked.
  * - `complete`: per step, whether all of its required fields are satisfied.
+ * - `ratio`: per step, the share (0–1) of its required fields that are satisfied.
  * - `furthest`: index of the furthest step the user has opened.
  * Published by the builder's step footer while it is mounted.
  *
@@ -15,6 +16,7 @@ import {BUILDER_STEPS, COMPLETENESS_RULES, type BuilderStep} from "./builderVali
 export const builderProgress = $state({
     reachable: BUILDER_STEPS.length as number,
     complete: {} as Partial<Record<BuilderStep, boolean>>,
+    ratio: {} as Partial<Record<BuilderStep, number>>,
     furthest: 0,
 });
 

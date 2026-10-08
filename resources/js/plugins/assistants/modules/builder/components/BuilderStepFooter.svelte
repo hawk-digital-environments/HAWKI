@@ -76,10 +76,18 @@
     // step checklist.
     $effect(() => {
         const complete: Partial<Record<BuilderStep, boolean>> = {};
+        const filled: Partial<Record<BuilderStep, number>> = {};
+        const total: Partial<Record<BuilderStep, number>> = {};
         for (const item of builder.validator.completeness) {
-            if (item.step) complete[item.step] = (complete[item.step] ?? true) && item.ok;
+            if (!item.step) continue;
+            complete[item.step] = (complete[item.step] ?? true) && item.ok;
+            filled[item.step] = (filled[item.step] ?? 0) + (item.ok ? 1 : 0);
+            total[item.step] = (total[item.step] ?? 0) + 1;
         }
         builderProgress.complete = complete;
+        builderProgress.ratio = Object.fromEntries(
+            BUILDER_STEPS.filter(step => total[step]).map(step => [step, filled[step]! / total[step]!])
+        );
     });
     $effect(() => {
         if (index > builderProgress.furthest) builderProgress.furthest = index;
@@ -87,6 +95,7 @@
     $effect(() => () => {
         builderProgress.reachable = BUILDER_STEPS.length;
         builderProgress.complete = {};
+        builderProgress.ratio = {};
         builderProgress.furthest = 0;
     });
 
