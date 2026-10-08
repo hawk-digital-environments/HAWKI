@@ -79,7 +79,7 @@
 </script>
 
 <div class="input-container renderBlock">
-    {#if label || builder.validator.errorFor('tags')}
+    {#if label}
         <div class="field-header">
             {#if label}
                 <label for={id}>{label}</label>
@@ -87,7 +87,6 @@
             {#if label && hint}
                 <InfoPopover {label} info={hint}/>
             {/if}
-            <InputError message={builder.validator.errorFor('tags')} />
         </div>
     {/if}
 
@@ -107,6 +106,7 @@
                 disabled={disabled} />
     </div>
     </AiFillReveal>
+    <InputError message={builder.validator.errorFor('tags')} />
 </div>
 
 

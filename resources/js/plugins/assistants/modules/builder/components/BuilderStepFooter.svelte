@@ -51,9 +51,13 @@
         void router.goToRoute(routeOf(step));
     }
 
-    function next() {
+    async function next() {
+        // Land pending edits first: only the server knows whether the handle
+        // is still free, and its verdict has to be in before moving on.
+        await builder.flushSave();
+        const rejected = builder.validator.hasRejectedField(current);
         if (!builder.validator.validateStep(current, __('assistants.builder.steps.required'))) {
-            toast.error(__('assistants.builder.steps.incomplete'));
+            toast.error(__(rejected ? 'assistants.builder.steps.invalid' : 'assistants.builder.steps.incomplete'));
             return;
         }
         goTo(BUILDER_STEPS[index + 1]);
@@ -103,15 +107,20 @@
     // step (browser history, anything bypassing Continue) is vetoed and that step's missing
     // fields are marked. Going back is always allowed.
     $effect(() => {
-        return router.registerNavigationGuard(({to}) => {
+        return router.registerNavigationGuard(async ({to}) => {
             const target = stepIndexOf(to);
-            const blocker = builder.validator.firstIncompleteStep;
-            if (target === -1 || target <= blocker) return true;
+            if (target === -1 || target <= index) return true;
 
+            // Moving forward: see `next()` for why pending edits land first.
+            await builder.flushSave();
+            const blocker = builder.validator.firstIncompleteStep;
+            if (target <= blocker) return true;
+
+            const rejected = builder.validator.hasRejectedField(BUILDER_STEPS[blocker]);
             if (blocker === index) {
                 builder.validator.validateStep(current, __('assistants.builder.steps.required'));
             }
-            toast.error(__('assistants.builder.steps.incomplete'));
+            toast.error(__(rejected ? 'assistants.builder.steps.invalid' : 'assistants.builder.steps.incomplete'));
             return false;
         });
     });

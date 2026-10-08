@@ -206,7 +206,6 @@ async function suggest(): Promise<void> {
 <div class="input-container renderBlock">
     <div class="field-header">
         <p class="u-label">{__('assistants.builder.general.avatar_title')}</p>
-        <InputError message={error} />
     </div>
 
     <div class="bento-host">
@@ -295,6 +294,7 @@ async function suggest(): Promise<void> {
         </button>
     </div>
     </div>
+    <InputError message={error} />
 </div>
 
 <style>

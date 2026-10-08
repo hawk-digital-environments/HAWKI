@@ -649,11 +649,7 @@ export class BuilderContext {
         if (!valuesEqual(effectiveAiToolIds, this.lastSyncedAiToolIds)) {
           changedKeys.add('aiTools');
         }
-        const body = assistantToApi(
-          {...this.draft, aiTools: effectiveAiTools},
-          changedKeys,
-        );
-        await updateAssistant(draftId, body);
+        await this.patchAssistant(draftId, changedKeys, effectiveAiTools);
         this.lastSyncedAiToolIds = effectiveAiToolIds;
         this.commitKeys([...changedKeys]);
       }
@@ -667,6 +663,55 @@ export class BuilderContext {
       if (this.saveAgain) {
         this.saveAgain = false;
         void this.updateServer();
+      }
+    }
+  }
+
+  /**
+   * The main assistant PATCH. A rejected handle must not take the rest of the
+   * request down with it — the server validates the whole body, so one taken
+   * handle would otherwise leave name, description etc. unsaved too.
+   *
+   * The handle then gets its inline error and is dropped from `changedKeys`,
+   * so it stays unsaved (and dirty) while the remaining fields are saved
+   * without it. The error keeps the General step from being left (see
+   * `BuilderValidatorContext.firstIncompleteStep`) until the user picks a
+   * handle the server accepts.
+   */
+  private async patchAssistant(
+    draftId: string,
+    changedKeys: Set<keyof Assistant>,
+    aiTools: Assistant['aiTools'],
+  ): Promise<void> {
+    // Already rejected and not edited since: don't re-send it with every save.
+    if (this.validator.errorFor('handle')) {
+      changedKeys.delete('handle');
+    }
+    if (!changedKeys.size) {
+      return;
+    }
+
+    const body = () => assistantToApi({...this.draft, aiTools}, changedKeys);
+    try {
+      await updateAssistant(draftId, body());
+    } catch (err) {
+      const apiErr = ApiError.from(err);
+      const handleRejected = apiErr.isValidation
+        && apiErr.fieldErrors.some(fieldError => fieldError.field === 'handle');
+      if (!changedKeys.has('handle') || !handleRejected) {
+        throw err;
+      }
+
+      this.validator.recordServerErrors(err);
+      // The server's message is untranslated. A handle within its format
+      // rules (see `AssistantRequest`) can only have failed on uniqueness.
+      if (/^[a-zA-Z0-9_-]{1,255}$/.test(this.draft.handle ?? '')) {
+        this.validator.recordFieldError('handle', this.translate('assistants.builder.general.handle_taken'));
+      }
+
+      changedKeys.delete('handle');
+      if (changedKeys.size) {
+        await updateAssistant(draftId, body());
       }
     }
   }

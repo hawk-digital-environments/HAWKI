@@ -185,7 +185,8 @@
                 "continue": "Weiter",
                 "continue_to": "Weiter zu :step",
                 "required": "Dieses Feld ist erforderlich.",
-                "incomplete": "Bitte fülle die Pflichtfelder aus."
+                "incomplete": "Bitte fülle die Pflichtfelder aus.",
+                "invalid": "Bitte korrigiere die markierten Felder."
             },
             "exit_dialog": {
                 "title": "Entwurf behalten?",
@@ -206,6 +207,7 @@
                 "input_name": "Name des Assistenten",
                 "input_handle": "Eindeutiger @Handle",
                 "input_handle_hint": "Eine eindeutige Adresse für deinen Assistenten, genutzt in Links und Erwähnungen. Nur Buchstaben, Zahlen, Binde- und Unterstriche.",
+                "handle_taken": "Dieser Handle ist bereits vergeben. Bitte wähle einen anderen.",
                 "input_description": "Kurzbeschreibung",
                 "input_description_hint": "Ein Satz, der auf der Karte des Assistenten im App Store angezeigt wird.",
                 "input_short_description": "Ausführliche Beschreibung",

@@ -185,7 +185,8 @@
                 "continue": "Continue",
                 "continue_to": "Continue to :step",
                 "required": "This field is required.",
-                "incomplete": "Please fill in the required fields."
+                "incomplete": "Please fill in the required fields.",
+                "invalid": "Please correct the marked fields."
             },
             "exit_dialog": {
                 "title": "Keep draft?",
@@ -206,6 +207,7 @@
                 "input_name": "Assistant name",
                 "input_handle": "Unique @handle",
                 "input_handle_hint": "A unique address for your assistant, used in links and mentions. Only letters, numbers, hyphens and underscores.",
+                "handle_taken": "This handle is already taken. Please choose another one.",
                 "input_description": "Short description",
                 "input_description_hint": "One sentence shown on the assistant's card in the app store.",
                 "input_short_description": "Detailed description",

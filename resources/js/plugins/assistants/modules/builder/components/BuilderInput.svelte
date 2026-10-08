@@ -211,7 +211,7 @@
   inline with the switch) and so renders on its own.
 -->
 {#snippet fieldHeader()}
-    {#if label || error || hint || type === 'slider'}
+    {#if label || hint || type === 'slider'}
         <div class="field-header">
             {#if label}
                 <label for={name}>{label}<RequiredMark field={assistantValueKey}/></label>
@@ -219,7 +219,6 @@
             {#if hint}
                 <InfoPopover {label} info={hint}/>
             {/if}
-            <InputError message={error} />
             {#if type === 'slider'}
                 <span class="slider-value">{numberValue}</span>
             {/if}
@@ -303,6 +302,7 @@
                 {/if}
             </AiFillReveal>
         {/if}
+        <InputError message={error} />
     </div>
 {/if}
 
