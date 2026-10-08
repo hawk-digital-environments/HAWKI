@@ -1,4 +1,4 @@
-import type {EnrichedUrlCitation} from '$lib/components/ui/citations/types.js';
+import type {EnrichedUrlCitation, UrlCitation} from '$lib/components/ui/citations/types.js';
 import {normalizeDocumentName} from '$plugins/core/modules/chat/components/message/rewriteDocumentCitationMarkers.js';
 
 /**
@@ -17,7 +17,7 @@ import {normalizeDocumentName} from '$plugins/core/modules/chat/components/messa
  *                       share (caller supplies the component-scoped source).
  */
 export function dedupeCitations(
-    citations: Array<EnrichedUrlCitation>,
+    citations: Array<UrlCitation>,
     makeIdentifier: () => string
 ): Array<EnrichedUrlCitation> {
     const bySource = new Map<string, EnrichedUrlCitation>();
