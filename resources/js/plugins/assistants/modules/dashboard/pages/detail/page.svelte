@@ -3,7 +3,6 @@
 
     import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
-    import Button from "$lib/components/ui/button/Button.svelte";
     import ButtonWithTooltip from "$lib/components/ui/button/ButtonWithTooltip.svelte";
     import FeedbackPanel from "$plugins/assistants/modules/dashboard/components/feedbackPanel/FeedbackPanel.svelte";
     import ReceivedFeedbackList from "$plugins/assistants/modules/dashboard/components/feedbackPanel/ReceivedFeedbackList.svelte";
@@ -18,7 +17,6 @@
     import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import {resolveAssistantAvatar} from "$plugins/assistants/utils/resolveAssistantAvatar";
     import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
-    import LinkSquare01Icon from "$lib/components/ui/icons/iconset/LinkSquare01Icon.svelte";
     import UserIcon from "$lib/components/ui/icons/iconset/UserIcon.svelte";
     import HashtagIcon from "$lib/components/ui/icons/iconset/HashtagIcon.svelte";
     import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
@@ -337,22 +335,15 @@
                         onchange={onFavoriteChange}
                     />
 
-                    <ButtonWithTooltip
-                        variant="stroke"
-                        size="sm"
-                        iconLeft={SplitIcon}
-                        tooltip={assistant.allowRemix
-                            ? __('assistants.detail.remix')
-                            : __('assistants.detail.remix_disabled')}
-                        disabled={!assistant.allowRemix}
-                        onclick={startRemix}
-                    ><span class="btn-label">{__('assistants.detail.remix')}</span></ButtonWithTooltip>
-                    <Button
-                        variant="stroke"
-                        size="sm"
-                        iconLeft={LinkSquare01Icon}
-                        onclick={() => chatOpen = !chatOpen}
-                    ><span class="btn-label">{__('assistants.detail.try_out')}</span></Button>
+                    {#if assistant.allowRemix}
+                        <ButtonWithTooltip
+                            variant="stroke"
+                            size="sm"
+                            iconLeft={SplitIcon}
+                            tooltip={__('assistants.detail.remix')}
+                            onclick={startRemix}
+                        ><span class="btn-label">{__('assistants.detail.remix')}</span></ButtonWithTooltip>
+                    {/if}
 
                     {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.delete === true}
                         <DropdownMenu align="end" bind:open={menuOpen}>

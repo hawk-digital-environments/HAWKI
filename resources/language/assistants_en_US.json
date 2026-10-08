@@ -132,7 +132,6 @@
             "deleted": "Assistant deleted.",
             "delete_failed": "The assistant could not be deleted.",
             "remix": "Remix",
-            "remix_disabled": "Remixing is not allowed for this assistant",
             "try_out": "Try it out",
             "read_more": "Read more",
             "meta_creator": "Creator",
