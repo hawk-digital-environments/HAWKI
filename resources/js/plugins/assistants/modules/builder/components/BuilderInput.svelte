@@ -15,6 +15,7 @@
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
     import CheckmarkCircle02Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle02Icon.svelte';
+    import Loading03Icon from '$lib/components/ui/icons/iconset/Loading03Icon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import RequiredMark from "$plugins/assistants/modules/builder/components/RequiredMark.svelte";
     import {getScrollableParent} from "$plugins/assistants/components/testChat/textarea-resizer";
@@ -91,7 +92,9 @@
     );
     let booleanValue = $derived(Boolean(currentValue));
 
-    // The handle field confirms a handle the server accepted as free.
+    // The handle field shows a spinner while the server checks a changed
+    // handle, and confirms one it accepted as free.
+    let handlePending = $derived(assistantValueKey === 'handle' && builder.handlePending);
     let handleAvailable = $derived(assistantValueKey === 'handle' && builder.handleAvailable);
 
 
@@ -271,7 +274,7 @@
             <!-- Blue reveal when the AI guide fills this field. -->
             <AiFillReveal field={assistantValueKey}>
                 {#if type === 'input'}
-                    <div class="input-wrap" class:hasStatus={handleAvailable}>
+                    <div class="input-wrap" class:hasStatus={handlePending || handleAvailable}>
                         <Input
                             id={name}
                             {placeholder}
@@ -279,7 +282,12 @@
                             value={currentValue ?? ''}
                             oninput={(e) => update(e.currentTarget.value)}
                         />
-                        {#if handleAvailable}
+                        {#if handlePending}
+                            <span class="input-status input-status--pending" role="status"
+                                  aria-label={__('assistants.builder.general.handle_checking')}>
+                                <Loading03Icon size="1.125rem"/>
+                            </span>
+                        {:else if handleAvailable}
                             <Tooltip tooltip={__('assistants.builder.general.handle_available')}
                                      delayDuration={300} focusable={false}>
                                 {#snippet children({props})}
@@ -350,6 +358,22 @@
         align-items: center;
         justify-content: center;
         color: var(--color-success);
+    }
+    .input-status--pending {
+        color: var(--color-text-disabled);
+    }
+    .input-status--pending :global(svg) {
+        animation: input-status-spin 700ms linear infinite;
+    }
+    @keyframes input-status-spin {
+        to {
+            rotate: 1turn;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .input-status--pending :global(svg) {
+            animation-duration: 1400ms;
+        }
     }
     .slider-value {
         margin-inline-start: auto;

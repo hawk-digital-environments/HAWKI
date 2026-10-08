@@ -172,6 +172,9 @@ export class BuilderContext {
    *  verdict; the handle input stays empty until then and reveals the handle
    *  that was actually free. */
   handleChecking = $state(false);
+  /** True while any changed handle — derived or typed — is on its way to the
+   *  server; the handle input shows a spinner until the verdict is in. */
+  handlePending = $state(false);
 
   private isNewDraft = false;
 
@@ -312,6 +315,7 @@ export class BuilderContext {
     this.lastSyncedAiToolIds = (assistant.aiTools ?? []).map(t => t.id).sort();
     this.handleEdited = false;
     this.handleChecking = false;
+    this.handlePending = false;
     this.setToSession();
     this.validator.init(this.draft);
   }
@@ -454,6 +458,7 @@ export class BuilderContext {
     if (key === 'handle') {
       this.handleEdited = true;
       this.handleChecking = false;
+      this.handlePending = !!value;
     }
     this.draft = { ...this.draft, [key]: value };
     this.validator.clearError(key);
@@ -473,6 +478,7 @@ export class BuilderContext {
       patch.handle = this.handleFromName(name);
       this.handleEdited = false;
       this.handleChecking = patch.handle !== '';
+      this.handlePending = this.handleChecking;
     }
 
     this.draft = { ...this.draft, ...patch };
@@ -697,10 +703,13 @@ export class BuilderContext {
     } finally {
       this.saving = false;
       // Settled either way — unless a newer edit is still waiting to be sent.
-      if (this.handleChecking && !this.saveAgain && this.debounceTimer === null) {
-        this.handleChecking = false;
-        // Same reveal as a field the guide filled in (`AiFillReveal`).
-        this.markAiFilled(['handle']);
+      if (!this.saveAgain && this.debounceTimer === null) {
+        this.handlePending = false;
+        if (this.handleChecking) {
+          this.handleChecking = false;
+          // Same reveal as a field the guide filled in (`AiFillReveal`).
+          this.markAiFilled(['handle']);
+        }
       }
       // Flush any change that arrived while this cycle was in flight.
       if (this.saveAgain) {
@@ -966,7 +975,7 @@ export class BuilderContext {
   get handleAvailable(): boolean {
     return !!this.draft.handle
       && this.draft.handle === this.baseline.handle
-      && !this.handleChecking
+      && !this.handlePending
       && !this.validator.errorFor('handle');
   }
   STORAGE_KEY = "assistant_draft";

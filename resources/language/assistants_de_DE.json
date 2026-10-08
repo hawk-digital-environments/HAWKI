@@ -209,6 +209,7 @@
                 "input_handle_hint": "Eine eindeutige Adresse für deinen Assistenten, genutzt in Links und Erwähnungen. Nur Buchstaben, Zahlen, Binde- und Unterstriche.",
                 "handle_taken": "Dieser Handle ist bereits vergeben. Bitte wähle einen anderen.",
                 "handle_available": "Dieser Handle ist verfügbar.",
+                "handle_checking": "Verfügbarkeit wird geprüft…",
                 "input_description": "Kurzbeschreibung",
                 "input_description_hint": "Ein Satz, der auf der Karte des Assistenten im App Store angezeigt wird.",
                 "input_short_description": "Ausführliche Beschreibung",
