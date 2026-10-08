@@ -11,6 +11,16 @@ import {CITATION_ANCHOR_PREFIX} from '$plugins/core/modules/chat/components/mess
 const DOCUMENT_MARKER_REGEX = /\[\[([^\[\]]+)\]\]/g;
 
 /**
+ * Code segments the marker rewrite must never touch: fenced blocks (``` or
+ * ~~~, an unterminated fence protects the rest of the string) and inline
+ * backtick spans. Bash conditionals (`[[ -f "$x" ]]`) and TOML array-of-table
+ * headers (`[[package]]`) are content, not citations — rewriting them would
+ * change the code's meaning.
+ */
+const CODE_SEGMENT_REGEX =
+    /(```[\s\S]*?(?:```|$))|(~~~[\s\S]*?(?:~~~|$))|(``[^`]*``|`[^`\n]*`)/g;
+
+/**
  * Normalizes a document name for marker/tile matching: trims, collapses
  * whitespace, folds case. Both sides (the marker name from the tool result's
  * `documents` list and the tile title) are canonicalised to the attachment
@@ -30,48 +40,83 @@ export function normalizeDocumentName(name: string): string {
  * the provider-citation path uses (`[N](#citation-<identifier>)`, rendered by
  * `ExtendedLinkNode.svelte`, scrolling to the matching `Citation` tile).
  *
- * Markers are matched against the message's document citations
- * (`document === true`) by normalized title — the backend canonicalises both
- * the marker name (the tool result's `documents` list) and the tile title to
- * the attachment's name before either reaches the client, so the names agree
- * by construction. Chip numbers follow the citation's index in `citations`, the
- * same array the tiles render, keeping document chips, web-source chips and
- * tiles consistent. Unmatched markers degrade to plain `[name]`; they never
- * render raw `[[…]]`.
+ * The rewrite only runs for knowledge answers — messages that carry at least
+ * one document citation (`document === true`). Everything else passes through
+ * byte-identical, so `[[…]]` tokens in plain chat or other models' code are
+ * never touched; during a live stream the citations array is still empty, so
+ * raw markers show until the stream completes and resolve into chips.
+ *
+ * Markers are matched against the message's document citations by normalized
+ * title — the backend canonicalises both the marker name (the tool result's
+ * `documents` list) and the tile title to the attachment's name before either
+ * reaches the client, so the names agree by construction. A name claimed by
+ * more than one document citation is ambiguous and left unresolved: the model
+ * cannot distinguish duplicate attachment names either, so those markers
+ * degrade rather than risk linking to a guessed tile. Chip numbers follow the
+ * citation's index in `citations`, the same array the tiles render, keeping
+ * document chips, web-source chips and tiles consistent. Unmatched markers
+ * degrade to plain `[name]`.
+ *
+ * Markers inside fenced code blocks or inline code spans are never rewritten
+ * — code is content, not citation syntax.
  *
  * Run AFTER `injectCitationsIntoMarkdown`: that function places its markers
  * by offsets into the original string, so it must see the unmodified input.
  * Provider citations (offset ranges) are untouched — this pass only consumes
- * `[[…]]` tokens, which provider messages do not contain.
+ * `[[…]]` tokens outside code, which provider messages do not contain.
  */
 export function rewriteDocumentCitationMarkers(
     markdown: string,
     citations: Array<EnrichedUrlCitation>
 ): string {
-    if (!markdown.includes('[[')) {
+    // Knowledge answers only: without a document citation there is nothing
+    // to resolve or degrade, so any `[[…]]` the text contains (other
+    // models' code, plain chat) passes through untouched.
+    if (!citations.some(citation => citation.document === true) || !markdown.includes('[[')) {
         return markdown;
     }
 
     const documentIndexByName = new Map<string, number>();
+    const ambiguousNames = new Set<string>();
     citations.forEach((citation, index) => {
         if (citation.document !== true) {
             return;
         }
         const key = normalizeDocumentName(citation.title ?? '');
-        if (key === '' || documentIndexByName.has(key)) {
+        if (key === '') {
+            return;
+        }
+        if (documentIndexByName.has(key)) {
+            // Two attachments share the name — a marker cannot say which
+            // tile is meant, so it must not link to either.
+            ambiguousNames.add(key);
             return;
         }
         documentIndexByName.set(key, index);
     });
+    for (const key of ambiguousNames) {
+        documentIndexByName.delete(key);
+    }
 
-    return markdown.replace(DOCUMENT_MARKER_REGEX, (_, rawName: string) => {
-        const name = String(rawName).trim();
-        const index = documentIndexByName.get(normalizeDocumentName(name));
+    const rewriteProse = (prose: string): string =>
+        prose.replace(DOCUMENT_MARKER_REGEX, (_, rawName: string) => {
+            const name = String(rawName).trim();
+            const index = documentIndexByName.get(normalizeDocumentName(name));
 
-        if (index === undefined) {
-            return `[${name}]`;
-        }
+            if (index === undefined) {
+                return `[${name}]`;
+            }
 
-        return `[${index + 1}](${CITATION_ANCHOR_PREFIX}${citations[index].identifier})`;
-    });
+            return `[${index + 1}](${CITATION_ANCHOR_PREFIX}${citations[index].identifier})`;
+        });
+
+    let result = '';
+    let lastCopied = 0;
+    for (const match of markdown.matchAll(CODE_SEGMENT_REGEX)) {
+        result += rewriteProse(markdown.slice(lastCopied, match.index));
+        result += match[0];
+        lastCopied = match.index + match[0].length;
+    }
+
+    return result + rewriteProse(markdown.slice(lastCopied));
 }

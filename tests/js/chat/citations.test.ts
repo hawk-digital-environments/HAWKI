@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {normalizeDocumentName, rewriteDocumentCitationMarkers} from '../../../resources/js/plugins/core/modules/chat/components/message/rewriteDocumentCitationMarkers.js';
+import {dedupeCitations} from '../../../resources/js/plugins/core/modules/chat/components/message/dedupeCitations.js';
 import {CITATION_ANCHOR_PREFIX} from '../../../resources/js/plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
 
 /** Minimal enriched-citation factory; only the fields the rewrite consumes matter. */
@@ -13,6 +14,12 @@ function citation(overrides = {}) {
         document: false,
         ...overrides
     };
+}
+
+/** Identifier factory for dedupe tests: deterministic, one fresh id per entry. */
+function sequencedIdentifier() {
+    let n = 0;
+    return () => `mount-${++n}`;
 }
 
 test('normalization is trim/whitespace/case only — no structural guessing', () => {
@@ -64,12 +71,77 @@ test('side-by-side markers for one claim become adjacent chips', () => {
     );
 });
 
-test('web citations never match markers — provider path stays untouched', () => {
+test('messages without document citations keep [[…]] verbatim — no rewrite at all', () => {
+    // The rewrite is exclusive to knowledge answers. Web-only messages
+    // (provider citations) pass through untouched.
     const web = [citation({title: 'report.pdf', identifier: 'web-1', document: false})];
 
     assert.equal(
         rewriteDocumentCitationMarkers('Claim [[report.pdf]].', web),
-        'Claim [report.pdf].'
+        'Claim [[report.pdf]].'
+    );
+
+    // No citations at all (plain chat, other models): byte-identical, so
+    // code like bash conditionals or TOML headers is never mangled.
+    assert.equal(
+        rewriteDocumentCitationMarkers('Lost [[report.pdf]] citations.', []),
+        'Lost [[report.pdf]] citations.'
+    );
+});
+
+test('plain-chat code with [[…]] semantics is never touched: bash and TOML', () => {
+    const bash = 'Run `[[ -f "$x" ]] && echo ok` or:\n\n```bash\nif [[ -f "$HOME/.profile" ]]; then\n  source "$HOME/.profile"\nfi\n```';
+    const toml = '```toml\n[[package]]\nname = "hawki"\n```';
+
+    assert.equal(rewriteDocumentCitationMarkers(bash, []), bash);
+    assert.equal(rewriteDocumentCitationMarkers(toml, []), toml);
+});
+
+test('code segments stay verbatim while prose markers resolve in the same message', () => {
+    const docs = [citation({document: true, title: 'setup.md', identifier: 'doc-1'})];
+    const markdown = [
+        'Follow [[setup.md]] first, then:',
+        '',
+        '```bash',
+        'if [[ -f ".env" ]]; then source ".env"; fi',
+        '```',
+        '',
+        'Inline code `[[setup.md]]` stays, prose [[setup.md]] resolves.',
+        '',
+        '~~~toml',
+        '[[bin]]',
+        'name = "tool"',
+        '~~~'
+    ].join('\n');
+
+    assert.equal(
+        rewriteDocumentCitationMarkers(markdown, docs),
+        [
+            'Follow [1](#citation-doc-1) first, then:',
+            '',
+            '```bash',
+            'if [[ -f ".env" ]]; then source ".env"; fi',
+            '```',
+            '',
+            'Inline code `[[setup.md]]` stays, prose [1](#citation-doc-1) resolves.',
+            '',
+            '~~~toml',
+            '[[bin]]',
+            'name = "tool"',
+            '~~~'
+        ].join('\n')
+    );
+});
+
+test('duplicate document names are ambiguous: markers degrade, never guess a tile', () => {
+    const docs = [
+        citation({document: true, title: 'report.pdf', identifier: 'doc-1'}),
+        citation({document: true, title: 'Report.PDF', identifier: 'doc-2'})
+    ];
+
+    assert.equal(
+        rewriteDocumentCitationMarkers('Claim [[report.pdf]] stays unlinked.', docs),
+        'Claim [report.pdf] stays unlinked.'
     );
 });
 
@@ -80,20 +152,15 @@ test('unmatched markers degrade to plain bracketed names', () => {
         rewriteDocumentCitationMarkers('Claim [[unknown.pdf]] stays readable.', docs),
         'Claim [unknown.pdf] stays readable.'
     );
-    // No citations at all: still no raw double brackets.
-    assert.equal(
-        rewriteDocumentCitationMarkers('Lost [[report.pdf]] citations.', []),
-        'Lost [report.pdf] citations.'
-    );
 });
 
-test('while streaming (citations not yet arrived) tokens degrade, not show raw', () => {
-    // The MessageBody contract during a live stream: injection is skipped,
-    // the rewrite still runs with the (empty) citations known so far.
-    assert.equal(
-        rewriteDocumentCitationMarkers('Live view [[Pisa-Studie_ Die Impfung gegen Dummheit _ DIE ZEIT.pdf]] shows clean names.', []),
-        'Live view [Pisa-Studie_ Die Impfung gegen Dummheit _ DIE ZEIT.pdf] shows clean names.'
-    );
+test('while streaming (citations not yet arrived) raw markers show until completion', () => {
+    // The MessageBody contract during a live stream: the citations array is
+    // empty, so the rewrite is inert — the model's raw text streams through
+    // and markers resolve into chips once the citation frames land.
+    const live = 'Live view [[Pisa-Studie_ Die Impfung gegen Dummheit _ DIE ZEIT.pdf]] shows raw markers.';
+
+    assert.equal(rewriteDocumentCitationMarkers(live, []), live);
 });
 
 test('strings without markers pass through byte-identical (provider messages)', () => {
@@ -132,4 +199,40 @@ test('chip hrefs use the citation anchor prefix', () => {
     const docs = [citation({document: true, title: 'a.pdf', identifier: 'doc-9'})];
     const result = rewriteDocumentCitationMarkers('[[a.pdf]]', docs);
     assert.ok(result.startsWith(`[1](${CITATION_ANCHOR_PREFIX}doc-9)`), result);
+});
+
+test('dedupe merges same-URL citations and their ranges into one tile', () => {
+    const merged = dedupeCitations([
+        citation({url: 'https://web.example/a', ranges: [[0, 5]], title: 'A'}),
+        citation({url: 'https://web.example/a', ranges: [[6, 9]]})
+    ], sequencedIdentifier());
+
+    assert.equal(merged.length, 1);
+    assert.deepEqual(merged[0].ranges, [[0, 5], [6, 9]]);
+    assert.equal(merged[0].title, 'A', 'first title wins, later one fills only if empty');
+    assert.equal(merged[0].identifier, 'mount-1', 'one fresh mount-local identifier per tile');
+});
+
+test('dedupe keeps URL-less document citations as separate tiles', () => {
+    // The bug this guards against: two different documents both carry an
+    // empty URL and used to collapse into a single tile.
+    const tiles = dedupeCitations([
+        citation({document: true, url: '', title: 'a.pdf', identifier: 'server-1'}),
+        citation({document: true, url: '', title: 'b.pdf', identifier: 'server-2'}),
+        citation({url: 'https://web.example', identifier: 'server-3'})
+    ], sequencedIdentifier());
+
+    assert.equal(tiles.length, 3);
+    assert.deepEqual(tiles.map(t => t.title), ['a.pdf', 'b.pdf', null]);
+    assert.deepEqual(tiles.map(t => t.identifier), ['mount-1', 'mount-2', 'mount-3']);
+});
+
+test('dedupe collapses document citations that share a normalized title', () => {
+    const tiles = dedupeCitations([
+        citation({document: true, url: '', title: 'Report.PDF', identifier: 'server-1', ranges: [[0, 3]]}),
+        citation({document: true, url: '', title: ' report.pdf ', identifier: 'server-2', ranges: [[4, 7]]})
+    ], sequencedIdentifier());
+
+    assert.equal(tiles.length, 1);
+    assert.deepEqual(tiles[0].ranges, [[0, 3], [4, 7]]);
 });
