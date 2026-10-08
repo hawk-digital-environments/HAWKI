@@ -200,7 +200,7 @@
             throw err;
         }
         toast.success(__('assistants.detail.deleted'));
-        goToRoute("assistants.dashboard.store");
+        goBack();
     }
 
     /** The menu's publish submenu: the release stages, iconed like the
