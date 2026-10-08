@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\Rag\AssistantKnowledge\AgentTools;
+namespace Tests\Unit\Services\AssistantKnowledge\AgentTools;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
-use App\Providers\RagServiceProvider;
+use App\Providers\AssistantKnowledgeServiceProvider;
 use App\Services\Assistant\AgentToolRegistry;
-use App\Services\Rag\AssistantKnowledge\AgentTools\RagKnowledgeAgentTool;
+use App\Services\AssistantKnowledge\AgentTools\RagKnowledgeAgentTool;
 use App\Services\Rag\Config\RagConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
 #[CoversClass(RagKnowledgeAgentTool::class)]
-#[CoversClass(RagServiceProvider::class)]
+#[CoversClass(AssistantKnowledgeServiceProvider::class)]
 class RagKnowledgeAgentToolTest extends TestCase
 {
     public function testItConstructs(): void
@@ -30,7 +30,7 @@ class RagKnowledgeAgentToolTest extends TestCase
         static::assertSame(WellKnownCapabilities::KNOWLEDGE_BASE, $this->sut()->key());
     }
 
-    public function testItIsAvailableWhenRagIsEnabledAndTheAssistantCarriesKnowledgeFiles(): void
+    public function testItIsAvailableWhenRetrievalIsEnabledAndTheAssistantCarriesKnowledgeFiles(): void
     {
         config(['rag.enabled' => true, 'rag.dataset_prefix' => 'assistant_']);
 
@@ -38,7 +38,7 @@ class RagKnowledgeAgentToolTest extends TestCase
         static::assertFalse($this->sut()->isAvailable($this->assistant(attachments: 0)));
     }
 
-    public function testItIsUnavailableWhenRagIsDisabled(): void
+    public function testItIsUnavailableWhenTheModuleIsDisabled(): void
     {
         config(['rag.enabled' => false, 'rag.dataset_prefix' => 'assistant_']);
 
@@ -51,6 +51,16 @@ class RagKnowledgeAgentToolTest extends TestCase
 
         static::assertSame(
             ['hawki-rag-query-search:{"dataset_id":"assistant_42"}'],
+            $this->sut()->toolTransferStrings($this->assistant(attachments: 1)),
+        );
+    }
+
+    public function testItsTransferStringFollowsAConfiguredToolName(): void
+    {
+        config(['rag.enabled' => true, 'rag.dataset_prefix' => 'assistant_', 'rag.query_tool' => 'custom-kb-search']);
+
+        static::assertSame(
+            ['custom-kb-search:{"dataset_id":"assistant_42"}'],
             $this->sut()->toolTransferStrings($this->assistant(attachments: 1)),
         );
     }
@@ -79,8 +89,8 @@ class RagKnowledgeAgentToolTest extends TestCase
         $instructions = $this->sut()->usageInstructions($this->assistant(attachments: 1));
 
         static::assertStringContainsString('[KNOWLEDGE TOOL MODULE]', $instructions);
-        static::assertStringContainsString('MUST always call the ' . RagKnowledgeAgentTool::TOOL_NAME . ' tool before answering', $instructions);
-        static::assertStringContainsString('knowledge_tool: ' . RagKnowledgeAgentTool::TOOL_NAME, $instructions);
+        static::assertStringContainsString('MUST always call the hawki-rag-query-search tool before answering', $instructions);
+        static::assertStringContainsString('knowledge_tool: hawki-rag-query-search', $instructions);
         static::assertStringContainsString('### No-Evidence Rule', $instructions);
         static::assertStringContainsString('Copy the document name character-for-character', $instructions);
         static::assertStringNotContainsString('{{tool_name}}', $instructions);
@@ -92,6 +102,7 @@ class RagKnowledgeAgentToolTest extends TestCase
             RagConfig::fromArray([
                 'enabled' => (bool) config('rag.enabled'),
                 'datasetPrefix' => (string) config('rag.dataset_prefix'),
+                'queryToolName' => (string) config('rag.query_tool', 'hawki-rag-query-search'),
             ]),
         );
     }

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Services\Rag\AssistantKnowledge\Jobs;
+namespace Tests\Feature\Services\AssistantKnowledge\Jobs;
 
-use App\Services\Rag\AssistantKnowledge\Jobs\IngestAttachmentToRag;
+use App\Services\AssistantKnowledge\Jobs\IngestAttachmentToRag;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Ai\Agents\Utils\ExtractTextCollector;

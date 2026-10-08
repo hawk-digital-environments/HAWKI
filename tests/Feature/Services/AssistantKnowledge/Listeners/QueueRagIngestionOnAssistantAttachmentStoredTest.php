@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Services\Rag\AssistantKnowledge\Listeners;
+namespace Tests\Feature\Services\AssistantKnowledge\Listeners;
 
-use App\Services\Rag\AssistantKnowledge\Jobs\IngestAttachmentToRag;
+use App\Services\AssistantKnowledge\Jobs\IngestAttachmentToRag;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Models\User;
 use App\Services\Assistant\Events\AssistantAttachmentStoredEvent;
 use App\Services\Rag\Contracts\RagIngesterInterface;
-use App\Services\Rag\AssistantKnowledge\Listeners\QueueRagIngestionOnAssistantAttachmentStored;
+use App\Services\AssistantKnowledge\Listeners\QueueRagIngestionOnAssistantAttachmentStored;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;

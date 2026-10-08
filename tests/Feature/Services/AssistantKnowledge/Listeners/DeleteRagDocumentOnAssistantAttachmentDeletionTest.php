@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Services\Rag\AssistantKnowledge\Listeners;
+namespace Tests\Feature\Services\AssistantKnowledge\Listeners;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Rag\Contracts\RagIngesterInterface;
-use App\Services\Rag\AssistantKnowledge\Listeners\DeleteRagDocumentOnAssistantAttachmentDeletion;
+use App\Services\AssistantKnowledge\Listeners\DeleteRagDocumentOnAssistantAttachmentDeletion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\CoversClass;

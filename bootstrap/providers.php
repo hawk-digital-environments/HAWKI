@@ -18,6 +18,7 @@ return [
     App\Providers\FileConverterServiceProvider::class,
     App\Providers\AssistantServiceProvider::class,
     App\Providers\RagServiceProvider::class,
+    App\Providers\AssistantKnowledgeServiceProvider::class,
     App\Providers\AiServiceProvider::class,
     App\Providers\ConfigServiceProvider::class,
     \App\Providers\EncryptionServiceProvider::class,

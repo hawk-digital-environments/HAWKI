@@ -124,12 +124,6 @@ class AiServiceProvider extends ServiceProvider
                     descriptionTranslationLabel: 'chat.composer.toolMenu.tools.webFetchDescription',
                     iconPath: resource_path('icons/tools/web-fetch.svg')
                 )
-                ->declare(
-                    key: WellKnownCapabilities::KNOWLEDGE_BASE,
-                    titleTranslationLabel: 'chat.composer.toolMenu.tools.knowledgeBase',
-                    descriptionTranslationLabel: 'chat.composer.toolMenu.tools.knowledgeBaseDescription',
-                    iconPath: resource_path('icons/tools/knowledge-base.svg')
-                )
         );
 
         $this->app->extend(

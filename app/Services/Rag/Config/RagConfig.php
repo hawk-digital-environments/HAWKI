@@ -6,7 +6,6 @@ namespace App\Services\Rag\Config;
 
 use App\Services\Config\AbstractConfig;
 use App\Services\Config\Contracts\PublicConfigInterface;
-use App\Services\Rag\AssistantKnowledge\AgentTools\RagKnowledgeAgentTool;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 
@@ -20,6 +19,12 @@ use Illuminate\Http\Request;
  * DB-backed plugin configuration arrives (plugin system, §4.7), only
  * {@see make()} changes its source — every consumer stays untouched.
  *
+ * The module has two sides — the background ingestion pipeline and the
+ * ambient assistant knowledge tool — gated by the single install-time
+ * {@see $enabled} switch. The tool identities ({@see $queryToolName},
+ * {@see $webSearchToolName}) are wire contracts with the HAWKI-RAG server;
+ * they live here so config, seeder, and the public API read one source.
+ *
  * The public API exposes the `enabled` flag and the ambient file-knowledge
  * tool's name under the `rag` key: they decide how the assistant builder's
  * knowledge page treats uploaded files (RAG ingestion vs. per-request
@@ -30,8 +35,10 @@ use Illuminate\Http\Request;
 class RagConfig extends AbstractConfig implements PublicConfigInterface
 {
     /**
-     * Whether uploaded assistant knowledge files are ingested into the RAG
-     * server's per-assistant datasets.
+     * Whether the RAG module is installed and active (both sides).
+     * Install-time decision — flipping it mid-operation requires a data
+     * migration (ingested attachments carry RAG state, the server holds
+     * their datasets).
      */
     public readonly bool $enabled;
 
@@ -61,6 +68,16 @@ class RagConfig extends AbstractConfig implements PublicConfigInterface
      */
     public readonly string $attachmentIngestion;
 
+    /**
+     * Local identity (ai_tools.name) of the file-knowledge query tool the
+     * ambient agent tool grants — also what the public config publishes so
+     * the builder can keep the tool out of manually attachable lists.
+     */
+    public readonly string $queryToolName;
+
+    /** Local identity (ai_tools.name) of the hawki-rag web-search tool. */
+    public readonly string $webSearchToolName;
+
     public static function publicKey(): string
     {
         return 'rag';
@@ -71,7 +88,7 @@ class RagConfig extends AbstractConfig implements PublicConfigInterface
         if ($request->user()) {
             return [
                 'enabled' => $this->enabled,
-                'fileKnowledgeTool' => RagKnowledgeAgentTool::TOOL_NAME,
+                'fileKnowledgeTool' => $this->queryToolName,
             ];
         }
 
@@ -88,6 +105,8 @@ class RagConfig extends AbstractConfig implements PublicConfigInterface
             'timeout' => (int) $repo->get('rag.timeout', 30),
             'datasetPrefix' => (string) $repo->get('rag.dataset_prefix', 'assistant_'),
             'attachmentIngestion' => (string) $repo->get('rag.attachment_ingestion', 'text'),
+            'queryToolName' => (string) $repo->get('rag.query_tool', 'hawki-rag-query-search'),
+            'webSearchToolName' => (string) $repo->get('rag.web_search_tool', 'hawki-rag-web-search-tool'),
         ]);
     }
 }

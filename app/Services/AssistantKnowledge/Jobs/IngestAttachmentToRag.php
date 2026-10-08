@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Rag\AssistantKnowledge\Jobs;
+namespace App\Services\AssistantKnowledge\Jobs;
 
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Ai\Agents\Utils\ExtractTextCollector;
 use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
-use App\Services\Rag\AssistantKnowledge\Repositories\RagIngestionStateRepository;
+use App\Services\AssistantKnowledge\Repositories\RagIngestionStateRepository;
 use App\Services\Rag\Contracts\RagIngesterInterface;
 use App\Services\Rag\Config\RagConfig;
 use App\Services\Rag\Exceptions\RagIngestionRequestException;

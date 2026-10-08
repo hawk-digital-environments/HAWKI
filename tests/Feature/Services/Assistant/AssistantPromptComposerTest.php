@@ -9,6 +9,7 @@ use App\Models\Assistants\AssistantSetting;
 use App\Models\User;
 use App\Services\Assistant\AssistantPromptComposer;
 use App\Services\Assistant\Values\AssistantPromptTemplate;
+use App\Services\AssistantKnowledge\Values\AssistantKnowledgePromptTemplate;
 use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
@@ -165,7 +166,7 @@ class AssistantPromptComposerTest extends TestCase
         ]);
         $this->attachKnowledgeFiles($assistant, $user);
 
-        $instructions = strtr(AssistantPromptTemplate::KNOWLEDGE_TOOL, [
+        $instructions = strtr(AssistantKnowledgePromptTemplate::KNOWLEDGE_TOOL, [
             '{{tool_name}}' => 'hawki-rag-query-search',
         ]);
 

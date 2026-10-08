@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Rag\Listeners;
+namespace App\Services\AssistantKnowledge\Listeners;
 
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Ai\Tools\LaravelAi\Events\McpToolCalledFilterEvent;

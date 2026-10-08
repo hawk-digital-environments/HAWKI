@@ -33,7 +33,7 @@ use Throwable;
  *  1. Returns an error immediately if the backing MCP server is marked OFFLINE.
  *  2. Merges the tool's settings over the model-supplied arguments (settings win) —
  *     settings are composed server-side (e.g. the RAG agent tool injects the
- *     assistant's dataset_id, see {@see \App\Services\Rag\AssistantKnowledge\AgentTools\RagKnowledgeAgentTool})
+ *     assistant's dataset_id, see {@see \App\Services\AssistantKnowledge\AgentTools\RagKnowledgeAgentTool})
  *     and are trusted, unlike model arguments, which must never control
  *     server-side scoping.
  *  3. Fires {@see BeforeCallingMcpToolFilterEvent}, allowing listeners to short-circuit the

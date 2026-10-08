@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\Rag\Listeners;
+namespace Tests\Unit\Services\AssistantKnowledge\Listeners;
 
 use App\Models\Ai\AiTool;
 use App\Models\Ai\McpServer;
@@ -11,7 +11,7 @@ use App\Services\Ai\Tools\LaravelAi\Events\McpToolCalledFilterEvent;
 use App\Services\Ai\Tools\Mcp\HawkiMcpClient;
 use App\Services\Ai\Tools\Values\ToolType;
 use App\Services\Rag\Citations\RagCitationCollector;
-use App\Services\Rag\Listeners\CollectRagDocumentCitationsOnMcpToolCalled;
+use App\Services\AssistantKnowledge\Listeners\CollectRagDocumentCitationsOnMcpToolCalled;
 use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Ai\Values\OnlineStatus;
 use PHPUnit\Framework\Attributes\CoversClass;

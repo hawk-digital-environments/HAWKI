@@ -48,9 +48,19 @@ settings the model never sees — and an optional usage-instruction prompt modul
 and declare it for a `WellKnownCapabilities` key; the `AssistantRunComposer` merges
 active tools into every assistant run, supersedes explicitly attached tools with
 the same effective capability (persisted capability strings pass through
-untouched), and appends contributed usage instructions to the system prompt. The
-Rag slice's knowledge-base tool (`Rag\AssistantKnowledge\AgentTools`, backed by the
-`hawki-rag-query-search` MCP tool) is the built-in example — see `RagServiceProvider`.
+untouched), and appends contributed usage instructions to the system prompt.
+The built-in example is the knowledge-base tool in the `AssistantKnowledge`
+composition slice (see `AssistantKnowledgeServiceProvider`).
+
+**Composition slices extend multiple modules.** Some features belong to no
+single module: they combine several modules' published APIs — a contract
+plus registry here, events and state columns there — into one user-facing
+capability. Such a feature is its own slice: it declares into the other
+modules' registries, listens to their events, and carries its own
+workflows and persistence concerns, while every base module stays unaware of it
+and keeps its own fallback behaviour when the composition's backing service is off.
+Deterministic background work in a composition is a callable service driven by event listeners.
+Wiring lives in the composition's own service provider, one declaration per adoption point.
 
 **Container tag `'ai.tool'`** — the `FunctionToolSyncer` discovers tools via container tag.
 Register a custom function tool:

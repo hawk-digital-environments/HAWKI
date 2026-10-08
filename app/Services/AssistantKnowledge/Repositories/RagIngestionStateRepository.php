@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Rag\AssistantKnowledge\Repositories;
+namespace App\Services\AssistantKnowledge\Repositories;
 
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Rag\Values\RagIngestionStatus;
