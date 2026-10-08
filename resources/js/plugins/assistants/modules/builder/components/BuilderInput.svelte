@@ -15,6 +15,7 @@
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
     import CheckmarkCircle02Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle02Icon.svelte';
+    import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
     import Loading03Icon from '$lib/components/ui/icons/iconset/Loading03Icon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import RequiredMark from "$plugins/assistants/modules/builder/components/RequiredMark.svelte";
@@ -96,6 +97,10 @@
     // handle, and confirms one it accepted as free.
     let handlePending = $derived(assistantValueKey === 'handle' && builder.handlePending);
     let handleAvailable = $derived(assistantValueKey === 'handle' && builder.handleAvailable);
+    // ... and flags one it rejected, e.g. because it is taken.
+    let handleRejected = $derived(
+        assistantValueKey === 'handle' && !!error && !!builder.draft.handle && !builder.handlePending
+    );
 
 
 
@@ -274,7 +279,7 @@
             <!-- Blue reveal when the AI guide fills this field. -->
             <AiFillReveal field={assistantValueKey}>
                 {#if type === 'input'}
-                    <div class="input-wrap" class:hasStatus={handlePending || handleAvailable}>
+                    <div class="input-wrap" class:hasStatus={handlePending || handleAvailable || handleRejected}>
                         <Input
                             id={name}
                             {placeholder}
@@ -295,6 +300,16 @@
                                           aria-label={__('assistants.builder.general.handle_available')}
                                           {...props}>
                                         <CheckmarkCircle02Icon size="1.125rem"/>
+                                    </span>
+                                {/snippet}
+                            </Tooltip>
+                        {:else if handleRejected}
+                            <Tooltip tooltip={error} delayDuration={300} focusable={false}>
+                                {#snippet children({props})}
+                                    <span class="input-status input-status--error" role="img"
+                                          aria-label={error}
+                                          {...props}>
+                                        <AlertCircleIcon size="1.125rem"/>
                                     </span>
                                 {/snippet}
                             </Tooltip>
@@ -358,6 +373,9 @@
         align-items: center;
         justify-content: center;
         color: var(--color-success);
+    }
+    .input-status--error {
+        color: var(--color-error);
     }
     .input-status--pending {
         color: var(--color-text-disabled);
