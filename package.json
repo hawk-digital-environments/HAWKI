@@ -7,7 +7,7 @@
  "postinstall": "patch-package",
  "build": "vite build",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
-        "test": "npm run test:auth && npm run test:admin && npm run test:client-schema && npm run test:routing && npm run test:search && npm run test:tools",
+        "test": "npm run test:auth && npm run test:admin && npm run test:chat && npm run test:client-schema && npm run test:routing && npm run test:search && npm run test:tools",
         "test:auth": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/auth/*.test.ts tests/js/auth/*.test.svelte.ts",
         "test:admin": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/admin/*.test.ts tests/js/admin/*.test.svelte.ts",
         "test:admin:types": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tests/js/admin/tsconfig.json --config ./svelte.config.js",
@@ -16,7 +16,8 @@
         "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/search/*.test.ts tests/js/search/*.test.svelte.ts",
         "tsc": "tsc -p ./tsconfig.json",
         "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json",
-        "test:tools": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/tools/*.test.ts tests/js/tools/*.test.svelte.ts"
+        "test:tools": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/tools/*.test.ts tests/js/tools/*.test.svelte.ts",
+        "test:chat": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/chat/*.test.ts tests/js/chat/*.test.svelte.ts"
     },
     "devDependencies": {
         "@antv/infographic": "^0.2.19",

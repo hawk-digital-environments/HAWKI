@@ -470,7 +470,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
                 if (packet.type === 'error') {
                     if (packet.code === 'TOOL_ACCESS_DENIED') void this.app.refreshConnection().catch(() => undefined);
-                    throw new Error(String(packet.code === 'TOOL_ACCESS_DENIED' || packet.code === 'TOOL_UNAVAILABLE'
+                    throw new Error(String(packet.code === 'TOOL_ACCESS_DENIED' || packet.code === 'TOOL_UNAVAILABLE' || packet.code === 'TOOL_OFFLINE'
                         ? packet.code : packet.content ?? this.app.translator.__('chat.page.requestFailed')));
                 }
                 if (packet.type === 'reasoning_start' || packet.type === 'reasoning_delta'
@@ -646,6 +646,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const code = error instanceof ApiTransportError || error instanceof AiApiError ? error.code : error instanceof Error ? error.message : null;
         if (code === 'TOOL_ACCESS_DENIED') return this.app.translator.__('chat.tools.accessDenied');
         if (code === 'TOOL_UNAVAILABLE') return this.app.translator.__('chat.tools.unavailable');
+        if (code === 'TOOL_OFFLINE') return this.app.translator.__('chat.tools.requiredOffline');
         if (code === 'TOOL_AUTHORIZATION_REFRESHING') return this.app.translator.__('chat.tools.authorizationRefreshing');
         return error instanceof Error ? error.message : this.app.translator.__('chat.page.sendError');
     }

@@ -155,6 +155,9 @@ class AssistantRemixTest extends TestCase
         $assistant->ai_tools()->attach($tool->id);
 
         $this->actingAsUser($remixUser);
+        // The remix copies ai_tools through the discovery scope, so the
+        // remixing user must be allowed to see the tool.
+        $this->grantInternalToolAccess($remixUser);
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();

@@ -7,22 +7,18 @@ namespace App\Services\Assistant\Repositories;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Models\User;
-use App\Services\Rag\Values\RagIngestionStatus;
 use App\Services\Storage\Values\AttachmentType;
 use App\Services\Storage\Values\StoredFile;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
-use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Clock\Clock;
 
 #[UseModel(AssistantAttachment::class)]
 class AssistantAttachmentRepository extends AbstractRepository
 {
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly ClockInterface $clock = new Clock(),
     ) {
     }
 
@@ -82,44 +78,5 @@ class AssistantAttachmentRepository extends AbstractRepository
 
             return null;
         }
-    }
-
-    /**
-     * Advances the RAG ingestion state of an attachment. Sets the ingest
-     * timestamp automatically when the status becomes INGESTED; passing
-     * null for taskId/documentId/batchId/error leaves the stored values
-     * untouched.
-     */
-    public function updateRagState(
-        int $assistantAttachmentId,
-        RagIngestionStatus $status,
-        ?string $taskId = null,
-        ?string $error = null,
-        ?string $documentId = null,
-        ?string $batchId = null,
-    ): void {
-        $update = ['rag_status' => $status->value];
-
-        if (null !== $taskId) {
-            $update['rag_task_id'] = $taskId;
-        }
-
-        if (null !== $error) {
-            $update['rag_error'] = $error;
-        }
-
-        if (null !== $documentId) {
-            $update['rag_document_id'] = $documentId;
-        }
-
-        if (null !== $batchId) {
-            $update['rag_batch_id'] = $batchId;
-        }
-
-        if (RagIngestionStatus::INGESTED === $status) {
-            $update['rag_ingested_at'] = $this->clock->now();
-        }
-
-        $this->getQuery()->whereKey($assistantAttachmentId)->update($update);
     }
 }

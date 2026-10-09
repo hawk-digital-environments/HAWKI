@@ -27,7 +27,7 @@ use App\Services\Ai\Values\OnlineStatus;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Ai\Contracts\Gateway\StepTextGateway;
 use Laravel\Ai\Contracts\Providers\TextProvider;
@@ -47,7 +47,7 @@ use Tests\TestCase;
 #[CoversNothing()]
 class ToolAuthorizationTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private User $actor;
     private Role $role;
@@ -362,7 +362,7 @@ class ToolAuthorizationTest extends TestCase
 
     public function testMcpServerConfigurationIsRecheckedBeforeClientCall(): void
     {
-        $server = \App\Models\Ai\McpServer::create(['url' => 'https://example.invalid/mcp', 'server_label' => 'Test MCP', 'timeouts' => \App\Services\Ai\Tools\Values\McpServerTimeouts::fromArray([]), 'api_key' => 'test-only']);
+        $server = \App\Models\Ai\McpServer::create(['url' => 'https://example.invalid/mcp', 'server_label' => 'Test MCP', 'type' => 'http', 'timeouts' => \App\Services\Ai\Tools\Values\McpServerTimeouts::fromArray([]), 'api_key' => 'test-only']);
         $server->forceFill(['status' => OnlineStatus::ONLINE])->save();
         $this->tool->update(['type' => 'mcp', 'mcp_server_id' => $server->id, 'mcp_name' => 'search', 'mcp_config' => ['inputSchema' => ['type' => 'object', 'properties' => []]]]);
         $this->tool->load('server');
@@ -372,6 +372,27 @@ class ToolAuthorizationTest extends TestCase
         $tool = new \App\Services\Ai\Tools\LaravelAi\AuthorizedTool($inner, $this->tool, $this->context);
         $server->update(['url' => 'https://example.invalid/reconfigured']);
         $this->assertAccessFailure(fn () => $tool->handle(new Request([])), 'TOOL_UNAVAILABLE');
+    }
+
+    /**
+     * A not-online backing server is an outage, not a configuration
+     * problem: it must surface as TOOL_OFFLINE (transient wording, no
+     * selection to review — e.g. ambiently granted assistant tools)
+     * rather than TOOL_UNAVAILABLE.
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('mcpServerOutageStatuses')]
+    public function testMcpToolOnANotOnlineServerFailsWithToolOffline(OnlineStatus $status): void
+    {
+        $server = \App\Models\Ai\McpServer::create(['url' => 'https://example.invalid/mcp', 'server_label' => 'Test MCP', 'type' => 'http', 'timeouts' => \App\Services\Ai\Tools\Values\McpServerTimeouts::fromArray([]), 'api_key' => 'test-only']);
+        $server->forceFill(['status' => $status])->save();
+        $this->tool->update(['type' => 'mcp', 'mcp_server_id' => $server->id, 'mcp_name' => 'search', 'mcp_config' => ['inputSchema' => ['type' => 'object', 'properties' => []]]]);
+        $this->assertAccessFailure(fn () => app(LaravelToolResolver::class)->resolveToolByName($this->tool->name, $this->context), 'TOOL_OFFLINE');
+    }
+
+    public static function mcpServerOutageStatuses(): \Generator
+    {
+        yield 'offline' => [OnlineStatus::OFFLINE];
+        yield 'unknown' => [OnlineStatus::UNKNOWN];
     }
 
     public function testSdkCannotContinueOrReportSuccessAfterLocalToolRevocation(): void

@@ -6,14 +6,14 @@ namespace Tests\Feature;
 
 use App\Models\Announcements\Announcement;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
 #[CoversNothing()]
 class AnnouncementsApiTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     public function testItListsGlobalAnnouncementsWithContentAndPivotStateForTheCurrentUser(): void
     {

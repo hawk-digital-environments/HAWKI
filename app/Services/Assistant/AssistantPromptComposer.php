@@ -14,7 +14,6 @@ use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\WellKnownAssistantSettingKeys;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Support\Collection;
 
@@ -24,12 +23,16 @@ class AssistantPromptComposer
         private readonly FileStorageService   $fileStorage,
         private readonly Gate                 $gate,
         private readonly ExtractTextCollector $extractTextCollector,
-        #[Config('rag.enabled')]
-        private readonly bool                 $knowledgeHandledByRag = false,
     ) {
     }
 
-    public function compose(Assistant $assistant, ?User $actor = null): string
+    /**
+     * @param list<string> $agentToolInstructions rendered usage-instruction
+     *                                            modules contributed by active
+     *                                            agent tools, appended before
+     *                                            the knowledge-files fragment
+     */
+    public function compose(Assistant $assistant, ?User $actor = null, bool $knowledgeHandledByAgentTool = false, array $agentToolInstructions = []): string
     {
         $prompt = $assistant->system_prompt ?? '';
 
@@ -65,7 +68,17 @@ class AssistantPromptComposer
             $prompt .= "\n\n" . $lengthFragment;
         }
 
-        $attachmentFragment = $this->resolveAttachmentFragment($assistant, $actor);
+        // Usage-instruction modules of the active agent tools (e.g. the
+        // knowledge-tool retrieval rules) sit between the composed settings
+        // modules and the knowledge-files fragment: the files fragment stays
+        // last while it is used (cached prefix, see below), and when an
+        // agent tool delivers the knowledge instead, the instructions are
+        // the tail — the two never overlap for the same capability.
+        foreach ($agentToolInstructions as $module) {
+            $prompt .= "\n\n" . $module;
+        }
+
+        $attachmentFragment = $this->resolveAttachmentFragment($assistant, $actor, $knowledgeHandledByAgentTool);
 
         if ('' !== $attachmentFragment) {
             $prompt .= "\n\n" . $attachmentFragment;
@@ -75,23 +88,13 @@ class AssistantPromptComposer
     }
 
     /**
-     * Builds the knowledge-files fragment appended at the end of the system
-     * prompt. For every attachment on the assistant, the stored file is
+     * Adds text extracts from knowledge-files at the end of the system
+     * prompt if there is *NO* RAG available.
+     * For every attachment on the assistant, the stored file is
      * retrieved and each of its extracts (plain-text virtual extracts or
      * converter-produced text) is concatenated as a "Source: {filename}"
      * block and substituted into the {{content}} placeholder of the
      * AssistantPromptTemplate::KNOWLEDGE_FILES module.
-     *
-     * Knowledge files are injected for every actor who may run the
-     * assistant (the `view` gate): an assistant's knowledge is part of its
-     * behaviour, so anyone who can address it experiences the files'
-     * effect. The raw file list and downloads stay protected — the
-     * `?include=assistant_attachments` JSON:API path remains behind the stricter
-     * viewAttachments gate (creator or org admin).
-     *
-     * Without an actor (rare, e.g. an unresolvable user during the group
-     * chat shutdown flow) the fragment is only injected for publicly
-     * visible assistants, matching the visibility anyone would have.
      *
      * Files whose extracts are null (converter not enabled at storage time)
      * or empty (e.g. images with no extractable text) are silently skipped.
@@ -99,12 +102,13 @@ class AssistantPromptComposer
      * stale attachment row never breaks prompt composition.
      *
      * Placement at the end of the prompt preserves the cached prefix
-     * (system_prompt + settings) when files are added, removed or replaced.
+     * (system_prompt + settings) when files are added, removed or replaced;
+     * when an agent tool delivers the knowledge instead, its
+     * usage-instruction module takes this fragment's place as the tail.
      */
-    private function resolveAttachmentFragment(Assistant $assistant, ?User $actor): string
+    private function resolveAttachmentFragment(Assistant $assistant, ?User $actor, bool $knowledgeHandledByAgentTool): string
     {
-        // Do not inject knowledge files if RAG ingestion is used.
-        if ($this->knowledgeHandledByRag) {
+        if ($knowledgeHandledByAgentTool) {
             return '';
         }
 
@@ -126,8 +130,6 @@ class AssistantPromptComposer
             }
 
             // Only PLAIN_TEXT extracts are inlined into the text system prompt;
-            // image/binary extracts carry no prompt text and would break the
-            // provider's JSON encoding. Sanitized inside the collector.
             $content = $this->extractTextCollector->collect($file);
 
             if ('' === $content) {

@@ -13,13 +13,8 @@ use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
 use App\JsonApi\V1\Server;
-use App\Models\Assistants\Assistant;
-use App\Models\Assistants\AssistantFeedback;
-use App\Observers\AssistantFeedbackObserver;
-use App\Observers\AssistantObserver;
 use App\Services\Ai\Streaming\AgentStreamer;
 use App\Services\Ai\Streaming\AgentStreamerInterface;
-use App\Services\Rag\Citations\RagCitationCollector;
 use App\Services\System\Http\SsrfSafeGetterMacro;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
 use App\Services\System\Time\CarbonClock;
@@ -57,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerDisablingGlobalScopesForEloquentUserProvider();
         $this->registerClockForInterface();
         $this->registerJsonApiServer();
-        $this->registerAssistantServices();
+        $this->registerStreamingServices();
     }
 
     /**
@@ -72,7 +67,6 @@ class AppServiceProvider extends ServiceProvider
         $this->bootUrlGeneratorMacros();
         $this->bootRequestMacros();
         $this->bootHttpMacros();
-        $this->bootObservers();
     }
 
     private function registerJsonApiServer(): void
@@ -83,18 +77,9 @@ class AppServiceProvider extends ServiceProvider
         ));
     }
 
-    private function registerAssistantServices(): void
+    private function registerStreamingServices(): void
     {
         $this->app->singleton(AgentStreamerInterface::class, AgentStreamer::class);
-        // Per-request: written by the RAG citation listener while MCP tools
-        // execute, drained by StreamController when the stream ends.
-        $this->app->scoped(RagCitationCollector::class);
-    }
-
-    private function bootObservers(): void
-    {
-        Assistant::observe(AssistantObserver::class);
-        AssistantFeedback::observe(AssistantFeedbackObserver::class);
     }
 
     /**

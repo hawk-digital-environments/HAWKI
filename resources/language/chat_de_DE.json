@@ -340,7 +340,8 @@
             "authorizationRefreshing": "Der Werkzeugzugriff wird geprüft. Bitte warte, bevor du mit Werkzeugen sendest.",
             "messageAccepted": "Deine Nachricht wurde gespeichert, aber die Antwort konnte nicht erstellt werden. Prüfe deine Auswahl, bevor du die Antwort neu erstellst.",
             "offline": "Ein ausgewähltes Werkzeug ist vorübergehend offline.",
-            "offlineHelp": "Warte, bis es wieder online ist, oder entferne es, um deine Nachricht zu senden."
+            "offlineHelp": "Warte, bis es wieder online ist, oder entferne es, um deine Nachricht zu senden.",
+            "requiredOffline": "Ein benötigtes Werkzeug ist offline. Die Anfrage kann nicht verarbeitet werden."
         }
     }
 }

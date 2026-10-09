@@ -18,6 +18,16 @@ use LaravelJsonApi\Eloquent\Fields\Relations\BelongsToMany;
 use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Schema;
 
+/**
+ * Assembles the machine-readable client schema document served by
+ * ClientSchemaController: one entry per JSON:API resource, merged from the
+ * sources of truth the API itself uses — schema classes, FormRequest
+ * validation rules, the route table, Gate policies, Eloquent model
+ * defaults, and the static override tables below.
+ *
+ * Concept and document anatomy:
+ * hawki-workflows-doc/CLIENT-SCHEMA-CONCEPT.md.
+ */
 class ClientSchemaGenerator
 {
     /**
@@ -94,6 +104,12 @@ class ClientSchemaGenerator
         return ltrim($this->urlPrefix(), '/');
     }
 
+    /**
+     * Entry point: build the full document by iterating every schema
+     * registered in the JSON:API server. Supports the kernel's cached
+     * fetch (ClientSchemaController) and, through it, all frontend
+     * consumers (form rendering, write-path lookup, action discovery).
+     */
     public function generate(?Authenticatable $user): array
     {
         $schemaClasses = $this->getSchemaClasses();
@@ -117,6 +133,12 @@ class ClientSchemaGenerator
         ];
     }
 
+    /**
+     * Assemble one resource entry: splits the schema fields into attributes
+     * and relationships, then fills the endpoints/attributes/schema/
+     * relationships/actions/filters/sortable/includable blocks from the
+     * shared inputs. Helper for generate().
+     */
     private function buildResource(Schema $schema, string $schemaClass, ?Authenticatable $user): array
     {
         $type = $schema::type();
@@ -168,6 +190,11 @@ class ClientSchemaGenerator
         return $resource;
     }
 
+    /**
+     * Decide whether a resource type has standalone CRUD routes at all.
+     * Gates the endpoints block: relationship-only resources (registered
+     * schema, no own routes — e.g. ai-conv-messages) correctly omit it.
+     */
     private function hasApiEndpoint(string $type): bool
     {
         $prefix = $this->routePrefix();
@@ -185,6 +212,12 @@ class ClientSchemaGenerator
         return false;
     }
 
+    /**
+     * Build the flat attribute map: simplified type, readOnly, required,
+     * formatted constraints, writable_on write paths, and the model-derived
+     * default per field. Supports editor form rendering and client-side
+     * validation; feeds the attributes block.
+     */
     private function buildAttributes(
         array $fields,
         array $validatedFields,
@@ -344,6 +377,12 @@ class ClientSchemaGenerator
         }
     }
 
+    /**
+     * Build the relationships map: cardinality, inverse resource type,
+     * readOnly, writable_on write paths, and a fetch endpoint only when a
+     * GET related route is registered. Supports resource-identifier write
+     * shaping and include decisions in the client.
+     */
     private function buildRelationships(
         array $fields,
         array $validatedFields,
@@ -398,6 +437,12 @@ class ClientSchemaGenerator
         return $relationships;
     }
 
+    /**
+     * Build the actions map from the discovered action routes: method,
+     * client-facing URL, allowed flag, and the simplified input contract
+     * when the action's FormRequest describes one. Supports action button
+     * rendering and request construction in the client.
+     */
     private function buildActions(string $type, array $actionRoutes, ?Authenticatable $user): array
     {
         $actions = [];
@@ -426,6 +471,12 @@ class ClientSchemaGenerator
         return $actions;
     }
 
+    /**
+     * Derive an action's input contract from its FormRequest via the
+     * SchemaBuilder OpenAPI machinery, simplified into the lean client
+     * format. Only requests following the JSON:API data.attributes.*
+     * shape yield a schema. Helper for buildActions().
+     */
     private function buildActionInputSchema(string $requestClass): ?array
     {
         try {
@@ -476,6 +527,10 @@ class ClientSchemaGenerator
         ];
     }
 
+    /**
+     * Simplify a property map from the SchemaBuilder OpenAPI output into
+     * the lean client format. Helper for buildActionInputSchema().
+     */
     private function simplifyOpenApiProperties(array $properties): array
     {
         $result = [];
@@ -487,6 +542,11 @@ class ClientSchemaGenerator
         return $result;
     }
 
+    /**
+     * Simplify a single OpenAPI property into the client format
+     * (type/enum/constraints/items/properties), recursing into nested
+     * arrays and objects. Helper for simplifyOpenApiProperties().
+     */
     private function simplifyOpenApiProperty(array $prop): array
     {
         $simplified = ['type' => $this->simplifyOpenApiType($prop['type'] ?? 'string')];
@@ -542,6 +602,10 @@ class ClientSchemaGenerator
         return $simplified;
     }
 
+    /**
+     * Fold OpenAPI scalar types into the client's reduced type set
+     * (integer becomes number). Helper for simplifyOpenApiProperty().
+     */
     private function simplifyOpenApiType(string $type): string
     {
         return match ($type) {
@@ -554,6 +618,12 @@ class ClientSchemaGenerator
         };
     }
 
+    /**
+     * Resolve all write paths for one field by merging the four layers:
+     * inline PATCH (validated fields), relationship routes, route-scanned
+     * nested writes, and the CUSTOM_WRITE_PATHS fallback. Supports the
+     * writable_on entries in attributes and relationships.
+     */
     private function resolveWritableOn(
         string $fieldName,
         string $resourceType,
@@ -706,6 +776,12 @@ class ClientSchemaGenerator
         return $this->relationshipFetchCache[$resourceType] = $found;
     }
 
+    /**
+     * Build the five CRUD endpoint descriptors with normalized URLs and
+     * allowed flags (Gate-checked viewAny/create, auth-checked otherwise).
+     * Supports the endpoints block; only reached when hasApiEndpoint()
+     * confirms standalone routes exist.
+     */
     private function buildEndpoints(string $type, string $schemaClass, bool $isAuthorizable, ?Authenticatable $user): array
     {
         $auth = null !== $user;
@@ -731,6 +807,10 @@ class ClientSchemaGenerator
         ];
     }
 
+    /**
+     * Build the fetch endpoint descriptor for one relationship (GET
+     * related). Helper for buildRelationships().
+     */
     private function buildRelationshipEndpoints(string $type, string $relationName): array
     {
         $prefix = $this->urlPrefix();
@@ -743,6 +823,10 @@ class ClientSchemaGenerator
         ];
     }
 
+    /**
+     * List the schema's filters as filter[...] query parameter descriptors.
+     * Supports list-view filtering in the client; feeds the filters block.
+     */
     private function buildFilters(Schema $schema): array
     {
         $filters = [];
@@ -757,6 +841,10 @@ class ClientSchemaGenerator
         return $filters;
     }
 
+    /**
+     * Collect the sortable field names from the schema. Supports sort
+     * parameter construction in list views; feeds the sortable block.
+     */
     private function buildSortable(Schema $schema): array
     {
         $sortable = [];
@@ -774,6 +862,10 @@ class ClientSchemaGenerator
         return $sortable;
     }
 
+    /**
+     * Collect the includable relationship names from the schema.
+     * Supports ?include= parameter construction; feeds the includable block.
+     */
     private function buildIncludable(Schema $schema): array
     {
         $includable = [];
@@ -787,6 +879,10 @@ class ClientSchemaGenerator
         return $includable;
     }
 
+    /**
+     * Reduce a field to the client's display type (enum/datetime/number/
+     * boolean/string). Helper for buildAttributes().
+     */
     private function simplifyType(array $openApiType, $field, array $constraints): string
     {
         if (isset($constraints['enum'])) {
@@ -808,6 +904,11 @@ class ClientSchemaGenerator
         return $openApiType['type'] ?? 'string';
     }
 
+    /**
+     * Rename the raw parsed constraints into the client's constraint keys
+     * (values/integer/minimum/maximum/maxLength). Helper for
+     * buildAttributes().
+     */
     private function formatConstraints(array $rawConstraints, array $openApiType): array
     {
         $formatted = [];
@@ -835,6 +936,12 @@ class ClientSchemaGenerator
         return $formatted;
     }
 
+    /**
+     * Scan the route table for action routes of a resource type
+     * (/{type}/{id}/actions/{name}) and resolve each action's FormRequest
+     * class via reflection. Supports the actions block and the
+     * writable_on custom layers; feeds buildActions().
+     */
     private function discoverActionRoutes(string $type): array
     {
         $actions = [];
@@ -867,6 +974,11 @@ class ClientSchemaGenerator
         return $actions;
     }
 
+    /**
+     * Reflect the controller method behind a route and return its
+     * FormRequest parameter class, if any. Helper for
+     * discoverActionRoutes().
+     */
     private function resolveActionRequestClass($route): ?string
     {
         $uses = $route->getAction('uses');
@@ -897,6 +1009,11 @@ class ClientSchemaGenerator
         return null;
     }
 
+    /**
+     * Overlay the DB_ENUMS values onto parsed constraints for fields whose
+     * enum lives only in the database. Helper for buildAttributes() and
+     * buildJsonSchema().
+     */
     private function mergeDbEnums(array $constraints, string $resourceType, string $fieldName): array
     {
         if (isset(self::DB_ENUMS[$resourceType][$fieldName])) {
@@ -906,6 +1023,10 @@ class ClientSchemaGenerator
         return $constraints;
     }
 
+    /**
+     * Reflect the JSON:API server's registered schema classes (the
+     * document's resource list). Helper for generate().
+     */
     private function getSchemaClasses(): array
     {
         $method = new \ReflectionMethod($this->server, 'allSchemas');
@@ -913,6 +1034,10 @@ class ClientSchemaGenerator
         return $method->invoke($this->server);
     }
 
+    /**
+     * Derive a human-readable display name from the resource type
+     * ("assistant-tags" -> "Assistant Tags"). Helper for buildResource().
+     */
     private function deriveDisplayName(string $type): string
     {
         return ucwords(str_replace(['-', '_'], ' ', $type));

@@ -13,6 +13,8 @@ use Illuminate\Foundation\Events\Dispatchable;
  * Fired after a knowledge file was stored, extracted and attached to an
  * assistant. Downstream consumers (e.g. RAG ingestion) can react without the
  * assistant domain knowing about them.
+ *
+ * @api consumed across slice boundaries (e.g. by the RAG module)
  */
 readonly class AssistantAttachmentStoredEvent
 {

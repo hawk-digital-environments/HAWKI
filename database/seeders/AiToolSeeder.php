@@ -31,16 +31,6 @@ use Illuminate\Support\Facades\DB;
  * is invoked), unlike `type=mcp` tools, which fail soft (an unreachable
  * server) rather than fatal.
  *
- * The `rag` entry adapts to the instance: without a configured
- * HAWKI-RAG system (see {@see realRagConfigured()}) the mock server is
- * seeded to demo the tool picker; with one configured, the seeder writes
- * the live `hawki-rag` server from `tools.mcp_servers` (url, api key,
- * timeouts; status is left at its default because the seeder never
- * pings) plus its two built-in tools, so a freshly seeded instance can
- * use the RAG tools without running `ai:config:sync` / `ai:tools:sync`
- * first. Later syncs stay idempotent: the server row and tool names
- * match what discovery writes.
- *
  * Uses `DB::table()->updateOrInsert()` rather than the Eloquent models —
  * `AiTool` filters to `active=1` through a contextual global scope
  * (`ActiveFilterScope`, see `AiTool::registerScopes()`), which makes
@@ -52,13 +42,6 @@ use Illuminate\Support\Facades\DB;
  */
 class AiToolSeeder extends Seeder
 {
-    /**
-     * The built-in default `tools.mcp_servers.hawki-rag.url` (mirrored
-     * from config/tools.php) — an instance still on this stock URL is
-     * treated as "no real HAWKI-RAG configured".
-     */
-    private const string DEFAULT_RAG_MCP_URL = 'http://localhost:8080/mcp/rawki';
-
     public function run(): void
     {
         $serverIds = $this->seedMcpServers();
@@ -72,17 +55,6 @@ class AiToolSeeder extends Seeder
         $now = now();
 
         $servers = [
-            'rag' => [
-                'url' => 'https://rag.mock.hawki.test/mcp',
-                'server_label' => 'hawki-rag',
-                'description' => 'HAWKI web search and knowledge base tools.',
-                'require_approval' => 'never',
-                'api_key' => 'mock-rag-api-key',
-                'type' => McpServerType::SSE->value,
-                'status' => OnlineStatus::ONLINE->value,
-                'timeouts' => ['read' => 30, 'connect' => 5],
-                'added_by_file' => false,
-            ],
             'github' => [
                 'url' => 'https://github.mock.hawki.test/mcp',
                 'server_label' => 'github-tools',
@@ -120,20 +92,6 @@ class AiToolSeeder extends Seeder
             ],
         ];
 
-        if ($this->realRagConfigured()) {
-            $realServer = $this->realRagServerConfig();
-
-            if (null !== $realServer) {
-                // Seed the live configuration instead of the mock.
-                $servers['rag'] = $realServer;
-            } else {
-                // Real system configured but no config entry to derive
-                // values from — skip the rag entries; the live server and
-                // tools then come from `ai:config:sync` / `ai:tools:sync`.
-                unset($servers['rag']);
-            }
-        }
-
         $ids = [];
         foreach ($servers as $label => $server) {
             $row = [
@@ -163,127 +121,14 @@ class AiToolSeeder extends Seeder
     }
 
     /**
-     * Whether a real HAWKI-RAG system is configured: either the MCP
-     * server URL in `tools.mcp_servers` is set to something other than
-     * the stock default (what `ai:config:sync` would register), or a
-     * live `hawki-rag` server (anything but this seeder's own mock URL)
-     * is already registered.
-     */
-    private function realRagConfigured(): bool
-    {
-        $config = config('tools.mcp_servers.hawki-rag');
-
-        $configuredUrl = \is_array($config) ? ($config['url'] ?? null) : null;
-
-        if (\is_string($configuredUrl) && '' !== $configuredUrl && $configuredUrl !== self::DEFAULT_RAG_MCP_URL) {
-            return true;
-        }
-
-        return DB::table('mcp_servers')
-            ->where('server_label', 'hawki-rag')
-            ->where('url', '!=', 'https://rag.mock.hawki.test/mcp')
-            ->exists();
-    }
-
-    /**
-     * The real `hawki-rag` MCP server definition from `tools.mcp_servers`,
-     * translated into this seeder's row shape (field mapping mirrors
-     * {@see \App\Services\Ai\ConfigFileSync\Syncers\McpServerSyncer}: the
-     * type defaults to SSE). Returns null when the config entry carries no
-     * URL. The row is marked `added_by_file` — it is owned by the config
-     * file the same way an `ai:config:sync` row is.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function realRagServerConfig(): ?array
-    {
-        $config = config('tools.mcp_servers.hawki-rag');
-
-        if (!\is_array($config) || empty($config['url']) || !\is_string($config['url'])) {
-            return null;
-        }
-
-        return [
-            'url' => $config['url'],
-            'server_label' => $config['server_label'] ?? 'hawki-rag',
-            'description' => $config['description'] ?? 'HAWKI web search and knowledge base tools.',
-            'require_approval' => $config['require_approval'] ?? 'never',
-            'api_key' => $config['api_key'] ?? null,
-            'type' => (empty($config['type']) ? McpServerType::SSE : McpServerType::from($config['type']))->value,
-            'timeouts' => array_filter([
-                'read' => $config['read_timeout'] ?? null,
-                'connect' => $config['connection_timeout'] ?? null,
-                'sse_idle' => $config['sse_idle_timeout'] ?? null,
-            ], static fn (int|float|null $value): bool => null !== $value),
-            'added_by_file' => true,
-        ];
-    }
-
-    /**
      * @param array<string, int> $serverIds
-     * @return array{rag: list<int>, other: list<int>} ids of the seeded tools, split so {@see assignToModels()} can treat the hawki-rag tools specially
+     * @return list<int> ids of the seeded tools
      */
     private function seedTools(array $serverIds): array
     {
         $now = now();
 
         $definitions = [
-            // ── hawki-rag: the two built-in capabilities ────────────────────
-            // Seeded against whichever server `seedMcpServers()` registered
-            // under 'rag' — the mock for the picker demo, or the real
-            // configured one. Names and schemas mirror the live HAWKI-RAG
-            // MCP server's tools (`App\Mcp\Tools\*` in HAWKI-RAG); keep them
-            // in sync when the server renames tools. Running
-            // `ai:tools:sync --mcp-only` replaces these rows with its own
-            // server-id-suffixed slugs (and drops their model assignments).
-            [
-                'server' => 'rag',
-                'name' => 'hawki-rag-web-search-tool',
-                'mcp_name' => 'web-search-tool',
-                'description' => 'Run a web search via the configured provider (brave or tavily).',
-                'capability' => WellKnownCapabilities::WEB_SEARCH,
-                'access_rule' => 'web_search',
-                'inputSchema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'query' => [
-                            'type' => 'string',
-                            'description' => 'A query string to search the web with',
-                        ],
-                        'max_results' => [
-                            'type' => 'integer',
-                            'description' => 'The maximum number of results to return',
-                        ],
-                    ],
-                    'required' => ['query'],
-                ],
-            ],
-            [
-                'server' => 'rag',
-                'name' => 'hawki-rag-query-search',
-                'mcp_name' => 'query-search',
-                'description' => 'Search and retrieve specific information related to HAWK and internal knowledge base with a query.',
-                'capability' => WellKnownCapabilities::KNOWLEDGE_BASE,
-                'access_rule' => 'internal_search',
-                'inputSchema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'query' => [
-                            'type' => 'string',
-                            'description' => 'Retrieve relevant information from the knowledge base. Formulate a precise and context-rich search query including specific names, entities, relationships, dates, or domain terminology. Avoid vague or generic wording.',
-                        ],
-                        'top_k' => [
-                            'type' => 'integer',
-                            'description' => 'Number of chunks to retrieve',
-                        ],
-                    ],
-                    // `dataset_id` is intentionally absent: it is injected
-                    // server-side (AssistantRunComposer -> LaravelMcpTool
-                    // settings) and must stay invisible to the model.
-                    'required' => ['query'],
-                ],
-            ],
-
             // ── github-tools: mostly uncategorized, one web_fetch, one mapped ──
             [
                 'server' => 'github',
@@ -338,14 +183,8 @@ class AiToolSeeder extends Seeder
             ],
         ];
 
-        $ids = ['rag' => [], 'other' => []];
+        $ids = [];
         foreach ($definitions as $def) {
-            // Definitions whose server was skipped (rag without a usable
-            // config entry) have nothing to attach to — skip them too.
-            if (!isset($serverIds[$def['server']])) {
-                continue;
-            }
-
             DB::table('ai_tools')->updateOrInsert(
                 ['name' => $def['name']],
                 [
@@ -368,7 +207,7 @@ class AiToolSeeder extends Seeder
                     'created_at' => $now,
                 ]
             );
-            $ids['rag' === $def['server'] ? 'rag' : 'other'][] = DB::table('ai_tools')->where('name', $def['name'])->value('id');
+            $ids[] = (int) DB::table('ai_tools')->where('name', $def['name'])->value('id');
         }
 
         // The one real function tool (see config/tools.php's `available_tools`).
@@ -390,18 +229,15 @@ class AiToolSeeder extends Seeder
                 'created_at' => $now,
             ]
         );
-        $ids['other'][] = DB::table('ai_tools')->where('name', 'test_tool')->value('id');
+        $ids[] = (int) DB::table('ai_tools')->where('name', 'test_tool')->value('id');
 
         return $ids;
     }
 
     /**
-     * Attaches the seeded tools to the tool-calling-capable models, so
-     * `filter[assigned]=1` (what the builder's tool picker actually
-     * queries) returns something. The hawki-rag tools go to every
-     * tool-calling model — knowledge base and web search are core
-     * capabilities, not demo entries — while the remaining mock tools
-     * keep their "handful of models" spread. Silently does nothing if
+     * Attaches the seeded mock tools to a handful of tool-calling-capable
+     * models, so `filter[assigned]=1` (what the builder's tool picker
+     * actually queries) returns something. Silently does nothing if
      * `models:sync` hasn't populated `ai_models` yet — this seeder
      * doesn't own that data.
      *
@@ -409,7 +245,7 @@ class AiToolSeeder extends Seeder
      * `syncWithoutDetaching` writes the pivot table directly from the ids
      * collected above rather than re-querying `AiTool`.
      *
-     * @param array{rag: list<int>, other: list<int>} $toolIds
+     * @param list<int> $toolIds
      */
     private function assignToModels(array $toolIds): void
     {
@@ -424,27 +260,19 @@ class AiToolSeeder extends Seeder
         }
 
         $typesById = DB::table('ai_tools')
-            ->whereIn('id', [...$toolIds['rag'], ...$toolIds['other']])
+            ->whereIn('id', $toolIds)
             ->pluck('type', 'id');
 
-        $attach = static function (AiModel $model, array $ids) use ($typesById): void {
-            if ([] === $ids) {
+        foreach ($models->take(3) as $model) {
+            if ([] === $toolIds) {
                 return;
             }
 
             $model->tools()->syncWithoutDetaching(
-                collect($ids)->mapWithKeys(fn (int $id) => [
+                collect($toolIds)->mapWithKeys(fn (int $id) => [
                     $id => ['type' => $typesById[$id]],
                 ])->all()
             );
-        };
-
-        foreach ($models as $model) {
-            $attach($model, $toolIds['rag']);
-        }
-
-        foreach ($models->take(3) as $model) {
-            $attach($model, $toolIds['other']);
         }
     }
 }
