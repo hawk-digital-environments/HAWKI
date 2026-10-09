@@ -17,7 +17,11 @@
   `composerContext.model.set(modelId)` (same contract as `ModelPicker`).
   Pinned models are persisted per browser by the registered `model-favorites` store.
 
-  Takes no props — it is a self-contained composer feature component.
+  Without props it is the self-contained composer feature. Passing `onSelect`
+  detaches it from the composer context: the selection then comes from `model`
+  (may be empty) and changes are reported to the callback — used by the
+  assistant builder's `ModelSelector`. Outside the composer card the popover
+  spans the nearest `[data-model-picker-anchor]` ancestor.
 
   ## Usage
   Rendered by `ChatComposer.svelte` in the top-left of the composer card when
@@ -50,7 +54,23 @@
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
-    const composerContext = useComposerContext();
+    interface Props {
+        /** Selected model when used outside the composer (requires `onSelect`). */
+        model?: AiModel | null;
+        /** Receives the picked `model_id`. When set, the composer context is not used. */
+        onSelect?: (modelId: string) => void;
+        /** Disables the trigger; outside the composer this replaces the composer guard. */
+        disabled?: boolean;
+        /** Id for the trigger button, e.g. to associate a `<label>`. */
+        id?: string;
+        /** `pill` is the compact composer chip; `field` a full-width trigger styled like a form input. */
+        variant?: 'pill' | 'field';
+    }
+
+    const {model, onSelect, disabled: disabledProp = false, id, variant = 'pill'}: Props = $props();
+
+    // svelte-ignore state_referenced_locally
+    const composerContext = onSelect ? null : useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
     const app = useApp();
@@ -73,16 +93,17 @@
 
     // The desktop popover spans the whole composer card instead of hugging the
     // small trigger button: anchor it to the nearest composer card (see
-    // `ChatComposer.svelte`), falling back to the trigger when rendered elsewhere.
+    // `ChatComposer.svelte`) or an explicitly marked `[data-model-picker-anchor]`
+    // container, falling back to the trigger when rendered elsewhere.
     const popoverAnchor = $derived.by(() => {
-        const card = triggerEl?.closest<HTMLElement>('.chat-composer-card');
+        const card = triggerEl?.closest<HTMLElement>('.chat-composer-card, [data-model-picker-anchor]');
         // Use the card's bounds without making its inputs part of the popover's
         // outside-click exclusion, as an HTMLElement anchor would do.
         return card ? {contextElement: card, getBoundingClientRect: () => card.getBoundingClientRect()} : null;
     });
 
-    const disabled = $derived(composerContext.guard.disablesFeature('models'));
-    const current = $derived(composerContext.model.current);
+    const disabled = $derived(disabledProp || (composerContext?.guard.disablesFeature('models') ?? false));
+    const current = $derived<AiModel | null>(composerContext ? composerContext.model.current : (model ?? null));
 
     // Unique providers in model order; models without a provider share the "other" tab.
     const providers = $derived.by(() => {
@@ -153,7 +174,9 @@
         return index ? `Alt+Shift+${index}` : undefined;
     }
 
-    const triggerLabel = $derived(__('chat.composer.modelPicker.switchModelCurrent', {model: current.label}));
+    const triggerLabel = $derived(current
+        ? __('chat.composer.modelPicker.switchModelCurrent', {model: current.label})
+        : __('chat.composer.modelPicker.placeholder'));
 
     function selectTab(id: string): void {
         activeTab = id;
@@ -165,7 +188,11 @@
         if (model.status === 'offline') {
             return;
         }
-        composerContext.model.set(model.model_id);
+        if (onSelect) {
+            onSelect(model.model_id);
+        } else {
+            composerContext?.model.set(model.model_id);
+        }
         open = false;
     }
 
@@ -243,10 +270,12 @@
 </script>
 
 {#snippet triggerContent()}
-    <span class="mp2-provider-chip" aria-hidden="true">
-        <ProviderIcon name={current.provider?.name ?? current.label} light={current.provider?.icon_url} dark={current.provider?.icon_url_dark} size={20} />
-    </span>
-    <span class="mp2-trigger-label">{current.label}</span>
+    {#if current}
+        <span class="mp2-provider-chip" aria-hidden="true">
+            <ProviderIcon name={current.provider?.name ?? current.label} light={current.provider?.icon_url} dark={current.provider?.icon_url_dark} size={20} />
+        </span>
+    {/if}
+    <span class="mp2-trigger-label">{current?.label ?? __('chat.composer.modelPicker.placeholder')}</span>
     <ChevronDownIcon size={14} class="mp2-trigger-chevron"/>
 {/snippet}
 
@@ -268,7 +297,7 @@
 
 {#snippet modelRow(model: AiModel, layout: 'popover' | 'sheet')}
     {@const offline = model.status === 'offline'}
-    {@const selected = model.model_id === current.model_id}
+    {@const selected = model.model_id === current?.model_id}
     {@const favorite = modelFavorites.has(model.model_id)}
     {@const kbdIndex = layout === 'popover' ? kbdIndexById.get(model.model_id) : undefined}
     <!-- Both actions are native sibling buttons. This intentionally avoids a
@@ -400,11 +429,15 @@
             </div>
             <div class="mp2-detail">
                 <div class="mp2-detail-card">
-                    <ModelCard model={detailModel}/>
+                    {#if detailModel}
+                        <ModelCard model={detailModel}/>
+                    {/if}
                 </div>
             </div>
         {:else}
-            <ModelCard model={current} compact/>
+            {#if current}
+                <ModelCard model={current} compact/>
+            {/if}
             {@render searchBox()}
             <div class="mp2-pills">
                 <button
@@ -449,6 +482,8 @@
             <button
                 type="button"
                 class="mp2-trigger chat-model-trigger"
+                class:mp2-trigger--field={variant === 'field'}
+                {id}
                 {disabled}
                 aria-label={triggerLabel}
                 aria-expanded={open}
@@ -483,7 +518,9 @@
                                 type="button"
                                 class="mp2-trigger chat-model-trigger"
                                 class:mp2-trigger--open={open}
+                                class:mp2-trigger--field={variant === 'field'}
                                 bind:this={triggerEl}
+                                {id}
                                 {disabled}
                                 aria-label={triggerLabel}
                                 {...mergeProps(props, t.props)}
@@ -563,6 +600,38 @@
         font-size: 0.55rem;
         font-weight: var(--font-weight-medium, 500);
         letter-spacing: 0.03em;
+    }
+
+    /* `field` variant: sized and outlined like the form inputs/selects it sits
+       next to, chevron pushed to the far end. */
+    .mp2-trigger--field {
+        width: 100%;
+        max-width: none;
+        min-height: 2.5rem;
+        padding: var(--space-2) var(--space-2_5);
+        border: var(--border);
+        border-radius: var(--corner-md);
+        background: transparent;
+        font-size: var(--font-size-sm);
+
+        &:hover:not([disabled]),
+        &[data-state='open'] {
+            background: transparent;
+        }
+
+        &:focus-visible {
+            border-color: var(--color-focus-ring);
+            outline: 1px solid var(--color-focus-ring);
+            outline-offset: 0;
+        }
+
+        &[disabled] {
+            opacity: 0.5;
+        }
+    }
+
+    .mp2-trigger--field :global(.mp2-trigger-chevron) {
+        margin-left: auto;
     }
 
     .mp2-no-models {
