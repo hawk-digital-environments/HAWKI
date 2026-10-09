@@ -3,17 +3,19 @@
   `modelPickerV2` experiments flag; the stable counterpart is `ModelPicker`).
 
   A richer picker in the style of a command palette: a provider tab rail
-  (first tab: all models, favorites first), a search input that filters
+  (first tab: all models, pinned first), a search input that filters
   across all providers,
-  a fixed-height result list and per-row extras (demand bars, status dot,
-  favorite star, Ctrl+1..9 quick-select). Desktop renders a two-column
-  popover, below the `md` breakpoint a bottom sheet with a horizontal
-  provider pill row instead of the rail.
+  a fixed-height result list and per-row extras (pin
+  button, Ctrl+1..9 quick-select). Desktop renders a popover with a
+  `ModelCard` detail column next to the list (following the highlighted row);
+  below the `md` breakpoint a bottom sheet with the current model's card on
+  top and a horizontal provider pill row instead of the rail. Both layouts
+  link to the `/models` showcase page in the footer.
 
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
   `composerContext.model.set(modelId)` (same contract as `ModelPicker`).
-  Favorites are persisted per browser by the registered `model-favorites` store.
+  Pinned models are persisted per browser by the registered `model-favorites` store.
 
   Takes no props — it is a self-contained composer feature component.
 
@@ -37,19 +39,20 @@
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import SearchIcon from '$lib/components/ui/icons/iconset/SearchIcon.svelte';
-    import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
+    import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
-    import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
-    import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
+    import ModelCard from '$plugins/core/components/ModelCard.svelte';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
     const composerContext = useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
+    const router = useRouter();
     const {__} = useTranslator();
 
     const ALL_TAB = '__all__';
@@ -64,6 +67,12 @@
     let activeTab = $state<string>(ALL_TAB);
     let highlightedId = $state<string | null>(null);
     let searchInputEl = $state<HTMLInputElement | null>(null);
+    let triggerEl = $state<HTMLButtonElement | null>(null);
+
+    // The desktop popover spans the whole composer card instead of hugging the
+    // small trigger button: anchor it to the nearest composer card (see
+    // `ChatComposer.svelte`), falling back to the trigger when rendered elsewhere.
+    const popoverAnchor = $derived(triggerEl?.closest<HTMLElement>('.chat-composer-card') ?? null);
 
     const disabled = $derived(composerContext.guard.disablesFeature('models'));
     const current = $derived(composerContext.model.current);
@@ -96,6 +105,10 @@
     });
 
     const selectableModels = $derived(visibleModels.entries().flatMap(([_, models]) => models).filter((model) => model.status !== 'offline').toArray());
+
+    // Model shown in the desktop detail card: follows the highlighted row,
+    // falls back to the current selection while nothing is highlighted.
+    const detailModel = $derived(selectableModels.find(model => model.model_id === highlightedId) ?? current);
 
     // Ctrl+N quick-select targets: the first 9 selectable visible rows.
     const kbdIndexById = $derived.by(() => {
@@ -139,6 +152,11 @@
         }
         composerContext.model.set(model.model_id);
         open = false;
+    }
+
+    function openModelsPage(): void {
+        open = false;
+        void router.goToRoute('models.index');
     }
 
     function toggleFavorite(e: Event, model: AiModel): void {
@@ -275,10 +293,6 @@
                         {#if selected}
                             <Tick02Icon size={16} class="mp2-row-check"/>
                         {/if}
-                            {#if !offline}
-                            <ModelDemandBars model={model} focusable={false}/>
-                        {/if}
-                            <StatusDotForModel model={model} focusable={false}/>
                             {#if kbdIndex}
                             <!-- Handles the Ctrl+N quick-select itself: listens
                                  globally while the row is mounted and shows the
@@ -287,8 +301,8 @@
                         {/if}
                             <button
                                 type="button"
-                                class="mp2-star"
-                                class:mp2-star--active={favorite}
+                                class="mp2-pin"
+                                class:mp2-pin--active={favorite}
                                 aria-label={__(
                                 favorite
                                     ? 'chat.composer.modelPicker.removeFavorite'
@@ -299,7 +313,7 @@
                                 onmousedown={(e) => e.preventDefault()}
                                 onclick={(e) => toggleFavorite(e, model)}
                             >
-                            <StarIcon size={16}/>
+                            <PinIcon size={16}/>
                         </button>
                     </span>
                     </div>
@@ -351,7 +365,13 @@
                 {@render searchBox()}
                 {@render modelList(layout)}
             </div>
+            <div class="mp2-detail">
+                <div class="mp2-detail-card">
+                    <ModelCard model={detailModel}/>
+                </div>
+            </div>
         {:else}
+            <ModelCard model={current} compact/>
             {@render searchBox()}
             <div class="mp2-pills">
                 <button
@@ -361,7 +381,7 @@
                     aria-pressed={!searching && activeTab === ALL_TAB}
                     onclick={() => selectTab(ALL_TAB)}
                 >
-                    <StarIcon size={14}/>
+                    <PinIcon size={14}/>
                     {__('chat.composer.modelPicker.allTab')}
                 </button>
                 {#each providers as provider (provider.id)}
@@ -381,6 +401,12 @@
     </div>
 {/snippet}
 
+{#snippet allModelsLink()}
+    <button type="button" class="mp2-all-models" onclick={openModelsPage}>
+        {__('chat.composer.modelPicker.allModelsLink')}
+    </button>
+{/snippet}
+
 {#if aiModelStore.models.length === 0}
     <span class="mp2-no-models">{__('chat.composer.modelPicker.placeholder')}</span>
 {:else}
@@ -395,7 +421,7 @@
             >
                 {@render triggerContent()}
             </button>
-            <BottomSheet bind:open title={__('chat.composer.modelPicker.switchModel')}>
+            <BottomSheet bind:open title={__('chat.composer.modelPicker.switchModel')} contentProps={{class: 'mp2-sheet'}}>
                 {@render panel('sheet')}
             </BottomSheet>
         {/snippet}
@@ -404,7 +430,7 @@
                 bind:open
                 side="top"
                 align="start"
-                contentProps={{class: 'mp2-content', onOpenAutoFocus: handleOpenAutoFocus, onkeydown: onPanelKeydown}}
+                contentProps={{class: 'mp2-content', customAnchor: popoverAnchor, onOpenAutoFocus: handleOpenAutoFocus, onkeydown: onPanelKeydown}}
             >
                 {#snippet children({props})}
                     <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>
@@ -413,6 +439,7 @@
                                 type="button"
                                 class="mp2-trigger chat-model-trigger"
                                 class:mp2-trigger--open={open}
+                                bind:this={triggerEl}
                                 {disabled}
                                 {...mergeProps(props, t.props)}
                             >
@@ -503,7 +530,9 @@
 
     /* Combined selector so this wins over the .popover-content defaults. */
     :global(.popover-content.mp2-content) {
-        width: auto;
+        /* Full composer width when anchored to the card (see `popoverAnchor`). */
+        width: var(--bits-floating-anchor-width, auto);
+        max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
         padding: 0;
         overflow: hidden;
     }
@@ -512,14 +541,30 @@
 
     .mp2-panel--popover {
         display: flex;
-        width: 24rem;
-        max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* Make this sheet's body a flex column so the panel (and within it only
+       the model list) absorbs the leftover height under the sheet's own
+       max-height cap — everything else stays visible, only the list scrolls. */
+    :global(.sheet-content.mp2-sheet .sheet-body) {
+        display: flex;
+        flex-direction: column;
     }
 
     .mp2-panel--sheet {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* Only the model list may give up height — the card, search, pills and
+       footer link keep their natural size instead of being squeezed. */
+    .mp2-panel--sheet > :global(*:not(.mp2-list)) {
+        flex-shrink: 0;
     }
 
     .mp2-rail {
@@ -574,6 +619,48 @@
         min-width: 0;
     }
 
+    /* ── Detail card (desktop only) ───────────────────────────────────── */
+
+    .mp2-detail {
+        display: flex;
+        flex-direction: column;
+        flex: 0 0 45%;
+        min-width: 0;
+        border-left: var(--border);
+        /* The card's content varies per model; `contain: size` keeps it from
+           contributing to the panel height, so the list column alone sets it and
+           the popover doesn't jump while browsing. The card scrolls if needed. */
+        contain: size;
+    }
+
+    .mp2-detail-card {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: var(--space-3);
+    }
+
+    .mp2-all-models {
+        border: none;
+        border-top: var(--border);
+        background: transparent;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xxs);
+        text-align: center;
+        padding: var(--space-2);
+        cursor: pointer;
+        transition: color var(--duration-fast, 150ms) var(--easing-default);
+
+        &:hover {
+            color: var(--color-text);
+        }
+    }
+
+    .mp2-panel--sheet .mp2-all-models {
+        border: none;
+        padding-bottom: 0;
+    }
+
     /* ── Search ───────────────────────────────────────────────────────── */
 
     .mp2-search {
@@ -614,11 +701,14 @@
 
     /* Fixed height on desktop so the popover does not resize while filtering. */
     .mp2-panel--popover .mp2-list {
-        height: 18rem;
+        /* Also sets the popover height (see `.mp2-detail`) — tall enough for a
+           typical model card without scrolling. */
+        height: 21rem;
     }
 
     .mp2-panel--sheet .mp2-list {
-        max-height: 50vh;
+        flex: 1;
+        min-height: 6rem;
     }
 
     .mp2-empty {
@@ -696,7 +786,10 @@
         color: var(--color-text-muted);
     }
 
-    .mp2-star {
+    /* Unpinned rows only reveal the pin button while hovered/highlighted
+       (or while the button itself has keyboard focus); pinned rows always
+       show it so the pinned state stays readable at a glance. */
+    .mp2-pin {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -706,15 +799,28 @@
         background: transparent;
         color: color-mix(in oklch, var(--color-text-muted) 55%, transparent);
         cursor: pointer;
-        transition: color var(--duration-fast, 150ms) var(--easing-default);
+        opacity: 0;
+        transition:
+            color var(--duration-fast, 150ms) var(--easing-default),
+            opacity var(--duration-fast, 150ms) var(--easing-default);
 
         &:hover {
             color: var(--color-text-muted);
         }
+
+        &:focus-visible {
+            opacity: 1;
+        }
     }
 
-    .mp2-star--active {
+    .mp2-row:hover .mp2-pin,
+    .mp2-row--highlighted .mp2-pin {
+        opacity: 1;
+    }
+
+    .mp2-pin--active {
         color: var(--color-warning);
+        opacity: 1;
 
         &:hover {
             color: var(--color-warning);
