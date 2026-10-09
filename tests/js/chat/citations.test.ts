@@ -236,3 +236,67 @@ test('dedupe collapses document citations that share a normalized title', () => 
     assert.equal(tiles.length, 1);
     assert.deepEqual(tiles[0].ranges, [[0, 3], [4, 7]]);
 });
+
+test('citeId markers resolve to numbered chips', () => {
+    const docs = [
+        citation({title: 'https://web.example', identifier: 'web-1'}),
+        citation({document: true, title: 'Pisa-Studie_ …long doubled filename….pdf', citeId: 'D1', identifier: 'doc-1'})
+    ];
+
+    assert.equal(
+        rewriteDocumentCitationMarkers('Claim [[D1]] resolves.', docs),
+        'Claim [2](#citation-doc-1) resolves.'
+    );
+    // Trivial variance on the token too.
+    assert.equal(
+        rewriteDocumentCitationMarkers('Claim [[ d1 ]] resolves.', docs),
+        'Claim [2](#citation-doc-1) resolves.'
+    );
+});
+
+test('unknown citeIds degrade to plain bracketed tokens', () => {
+    const docs = [citation({document: true, title: 'a.pdf', citeId: 'D1', identifier: 'doc-1'})];
+
+    assert.equal(
+        rewriteDocumentCitationMarkers('Claim [[D9]] stays readable.', docs),
+        'Claim [D9] stays readable.'
+    );
+});
+
+test('duplicate citeIds are ambiguous and degrade', () => {
+    const docs = [
+        citation({document: true, title: 'a.pdf', citeId: 'D1', identifier: 'doc-1'}),
+        citation({document: true, title: 'b.pdf', citeId: 'D1', identifier: 'doc-2'})
+    ];
+
+    assert.equal(
+        rewriteDocumentCitationMarkers('Claim [[D1]] stays unlinked.', docs),
+        'Claim [D1] stays unlinked.'
+    );
+});
+
+test('garbled long filenames degrade — no fuzzy guessing while the citeId contract is validated', () => {
+    // This test verifies that the citation output from the model is not parsed or guessed for now.
+    // In real world scenarios, the model may produce garbled filenames, and we should not attempt to guess the correct document.
+    // This test is just for documentation purposes of design choices and awareness.
+    const title = 'Pisa-Studie_ Die Impfung gegen Dummheit _ DIE ZEIT-3-1-1Pisa-Studie_ Die Impfung gegen Dummheit _ DIE ZEIT-3-1-1Pisa-Studie_ .pdf';
+    const docs = [citation({document: true, title, identifier: 'doc-1'})];
+
+    const garbled = 'Pisa-Studie_ Die Impfung gegen Dummheit _ DIE ZEIT-3-1-1Pisa-Studie_ Die ZEIT-3-1-1Pisa-Studie_ .pdf';
+
+    assert.equal(
+        rewriteDocumentCitationMarkers(`Claim [[${garbled}]] stays readable.`, docs),
+        `Claim [${garbled}] stays readable.`
+    );
+});
+
+test('dedupe merges the same document across searches by citeId', () => {
+    const tiles = dedupeCitations([
+        citation({document: true, url: '', title: 'Report.PDF', citeId: 'D1', ranges: [[0, 3]]}),
+        citation({document: true, url: '', title: 'report.pdf', citeId: 'D1', ranges: [[4, 7]]}),
+        citation({document: true, url: '', title: 'report.pdf', citeId: 'D2', ranges: [[8, 9]]})
+    ], sequencedIdentifier());
+
+    assert.equal(tiles.length, 2, 'same citeId collapses; a different citeId is a different document');
+    assert.deepEqual(tiles[0].ranges, [[0, 3], [4, 7]]);
+});

@@ -94,7 +94,7 @@ class RagKnowledgeAgentToolTest extends TestCase
         static::assertStringContainsString('at most 5 times per answer', $instructions);
         static::assertStringContainsString('### Re-Search Rule', $instructions);
         static::assertStringContainsString('### No-Evidence Rule', $instructions);
-        static::assertStringContainsString('Copy the document name character-for-character', $instructions);
+        static::assertStringContainsString('Copy the citeId character-for-character', $instructions);
         static::assertStringNotContainsString('{{tool_name}}', $instructions);
     }
 

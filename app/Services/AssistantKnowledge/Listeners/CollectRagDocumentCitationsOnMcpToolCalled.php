@@ -10,6 +10,7 @@ use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Rag\Citations\RagCitationCollector;
 use App\Services\Rag\Citations\RagDocumentCitation;
 use App\Services\Rag\Citations\RagDocumentReference;
+use App\Services\Rag\Config\RagConfig;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use Psr\Log\LoggerInterface;
 
@@ -24,11 +25,18 @@ use Psr\Log\LoggerInterface;
  * `metadata.document_id` (managed documents, resolved through the
  * ingestion-time `rag_document_id` mapping).
  *
- * Gated per MCP server through `tools.mcp_servers.<key>.map_document_to_attachment`
- * (default true), matched by the tool's server label: only servers whose
- * documents have local counterparts (the HAWKI-RAG knowledge base, fed from
- * assistant attachments) are mapped. For other servers the listener is a
- * no-op and the raw result passes through untouched.
+ * The same pass rewrites the tool result before the model reads it: every
+ * entry of the result's `documents` list gains a run-stable `citeId`
+ * (`D1`, `D2`, … — same document keeps its citeId across all searches of
+ * the run), and the RAG server's cite-by-name instruction line is swapped
+ * for the citeId form. The system prompt's citation rule then only asks
+ * the model to echo a two-character token instead of copying a long
+ * document name character-for-character — small models garble the latter.
+ *
+ * Serves exactly one tool: the configured knowledge query tool
+ * ({@see RagConfig::$queryToolName}). Tool calls from anything else —
+ * the web-search tool of the same server included — are a no-op and their
+ * raw results pass through untouched.
  *
  * Citations with a matching attachment point at HAWKI's storage proxy (the
  * same authorized URL the chat uses for uploads); documents without one are
@@ -36,20 +44,26 @@ use Psr\Log\LoggerInterface;
  */
 class CollectRagDocumentCitationsOnMcpToolCalled
 {
+    /** The RAG server's cite-by-name instruction, replaced with the citeId form. */
+    private const CITE_BY_NAME_INSTRUCTION = 'Cite sources by the document names from the `documents` list.';
+
+    private const CITE_ID_INSTRUCTION = 'Cite sources inline by each document\'s `citeId` from the `documents` list, e.g. [[D1]].';
+
     public function __construct(
         private readonly AssistantAttachmentRepository $attachments,
         private readonly RagCitationCollector $citations,
+        private readonly RagConfig $config,
         private readonly LoggerInterface $logger,
     ) {
     }
 
     public function handle(McpToolCalledFilterEvent $event): void
     {
-        $server = $event->getTool()->server;
-
-        if ($server === null || !$this->mapsDocumentsToAttachments($server->server_label)) {
+        if ($event->getTool()->name !== $this->config->queryToolName) {
             return;
         }
+
+        $this->rewriteCiteIds($event);
 
         foreach ($this->referencedDocuments($event->getResult()) as $reference) {
             $attachment = $this->resolveAttachment($reference);
@@ -70,27 +84,92 @@ class CollectRagDocumentCitationsOnMcpToolCalled
                 new RagDocumentCitation(
                     url: $attachment instanceof AssistantAttachment ? $this->attachmentUrl($attachment) : '',
                     title: $title,
+                    citeId: $this->citations->citeIdFor($reference->kind . ':' . $reference->id),
                 ),
             );
         }
     }
 
     /**
-     * Whether the config declares document-to-attachment mapping for the
-     * MCP server with this label. Absent key defaults to true; servers not
-     * present in the config are never mapped.
+     * Adds run-stable cite ids to every `documents` list entry of the tool
+     * result and swaps the cite-by-name instruction line, so the model sees
+     * and echoes `citeId` tokens. Rewrites both wire shapes MCP results
+     * come in: `structuredContent` and `content[].text` payloads. A no-op
+     * (result untouched) when the result carries neither documents nor the
+     * instruction line.
      */
-    private function mapsDocumentsToAttachments(string $serverLabel): bool
+    private function rewriteCiteIds(McpToolCalledFilterEvent $event): void
     {
-        foreach (config('tools.mcp_servers', []) as $server) {
-            if (is_array($server) && ($server['server_label'] ?? null) === $serverLabel) {
-                return (bool) ($server['map_document_to_attachment'] ?? true);
+        $result = json_decode($event->getResult(), true);
+
+        if (!is_array($result)) {
+            return;
+        }
+
+        $rewritten = is_array($result['structuredContent'] ?? null)
+            && $this->rewritePayload($result['structuredContent']);
+
+        foreach (is_array($result['content'] ?? null) ? $result['content'] : [] as $index => $content) {
+            if (!is_array($content) || ($content['type'] ?? null) !== 'text' || !is_string($content['text'] ?? null)) {
+                continue;
+            }
+
+            $decoded = json_decode($content['text'], true);
+
+            if (is_array($decoded) && $this->rewritePayload($decoded)) {
+                $result['content'][$index]['text'] = json_encode($decoded, JSON_THROW_ON_ERROR);
+                $rewritten = true;
             }
         }
 
-        return false;
+        if ($rewritten) {
+            $event->setResult(json_encode($result, JSON_THROW_ON_ERROR));
+        }
     }
 
+    /**
+     * Mutates one decoded payload in place: cite ids onto `documents`
+     * entries (keyed `kind:document_id`, the same keys the citation
+     * collection uses, so a document's citeId agrees everywhere) and the
+     * instruction swap.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function rewritePayload(array &$payload): bool
+    {
+        $rewritten = false;
+
+        foreach (is_array($payload['documents'] ?? null) ? $payload['documents'] : [] as $index => $document) {
+            if (!is_array($document) || !is_string($document['kind'] ?? null) || !is_string($document['document_id'] ?? null)) {
+                continue;
+            }
+
+            $citeId = $this->citations->citeIdFor($document['kind'] . ':' . $document['document_id']);
+
+            if (($document['citeId'] ?? null) !== $citeId) {
+                $payload['documents'][$index]['citeId'] = $citeId;
+                $rewritten = true;
+            }
+        }
+
+        if (is_string($payload['instructions'] ?? null)
+            && str_contains($payload['instructions'], self::CITE_BY_NAME_INSTRUCTION)) {
+            $payload['instructions'] = str_replace(
+                self::CITE_BY_NAME_INSTRUCTION,
+                self::CITE_ID_INSTRUCTION,
+                $payload['instructions'],
+            );
+            $rewritten = true;
+        }
+
+        return $rewritten;
+    }
+
+    /**
+     * Whether the MCP server with this label is declared in
+     * `tools.mcp_servers` — the servers whose documents have local
+     * counterparts and therefore get document-to-attachment mapping.
+     */
     /**
      * The source references carried by the tool result, in result order.
      * Derived from the search hits' metadata — `metadata.external_document_id`

@@ -8,10 +8,10 @@ import {normalizeDocumentName} from '$plugins/core/modules/chat/components/messa
  *
  * Providers may report the same URL more than once (one entry per cited text
  * segment) — those merge by URL, combining their ranges so every cited
- * segment still gets its inline marker. Document citations have no URL
- * (resolved attachments use a proxy URL, unresolved ones an empty string);
- * they dedupe by normalized document title instead, so two DIFFERENT
- * documents never collapse into one tile just because both lack a URL.
+ * segment still gets its inline marker. Document citations dedupe by their
+ * run-stable `citeId` when the backend supplies one (the same document
+ * across several searches carries the same citeId), by normalized document
+ * title otherwise, so two DIFFERENT documents never collapse into one tile.
  *
  * @param makeIdentifier mints the mount-local identifier chips and tiles
  *                       share (caller supplies the component-scoped source).
@@ -24,7 +24,10 @@ export function dedupeCitations(
 
     for (const citation of citations) {
         const key = citation.document === true
-            ? 'document:' + normalizeDocumentName(citation.title ?? '')
+            ? (typeof citation.citeId === 'string' && citation.citeId.trim() !== ''
+                // Same document across several searches = same citeId.
+                ? 'cite:' + citation.citeId.trim().toUpperCase()
+                : 'document:' + normalizeDocumentName(citation.title ?? ''))
             : citation.url;
 
         const existing = bySource.get(key);

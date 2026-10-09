@@ -37,6 +37,14 @@ export interface UrlCitation {
      * in which case the tile renders by name only.
      */
     document?: boolean;
+    /**
+     * Run-stable cite id (`D1`, `D2`, …) the knowledge tool assigns to each
+     * document across all searches of one run — short by design so the
+     * model can echo it instead of copying a long document name.
+     * `[[D1]]` markers resolve against this first; the document name is the
+     * fallback for citations recorded before cite ids existed.
+     */
+    citeId?: string;
 }
 
 /**
