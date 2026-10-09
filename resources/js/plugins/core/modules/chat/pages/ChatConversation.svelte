@@ -72,7 +72,7 @@ exists; a generation started there keeps streaming through the store.
     // composer is recreated per conversation), so typing can start right away.
     $effect(() => {
         if (!composer) return;
-        setTimeout(() => composer?.autoFocusInput());
+        composer.autoFocusInput();
     });
 
     $effect(() => {

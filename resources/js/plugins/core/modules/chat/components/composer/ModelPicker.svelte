@@ -47,10 +47,13 @@
         composerContext.model.set(newModelId);
     }
 
-    function handleModelSelect() {
-        // Hand the cursor back to the input so typing can continue right away,
-        // also when the already active model was picked again.
-        composerContext.autoFocusInput();
+    function handleOpenChange(isOpen: boolean) {
+        // Hand the cursor back to the input whenever the picker closes:
+        // picking a model, re-picking the active one, Escape, outside click, ... 
+        // Note: bits-ui's select leaves focus on <body> after closing otherwise.
+        if (!isOpen) {
+            composerContext.autoFocusInput();
+        }
     }
 
 </script>
@@ -87,7 +90,7 @@
             triggerValue={triggerValue}
             placeholder={__('chat.composer.modelPicker.placeholder')}
             onValueChange={handleModelChange}
-            onSelect={handleModelSelect}
+            onOpenChange={handleOpenChange}
             triggerProps={mergeProps(a.props, {class: 'chat-model-trigger'})}
             contentProps={{class: 'chat-model-content'}}
         />
