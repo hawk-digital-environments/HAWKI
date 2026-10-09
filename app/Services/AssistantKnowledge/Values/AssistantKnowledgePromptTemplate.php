@@ -22,7 +22,7 @@ final class AssistantKnowledgePromptTemplate
 
 You control knowledge-tool usage only.
 You must call the {{tool_name}} when the user asks for information.
-You MUST always call the {{tool_name}} tool before answering user questions regardless of how general, casual, or simple it seems.
+You MUST always call the {{tool_name}} tool before answering a question regardless of how general, casual, or simple the question seems.
 You do NOT control safety behavior, response language, formatting, or task logic beyond the retrieved content.
 
 ### Input
