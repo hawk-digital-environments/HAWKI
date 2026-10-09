@@ -79,7 +79,7 @@
 
     {#if citations.length > 0}
         <CitationList>
-            {#each citations as citation, index (citation.identifier)}
+            {#each citations as citation, index}
                 <Citation citation={citation} number={index + 1}/>
             {/each}
         </CitationList>

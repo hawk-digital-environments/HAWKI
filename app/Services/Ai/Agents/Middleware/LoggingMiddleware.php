@@ -8,17 +8,20 @@ namespace App\Services\Ai\Agents\Middleware;
 use App\Services\System\Container\ServiceLocatorTrait;
 use Illuminate\Contracts\Auth\Factory;
 use Illuminate\Http\Client\RequestException;
-use Laravel\Ai\Prompts\AgentPrompt;
+use Laravel\Ai\PendingStep;
 use Psr\Log\LoggerInterface;
 
 /**
- * Laravel AI middleware that logs every agent prompt dispatch and its outcome.
+ * Laravel AI middleware that logs every agent generation step and its outcome.
+ *
+ * Since Laravel AI 1.0, middleware wraps each generation step instead of the whole run,
+ * so a run with tool calls logs one entry pair per model round trip.
  *
  * Registered automatically for all {@see AbstractTextGeneratingAgent} subclasses via
  * {@see AbstractTextGeneratingAgent::middleware()}.
  *
- * On every request the middleware logs an `info` entry containing the model slug, provider
- * class, agent class, invocation ID, and the ID of the currently authenticated user. A second
+ * On every step the middleware logs an `info` entry containing the model slug, provider
+ * name, agent class, step number, invocation ID, and the ID of the currently authenticated user. A second
  * `info` entry is logged on success.
  *
  * On failure two error cases are distinguished:
@@ -36,22 +39,23 @@ class LoggingMiddleware
 {
     use ServiceLocatorTrait;
 
-    public function handle(AgentPrompt $prompt, \Closure $next)
+    public function handle(PendingStep $step, \Closure $next)
     {
         $logger = $this->getService(LoggerInterface::class);
         $currentUser = $this->getService(Factory::class)->guard()->user();
 
         $logData = [
-            'model' => $prompt->model,
-            'provider' => get_class($prompt->provider),
-            'agent' => get_class($prompt->agent),
-            'invocation_id' => $prompt->invocationId,
+            'model' => $step->model,
+            'provider' => $step->provider,
+            'agent' => $step->options?->agent ? get_class($step->options->agent) : null,
+            'step' => $step->number,
+            'invocation_id' => $step->invocationId,
             'user_id' => $currentUser?->id,
         ];
         $logger->info('Sending prompt to agent', $logData);
 
         try {
-            $res = $next($prompt);
+            $res = $next($step);
             $logger->info('Received response from agent', [
                 ...$logData,
             ]);

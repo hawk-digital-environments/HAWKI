@@ -1,4 +1,4 @@
-import type {AiProviderToolEvent, AiReasoningEvent, AiStreamPacket} from '$lib/kernel/ai/types.js';
+import type {AiProviderToolEvent, AiReasoningDeltaEvent, AiStreamPacket} from '$lib/kernel/ai/types.js';
 import type {ReasoningPart} from '$plugins/core/modules/chat/types.js';
 
 /**
@@ -13,18 +13,34 @@ import type {ReasoningPart} from '$plugins/core/modules/chat/types.js';
 export interface ThinkingTimeline {
     /** The reasoning steps in the order they happened. */
     parts: ReasoningPart[];
-    /** True while incoming reasoning deltas append to the last text part. */
-    textSegmentOpen: boolean;
+    /**
+     * Index into {@link parts} of the text part each reasoning block writes to,
+     * keyed by the block's `reasoning_id`. Every id gets its own part, so
+     * separate reasoning blocks never merge even when nothing sits between them.
+     * A block with several titled sections gets one part per section; the index
+     * then points at the section currently streaming in.
+     */
+    textPartIndex: Record<string, number>;
     /**
      * Anthropic announces a web search with a `server_tool_use` event and
      * delivers its sources with the matching `web_search_tool_result`, keyed
      * by the tool-use id.
      */
-    pendingSearches: Record<string, {query: string | null}>;
+    pendingSearches: Record<string, { query: string | null }>;
 }
 
+/**
+ * Bold text ending its line — how models title a section of their reasoning
+ * ("**Title**\n\nBody"). A title starts its line or is glued to the text before
+ * it: OpenAI's summary parts carry no trailing newline, so consecutive sections
+ * of one block arrive as "…done.**Next title**". Inline bold after a space is
+ * not a title. The newline must already be there, so bold text that is still
+ * streaming in is never mistaken for one.
+ */
+const SECTION_TITLE = /(?:^[ \t]*|(?<=\S))\*\*[^*\n]+\*\*[ \t]*\n/gm;
+
 export function emptyThinkingTimeline(): ThinkingTimeline {
-    return {parts: [], textSegmentOpen: false, pendingSearches: {}};
+    return {parts: [], textPartIndex: {}, pendingSearches: {}};
 }
 
 /**
@@ -34,34 +50,59 @@ export function emptyThinkingTimeline(): ThinkingTimeline {
  */
 export function applyThinkingEvent(timeline: ThinkingTimeline, packet: AiStreamPacket): ThinkingTimeline {
     switch (packet.type) {
-        case 'reasoning_start':
-            return {...timeline, textSegmentOpen: false};
-        case 'reasoning_delta': {
-            const event = packet.content as AiReasoningEvent | undefined;
-            const delta = typeof event?.delta === 'string' ? event.delta : '';
-            if (!delta) return timeline;
-            const last = timeline.parts.at(-1);
-            const parts: ReasoningPart[] = timeline.textSegmentOpen && last?.type === 'text'
-                ? [...timeline.parts.slice(0, -1), {type: 'text', text: last.text + delta}]
-                : [...timeline.parts, {type: 'text', text: delta}];
-            return {...timeline, parts, textSegmentOpen: true};
-        }
-        case 'reasoning_end':
-            return {...timeline, textSegmentOpen: false};
+        case 'reasoning_delta':
+            return applyReasoningDelta(timeline, packet.content);
         case 'provider_tool_event':
-            return applyProviderToolEvent(timeline, packet.content as AiProviderToolEvent | undefined);
+            return applyProviderToolEvent(timeline, packet.content);
         default:
             return timeline;
     }
 }
 
-function applyProviderToolEvent(timeline: ThinkingTimeline, event: AiProviderToolEvent | undefined): ThinkingTimeline
+function applyReasoningDelta(timeline: ThinkingTimeline, event: AiReasoningDeltaEvent): ThinkingTimeline
 {
-    if (!event) return timeline;
+    const {reasoning_id: reasoningId, delta} = event;
+    if (!delta) return timeline;
 
-    // Any tool execution interleaves the reasoning, so the open text segment ends here.
-    const timeline1 = {...timeline, textSegmentOpen: false};
+    const known = timeline.textPartIndex[reasoningId];
+    const existing = known === undefined ? undefined : timeline.parts[known];
+    const isOpen = known !== undefined && existing?.type === 'text';
+    const index = isOpen ? known : timeline.parts.length;
+    const sections = splitSections((isOpen ? existing.text : '') + delta);
 
+    const parts = [...timeline.parts];
+    parts.splice(index, isOpen ? 1 : 0, ...sections.map(text => ({type: 'text' as const, text})));
+
+    // Sections inserted mid-list push the parts of later blocks back.
+    const shift = sections.length - (isOpen ? 1 : 0);
+    const textPartIndex: Record<string, number> = {};
+    for (const [id, partIndex] of Object.entries(timeline.textPartIndex)) {
+        textPartIndex[id] = partIndex > index ? partIndex + shift : partIndex;
+    }
+    textPartIndex[reasoningId] = index + sections.length - 1;
+
+    return {...timeline, parts, textPartIndex};
+}
+
+/**
+ * Cuts reasoning text before every {@link SECTION_TITLE} that has text in
+ * front of it, so each titled section becomes its own part. A title opening
+ * the text stays with it.
+ */
+function splitSections(text: string): string[] {
+    const sections: string[] = [];
+    let start = 0;
+    for (const match of text.matchAll(SECTION_TITLE)) {
+        if (text.slice(start, match.index).trim() === '') continue;
+        sections.push(text.slice(start, match.index));
+        start = match.index;
+    }
+    sections.push(text.slice(start));
+    return sections;
+}
+
+function applyProviderToolEvent(timeline: ThinkingTimeline, event: AiProviderToolEvent): ThinkingTimeline
+{
     // OpenAI native web search: the completed `web_search_call` item carries the action.
     if (event.type === 'web_search_call' && event.status === 'completed') {
         const action = isRecord(event.data?.action) ? event.data.action : {};
@@ -69,8 +110,8 @@ function applyProviderToolEvent(timeline: ThinkingTimeline, event: AiProviderToo
         const query = isString(action.query) ? action.query : null;
         const fallbackUrl = isString(action.url) ? action.url : null;
         const sources = normaliseSources(action.sources, fallbackUrl);
-        if (sources.length === 0 && (query === null || query === '')) return timeline1;
-        return appendSearch(timeline1, actionType, query, sources);
+        if (sources.length === 0 && (query === null || query === '')) return timeline;
+        return appendSearch(timeline, actionType, query, sources);
     }
 
     // Anthropic native web search, announcement half. The block is emitted twice,
@@ -80,19 +121,19 @@ function applyProviderToolEvent(timeline: ThinkingTimeline, event: AiProviderToo
         const input = isRecord(event.data.input) ? event.data.input : {};
         const query = isString(input.query) ? input.query : null;
         return {
-            ...timeline1,
-            pendingSearches: {...timeline1.pendingSearches, [event.item_id]: {query}}
+            ...timeline,
+            pendingSearches: {...timeline.pendingSearches, [event.item_id]: {query}}
         };
     }
 
     // Anthropic native web search, result half; correlates via the tool-use id.
     if (event.type === 'web_search_tool_result') {
-        const {[event.item_id]: pending = {query: null}, ...remaining} = timeline1.pendingSearches;
+        const {[event.item_id]: pending = {query: null}, ...remaining} = timeline.pendingSearches;
         const sources = normaliseSources(event.data?.content, null);
-        return appendSearch({...timeline1, pendingSearches: remaining}, 'search', pending.query, sources);
+        return appendSearch({...timeline, pendingSearches: remaining}, 'search', pending.query, sources);
     }
 
-    return timeline1;
+    return timeline;
 }
 
 function appendSearch(timeline: ThinkingTimeline, action: string, query: string | null, sources: string[]): ThinkingTimeline

@@ -186,31 +186,10 @@ class GeminiAdapterTest extends TestCase
 
         $result = $sut->getAdditionalDriverOptions($agent, $context);
 
-        static::assertArrayHasKey('generationConfig', $result);
-        static::assertArrayHasKey('safetySettings', $result);
-    }
-
-    public function testItGetAdditionalDriverOptionsCapsBudgetAtHalfMaxTokens(): void
-    {
-        $sut     = $this->makeAdapter();
-        $context = $this->makeContext(4000, 8000);
-        $agent   = $this->createMock(AbstractTextGeneratingAgent::class);
-
-        $result = $sut->getAdditionalDriverOptions($agent, $context);
-
-        // budget capped at 4000/2 = 2000, not the raw 8000
-        static::assertSame(2000, $result['generationConfig']['thinkingConfig']['thinkingBudget']);
-    }
-
-    public function testItGetAdditionalDriverOptionsUsesRawBudgetWhenBelowHalfMax(): void
-    {
-        $sut     = $this->makeAdapter();
-        $context = $this->makeContext(8000, 1000);
-        $agent   = $this->createMock(AbstractTextGeneratingAgent::class);
-
-        $result = $sut->getAdditionalDriverOptions($agent, $context);
-
-        static::assertSame(1000, $result['generationConfig']['thinkingConfig']['thinkingBudget']);
+        static::assertSame(['thinking_summaries' => 'auto'], $result['generation_config']);
+        static::assertSame([
+            ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+        ], $result['safety_settings']);
     }
 
     // =========================================================================
