@@ -1,6 +1,7 @@
 <!--
   @component Sidebar profile control. Opens the account dropdown with the
-  settings entry, a light/dark theme toggle and the logout action. The
+  settings entry, a light/dark theme toggle, the operator's legal pages and
+  the logout action. The
   settings dialog itself is owned by `AppSidebar` (it is also opened from the
   search palette); this component only asks for it via `onOpenSettings`.
 -->
@@ -16,10 +17,12 @@
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
     import Megaphone01Icon from '$lib/components/ui/icons/iconset/Megaphone01Icon.svelte';
     import AiChipIcon from '$lib/components/ui/icons/iconset/AiChipIcon.svelte';
+    import ExternalLinkIcon from '$lib/components/ui/icons/iconset/ExternalLinkIcon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
+    import {useLegalLinks} from '$lib/app/hooks/useLegalLinks.svelte.js';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
 
@@ -49,6 +52,10 @@
             : null
     );
     const avatarUrl = $derived(app.uriBuilder.storageFileUri(avatarIdentifier) ?? undefined);
+
+    // The accessibility statement already has its own row in the sidebar footer.
+    const legalLinks = useLegalLinks();
+    const links = $derived(legalLinks().filter(link => link.key !== 'accessibility'));
 
     let menuOpen = $state(false);
 
@@ -122,6 +129,14 @@
     <DropdownMenuItem iconLeft={AiChipIcon} onclick={openModels}>
         {__('ui.profile.models')}
     </DropdownMenuItem>
+    {#if links.length}
+        <DropdownMenuSeparator/>
+        {#each links as link (link.key)}
+            <DropdownMenuItem iconRight={ExternalLinkIcon} onclick={() => window.open(link.href, '_blank', 'noopener,noreferrer')}>
+                {link.label}
+            </DropdownMenuItem>
+        {/each}
+    {/if}
     <DropdownMenuSeparator/>
     <DropdownMenuItem iconLeft={Logout02Icon} onclick={logout}>
         {__('ui.profile.logout')}

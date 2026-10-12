@@ -79,6 +79,25 @@ const HawkiCoreSchema = z.object({
     accessibility: z.object({
         statementUrl: z.string().nullable()
     }).optional(),
+    /**
+     * Naming and logo of the deployment. `logoUrl` (a `data:` URI of the
+     * uploaded SVG) replaces the HAWKI wordmark and is tinted
+     * with the accent color like it; the organization
+     * is credited on the sign-in page. Colors are not part of it — the server
+     * applies them to the design tokens while rendering the page.
+     */
+    branding: z.object({
+        appName: z.string(),
+        logoUrl: z.string().nullable(),
+        organizationName: z.string().nullable(),
+        organizationUrl: z.string().nullable()
+    }).optional(),
+    /** The operator's legal pages; a null link is not rendered. */
+    legal: z.object({
+        imprintUrl: z.string().nullable(),
+        privacyUrl: z.string().nullable(),
+        termsUrl: z.string().nullable()
+    }).optional(),
     security: z.object({
         /** Generate a random passkey during registration and show only its backup code. */
         passkeyAutoGenerate: z.boolean().default(false),

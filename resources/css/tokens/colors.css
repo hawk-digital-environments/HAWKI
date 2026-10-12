@@ -5,21 +5,30 @@
    ========================================================================== */
 @layer tokens {
     :root {
+        /* ── Brand inputs ──────────────────────────────────────────────── */
+        /* Every accent color below is built from these two, so a deployment
+           re-themes the app by overriding them (see BrandTheme.php). The hue is
+           the brand color's OKLCH hue; the chroma is a 0–1 factor on the ramp's
+           saturation, so a muted or grey brand yields a muted or grey ramp.
+           Lightness is never taken from the brand color, which keeps contrast. */
+        --accent-hue: 265;
+        --accent-chroma: 1;
+
         /* ── Accent scale ──────────────────────────────────────────────── */
-        --color-accent-100: oklch(93% 0.04 265);
-        --color-accent-200: oklch(84% 0.09 265);
-        --color-accent-300: oklch(74% 0.14 265);
-        --color-accent-400: oklch(60% 0.2 265);
-        --color-accent-500: oklch(45% 0.24 265);
-        --color-accent-600: oklch(37% 0.22 265);
-        --color-accent-700: oklch(29% 0.19 265);
-        --color-accent-800: oklch(21% 0.15 265);
-        --color-accent-900: oklch(14% 0.1 265);
+        --color-accent-100: oklch(93% calc(0.04 * var(--accent-chroma)) var(--accent-hue));
+        --color-accent-200: oklch(84% calc(0.09 * var(--accent-chroma)) var(--accent-hue));
+        --color-accent-300: oklch(74% calc(0.14 * var(--accent-chroma)) var(--accent-hue));
+        --color-accent-400: oklch(60% calc(0.2 * var(--accent-chroma)) var(--accent-hue));
+        --color-accent-500: oklch(45% calc(0.24 * var(--accent-chroma)) var(--accent-hue));
+        --color-accent-600: oklch(37% calc(0.22 * var(--accent-chroma)) var(--accent-hue));
+        --color-accent-700: oklch(29% calc(0.19 * var(--accent-chroma)) var(--accent-hue));
+        --color-accent-800: oklch(21% calc(0.15 * var(--accent-chroma)) var(--accent-hue));
+        --color-accent-900: oklch(14% calc(0.1 * var(--accent-chroma)) var(--accent-hue));
 
         /* ── Accent dark variants ──────────────────────────────────────── */
-        --color-accent-dark-300: oklch(78% 0.07 240);
-        --color-accent-dark-400: oklch(64% 0.09 240);
-        --color-accent-dark-500: oklch(54% 0.11 240);
+        --color-accent-dark-300: oklch(78% calc(0.07 * var(--accent-chroma)) calc(var(--accent-hue) - 25));
+        --color-accent-dark-400: oklch(64% calc(0.09 * var(--accent-chroma)) calc(var(--accent-hue) - 25));
+        --color-accent-dark-500: oklch(54% calc(0.11 * var(--accent-chroma)) calc(var(--accent-hue) - 25));
 
         /* ── Semantic aliases — light mode defaults ─────────────────────── */
         --color-interactive: oklch(20% 0 0);
@@ -79,7 +88,7 @@
 
         /* ── Neutral surfaces ───────────────────────────────────────────── */
         --color-bg: oklch(100% 0 0);
-        --color-bg-secondary: oklch(96% 0.01 265); /* --background-secondary (#F4F6FB) */
+        --color-bg-secondary: oklch(96% calc(0.01 * var(--accent-chroma)) var(--accent-hue)); /* --background-secondary (#F4F6FB) */
         --color-surface: oklch(94% 0 0);
         --color-surface-raised: oklch(100% 0 0);
         --color-surface-invert: oklch(20% 0 0);
@@ -88,7 +97,7 @@
         --color-message-ai: oklch(100% 0 0);
 
         /* Muted light blue used as the shared hover across sidebar, composer, etc. */
-        --color-hover: oklch(97% 0.018 265);
+        --color-hover: oklch(97% calc(0.018 * var(--accent-chroma)) var(--accent-hue));
         /* Lighter-than-surface neutral fill. Used as a resting background for
            controls so the standard --color-hover reads as a darker hover. */
         --color-surface-light: oklch(97% 0 0);
@@ -111,9 +120,9 @@
         --color-interactive-hover: oklch(82% 0 0);
         --color-interactive-active: oklch(72% 0 0);
         --color-focus-ring: var(--color-accent-dark-300);
-        --color-accent-text: oklch(80% 0.11 240);
-        --color-accent-fill: oklch(25.9% 0.103 272.4);
-        --color-accent-fill-hover: oklch(31.2% 0.128 272.4);
+        --color-accent-text: oklch(80% calc(0.11 * var(--accent-chroma)) calc(var(--accent-hue) - 25));
+        --color-accent-fill: oklch(25.9% calc(0.103 * var(--accent-chroma)) calc(var(--accent-hue) + 7.4));
+        --color-accent-fill-hover: oklch(31.2% calc(0.128 * var(--accent-chroma)) calc(var(--accent-hue) + 7.4));
 
         /* Active/hover rows track the blue button accent fill, slightly translucent. */
         --color-active-surface: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
@@ -130,12 +139,12 @@
            variants drifted hue mid-gradient and let the light end go grey.
            Hover brightens rather than darkens — the dark-mode analogue of light
            mode's "step further along the ramp". */
-        --gradient-brand-1: oklch(32% 0.16 265);
-        --gradient-brand-2: oklch(42% 0.21 265);
-        --gradient-brand-3: oklch(52% 0.22 265);
-        --gradient-brand-hover-1: oklch(38% 0.19 265);
-        --gradient-brand-hover-2: oklch(48% 0.22 265);
-        --gradient-brand-hover-3: oklch(58% 0.21 265);
+        --gradient-brand-1: oklch(32% calc(0.16 * var(--accent-chroma)) var(--accent-hue));
+        --gradient-brand-2: oklch(42% calc(0.21 * var(--accent-chroma)) var(--accent-hue));
+        --gradient-brand-3: oklch(52% calc(0.22 * var(--accent-chroma)) var(--accent-hue));
+        --gradient-brand-hover-1: oklch(38% calc(0.19 * var(--accent-chroma)) var(--accent-hue));
+        --gradient-brand-hover-2: oklch(48% calc(0.22 * var(--accent-chroma)) var(--accent-hue));
+        --gradient-brand-hover-3: oklch(58% calc(0.21 * var(--accent-chroma)) var(--accent-hue));
 
         --gradient-brand: linear-gradient(
             135deg,

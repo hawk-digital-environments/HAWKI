@@ -5,7 +5,7 @@
   panel on the left and a canvas on the right that plays the deployment's
   background video (see `public/bg_videos/bg_videos.json`) with the creator
   credit; without a video it shows the encryption claim over an oversized,
-  cropped HAWKI wordmark. The canvas collapses on small screens, where no video
+  cropped HAWKI wordmark (left out when the deployment brings its own logo). The canvas collapses on small screens, where no video
   is loaded. A switch in the canvas corner turns the video off for good on
   low-power devices, remembered in `localStorage` as `hawki.auth.backgroundVideo`.
 
@@ -13,6 +13,10 @@
   centered column on the plain page background: wordmark top-left, content in the
   middle of the viewport, preferences bottom-left and the signed-in account with
   logout bottom-right.
+
+  Both layouts end with the operator's legal links (imprint, privacy policy,
+  terms of use, accessibility statement) and the operating institution, as far
+  as an administrator configured them.
 
   Pages render their content as:
   ```svelte
@@ -25,12 +29,15 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
+    import BrandLogo from '$lib/app/components/branding/BrandLogo.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import Link from '$lib/components/util/link/Link.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useStore } from '$lib/app/hooks/useStore.svelte.js';
+    import { useConfig } from '$lib/app/hooks/useConfig.svelte.js';
+    import { useLegalLinks } from '$lib/app/hooks/useLegalLinks.svelte.js';
     import { useBreakpoint } from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import { useReducedMotion } from '$lib/utils/transitions/reducedMotion.svelte.js';
     import {
@@ -51,6 +58,10 @@
     const { __ } = useTranslator();
     const app = useApp();
     const theme = useStore('theme');
+    const config = useConfig();
+    const branding = $derived(config.branding);
+    const legalLinks = useLegalLinks();
+    const links = $derived(legalLinks());
     const breakpoint = useBreakpoint();
     const reducedMotion = useReducedMotion();
     const connection = $derived(app.connection);
@@ -87,7 +98,7 @@
 <div class="auth-page" class:canvas>
     <div class="auth-panel">
         <header class="auth-brand">
-            <HawkLogo label={__('ui.auth.logoLabel')}/>
+            <BrandLogo/>
         </header>
         <main id="main-content" tabindex="-1" class="auth-main">
             <section class="auth-body" aria-labelledby="auth-title">
@@ -102,12 +113,28 @@
                     <Button variant="ghost" size="sm" onclick={() => { void app.logout().catch(() => {}); }}>{__('ui.profile.logout')}</Button>
                 </div>
             {/if}
+            {#if links.length || branding?.organizationName}
+                <nav class="auth-legal" aria-label={__('ui.legal.label')}>
+                    {#if branding?.organizationName}
+                        {#if branding.organizationUrl}
+                            <Link href={branding.organizationUrl} target="_blank">{__('ui.legal.operatedBy', {name: branding.organizationName})}</Link>
+                        {:else}
+                            <span>{__('ui.legal.operatedBy', {name: branding.organizationName})}</span>
+                        {/if}
+                    {/if}
+                    {#each links as link (link.key)}
+                        <Link href={link.href} target="_blank">{link.label}</Link>
+                    {/each}
+                </nav>
+            {/if}
         </footer>
     </div>
     {#if canvas}
         <div class="auth-canvas" class:has-video={video !== null && videoReady}>
             <p class="auth-claim">{__('ui.auth.claim')}</p>
-            <HawkLogo class="auth-canvas-mark" aria-hidden="true"/>
+            {#if !branding?.logoUrl}
+                <HawkLogo class="auth-canvas-mark" aria-hidden="true"/>
+            {/if}
             <label class="auth-video-toggle" title={__('ui.auth.videoToggleHint')}>
                 <span id="auth-video-toggle-label">{__('ui.auth.videoToggle')}</span>
                 <Switch bind:checked={videoEnabled} aria-labelledby="auth-video-toggle-label"/>
@@ -156,6 +183,10 @@
     .auth-brand :global(.mark) {
         height: 1.125rem;
     }
+    /* A step larger than in the sidebar, in the same proportion as the wordmark above. */
+    .auth-brand :global(.mark.image) {
+        height: calc(var(--logo-height, 1.75rem) * 9 / 7);
+    }
     .auth-main {
         display: grid;
         justify-items: center;
@@ -190,6 +221,23 @@
         margin: 0;
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
+    }
+    .auth-legal {
+        flex-basis: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1) var(--space-4);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+    }
+    .auth-legal :global(a) {
+        color: inherit;
+        text-decoration: none;
+    }
+    .auth-legal :global(a:hover),
+    .auth-legal :global(a:focus-visible) {
+        color: var(--color-text);
+        text-decoration: underline;
     }
 
     /* ── Page: split layout with canvas (login) ───────────────────────── */

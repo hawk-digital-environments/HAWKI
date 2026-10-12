@@ -16,11 +16,13 @@
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useAppName} from '$lib/app/hooks/useAppName.svelte.js';
     import {announcementDisplayTitle, parseAnnouncementContent, stripLeadingHeading} from '$lib/app/components/announcements/announcementContent.js';
 
     const app = useApp();
     const store = useStore('announcements');
     const {__} = useTranslator();
+    const appName = useAppName();
 
     const current = $derived(store.current);
     const parsed = $derived(current ? parseAnnouncementContent(current.content) : null);
@@ -107,7 +109,7 @@
     <ConfirmDialog
         bind:open={logoutConfirmOpen}
         title={__('ui.announcements.logoutWarningTitle')}
-        description={__('ui.announcements.logoutWarningDescription')}
+        description={__('ui.announcements.logoutWarningDescription', {appName})}
         confirmVariant="delete"
         onConfirm={() => app.logout()}
     />

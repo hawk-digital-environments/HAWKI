@@ -237,6 +237,7 @@ export function controlFor(
             };
         const limits: Record<string, [number, number]> = {
             SESSION_LIFETIME: [1, 525600],
+            BRAND_LOGO_HEIGHT: [12, 36],
             ALLOW_EXTERNAL_APPS_CONNECT_REQUEST_TIMEOUT: [60, 86400],
             MAX_FILE_SIZE: [1, 1073741824],
             MAX_AVATAR_FILE_SIZE: [1, 52428800],
@@ -244,7 +245,9 @@ export function controlFor(
             REMOVE_FILES_AFTER_MONTHS: [1, 120]
         };
         if (limits[setting]) return { ...number(...limits[setting]), optional: false };
-        if (['ACCESSIBILITY_STATEMENT_URL', 'APP_URL'].includes(setting)) return { type: 'url' };
+        if (['ACCESSIBILITY_STATEMENT_URL', 'APP_URL', 'BRAND_ORGANIZATION_URL'].includes(setting))
+            return { type: 'url' };
+        // The legal links stay plain text: they also accept a path on this host.
     }
     if (field.type === 'json' || field.type === 'secret-json')
         throw new Error(`Missing structured control for ${section}.${key}`);

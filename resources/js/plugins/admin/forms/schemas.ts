@@ -8,6 +8,12 @@ export type EditorSection = WorkspaceId | 'tools' | (string & {});
 const text = (max = 255) => z.string().trim().min(1).max(max);
 const optionalText = (max = 255) => z.string().max(max).nullish();
 const url = z.union([z.literal(''), z.url({ protocol: /^https?$/ }).max(2000)]).nullish();
+/** Markup of an uploaded SVG file; the server validates the drawing itself (`ProviderIconService::validateSvg`). */
+const svg = z.string().max(262144).nullish();
+/** An absolute HTTP(S) URL or a path on this host, as `SystemSettings::LINK` accepts it. */
+const link = z
+    .union([z.literal(''), z.string().max(2000).regex(/^(?:https?:\/)?\/[^/\s"'<>][^\s"'<>]*$/)])
+    .nullish();
 const date = z
     .string()
     .refine((value) => !value || Number.isFinite(Date.parse(value)))
@@ -190,6 +196,16 @@ const mimeList = z.array(
 );
 export const settingsSchemas: Record<string, z.ZodType> = {
     APP_NAME: text(),
+    BRAND_ORGANIZATION_NAME: optionalText(),
+    BRAND_ORGANIZATION_URL: url,
+    BRAND_ACCENT_COLOR: z.union([z.literal(''), z.string().regex(/^#[0-9a-fA-F]{6}$/)]).nullish(),
+    BRAND_CORNER_STYLE: z.enum(['round', 'soft', 'square']),
+    BRAND_LOGO: svg,
+    BRAND_LOGO_HEIGHT: z.number().int().min(12).max(36),
+    BRAND_FAVICON: svg,
+    LEGAL_IMPRINT_URL: link,
+    LEGAL_PRIVACY_URL: link,
+    LEGAL_TERMS_URL: link,
     APP_URL: url.refine((value) => !!value, 'admin.validation.required'),
     APP_ENV: text(50).regex(/^[a-zA-Z0-9_-]+$/),
     APP_TIMEZONE: text(),

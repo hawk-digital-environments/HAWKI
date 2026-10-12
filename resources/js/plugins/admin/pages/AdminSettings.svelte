@@ -1,45 +1,62 @@
+<!--
+  @component System settings, edited in place. Every setting shows its control
+  directly in the list; changes collect in a draft and are written together
+  from the save bar. The brand color, corner style, logo and logo height
+  preview on the running page while they are edited. Only list-valued settings still open the editor
+  dialog.
+-->
 <script lang="ts">
     import type { RouteProps } from '$lib/components/ui/routing/index.js';
     const {}: RouteProps = $props();
+    import { onDestroy } from 'svelte';
     import AdminPage from '../components/AdminPage.svelte';
     import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
+    import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
+    import Slider from '$lib/components/ui/slider/Slider.svelte';
+    import Input from '$lib/components/ui/input/Input.svelte';
+    import Switch from '$lib/components/ui/switch/Switch.svelte';
+    import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { AdminFieldSchema } from '../schemas/admin-content.js';
     import { settingsTabs } from '../settings.js';
     import type { AdminSettingResource } from '../schemas/resources/admin-settings.schema.js';
     import { type AdminColumn, useAdminWorkspace } from '../workspace.svelte.js';
+    import { useFieldLabel } from '../forms/labels.js';
+    import { controlFor } from '../forms/controls.js';
+    import { settingsSchemas } from '../forms/schemas.js';
+    import { issueMessage } from '../forms/validationMessages.js';
+    import { applyBrandTheme, isBrandColor } from '../brandTheme.js';
+    import { svgPreview } from '../providerIcons.js';
 
     const app = useApp();
-    const { __ } = useTranslator();
+    const translator = useTranslator();
+    const { __ } = translator;
+    const fieldLabel = useFieldLabel();
     const columns: AdminColumn<AdminSettingResource>[] = [];
+    const valueField = (row: AdminSettingResource) =>
+        AdminFieldSchema.parse({
+            key: 'value',
+            type:
+                row.options.length ? 'select'
+                : row.kind === 'string' ? 'text'
+                : row.kind,
+            options: row.options,
+            required: row.kind !== 'string'
+        });
+    const version = (row: AdminSettingResource) => ({ headers: { 'If-Match': `"${row._version}"` } });
     const records = useAdminWorkspace(
         columns,
         (signal, query) => app.restApi.getResourceCollection('admin-settings', { query, signal }),
         {
             resettable: true,
-            editFields: (row) => [
-                AdminFieldSchema.parse({
-                    key: 'value',
-                    type:
-                        row.options.length ? 'select'
-                        : row.kind === 'string' ? 'text'
-                        : row.kind,
-                    options: row.options,
-                    required: row.kind !== 'string'
-                })
-            ],
+            editFields: (row) => [valueField(row)],
             save: async (values, row) => {
                 if (!row) throw new Error(__('admin.errors.save'));
-                return app.restApi.updateResource('admin-settings', row.id, values, {
-                    headers: { 'If-Match': `"${row._version}"` }
-                });
+                return app.restApi.updateResource('admin-settings', row.id, values, version(row));
             },
-            remove: (row) =>
-                app.restApi.deleteResource('admin-settings', row.id, {
-                    headers: { 'If-Match': `"${row._version}"` }
-                })
+            remove: (row) => app.restApi.deleteResource('admin-settings', row.id, version(row))
         }
     );
     const uid = $props.id();
@@ -53,12 +70,122 @@
         }))
     );
 
+    /** Edited values by setting key; an entry equal to the stored value is not a change. */
+    let draft = $state<Record<string, unknown>>({});
+    let errors = $state<Record<string, string>>({});
+    let saving = $state(false);
+    const rowsByKey = $derived(new Map(records.rows.map((row) => [row.key, row])));
+    // An unset text setting is null on the server and an empty string in its input.
+    const same = (a: unknown, b: unknown) => (a ?? '') === (b ?? '');
+    const current = (row: AdminSettingResource) => (row.key in draft ? draft[row.key] : row.value);
+    const dirty = $derived(
+        Object.keys(draft).filter((key) => {
+            const row = rowsByKey.get(key);
+            return !!row && !same(draft[key], row.value);
+        })
+    );
+    const locked = $derived(records.loading || records.busy || saving);
+
+    function set(row: AdminSettingResource, value: unknown) {
+        draft[row.key] = value;
+        delete errors[row.key];
+    }
+    function discard() {
+        draft = {};
+        errors = {};
+    }
+    async function save() {
+        const keys = [...dirty];
+        const invalid: Record<string, string> = {};
+        for (const key of keys) {
+            const result = settingsSchemas[key].safeParse(draft[key]);
+            if (!result.success) invalid[key] = issueMessage(result.error.issues[0], translator);
+        }
+        errors = invalid;
+        if (Object.keys(invalid).length) return;
+        saving = true;
+        let failure = '';
+        try {
+            for (const key of keys) {
+                const row = rowsByKey.get(key)!;
+                await app.restApi.updateResource('admin-settings', row.id, { value: draft[key] }, version(row));
+            }
+        } catch (error) {
+            failure = error instanceof Error ? error.message : __('admin.errors.save');
+        }
+        // Re-read either way: settings saved before a failure are no longer changes.
+        await records.revalidate();
+        if (failure) records.error = failure;
+        else {
+            draft = {};
+            records.notice = __('admin.saved');
+            // Names, links and the logo reach the rest of the app without a reload.
+            await app.config.refresh().catch(() => {});
+        }
+        saving = false;
+    }
+
     function display(value: unknown): string {
         if (value === null || value === undefined || value === '') return __('admin.settings_empty');
         if (typeof value === 'boolean') return __(value ? 'admin.yes' : 'admin.no');
         if (Array.isArray(value)) return value.length ? value.join(', ') : __('admin.settings_empty');
         return String(value);
     }
+    const text = (row: AdminSettingResource) => String(current(row) ?? '');
+    const control = (row: AdminSettingResource) => controlFor('settings', valueField(row), {}, row);
+    /** Settings holding an uploaded SVG. */
+    const uploads = ['BRAND_LOGO', 'BRAND_FAVICON'];
+    /** The tab icon in use while none is uploaded. */
+    const defaultFavicon = new URL('favicon.ico', app.config.get().transfer.baseUrl.replace(/\/?$/, '/')).href;
+    async function upload(row: AdminSettingResource, input: HTMLInputElement) {
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file) return;
+        // The server checks the drawing itself on save; this only catches the obvious early.
+        if (!file.name.toLowerCase().endsWith('.svg') || file.size > 262144) {
+            errors[row.key] = __('admin.icons.invalid');
+            return;
+        }
+        set(row, await file.text());
+    }
+
+    /** The height only applies to an uploaded logo; the wordmark keeps its own size. */
+    const hidden = (key: string) => {
+        const logo = rowsByKey.get('BRAND_LOGO');
+        return key === 'BRAND_LOGO_HEIGHT' && !(logo && current(logo));
+    };
+
+    // Brand color, corners and logo height show on the running page while they are edited.
+    const brand = () => {
+        const value = (key: string) => {
+            const row = rowsByKey.get(key);
+            return row ? current(row) : undefined;
+        };
+        return {
+            accentColor: value('BRAND_ACCENT_COLOR'),
+            cornerStyle: value('BRAND_CORNER_STYLE'),
+            logoHeight: value('BRAND_LOGO_HEIGHT')
+        };
+    };
+    $effect(() => {
+        if (rowsByKey.size) applyBrandTheme(brand());
+    });
+    // The logo previews where it lives: the sidebar reads it from the app configuration.
+    const config = app.config.get();
+    $effect(() => {
+        const logo = rowsByKey.get('BRAND_LOGO');
+        if (logo && config.branding) config.branding.logoUrl = svgPreview(current(logo)) ?? null;
+    });
+    onDestroy(() => {
+        // Leaving with unsaved changes returns the page to the stored theme and logo.
+        if (!rowsByKey.size) return;
+        if (dirty.includes('BRAND_LOGO')) void app.config.refresh().catch(() => {});
+        applyBrandTheme({
+            accentColor: rowsByKey.get('BRAND_ACCENT_COLOR')?.value,
+            cornerStyle: rowsByKey.get('BRAND_CORNER_STYLE')?.value,
+            logoHeight: rowsByKey.get('BRAND_LOGO_HEIGHT')?.value
+        });
+    });
 </script>
 
 <AdminPage
@@ -91,47 +218,182 @@
                         <h2 id={`${uid}-group-${group.key}`}>{__('admin.settings_groups.' + group.key + '.title')}</h2>
                         <p>{__('admin.settings_groups.' + group.key + '.description')}</p>
                     </div>
-                    <ul class="settings-card">
+                    <ul class="settings-list">
                         {#each group.settings as key (key)}
-                            {@const row = records.rows.find((row) => row.key === key)}
-                            {#if row}
+                            {@const row = rowsByKey.get(key)}
+                            {#if row && !hidden(key)}
+                                {@const id = `${uid}-${key}`}
+                                {@const label = __('admin.settings_labels.' + key)}
+                                {@const value = current(row)}
                                 <li>
                                     <div class="setting-label">
-                                        <h3>{__('admin.settings_labels.' + key)}</h3>
-                                        <small>{__('admin.values.' + row.source)}</small>
+                                        <label id={`${id}-label`} for={id}>{label}</label>
                                         {#if row.source === 'database'}
-                                            <small>{__('admin.fields.default')}: {display(row.default)}</small>
-                                        {/if}
-                                    </div>
-                                    <p class="setting-value">{display(row.value)}</p>
-                                    <div class="setting-actions">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            disabled={records.loading || records.busy}
-                                            aria-label={__('admin.settings_edit', {
-                                                name: __('admin.settings_labels.' + key)
-                                            })}
-                                            onclick={(event) => records.edit(row, event.currentTarget)}
-                                            >{__('admin.edit')}</Button
-                                        >
-                                        {#if row.source === 'database'}
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                disabled={records.loading || records.busy}
-                                                aria-label={__('admin.settings_reset', {
-                                                    name: __('admin.settings_labels.' + key)
-                                                })}
-                                                onclick={(event) =>
-                                                    records.remove(
-                                                        row,
-                                                        event.currentTarget.parentElement?.querySelector('button') ??
-                                                            event.currentTarget
-                                                    )}>{__('admin.reset')}</Button
+                                            <small
+                                                >{__('admin.fields.default')}: {row.options.length ?
+                                                    fieldLabel(display(row.default))
+                                                :   display(row.default)}</small
                                             >
                                         {/if}
                                     </div>
+                                    <div class="setting-control">
+                                        {#if row.kind === 'json'}
+                                            <p class="setting-value">{display(row.value)}</p>
+                                        {:else if key === 'BRAND_ACCENT_COLOR'}
+                                            <div class="color">
+                                                <input
+                                                    type="color"
+                                                    aria-label={__('admin.settings_pick_color')}
+                                                    value={isBrandColor(value) ? value : '#2f2abf'}
+                                                    oninput={(event) => set(row, event.currentTarget.value)}
+                                                    disabled={locked}
+                                                />
+                                                <Input
+                                                    {id}
+                                                    placeholder="#2f2abf"
+                                                    bind:value={() => text(row), (next) => set(row, next)}
+                                                    aria-invalid={!!errors[key]}
+                                                    disabled={locked}
+                                                    autocomplete="off"
+                                                    spellcheck={false}
+                                                />
+                                            </div>
+                                        {:else if uploads.includes(key)}
+                                            <!-- Always shows the asset in use: the upload, or the built-in one it would replace. -->
+                                            <div class="upload">
+                                                <span class="preview">
+                                                    {#if key === 'BRAND_LOGO'}
+                                                        <HawkLogo src={svgPreview(value)} aria-hidden="true" />
+                                                    {:else}
+                                                        <img src={svgPreview(value) ?? defaultFavicon} alt="" />
+                                                    {/if}
+                                                </span>
+                                                <input
+                                                    {id}
+                                                    class="u-sr-only"
+                                                    type="file"
+                                                    accept=".svg,image/svg+xml"
+                                                    tabindex="-1"
+                                                    disabled={locked}
+                                                    onchange={(event) => void upload(row, event.currentTarget)}
+                                                />
+                                                <Button
+                                                    variant="stroke"
+                                                    size="sm"
+                                                    disabled={locked}
+                                                    aria-label={`${label}: ${__(value ? 'admin.settings_replace_svg' : 'admin.settings_upload_svg')}`}
+                                                    onclick={() => document.getElementById(id)?.click()}
+                                                    >{__(value ? 'admin.settings_replace_svg' : 'admin.settings_upload_svg')}</Button
+                                                >
+                                            </div>
+                                        {:else if key === 'BRAND_LOGO_HEIGHT'}
+                                            <div class="range">
+                                                <Slider
+                                                    min={12}
+                                                    max={36}
+                                                    step={1}
+                                                    value={Number(value)}
+                                                    onValueChange={(next: number) => set(row, next)}
+                                                    aria-labelledby={`${id}-label`}
+                                                    disabled={locked}
+                                                />
+                                                <span>{__('admin.settings_pixels', { value: String(value) })}</span>
+                                            </div>
+                                        {:else if key === 'BRAND_CORNER_STYLE'}
+                                            <Tabs
+                                                mode="radio"
+                                                items={row.options.map((option) => ({
+                                                    key: option.value,
+                                                    label: fieldLabel(option.label)
+                                                }))}
+                                                value={String(value)}
+                                                onChange={(next) => set(row, next)}
+                                                aria-label={label}
+                                                disabled={locked}
+                                            />
+                                        {:else if row.options.length}
+                                            <SingleSelect
+                                                triggerProps={{ id, 'aria-labelledby': `${id}-label ${id}` }}
+                                                disabled={locked}
+                                                items={row.options.map((option) => ({
+                                                    value: option.value,
+                                                    label: fieldLabel(option.label)
+                                                }))}
+                                                value={String(value ?? '')}
+                                                onValueChange={(next: string) => set(row, next)}
+                                            />
+                                        {:else if row.kind === 'boolean'}
+                                            <Switch
+                                                {id}
+                                                aria-labelledby={`${id}-label`}
+                                                bind:checked={() => value === true, (next) => set(row, next)}
+                                                disabled={locked}
+                                            />
+                                        {:else}
+                                            {@const input = control(row)}
+                                            <Input
+                                                    {id}
+                                                    type={input.type === 'number' || input.type === 'url' ? input.type : 'text'}
+                                                    min={input.min}
+                                                    max={input.max}
+                                                    bind:value={
+                                                        () => text(row),
+                                                        (next) =>
+                                                            set(
+                                                                row,
+                                                                input.type !== 'number' ? next
+                                                                : next === '' ? undefined
+                                                                : Number(next)
+                                                            )
+                                                    }
+                                                    aria-invalid={!!errors[key]}
+                                                    disabled={locked}
+                                                    autocomplete="off"
+                                                />
+                                        {/if}
+                                        {#if errors[key]}
+                                            <p class="setting-error" role="alert">{errors[key]}</p>
+                                        {/if}
+                                    </div>
+                                    {#if row.kind === 'json' || !same(value, row.default)}
+                                    <div class="setting-actions">
+                                        {#if row.kind === 'json'}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled={locked}
+                                                aria-label={__('admin.settings_edit', { name: label })}
+                                                onclick={(event) => records.edit(row, event.currentTarget)}
+                                                >{__('admin.edit')}</Button
+                                            >
+                                            {#if row.source === 'database'}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    disabled={locked}
+                                                    aria-label={__('admin.settings_reset', { name: label })}
+                                                    onclick={(event) =>
+                                                        records.remove(
+                                                            row,
+                                                            event.currentTarget.parentElement?.querySelector(
+                                                                'button'
+                                                            ) ?? event.currentTarget
+                                                        )}>{__('admin.settings_use_default')}</Button
+                                                >
+                                            {/if}
+                                        {:else}
+                                            <!-- Saving the default removes the override, so this needs no request of its own. -->
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled={locked}
+                                                aria-label={__('admin.settings_reset', { name: label })}
+                                                onclick={() => set(row, row.default)}
+                                                >{__('admin.settings_use_default')}</Button
+                                            >
+                                        {/if}
+                                    </div>
+                                    {/if}
                                 </li>
                             {/if}
                         {/each}
@@ -140,6 +402,13 @@
             {/each}
         </div>
     {/each}
+    {#if dirty.length}
+        <div class="save-bar" role="group" aria-label={__('admin.settings_unsaved', { count: String(dirty.length) })}>
+            <p>{__('admin.settings_unsaved', { count: String(dirty.length) })}</p>
+            <Button variant="ghost" disabled={saving} onclick={discard}>{__('admin.discard')}</Button>
+            <Button disabled={saving} onclick={() => void save()}>{__('admin.save')}</Button>
+        </div>
+    {/if}
 </AdminPage>
 
 <style>
@@ -150,7 +419,7 @@
         padding: var(--space-1);
     }
     .settings-tabs :global([role='tablist']) {
-        min-width: 30rem;
+        min-width: 42rem;
     }
     .settings-tabs :global([role='tab']) {
         font-size: var(--font-size-sm);
@@ -172,46 +441,135 @@
     .group-description p,
     small {
         color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+    }
+    .group-description p {
         font-size: var(--font-size-sm);
     }
-    .settings-card {
+    .settings-list {
         list-style: none;
         margin: 0;
-        padding: var(--space-2) var(--space-5);
-        border: var(--border);
-        border-radius: var(--corner-lg);
-        background: var(--color-surface-raised);
+        padding: 0;
     }
     li {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+        grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr);
+        align-items: center;
         gap: var(--space-2) var(--space-4);
-        padding-block: var(--space-4);
+        padding-block: var(--space-3);
     }
     li + li {
         border-top: var(--border);
     }
-    h3 {
+    label {
+        display: block;
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-medium);
-        margin: 0 0 var(--space-1);
     }
     small {
         display: block;
-    }
-    .setting-value,
-    small {
+        margin-top: var(--space-1);
         overflow-wrap: anywhere;
+    }
+    .setting-control {
+        display: grid;
+        gap: var(--space-1);
+        min-width: 0;
+        justify-items: start;
+    }
+    .setting-control > :global(*) {
+        max-width: 100%;
+    }
+    .range {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 4rem;
+        align-items: center;
+        gap: var(--space-3);
+        width: 100%;
+        font-size: var(--font-size-sm);
+        font-variant-numeric: tabular-nums;
+    }
+    .color,
+    .upload {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        width: 100%;
+    }
+    .color input[type='color'] {
+        flex: none;
+        box-sizing: border-box;
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: 0;
+        border: var(--border);
+        border-radius: var(--corner-md);
+        background: none;
+        overflow: hidden;
+        cursor: pointer;
+    }
+    .color input[type='color']::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+    .color input[type='color']::-webkit-color-swatch {
+        border: 0;
+    }
+    .color input[type='color']::-moz-color-swatch {
+        border: 0;
+    }
+    .preview {
+        flex: none;
+        box-sizing: border-box;
+        display: grid;
+        place-items: center;
+        /* As tall as a sidebar row plus its inset, so the logo previews at its real size. */
+        height: 3.25rem;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--corner-md);
+        background: var(--color-surface);
+    }
+    .preview > img {
+        display: block;
+        height: 100%;
+        max-width: 7rem;
+        object-fit: contain;
+    }
+    .preview :global(svg.mark) {
+        height: 1rem;
     }
     .setting-value {
         margin: 0;
+        overflow-wrap: anywhere;
+        font-size: var(--font-size-sm);
+    }
+    .setting-error {
+        margin: 0;
+        color: var(--color-error);
+        font-size: var(--font-size-xs);
     }
     .setting-actions {
-        grid-column: 1 / -1;
+        grid-column: 2;
         display: flex;
-        justify-content: end;
         flex-wrap: wrap;
         gap: var(--space-2);
+        margin-inline-start: calc(-1 * var(--space-2));
+    }
+    .save-bar {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: end;
+        gap: var(--space-2);
+        margin-top: var(--space-4);
+        padding-block: var(--space-3);
+        border-top: var(--border);
+        background: var(--color-bg);
+    }
+    .save-bar p {
+        margin: 0 auto 0 0;
+        font-size: var(--font-size-sm);
     }
     @media (--bp-md-and-smaller) {
         .settings-group {
@@ -220,11 +578,11 @@
         }
     }
     @media (--bp-xs) {
-        .settings-card {
-            padding-inline: var(--space-3);
-        }
         li {
             grid-template-columns: minmax(0, 1fr);
+        }
+        .setting-actions {
+            grid-column: 1;
         }
     }
 </style>

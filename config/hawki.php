@@ -31,6 +31,29 @@ return [
         'statement_url' => env('ACCESSIBILITY_STATEMENT_URL'),
     ],
 
+    'branding' => [
+        // Brand color as #RRGGBB. Its hue and saturation drive the accent color ramp. Empty = HAWKI default.
+        'accent_color' => env('BRAND_ACCENT_COLOR'),
+        // Corner rounding of the interface: round (default), soft or square.
+        'corner_style' => env('BRAND_CORNER_STYLE', 'round'),
+        // SVG markup of the logo and the browser tab icon. Uploaded in the
+        // administration (Settings > Branding), which validates the files; there is no .env equivalent.
+        'logo' => null,
+        'favicon' => null,
+        // Height of an uploaded logo in the sidebar, in pixels (12-36). The sign-in page scales with it.
+        'logo_height' => (int) env('BRAND_LOGO_HEIGHT', 28),
+        // Operating institution, shown on the sign-in page. Empty = not shown.
+        'organization_name' => env('BRAND_ORGANIZATION_NAME'),
+        'organization_url' => env('BRAND_ORGANIZATION_URL'),
+    ],
+
+    'legal' => [
+        // Legal links shown on the sign-in page and in the profile menu. Empty = no link in the UI.
+        'imprint_url' => env('IMPRINT_LOCATION'),
+        'privacy_url' => env('PRIVACY_POLICY_URL', '/dataprotection'),
+        'terms_url' => env('TERMS_OF_USE_URL'),
+    ],
+
     'security' => [
         'passkey' => [
             'auto_generate' => filter_var(env('APP_SECURITY_PASSKEY_AUTO_GENERATE', false), FILTER_VALIDATE_BOOLEAN),

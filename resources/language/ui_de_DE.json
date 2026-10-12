@@ -7,7 +7,6 @@
         },
         "loading": "Wird geladen…",
         "auth": {
-            "logoLabel": "HAWKI",
             "errors": {
                 "auth_redirect_required": "Starte die Anmeldung über deinen Identitätsanbieter.",
                 "registration_policy_unavailable": "Die Registrierung ist vorübergehend nicht verfügbar, weil die Nutzungsbedingungen nicht geladen werden konnten. Bitte versuche es später erneut.",
@@ -19,8 +18,8 @@
             },
             "login": {
                 "title": "Anmelden",
-                "description": "Melde dich mit deinem HAWKI-Konto an.",
-                "mixedDescription": "Melde dich mit einem lokalen HAWKI-Konto oder über den Anmeldedienst deiner Organisation an.",
+                "description": "Melde dich mit deinem :appName-Konto an.",
+                "mixedDescription": "Melde dich mit einem lokalen :appName-Konto oder über den Anmeldedienst deiner Organisation an.",
                 "account": "Konto",
                 "password": "Passwort",
                 "submit": "Anmelden",
@@ -63,7 +62,7 @@
                     "back": "Zurück",
                     "progress": "Schritt :current von :total",
                     "encryption": {
-                        "title": "Willkommen bei HAWKI",
+                        "title": "Willkommen bei :appName",
                         "body": "Ab jetzt werden deine Chats gespeichert, damit du jederzeit und von jedem Gerät darauf zurückkommen kannst. Alles, was du schreibst, wird verschlüsselt, bevor es deinen Browser verlässt. Niemand, auch nicht deine Hochschule, kann deine Gespräche lesen.",
                         "action": "Verstanden"
                     },
@@ -181,6 +180,13 @@
                 "toggleLabel": "Element umschalten"
             }
         },
+        "legal": {
+            "label": "Rechtliche Informationen",
+            "imprint": "Impressum",
+            "privacy": "Datenschutzerklärung",
+            "terms": "Nutzungsbedingungen",
+            "operatedBy": "Ein Angebot von :name"
+        },
         "profile": {
             "fallbackName": "Profil",
             "menuTitle": "Kontomenü",
@@ -195,7 +201,7 @@
             "confirm": "Bestätigen",
             "decline": "Ablehnen",
             "logoutWarningTitle": "Ablehnen und abmelden?",
-            "logoutWarningDescription": "Um HAWKI weiter zu nutzen, musst du diese Ankündigung akzeptieren. Wenn du ablehnst, wirst du abgemeldet.",
+            "logoutWarningDescription": "Um :appName weiter zu nutzen, musst du diese Ankündigung akzeptieren. Wenn du ablehnst, wirst du abgemeldet.",
             "pageTitle": "Ankündigungen",
             "empty": "Es gibt noch keine Ankündigungen für dich.",
             "back": "Zurück"
@@ -334,6 +340,9 @@
             "tier": "Staffel :number",
             "add_tier": "Staffel hinzufügen",
             "labels": {
+                "round": "Rund",
+                "soft": "Dezent",
+                "square": "Eckig",
                 "temperature": "Temperatur",
                 "top_p": "Top P",
                 "max_tokens": "Maximale Ausgabetoken",
@@ -478,6 +487,8 @@
         "reset_done": "Überschreibung entfernt. Der Umgebungswert gilt für neue Anfragen.",
         "settings_tabs": {
             "system": "System",
+            "branding": "Branding",
+            "legal": "Rechtliches",
             "authentication": "Authentifizierung",
             "features": "Funktionen",
             "performance": "Performance"
@@ -487,16 +498,24 @@
         "settings_reset": "Auf Umgebungsstandard zurücksetzen: :name",
         "settings_groups": {
             "base": {
-                "title": "Grundeinstellungen",
-                "description": "Anwendungsname und Branding."
+                "title": "Benennung",
+                "description": "Wie die Anwendung, ihr KI-Assistent und die betreibende Einrichtung heißen. Die Einrichtung wird auf der Anmeldeseite genannt."
+            },
+            "theme": {
+                "title": "Erscheinungsbild",
+                "description": "Markenfarbe und Eckenrundung. Schaltflächen, Links, Auswahlen und Fokusrahmen übernehmen Farbton und Sättigung der Markenfarbe; die Helligkeit legt die Oberfläche fest, damit Text im hellen und dunklen Modus lesbar bleibt."
+            },
+            "logo": {
+                "title": "Logo",
+                "description": "SVG-Dateien, die anstelle des HAWKI-Schriftzugs und als Symbol im Browser-Tab erscheinen. Das Logo wird im hellen wie im dunklen Modus in der Markenfarbe dargestellt; verwendet wird nur seine Form, nicht seine eigenen Farben. Die Dateien müssen statische Zeichnungen bis 256 KB sein: ohne Skripte, externe Verweise oder Text als Schrift. Wandeln Sie Text vor dem Export in Pfade um."
             },
             "system": {
                 "title": "Systemkonfiguration",
                 "description": "Basis-URL, Umgebung, Zeitzone und Standardsprache."
             },
             "links": {
-                "title": "Links",
-                "description": "Öffentliche Barrierefreiheitserklärung. Ein leerer Wert blendet den Link aus."
+                "title": "Rechtliche Seiten",
+                "description": "Erscheinen auf der Anmeldeseite und im Kontomenü. Geben Sie eine Adresse an oder einen Pfad auf diesem Server wie /dataprotection. Ein leerer Wert blendet den jeweiligen Link aus."
             },
             "passkey": {
                 "title": "Passkey-Einstellungen",
@@ -512,7 +531,7 @@
             },
             "features": {
                 "title": "KI-Funktionen",
-                "description": "KI-Erwähnungsname und Prüfung der Tool-Verfügbarkeit."
+                "description": "Prüfung der Tool-Verfügbarkeit."
             },
             "api": {
                 "title": "API-Konfiguration",
@@ -533,6 +552,16 @@
         },
         "settings_labels": {
             "APP_NAME": "Anwendungsname",
+            "BRAND_ORGANIZATION_NAME": "Name der Einrichtung",
+            "BRAND_ORGANIZATION_URL": "Website der Einrichtung",
+            "BRAND_ACCENT_COLOR": "Markenfarbe",
+            "BRAND_CORNER_STYLE": "Eckenrundung",
+            "BRAND_LOGO": "Logo",
+            "BRAND_LOGO_HEIGHT": "Logohöhe",
+            "BRAND_FAVICON": "Symbol im Browser-Tab",
+            "LEGAL_IMPRINT_URL": "Impressum",
+            "LEGAL_PRIVACY_URL": "Datenschutzerklärung",
+            "LEGAL_TERMS_URL": "Nutzungsbedingungen",
             "APP_URL": "Basis-URL",
             "APP_ENV": "Umgebung",
             "APP_TIMEZONE": "Standardzeitzone",
@@ -542,7 +571,7 @@
             "SESSION_EXPIRE_ON_CLOSE": "Sitzung beim Schließen des Browsers beenden",
             "SESSION_ENCRYPT": "Sitzungsdaten verschlüsseln",
             "AI_MENTION_HANDLE": "KI-Erwähnungsname, ohne @",
-            "ACCESSIBILITY_STATEMENT_URL": "URL der Barrierefreiheitserklärung",
+            "ACCESSIBILITY_STATEMENT_URL": "Barrierefreiheitserklärung",
             "APP_SECURITY_PASSKEY_ALLOW_PASTE": "Einfügen des Passkeys erlauben",
             "APP_SECURITY_PASSKEY_AUTO_GENERATE": "Passkeys automatisch erzeugen",
             "APP_SECURITY_PASSKEY_CHAR_LIMITATION": "Passkey-Zeichen einschränken",
@@ -559,7 +588,13 @@
             "REMOVE_FILES_AFTER_MONTHS": "Dateiaufbewahrung in Monaten",
             "CHECK_TOOL_STATUS": "Tool-Verfügbarkeit prüfen"
         },
-        "settings_hint": "Umgebungswerte gelten als Standard. Nur abweichende Werte werden gespeichert. Nach dem Speichern die App neu laden.",
+        "settings_hint": "Umgebungswerte sind die Standardwerte; nur geänderte Werte werden gespeichert. Markenfarbe, Eckenrundung und Logo sehen Sie beim Bearbeiten direkt auf dieser Seite. Einige andere Änderungen erscheinen erst nach dem Neuladen der Anwendung.",
+        "settings_unsaved": "Ungespeicherte Änderungen: :count",
+        "settings_upload_svg": "SVG hochladen",
+        "settings_replace_svg": "Ersetzen",
+        "settings_pixels": ":value px",
+        "settings_pick_color": "Farbe auswählen",
+        "settings_use_default": "Standard verwenden",
         "environment_hint": "Schreibgeschützte Informationen zur Bereitstellung. Geheime Werte sind ausgeblendet.",
         "action_confirmation": "Aktion ausführen? Bestehende Konfiguration oder der Systemzustand können sich ändern.",
         "action_done": "Aktion abgeschlossen. Eingereihte Aufgaben laufen, sobald ein Worker verfügbar ist.",

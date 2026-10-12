@@ -24,6 +24,7 @@
     import type { RouteProps } from '$lib/components/ui/routing/index.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useAppName } from '$lib/app/hooks/useAppName.svelte.js';
     import Input from '$lib/components/ui/input/Input.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import AuthFrame from './AuthFrame.svelte';
@@ -33,6 +34,7 @@
     const { data }: RouteProps<typeof config> = $props();
     const app = useApp();
     const { __ } = useTranslator();
+    const appName = useAppName();
     let account = $state('');
     let password = $state('');
     let pending = $state(false);
@@ -72,8 +74,8 @@
     <div class="auth-intro">
         <h1 id="auth-title">{__('ui.auth.login.title')}</h1>
         <p class="auth-copy">{
-            data.auth.mode === 'credentials' ? __('ui.auth.login.description')
-            : data.auth.mode === 'mixed' ? __('ui.auth.login.mixedDescription')
+            data.auth.mode === 'credentials' ? __('ui.auth.login.description', {appName})
+            : data.auth.mode === 'mixed' ? __('ui.auth.login.mixedDescription', {appName})
             : __('ui.auth.login.redirectDescription')
         }</p>
     </div>

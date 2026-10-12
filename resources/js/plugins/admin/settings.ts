@@ -3,9 +3,32 @@ export const settingsTabs = [
     {
         key: 'system',
         groups: [
-            { key: 'base', settings: ['APP_NAME'] },
-            { key: 'system', settings: ['APP_URL', 'APP_ENV', 'APP_TIMEZONE', 'APP_LOCALE'] },
-            { key: 'links', settings: ['ACCESSIBILITY_STATEMENT_URL'] }
+            { key: 'system', settings: ['APP_URL', 'APP_ENV', 'APP_TIMEZONE', 'APP_LOCALE'] }
+        ]
+    },
+    {
+        key: 'branding',
+        groups: [
+            {
+                key: 'base',
+                settings: ['APP_NAME', 'AI_MENTION_HANDLE', 'BRAND_ORGANIZATION_NAME', 'BRAND_ORGANIZATION_URL']
+            },
+            { key: 'theme', settings: ['BRAND_ACCENT_COLOR', 'BRAND_CORNER_STYLE'] },
+            { key: 'logo', settings: ['BRAND_LOGO', 'BRAND_LOGO_HEIGHT', 'BRAND_FAVICON'] }
+        ]
+    },
+    {
+        key: 'legal',
+        groups: [
+            {
+                key: 'links',
+                settings: [
+                    'LEGAL_IMPRINT_URL',
+                    'LEGAL_PRIVACY_URL',
+                    'LEGAL_TERMS_URL',
+                    'ACCESSIBILITY_STATEMENT_URL'
+                ]
+            }
         ]
     },
     {
@@ -26,7 +49,7 @@ export const settingsTabs = [
     {
         key: 'features',
         groups: [
-            { key: 'features', settings: ['AI_MENTION_HANDLE', 'CHECK_TOOL_STATUS'] },
+            { key: 'features', settings: ['CHECK_TOOL_STATUS'] },
             { key: 'api', settings: ['ALLOW_EXTERNAL_COMMUNICATION', 'ALLOW_USER_TOKEN_CREATION'] },
             {
                 key: 'apps',

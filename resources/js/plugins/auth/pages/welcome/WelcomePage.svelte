@@ -15,6 +15,7 @@
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import {useRouter, type RouteProps} from '$lib/components/ui/routing/index.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useAppName} from '$lib/app/hooks/useAppName.svelte.js';
     import type {WelcomeStepMeta} from './welcomeRoutes.js';
     import {useWelcomeFlow} from './welcomeFlow.js';
     import {welcomeStepEmoji} from './welcomeSteps.js';
@@ -22,7 +23,8 @@
     const {meta}: RouteProps<void, void, WelcomeStepMeta> = $props();
     const router = useRouter();
     const flow = useWelcomeFlow();
-    const {__, getTranslations} = useTranslator();
+    const {__} = useTranslator();
+    const appName = useAppName();
     let heading = $state<HTMLHeadingElement | null>(null);
     /** Measured height of the content; the outer box follows it so step changes resize smoothly. */
     let contentHeight = $state<number | undefined>(undefined);
@@ -33,9 +35,7 @@
         action: string;
     }
     const texts = $derived.by((): StepTexts => {
-        const bundle = getTranslations(`ui.auth.register.welcome.${meta.step}`);
-        const text = (key: keyof StepTexts) =>
-            bundle && typeof bundle === 'object' && typeof bundle[key] === 'string' ? bundle[key] : `Missing translation: ui.auth.register.welcome.${meta.step}.${key}`;
+        const text = (key: keyof StepTexts) => __(`ui.auth.register.welcome.${meta.step}.${key}`, {appName});
         return {title: text('title'), body: text('body'), action: text('action')};
     });
 

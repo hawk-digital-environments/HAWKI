@@ -8,11 +8,28 @@ use App\Services\Config\EnvironmentConfigProxy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SystemSettings
 {
+    /** An absolute HTTP(S) URL or a path on this host; protocol-relative URLs are rejected. */
+    private const LINK = 'nullable|string|max:2000|regex:~^(?:https?:/)?/[^/\s"\'<>][^\s"\'<>]*$~';
+
+    /** Settings whose value is the markup of an uploaded SVG file. */
+    public const SVG = ['BRAND_LOGO', 'BRAND_FAVICON'];
+
     public const DEFINITIONS = [
         'APP_NAME' => ['app.name', 'string', 'required|string|max:255'],
+        'BRAND_ORGANIZATION_NAME' => ['hawki.branding.organization_name', 'string', 'nullable|string|max:255'],
+        'BRAND_ORGANIZATION_URL' => ['hawki.branding.organization_url', 'string', 'nullable|url:http,https|max:2000'],
+        'BRAND_ACCENT_COLOR' => ['hawki.branding.accent_color', 'string', 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/'],
+        'BRAND_CORNER_STYLE' => ['hawki.branding.corner_style', 'string', 'required|in:round,soft,square'],
+        'BRAND_LOGO' => ['hawki.branding.logo', 'string', 'nullable|string'],
+        'BRAND_LOGO_HEIGHT' => ['hawki.branding.logo_height', 'number', 'required|integer|min:12|max:36'],
+        'BRAND_FAVICON' => ['hawki.branding.favicon', 'string', 'nullable|string'],
+        'LEGAL_IMPRINT_URL' => ['hawki.legal.imprint_url', 'string', self::LINK],
+        'LEGAL_PRIVACY_URL' => ['hawki.legal.privacy_url', 'string', self::LINK],
+        'LEGAL_TERMS_URL' => ['hawki.legal.terms_url', 'string', self::LINK],
         'APP_URL' => ['app.url', 'string', 'required|url:http,https|max:2000'],
         'APP_ENV' => ['app.env', 'string', 'required|alpha_dash:ascii|max:50'],
         'APP_TIMEZONE' => ['app.timezone', 'string', 'required|timezone:all_with_bc'],
@@ -112,6 +129,15 @@ class SystemSettings
         $value = Validator::make(['value' => $value], $rules)->validate()['value'];
         $value = $this->normalize($key, $value);
 
+        if (\in_array($key, self::SVG, true) && null !== $value) {
+            try {
+                // Stored sanitized: the markup is later embedded in pages every visitor loads.
+                $value = app(ProviderIconService::class)->validateSvg($value);
+            } catch (ValidationException $exception) {
+                throw ValidationException::withMessages(['value' => $exception->errors()['icon']]);
+            }
+        }
+
         if ($this->default($key) === $value) {
             $this->reset($key);
 
@@ -135,7 +161,12 @@ class SystemSettings
 
     public function environment(): array
     {
-        $rows = $this->rows();
+        $rows = array_map(
+            static fn (array $row) => \in_array($row['key'], self::SVG, true)
+                ? ['value' => null === $row['value'] ? '[not set]' : '[set]'] + $row
+                : $row,
+            $this->rows(),
+        );
 
         foreach (['APP_DEBUG' => 'app.debug', 'DB_CONNECTION' => 'database.default', 'QUEUE_CONNECTION' => 'queue.default', 'CACHE_STORE' => 'cache.default', 'SESSION_DRIVER' => 'session.driver', 'MAIL_MAILER' => 'mail.default'] as $key => $path) {
             $rows[] = ['id' => $key, 'key' => $key, 'value' => config($path), 'source' => 'deployment'];
@@ -197,6 +228,7 @@ class SystemSettings
 
         $values = match ($key) {
             'AUTHENTICATION_METHOD' => ['LDAP', 'OIDC', 'Shibboleth'],
+            'BRAND_CORNER_STYLE' => ['round', 'soft', 'square'],
             'APP_TIMEZONE' => \DateTimeZone::listIdentifiers(\DateTimeZone::ALL_WITH_BC),
             default => [],
         };

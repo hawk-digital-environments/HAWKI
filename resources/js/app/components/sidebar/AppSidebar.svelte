@@ -8,7 +8,7 @@
     import Sidebar from '$lib/components/ui/sidebar/Sidebar.svelte';
     import SidebarHeader from '$lib/components/ui/sidebar/SidebarHeader.svelte';
     import SidebarFooter from '$lib/components/ui/sidebar/SidebarFooter.svelte';
-    import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
+    import BrandLogo from '$lib/app/components/branding/BrandLogo.svelte';
     import ModuleSelector from '$lib/app/components/sidebar/ModuleSelector.svelte';
     import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
     import MobileNavCollapse from '$lib/app/components/sidebar/MobileNavCollapse.svelte';
@@ -82,7 +82,7 @@
 <Sidebar label={__('ui.navigation.label')}>
     <MobileNavCollapse />
     <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat} onSearch={() => searchOpen = true}>
-        <HawkLogo label={__('ui.navigation.newChat')} />
+        <BrandLogo label={__('ui.navigation.newChat')} />
     </SidebarHeader>
     <nav class="module-selector" aria-label={__('ui.navigation.mainLabel')}>
         <ModuleSelector module={sidebarModule} />

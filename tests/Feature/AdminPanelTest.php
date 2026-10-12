@@ -216,6 +216,9 @@ class AdminPanelTest extends TestCase
             $value = match ($key) {
                 'APP_NAME' => 'Test application', 'APP_ENV' => 'testing', 'APP_TIMEZONE' => 'Europe/Berlin',
                 'APP_LOCALE' => 'de_DE', 'AUTHENTICATION_METHOD' => 'LDAP',
+                'BRAND_ACCENT_COLOR' => '#a00020', 'BRAND_CORNER_STYLE' => 'soft',
+                'BRAND_LOGO_HEIGHT' => 32,
+                'BRAND_LOGO', 'BRAND_FAVICON' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1z"/></svg>',
                 default => match ($type) {
                     'boolean' => false, 'number' => 60, 'json' => ['image/png'], default => 'AI_MENTION_HANDLE' === $key ? 'helper' : 'https://example.com/accessibility',
                 },

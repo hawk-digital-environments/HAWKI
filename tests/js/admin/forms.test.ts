@@ -210,6 +210,26 @@ test('setting schemas validate MIME syntax, integer ranges and empty allowlists'
     assert.equal(settingsSchemas.MAX_FILE_SIZE.safeParse(1.5).success, false);
 });
 
+test('branding and legal settings accept brand colors, bounded SVG markup and same-host or http(s) links only', () => {
+    const color = settingsSchemas.BRAND_ACCENT_COLOR;
+    for (const value of ['#2f2abf', '#A00020', '', null]) assert.equal(color.safeParse(value).success, true);
+    for (const value of ['#fff', 'red', '#2f2abf;}', 'oklch(50% 0.2 20)'])
+        assert.equal(color.safeParse(value).success, false);
+    assert.equal(settingsSchemas.BRAND_CORNER_STYLE.safeParse('soft').success, true);
+    assert.equal(settingsSchemas.BRAND_CORNER_STYLE.safeParse('pill').success, false);
+    for (const key of ['LEGAL_IMPRINT_URL', 'LEGAL_PRIVACY_URL', 'LEGAL_TERMS_URL']) {
+        for (const value of ['/img/logo.svg', 'https://example.edu/imprint', '', null])
+            assert.equal(settingsSchemas[key].safeParse(value).success, true, `${key}: ${value}`);
+        for (const value of ['//evil.example/x', 'javascript:alert(1)', 'img/logo.svg', '/a b', '/"onload="x'])
+            assert.equal(settingsSchemas[key].safeParse(value).success, false, `${key}: ${value}`);
+    }
+    assert.equal(settingsSchemas.BRAND_LOGO.safeParse('<svg xmlns="http://www.w3.org/2000/svg"/>').success, true);
+    assert.equal(settingsSchemas.BRAND_FAVICON.safeParse('x'.repeat(262145)).success, false);
+    const control = (id: string) => controlFor('settings', field('value'), {}, { id });
+    assert.equal(control('LEGAL_PRIVACY_URL').type, 'text');
+    assert.equal(control('BRAND_ORGANIZATION_URL').type, 'url');
+});
+
 test('announcement schema rejects date order, empty publication and targeted policies', () => {
     const names = [
         'title',

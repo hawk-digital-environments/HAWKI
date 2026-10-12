@@ -380,6 +380,22 @@ For enhanced security, HAWKI utilizes individual salts for each component to ens
 | Variable         | Description                                |
 |------------------|--------------------------------------------|
 | IMPRINT_LOCATION | The URL to your organization imprint page. |
+| PRIVACY_POLICY_URL | The URL to your privacy policy. Defaults to the built-in `/dataprotection` page. |
+| TERMS_OF_USE_URL | The URL to your terms of use. |
+
+Each link is shown on the sign-in page and in the account menu; an empty value hides it. A value is an absolute `http(s)` URL or a path on this host starting with `/`.
+
+## Branding
+
+| Variable | Description |
+|----------|-------------|
+| BRAND_ACCENT_COLOR | Brand color as `#RRGGBB`. Its hue and saturation re-color the accent surfaces (buttons, links, selections, focus rings). The lightness steps of the interface stay fixed, so contrast is preserved in light and dark mode. Empty = HAWKI blue. |
+| BRAND_CORNER_STYLE | Corner rounding of the interface: `round` (default), `soft` or `square`. |
+| BRAND_LOGO_HEIGHT | Height of the uploaded logo in the sidebar, in pixels (`12`–`36`, default `28`). The sign-in page shows it proportionally larger. |
+| BRAND_ORGANIZATION_NAME | Operating institution, credited on the sign-in page. |
+| BRAND_ORGANIZATION_URL | Website of the operating institution. |
+
+These values, `APP_NAME` and the legal links can also be changed at runtime in the administration (Settings > Branding and Settings > Legal). The logo and the browser tab icon are uploaded there as SVG files and have no `.env` setting.
 
 ## Runtime overrides in Administration
 

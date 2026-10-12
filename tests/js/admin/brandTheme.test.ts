@@ -1,0 +1,31 @@
+import { strict as assert } from 'node:assert';
+import { test } from 'node:test';
+import { accentTokens, applyBrandTheme } from '../../../resources/js/plugins/admin/brandTheme.js';
+
+const root = () => {
+    const values = new Map<string, string>();
+    return { values, style: { setProperty: (name: string, value: string) => void values.set(name, value) } };
+};
+
+test('accent tokens match the server (BrandThemeTest.php pins the same numbers)', () => {
+    assert.deepEqual(accentTokens('#FF0000'), { hue: 29.2, chroma: 1 });
+    assert.equal(accentTokens('#808080').chroma, 0);
+    const fallback = accentTokens('#2f2abf');
+    assert.ok(Math.abs(fallback.hue - 265) < 8 && fallback.chroma > 0.9);
+});
+
+test('the preview applies a color, keeps the accent while one is half-typed and returns to the defaults', () => {
+    const target = root();
+    applyBrandTheme({ accentColor: '#ff0000', cornerStyle: 'square' }, target as never);
+    assert.equal(target.values.get('--accent-hue'), '29.2');
+    assert.equal(target.values.get('--corner-lg'), '0');
+    applyBrandTheme({ accentColor: '#ff0', cornerStyle: 'unknown' }, target as never);
+    assert.equal(target.values.get('--accent-hue'), '29.2');
+    assert.equal(target.values.get('--corner-lg'), '24px');
+    applyBrandTheme({ accentColor: null, cornerStyle: 'round', logoHeight: 36 }, target as never);
+    assert.equal(target.values.get('--logo-height'), '2.25rem');
+    applyBrandTheme({ accentColor: null, cornerStyle: 'round', logoHeight: 400 }, target as never);
+    assert.equal(target.values.get('--logo-height'), '2.25rem');
+    assert.equal(target.values.get('--accent-hue'), '265');
+    assert.equal(target.values.get('--accent-chroma'), '1');
+});
