@@ -102,6 +102,20 @@ function settleBackground(id: number): void {
     backgroundLayers = backgroundLayers.slice(index + 1);
 }
 
+/**
+ * The reveal for an AI fill (see `AiFillReveal`), in the avatar's own terms:
+ * the background washes in from the bare tile and the emoji pops. Whatever
+ * the fill's change is already playing is left alone. Not called under
+ * reduced motion, where `AiFillReveal` fades the tile instead.
+ */
+function revealAiFill(): void {
+    if (backgroundLayers.length === 0) {
+        settledBackground = '';
+        backgroundLayers.push({id: ++layerId, css: shownBackground});
+    }
+    if (Math.abs(emojiScale.current - 1) < 0.01) kick(emojiScale, 0.55, 1);
+}
+
 let swatchGrid = $state<HTMLElement | null>(null);
 let swatchEls = $state<HTMLButtonElement[]>([]);
 const activeIndex = $derived(BACKGROUNDS.findIndex((bg) => bg.value === avatar.iconCss));
@@ -243,9 +257,9 @@ async function suggest(): Promise<void> {
 
     <div class="bento-host">
     <div class="bento">
-        <!-- Blue reveal on the avatar alone when the AI fills it. -->
+        <!-- No blue sweep here: an AI fill replays the avatar's own motion. -->
         <div class="avatar-cell">
-        <AiFillReveal field="avatar">
+        <AiFillReveal field="avatar" onreveal={revealAiFill}>
         <div class="tile avatar-tile" style={settledBackground}>
             {#each backgroundLayers as layer (layer.id)}
                 <span
@@ -379,9 +393,6 @@ async function suggest(): Promise<void> {
     .avatar-cell :global(.ai-fill),
     .avatar-cell :global(.ai-fill > .content) {
         height: 100%;
-    }
-    .avatar-cell :global(.sheen) {
-        border-radius: var(--corner-lg);
     }
 
     /* The tile is the avatar: its background fills it edge to edge. */

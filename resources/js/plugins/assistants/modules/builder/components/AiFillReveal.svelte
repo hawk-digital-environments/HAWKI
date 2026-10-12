@@ -7,6 +7,10 @@
   together cascade top to bottom. It also scrolls the field into view on
   `builder.requestScrollTo(field)`.
 
+  A field with motion of its own (the avatar) passes `onreveal` and plays
+  that instead of the sweep; under reduced motion it gets the same fade as
+  every other field.
+
   @example
   ```svelte
   <AiFillReveal field="systemPrompt">
@@ -22,10 +26,12 @@
 
     interface Props {
         field: keyof Assistant;
+        /** Replaces the sweep: called when the reveal is due, nothing is drawn. */
+        onreveal?: () => void;
         children: Snippet;
     }
 
-    const {field, children}: Props = $props();
+    const {field, onreveal, children}: Props = $props();
     const builder = useBuilderContext();
     const reducedMotion = useReducedMotion();
 
@@ -63,6 +69,10 @@
             if (!entry) return;
             observer.disconnect();
             if (!builder.claimAiFill(field)) return;
+            if (onreveal && !reducedMotion.current) {
+                onreveal();
+                return;
+            }
             // Lower fields start a little later, so a batch reads as one wave.
             const top = entry.boundingClientRect.top - (entry.rootBounds?.top ?? 0);
             delay = Math.round(Math.min(MAX_DELAY, Math.max(0, top) * 0.6));
