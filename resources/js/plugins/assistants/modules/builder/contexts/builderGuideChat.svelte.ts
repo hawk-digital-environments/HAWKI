@@ -159,8 +159,10 @@ export function createBuilderGuideChat(
             builder.set(key, value as never);
             filled.push(key);
         }
-        if (updates.handle !== undefined && updates.handle !== builder.draft.handle) {
-            builder.set("handle", updates.handle);
+        // Also when the name above already derived the same handle: that one is
+        // held back for the server's verdict, which the guide's handle has.
+        if (updates.handle !== undefined && (updates.handle !== builder.draft.handle || builder.handleChecking)) {
+            builder.setGuideHandle(updates.handle);
             filled.push("handle");
         }
         const category = assistantOptionsStore.categories.find((c) => c.id === updates.categoryId);

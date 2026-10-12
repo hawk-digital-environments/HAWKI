@@ -467,6 +467,15 @@ export class BuilderContext {
   }
 
   /**
+   * Set a handle the guide picked. The server already made it unique, so it is
+   * shown right away, and — unlike a typed one — it keeps following the name.
+   */
+  setGuideHandle(handle: Assistant['handle']): void {
+    this.set('handle', handle);
+    this.handleEdited = false;
+  }
+
+  /**
    * Set the name and, while the handle is still untouched, derive it from the
    * name. "Untouched" means empty or still the slug of the previous name
    * (see {@link handleFollowsName}) — so the handle follows the name until the
