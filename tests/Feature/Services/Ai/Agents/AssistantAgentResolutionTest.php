@@ -6,7 +6,7 @@ namespace Tests\Feature\Services\Ai\Agents;
 use App\Models\Assistants\Assistant;
 use App\Models\User;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
-use App\Services\Ai\Agents\Implementations\Chat\AssistantChatAgentFactory;
+use App\Services\Assistant\Agents\AssistantChatAgentFactory;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
 use App\Services\Ai\AiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

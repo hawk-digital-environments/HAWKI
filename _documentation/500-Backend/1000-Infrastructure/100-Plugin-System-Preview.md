@@ -15,6 +15,7 @@ service provider in any package or overlay without modifying HAWKI core code.
 | Extension point | How to use | Stability |
 |---|---|---|
 | `ProviderAdapterRegistry::declare()` | `$r->declare('my_key', MyAdapter::class)` in `ServiceProvider::boot()` | `@api` |
+| `AgentToolRegistry::declare()` | `$app->extend(AgentToolRegistry::class, fn($r) => $r->declare('my_capability', MyAgentTool::class))` in `ServiceProvider::register()` | `@api` |
 | Container tag `'ai.tool'` | `$app->tag([MyTool::class], 'ai.tool')` in `ServiceProvider::register()` | Stable |
 | `AgentRegistry::declare(before/after)` | `$r->declare(MyFactory::class, before: 'chat')` in `ServiceProvider::boot()` | Stable |
 | `AiModelSettingRegistry` | `$app->extend(AiModelSettingRegistry::class, fn($r) => $r->register(...))` | Stable |
@@ -23,7 +24,7 @@ service provider in any package or overlay without modifying HAWKI core code.
 | `HealthCheckEvent::addResult()` | Add a listener to `HealthCheckEvent` in any auto-discovered `Listeners/` directory | Stable |
 | `DecoratorTrait` + `$app->extend()` | Wrap any `@api`-marked service class | `@api` |
 | Filter events (`DispatchableFilter`) | Add a listener to any filter event class | `@api` varies per event |
-| Event auto-discovery | Place listeners in `app/Services/*/Listeners/` (or any registered discovery path) | Stable |
+| Event auto-discovery | Place listeners in `app/Services/*/Listeners/` or `app/Services/*/*/Listeners/` (nested slice domains, e.g. `Rag/AssistantKnowledge/Listeners`) — or any registered discovery path | Stable |
 
 ### Notes on specific points
 
@@ -37,6 +38,18 @@ $this->app->extend(ProviderAdapterRegistry::class, function (ProviderAdapterRegi
 ```
 No core code changes required. See [Provider Adapters](../500-AI-Service-Layer/100-Provider-Adapters.md)
 for the full adapter contract.
+
+**`AgentToolRegistry::declare()`** — the hook for granting an plugin extensibility
+
+**Composition slices extend multiple modules.** Some features belong to no
+single module: they combine several modules' published APIs — a contract
+plus registry here, events and state columns there — into one user-facing
+capability. Such a feature is its own slice: it declares into the other
+modules' registries, listens to their events, and carries its own
+workflows and persistence concerns, while every base module stays unaware of it
+and keeps its own fallback behaviour when the composition's backing service is off.
+Deterministic background work in a composition is a callable service driven by event listeners.
+Wiring lives in the composition's own service provider, one declaration per adoption point.
 
 **Container tag `'ai.tool'`** — the `FunctionToolSyncer` discovers tools via container tag.
 Register a custom function tool:
@@ -84,8 +97,9 @@ application on install. Works similarly to `vendor:publish` but plugin-aware.
 ### Plugin Route and Event Registration
 
 **`PluginRouteBuilder`** — registers each plugin's routes, adds its `Listeners/` directory to
-the event auto-discovery paths (reusing the same `app/Services/*/Listeners` glob already in
-`bootstrap/app.php`), and wires any custom middleware.
+the event auto-discovery paths (reusing the same `app/Services/*/Listeners` and
+`app/Services/*/*/Listeners` globs already in `bootstrap/app.php`), and wires any custom
+middleware.
 
 ### Composer Lifecycle Hooks
 
@@ -161,4 +175,4 @@ the v3 plugin system, not over-engineering:
 | `IntuitiveTopSorter` | `AgentRegistry` ordering | Plugin load-order resolution |
 | Filter events | ExternalContent, AI tools | Primary data-interception hook for plugins |
 | `DecoratorTrait` | Manual service wrapping | Designated mechanism for plugins to extend `@api` services |
-| Event auto-discovery | `app/Services/*/Listeners` | Plugin listener directories added to the same glob |
+| Event auto-discovery | `app/Services/*/Listeners` + `app/Services/*/*/Listeners` (nested slice domains) | Plugin listener directories added to the same globs |

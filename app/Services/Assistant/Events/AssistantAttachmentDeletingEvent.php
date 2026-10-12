@@ -10,6 +10,8 @@ use App\Models\Assistants\AssistantAttachment;
  * Event fired before an assistant attachment is deleted.
  * Listeners can use this event to perform cleanup tasks, such as deleting
  * the associated stored file or removing the document from the RAG dataset.
+ *
+ * @api consumed across slice boundaries (e.g. by the RAG module)
  */
 readonly class AssistantAttachmentDeletingEvent
 {

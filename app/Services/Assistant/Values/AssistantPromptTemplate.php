@@ -279,4 +279,5 @@ Do not preamble with statements about checking files.
 ### Knowledge Files
 {{content}}
 MARKDOWN;
+
 }

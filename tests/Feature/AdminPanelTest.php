@@ -20,7 +20,7 @@ use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\Limits\Values\ChatAiModelLimits;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -29,7 +29,7 @@ use Tests\TestCase;
 #[CoversNothing()]
 class AdminPanelTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
     use \Tests\Support\AdminJsonApiRequests;
 
     protected function setUp(): void

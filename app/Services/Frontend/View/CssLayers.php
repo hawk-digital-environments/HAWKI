@@ -11,11 +11,12 @@ use Illuminate\View\Component;
  * these layers; otherwise browsers process layer order on a first-seen basis and
  * the specificity hierarchy becomes unpredictable. Placing this component at the top
  * of the `<head>` guarantees a stable, explicit layer order:
- * `reset → tokens → base → legacy → components → utilities`.
+ * `reset → legacy → tokens → base → components → utilities`.
  *
  * The order must stay in sync with the statement in `resources/css/app.css`:
- * `legacy` sits above `base` so legacy Blade pages keep their own look, while
- * unlayered Svelte scoped styles (and `components`/`utilities`) still win over it.
+ * `legacy` sits directly above `reset` so the new design system (`tokens`,
+ * `base`) overrides legacy Blade styles, while `components`/`utilities` and
+ * unlayered Svelte scoped styles still win over everything.
  */
 class CssLayers extends Component
 {
@@ -27,8 +28,11 @@ class CssLayers extends Component
     {
         // Declare the CSS layers in the desired order.
         // This has to be done in the HTML so it is loaded before any of the CSS files that use the layers are loaded.
+        // Previous ordering on this branch (legacy ABOVE base, so legacy Blade
+        // pages kept their own look over the design system) — restore to revert:
+        //   @layer reset, tokens, base, legacy, components, utilities;
         return <<<'blade'
-<style>@layer reset, tokens, base, legacy, components, utilities;</style>
+<style>@layer reset, legacy, tokens, base, components, utilities;</style>
 blade;
     }
 }

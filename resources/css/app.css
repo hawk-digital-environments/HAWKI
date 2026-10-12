@@ -4,11 +4,11 @@
    Order = lowest priority first → highest priority last.
 
    - reset:      box-sizing, margin resets
+   - legacy:     legacy Blade UI stylesheets (public/css, each wrapped in
+                 `@layer legacy`) — directly above reset, overridden by the
+                 design-system layers below
    - tokens:     CSS custom properties (:root variables)
    - base:       element defaults (body, :focus-visible, scrollbar, a)
-   - legacy:     legacy Blade UI stylesheets (public/css, each wrapped in
-                 `@layer legacy`) — above the base layers, below unlayered
-                 component styles and utilities
    - components: vendored stylesheets assigned via the vite `layer` option
                  (katex, monaco, markstream); Svelte scoped <style> blocks are
                  unlayered and beat every layer
@@ -21,7 +21,10 @@
    by `<x-css-layers />` (app/Services/Frontend/View/CssLayers.php), which the
    browser sees first and which therefore establishes the effective order.
    ========================================================================== */
-@layer reset, tokens, base, legacy, components, utilities;
+/* Previous ordering on this branch (legacy ABOVE tokens/base, so legacy Blade
+   pages kept their own look over the design system) — restore to revert:
+   @layer reset, tokens, base, legacy, components, utilities; */
+@layer reset, legacy, tokens, base, components, utilities;
 
 @import "pdfjs-dist/web/pdf_viewer.css";
 

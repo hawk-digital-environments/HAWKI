@@ -19,7 +19,7 @@ class ExampleBuilderActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->builder = new ExampleBuilder(new SchemaBuilder());
+        $this->builder = new ExampleBuilder($this->app->make(SchemaBuilder::class));
     }
 
     public function testRemixActionResponseExampleIsDefined(): void

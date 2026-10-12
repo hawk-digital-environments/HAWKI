@@ -50,7 +50,7 @@ final class ToolAuthorization
                 throw ToolAccessException::unavailable();
             }
             if (!$server || $server->status !== OnlineStatus::ONLINE || !$current->mcp_config) {
-                throw ToolAccessException::unavailable();
+                throw ToolAccessException::offline();
             }
         }
         // A resolved implementation must not survive a configuration replacement.

@@ -316,9 +316,9 @@ The `ai_model_tools` pivot table links specific AI models to the tools they are 
 ```bash
 php hawki tools assign --list                                             # view all assignments
 php hawki tools assign                                                    # interactive
-php hawki tools assign --tool=hawki-rag-search --model=gpt-4.1           # direct assignment
-php hawki tools assign --tool=hawki-rag-search --provider=openAi         # assign to all OpenAI models
-php hawki tools assign --tool=hawki-rag-search --model=gpt-4.1 --detach  # remove assignment
+php hawki tools assign --tool=hawki-rag-query-search --model=gpt-4.1           # direct assignment
+php hawki tools assign --tool=hawki-rag-query-search --provider=openAi         # assign to all OpenAI models
+php hawki tools assign --tool=hawki-rag-query-search --model=gpt-4.1 --detach  # remove assignment
 ```
 
 ---

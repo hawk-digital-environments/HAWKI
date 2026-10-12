@@ -17,6 +17,9 @@
         onChange: (query: string) => void;
     }>();
 
+    // Intentionally captures the mount-time value: the field is seeded from the
+    // saved query and later defaultValue changes must not clobber user typing.
+    // svelte-ignore state_referenced_locally
     const initialQuery = defaultValue;
     let text = $state(initialQuery);
     let emittedChange = initialQuery;

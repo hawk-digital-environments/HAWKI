@@ -8,7 +8,7 @@ use App\Models\Ai\AiProvider;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Admin\RoleAssignmentService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -18,7 +18,7 @@ use Tests\TestCase;
 #[CoversNothing()]
 class ProviderIconsTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
     use \Tests\Support\AdminJsonApiRequests;
     private const BASE = '/api/hawki/v1/admin-providers';
 

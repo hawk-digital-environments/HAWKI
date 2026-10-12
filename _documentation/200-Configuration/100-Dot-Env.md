@@ -117,7 +117,7 @@ Configuration for document conversion services. Choose between HAWIK's built-in 
 
 | Variable                     | Default Value                | Description                                                                                     |
 |------------------------------|------------------------------|-------------------------------------------------------------------------------------------------|
-| HAWKI_RAG_INGESTION_ENABLED  | false                        | Whether assistant knowledge files are ingested into the external HAWKI-RAG server               |
+| HAWKI_RAG_ENABLED            | false                        | Master switch for the RAG module (ingestion + retrieval); install-time decision                  |
 | HAWKI_RAG_DRIVER             | hawki_rag                    | Which RAG backend implements ingestion ("hawki_rag"; anything else resolves to a no-op)         |
 | HAWKI_RAG_API_URL            | http://localhost:8080/api    | Base URL of the RAG server's REST ingestion API                                                 |
 | HAWKI_RAG_API_KEY            |                              | Bearer token with the `rag:text-ingest` ability                                                 |
