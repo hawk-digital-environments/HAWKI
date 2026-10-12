@@ -21,8 +21,8 @@ import SmileIcon from "$lib/components/ui/icons/iconset/SmileIcon.svelte";
 import ArrowLeft01Icon from "$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte";
 import ArrowRight01Icon from "$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte";
 import {ActionIcon} from "$lib/components/ui/icons";
-import AiSparklesIcon from "$lib/components/ui/icons/iconset/AiSparklesIcon.svelte";
-import DiceIcon from "$lib/components/ui/icons/iconset/DiceIcon.svelte";
+import GoogleGeminiIcon from "$lib/components/ui/icons/iconset/GoogleGeminiIcon.svelte";
+import DiceFaces05Icon from "$lib/components/ui/icons/iconset/DiceFaces05Icon.svelte";
 import {BACKGROUNDS} from "$plugins/assistants/presets/backgrounds";
 import {AVATAR_EMOJIS} from "$plugins/assistants/presets/emojis";
 import {requestAvatarSuggestion} from "$plugins/assistants/api/resources/assistantBuilderGuideClient";
@@ -319,7 +319,7 @@ async function suggest(): Promise<void> {
             aria-busy={suggesting}
             onclick={suggest}
         >
-            <span class="action-icon"><AiSparklesIcon size="1rem"/></span>
+            <span class="action-icon"><GoogleGeminiIcon size="1rem"/></span>
             <span class="action-label">
                 <ShimmerText active={suggesting}>
                     {suggesting ? __('assistants.builder.general.avatar_ai_loading') : __('assistants.builder.general.avatar_ai')}
@@ -329,7 +329,7 @@ async function suggest(): Promise<void> {
 
         <button type="button" class="tile action-tile shuffle-tile" onclick={shuffle}>
             <span class="action-icon" style:transform="rotate({diceTurn.current}deg)">
-                <DiceIcon size="1rem"/>
+                <DiceFaces05Icon size="1rem"/>
             </span>
             <span class="action-label">{__('assistants.builder.general.avatar_random')}</span>
         </button>
