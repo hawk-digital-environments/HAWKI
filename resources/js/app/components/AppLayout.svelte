@@ -11,6 +11,7 @@
     import SidebarRoot from '$lib/components/ui/sidebar/SidebarRoot.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import Toaster from '$lib/components/ui/toast/Toaster.svelte';
+    import AnnouncementDialog from '$lib/app/components/announcements/AnnouncementDialog.svelte';
 
     interface Props {
         /** Page content, rendered in the layout's main column. */
@@ -29,6 +30,7 @@
     </SidebarContent>
 
     <Toaster />
+    <AnnouncementDialog />
 </SidebarRoot>
 
 <style>

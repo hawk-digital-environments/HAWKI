@@ -39,7 +39,19 @@
             "lightMode": "Heller Modus",
             "darkMode": "Dunkler Modus",
             "settings": "Einstellungen",
+            "announcements": "Ankündigungen",
             "logout": "Abmelden"
+        },
+        "announcements": {
+            "confirm": "Bestätigen",
+            "decline": "Ablehnen",
+            "logoutWarningTitle": "Ablehnen und abmelden?",
+            "logoutWarningDescription": "Um HAWKI weiter zu nutzen, musst du diese Ankündigung akzeptieren. Wenn du ablehnst, wirst du abgemeldet.",
+            "pageTitle": "Aktuelles",
+            "empty": "Es gibt noch keine Ankündigungen für dich.",
+            "publishedForAll": "Veröffentlicht für alle",
+            "publishedForYou": "Veröffentlicht für dich",
+            "readBy": "gelesen von :count"
         },
         "settings": {
             "title": "Einstellungen",
