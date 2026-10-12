@@ -374,6 +374,14 @@ async function suggest(): Promise<void> {
         font-size: 3.5rem;
         line-height: 1;
         will-change: transform;
+        transition: scale var(--duration-fast) var(--easing-spring),
+                    rotate var(--duration-fast) var(--easing-spring);
+    }
+    /* `transform` carries the pop and tilt springs; hover uses the separate
+       `scale` and `rotate` properties so it stacks on top of them. */
+    .avatar-tile:hover .emoji {
+        scale: 1.12;
+        rotate: -6deg;
     }
 
     .edit-hint {
@@ -387,12 +395,13 @@ async function suggest(): Promise<void> {
         color: oklch(100% 0 0);
         background: oklch(100% 0 0 / 0.22);
         backdrop-filter: blur(6px);
-        opacity: 0;
-        transition: opacity var(--duration-extra-fast) var(--easing-default);
+        transition: background-color var(--duration-fast) var(--easing-default),
+                    scale var(--duration-fast) var(--easing-spring);
     }
     .avatar-tile:hover .edit-hint,
     .avatar-tile:has(:focus-visible) .edit-hint {
-        opacity: 1;
+        background: oklch(100% 0 0 / 0.38);
+        scale: 1.12;
     }
 
     /* ── Swatches ────────────────────────────────────────────────────── */
