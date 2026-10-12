@@ -24,6 +24,7 @@ use App\JsonApi\V1\Rooms\RoomSchema;
 use App\JsonApi\V1\SystemModels\SystemModelSchema;
 use App\JsonApi\V1\SystemPrompts\SystemPromptSchema;
 use App\JsonApi\V1\TranslationLabels\TranslationLabelSchema;
+use App\JsonApi\V1\UserFavorites\UserFavoriteSchema;
 use App\JsonApi\V1\UserKeychainValues\UserKeychainValueSchema;
 use App\JsonApi\V1\Users\UserSchema;
 use App\JsonApi\V1\UserSettings\UserSettingSchema;
@@ -68,6 +69,7 @@ class Server extends BaseServer
             SystemModelSchema::class,
             SystemPromptSchema::class,
             TranslationLabelSchema::class,
+            UserFavoriteSchema::class,
             UserKeychainValueSchema::class,
             UserSchema::class,
             UserSettingSchema::class,
