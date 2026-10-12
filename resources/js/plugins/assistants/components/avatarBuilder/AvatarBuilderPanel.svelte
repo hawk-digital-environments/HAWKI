@@ -3,10 +3,11 @@
   (tap it to pick another emoji), a tile of round background swatches, and
   two action tiles — an AI suggestion from the builder guide and a shuffle.
   Changes play spring motions: the emoji pops, the picked swatch grows while
-  the previous one shrinks back, and the dice rolls. Reduced motion makes them instant.
+  the previous one shrinks back, the new background washes over the avatar
+  from its centre, and the dice rolls. Reduced motion makes them instant.
 -->
 <script lang="ts">
-import {onDestroy} from "svelte";
+import {onDestroy, untrack} from "svelte";
 import {Spring} from "svelte/motion";
 import {type AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
 import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
@@ -61,14 +62,45 @@ function kick(spring: Spring<number>, from: number, rest: number): void {
     spring.target = rest;
 }
 
-// Pop the emoji whenever the avatar changes, whoever changed it (a tap, a
-// swatch, the shuffle, the AI or the guide chat) — but not on first render.
+// Pop the emoji whenever it changes, whoever changed it (a tap, the
+// shuffle, the AI or the guide chat) — but not on first render, and not
+// when only the background changes.
 let seen: string | null = null;
 $effect(() => {
-    const key = `${avatar.name}|${avatar.iconCss}`;
-    if (seen !== null && seen !== key) kick(emojiScale, 0.55, 1);
-    seen = key;
+    const emoji = avatar.name;
+    if (seen !== null && seen !== emoji) kick(emojiScale, 0.55, 1);
+    seen = emoji;
 });
+
+// Gradients can't be transitioned, so a new background is laid over the
+// settled one and revealed as a circle growing out from under the emoji.
+// Quick successive picks stack; a finished layer becomes the settled
+// background and drops itself and everything beneath it.
+let settledBackground = $state(builder.draft.avatar.iconCss);
+let backgroundLayers = $state<{id: number; css: string}[]>([]);
+let shownBackground = builder.draft.avatar.iconCss;
+let layerId = 0;
+$effect(() => {
+    const css = avatar.iconCss;
+    if (css === shownBackground) return;
+    shownBackground = css;
+    const instant = reducedMotion.current;
+    untrack(() => {
+        if (instant) {
+            settledBackground = css;
+            backgroundLayers = [];
+        } else {
+            backgroundLayers.push({id: ++layerId, css});
+        }
+    });
+});
+
+function settleBackground(id: number): void {
+    const index = backgroundLayers.findIndex((layer) => layer.id === id);
+    if (index < 0) return;
+    settledBackground = backgroundLayers[index].css;
+    backgroundLayers = backgroundLayers.slice(index + 1);
+}
 
 let swatchGrid = $state<HTMLElement | null>(null);
 let swatchEls = $state<HTMLButtonElement[]>([]);
@@ -188,12 +220,13 @@ async function suggest(): Promise<void> {
             aiError = __('assistants.builder.general.avatar_ai_error');
             return;
         }
+        const emojiChanged = !!pick?.emoji && pick.emoji !== avatar.name;
         setAvatar({
             ...(pick?.emoji ? {name: pick.emoji} : {}),
             ...(background ? {iconCss: background.value} : {}),
         });
         builder.markAiFilled(['avatar']);
-        kick(emojiTilt, -16, 0);
+        if (emojiChanged) kick(emojiTilt, -16, 0);
     } catch {
         if (!ctrl.signal.aborted) aiError = __('assistants.builder.general.avatar_ai_error');
     } finally {
@@ -213,7 +246,15 @@ async function suggest(): Promise<void> {
         <!-- Blue reveal on the avatar alone when the AI fills it. -->
         <div class="avatar-cell">
         <AiFillReveal field="avatar">
-        <div class="tile avatar-tile" style={avatar.iconCss}>
+        <div class="tile avatar-tile" style={settledBackground}>
+            {#each backgroundLayers as layer (layer.id)}
+                <span
+                    class="background-layer"
+                    style={layer.css}
+                    aria-hidden="true"
+                    onanimationend={() => settleBackground(layer.id)}
+                ></span>
+            {/each}
             <EmojiPicker
                 onSelect={(emoji) => { aiError = undefined; setAvatar({name: emoji}); }}
                 ariaLabel={__('assistants.builder.general.avatar_symbol_change')}
@@ -345,10 +386,22 @@ async function suggest(): Promise<void> {
 
     /* The tile is the avatar: its background fills it edge to edge. */
     .avatar-tile {
+        position: relative;
         display: flex;
         height: 100%;
         padding: 0;
         overflow: hidden;
+    }
+    /* An incoming background, revealed from the centre outwards. It sits
+       before the (positioned) trigger, so the emoji stays on top. */
+    .background-layer {
+        position: absolute;
+        inset: 0;
+        animation: background-reveal var(--duration-medium) var(--easing-spring) both;
+    }
+    @keyframes background-reveal {
+        from { clip-path: circle(0% at 50% 50%); }
+        to { clip-path: circle(75% at 50% 50%); }
     }
     .avatar-tile :global(.emoji-picker) {
         display: flex;
