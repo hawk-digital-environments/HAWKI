@@ -8,9 +8,11 @@
   clicking into a text field even though the actual `<textarea>` might be
   small or positioned elsewhere.
 
-  Also subscribes to `ComposerContext.onFocusInput` so that
-  `composerContext.focusInput()` (called e.g. after a mode pre-fills the
-  message, or after sending) reuses the same focus logic. Uses a `setTimeout`
+  Also subscribes to the kernel `onComposerFocusRequested` event (triggered by
+  `composerContext.focusInput()`, e.g. after a mode pre-fills the message or
+  after sending) so it reuses the same focus logic. The subscription is
+  attached synchronously during script init so events triggered by parent
+  `$effect`s after mount are already received. Uses a `setTimeout`
   before focusing so the textarea/button's enabled state has settled first
   (e.g. right after a send completes and re-enables the input).
 
@@ -23,8 +25,11 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import {onDestroy} from 'svelte';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
+    const app = useApp();
     const composerContext = useComposerContext();
 
     interface Props {
@@ -92,7 +97,11 @@
         }
     }
 
-    $effect(() => composerContext.onFocusInput(doFocus));
+    // Subscribed synchronously parent components trigger the
+    // event from their own `$effect`s after mount, which flush before a child effect
+    // would have registered the handler. The wrapper dereferences the `doFocus`
+    // derived on each call so the latest textarea/button elements are used.
+    onDestroy(app.events.sync.on('onComposerFocusRequested', () => doFocus()));
 </script>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->

@@ -61,7 +61,7 @@ from the store's in-flight cache.
     // Land the cursor in the input so typing can start right away.
     $effect(() => {
         if (!composer) return;
-        setTimeout(() => composer?.focusInput());
+        composer.autoFocusInput();
     });
 
     // Clicking the "new chat" button in the sidebar while this page is
@@ -69,7 +69,7 @@ from the store's in-flight cache.
     $effect(() => {
         return app.events.sync.on('onNewChatRequested', () => {
             if (!composer) return;
-            setTimeout(() => composer?.focusInput());
+            composer.autoFocusInput();
         });
     });
 </script>

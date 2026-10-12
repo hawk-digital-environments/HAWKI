@@ -63,6 +63,8 @@
     let query = $state('');
     let activeTab = $state<string>(ALL_TAB);
     let highlightedId = $state<string | null>(null);
+    // True between picking a model and the picker closing.
+    let modelPicked = false;
     let searchInputEl = $state<HTMLInputElement | null>(null);
 
     const disabled = $derived(composerContext.guard.disablesFeature('models'));
@@ -138,7 +140,18 @@
             return;
         }
         composerContext.model.set(model.model_id);
+        modelPicked = true;
         open = false;
+    }
+
+    function handleCloseAutoFocus(e: Event): void {
+        // bits-ui would return focus to the trigger; after picking a model, hand the
+        // cursor back to the input instead so typing can continue right away.
+        if (modelPicked) {
+            e.preventDefault();
+            composerContext.autoFocusInput();
+        }
+        modelPicked = false;
     }
 
     function toggleFavorite(e: Event, model: AiModel): void {
@@ -404,7 +417,7 @@
                 bind:open
                 side="top"
                 align="start"
-                contentProps={{class: 'mp2-content', onOpenAutoFocus: handleOpenAutoFocus, onkeydown: onPanelKeydown}}
+                contentProps={{class: 'mp2-content', onOpenAutoFocus: handleOpenAutoFocus, onCloseAutoFocus: handleCloseAutoFocus, onkeydown: onPanelKeydown}}
             >
                 {#snippet children({props})}
                     <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>
