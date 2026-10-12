@@ -11,7 +11,7 @@ import type {DataStore} from '$lib/kernel/stores/types.js';
  * @example
  * // Inside a plugin's `stores()` hook:
  * public stores({add}: StoreRegistrar): void {
- *     add(new ThemeStore());
+ *     add(new AiModelStore());
  * }
  */
 export function createStoreRegistrar(

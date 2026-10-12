@@ -1,10 +1,10 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\Config;
 
-
+use App\Services\System\Plugins\PluginAwareTrait;
 use App\Utils\Casts\AbstractCastableObject;
 
 /**
@@ -58,22 +58,28 @@ use App\Utils\Casts\AbstractCastableObject;
  * ```
  *
  * @api
+ *
  * @see ConfigService
  * @see AbstractCastableObject for property hydration and serialization
  */
 abstract class AbstractConfig extends AbstractCastableObject
 {
+    use PluginAwareTrait;
+
     /**
      * Returns the namespace that groups this config in the public API response.
      *
-     * All core HAWKI configs share the `'hawki-core'` namespace, which is the key under which
-     * their values appear in the `GET /api/v1/configs` response. The method is `final` to ensure
-     * all subclasses in the core stay under a single, predictable namespace.
+     * Derived from the owning plugin via {@see PluginAwareTrait}: every config class inside
+     * the `App\` namespace belongs to the core application and resolves to `'hawki-core'`,
+     * while plugin config classes resolve to their plugin's storage-safe namespace
+     * (e.g. `hawk/deepl-plugin` → `'hawk-deepl-plugin'`). The method is `final` so the
+     * namespace is always anchored to the owning package — plugin configs can never
+     * accidentally collide with core namespaces.
      *
      * @see \App\Services\Config\Contracts\PublicConfigInterface::publicKey() for the per-config key within this namespace
      */
     final public static function namespace(): string
     {
-        return 'hawki-core';
+        return static::getContainingPlugin()->getNamespace();
     }
 }

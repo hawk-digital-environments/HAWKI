@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Models\Announcements\Announcement;
@@ -22,13 +24,13 @@ use Laravel\Sanctum\HasApiTokens;
 #[UsePolicy(UserPolicy::class)]
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
     use HasContextualScopesTrait;
-
     protected $dispatchesEvents = [
-        'created' => UserCreatedEvent::class
+        'created' => UserCreatedEvent::class,
     ];
-
     protected $fillable = [
         'name',
         'email',
@@ -37,23 +39,14 @@ class User extends Authenticatable
         'publicKey',
         'avatar_id',
         'bio',
-        'locale',
-        'isRemoved'
+        'isRemoved',
     ];
-
     protected $casts = [
         'isRemoved' => 'boolean',
     ];
 
-    protected static function registerScopes(ScopeRegistrar $registrar): void
-    {
-        $registrar
-            ->addScope('access', new KnownUsersAccessScope())
-            ->addScope('active', new ActiveFilterScope('isRemoved', '0'));
-    }
-
     /**
-     * @return User|HasMany<Member, $this>
+     * @return HasMany<Member, $this>|User
      */
     public function members()
     {
@@ -70,7 +63,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Define the relationship with AiConv
+     * Define the relationship with AiConv.
+     *
      * @return HasMany<AiConv, $this>
      */
     public function conversations(): HasMany
@@ -91,7 +85,6 @@ class User extends Authenticatable
         $this->update(['isRemoved' => 1]);
     }
 
-
     // SECTION: ANNOUNCEMENTS
 
     /**
@@ -105,7 +98,6 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-
     /**
      * @return Collection<int, Announcement>
      */
@@ -114,17 +106,17 @@ class User extends Authenticatable
         $now = now();
 
         return Announcement::query()
-            ->where(function ($q) use ($now) {
+            ->where(static function ($q) use ($now): void {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
             })
-            ->where(function ($q) use ($now) {
+            ->where(static function ($q) use ($now): void {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>=', $now);
             })
-            ->where(function ($q) {
+            ->where(function ($q): void {
                 $q->where('is_global', true)
                     ->orWhereJsonContains('target_users', $this->id);
             })
-            ->whereDoesntHave('users', function ($q) {
+            ->whereDoesntHave('users', function ($q): void {
                 $q->where('user_id', $this->id)->whereNotNull('accepted_at');
             })
             ->get();
@@ -144,4 +136,10 @@ class User extends Authenticatable
         ]);
     }
 
+    protected static function registerScopes(ScopeRegistrar $registrar): void
+    {
+        $registrar
+            ->addScope('access', new KnownUsersAccessScope())
+            ->addScope('active', new ActiveFilterScope('isRemoved', '0'));
+    }
 }

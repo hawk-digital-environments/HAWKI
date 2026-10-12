@@ -10,8 +10,8 @@ import {useApp} from '$lib/app/hooks/useApp.svelte.js';
  * across component boundaries (e.g. AI handles, AI models, theme, keychain —
  * see `resources/js/plugins/core/stores/*.svelte.ts`). Each store registers
  * itself into the `HawkiDataStores` map via TypeScript declaration merging
- * (e.g. `interface HawkiDataStores { 'theme': ThemeStore; }`), which is what
- * lets `useStore('theme')` return a fully-typed `ThemeStore` instead of the
+ * (e.g. `interface HawkiDataStores { 'ai-models': AiModelStore; }`), which is what
+ * lets `useStore('ai-models')` return a fully-typed `AiModelStore` instead of the
  * generic `DataStore` interface. Stores that implement `loadData(app)` have
  * it invoked automatically once, during the bootstrapper's `main` stage.
  *
@@ -26,7 +26,7 @@ import {useApp} from '$lib/app/hooks/useApp.svelte.js';
  * <script lang="ts">
  *     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
  *
- *     const themeStore = useStore('theme');
+ *     const aiModelStore = useStore('ai-models');
  * </script>
  * ```
  */

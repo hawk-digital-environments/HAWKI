@@ -4,6 +4,7 @@ import type {HawkiClient} from '$lib/kernel/client/dummyClient.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
 import type {ConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistrar.js';
+import type {UserSettingsSchemaRegistrar} from '$lib/kernel/userSettings/userSettingsSchemaRegistrar.js';
 import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
@@ -60,6 +61,9 @@ export interface HawkiPlugin {
 
     /** Register this plugin's Zod config schema (augmenting `HawkiConfigSchemas`) on the registrar. */
     configSchemas?(registrar: ConfigSchemaRegistrar, context: HawkiPluginContext): void | Promise<void>;
+
+    /** Register this plugin's Zod user-settings schema (augmenting `HawkiUserSettingsSchemas`) on the registrar. */
+    settingSchemas?(registrar: UserSettingsSchemaRegistrar, context: HawkiPluginContext): void | Promise<void>;
 
     /** Register this plugin's feature modules (bundles of routes + setup) on the registrar. */
     modules?(registrar: ModuleRegistrar, context: HawkiPluginContextWithConfig): void | Promise<void>;

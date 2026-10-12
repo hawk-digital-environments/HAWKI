@@ -49,7 +49,7 @@ export class StoreExtension implements HawkiAppExtension {
      * Pass a name from {@link HawkiDataStores} (e.g. `'theme'`) to get the
      * concrete, typed store class instead of the generic `DataStore`:
      * @example
-     * const theme = app.stores.get('theme'); // typed as ThemeStore
+     * const models = app.stores.get('ai-models'); // typed as AiModelStore
      */
     public get<N extends keyof HawkiDataStores>(name: N): HawkiDataStores[N];
     public get(name: string): DataStore;

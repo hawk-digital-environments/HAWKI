@@ -1,15 +1,16 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Models;
 
 use App\Casts\AsSymmetricCryptoValue;
-use App\Services\Users\Events\UserKeychainValueCreatedEvent;
-use App\Services\Users\Events\UserKeychainValueDeletingEvent;
-use App\Services\Users\Events\UserKeychainValueUpdatedEvent;
 use App\Models\Scopes\Generic\BelongsToUserScope;
 use App\Policies\UserKeychainValuePolicy;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
+use App\Services\Users\Events\UserKeychainValueCreatedEvent;
+use App\Services\Users\Events\UserKeychainValueDeletingEvent;
+use App\Services\Users\Events\UserKeychainValueUpdatedEvent;
 use App\Services\Users\Keychain\Value\UserKeychainValueType;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;

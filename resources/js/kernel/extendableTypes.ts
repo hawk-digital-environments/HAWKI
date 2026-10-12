@@ -39,6 +39,41 @@ export interface HawkiConfigSchemas {
 }
 
 /**
+ * Namespaced per-user settings loaded from the `user-settings` JSON:API
+ * resource and kept reactive across authentication transitions.
+ *
+ * Unlike {@link HawkiConfigSchemas} (global app config), user settings are
+ * per-user (or per-session for guests) and **writable** from the frontend
+ * via `app.userSettings.save(...)`. Each namespace (e.g. `'hawki-core'`)
+ * validates one namespace resource — the resource id *is* the namespace, and
+ * its attributes are keyed by each settings class's public key (e.g. `core` →
+ * typed `{locale, theme, timezone}`). The schema therefore validates the full
+ * namespace resource shape (public keys → typed values), not individual
+ * properties.
+ *
+ * **How to add a new user-settings namespace:**
+ *
+ * 1. Export a default Zod schema from `<namespace>.schema.ts` under
+ *    `$lib/app/schemas/user-settings/` (namespace is inferred from the
+ *    filename by `createUserSettingsSchemaRegistrar().addFromModules()`,
+ *    e.g. `hawki-core.schema.ts` → namespace `'hawki-core'`).
+ * 2. Augment this interface next to that schema:
+ *    ```ts
+ *    declare module '$lib/kernel/extendableTypes.js' {
+ *        interface HawkiUserSettingsSchemas {
+ *            'hawki-core': typeof HawkiCoreUserSettingsSchema;
+ *        }
+ *    }
+ *    ```
+ *
+ * See `resources/js/app/schemas/user-settings/hawki-core.schema.ts` for a
+ * real example.
+ */
+export interface HawkiUserSettingsSchemas {
+    // Populated by other modules via declaration merging (see above).
+}
+
+/**
  * Central registry that connects resource type names (strings like `'connections'`)
  * to their TypeScript types and Zod validation schemas.
  *
@@ -98,17 +133,17 @@ export interface HawkiAppExtensions {
 
 /**
  * Registry mapping a data store's `name` (e.g. `'theme'`) to its concrete
- * store class, so `app.stores.get('theme')` / `useStore('theme')` return a
- * typed `ThemeStore` instead of the generic `DataStore`. Each store augments
+ * store class, so `app.stores.get('ai-models')` / `useStore('ai-models')` return a
+ * typed `AiModelStore` instead of the generic `DataStore`. Each store augments
  * this interface next to its class definition:
  * ```ts
  * declare module '$lib/kernel/extendableTypes.js' {
  *     interface HawkiDataStores {
- *         'theme': ThemeStore;
+ *         'ai-models': AiModelStore;
  *     }
  * }
  * ```
- * See `resources/js/plugins/core/stores/ThemeStore.svelte.ts` for a real example.
+ * See `resources/js/plugins/core/stores/AiModelStore.svelte.ts` for a real example.
  */
 export interface HawkiDataStores {
 

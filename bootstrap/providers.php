@@ -18,6 +18,7 @@ return [
     App\Providers\AiServiceProvider::class,
     App\Providers\ConfigServiceProvider::class,
     \App\Providers\EncryptionServiceProvider::class,
-    App\Providers\ExtAppServiceProvider::class,
-    App\Providers\SystemServiceProvider::class,
+    \App\Providers\ExtAppServiceProvider::class,
+    \App\Providers\UsersServiceProvider::class,
+    \App\Providers\SystemServiceProvider::class,
 ];

@@ -26,23 +26,23 @@ use App\JsonApi\V1\SystemPrompts\SystemPromptSchema;
 use App\JsonApi\V1\TranslationLabels\TranslationLabelSchema;
 use App\JsonApi\V1\UserKeychainValues\UserKeychainValueSchema;
 use App\JsonApi\V1\Users\UserSchema;
+use App\JsonApi\V1\UserSettings\UserSettingSchema;
 use LaravelJsonApi\Core\Server\Server as BaseServer;
 
 class Server extends BaseServer
 {
-
     public const string BASE_URL_PREFIX = '/hawki/v1';
 
+    public function serving(): void
+    {
+    }
+
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseUri(): string
     {
         return '/api' . self::BASE_URL_PREFIX;
-    }
-
-    public function serving(): void
-    {
     }
 
     protected function allSchemas(): array
@@ -70,6 +70,7 @@ class Server extends BaseServer
             TranslationLabelSchema::class,
             UserKeychainValueSchema::class,
             UserSchema::class,
+            UserSettingSchema::class,
         ];
     }
 }
