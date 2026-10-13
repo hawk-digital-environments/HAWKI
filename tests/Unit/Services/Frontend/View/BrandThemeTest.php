@@ -19,11 +19,8 @@ class BrandThemeTest extends TestCase
 
     public function testTheDefaultAccentMapsOntoTheDefaultTokens(): void
     {
-        // #2f2abf is the color the default ramp (hue 265, full chroma) is built around.
-        $tokens = BrandTheme::accentTokens('#2f2abf');
-
-        static::assertEqualsWithDelta(265, $tokens['hue'], 8);
-        static::assertEqualsWithDelta(1, $tokens['chroma'], 0.1);
+        // The default brand color (config/hawki.php) must reproduce the built-in ramp exactly.
+        static::assertSame(['hue' => 265.0, 'chroma' => 1.0], BrandTheme::accentTokens('#1139d7'));
     }
 
     public function testAGreyBrandColorYieldsANeutralRamp(): void

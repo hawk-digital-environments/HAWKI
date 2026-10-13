@@ -10,7 +10,7 @@
     <link rel="icon" href="{{ \App\Services\Frontend\Config\BrandingConfig::svgUri(config('hawki.branding.favicon')) ?? asset('favicon.ico') }}">
     <link rel="manifest" href="{{ url('manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ url('pwa/icons/apple-touch-icon.png') }}">
-    <meta name="theme-color" content="{{ \App\Services\Frontend\View\BrandTheme::accentColor() ?? '#2f2abf' }}">
+    <meta name="theme-color" content="{{ \App\Services\Frontend\View\BrandTheme::accentColor() ?? '#1139d7' }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="{{ config('app.name') }}">

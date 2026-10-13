@@ -212,8 +212,8 @@ test('setting schemas validate MIME syntax, integer ranges and empty allowlists'
 
 test('branding and legal settings accept brand colors, bounded SVG markup and same-host or http(s) links only', () => {
     const color = settingsSchemas.BRAND_ACCENT_COLOR;
-    for (const value of ['#2f2abf', '#A00020', '', null]) assert.equal(color.safeParse(value).success, true);
-    for (const value of ['#fff', 'red', '#2f2abf;}', 'oklch(50% 0.2 20)'])
+    for (const value of ['#1139d7', '#A00020', '', null]) assert.equal(color.safeParse(value).success, true);
+    for (const value of ['#fff', 'red', '#1139d7;}', 'oklch(50% 0.2 20)'])
         assert.equal(color.safeParse(value).success, false);
     assert.equal(settingsSchemas.BRAND_CORNER_STYLE.safeParse('soft').success, true);
     assert.equal(settingsSchemas.BRAND_CORNER_STYLE.safeParse('pill').success, false);

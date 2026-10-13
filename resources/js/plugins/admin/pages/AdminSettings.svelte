@@ -247,13 +247,13 @@
                                                 <input
                                                     type="color"
                                                     aria-label={__('admin.settings_pick_color')}
-                                                    value={isBrandColor(value) ? value : '#2f2abf'}
+                                                    value={isBrandColor(value) ? value : '#1139d7'}
                                                     oninput={(event) => set(row, event.currentTarget.value)}
                                                     disabled={locked}
                                                 />
                                                 <Input
                                                     {id}
-                                                    placeholder="#2f2abf"
+                                                    placeholder="#1139d7"
                                                     bind:value={() => text(row), (next) => set(row, next)}
                                                     aria-invalid={!!errors[key]}
                                                     disabled={locked}

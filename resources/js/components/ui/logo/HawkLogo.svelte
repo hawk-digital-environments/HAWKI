@@ -44,7 +44,7 @@
     .mark {
         height: 0.85rem;
         width: auto;
-        color: var(--color-accent-text, #2f2abf);
+        color: var(--color-accent-text, #1139d7);
     }
 
     /* A logo carries more than five letters; it needs more height than the wordmark to stay legible. */

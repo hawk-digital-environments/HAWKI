@@ -10,8 +10,8 @@ const root = () => {
 test('accent tokens match the server (BrandThemeTest.php pins the same numbers)', () => {
     assert.deepEqual(accentTokens('#FF0000'), { hue: 29.2, chroma: 1 });
     assert.equal(accentTokens('#808080').chroma, 0);
-    const fallback = accentTokens('#2f2abf');
-    assert.ok(Math.abs(fallback.hue - 265) < 8 && fallback.chroma > 0.9);
+    // The default brand color (config/hawki.php) must reproduce the built-in ramp exactly.
+    assert.deepEqual(accentTokens('#1139d7'), { hue: 265, chroma: 1 });
 });
 
 test('the preview applies a color, keeps the accent while one is half-typed and returns to the defaults', () => {

@@ -32,8 +32,9 @@ return [
     ],
 
     'branding' => [
-        // Brand color as #RRGGBB. Its hue and saturation drive the accent color ramp. Empty = HAWKI default.
-        'accent_color' => env('BRAND_ACCENT_COLOR'),
+        // Brand color as #RRGGBB. Its hue and saturation drive the accent color ramp. The default is
+        // the HAWKI blue the built-in ramp is made of (oklch 45% 0.24 265), so it changes nothing.
+        'accent_color' => env('BRAND_ACCENT_COLOR') ?: '#1139d7',
         // Corner rounding of the interface: round (default), soft or square.
         'corner_style' => env('BRAND_CORNER_STYLE', 'round'),
         // SVG markup of the logo and the browser tab icon. Uploaded in the
