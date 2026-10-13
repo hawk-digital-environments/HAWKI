@@ -11,8 +11,8 @@ return [
     |
     */
     'default_models' => [
-        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
-        'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-2.0-flash'),
+        'default_model' => env('DEFAULT_MODEL', 'gpt-5-nano'),
+        'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-3.8-flash'),
         'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'qwen3-omni-30b-a3b-instruct'),
         'default_vision_model' => env('DEFAULT_VISION_MODEL', 'qwen3-omni-30b-a3b-instruct'),
     ],
@@ -40,10 +40,10 @@ return [
     |
     */
     'system_models' => [
-//        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
-        'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
-        'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
-        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
+//        'default_model' => env('DEFAULT_MODEL', 'gpt-5-nano'),
+        'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-5-nano'),
+        'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-5-nano'),
+        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-5-nano'),
     ],
 
     /*
