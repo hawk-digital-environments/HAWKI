@@ -489,6 +489,11 @@
     .setting-control > :global(*) {
         max-width: 100%;
     }
+    /* Wide enough that every option fits: the tabs share the width equally and would
+       otherwise shrink to the average label, cutting the longest one off. */
+    .setting-control > :global(.tabs) {
+        width: 18rem;
+    }
     .range {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 4rem;

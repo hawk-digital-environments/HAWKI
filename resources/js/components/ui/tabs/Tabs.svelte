@@ -64,7 +64,22 @@
     const indicator = new Spring({x: 0, w: 0}, {stiffness: 0.55, damping: 0.9});
     let indicatorReady = $state(false);
 
+    // The indicator is positioned from measured pixels, so it has to be measured
+    // again whenever the control changes size — including the first time it gets
+    // one, when it was mounted inside something hidden (e.g. an inactive panel).
+    let rootEl = $state<HTMLDivElement | null>(null);
+    let layout = $state(0);
+    let measuredLayout = 0;
     $effect(() => {
+        if (!rootEl || typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(() => layout++);
+        observer.observe(rootEl);
+        return () => observer.disconnect();
+    });
+
+    $effect(() => {
+        const resized = layout !== measuredLayout;
+        measuredLayout = layout;
         const idx = items.findIndex(i => i.key === value);
         const el = idx >= 0 ? tabEls[idx] : null;
         if (!el) {
@@ -72,7 +87,8 @@
             return;
         }
         const target = {x: el.offsetLeft, w: el.offsetWidth};
-        if (!indicatorReady || reducedMotion.current) {
+        // A resize is not a selection: the indicator snaps instead of sliding.
+        if (!indicatorReady || reducedMotion.current || resized) {
             indicator.set(target, {instant: true});
             indicatorReady = true;
         } else {
@@ -111,7 +127,7 @@
     }
 </script>
 
-<div class="tabs" role={mode === 'radio' ? 'radiogroup' : 'tablist'} aria-label={ariaLabel}>
+<div class="tabs" bind:this={rootEl} role={mode === 'radio' ? 'radiogroup' : 'tablist'} aria-label={ariaLabel}>
     {#if indicatorReady}
         <span
             class="tabs-indicator"
