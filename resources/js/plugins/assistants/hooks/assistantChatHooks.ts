@@ -23,9 +23,9 @@ import {assistantHandlesStore} from '$plugins/assistants/stores/AssistantHandles
  *   prompts (there the conversation binding still acts as a display
  *   fallback while the composer is still seeding).
  *
- * A regen keeps the run pinned to the assistant that authored the original
- * answer (read from the message's persisted identity) even after the
- * composer switched or cleared its handle.
+ * A regen runs through the same pinning for the assistant picked in the
+ * regenerate menu (preset as the descriptor's `assistantHandle`), so it
+ * applies the assistant's logic regardless of the composer's current handle.
  *
  * The backend independently assembles the run from the `@handle` inside the
  * message text (see `AssistantChatAgentFactory`), so the rewritten values
@@ -61,15 +61,20 @@ function addressedByComposer(composer: ComposerContext | null): AddressableAssis
 
 /**
  * The assistant a send is pinned to: the composer's live `@handle` choice,
+ * else the assistant a regen explicitly targets (preset on the descriptor),
  * else the original author of the message a regen overwrites, else none.
  * The conversation binding deliberately does not feed back here — the
  * transport rebases it on this result, so consulting it would resurrect a
  * removed assistant.
  */
-function resolveSendAssistant(ctx: ChatSendContext): AddressableAssistant | null {
+function resolveSendAssistant(send: ChatSendDescriptor, ctx: ChatSendContext): AddressableAssistant | null {
     const addressed = addressedByComposer(ctx.composer);
     if (addressed) {
         return addressed;
+    }
+
+    if (send.assistantHandle !== null) {
+        return addressableAssistants().get(send.assistantHandle) ?? null;
     }
 
     const regenHandle = ctx.regenMessage?.assistant?.handle;
@@ -82,7 +87,7 @@ function resolveSendAssistant(ctx: ChatSendContext): AddressableAssistant | null
 
 /** Handler for the `chatSend` hook. */
 export function assistantChatSend(send: ChatSendDescriptor, ctx: ChatSendContext): ChatSendDescriptor {
-    const assistant = resolveSendAssistant(ctx);
+    const assistant = resolveSendAssistant(send, ctx);
     if (!assistant) {
         return send;
     }

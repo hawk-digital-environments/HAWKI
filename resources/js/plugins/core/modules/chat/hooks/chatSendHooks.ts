@@ -39,11 +39,12 @@ export interface ChatSendDescriptor {
 
 /** Context for the `chatSend` hook. */
 export interface ChatSendContext {
-    /** The composer the send originates from. */
-    composer: ComposerContext;
+    /** The composer the send originates from; null for a regenerate, which runs without one
+     *  and presets `assistantHandle` on the descriptor to the assistant it targets. */
+    composer: ComposerContext | null;
     /** The conversation the send goes into; null while the first message creates it. */
     conversation: ChatConversation | null;
-    /** The assistant message a regen overwrites, when the composer is in regen mode. */
+    /** The assistant message a regenerate overwrites; null for a composer send. */
     regenMessage: ChatMessage | null;
 }
 

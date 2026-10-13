@@ -28,12 +28,11 @@ announces streaming errors.
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {ChatTransport, type GenerationEvent} from '$plugins/core/modules/chat/transport/ChatTransport.js';
+    import {ChatTransport, type GenerationEvent, type RegenerateTarget} from '$plugins/core/modules/chat/transport/ChatTransport.js';
     import {exportConversation, toConversationExportLabels} from '$plugins/core/modules/chat/utils/exportConversation.js';
     import {groupMessagesIntoThreads, threadIndexOf} from '$plugins/core/modules/chat/utils/messageThreads.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
-    import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 
     interface Props { params?: RouteParams; }
     const {params = {}}: Props = $props();
@@ -261,7 +260,7 @@ announces streaming errors.
 
     // Regenerate is a plain per-message action, not a composer mode: the transport streams
     // the replacement reply while the composer stays locked through `store.isGenerating`.
-    async function regenerateMessage(message: ChatMessageType, model: AiModel | null) {
+    async function regenerateMessage(message: ChatMessageType, target: RegenerateTarget) {
         const conversationSlug = store.active?.slug;
         if (!conversationSlug) return;
         if (store.isGenerating(conversationSlug)) {
@@ -269,7 +268,7 @@ announces streaming errors.
             return;
         }
         try {
-            await transport.regenerateMessage(conversationSlug, message, model?.model_id ?? null, notice => toast.info(notice));
+            await transport.regenerateMessage(conversationSlug, message, target, notice => toast.info(notice));
         } catch (error) {
             toast.error(error instanceof Error ? error.message : String(error));
         }

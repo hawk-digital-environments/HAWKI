@@ -70,6 +70,8 @@
             "deleteConfirmDescription": "Diese Nachricht wird dauerhaft entfernt."
         },
         "regenerate": {
+            "assistantsGroup": "Assistenten",
+            "modelsGroup": "Nur Modelle",
             "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
             "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
             "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."

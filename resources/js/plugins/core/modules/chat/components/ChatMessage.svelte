@@ -33,7 +33,7 @@
     import RegenerateMenu from '$plugins/core/modules/chat/components/message/RegenerateMenu.svelte';
     import MessageStats from '$plugins/core/modules/chat/components/message/MessageStats.svelte';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
-    import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
+    import type {RegenerateTarget} from '$plugins/core/modules/chat/transport/ChatTransport.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {messageTrunkId} from '$plugins/core/modules/chat/utils/messageThreads.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
@@ -50,8 +50,8 @@
         /** True when this message is itself a thread reply — it gets no thread of its own. */
         isThreadReply?: boolean;
         composer?: ComposerContext | null;
-        /** Enables the regenerate menu on assistant messages; `model` is `null` for "same model as before". */
-        onRegenerate?: (message: ChatMessageType, model: AiModel | null) => void;
+        /** Enables the regenerate menu on assistant messages; `target` is the picked assistant or model. */
+        onRegenerate?: (message: ChatMessageType, target: RegenerateTarget) => void;
         onDelete: (message: ChatMessageType) => void;
         onDeleteAttachment: (message: ChatMessageType, fileId: string) => void;
         /** Level of the message's visually hidden author heading; thread replies render one level deeper. Defaults to 3. */

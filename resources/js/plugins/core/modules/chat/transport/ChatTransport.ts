@@ -44,9 +44,8 @@ interface AssistantRequest {
     /** Id of the assistant message to replace in place; `null` for a fresh reply. */
     regenerateMessageId: string | null;
     /**
-     * Assistant handle the run is bound to, resolved by the `chatSend` hook. Absent for a
-     * regenerate, which has no live composer to resolve hooks from — it keeps whichever
-     * identity the message being replaced already carries (see `streamAssistant`).
+     * Assistant handle the run is bound to, resolved by the `chatSend` hook. Null for a
+     * plain model run, including a regenerate that targets a model.
      */
     assistantHandle?: string | null;
     /** Display author for the streamed assistant message; falls back to the default HAWKI author. */
@@ -54,6 +53,12 @@ interface AssistantRequest {
     /** Display identity persisted on the AI message, so the log keeps showing who answered after reload. */
     assistant?: ChatAssistantIdentity;
 }
+
+/** What a regenerate re-runs the reply with (see {@link ChatTransport.regenerateMessage}):
+ *  an assistant by its bare handle, or a plain model (`null` = the one that produced it). */
+export type RegenerateTarget =
+    | {kind: 'assistant'; handle: string}
+    | {kind: 'model'; modelId: string | null};
 
 /** Write surface the streaming loop reports into. `SendMessageResponse` satisfies it for
  *  composer sends; {@link ChatTransport.regenerateMessage} passes a promise adapter. */
@@ -221,39 +226,27 @@ export class ChatTransport implements MessageSenderTransportInterface {
     }
 
     /**
-     * Re-runs the assistant reply `message` and replaces it in place. `modelId` picks the
-     * model; `null` reuses the one that produced the message. A model that is no longer
-     * available falls back to the default model. Tools and sampling parameters come from the
-     * message's metadata. Unavailable tool selections abort regeneration for review.
-     * `onNotice` reports model fallback. The conversation is
-     * marked as generating for the duration. Rejects with the error message on failure.
+     * Re-runs the assistant reply `message` and replaces it in place, routed by `target`:
      *
-     * Bypasses the `chatSend` hook (there is no live composer to resolve it from): the message
-     * being replaced already carries whichever assistant identity it was sent with, and
-     * `streamAssistant` keeps that identity for a regenerate (see the `existing` branch there).
+     * - `{kind: 'assistant', handle}` runs the reply through that assistant, exactly like a
+     *   composer send addressing it: the descriptor goes through the `chatSend` hook (which
+     *   pins the assistant's model/tools/params and identity) and the handle travels as
+     *   `hawkiExtensions.assistant_handle`, so the backend applies the assistant's logic.
+     * - `{kind: 'model', modelId}` runs a plain model reply without any assistant logic;
+     *   `modelId: null` reuses the model that produced the message. Tools and sampling
+     *   parameters come from the message's metadata.
+     *
+     * A model that is no longer available falls back to the default model (reported through
+     * `onNotice`). Unavailable tool selections abort regeneration for review. The conversation
+     * is marked as generating for the duration. Rejects with the error message on failure.
      */
     public async regenerateMessage(
         conversationSlug: string,
         message: ChatMessage,
-        modelId: string | null,
+        target: RegenerateTarget,
         onNotice?: (notice: string) => void
     ): Promise<void> {
         const translator = this.app.translator;
-        const requestedModelId = modelId ?? message.model;
-        const model = this.app.stores.get('ai-models').getModelByIdOrFallback(requestedModelId);
-        if (!model) throw new Error(translator.__('chat.tools.unavailable'));
-        if (requestedModelId && model.model_id !== requestedModelId) {
-            onNotice?.(translator.__('chat.regenerate.modelNotAvailable', {model: requestedModelId, fallback: model.label}));
-        }
-
-        const toolStore = this.app.stores.get('ai-tools');
-        const storedTools = message.metadata?.tools;
-        let tools: string[];
-        try {
-            tools = validatedToolSnapshot(Array.isArray(storedTools) ? storedTools : [], toolStore, model);
-        } catch (error) {
-            throw new Error(this.errorMessage(error));
-        }
 
         // Only the sampling parameters travel along; everything else falls back to the
         // model's defaults so a different model is not sent settings it does not know.
@@ -261,16 +254,50 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const params: Record<string, number> = {};
         if (typeof storedParams?.temperature === 'number') params.temperature = storedParams.temperature;
         if (typeof storedParams?.top_p === 'number') params.top_p = storedParams.top_p;
+        const storedTools = message.metadata?.tools;
+
+        const base: ChatSendDescriptor = {
+            assistantHandle: null,
+            assistant: null,
+            author: null,
+            model: (target.kind === 'model' ? target.modelId : null) ?? message.model ?? '',
+            tools: Array.isArray(storedTools) ? storedTools : [],
+            params: Object.keys(params).length ? params : null
+        };
+        const send = target.kind === 'assistant'
+            ? this.app.hooks.apply('chatSend', {...base, assistantHandle: target.handle}, {
+                composer: null,
+                conversation: this.store.active?.slug === conversationSlug ? this.store.active : null,
+                regenMessage: message
+            })
+            : base;
+
+        const requestedModelId = send.model || null;
+        const model = this.app.stores.get('ai-models').getModelByIdOrFallback(requestedModelId);
+        if (!model) throw new Error(translator.__('chat.tools.unavailable'));
+        if (requestedModelId && model.model_id !== requestedModelId) {
+            onNotice?.(translator.__('chat.regenerate.modelNotAvailable', {model: requestedModelId, fallback: model.label}));
+        }
+
+        let tools: string[];
+        try {
+            tools = validatedToolSnapshot(send.tools, this.app.stores.get('ai-tools'), model);
+        } catch (error) {
+            throw new Error(this.errorMessage(error));
+        }
 
         const request: AssistantRequest = {
             actorId: this.actorId(),
             modelId: model.model_id,
             tools,
-            params: Object.keys(params).length ? params : null,
+            params: send.params,
             systemPrompt: (this.store.active?.slug === conversationSlug ? this.store.active.system_prompt : null)
                 ?? this.app.stores.get('system-prompts').getPromptByType('default').prompt,
             threadId: this.threadIdForMessage(message.message_id),
-            regenerateMessageId: message.message_id
+            regenerateMessageId: message.message_id,
+            assistantHandle: send.assistantHandle,
+            author: send.author,
+            assistant: send.assistant ?? undefined
         };
 
         this.store.beginGeneration(conversationSlug);
@@ -407,6 +434,10 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const existing = regenerateMessageId ? this.store.findMessage(conversationSlug, regenerateMessageId) : null;
         const temporary: ChatMessage = existing ? {
             ...existing,
+            // A regenerate may switch between assistant and plain model, so the placeholder
+            // shows who answers now rather than who answered before.
+            model: request.modelId,
+            assistant: request.assistant,
             content: {...existing.content, text: ''},
             citations: [],
             isStreaming: true,
