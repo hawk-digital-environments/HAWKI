@@ -5,7 +5,7 @@
   panel on the left and a canvas on the right that plays the deployment's
   background video (see `public/bg_videos/bg_videos.json`) with the creator
   credit; without a video it shows the encryption claim over an oversized,
-  cropped HAWKI wordmark (left out when the deployment brings its own logo). The canvas collapses on small screens, where no video
+  cropped wordmark, or the deployment's own logo in its place. The canvas collapses on small screens, where no video
   is loaded. A switch in the canvas corner turns the video off for good on
   low-power devices, remembered in `localStorage` as `hawki.auth.backgroundVideo`.
 
@@ -28,7 +28,6 @@
 -->
 <script lang="ts">
     import type { Snippet } from 'svelte';
-    import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
     import BrandLogo from '$lib/app/components/branding/BrandLogo.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
@@ -132,9 +131,7 @@
     {#if canvas}
         <div class="auth-canvas" class:has-video={video !== null && videoReady}>
             <p class="auth-claim">{__('ui.auth.claim')}</p>
-            {#if !branding?.logoUrl}
-                <HawkLogo class="auth-canvas-mark" aria-hidden="true"/>
-            {/if}
+            <BrandLogo class="auth-canvas-mark" aria-hidden="true"/>
             <label class="auth-video-toggle" title={__('ui.auth.videoToggleHint')}>
                 <span id="auth-video-toggle-label">{__('ui.auth.videoToggle')}</span>
                 <Switch bind:checked={videoEnabled} aria-labelledby="auth-video-toggle-label"/>
@@ -365,6 +362,16 @@
     .auth-canvas :global(.auth-canvas-mark .mark) {
         width: 100%;
         height: auto;
+    }
+    /* An uploaded logo fills the same width; its hidden image keeps the aspect ratio. */
+    .auth-canvas :global(.auth-canvas-mark .mark.image) {
+        display: block;
+        max-width: none;
+    }
+    .auth-canvas :global(.auth-canvas-mark .mark.image img) {
+        width: 100%;
+        height: auto;
+        max-width: none;
     }
 
     /* Video: fills the canvas and fades in over the wordmark once it can play,

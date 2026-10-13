@@ -261,7 +261,7 @@
         font-size: var(--font-size-xs);
         background: var(--color-bg-secondary);
         border: 1px solid transparent;
-        border-radius: var(--corner-full);
+        border-radius: var(--corner-control);
         padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2);
         align-items: center;
         gap: var(--space-1);

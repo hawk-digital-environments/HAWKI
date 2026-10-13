@@ -268,7 +268,7 @@
         column-gap: var(--space-1);
         padding: 0 var(--space-3);
         font-size: var(--font-size-xs);
-        border-radius: var(--corner-full);
+        border-radius: var(--corner-control);
 
         /* Icons carry their own side bearing, so the icon side sits a notch
            tighter than the text side to look even. */
@@ -287,7 +287,7 @@
         height: 2rem;
         padding: 0 var(--space-3);
         font-size: var(--font-size-sm);
-        border-radius: var(--corner-full);
+        border-radius: var(--corner-control);
 
         /* Icons carry their own side bearing, so the icon side sits a notch
            tighter than the text side to look even. */
@@ -309,7 +309,7 @@
         padding: var(--space-2) calc(var(--space-4) + var(--space-1));
         overflow: hidden;
         font-size: var(--font-size-md);
-        border-radius: var(--corner-full);
+        border-radius: var(--corner-control);
 
         &:has(> :global(.btnIcon):first-child) {
             padding-inline-start: var(--space-4);
@@ -334,7 +334,7 @@
         padding: 0;
         flex-shrink: 0;
         justify-content: center;
-        border-radius: var(--corner-full);
+        border-radius: var(--corner-control);
     }
 
     .btn--iconGhost.btn--iconOnly {

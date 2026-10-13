@@ -126,7 +126,9 @@
             if (!child) return;
             const computed = getComputedStyle(child);
             const raw = parseFloat(computed.borderTopLeftRadius);
-            if (!isNaN(raw) && raw > 0) {
+            // Zero is a real answer: a square child must not fall back to the size
+            // preset's rounded default, whose clip would cut the child's corners off.
+            if (!isNaN(raw)) {
                 detectedRadius = raw;
             }
         };

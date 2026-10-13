@@ -21,8 +21,8 @@ class BrandTheme extends Component
     private const LOGO_HEIGHT = 28;
 
     private const CORNERS = [
-        'soft' => ['xs' => '4px', 'sm' => '6px', 'md' => '8px', 'lg' => '12px'],
-        'square' => ['xs' => '0', 'sm' => '0', 'md' => '0', 'lg' => '0'],
+        'soft' => ['xs' => '4px', 'sm' => '6px', 'md' => '8px', 'lg' => '12px', 'control' => '8px'],
+        'square' => ['xs' => '0', 'sm' => '0', 'md' => '0', 'lg' => '0', 'control' => '0'],
     ];
 
     /** The configured brand color as `#rrggbb`, or null when none (or an invalid one) is configured. */

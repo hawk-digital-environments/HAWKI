@@ -11,5 +11,9 @@
         --corner-md:   16px;    /* --border-radius-normal */
         --corner-lg:   24px;    /* --border-radius-large */
         --corner-full: 9999px;
+        /* Buttons and button-shaped controls (select triggers, segmented tabs). Pills by
+           default; a deployment's corner style squares them off, which --corner-full —
+           reserved for shapes that are circles by nature, like avatars — never does. */
+        --corner-control: var(--corner-full);
     }
 }
