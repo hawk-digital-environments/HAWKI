@@ -136,7 +136,10 @@
     /** Settings holding an uploaded SVG. */
     const uploads = ['BRAND_LOGO', 'BRAND_FAVICON'];
     /** The tab icon in use while none is uploaded. */
-    const defaultFavicon = new URL('favicon.ico', app.config.get().transfer.baseUrl.replace(/\/?$/, '/')).href;
+    /** An installation without a `favicon.ico` has nothing to show until an icon is uploaded. */
+    let defaultFaviconMissing = $state(false);
+    // Loaded from the host the page is open on; the configured base URL can be another host.
+    const defaultFavicon = '/favicon.ico';
     async function upload(row: AdminSettingResource, input: HTMLInputElement) {
         const file = input.files?.[0];
         input.value = '';
@@ -261,13 +264,19 @@
                                         {:else if uploads.includes(key)}
                                             <!-- Always shows the asset in use: the upload, or the built-in one it would replace. -->
                                             <div class="upload">
-                                                <span class="preview">
-                                                    {#if key === 'BRAND_LOGO'}
+                                                {#if key === 'BRAND_LOGO'}
+                                                    <span class="preview">
                                                         <HawkLogo src={svgPreview(value)} aria-hidden="true" />
-                                                    {:else}
-                                                        <img src={svgPreview(value) ?? defaultFavicon} alt="" />
-                                                    {/if}
-                                                </span>
+                                                    </span>
+                                                {:else if value || !defaultFaviconMissing}
+                                                    <span class="preview">
+                                                        <img
+                                                            src={svgPreview(value) ?? defaultFavicon}
+                                                            alt=""
+                                                            onerror={() => (defaultFaviconMissing = !value)}
+                                                        />
+                                                    </span>
+                                                {/if}
                                                 <input
                                                     {id}
                                                     class="u-sr-only"
@@ -528,10 +537,12 @@
         border-radius: var(--corner-md);
         background: var(--color-surface);
     }
+    /* A fixed size, not a percentage: inside the grid a percentage height resolves
+       against the image's own size and lets a large icon grow out of the box. */
     .preview > img {
         display: block;
-        height: 100%;
-        max-width: 7rem;
+        width: 2.25rem;
+        height: 2.25rem;
         object-fit: contain;
     }
     .preview :global(svg.mark) {
