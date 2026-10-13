@@ -509,6 +509,10 @@
                 "title": "Status colors",
                 "description": "Colors for confirmations, warnings, errors and notes, as OKLCH values: oklch(lightness % chroma hue), for example oklch(52% 0.21 25). The value is used exactly as entered, so check that text in this color stays readable on light and dark backgrounds. The dot shows the color."
             },
+            "font": {
+                "title": "Font",
+                "description": "One font file for the whole interface: WOFF2, WOFF, TTF or OTF, up to 5 MB. WOFF2 loads fastest. A variable font provides every weight. With any other font, upload the regular cut: the browser derives bold and italic text from it. Only upload a font your institution is licensed to use on the web."
+            },
             "logo": {
                 "title": "Logo",
                 "description": "SVG files shown instead of the HAWKI wordmark and as the browser tab icon. The logo is drawn in the brand color, in light and dark mode alike; only its shape is used, not its own colors. Files must be static drawings of up to 256 KB: no scripts, external references or live text, so convert text to outlines before exporting."
@@ -564,6 +568,7 @@
             "BRAND_COLOR_ERROR": "Error",
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Corner rounding",
+            "BRAND_FONT": "Font",
             "BRAND_LOGO": "Logo",
             "BRAND_LOGO_HEIGHT": "Logo height",
             "BRAND_FAVICON": "Browser tab icon",
@@ -824,6 +829,14 @@
             "database": "Database override",
             "environment": "Environment / default",
             "deployment": "Deployment"
+        },
+        "fonts": {
+            "invalid": "Use a WOFF2, WOFF, TTF or OTF font file of up to 5 MB.",
+            "upload_failed": "The font could not be uploaded. Use a WOFF2, WOFF, TTF or OTF file of up to 5 MB and try again.",
+            "upload": "Upload font",
+            "replace": "Replace",
+            "sample": "The quick brown fox 0123456789",
+            "variable": "Variable font: provides every weight"
         },
         "icons": {
             "light": "Light",

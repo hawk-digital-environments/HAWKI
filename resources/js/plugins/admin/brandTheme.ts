@@ -98,3 +98,49 @@ export function applyBrandTheme(
         root.style.setProperty('--logo-height', `${height / 16}rem`);
     }
 }
+
+/** The accepted font formats by file extension, with the name browsers expect in `format()`. */
+export const FONT_FORMATS: Record<string, string> = { woff2: 'woff2', woff: 'woff', ttf: 'truetype', otf: 'opentype' };
+/** Upload limit in bytes; `BrandFonts::MAX_KILOBYTES` enforces the same on the server. */
+export const FONT_MAX_BYTES = 5 * 1024 * 1024;
+
+/** A stored font file: content hash, `.var` for a variable font, the format as extension (see `BrandFonts.php`). */
+export const isFontFile = (value: unknown): value is string =>
+    typeof value === 'string' && /^[a-f0-9]{64}(?:\.var)?\.(?:woff2|woff|ttf|otf)$/.test(value);
+export const isVariableFontFile = (value: unknown): boolean => isFontFile(value) && value.includes('.var.');
+
+const PREVIEW_FONT = 'HAWKI Brand Preview';
+/** The stack of `--font-family-base` in `typography.css`, to return to when the font is removed. */
+const DEFAULT_FONT_STACK = "'Fire Sans', system-ui, sans-serif";
+
+/**
+ * The `@font-face` rule for the uploaded font, or an empty string without one. Mirrors
+ * `BrandTheme::fontFace()`: a variable font is declared for every weight, any other as regular.
+ */
+export function fontFace(font: unknown, url: (file: string) => string, family = PREVIEW_FONT): string {
+    if (!isFontFile(font)) return '';
+    const format = FONT_FORMATS[font.split('.').pop()!];
+    const weight = isVariableFontFile(font) ? '100 900' : '400';
+    return `@font-face{font-family:"${family}";src:url("${url(font)}") format("${format}");font-weight:${weight};font-display:swap}`;
+}
+
+/** Previews an uploaded font on the running page; without one it returns to the built-in stack. */
+export function applyBrandFont(
+    font: unknown,
+    url: (file: string) => string,
+    doc: Document = document
+): void {
+    const id = 'brand-font-preview';
+    const css = fontFace(font, url);
+    let style = doc.getElementById(id);
+    if (!style) {
+        style = doc.createElement('style');
+        style.id = id;
+        doc.head.append(style);
+    }
+    style.textContent = css;
+    doc.documentElement.style.setProperty(
+        '--font-family-base',
+        css ? `"${PREVIEW_FONT}", system-ui, sans-serif` : DEFAULT_FONT_STACK
+    );
+}

@@ -10,6 +10,20 @@ use Tests\TestCase;
 #[CoversClass(BrandTheme::class)]
 class BrandThemeTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Start every test from the built-in theme: the application boots with whatever branding
+        // the local database holds, which must not leak into these expectations.
+        config(['hawki.branding' => [
+            'accent_color' => null,
+            'corner_style' => 'round',
+            'logo_height' => null,
+            'status_colors' => BrandTheme::STATUS_COLORS,
+            'font' => null,
+        ]]);
+    }
+
     public function testItRendersNothingForTheDefaultTheme(): void
     {
         config(['hawki.branding.accent_color' => null, 'hawki.branding.corner_style' => 'round', 'hawki.branding.logo_height' => null]);
@@ -68,6 +82,31 @@ class BrandThemeTest extends TestCase
         foreach (['oklch(101% 0.2 10)', 'oklch(50% 0.5 10)', 'oklch(50% 0.2 361)', 'oklch(50% 0.2 10 / 0.5)', 'oklch(50% var(--x) 10)', 'red', '#ff0000', '', null, 12] as $value) {
             static::assertNull(BrandTheme::oklch($value));
         }
+    }
+
+    public function testTheFontFaceDeclaresEveryWeightOnlyForAVariableFont(): void
+    {
+        $static = str_repeat('a', 64) . '.woff2';
+        $variable = str_repeat('c', 64) . '.var.ttf';
+        $url = static fn (string $file): string => '/fonts/' . $file;
+
+        static::assertSame('', BrandTheme::fontFace(null, $url));
+        static::assertSame('', BrandTheme::fontFace('x");}body{display:none', $url));
+        static::assertSame('@font-face{font-family:"HAWKI Brand";src:url("/fonts/' . $static . '") format("woff2");font-weight:400;font-display:swap}', BrandTheme::fontFace($static, $url));
+        static::assertSame('@font-face{font-family:"HAWKI Brand";src:url("/fonts/' . $variable . '") format("truetype");font-weight:100 900;font-display:swap}', BrandTheme::fontFace($variable, $url));
+        static::assertStringContainsString('.otf") format("opentype")', BrandTheme::fontFace(str_repeat('d', 64) . '.otf', $url));
+    }
+
+    public function testAnUploadedFontReplacesTheBaseFontFamily(): void
+    {
+        $regular = str_repeat('a', 64) . '.woff2';
+        config(['hawki.branding.accent_color' => null, 'hawki.branding.corner_style' => 'round', 'hawki.branding.logo_height' => null,
+            'hawki.branding.status_colors' => BrandTheme::STATUS_COLORS, 'hawki.branding.font' => $regular]);
+
+        $html = (new BrandTheme())->render();
+
+        static::assertStringContainsString('src:url("/api/hawki/v1/brand-fonts/' . $regular . '")', $html);
+        static::assertStringEndsWith(':root{--font-family-base:"HAWKI Brand",system-ui,sans-serif}</style>', $html);
     }
 
     public function testInvalidDeploymentValuesNeverReachTheStylesheet(): void

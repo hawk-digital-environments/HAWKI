@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\JsonApi\V1\Admin\Record;
 use App\Services\Admin\AdminAudit;
+use App\Services\Admin\BrandFonts;
 use App\Services\Admin\Repositories\SettingRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,17 @@ class SettingController extends ResourceController
         $this->mutate($request, 'delete', $id, fn () => $this->resource->reset($id));
 
         return response()->noContent();
+    }
+
+    /**
+     * Stores an uploaded font file; it only takes effect once its setting is saved.
+     */
+    public function uploadFont(Request $request, BrandFonts $fonts): JsonResponse
+    {
+        $this->resource->authorize($request->user());
+        $data = $request->validate(['font' => $fonts->uploadRules()]);
+
+        return response()->json(['font' => $fonts->store($data['font'])]);
     }
 
     protected function repository(): SettingRepository

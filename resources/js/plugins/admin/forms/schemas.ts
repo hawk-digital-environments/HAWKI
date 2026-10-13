@@ -1,7 +1,7 @@
 import z from 'zod';
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
 import type { WorkspaceId } from '../workspaces.js';
-import { oklch } from '../brandTheme.js';
+import { isFontFile, oklch } from '../brandTheme.js';
 
 /** Workspaces that have an editor; `tools` is edited on the MCP page and has no route of its own. */
 export type EditorSection = WorkspaceId | 'tools' | (string & {});
@@ -9,6 +9,7 @@ export type EditorSection = WorkspaceId | 'tools' | (string & {});
 const text = (max = 255) => z.string().trim().min(1).max(max);
 const optionalText = (max = 255) => z.string().max(max).nullish();
 const url = z.union([z.literal(''), z.url({ protocol: /^https?$/ }).max(2000)]).nullish();
+const font = z.union([z.literal(''), z.string().refine(isFontFile)]).nullish();
 const oklchColor = z
     .union([z.literal(''), z.string().refine((value) => oklch(value) !== null)])
     .nullish();
@@ -209,6 +210,7 @@ export const settingsSchemas: Record<string, z.ZodType> = {
     BRAND_COLOR_ERROR: oklchColor,
     BRAND_COLOR_INFO: oklchColor,
     BRAND_CORNER_STYLE: z.enum(['round', 'soft', 'square']),
+    BRAND_FONT: font,
     BRAND_LOGO: svg,
     BRAND_LOGO_HEIGHT: z.number().int().min(12).max(36).nullish(),
     BRAND_FAVICON: svg,

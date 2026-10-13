@@ -19,6 +19,9 @@ class SystemSettings
     /** Settings whose value is a CSS OKLCH color. */
     public const OKLCH = ['BRAND_COLOR_SUCCESS', 'BRAND_COLOR_WARNING', 'BRAND_COLOR_ERROR', 'BRAND_COLOR_INFO'];
 
+    /** Settings whose value names an uploaded font file. */
+    public const FONT = ['BRAND_FONT'];
+
     /** Settings whose value is the markup of an uploaded SVG file. */
     public const SVG = ['BRAND_LOGO', 'BRAND_FAVICON'];
 
@@ -34,6 +37,7 @@ class SystemSettings
         'BRAND_COLOR_ERROR' => ['hawki.branding.status_colors.error', 'string', 'nullable|string|max:60'],
         'BRAND_COLOR_INFO' => ['hawki.branding.status_colors.info', 'string', 'nullable|string|max:60'],
         'BRAND_CORNER_STYLE' => ['hawki.branding.corner_style', 'string', 'required|in:round,soft,square'],
+        'BRAND_FONT' => ['hawki.branding.font', 'string', 'nullable|string|max:80'],
         'BRAND_LOGO' => ['hawki.branding.logo', 'string', 'nullable|string'],
         'BRAND_LOGO_HEIGHT' => ['hawki.branding.logo_height', 'number', 'nullable|integer|min:12|max:36'],
         'BRAND_FAVICON' => ['hawki.branding.favicon', 'string', 'nullable|string'],
@@ -144,6 +148,10 @@ class SystemSettings
             $value = BrandTheme::oklch($value) ?? throw ValidationException::withMessages(['value' => __('admin.errors.invalid_value')]);
         }
 
+        if (\in_array($key, self::FONT, true) && null !== $value && !app(BrandFonts::class)->exists($value)) {
+            throw ValidationException::withMessages(['value' => __('admin.fonts.invalid')]);
+        }
+
         if (\in_array($key, self::SVG, true) && null !== $value) {
             try {
                 // Stored sanitized: the markup is later embedded in pages every visitor loads.
@@ -165,6 +173,7 @@ class SystemSettings
             ['value', 'updated_by', 'updated_at'],
         );
         $this->apply();
+        $this->pruneFonts($key);
     }
 
     public function reset(string $key): void
@@ -172,6 +181,15 @@ class SystemSettings
         abort_unless(isset(self::DEFINITIONS[$key]), 404);
         DB::table('admin_settings')->where('key', $key)->delete();
         $this->apply();
+        $this->pruneFonts($key);
+    }
+
+    /** A changed font setting can leave its previous file unused. */
+    private function pruneFonts(string $key): void
+    {
+        if (\in_array($key, self::FONT, true)) {
+            app(BrandFonts::class)->prune();
+        }
     }
 
     public function environment(): array

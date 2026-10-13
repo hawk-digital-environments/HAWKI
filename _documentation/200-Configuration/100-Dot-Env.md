@@ -396,7 +396,7 @@ Each link is shown on the sign-in page and in the account menu; an empty value h
 | BRAND_ORGANIZATION_NAME | Operating institution, credited on the sign-in page. |
 | BRAND_ORGANIZATION_URL | Website of the operating institution. |
 
-These values, `APP_NAME` and the legal links can also be changed at runtime in the administration (Settings > Branding and Settings > Legal). The logo and the browser tab icon are uploaded there as SVG files and have no `.env` setting.
+These values, `APP_NAME` and the legal links can also be changed at runtime in the administration (Settings > Branding and Settings > Legal). The logo and the browser tab icon (SVG) and the interface fonts (WOFF2, WOFF, TTF or OTF) are uploaded there and have no `.env` setting.
 
 ## Runtime overrides in Administration
 

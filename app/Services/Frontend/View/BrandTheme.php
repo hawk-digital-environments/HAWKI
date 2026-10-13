@@ -2,6 +2,7 @@
 
 namespace App\Services\Frontend\View;
 
+use App\Services\Admin\BrandFonts;
 use Illuminate\View\Component;
 
 /**
@@ -24,6 +25,8 @@ class BrandTheme extends Component
         'error' => 'oklch(52% 0.21 25)',
         'info' => 'oklch(55% 0.14 230)',
     ];
+
+    private const FONT_FAMILY = 'HAWKI Brand';
 
     private const CORNERS = [
         'soft' => ['xs' => '4px', 'sm' => '6px', 'md' => '8px', 'lg' => '12px', 'control' => '8px'],
@@ -88,6 +91,24 @@ class BrandTheme extends Component
     }
 
     /**
+     * The `@font-face` rule for the uploaded font, or an empty string without one.
+     *
+     * A variable font is declared for every weight. Any other font is declared as regular, so the
+     * browser thickens it where bold is asked for.
+     *
+     * @param callable(string): string $url maps a stored file to its public URL
+     */
+    public static function fontFace(mixed $font, callable $url): string
+    {
+        if (!BrandFonts::isFile($font)) {
+            return '';
+        }
+
+        return '@font-face{font-family:"' . self::FONT_FAMILY . '";src:url("' . $url($font) . '") format("' . BrandFonts::cssFormat($font)
+            . '");font-weight:' . (BrandFonts::isVariableFile($font) ? '100 900' : '400') . ';font-display:swap}';
+    }
+
+    /**
      * Renders the token overrides, or nothing when the deployment uses the default theme.
      * Only validated values reach the stylesheet, also for values that come straight from `.env`.
      */
@@ -120,6 +141,15 @@ class BrandTheme extends Component
             $tokens[] = '--logo-height:' . $height / 16 . 'rem';
         }
 
-        return [] === $tokens ? '' : '<style>:root{' . implode(';', $tokens) . '}</style>';
+        $fonts = self::fontFace(
+            config('hawki.branding.font'),
+            static fn (string $file): string => route('api.brand-fonts.show', ['file' => $file], false),
+        );
+
+        if ('' !== $fonts) {
+            $tokens[] = '--font-family-base:"' . self::FONT_FAMILY . '",system-ui,sans-serif';
+        }
+
+        return [] === $tokens ? '' : '<style>' . $fonts . ':root{' . implode(';', $tokens) . '}</style>';
     }
 }

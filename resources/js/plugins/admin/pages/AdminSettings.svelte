@@ -27,7 +27,16 @@
     import { controlFor } from '../forms/controls.js';
     import { settingsSchemas } from '../forms/schemas.js';
     import { issueMessage } from '../forms/validationMessages.js';
-    import { applyBrandTheme, isBrandColor, STATUS_COLORS } from '../brandTheme.js';
+    import z from 'zod';
+    import {
+        applyBrandFont,
+        applyBrandTheme,
+        FONT_FORMATS,
+        FONT_MAX_BYTES,
+        isBrandColor,
+        isVariableFontFile,
+        STATUS_COLORS
+    } from '../brandTheme.js';
     import { svgPreview } from '../providerIcons.js';
 
     const app = useApp();
@@ -152,6 +161,37 @@
         set(row, await file.text());
     }
 
+    let uploadingFont = $state(false);
+    async function uploadFont(row: AdminSettingResource, input: HTMLInputElement) {
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file) return;
+        // The server decides from the file's content; this only catches the obvious early.
+        if (!(file.name.split('.').pop()!.toLowerCase() in FONT_FORMATS) || file.size > FONT_MAX_BYTES) {
+            errors[row.key] = __('admin.fonts.invalid');
+            return;
+        }
+        const body = new FormData();
+        body.append('font', file);
+        uploadingFont = true;
+        try {
+            // The file is stored right away; it takes effect once the setting is saved.
+            const result = await app.restApi.postToResourceAction('admin-settings', 'actions/font-upload', body, {
+                schema: z.object({ font: z.object({ file: z.string(), name: z.string(), variable: z.boolean() }) })
+            });
+            set(row, result.font.file);
+        } catch {
+            errors[row.key] = __('admin.fonts.upload_failed');
+        } finally {
+            uploadingFont = false;
+        }
+    }
+    const fontUrl = (file: string) => app.uriBuilder.jsonApiUri('brand-fonts', file);
+    const fontValue = (read: (row: AdminSettingResource) => unknown) => {
+        const font = rowsByKey.get('BRAND_FONT');
+        return font && read(font);
+    };
+
     /** Height the logo has while none is set: the wordmark is smaller than an uploaded logo. */
     const ownLogoHeight = () => {
         const logo = rowsByKey.get('BRAND_LOGO');
@@ -184,6 +224,9 @@
     $effect(() => {
         if (rowsByKey.size) applyBrandTheme(brand());
     });
+    $effect(() => {
+        if (rowsByKey.size) applyBrandFont(fontValue(current), fontUrl);
+    });
     // The logo previews where it lives: the sidebar reads it from the app configuration.
     const config = app.config.get();
     $effect(() => {
@@ -194,6 +237,7 @@
         // Leaving with unsaved changes returns the page to the stored theme and logo.
         if (!rowsByKey.size) return;
         if (dirty.includes('BRAND_LOGO')) void app.config.refresh().catch(() => {});
+        applyBrandFont(fontValue((row) => row.value), fontUrl);
         applyBrandTheme({
             accentColor: rowsByKey.get('BRAND_ACCENT_COLOR')?.value,
             cornerStyle: rowsByKey.get('BRAND_CORNER_STYLE')?.value,
@@ -286,6 +330,34 @@
                                                     spellcheck={false}
                                                 />
                                             </div>
+                                        {:else if key === 'BRAND_FONT'}
+                                            <div class="upload">
+                                                {#if value}
+                                                    <span class="sample">{__('admin.fonts.sample')}</span>
+                                                {/if}
+                                                <input
+                                                    {id}
+                                                    class="u-sr-only"
+                                                    type="file"
+                                                    accept={Object.keys(FONT_FORMATS)
+                                                        .map((extension) => '.' + extension)
+                                                        .join(',')}
+                                                    tabindex="-1"
+                                                    disabled={locked || uploadingFont}
+                                                    onchange={(event) => void uploadFont(row, event.currentTarget)}
+                                                />
+                                                <Button
+                                                    variant="stroke"
+                                                    size="sm"
+                                                    disabled={locked || uploadingFont}
+                                                    aria-label={`${label}: ${__(value ? 'admin.fonts.replace' : 'admin.fonts.upload')}`}
+                                                    onclick={() => document.getElementById(id)?.click()}
+                                                    >{__(value ? 'admin.fonts.replace' : 'admin.fonts.upload')}</Button
+                                                >
+                                            </div>
+                                            {#if isVariableFontFile(value)}
+                                                <small>{__('admin.fonts.variable')}</small>
+                                            {/if}
                                         {:else if uploads.includes(key)}
                                             <!-- Always shows the asset in use: the upload, or the built-in one it would replace. -->
                                             <div class="upload">
@@ -555,6 +627,13 @@
     }
     .color input[type='color']::-moz-color-swatch {
         border: 0;
+    }
+    .sample {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: var(--font-size-sm);
     }
     .result {
         flex: none;

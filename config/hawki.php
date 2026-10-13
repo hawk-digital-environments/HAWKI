@@ -49,6 +49,10 @@ return [
         // administration (Settings > Branding), which validates the files; there is no .env equivalent.
         'logo' => null,
         'favicon' => null,
+        // Font file of the interface, uploaded in the administration (Settings > Branding). There is
+        // no .env equivalent. A variable font provides every weight; with any other font the browser
+        // derives bold and italic text from the one file.
+        'font' => null,
         // Height of the logo in the sidebar, in pixels (12-36). The sign-in page scales with it.
         // Empty = the logo's own size: 14 px for the HAWKI wordmark, 28 px for an uploaded logo.
         'logo_height' => env('BRAND_LOGO_HEIGHT') ? (int) env('BRAND_LOGO_HEIGHT') : null,

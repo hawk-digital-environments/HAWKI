@@ -509,6 +509,10 @@
                 "title": "Statusfarben",
                 "description": "Farben für Bestätigungen, Warnungen, Fehler und Hinweise als OKLCH-Werte: oklch(Helligkeit % Chroma Farbton), zum Beispiel oklch(52% 0.21 25). Der Wert wird genau so verwendet, wie er eingegeben wird. Prüfen Sie daher, ob Text in dieser Farbe auf hellem und dunklem Hintergrund lesbar bleibt. Der Punkt zeigt die Farbe."
             },
+            "font": {
+                "title": "Schrift",
+                "description": "Eine Schriftdatei für die gesamte Oberfläche: WOFF2, WOFF, TTF oder OTF mit bis zu 5 MB. WOFF2 lädt am schnellsten. Eine variable Schrift liefert alle Schriftstärken. Laden Sie bei jeder anderen Schrift den normalen Schnitt hoch: Fetten und kursiven Text leitet der Browser daraus ab. Laden Sie nur eine Schrift hoch, für die Ihre Einrichtung eine Web-Lizenz besitzt."
+            },
             "logo": {
                 "title": "Logo",
                 "description": "SVG-Dateien, die anstelle des HAWKI-Schriftzugs und als Symbol im Browser-Tab erscheinen. Das Logo wird im hellen wie im dunklen Modus in der Markenfarbe dargestellt; verwendet wird nur seine Form, nicht seine eigenen Farben. Die Dateien müssen statische Zeichnungen bis 256 KB sein: ohne Skripte, externe Verweise oder Text als Schrift. Wandeln Sie Text vor dem Export in Pfade um."
@@ -564,6 +568,7 @@
             "BRAND_COLOR_ERROR": "Fehler",
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Eckenrundung",
+            "BRAND_FONT": "Schrift",
             "BRAND_LOGO": "Logo",
             "BRAND_LOGO_HEIGHT": "Logohöhe",
             "BRAND_FAVICON": "Symbol im Browser-Tab",
@@ -824,6 +829,14 @@
             "database": "Datenbanküberschreibung",
             "environment": "Umgebung / Standard",
             "deployment": "Bereitstellung"
+        },
+        "fonts": {
+            "invalid": "Verwenden Sie eine Schriftdatei im Format WOFF2, WOFF, TTF oder OTF mit bis zu 5 MB.",
+            "upload_failed": "Die Schrift konnte nicht hochgeladen werden. Verwenden Sie eine Datei im Format WOFF2, WOFF, TTF oder OTF mit bis zu 5 MB und versuchen Sie es erneut.",
+            "upload": "Schrift hochladen",
+            "replace": "Ersetzen",
+            "sample": "Falsches Üben von Xylophonmusik 0123456789",
+            "variable": "Variable Schrift: liefert alle Schriftstärken"
         },
         "icons": {
             "light": "Hell",

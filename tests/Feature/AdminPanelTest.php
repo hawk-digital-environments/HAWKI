@@ -20,6 +20,7 @@ use App\Utils\JobMetrics;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
@@ -212,8 +213,14 @@ class AdminPanelTest extends TestCase
     {
         $user = User::factory()->create();
 
+        // A font setting names a stored file, so one has to exist.
+        Storage::fake(config('filesystems.avatar_storage'));
+        $font = str_repeat('a', 64) . '.woff2';
+        Storage::disk(config('filesystems.avatar_storage'))->put('branding/fonts/' . $font, 'wOF2');
+
         foreach (SystemSettings::DEFINITIONS as $key => [$path, $type]) {
             $value = match ($key) {
+                'BRAND_FONT' => $font,
                 'APP_NAME' => 'Test application', 'APP_ENV' => 'testing', 'APP_TIMEZONE' => 'Europe/Berlin',
                 'APP_LOCALE' => 'de_DE', 'AUTHENTICATION_METHOD' => 'LDAP',
                 'BRAND_ACCENT_COLOR' => '#a00020',

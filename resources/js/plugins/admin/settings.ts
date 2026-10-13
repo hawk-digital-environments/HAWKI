@@ -18,6 +18,7 @@ export const settingsTabs = [
                 key: 'status',
                 settings: ['BRAND_COLOR_SUCCESS', 'BRAND_COLOR_WARNING', 'BRAND_COLOR_ERROR', 'BRAND_COLOR_INFO']
             },
+            { key: 'font', settings: ['BRAND_FONT'] },
             { key: 'logo', settings: ['BRAND_LOGO', 'BRAND_LOGO_HEIGHT', 'BRAND_FAVICON'] }
         ]
     },
