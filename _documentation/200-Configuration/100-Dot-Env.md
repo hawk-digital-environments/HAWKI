@@ -391,7 +391,7 @@ Each link is shown on the sign-in page and in the account menu; an empty value h
 |----------|-------------|
 | BRAND_ACCENT_COLOR | Brand color as `#RRGGBB`. Its hue and saturation re-color the accent surfaces (buttons, links, selections, focus rings). The lightness steps of the interface stay fixed, so contrast is preserved in light and dark mode. Empty = HAWKI blue (`#1139d7`). |
 | BRAND_CORNER_STYLE | Corner rounding of the interface: `round` (default), `soft` or `square`. |
-| BRAND_LOGO_HEIGHT | Height of the uploaded logo in the sidebar, in pixels (`12`–`36`, default `28`). The sign-in page shows it proportionally larger. |
+| BRAND_LOGO_HEIGHT | Height of the logo in the sidebar, in pixels (`12`–`36`). Empty = the logo's own size: 14 px for the HAWKI wordmark, 28 px for an uploaded logo. The sign-in page shows it proportionally larger. |
 | BRAND_ORGANIZATION_NAME | Operating institution, credited on the sign-in page. |
 | BRAND_ORGANIZATION_URL | Website of the operating institution. |
 

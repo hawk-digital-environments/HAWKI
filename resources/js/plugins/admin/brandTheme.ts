@@ -56,7 +56,10 @@ export function applyBrandTheme(
         root.style.setProperty(`--corner-${size}`, radius);
     }
     const height = Number(theme.logoHeight);
-    if (Number.isInteger(height) && height >= 12 && height <= 36) {
+    if (theme.logoHeight == null) {
+        // `initial` makes `var(--logo-height, …)` take its fallback even over a server-rendered value.
+        root.style.setProperty('--logo-height', 'initial');
+    } else if (Number.isInteger(height) && height >= 12 && height <= 36) {
         root.style.setProperty('--logo-height', `${height / 16}rem`);
     }
 }

@@ -17,9 +17,6 @@ class BrandTheme extends Component
     /** Chroma of the default accent (`--color-accent-500`); a brand color this saturated uses the full ramp. */
     private const REFERENCE_CHROMA = 0.24;
 
-    /** Default height of an uploaded logo in pixels; `HawkLogo.svelte` falls back to the same 1.75rem. */
-    private const LOGO_HEIGHT = 28;
-
     private const CORNERS = [
         'soft' => ['xs' => '4px', 'sm' => '6px', 'md' => '8px', 'lg' => '12px', 'control' => '8px'],
         'square' => ['xs' => '0', 'sm' => '0', 'md' => '0', 'lg' => '0', 'control' => '0'],
@@ -80,7 +77,8 @@ class BrandTheme extends Component
 
         $height = config('hawki.branding.logo_height');
 
-        if (\is_int($height) && $height >= 12 && $height <= 36 && self::LOGO_HEIGHT !== $height) {
+        // Unset leaves the logo at its own size: `HawkLogo.svelte` has a fallback per kind of logo.
+        if (\is_int($height) && $height >= 12 && $height <= 36) {
             $tokens[] = '--logo-height:' . $height / 16 . 'rem';
         }
 

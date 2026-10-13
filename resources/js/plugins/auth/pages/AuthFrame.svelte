@@ -177,10 +177,10 @@
         gap: var(--space-8);
         padding: clamp(var(--space-5), 4vw, var(--space-10));
     }
+    /* A step larger than in the sidebar, by the same factor for either kind of logo. */
     .auth-brand :global(.mark) {
-        height: 1.125rem;
+        height: calc(var(--logo-height, 0.875rem) * 9 / 7);
     }
-    /* A step larger than in the sidebar, in the same proportion as the wordmark above. */
     .auth-brand :global(.mark.image) {
         height: calc(var(--logo-height, 1.75rem) * 9 / 7);
     }

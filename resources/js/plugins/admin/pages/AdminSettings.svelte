@@ -152,10 +152,10 @@
         set(row, await file.text());
     }
 
-    /** The height only applies to an uploaded logo; the wordmark keeps its own size. */
-    const hidden = (key: string) => {
+    /** Height the logo has while none is set: the wordmark is smaller than an uploaded logo. */
+    const ownLogoHeight = () => {
         const logo = rowsByKey.get('BRAND_LOGO');
-        return key === 'BRAND_LOGO_HEIGHT' && !(logo && current(logo));
+        return logo && current(logo) ? 28 : 14;
     };
 
     // Brand color, corners and logo height show on the running page while they are edited.
@@ -224,7 +224,7 @@
                     <ul class="settings-list">
                         {#each group.settings as key (key)}
                             {@const row = rowsByKey.get(key)}
-                            {#if row && !hidden(key)}
+                            {#if row}
                                 {@const id = `${uid}-${key}`}
                                 {@const label = __('admin.settings_labels.' + key)}
                                 {@const value = current(row)}
@@ -301,12 +301,12 @@
                                                     min={12}
                                                     max={36}
                                                     step={1}
-                                                    value={Number(value)}
+                                                    value={Number(value ?? ownLogoHeight())}
                                                     onValueChange={(next: number) => set(row, next)}
                                                     aria-labelledby={`${id}-label`}
                                                     disabled={locked}
                                                 />
-                                                <span>{__('admin.settings_pixels', { value: String(value) })}</span>
+                                                <span>{__('admin.settings_pixels', { value: String(value ?? ownLogoHeight()) })}</span>
                                             </div>
                                         {:else if key === 'BRAND_CORNER_STYLE'}
                                             <Tabs
@@ -544,9 +544,6 @@
         width: 2.25rem;
         height: 2.25rem;
         object-fit: contain;
-    }
-    .preview :global(svg.mark) {
-        height: 1rem;
     }
     .setting-value {
         margin: 0;

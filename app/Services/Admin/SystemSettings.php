@@ -25,7 +25,7 @@ class SystemSettings
         'BRAND_ACCENT_COLOR' => ['hawki.branding.accent_color', 'string', 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/'],
         'BRAND_CORNER_STYLE' => ['hawki.branding.corner_style', 'string', 'required|in:round,soft,square'],
         'BRAND_LOGO' => ['hawki.branding.logo', 'string', 'nullable|string'],
-        'BRAND_LOGO_HEIGHT' => ['hawki.branding.logo_height', 'number', 'required|integer|min:12|max:36'],
+        'BRAND_LOGO_HEIGHT' => ['hawki.branding.logo_height', 'number', 'nullable|integer|min:12|max:36'],
         'BRAND_FAVICON' => ['hawki.branding.favicon', 'string', 'nullable|string'],
         'LEGAL_IMPRINT_URL' => ['hawki.legal.imprint_url', 'string', self::LINK],
         'LEGAL_PRIVACY_URL' => ['hawki.legal.privacy_url', 'string', self::LINK],
@@ -213,7 +213,8 @@ class SystemSettings
 
         return match (self::DEFINITIONS[$key][1]) {
             'boolean' => filter_var($value, \FILTER_VALIDATE_BOOLEAN),
-            'number' => (int) $value,
+            // An optional number keeps "not set" apart from zero.
+            'number' => null === $value && str_starts_with(self::DEFINITIONS[$key][2], 'nullable') ? null : (int) $value,
             'string' => '' === $value ? null : $value,
             default => $value,
         };

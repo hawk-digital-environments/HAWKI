@@ -42,7 +42,8 @@
     }
 
     .mark {
-        height: 0.85rem;
+        /* Deployments can set the height (see BrandTheme.php); unset, each kind of logo has its own. */
+        height: var(--logo-height, 0.85rem);
         width: auto;
         color: var(--color-accent-text, #1139d7);
     }
@@ -50,7 +51,6 @@
     /* A logo carries more than five letters; it needs more height than the wordmark to stay legible. */
     .mark.image {
         display: inline-block;
-        /* Deployments set the height together with the logo (see BrandTheme.php). */
         height: var(--logo-height, 1.75rem);
         max-width: 100%;
         background: currentColor;

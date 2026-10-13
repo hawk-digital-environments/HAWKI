@@ -27,6 +27,9 @@ test('the preview applies a color, keeps the accent while one is half-typed and 
     assert.equal(target.values.get('--logo-height'), '2.25rem');
     applyBrandTheme({ accentColor: null, cornerStyle: 'round', logoHeight: 400 }, target as never);
     assert.equal(target.values.get('--logo-height'), '2.25rem');
+    // Unset returns each logo to its own size, also over a value the server rendered.
+    applyBrandTheme({ accentColor: null, cornerStyle: 'round', logoHeight: null }, target as never);
+    assert.equal(target.values.get('--logo-height'), 'initial');
     assert.equal(target.values.get('--accent-hue'), '265');
     assert.equal(target.values.get('--accent-chroma'), '1');
 });

@@ -41,8 +41,9 @@ return [
         // administration (Settings > Branding), which validates the files; there is no .env equivalent.
         'logo' => null,
         'favicon' => null,
-        // Height of an uploaded logo in the sidebar, in pixels (12-36). The sign-in page scales with it.
-        'logo_height' => (int) env('BRAND_LOGO_HEIGHT', 28),
+        // Height of the logo in the sidebar, in pixels (12-36). The sign-in page scales with it.
+        // Empty = the logo's own size: 14 px for the HAWKI wordmark, 28 px for an uploaded logo.
+        'logo_height' => env('BRAND_LOGO_HEIGHT') ? (int) env('BRAND_LOGO_HEIGHT') : null,
         // Operating institution, shown on the sign-in page. Empty = not shown.
         'organization_name' => env('BRAND_ORGANIZATION_NAME'),
         'organization_url' => env('BRAND_ORGANIZATION_URL'),

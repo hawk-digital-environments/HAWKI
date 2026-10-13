@@ -201,7 +201,7 @@ export const settingsSchemas: Record<string, z.ZodType> = {
     BRAND_ACCENT_COLOR: z.union([z.literal(''), z.string().regex(/^#[0-9a-fA-F]{6}$/)]).nullish(),
     BRAND_CORNER_STYLE: z.enum(['round', 'soft', 'square']),
     BRAND_LOGO: svg,
-    BRAND_LOGO_HEIGHT: z.number().int().min(12).max(36),
+    BRAND_LOGO_HEIGHT: z.number().int().min(12).max(36).nullish(),
     BRAND_FAVICON: svg,
     LEGAL_IMPRINT_URL: link,
     LEGAL_PRIVACY_URL: link,

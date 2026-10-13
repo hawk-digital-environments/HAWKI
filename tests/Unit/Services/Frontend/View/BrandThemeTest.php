@@ -12,7 +12,7 @@ class BrandThemeTest extends TestCase
 {
     public function testItRendersNothingForTheDefaultTheme(): void
     {
-        config(['hawki.branding.accent_color' => null, 'hawki.branding.corner_style' => 'round', 'hawki.branding.logo_height' => 28]);
+        config(['hawki.branding.accent_color' => null, 'hawki.branding.corner_style' => 'round', 'hawki.branding.logo_height' => null]);
 
         static::assertSame('', (new BrandTheme())->render());
     }
