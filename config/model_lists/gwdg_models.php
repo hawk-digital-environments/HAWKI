@@ -2,27 +2,6 @@
 
 return [
     [
-        'active' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_ACTIVE', true),
-        'id' => 'apertus-70b-instruct-2509',
-        'label' => 'Apertus 70B Instruct 2509',
-        'input' => [
-            'text',
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => false, // Academic fine-tune; tool-calling capability not confirmed
-            'file_upload' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_TOOLS_FILE_UPLOAD', true),
-        ],
-        'default_params' => [
-            // GWDG recommended values: temp=0.8, top_p=0.9
-            'temp' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_PARAMS_TEMP', 0.8),
-            'top_p' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_PARAMS_TOP_P', 0.9),
-        ],
-    ],
-    [
         'active' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_ACTIVE', true),
         'id' => 'deepseek-v4-flash-0731',
         'label' => 'DeepSeek V4 Flash',
@@ -41,27 +20,6 @@ return [
             // GWDG recommended values: temp=1.0, top_p=1.0
             'temp' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_PARAMS_TEMP', 1.0),
             'top_p' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_PARAMS_TOP_P', 1.0),
-        ],
-    ],
-    [
-        'active' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_ACTIVE', true),
-        'id' => 'devstral-2-123b-instruct-2512',
-        'label' => 'Devstral 2 123B Instruct 2512',
-        'input' => [
-            'text',
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_TOOLS_FILE_UPLOAD', true),
-        ],
-        'default_params' => [
-            // GWDG lists no specific recommendation; API defaults apply unless overridden via env
-            'temp' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_PARAMS_TOP_P'),
         ],
     ],
     [
@@ -87,11 +45,12 @@ return [
         ],
     ],
     [
-        'active' => env('MODELS_GWDG_GLM_4_7_ACTIVE', true),
-        'id' => 'glm-4.7',
-        'label' => 'GLM 4.7',
+        'active' => env('MODELS_GWDG_GLM_5_3_FLASH_ACTIVE', true),
+        'id' => 'glm-5.3-flash',
+        'label' => 'GLM 5.3 Flash',
         'input' => [
             'text',
+            'image',
         ],
         'output' => [
             'text',
@@ -99,12 +58,13 @@ return [
         'tools' => [
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_GLM_4_7_TOOLS_FILE_UPLOAD', true),
+            'file_upload' => env('MODELS_GWDG_GLM_5_3_FLASH_TOOLS_FILE_UPLOAD', true),
+            'vision' => env('MODELS_GWDG_GLM_5_3_FLASH_TOOLS_VISION', true),
         ],
         'default_params' => [
             // GWDG recommended values: temp=1.0, top_p=0.95
-            'temp' => env('MODELS_GWDG_GLM_4_7_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GWDG_GLM_4_7_PARAMS_TOP_P', 0.95),
+            'temp' => env('MODELS_GWDG_GLM_5_3_FLASH_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_GLM_5_3_FLASH_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -126,49 +86,6 @@ return [
             // No official sampling recommendations from Meta; API defaults temp=1.0 and top_p=1.0 used
             'temp' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_PARAMS_TEMP', 1.0),
             'top_p' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_PARAMS_TOP_P', 1.0),
-        ],
-    ],
-    [
-        'active' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_ACTIVE', true),
-        'id' => 'mistral-medium-3.5-128b',
-        'label' => 'Mistral Medium 3.5 128B',
-        'input' => [
-            'text',
-            'image'
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_TOOLS_FILE_UPLOAD', true),
-        ],
-        'default_params' => [
-            // GWDG lists no specific recommendation; API defaults apply unless overridden via env
-            'temp' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_PARAMS_TOP_P'),
-        ],
-    ],
-    [
-        'active' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_ACTIVE', true),
-        'id' => 'openai-gpt-oss-120b',
-        'label' => 'OpenAI GPT OSS 120B',
-        'input' => [
-            'text',
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_TOOLS_FILE_UPLOAD', true),
-        ],
-        'default_params' => [
-            // No official sampling recommendations; OpenAI API defaults temp=1.0 and top_p=1.0 used
-            'temp' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_PARAMS_TOP_P', 1.0),
         ],
     ],
     [
@@ -238,30 +155,6 @@ return [
         ],
     ],
     [
-        'active' => env('MODELS_GWDG_QWEN35_122B_A10B_ACTIVE', true),
-        'id' => 'qwen3.5-122b-a10b',
-        'label' => 'Qwen 3.5 122B A10B',
-        'input' => [
-            'text',
-            'image',
-        ],
-        'output' => [
-            'text',
-            'thought',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN35_122B_A10B_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_QWEN35_122B_A10B_TOOLS_VISION', true),
-        ],
-        'default_params' => [
-            // vLLM examples for Qwen 3 Omni use temp=0.6 and top_p=0.95
-            'temp' => env('MODELS_GWDG_QWEN35_122B_A10B_PARAMS_TEMP', 0.6),
-            'top_p' => env('MODELS_GWDG_QWEN35_122B_A10B_PARAMS_TOP_P', 0.95),
-        ],
-    ],
-    [
         'active' => env('MODELS_GWDG_QWEN35_397B_A17B_ACTIVE', true),
         'id' => 'qwen3.5-397b-a17b',
         'label' => 'Qwen 3.5 397B A17B',
@@ -286,7 +179,7 @@ return [
         ],
     ],
     [
-        'active' => env('MODELS_GWDG_QWEN_3.8_27B_ACTIVE', true),
+        'active' => env('MODELS_GWDG_QWEN38_27B_ACTIVE', true),
         'id' => 'qwen3.8-27b',
         'label' => 'Qwen 3.8 27B',
         'input' => [
@@ -299,16 +192,17 @@ return [
         'tools' => [
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN_3.8_27B_TOOLS_FILE_UPLOAD', true),
+            'file_upload' => env('MODELS_GWDG_QWEN38_27B_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_QWEN38_27B_TOOLS_VISION', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_QWEN_3.8_27B_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GWDG_QWEN_3.8_27B_PARAMS_TOP_P', 0.95),
+            // GWDG recommended values: temp=1.0, top_p=0.95
+            'temp' => env('MODELS_GWDG_QWEN38_27B_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_QWEN38_27B_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
-        'active' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_ACTIVE', true),
+        'active' => env('MODELS_GWDG_QWEN36_35B_A3B_ACTIVE', true),
         'id' => 'qwen3.6-35b-a3b',
         'label' => 'Qwen 3.6 35B A3B',
         'input' => [
@@ -321,13 +215,13 @@ return [
         'tools' => [
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_TOOLS_VISION', true),
+            'file_upload' => env('MODELS_GWDG_QWEN36_35B_A3B_TOOLS_FILE_UPLOAD', true),
+            'vision' => env('MODELS_GWDG_QWEN36_35B_A3B_TOOLS_VISION', true),
         ],
         'default_params' => [
-            // vLLM examples for Qwen 3 Omni use temp=0.6 and top_p=0.95
-            'temp' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_PARAMS_TOP_P', 0.95),
+            // GWDG recommended values: temp=1.0, top_p=0.95
+            'temp' => env('MODELS_GWDG_QWEN36_35B_A3B_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_QWEN36_35B_A3B_PARAMS_TOP_P', 0.95),
         ],
     ],
 ];
