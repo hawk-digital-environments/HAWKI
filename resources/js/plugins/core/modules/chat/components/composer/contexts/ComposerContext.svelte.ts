@@ -271,8 +271,8 @@ export class ComposerContext {
      *  In room mode, the presence of a handle determines whether AI UI elements are shown.
      *  Only one assistant can be addressed at a time (see {@link addHandleToMessage}), so
      *  this normally holds at most one entry — it stays a list because a hand-typed message
-     *  can still contain several. */
-    public readonly handlesInMessage = $derived.by(() => [...this.getHandlesInText(this.message)]);
+     *  can still contain several. Each handle is listed once, however often it occurs. */
+    public readonly handlesInMessage = $derived.by(() => [...new Set(this.getHandlesInText(this.message))]);
 
     /** `true` when at least one `@hawki` is present in the message. */
     public readonly containsAiHandle = $derived.by(() => this.handlesInMessage.length > 0);

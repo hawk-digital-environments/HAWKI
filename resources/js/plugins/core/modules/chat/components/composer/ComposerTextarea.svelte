@@ -99,7 +99,31 @@
     const body = $derived(stripHandles(composerContext.message));
 
     function setBody(value: string) {
-        composerContext.message = composeMessage(composerContext.handlesInMessage, value);
+        // A handle typed out in full is a mention just like one picked from the popup: it
+        // becomes the message's one assistant handle (replacing any other) instead of being
+        // appended as a second, possibly duplicate, handle.
+        const typed = [...aiHandleStore.getHandleMatchesIn(value)].at(-1);
+        if (!typed) {
+            composerContext.message = composeMessage(composerContext.handlesInMessage, value);
+            return;
+        }
+        composerContext.message = composeMessage([typed.handle], stripHandles(value));
+        mention = null;
+        caret = null;
+        if (ref) {
+            placeCaretAfterFlush(ref, stripHandles(value.slice(0, typed.start)).length);
+        }
+    }
+
+    /** The value lands on the element only after the binding flushes, so the caret is put
+     *  back on the next frame; until then, events must not re-detect a stale mention. */
+    function placeCaretAfterFlush(textarea: HTMLTextAreaElement, offset: number) {
+        awaitingFlush = true;
+        requestAnimationFrame(() => {
+            awaitingFlush = false;
+            textarea.focus();
+            textarea.setSelectionRange(offset, offset);
+        });
     }
 
     const textareaPlaceholder = $derived.by(() => {
@@ -260,31 +284,18 @@
         mention = null;
         caret = null;
         dismissedStart = null;
-        awaitingFlush = true;
-
-        // The value lands on the element only after the binding flushes, so restore the
-        // caret where the mention was on the next frame.
-        requestAnimationFrame(() => {
-            awaitingFlush = false;
-            textarea.focus();
-            textarea.setSelectionRange(start, start);
-        });
+        placeCaretAfterFlush(textarea, start);
         return start;
     }
 
     /** Turns the typed `@query` into a chip: the query is dropped from the text and the
-     *  assistant's handle is added to the message — or removed again if it was already
-     *  tagged, so picking the checked row untags it, the same way `/` toggles a tool. */
+     *  assistant becomes the message's handle — the same outcome as typing the handle out
+     *  in full (see {@link setBody}), so re-picking a tagged assistant keeps it tagged. */
     function insertMention(assistant: AiAssistant) {
-        const wasTagged = composerContext.handlesInMessage.includes(assistant.handle);
         if (consumeMention() === null) {
             return;
         }
-        if (wasTagged) {
-            composerContext.removeHandleFromMessage(assistant.handle);
-        } else {
-            composerContext.addHandleToMessage(assistant.handle);
-        }
+        composerContext.addHandleToMessage(assistant.handle);
     }
 
     /** Turns the typed `/query` into a tool switch: the query is dropped from the text and
