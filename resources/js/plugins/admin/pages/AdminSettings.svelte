@@ -27,7 +27,7 @@
     import { controlFor } from '../forms/controls.js';
     import { settingsSchemas } from '../forms/schemas.js';
     import { issueMessage } from '../forms/validationMessages.js';
-    import { applyBrandTheme, isBrandColor } from '../brandTheme.js';
+    import { applyBrandTheme, isBrandColor, STATUS_COLORS } from '../brandTheme.js';
     import { svgPreview } from '../providerIcons.js';
 
     const app = useApp();
@@ -158,7 +158,17 @@
         return logo && current(logo) ? 28 : 14;
     };
 
-    // Brand color, corners and logo height show on the running page while they are edited.
+    /** The status a color setting belongs to, e.g. `error`. */
+    const statusOf = (key: string) => Object.keys(STATUS_COLORS).find((status) => key === `BRAND_COLOR_${status.toUpperCase()}`);
+    const statusValues = (read: (row: AdminSettingResource) => unknown) =>
+        Object.fromEntries(
+            Object.keys(STATUS_COLORS).map((status) => {
+                const row = rowsByKey.get(`BRAND_COLOR_${status.toUpperCase()}`);
+                return [status, row && read(row)];
+            })
+        );
+
+    // Colors, corners and logo height show on the running page while they are edited.
     const brand = () => {
         const value = (key: string) => {
             const row = rowsByKey.get(key);
@@ -167,7 +177,8 @@
         return {
             accentColor: value('BRAND_ACCENT_COLOR'),
             cornerStyle: value('BRAND_CORNER_STYLE'),
-            logoHeight: value('BRAND_LOGO_HEIGHT')
+            logoHeight: value('BRAND_LOGO_HEIGHT'),
+            statusColors: statusValues(current)
         };
     };
     $effect(() => {
@@ -186,7 +197,8 @@
         applyBrandTheme({
             accentColor: rowsByKey.get('BRAND_ACCENT_COLOR')?.value,
             cornerStyle: rowsByKey.get('BRAND_CORNER_STYLE')?.value,
-            logoHeight: rowsByKey.get('BRAND_LOGO_HEIGHT')?.value
+            logoHeight: rowsByKey.get('BRAND_LOGO_HEIGHT')?.value,
+            statusColors: statusValues((row) => row.value)
         });
     });
 </script>
@@ -242,18 +254,31 @@
                                     <div class="setting-control">
                                         {#if row.kind === 'json'}
                                             <p class="setting-value">{display(row.value)}</p>
+                                        {:else if statusOf(key)}
+                                            <div class="color">
+                                                <span class="result" style:background={`var(--color-${statusOf(key)})`} aria-hidden="true"></span>
+                                                <Input
+                                                    {id}
+                                                    placeholder={String(row.default ?? '')}
+                                                    bind:value={() => text(row), (next) => set(row, next)}
+                                                    aria-invalid={!!errors[key]}
+                                                    disabled={locked}
+                                                    autocomplete="off"
+                                                    spellcheck={false}
+                                                />
+                                            </div>
                                         {:else if key === 'BRAND_ACCENT_COLOR'}
                                             <div class="color">
                                                 <input
                                                     type="color"
                                                     aria-label={__('admin.settings_pick_color')}
-                                                    value={isBrandColor(value) ? value : '#1139d7'}
+                                                    value={isBrandColor(value) ? value : String(row.default ?? '#1139d7')}
                                                     oninput={(event) => set(row, event.currentTarget.value)}
                                                     disabled={locked}
                                                 />
                                                 <Input
                                                     {id}
-                                                    placeholder="#1139d7"
+                                                    placeholder={String(row.default ?? '')}
                                                     bind:value={() => text(row), (next) => set(row, next)}
                                                     aria-invalid={!!errors[key]}
                                                     disabled={locked}
@@ -530,6 +555,12 @@
     }
     .color input[type='color']::-moz-color-swatch {
         border: 0;
+    }
+    .result {
+        flex: none;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: var(--corner-full);
     }
     .preview {
         flex: none;

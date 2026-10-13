@@ -81,6 +81,8 @@
         );
 
         /* ── Status colors ──────────────────────────────────────────────── */
+        /* A deployment can replace each of these (see BrandTheme.php, which repeats
+           the values as the defaults of the setting). */
         --color-success: oklch(50% 0.17 145);
         --color-warning: oklch(62% 0.17 75);
         --color-error: oklch(52% 0.21 25);

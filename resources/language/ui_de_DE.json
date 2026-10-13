@@ -505,6 +505,10 @@
                 "title": "Erscheinungsbild",
                 "description": "Markenfarbe und Eckenrundung. Schaltflächen, Links, Auswahlen und Fokusrahmen übernehmen Farbton und Sättigung der Markenfarbe; die Helligkeit legt die Oberfläche fest, damit Text im hellen und dunklen Modus lesbar bleibt."
             },
+            "status": {
+                "title": "Statusfarben",
+                "description": "Farben für Bestätigungen, Warnungen, Fehler und Hinweise als OKLCH-Werte: oklch(Helligkeit % Chroma Farbton), zum Beispiel oklch(52% 0.21 25). Der Wert wird genau so verwendet, wie er eingegeben wird. Prüfen Sie daher, ob Text in dieser Farbe auf hellem und dunklem Hintergrund lesbar bleibt. Der Punkt zeigt die Farbe."
+            },
             "logo": {
                 "title": "Logo",
                 "description": "SVG-Dateien, die anstelle des HAWKI-Schriftzugs und als Symbol im Browser-Tab erscheinen. Das Logo wird im hellen wie im dunklen Modus in der Markenfarbe dargestellt; verwendet wird nur seine Form, nicht seine eigenen Farben. Die Dateien müssen statische Zeichnungen bis 256 KB sein: ohne Skripte, externe Verweise oder Text als Schrift. Wandeln Sie Text vor dem Export in Pfade um."
@@ -555,6 +559,10 @@
             "BRAND_ORGANIZATION_NAME": "Name der Einrichtung",
             "BRAND_ORGANIZATION_URL": "Website der Einrichtung",
             "BRAND_ACCENT_COLOR": "Markenfarbe",
+            "BRAND_COLOR_SUCCESS": "Erfolg",
+            "BRAND_COLOR_WARNING": "Warnung",
+            "BRAND_COLOR_ERROR": "Fehler",
+            "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Eckenrundung",
             "BRAND_LOGO": "Logo",
             "BRAND_LOGO_HEIGHT": "Logohöhe",

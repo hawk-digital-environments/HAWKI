@@ -1,6 +1,7 @@
 import z from 'zod';
 import type { AdminField, AdminRow } from '../schemas/admin-content.js';
 import type { WorkspaceId } from '../workspaces.js';
+import { oklch } from '../brandTheme.js';
 
 /** Workspaces that have an editor; `tools` is edited on the MCP page and has no route of its own. */
 export type EditorSection = WorkspaceId | 'tools' | (string & {});
@@ -8,6 +9,10 @@ export type EditorSection = WorkspaceId | 'tools' | (string & {});
 const text = (max = 255) => z.string().trim().min(1).max(max);
 const optionalText = (max = 255) => z.string().max(max).nullish();
 const url = z.union([z.literal(''), z.url({ protocol: /^https?$/ }).max(2000)]).nullish();
+const oklchColor = z
+    .union([z.literal(''), z.string().refine((value) => oklch(value) !== null)])
+    .nullish();
+const color = z.union([z.literal(''), z.string().regex(/^#[0-9a-fA-F]{6}$/)]).nullish();
 /** Markup of an uploaded SVG file; the server validates the drawing itself (`ProviderIconService::validateSvg`). */
 const svg = z.string().max(262144).nullish();
 /** An absolute HTTP(S) URL or a path on this host, as `SystemSettings::LINK` accepts it. */
@@ -198,7 +203,11 @@ export const settingsSchemas: Record<string, z.ZodType> = {
     APP_NAME: text(),
     BRAND_ORGANIZATION_NAME: optionalText(),
     BRAND_ORGANIZATION_URL: url,
-    BRAND_ACCENT_COLOR: z.union([z.literal(''), z.string().regex(/^#[0-9a-fA-F]{6}$/)]).nullish(),
+    BRAND_ACCENT_COLOR: color,
+    BRAND_COLOR_SUCCESS: oklchColor,
+    BRAND_COLOR_WARNING: oklchColor,
+    BRAND_COLOR_ERROR: oklchColor,
+    BRAND_COLOR_INFO: oklchColor,
     BRAND_CORNER_STYLE: z.enum(['round', 'soft', 'square']),
     BRAND_LOGO: svg,
     BRAND_LOGO_HEIGHT: z.number().int().min(12).max(36).nullish(),

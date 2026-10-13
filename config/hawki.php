@@ -35,6 +35,14 @@ return [
         // Brand color as #RRGGBB. Its hue and saturation drive the accent color ramp. The default is
         // the HAWKI blue the built-in ramp is made of (oklch 45% 0.24 265), so it changes nothing.
         'accent_color' => env('BRAND_ACCENT_COLOR') ?: '#1139d7',
+        // Status colors for confirmations, warnings, errors and notes, as CSS OKLCH values:
+        // oklch(<lightness 0-100>% <chroma 0-0.4> <hue 0-360>). The defaults are the built-in colors.
+        'status_colors' => [
+            'success' => env('BRAND_COLOR_SUCCESS') ?: 'oklch(50% 0.17 145)',
+            'warning' => env('BRAND_COLOR_WARNING') ?: 'oklch(62% 0.17 75)',
+            'error' => env('BRAND_COLOR_ERROR') ?: 'oklch(52% 0.21 25)',
+            'info' => env('BRAND_COLOR_INFO') ?: 'oklch(55% 0.14 230)',
+        ],
         // Corner rounding of the interface: round (default), soft or square.
         'corner_style' => env('BRAND_CORNER_STYLE', 'round'),
         // SVG markup of the logo and the browser tab icon. Uploaded in the

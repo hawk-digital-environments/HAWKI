@@ -8,6 +8,25 @@
 /** Chroma of the default accent (`--color-accent-500`); a brand color this saturated uses the full ramp. */
 const REFERENCE_CHROMA = 0.24;
 const DEFAULT_ACCENT = { hue: 265, chroma: 1 };
+/** The built-in status colors; an unset status returns to these (`colors.css` holds the same values). */
+export const STATUS_COLORS: Record<string, string> = {
+    success: 'oklch(50% 0.17 145)',
+    warning: 'oklch(62% 0.17 75)',
+    error: 'oklch(52% 0.21 25)',
+    info: 'oklch(55% 0.14 230)'
+};
+
+/**
+ * A CSS OKLCH color in its canonical spelling, `oklch(L% C H)`, or null when the value is not one:
+ * lightness 0–100 %, chroma 0–0.4, hue 0–360, plain numbers only. Mirrors `BrandTheme::oklch()`.
+ */
+export function oklch(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const match = /^oklch\(\s*(\d{1,3}(?:\.\d{1,2})?)%\s+(\d(?:\.\d{1,3})?)\s+(\d{1,3}(?:\.\d{1,2})?)\s*\)$/i.exec(value.trim());
+    if (!match) return null;
+    const [lightness, chroma, hue] = match.slice(1).map(Number);
+    return lightness <= 100 && chroma <= 0.4 && hue <= 360 ? `oklch(${lightness}% ${chroma} ${hue})` : null;
+}
 /** `round` repeats `resources/css/tokens/radius.css`, so a preview can return to it over a server-rendered override. */
 const CORNERS: Record<string, Record<string, string>> = {
     round: { xs: '8px', sm: '12px', md: '16px', lg: '24px', control: '9999px' },
@@ -18,8 +37,8 @@ const CORNERS: Record<string, Record<string, string>> = {
 export const isBrandColor = (value: unknown): value is string =>
     typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
 
-/** Converts a `#rrggbb` color to its OKLCH hue (degrees) and its chroma relative to the default accent. */
-export function accentTokens(hex: string): { hue: number; chroma: number } {
+/** OKLCH hue in degrees and chroma of a `#rrggbb` color. */
+function hueAndChroma(hex: string): [number, number] {
     const [r, g, b] = [1, 3, 5].map((start) => {
         const value = parseInt(hex.slice(start, start + 2), 16) / 255;
         return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
@@ -29,10 +48,14 @@ export function accentTokens(hex: string): { hue: number; chroma: number } {
     const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
     const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
     const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
-    return {
-        hue: Math.round((((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360) * 10) / 10,
-        chroma: Math.round(Math.min(1, Math.hypot(a, bb) / REFERENCE_CHROMA) * 1000) / 1000
-    };
+    return [Math.round((((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360) * 10) / 10, Math.hypot(a, bb)];
+}
+const round3 = (value: number) => Math.round(value * 1000) / 1000;
+
+/** Converts a `#rrggbb` color to its OKLCH hue (degrees) and its chroma relative to the default accent. */
+export function accentTokens(hex: string): { hue: number; chroma: number } {
+    const [hue, chroma] = hueAndChroma(hex);
+    return { hue, chroma: round3(Math.min(1, chroma / REFERENCE_CHROMA)) };
 }
 
 /**
@@ -41,7 +64,13 @@ export function accentTokens(hex: string): { hue: number; chroma: number } {
  * back to the default between keystrokes.
  */
 export function applyBrandTheme(
-    theme: { accentColor?: unknown; cornerStyle?: unknown; logoHeight?: unknown },
+    theme: {
+        accentColor?: unknown;
+        cornerStyle?: unknown;
+        logoHeight?: unknown;
+        /** CSS OKLCH color per status, e.g. `{ error: 'oklch(52% 0.21 25)' }`. */
+        statusColors?: Record<string, unknown>;
+    },
     root: Pick<HTMLElement, 'style'> = document.documentElement
 ): void {
     const accent =
@@ -54,6 +83,12 @@ export function applyBrandTheme(
     }
     for (const [size, radius] of Object.entries(CORNERS[String(theme.cornerStyle)] ?? CORNERS.round)) {
         root.style.setProperty(`--corner-${size}`, radius);
+    }
+    for (const [status, builtIn] of Object.entries(STATUS_COLORS)) {
+        const value = theme.statusColors?.[status];
+        // Empty means the built-in color; a half-typed value leaves the current one alone.
+        const color = value ? oklch(value) : builtIn;
+        if (color) root.style.setProperty(`--color-${status}`, color);
     }
     const height = Number(theme.logoHeight);
     if (theme.logoHeight == null) {

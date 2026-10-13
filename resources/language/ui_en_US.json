@@ -505,6 +505,10 @@
                 "title": "Appearance",
                 "description": "Brand color and corner rounding. Buttons, links, selections and focus rings take the hue and saturation of the brand color; its lightness is set by the interface, so text stays readable in light and dark mode."
             },
+            "status": {
+                "title": "Status colors",
+                "description": "Colors for confirmations, warnings, errors and notes, as OKLCH values: oklch(lightness % chroma hue), for example oklch(52% 0.21 25). The value is used exactly as entered, so check that text in this color stays readable on light and dark backgrounds. The dot shows the color."
+            },
             "logo": {
                 "title": "Logo",
                 "description": "SVG files shown instead of the HAWKI wordmark and as the browser tab icon. The logo is drawn in the brand color, in light and dark mode alike; only its shape is used, not its own colors. Files must be static drawings of up to 256 KB: no scripts, external references or live text, so convert text to outlines before exporting."
@@ -555,6 +559,10 @@
             "BRAND_ORGANIZATION_NAME": "Institution name",
             "BRAND_ORGANIZATION_URL": "Institution website",
             "BRAND_ACCENT_COLOR": "Brand color",
+            "BRAND_COLOR_SUCCESS": "Success",
+            "BRAND_COLOR_WARNING": "Warning",
+            "BRAND_COLOR_ERROR": "Error",
+            "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Corner rounding",
             "BRAND_LOGO": "Logo",
             "BRAND_LOGO_HEIGHT": "Logo height",

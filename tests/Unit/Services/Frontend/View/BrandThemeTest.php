@@ -50,6 +50,26 @@ class BrandThemeTest extends TestCase
         static::assertSame('', (new BrandTheme())->render());
     }
 
+    public function testStatusColorsAreRenderedOnlyWhereTheyDifferFromTheBuiltInOnes(): void
+    {
+        config(['hawki.branding.accent_color' => null, 'hawki.branding.corner_style' => 'round', 'hawki.branding.logo_height' => null,
+            'hawki.branding.status_colors' => BrandTheme::STATUS_COLORS]);
+        static::assertSame('', (new BrandTheme())->render());
+
+        config(['hawki.branding.status_colors.error' => ' OKLCH( 40%  0.2 10 ) ', 'hawki.branding.status_colors.info' => 'oklch(40% 0.2 10);}body{display:none']);
+        static::assertSame('<style>:root{--color-error:oklch(40% 0.2 10)}</style>', (new BrandTheme())->render());
+    }
+
+    public function testOklchAcceptsPlainInRangeValuesOnly(): void
+    {
+        static::assertSame('oklch(52% 0.21 25)', BrandTheme::oklch('oklch(52% 0.21 25)'));
+        static::assertSame('oklch(50.5% 0.125 359.5)', BrandTheme::oklch('oklch(50.5% 0.125 359.5)'));
+
+        foreach (['oklch(101% 0.2 10)', 'oklch(50% 0.5 10)', 'oklch(50% 0.2 361)', 'oklch(50% 0.2 10 / 0.5)', 'oklch(50% var(--x) 10)', 'red', '#ff0000', '', null, 12] as $value) {
+            static::assertNull(BrandTheme::oklch($value));
+        }
+    }
+
     public function testInvalidDeploymentValuesNeverReachTheStylesheet(): void
     {
         config(['hawki.branding.accent_color' => 'red}</style><script>', 'hawki.branding.corner_style' => '0}body{display:none', 'hawki.branding.logo_height' => '28}x']);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use App\Services\Config\EnvironmentConfigProxy;
+use App\Services\Frontend\View\BrandTheme;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -15,14 +16,23 @@ class SystemSettings
     /** An absolute HTTP(S) URL or a path on this host; protocol-relative URLs are rejected. */
     private const LINK = 'nullable|string|max:2000|regex:~^(?:https?:/)?/[^/\s"\'<>][^\s"\'<>]*$~';
 
+    /** Settings whose value is a CSS OKLCH color. */
+    public const OKLCH = ['BRAND_COLOR_SUCCESS', 'BRAND_COLOR_WARNING', 'BRAND_COLOR_ERROR', 'BRAND_COLOR_INFO'];
+
     /** Settings whose value is the markup of an uploaded SVG file. */
     public const SVG = ['BRAND_LOGO', 'BRAND_FAVICON'];
+
+    private const COLOR = 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/';
 
     public const DEFINITIONS = [
         'APP_NAME' => ['app.name', 'string', 'required|string|max:255'],
         'BRAND_ORGANIZATION_NAME' => ['hawki.branding.organization_name', 'string', 'nullable|string|max:255'],
         'BRAND_ORGANIZATION_URL' => ['hawki.branding.organization_url', 'string', 'nullable|url:http,https|max:2000'],
-        'BRAND_ACCENT_COLOR' => ['hawki.branding.accent_color', 'string', 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/'],
+        'BRAND_ACCENT_COLOR' => ['hawki.branding.accent_color', 'string', self::COLOR],
+        'BRAND_COLOR_SUCCESS' => ['hawki.branding.status_colors.success', 'string', 'nullable|string|max:60'],
+        'BRAND_COLOR_WARNING' => ['hawki.branding.status_colors.warning', 'string', 'nullable|string|max:60'],
+        'BRAND_COLOR_ERROR' => ['hawki.branding.status_colors.error', 'string', 'nullable|string|max:60'],
+        'BRAND_COLOR_INFO' => ['hawki.branding.status_colors.info', 'string', 'nullable|string|max:60'],
         'BRAND_CORNER_STYLE' => ['hawki.branding.corner_style', 'string', 'required|in:round,soft,square'],
         'BRAND_LOGO' => ['hawki.branding.logo', 'string', 'nullable|string'],
         'BRAND_LOGO_HEIGHT' => ['hawki.branding.logo_height', 'number', 'nullable|integer|min:12|max:36'],
@@ -128,6 +138,11 @@ class SystemSettings
 
         $value = Validator::make(['value' => $value], $rules)->validate()['value'];
         $value = $this->normalize($key, $value);
+
+        if (\in_array($key, self::OKLCH, true) && null !== $value) {
+            // Stored in one canonical spelling; it is written into every page's stylesheet.
+            $value = BrandTheme::oklch($value) ?? throw ValidationException::withMessages(['value' => __('admin.errors.invalid_value')]);
+        }
 
         if (\in_array($key, self::SVG, true) && null !== $value) {
             try {

@@ -14,6 +14,10 @@ export const settingsTabs = [
                 settings: ['APP_NAME', 'AI_MENTION_HANDLE', 'BRAND_ORGANIZATION_NAME', 'BRAND_ORGANIZATION_URL']
             },
             { key: 'theme', settings: ['BRAND_ACCENT_COLOR', 'BRAND_CORNER_STYLE'] },
+            {
+                key: 'status',
+                settings: ['BRAND_COLOR_SUCCESS', 'BRAND_COLOR_WARNING', 'BRAND_COLOR_ERROR', 'BRAND_COLOR_INFO']
+            },
             { key: 'logo', settings: ['BRAND_LOGO', 'BRAND_LOGO_HEIGHT', 'BRAND_FAVICON'] }
         ]
     },

@@ -136,12 +136,12 @@ class SystemSettingsTest extends TestCase
 
     public function testBrandingAndLegalValuesAreValidatedBeforeTheyReachThePage(): void
     {
-        foreach (['BRAND_ACCENT_COLOR' => '#A00020', 'BRAND_CORNER_STYLE' => 'square', 'BRAND_LOGO' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1z"/></svg>', 'LEGAL_IMPRINT_URL' => 'https://example.edu/imprint'] as $key => $value) {
+        foreach (['BRAND_COLOR_WARNING' => 'oklch(60% 0.15 80)', 'BRAND_ACCENT_COLOR' => '#A00020', 'BRAND_CORNER_STYLE' => 'square', 'BRAND_LOGO' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1z"/></svg>', 'LEGAL_IMPRINT_URL' => 'https://example.edu/imprint'] as $key => $value) {
             $this->settings->save($key, $value, $this->user->id);
             self::assertSame($value, config(SystemSettings::DEFINITIONS[$key][0]));
         }
 
-        foreach (['BRAND_ACCENT_COLOR' => 'red;}', 'BRAND_CORNER_STYLE' => 'pill', 'BRAND_LOGO' => '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', 'BRAND_FAVICON' => '/img/logo.svg', 'LEGAL_IMPRINT_URL' => '//evil.example/x', 'LEGAL_PRIVACY_URL' => '/"onclick="x', 'BRAND_ORGANIZATION_URL' => '/relative'] as $key => $value) {
+        foreach (['BRAND_COLOR_ERROR' => 'oklch(50% 0.2 10);}', 'BRAND_COLOR_INFO' => '#ff0000', 'BRAND_ACCENT_COLOR' => 'red;}', 'BRAND_CORNER_STYLE' => 'pill', 'BRAND_LOGO' => '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', 'BRAND_FAVICON' => '/img/logo.svg', 'LEGAL_IMPRINT_URL' => '//evil.example/x', 'LEGAL_PRIVACY_URL' => '/"onclick="x', 'BRAND_ORGANIZATION_URL' => '/relative'] as $key => $value) {
             try {
                 $this->settings->save($key, $value, $this->user->id);
                 self::fail('Accepted invalid setting: ' . $key);
@@ -149,7 +149,7 @@ class SystemSettingsTest extends TestCase
                 self::assertArrayHasKey('value', $exception->errors());
             }
         }
-        self::assertSame(4, DB::table('admin_settings')->count());
+        self::assertSame(5, DB::table('admin_settings')->count());
         // The environment page lists every setting; uploaded markup is summarized, not dumped.
         self::assertSame('[set]', collect($this->settings->environment())->firstWhere('key', 'BRAND_LOGO')['value']);
     }
