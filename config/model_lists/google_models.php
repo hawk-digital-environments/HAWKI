@@ -1,5 +1,31 @@
 <?php
+/*
+    For updating models consult:
+        - https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/migrate
+
+    But each model has its own documentation page.
+    A check those for details on the model's capabilities and limitations is recommended.
+    E.g. a model might already be deprecated and routed to a newer model in the google api.
+**/
 return [
+    [
+        'active' => env('MODELS_GOOGLE_GEMINI_4_ARGON_ACTIVE', true),
+        'id' => 'gemini-4-argon',
+        'label' => 'Gemini 4 Argon',
+        "input" => [
+            "text",
+            "image"
+        ],
+        "output" => [
+            "text"
+        ],
+        'tools' => [
+            'stream' => true,
+            'tool_calling' => true,
+            'file_upload' => env('MODELS_GOOGLE_GEMINI_4_ARGON_TOOLS_FILE_UPLOAD', false),
+            'native_capabilities' => env('MODELS_GOOGLE_GEMINI_4_ARGON_TOOLS_NATIVE_CAPABILITIES', true),
+        ],
+    ],
     [
         'active' => env('MODELS_GOOGLE_GEMINI_3_1_PRO_ACTIVE', true),
         'id' => 'gemini-3.1-pro-preview',
@@ -35,34 +61,6 @@ return [
             'file_upload' => env('MODELS_GOOGLE_GEMINI_3_8_FLASH_TOOLS_FILE_UPLOAD', false),
             'native_capabilities' => env('MODELS_GOOGLE_GEMINI_3_8_FLASH_TOOLS_NATIVE_CAPABILITIES', true),
         ],
-        'default_params' => [
-            // Google AI Studio defaults for Gemini Flash: temp=1.0, top_p=0.95
-            'temp' => env('MODELS_GOOGLE_GEMINI_3_8_FLASH_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GOOGLE_GEMINI_3_8_FLASH_PARAMS_TOP_P', 0.95),
-        ],
-    ],
-    [
-        'active' => env('MODELS_GOOGLE_GEMINI_3_7_FLASH_ACTIVE', true),
-        'id' => 'gemini-3.7-flash',
-        'label' => 'Gemini 3.7 Flash',
-        "input" => [
-            "text",
-            "image"
-        ],
-        "output" => [
-            "text"
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_GOOGLE_GEMINI_3_7_FLASH_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_GOOGLE_GEMINI_3_7_FLASH_TOOLS_NATIVE_CAPABILITIES', true),
-        ],
-        'default_params' => [
-            // Google AI Studio defaults for Gemini Flash: temp=1.0, top_p=0.95
-            'temp' => env('MODELS_GOOGLE_GEMINI_3_7_FLASH_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GOOGLE_GEMINI_3_7_FLASH_PARAMS_TOP_P', 0.95),
-        ],
     ],
     [
         'active' => env('MODELS_GOOGLE_GEMINI_3_6_FLASH_ACTIVE', true),
@@ -80,11 +78,6 @@ return [
             'tool_calling' => true,
             'file_upload' => env('MODELS_GOOGLE_GEMINI_3_6_FLASH_TOOLS_FILE_UPLOAD', false),
             'native_capabilities' => env('MODELS_GOOGLE_GEMINI_3_6_FLASH_TOOLS_NATIVE_CAPABILITIES', true),
-        ],
-        'default_params' => [
-            // Google AI Studio defaults for Gemini Flash: temp=1.0, top_p=0.95
-            'temp' => env('MODELS_GOOGLE_GEMINI_3_6_FLASH_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GOOGLE_GEMINI_3_6_FLASH_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -104,11 +97,6 @@ return [
             'file_upload' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_TOOLS_FILE_UPLOAD', false),
             'native_capabilities' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_TOOLS_NATIVE_CAPABILITIES', true),
         ],
-        'default_params' => [
-            // Google AI Studio defaults for Gemini Flash: temp=1.0, top_p=0.95
-            'temp' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_PARAMS_TOP_P', 0.95),
-        ],
     ],
     [
         'active' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_LITE_ACTIVE', true),
@@ -127,11 +115,6 @@ return [
             'file_upload' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_LITE_TOOLS_FILE_UPLOAD', false),
             'native_capabilities' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_LITE_TOOLS_NATIVE_CAPABILITIES', false),
         ],
-        'default_params' => [
-            // Google AI Studio defaults for Gemini Flash Lite: temp=1.0, top_p=0.95
-            'temp' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_LITE_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GOOGLE_GEMINI_3_5_FLASH_LITE_PARAMS_TOP_P', 0.95),
-        ],
     ],
     [
         'active' => env('MODELS_GOOGLE_GEMINI_3_1_FLASH_LITE_ACTIVE', true),
@@ -149,11 +132,6 @@ return [
             'tool_calling' => true,
             'file_upload' => env('MODELS_GOOGLE_GEMINI_3_1_FLASH_LITE_TOOLS_FILE_UPLOAD', false),
             'native_capabilities' => env('MODELS_GOOGLE_GEMINI_3_1_FLASH_LITE_TOOLS_NATIVE_CAPABILITIES', false),
-        ],
-        'default_params' => [
-            // Google AI Studio defaults for Gemini Flash Lite: temp=1.0, top_p=0.95
-            'temp' => env('MODELS_GOOGLE_GEMINI_3_1_FLASH_LITE_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GOOGLE_GEMINI_3_1_FLASH_LITE_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
