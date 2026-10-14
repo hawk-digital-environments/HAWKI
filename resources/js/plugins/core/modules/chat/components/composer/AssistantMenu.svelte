@@ -22,8 +22,8 @@
   Each row's info icon (or ArrowRight) drills into `AssistantMenuDetail` in place of the
   list — a two-panel `DropdownMenuDetailView`, same as the tool picker.
 
-  This is the browse-all entry point; typing `@` in the message instead opens
-  `AssistantMentionPopup` at the caret, which filters the same assistants as you type.
+  This is the assistant entry point however the user arrives: the trigger button, or
+  typing `@` in the message, which opens this same menu with its search field focused.
 -->
 <script lang="ts">
     import {untrack} from 'svelte';

@@ -116,8 +116,12 @@
     });
 
     // Touch triggers open their menu on pointerup (bits-ui), and some browsers
-    // synthesizes the tap's compatibility mouse events afterwards, which e.g. causes 
-    // a tap on the openening overlay ()
+    // synthesize the tap's compatibility mouse events afterwards, which e.g. causes
+    // a tap on the freshly opened overlay or panel to dismiss or hit a row.
+    // The guard blocks those stray pointer events with `pointer-events: none`
+    // rather than `inert`: `inert` also makes the panel unfocusable, which would
+    // swallow the focus claim of e.g. a menu's search field during the window —
+    // breaking the keyboard flow on mobile.
     let guarded = $state(false);
     let guardTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -128,6 +132,10 @@
             guardTimer = setTimeout(() => (guarded = false), TAP_THROUGH_GUARD_MS);
         }
     });
+
+    // The guarded panel drops out of hit-testing (see `guarded` above); the class
+    // travels with the rest of the content props below.
+    const contentClass = $derived(`sheet-content${guarded ? ' sheet-content--guarded' : ''}`);
 
     // Only ever emit an inline transition while snapping back — a permanent one
     // would stall the dialog's keyframe-based exit-animation detection.
@@ -149,7 +157,7 @@
     <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay {...mergeProps({inert: guarded || undefined, class: 'sheet-overlay'})}/>
         <DialogPrimitive.Content
-            {...mergeProps({inert: guarded || undefined, class: 'sheet-content', style: panelStyle}, contentProps) as DialogContentProps}
+            {...mergeProps({class: contentClass, style: panelStyle}, contentProps) as DialogContentProps}
         >
             <div
                 role="dialog"
@@ -205,6 +213,11 @@
     }
 
     /* ── Panel ────────────────────────────────────────────────────────── */
+
+    /* The fresh-open tap-through guard — see `guarded` in the script. */
+    :global(.sheet-content.sheet-content--guarded) {
+        pointer-events: none;
+    }
 
     :global(.sheet-content) {
         --sheet-bg: var(--color-surface-raised);

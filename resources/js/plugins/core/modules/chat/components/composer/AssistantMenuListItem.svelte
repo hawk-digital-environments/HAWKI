@@ -2,7 +2,7 @@
   @component A single assistant row inside `AssistantMenu` — mirrors `ToolMenuListItem`,
   but toggles an `@handle` in the composer message instead of a tool. The whole row acts as
   a checkbox (checked = the handle is currently present in the message); the visuals come
-  from `AssistantRow`, shared with the caret-anchored `AssistantMentionPopup`.
+  from `AssistantRow`, shared wherever an assistant row is listed.
 
   A separate info button on the right — or ArrowRight — opens `AssistantMenuDetail` for that
   assistant instead of toggling it, stopping propagation so it never also tags.

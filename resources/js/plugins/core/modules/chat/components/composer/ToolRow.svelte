@@ -5,7 +5,7 @@
   row and an assistant row read as the same kind of thing.
 
   Deliberately renders no interactive element of its own, so it can sit inside whatever
-  wrapper the surrounding list needs — currently the option rows of `ToolMentionPopup`.
+  wrapper the surrounding list needs.
 
   ## Usage
   ```svelte

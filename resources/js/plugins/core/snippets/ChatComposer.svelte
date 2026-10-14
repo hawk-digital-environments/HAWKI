@@ -86,6 +86,29 @@ Rendered once per page for either an AI conversation or a group room chat (see
 
     // Shared so the tool-chip overflow badge can open the picker.
     let toolPickerOpen = $state(false);
+    let assistantMenuOpen = $state(false);
+
+    /** Opens the menu a typed `@`/`/` trigger asked for (see `ComposerTextarea`) — the
+     *  trigger character is already gone from the message by the time this runs. */
+    function openMenuFromTyping(trigger: '@' | '/') {
+        if (trigger === '@') {
+            assistantMenuOpen = true;
+        } else {
+            toolPickerOpen = true;
+        }
+    }
+
+    // A menu opened from typing borrowed the caret; when it closes again, the cursor
+    // goes back to the textarea — bits-ui would otherwise leave focus on the menu's
+    // trigger button.
+    let menusWereOpen = false;
+    $effect(() => {
+        const open = assistantMenuOpen || toolPickerOpen;
+        if (menusWereOpen && !open) {
+            chatContext.autoFocusInput();
+        }
+        menusWereOpen = open;
+    });
 
     const hasFiles = $derived(chatContext.attachments.list.length > 0);
 
@@ -235,7 +258,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
                             <!-- Separator -->
                             <div class="chat-composer-sep"></div>
 
-                            <ComposerTextarea bind:ref={textareaEl} onSend={handleSend}/>
+                            <ComposerTextarea bind:ref={textareaEl} onSend={handleSend} onTriggerMenu={openMenuFromTyping}/>
                             <ModelConflictPicker/>
 
                             <!-- File chips -->
@@ -254,7 +277,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
                             <div class="chat-composer-bottom-row">
                                 <div class="chat-bottom-left">
                                     <FilePicker/>
-                                    <AssistantMenu/>
+                                    <AssistantMenu bind:open={assistantMenuOpen}/>
                                     <ToolMenu bind:open={toolPickerOpen}/>
                                     <div class="chat-tool-chip-lane">
                                         <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
