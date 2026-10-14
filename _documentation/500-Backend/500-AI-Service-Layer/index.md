@@ -91,7 +91,7 @@ public function __construct(
 
 **Sampling parameters.** `maxTokens()`, `temperature()`, and `topP()` return `null` when the model's flags indicate it does not support sampling parameters (`hasFeatureSamplingParameters()` returns false). This lets the provider apply its own defaults rather than HAWKI overriding them with meaningless values.
 
-**Middleware.** `middleware()` registers `LoggingMiddleware`, which logs the provider name, model ID, agent class, the authenticated user's ID, token counts, and whether the call was streaming. This fires on every request.
+**Middleware.** `middleware()` registers `LoggingMiddleware`, which logs the provider name, model ID, agent class, step number, invocation ID, and the authenticated user's ID. Since Laravel AI 1.0 middleware wraps each generation step, so this fires once per model round trip.
 
 **Provider options.** `providerOptions()` delegates to `$context->provider->adapter->getAdditionalDriverOptions()`, so any adapter-specific options (e.g. extended thinking on Anthropic) are injected without the agent knowing about provider specifics.
 
@@ -218,7 +218,7 @@ Here is the complete path from HTTP request to streaming response:
 3. The controller calls `$agent->sendStreaming()`.
 4. `AbstractLaravelAgent::sendStreaming()` dispatches `AgentSendingEvent`, then calls `$this->stream(prompt, attachments, provider: (string)ProviderDriverPortal::fromProviderProxy($driver), model: $modelId)`.
 5. `ExtendedAiManager::instance()` detects the portal transfer ID, retrieves the pre-built `Driver`, and returns it without any database resolution.
-6. The gateway (e.g. `ExtendedGeminiGateway` or `ExtendedOpenAiGateway`) sends the request to the provider API and returns a `StreamableAgentResponse`.
+6. The Laravel AI gateway (e.g. `GeminiGateway` or `OpenAiGateway`) sends the request to the provider API and returns a `StreamableAgentResponse`.
 7. `AbstractLaravelAgent` dispatches `AgentStreamInitiatedEvent`, and registers a `.then()` callback that will dispatch `AgentStreamCompletedEvent` with token usage once the stream closes.
 8. The controller returns the `StreamableAgentResponse` to the HTTP client.
 

@@ -7,6 +7,7 @@ use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\AiService;
+use App\Services\Ai\LaravelAi\Values\UrlMultiCitation;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
@@ -293,7 +294,7 @@ class StreamController extends Controller
                         yield $formatData(content: $chunk->toArray(), type: 'tool_result');
                         break;
                     case $chunk instanceof StreamEnd:
-                        foreach ($this->citationCleaner->cleanMany($citations) as $cleanedCitation) {
+                        foreach ($this->citationCleaner->cleanMany(UrlMultiCitation::mergeByUrl($citations)) as $cleanedCitation) {
                             yield $formatData(content: $cleanedCitation, type: 'citation');
                         }
                         yield $formatData(content: '', type: 'message');
@@ -397,7 +398,7 @@ class StreamController extends Controller
 
             $text = $res->text;
 
-            $citations = $this->citationCleaner->cleanMany($res->meta->citations->all());
+            $citations = $this->citationCleaner->cleanMany(UrlMultiCitation::mergeByUrl($res->meta->citations));
         } catch (\Throwable $e) {
             $this->logger->error('Error handling group chat request', [
                 'exception' => $e,
