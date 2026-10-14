@@ -102,6 +102,24 @@ const HawkiCoreSchema = z.object({
             title: z.string(),
             text: z.string().nullable()
         })).optional(),
+        /** Welcome steps after the first sign-in, before the passkey step; see `welcomeSteps.ts`. */
+        onboarding: z.array(z.discriminatedUnion('type', [
+            z.object({
+                type: z.literal('builtin'),
+                step: z.enum(['encryption', 'groups']),
+                emoji: z.string().nullable().optional(),
+                title: z.string().nullable().optional(),
+                text: z.string().nullable().optional(),
+                action: z.string().nullable().optional()
+            }),
+            z.object({
+                type: z.literal('custom'),
+                emoji: z.string().nullable(),
+                title: z.string(),
+                text: z.string(),
+                action: z.string().nullable()
+            })
+        ])).optional(),
         organizationName: z.string().nullable(),
         organizationUrl: z.string().nullable()
     }).optional(),

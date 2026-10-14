@@ -43,6 +43,7 @@ class SystemSettings
         'BRAND_FONT' => ['hawki.branding.font', 'string', 'nullable|string|max:80'],
         'BRAND_LOGIN_BACKGROUNDS' => ['hawki.branding.login_backgrounds', 'json', 'present|array|max:20'],
         'BRAND_LOGIN_NEWS' => ['hawki.branding.login_news', 'json', 'present|array|max:' . LoginNews::MAX_ENTRIES],
+        'BRAND_ONBOARDING' => ['hawki.branding.onboarding', 'json', 'present|array|max:' . Onboarding::MAX_STEPS],
         'BRAND_LOGO' => ['hawki.branding.logo', 'string', 'nullable|string'],
         'BRAND_LOGO_HEIGHT' => ['hawki.branding.logo_height', 'number', 'nullable|integer|min:12|max:36'],
         'BRAND_FAVICON' => ['hawki.branding.favicon', 'string', 'nullable|string'],
@@ -156,6 +157,10 @@ class SystemSettings
             LoginNews::entries($value, strict: true);
         }
 
+        if ('BRAND_ONBOARDING' === $key) {
+            Onboarding::steps($value, strict: true);
+        }
+
         $value = $this->normalize($key, $value);
 
         if (\in_array($key, self::OKLCH, true) && null !== $value) {
@@ -216,7 +221,7 @@ class SystemSettings
         $rows = array_map(
             static fn (array $row) => match (true) {
                 \in_array($row['key'], self::SVG, true) => ['value' => null === $row['value'] ? '[not set]' : '[set]'] + $row,
-                \in_array($row['key'], [...self::MEDIA, 'BRAND_LOGIN_NEWS'], true) => ['value' => \count((array) $row['value']) . ' entries'] + $row,
+                \in_array($row['key'], [...self::MEDIA, 'BRAND_LOGIN_NEWS', 'BRAND_ONBOARDING'], true) => ['value' => \count((array) $row['value']) . ' entries'] + $row,
                 default => $row,
             },
             $this->rows(),
@@ -272,6 +277,10 @@ class SystemSettings
 
         if ('BRAND_LOGIN_NEWS' === $key) {
             return LoginNews::entries($value);
+        }
+
+        if ('BRAND_ONBOARDING' === $key) {
+            return Onboarding::steps($value);
         }
 
         return match (self::DEFINITIONS[$key][1]) {

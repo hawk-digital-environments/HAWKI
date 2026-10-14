@@ -60,6 +60,7 @@
                 "backupTitle": "Sicherungscode aufbewahren",
                 "welcome": {
                     "back": "Zurück",
+                    "next": "Weiter",
                     "progress": "Schritt :current von :total",
                     "encryption": {
                         "title": "Willkommen bei :appName",
@@ -516,6 +517,10 @@
                 "title": "Anmeldeseite",
                 "description": "Was die große Fläche neben dem Anmeldeformular zeigt. Bei jedem Besuch erscheint der nächste Hintergrund, im hellen wie im dunklen Modus; ohne Hintergrund nur das Logo. Bis Sie die Liste ändern, enthält sie die HAWKI-Videos. Bilder: JPEG, PNG, WebP oder AVIF; Videos: MP4 oder WebM; jeweils bis zu 50 MB. Videos laufen stumm in Schleife. Laden Sie nur Material hoch, das Ihre Einrichtung veröffentlichen darf. Darüber kann eine kleine Karte Ihre drei neuesten Neuigkeiten zeigen."
             },
+            "onboarding": {
+                "title": "Onboarding",
+                "description": "Die Willkommensschritte, die neue Nutzende nach der ersten Anmeldung sehen. Bearbeiten, ordnen oder entfernen Sie die HAWKI-Schritte und fügen Sie eigene hinzu, etwa Nutzungsregeln oder wo es Hilfe gibt. Was Sie schreiben, erscheint so, wie Sie es schreiben, in einer Sprache; leere Felder eines HAWKI-Schritts behalten den übersetzten Standardtext."
+            },
             "logo": {
                 "title": "Logo",
                 "description": "SVG-Dateien, die anstelle des HAWKI-Schriftzugs und als Symbol im Browser-Tab erscheinen. Das Logo wird im hellen wie im dunklen Modus in der Markenfarbe dargestellt; verwendet wird nur seine Form, nicht seine eigenen Farben. Die Dateien müssen statische Zeichnungen bis 256 KB sein: ohne Skripte, externe Verweise oder Text als Schrift. Wandeln Sie Text vor dem Export in Pfade um."
@@ -572,6 +577,7 @@
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Eckenrundung",
             "BRAND_FONT": "Schrift",
+            "BRAND_ONBOARDING": "Willkommensschritte",
             "BRAND_LOGIN_NEWS": "Neuigkeiten",
             "BRAND_LOGIN_BACKGROUNDS": "Hintergründe",
             "BRAND_LOGO": "Logo",
@@ -834,6 +840,21 @@
             "database": "Datenbanküberschreibung",
             "environment": "Umgebung / Standard",
             "deployment": "Bereitstellung"
+        },
+        "onboarding": {
+            "entry": "Schritt :number",
+            "builtin": "HAWKI-Schritt: leere Felder zeigen den übersetzten Standardtext",
+            "emoji": "Emoji",
+            "title": "Titel",
+            "text": "Text",
+            "action": "Beschriftung des Knopfs (optional, sonst „Weiter“)",
+            "up": "Nach oben",
+            "down": "Nach unten",
+            "remove": "Entfernen",
+            "add": "Schritt hinzufügen",
+            "empty": "Keine Willkommensschritte: Neue Nutzende richten direkt ihr Passwort ein.",
+            "passkey_last": "Danach folgt immer die Einrichtung des Passworts.",
+            "invalid": "Prüfen Sie die Willkommensschritte: Jeder eigene braucht einen Titel mit bis zu 80 und einen Text mit bis zu 600 Zeichen; jeder HAWKI-Schritt darf einmal vorkommen."
         },
         "news": {
             "entry": "Neuigkeit :number",

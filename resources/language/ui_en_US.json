@@ -60,6 +60,7 @@
                 "backupTitle": "Save your backup code",
                 "welcome": {
                     "back": "Back",
+                    "next": "Next",
                     "progress": "Step :current of :total",
                     "encryption": {
                         "title": "Welcome to :appName",
@@ -516,6 +517,10 @@
                 "title": "Sign-in page",
                 "description": "What the large area next to the sign-in form shows. Each visit shows the next background, in light and dark mode alike; without any, only the logo is shown. Until you change the list, it holds the HAWKI videos. Images: JPEG, PNG, WebP or AVIF; videos: MP4 or WebM; up to 50 MB each. Videos play muted in a loop. Only upload material your institution may publish. Optionally, a small card on top of it lists your three newest news entries."
             },
+            "onboarding": {
+                "title": "Onboarding",
+                "description": "The welcome steps new users see after their first sign-in. Edit, reorder or remove the HAWKI steps and add your own, for example house rules or where to find help. What you write is shown as written, in one language; a HAWKI step's empty fields keep their translated default."
+            },
             "logo": {
                 "title": "Logo",
                 "description": "SVG files shown instead of the HAWKI wordmark and as the browser tab icon. The logo is drawn in the brand color, in light and dark mode alike; only its shape is used, not its own colors. Files must be static drawings of up to 256 KB: no scripts, external references or live text, so convert text to outlines before exporting."
@@ -572,6 +577,7 @@
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Corner rounding",
             "BRAND_FONT": "Font",
+            "BRAND_ONBOARDING": "Welcome steps",
             "BRAND_LOGIN_NEWS": "News",
             "BRAND_LOGIN_BACKGROUNDS": "Backgrounds",
             "BRAND_LOGO": "Logo",
@@ -834,6 +840,21 @@
             "database": "Database override",
             "environment": "Environment / default",
             "deployment": "Deployment"
+        },
+        "onboarding": {
+            "entry": "Step :number",
+            "builtin": "HAWKI step: empty fields show the translated default",
+            "emoji": "Emoji",
+            "title": "Title",
+            "text": "Text",
+            "action": "Button label (optional, default “Next”)",
+            "up": "Move up",
+            "down": "Move down",
+            "remove": "Remove",
+            "add": "Add step",
+            "empty": "No welcome steps: new users go straight to setting up their passkey.",
+            "passkey_last": "The passkey setup always follows as the last step.",
+            "invalid": "Check the welcome steps: each of your own needs a title of up to 80 and a text of up to 600 characters; each HAWKI step may appear once."
         },
         "news": {
             "entry": "News :number",

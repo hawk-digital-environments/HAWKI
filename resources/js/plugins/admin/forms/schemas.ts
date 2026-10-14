@@ -211,6 +211,27 @@ export const settingsSchemas: Record<string, z.ZodType> = {
     BRAND_COLOR_INFO: oklchColor,
     BRAND_CORNER_STYLE: z.enum(['round', 'soft', 'square']),
     BRAND_FONT: font,
+    BRAND_ONBOARDING: z
+        .array(
+            z.discriminatedUnion('type', [
+                z.object({
+                    type: z.literal('builtin'),
+                    step: z.enum(['encryption', 'groups']),
+                    emoji: optionalText(16),
+                    title: optionalText(80),
+                    text: optionalText(600),
+                    action: optionalText(40)
+                }),
+                z.object({
+                    type: z.literal('custom'),
+                    emoji: optionalText(16),
+                    title: text(80),
+                    text: text(600),
+                    action: optionalText(40)
+                })
+            ])
+        )
+        .max(8),
     BRAND_LOGIN_NEWS: z
         .array(
             z.object({

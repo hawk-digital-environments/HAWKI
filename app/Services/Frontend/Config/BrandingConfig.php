@@ -7,6 +7,7 @@ namespace App\Services\Frontend\Config;
 
 use App\Services\Admin\BrandMedia;
 use App\Services\Admin\LoginNews;
+use App\Services\Admin\Onboarding;
 use App\Services\Config\AbstractConfig;
 use App\Services\Config\Contracts\PublicConfigInterface;
 use Illuminate\Config\Repository;
@@ -43,6 +44,13 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
      * @var list<array{date: string, title: string, text: string|null}>
      */
     public readonly array $loginNews;
+
+    /**
+     * Welcome steps after the first sign-in, before the passkey step (see {@see Onboarding::steps()}).
+     *
+     * @var list<array<string, string|null>>
+     */
+    public readonly array $onboarding;
 
     /** Operating institution shown on the sign-in page, or null when none is configured. */
     public readonly string|null $organizationName;
@@ -81,6 +89,7 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
             'logoUrl' => self::svgUri($repo->get('hawki.branding.logo')),
             'loginBackgrounds' => self::loginBackgrounds($repo),
             'loginNews' => LoginNews::entries($repo->get('hawki.branding.login_news')),
+            'onboarding' => Onboarding::steps($repo->get('hawki.branding.onboarding')),
             'organizationName' => trim((string) $repo->get('hawki.branding.organization_name')) ?: null,
             'organizationUrl' => LegalConfig::link($repo->get('hawki.branding.organization_url')),
         ]);
@@ -104,6 +113,7 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
             'logoUrl' => $this->logoUrl,
             'loginBackgrounds' => $this->loginBackgrounds,
             'loginNews' => $this->loginNews,
+            'onboarding' => $this->onboarding,
             'organizationName' => $this->organizationName,
             'organizationUrl' => $this->organizationUrl,
         ];

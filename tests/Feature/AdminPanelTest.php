@@ -223,6 +223,7 @@ class AdminPanelTest extends TestCase
         foreach (SystemSettings::DEFINITIONS as $key => [$path, $type]) {
             $value = match ($key) {
                 'BRAND_FONT' => $font,
+                'BRAND_ONBOARDING' => [['type' => 'builtin', 'step' => 'groups', 'emoji' => null, 'title' => 'Groups', 'text' => null, 'action' => null], ['type' => 'custom', 'emoji' => null, 'title' => 'Rules', 'text' => 'Be kind.', 'action' => null]],
                 'BRAND_LOGIN_NEWS' => [['date' => '2026-10-14', 'title' => 'Release', 'text' => null]],
                 'BRAND_LOGIN_BACKGROUNDS' => [['source' => 'upload', 'file' => $media, 'credit' => null, 'link' => null]],
                 'APP_NAME' => 'Test application', 'APP_ENV' => 'testing', 'APP_TIMEZONE' => 'Europe/Berlin',

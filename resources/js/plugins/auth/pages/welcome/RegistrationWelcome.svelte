@@ -28,7 +28,8 @@
     const {__} = useTranslator();
 
     const router = createRouter('registration-welcome', (registrar) => {
-        registerWelcomeRoutes(registrar, welcomeSteps(app.config.get().security.passkeyAutoGenerate), WelcomePage);
+        const config = app.config.get();
+        registerWelcomeRoutes(registrar, welcomeSteps(config.security.passkeyAutoGenerate, config.branding?.onboarding), WelcomePage);
     }, {strategy: 'transient'});
 
     provideWelcomeFlow(createWelcomeFlow(() => onFinish()));

@@ -20,6 +20,7 @@ export const settingsTabs = [
             },
             { key: 'font', settings: ['BRAND_FONT'] },
             { key: 'login', settings: ['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS'] },
+            { key: 'onboarding', settings: ['BRAND_ONBOARDING'] },
             { key: 'logo', settings: ['BRAND_LOGO', 'BRAND_LOGO_HEIGHT', 'BRAND_FAVICON'] }
         ]
     },

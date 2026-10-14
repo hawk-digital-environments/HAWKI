@@ -17,11 +17,16 @@
     import Input from '$lib/components/ui/input/Input.svelte';
     import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
+    // The onboarding's own emoji, so the list shows each step the way new users see it.
+    import { DEFAULT_STEP_EMOJI, welcomeStepEmoji } from '$plugins/auth/pages/welcome/welcomeSteps.js';
+    import ArrowUp01Icon from '$lib/components/ui/icons/iconset/ArrowUp01Icon.svelte';
+    import ArrowDown01Icon from '$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useAppName } from '$lib/app/hooks/useAppName.svelte.js';
     import { AdminFieldSchema } from '../schemas/admin-content.js';
     import { settingsTabs } from '../settings.js';
     import type { AdminSettingResource } from '../schemas/resources/admin-settings.schema.js';
@@ -46,6 +51,7 @@
     const translator = useTranslator();
     const { __ } = translator;
     const fieldLabel = useFieldLabel();
+    const appName = useAppName();
     const columns: AdminColumn<AdminSettingResource>[] = [];
     const valueField = (row: AdminSettingResource) =>
         AdminFieldSchema.parse({
@@ -243,6 +249,42 @@
         text: string | null;
     }
     const MAX_NEWS = 10;
+    /** One onboarding step as the setting stores it (see `Onboarding::steps()`). */
+    type OnboardingStep =
+        | {
+              type: 'builtin';
+              step: 'encryption' | 'groups';
+              emoji?: string | null;
+              title?: string | null;
+              text?: string | null;
+              action?: string | null;
+          }
+        | { type: 'custom'; emoji: string | null; title: string; text: string; action: string | null };
+    type StepText = 'title' | 'text' | 'action';
+    /** A built-in step's field shows its translated default; a custom step's field names what goes in. */
+    const stepPlaceholder = (step: OnboardingStep, key: StepText) =>
+        step.type === 'builtin' ?
+            __(`ui.auth.register.welcome.${step.step}.${key === 'text' ? 'body' : key}`, { appName })
+        :   __(`admin.onboarding.${key}`);
+    /** Emptying a field of a built-in step returns it to the translation; a custom step keeps what is typed. */
+    const stepValue = (step: OnboardingStep, value: string) => (step.type === 'builtin' ? value || null : value);
+    const MAX_STEPS = 8;
+    const onboardingSteps = (row: AdminSettingResource) =>
+        Array.isArray(current(row)) ? (current(row) as OnboardingStep[]) : [];
+    function changeStep(row: AdminSettingResource, index: number, change: Record<string, unknown> | null) {
+        const next = onboardingSteps(row).map((step) => ({ ...step }));
+        if (change) Object.assign(next[index], change);
+        else next.splice(index, 1);
+        set(row, next);
+    }
+    function moveStep(row: AdminSettingResource, index: number, offset: -1 | 1) {
+        const next = [...onboardingSteps(row)];
+        [next[index], next[index + offset]] = [next[index + offset], next[index]];
+        set(row, next);
+    }
+    function addStep(row: AdminSettingResource) {
+        set(row, [...onboardingSteps(row), { type: 'custom', emoji: null, title: '', text: '', action: null }]);
+    }
     const newsEntries = (row: AdminSettingResource) => (Array.isArray(current(row)) ? (current(row) as NewsEntry[]) : []);
     function changeNews(row: AdminSettingResource, index: number, change: Partial<NewsEntry> | null) {
         const next = newsEntries(row).map((entry) => ({ ...entry }));
@@ -371,7 +413,109 @@
                                         {/if}
                                     </div>
                                     <div class="setting-control">
-                                        {#if key === 'BRAND_LOGIN_NEWS'}
+                                        {#if key === 'BRAND_ONBOARDING'}
+                                            {@const steps = onboardingSteps(row)}
+                                            {#if steps.length}
+                                                <ol class="backgrounds">
+                                                    {#each steps as step, index (index)}
+                                                        {@const name = __('admin.onboarding.entry', { number: String(index + 1) })}
+                                                        <li class="onboarding-entry">
+                                                            <span class="step-emoji-preview" aria-hidden="true"
+                                                                >{step.emoji ??
+                                                                    (step.type === 'builtin' ? welcomeStepEmoji[step.step] : DEFAULT_STEP_EMOJI)}</span
+                                                            >
+                                                            <div class="background-fields">
+                                                                {#if step.type === 'builtin'}
+                                                                    <small>{__('admin.onboarding.builtin')}</small>
+                                                                {/if}
+                                                                <div class="step-heading">
+                                                                    <Input
+                                                                        class="step-emoji"
+                                                                        aria-label={`${name}: ${__('admin.onboarding.emoji')}`}
+                                                                        placeholder={step.type === 'builtin' ? welcomeStepEmoji[step.step] : DEFAULT_STEP_EMOJI}
+                                                                        maxlength={16}
+                                                                        bind:value={
+                                                                            () => step.emoji ?? '',
+                                                                            (emoji) => changeStep(row, index, { emoji: emoji || null })
+                                                                        }
+                                                                        disabled={locked}
+                                                                        autocomplete="off"
+                                                                    />
+                                                                    <Input
+                                                                        aria-label={`${name}: ${__('admin.onboarding.title')}`}
+                                                                        placeholder={stepPlaceholder(step, 'title')}
+                                                                        maxlength={80}
+                                                                        bind:value={
+                                                                            () => step.title ?? '',
+                                                                            (title) => changeStep(row, index, { title: stepValue(step, title) })
+                                                                        }
+                                                                        disabled={locked}
+                                                                        autocomplete="off"
+                                                                    />
+                                                                </div>
+                                                                <Textarea
+                                                                    aria-label={`${name}: ${__('admin.onboarding.text')}`}
+                                                                    placeholder={stepPlaceholder(step, 'text')}
+                                                                    maxlength={600}
+                                                                    rows={3}
+                                                                    bind:value={
+                                                                        () => step.text ?? '',
+                                                                        (text) => changeStep(row, index, { text: stepValue(step, text) })
+                                                                    }
+                                                                    disabled={locked}
+                                                                />
+                                                                <Input
+                                                                    aria-label={`${name}: ${__('admin.onboarding.action')}`}
+                                                                    placeholder={stepPlaceholder(step, 'action')}
+                                                                    maxlength={40}
+                                                                    bind:value={
+                                                                        () => step.action ?? '',
+                                                                        (action) => changeStep(row, index, { action: action || null })
+                                                                    }
+                                                                    disabled={locked}
+                                                                    autocomplete="off"
+                                                                />
+                                                            </div>
+                                                            <div class="step-actions">
+                                                                <ButtonWithTooltip
+                                                                    variant="ghost"
+                                                                    iconLeft={ArrowUp01Icon}
+                                                                    tooltip={__('admin.onboarding.up')}
+                                                                    disabled={locked || index === 0}
+                                                                    aria-label={`${name}: ${__('admin.onboarding.up')}`}
+                                                                    onclick={() => moveStep(row, index, -1)}
+                                                                />
+                                                                <ButtonWithTooltip
+                                                                    variant="ghost"
+                                                                    iconLeft={ArrowDown01Icon}
+                                                                    tooltip={__('admin.onboarding.down')}
+                                                                    disabled={locked || index === steps.length - 1}
+                                                                    aria-label={`${name}: ${__('admin.onboarding.down')}`}
+                                                                    onclick={() => moveStep(row, index, 1)}
+                                                                />
+                                                                <ButtonWithTooltip
+                                                                    variant="ghost"
+                                                                    iconLeft={Delete02Icon}
+                                                                    tooltip={__('admin.onboarding.remove')}
+                                                                    disabled={locked}
+                                                                    aria-label={`${name}: ${__('admin.onboarding.remove')}`}
+                                                                    onclick={() => changeStep(row, index, null)}
+                                                                />
+                                                            </div>
+                                                        </li>
+                                                    {/each}
+                                                </ol>
+                                            {:else}
+                                                <p class="setting-value">{__('admin.onboarding.empty')}</p>
+                                            {/if}
+                                            <small>{__('admin.onboarding.passkey_last')}</small>
+                                            <Button
+                                                variant="stroke"
+                                                size="sm"
+                                                disabled={locked || steps.length >= MAX_STEPS}
+                                                onclick={() => addStep(row)}>{__('admin.onboarding.add')}</Button
+                                            >
+                                        {:else if key === 'BRAND_LOGIN_NEWS'}
                                             {@const entries = newsEntries(row)}
                                             {#if entries.length}
                                                 <ul class="backgrounds">
@@ -664,9 +808,9 @@
                                             <p class="setting-error" role="alert">{errors[key]}</p>
                                         {/if}
                                     </div>
-                                    {#if (row.kind === 'json' && !['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS'].includes(key)) || !same(value, row.default)}
+                                    {#if (row.kind === 'json' && !['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS', 'BRAND_ONBOARDING'].includes(key)) || !same(value, row.default)}
                                     <div class="setting-actions">
-                                        {#if row.kind === 'json' && !['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS'].includes(key)}
+                                        {#if row.kind === 'json' && !['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS', 'BRAND_ONBOARDING'].includes(key)}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -888,6 +1032,41 @@
     .backgrounds > li.news-entry + li.news-entry {
         padding-top: var(--space-3);
         border-top: var(--border);
+    }
+    /* Emoji, the step itself, then order and removal. */
+    .backgrounds > li.onboarding-entry {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .backgrounds > li.onboarding-entry + li.onboarding-entry {
+        padding-top: var(--space-3);
+        border-top: var(--border);
+    }
+    /* The tinted circle of the onboarding, at the height of a field. */
+    .step-emoji-preview {
+        display: grid;
+        place-items: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: var(--corner-full);
+        background: color-mix(in srgb, var(--color-accent-fill) 12%, transparent);
+        font-size: 1.375rem;
+        line-height: 1;
+    }
+    .step-heading {
+        display: grid;
+        grid-template-columns: 4rem minmax(0, 1fr);
+        gap: var(--space-2);
+    }
+    .step-heading :global(.step-emoji) {
+        text-align: center;
+    }
+    /* Order and removal side by side, each as large as a field. */
+    .step-actions {
+        display: flex;
+    }
+    .step-actions :global(.btn) {
+        width: 2.75rem;
+        height: 2.75rem;
     }
     .background-remove {
         display: grid;
