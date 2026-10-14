@@ -158,11 +158,10 @@
                     {/if}
                 {/key}
                 {#if background.credit}
-                    {@const credit = __(background.kind === 'video' ? 'ui.auth.videoCredit' : 'ui.auth.imageCredit', {name: background.credit})}
                     {#if background.link}
-                        <Link class="auth-credit" href={background.link} target="_blank">{credit}</Link>
+                        <Link class="auth-credit" href={background.link} target="_blank">© {background.credit}</Link>
                     {:else}
-                        <span class="auth-credit">{credit}</span>
+                        <span class="auth-credit">© {background.credit}</span>
                     {/if}
                 {/if}
             {/if}

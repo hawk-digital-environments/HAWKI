@@ -112,8 +112,6 @@
             },
             "claim": "Deine Gespräche sind verschlüsselt. Der Schlüssel bleibt bei dir.",
             "signedInAs": "Angemeldet als :name",
-            "imageCredit": "Bild von :name",
-            "videoCredit": "Video von :name",
             "videoToggle": "Video",
             "videoToggleHint": "Hintergrundvideo ausschalten, um auf schwachen Geräten Energie zu sparen.",
             "preferences": {

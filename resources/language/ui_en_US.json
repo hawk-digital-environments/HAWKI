@@ -112,8 +112,6 @@
             },
             "claim": "Your conversations are encrypted. The key stays with you.",
             "signedInAs": "Signed in as :name",
-            "imageCredit": "Image by :name",
-            "videoCredit": "Video by :name",
             "videoToggle": "Video",
             "videoToggleHint": "Switch the background video off to save energy on low-power devices.",
             "preferences": {

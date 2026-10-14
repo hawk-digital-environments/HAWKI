@@ -724,10 +724,16 @@
         font-size: var(--font-size-sm);
         font-variant-numeric: tabular-nums;
     }
-    .color,
-    .upload {
+    .color {
         display: flex;
         align-items: center;
+        gap: var(--space-2);
+        width: 100%;
+    }
+    /* Preview on top, its button below: the same order as the background list and its add button. */
+    .upload {
+        display: grid;
+        justify-items: start;
         gap: var(--space-2);
         width: 100%;
     }
@@ -773,14 +779,13 @@
         box-sizing: border-box;
         display: grid;
         place-items: center;
-        /* As tall as a sidebar row plus its inset, so the logo previews at its real size. */
-        height: 3.25rem;
-        padding: var(--space-2) var(--space-3);
+        /* Square, and as tall as a background's two fields beside it. */
+        width: 6rem;
+        height: 6rem;
+        padding: var(--space-3);
         border-radius: var(--corner-md);
         background: var(--color-surface);
     }
-    /* A fixed size, not a percentage: inside the grid a percentage height resolves
-       against the image's own size and lets a large icon grow out of the box. */
     .backgrounds {
         display: grid;
         gap: var(--space-3);
@@ -820,14 +825,16 @@
     .preview.media > img,
     .preview.media > video {
         display: block;
-        width: 5rem;
+        width: 100%;
         height: 100%;
         object-fit: cover;
     }
+    /* A fixed size, not a percentage: inside the grid a percentage height resolves
+       against the image's own size and lets a large icon grow out of the box. */
     .preview > img {
         display: block;
-        width: 2.25rem;
-        height: 2.25rem;
+        width: 3rem;
+        height: 3rem;
         object-fit: contain;
     }
     .setting-value {
