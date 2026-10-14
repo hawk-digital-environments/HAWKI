@@ -1,14 +1,28 @@
 /* ==========================================================================
-   Cascade Layer Declaration
-   This single line controls ALL specificity ordering for new Svelte components.
+   Cascade Layers
+   The layer order is declared exactly once, in the HTML `<head>`, by the Blade
+   component `<x-css-layers />` (app/Services/Frontend/View/CssLayers.php).
+   The browser locks the order when it first sees each layer name and that
+   statement is guaranteed to precede every stylesheet — a second statement
+   here could never change the order, so this file deliberately has none.
    Order = lowest priority first → highest priority last.
 
    - reset:      box-sizing, margin resets
    - tokens:     CSS custom properties (:root variables)
    - base:       element defaults (body, :focus-visible, scrollbar, a)
-   - components: Svelte scoped <style> blocks land here automatically
+   - legacy:     legacy Blade UI stylesheets (public/css, each wrapped in
+                 `@layer legacy`) — above the base layers, below unlayered
+                 component styles and utilities
+   - components: vendored stylesheets assigned via the vite `layer` option
+                 (katex, monaco, markstream); Svelte scoped <style> blocks are
+                 unlayered and beat every layer
    - utilities:  .u-* helper classes — always win against component styles
+
+   The @import rules MUST stay the first rules in the file: @import is only
+   valid before any other rule, and one placed after it is silently dropped —
+   which once unloaded the entire utilities layer.
    ========================================================================== */
+
 @import "pdfjs-dist/web/pdf_viewer.css";
 
 @import './tokens/breakpoints.css';

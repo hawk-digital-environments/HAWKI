@@ -26,6 +26,21 @@ export type BorderBeamSize = 'sm' | 'md' | 'line';
 export type BorderBeamTheme = AppTheme | 'auto';
 
 /**
+ * The two color stops a beam is painted from. Every blob in the palette is a mix of these
+ * two, positioned by where it sits along the beam's travel, so the traveling highlight
+ * sweeps from `from` through to `to` and back.
+ *
+ * Any CSS color works — hex, `rgb()`, `var(--token)` — because the values are only ever
+ * spliced into generated `color-mix()` expressions, never parsed.
+ */
+export interface BeamColors {
+    /** The stop at the start of the beam's travel. */
+    from: string;
+    /** The stop at the end of it. */
+    to: string;
+}
+
+/**
  * Geometry preset for a `BorderBeamSize`. Consumed by `sizePresets` in
  * `./styles.ts` as the default border radius/width, and (for `'sm'`) the
  * reference dimensions the compact glow was authored for.

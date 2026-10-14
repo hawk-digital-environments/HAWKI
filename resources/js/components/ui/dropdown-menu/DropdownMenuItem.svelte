@@ -130,4 +130,9 @@
     .dropdown-item :global(.dropdown-item-icon-end) {
         margin-inline-start: auto;
     }
+
+    /* Touch-sized rows in the mobile sheet, where the same menu is finger-driven. */
+    :global(.dropdown-content--sheet) .dropdown-item {
+        min-height: 2.5rem;
+    }
 </style>

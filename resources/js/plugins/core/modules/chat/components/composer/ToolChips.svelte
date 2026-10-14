@@ -6,7 +6,12 @@
 
   Only the chips that fit on a single row (measured against an offscreen mirror row on
   resize/tool-list change) are shown; the rest collapse into a "+N" badge. Renders nothing
-  when no tools are active or `composerContext.guard.showsAiUiElements` is false.
+  when no tools are active.
+
+  Deliberately not gated on `composerContext.guard.showsAiUiElements`, unlike the model
+  picker and the rest of the AI controls: `ToolMenu` and the composer's `/` menu both stay
+  usable in a room chat that tags nobody yet, so hiding the chips there would enable tools
+  with nothing on screen to show for it.
 
   ## Usage
   Rendered by `ChatComposer.svelte` in the bottom-left control row, sharing `toolPickerOpen`
@@ -21,6 +26,9 @@
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {chipPop} from '$lib/utils/transitions/chipPop';
+    import {flip} from 'svelte/animate';
+    import {backOut} from 'svelte/easing';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -116,17 +124,26 @@
         onclick={() => composerContext.tools.disable(tool)}
         aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName})}
     >
-        <ToolIcon tool={tool} size={12}/>
+        <ToolIcon tool={tool} size={16}/>
         <span class="tool-chip-label">{tool.displayName}</span>
-        <Cancel01Icon size={12}/>
+        <span class="tool-chip-remove" aria-hidden="true"><Cancel01Icon size={16}/></span>
     </button>
 {/snippet}
 
-{#if tools.length > 0 && composerContext.guard.showsAiUiElements}
+{#if tools.length > 0}
     <!-- Visible row -->
     <div class="tool-chips" bind:this={rowEl} transition:growTransition={{mode: 'horizontal'}}>
         {#each visibleTools as tool (tool)}
-            {@render chip(tool)}
+            <!-- Wrapper carries the motion so the snippet stays shared with the
+                 offscreen measurement row, which must never animate. -->
+            <span
+                class="tool-chip-slot"
+                in:chipPop
+                out:chipPop={{direction: 'out'}}
+                animate:flip={{duration: 260, easing: backOut}}
+            >
+                {@render chip(tool)}
+            </span>
         {/each}
         {#if hiddenCount > 0}
             <button
@@ -171,17 +188,28 @@
         flex-wrap: nowrap;
     }
 
+    /* Transform-origin at the start edge keeps the pop growing out of the row rather
+       than pushing back into the chip before it. */
+    .tool-chip-slot {
+        display: inline-flex;
+        flex-shrink: 0;
+        transform-origin: left center;
+    }
+
     .tool-chip {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: var(--space-1);
-        height: 2rem;
+        /* Same source as the picker and the assistant tags above; already this value. */
+        height: var(--chat-composer-control-height, 2rem);
         max-width: min(16rem, 100%);
         flex-shrink: 0;
         border-radius: var(--corner-full);
-        background-color: var(--color-surface);
-        color: var(--color-text-muted);
+        /* Neutral and light: the chip is a container for the tool's own icon swatch,
+           which already carries the color. Tinting the pill too made the row shout. */
+        background-color: color-mix(in oklab, var(--color-text) 8%, var(--color-surface-raised));
+        color: var(--color-text);
         padding-inline: var(--space-2);
         border: none;
         cursor: pointer;
@@ -195,23 +223,35 @@
         white-space: nowrap;
     }
 
+    /* Held back so it stays subordinate to the tool name, coming forward when the
+       pointer is anywhere on the chip — the whole pill is the remove control, but the
+       X is the only part that reacts. */
+    .tool-chip-remove {
+        display: inline-flex;
+        line-height: 0;
+        opacity: 0.55;
+        transition: opacity var(--duration-fast, 150ms);
+    }
+
+    .tool-chip:hover .tool-chip-remove,
+    .tool-chip:focus-visible .tool-chip-remove {
+        opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .tool-chip-slot {
+            transform: none !important;
+        }
+    }
+
     .tool-chip-badge {
         font-variant-numeric: tabular-nums;
         font-weight: var(--font-weight-medium, 500);
     }
 
-    .tool-chip:hover {
-        background-color: var(--color-hover);
-        color: var(--color-text);
-    }
-
     .tool-chip.incompatible {
-        background-color: var(--color-error-surface, color-mix(in srgb, var(--color-error) 15%, transparent));
+        background-color: color-mix(in oklab, var(--color-error) 12%, var(--color-surface-raised));
         color: var(--color-error);
     }
 
-    .tool-chip.incompatible:hover {
-        background-color: var(--color-error-surface-hover, color-mix(in srgb, var(--color-error) 25%, transparent));
-        color: var(--color-error);
-    }
 </style>
