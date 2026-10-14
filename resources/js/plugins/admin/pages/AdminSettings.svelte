@@ -635,10 +635,13 @@
         white-space: nowrap;
         font-size: var(--font-size-sm);
     }
+    /* As large as the brand color's picker above, so the color column lines up. */
     .result {
         flex: none;
-        width: 1.5rem;
-        height: 1.5rem;
+        box-sizing: border-box;
+        width: 2.75rem;
+        height: 2.75rem;
+        border: var(--border);
         border-radius: var(--corner-full);
     }
     .preview {
