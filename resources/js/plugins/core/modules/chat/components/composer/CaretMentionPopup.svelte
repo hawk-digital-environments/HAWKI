@@ -7,11 +7,13 @@
   selection with ArrowUp/ArrowDown/Enter/Tab/Escape. It is therefore a `listbox` the
   textarea points at via `aria-activedescendant`, not a menu.
 
-  Positioned `fixed` at the caret rect, preferring the space above the caret (the composer
-  sits at the bottom of the screen) and flipping below when there isn't room. It renders
-  through a `Portal`, because the composer card clips (`overflow: hidden`) and — via its
-  `backdrop-filter` — also acts as the containing block for fixed descendants, so an
-  in-place popup would be positioned against the card and then clipped away.
+  Positioned `fixed` by floating-ui against a virtual element at the caret rect (the caret
+  itself is not an element floating-ui could anchor to): preferring the space above the
+  caret (the composer sits at the bottom of the screen), flipping below when there isn't
+  room, and shifting to stay inside the viewport. It renders through a `Portal`, because
+  the composer card clips (`overflow: hidden`) and — via its `backdrop-filter` — also acts
+  as the containing block for fixed descendants, so an in-place popup would be positioned
+  against the card and then clipped away.
 
   ## Usage
   ```svelte
@@ -34,6 +36,7 @@
     import type {Snippet} from 'svelte';
     import type {CaretRect} from '$plugins/core/modules/chat/components/composer/utils/textareaCaret.js';
     import {Portal} from 'bits-ui';
+    import {computePosition, flip, offset, shift} from '@floating-ui/dom';
 
     interface Props {
         /** The entries to offer, in display order. Never empty — `ComposerTextarea` closes
@@ -64,9 +67,10 @@
 
     const GAP = 4;
 
-    let popupHeight = $state(0);
-    let popupWidth = $state(0);
     let popupEl = $state<HTMLDivElement | null>(null);
+    // Set from floating-ui's async placement; `null` until the first placement lands,
+    // so the popup doesn't flash at the viewport's top-left corner before then.
+    let position = $state<{x: number; y: number} | null>(null);
 
     // Arrow keys move the highlight without moving focus, so the browser does no scrolling
     // of its own — keep the active option visible manually. Looked up by id rather than by
@@ -112,15 +116,37 @@
         }
     });
 
-    // Prefer opening upwards (the composer lives at the bottom of the viewport) and flip
-    // below the caret line only when there isn't enough room above.
-    const position = $derived.by(() => {
-        const opensUpwards = caret.top - popupHeight - GAP >= 0;
-        const top = opensUpwards
-            ? caret.top - popupHeight - GAP
-            : caret.top + caret.height + GAP;
-        const maxLeft = Math.max(window.innerWidth - popupWidth - GAP, GAP);
-        return {top, left: Math.min(Math.max(caret.left, GAP), maxLeft)};
+    // The caret is not an element floating-ui could anchor to, so it gets a virtual
+    // one: a zero-width rect spanning the caret line, measured by the mirror-div
+    // technique in `textareaCaret.ts` and refreshed by `ComposerTextarea` on every
+    // caret move.
+    const caretReference = $derived.by(() => ({
+        getBoundingClientRect: () => new DOMRect(caret.left, caret.top, 0, caret.height)
+    }));
+
+    // Prefer opening upwards (the composer lives at the bottom of the viewport) and
+    // flip below the caret line when there isn't room (`flip`); stay inside the
+    // viewport horizontally (`shift`). Re-runs when the caret moves or the row count
+    // changes, because the flip decision depends on the popup's height.
+    $effect(() => {
+        const popup = popupEl;
+        if (!popup || items.length === 0) {
+            return;
+        }
+
+        let cancelled = false;
+        computePosition(caretReference, popup, {
+            strategy: 'fixed',
+            placement: 'top-start',
+            middleware: [offset(GAP), flip(), shift({padding: GAP})]
+        }).then(({x, y}) => {
+            if (!cancelled) {
+                position = {x, y};
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
     });
 </script>
 
@@ -135,10 +161,9 @@
         tabindex="-1"
         aria-label={label}
         bind:this={popupEl}
-        bind:clientHeight={popupHeight}
-        bind:clientWidth={popupWidth}
-        style:top="{position.top}px"
-        style:left="{position.left}px"
+        style:top={position ? `${position.y}px` : undefined}
+        style:left={position ? `${position.x}px` : undefined}
+        style:visibility={position ? undefined : 'hidden'}
         onpointerdown={(event) => event.preventDefault()}>
         {#each items as item, index (key(item))}
             <button
