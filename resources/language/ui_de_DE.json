@@ -110,10 +110,10 @@
                 "confirmDescription": "Dadurch werden deine Chats, dein verschlüsselter Schlüsselbund, deine Passwortsicherung und zugehörige Profildaten dauerhaft gelöscht. Anschließend richtest du ein neues Passwort und einen neuen Sicherungscode ein. Dies kann nicht rückgängig gemacht werden.",
                 "confirm": "Profil zurücksetzen"
             },
-            "claim": "Deine Gespräche sind verschlüsselt. Der Schlüssel bleibt bei dir.",
             "signedInAs": "Angemeldet als :name",
-            "videoToggle": "Video",
-            "videoToggleHint": "Hintergrundvideo ausschalten, um auf schwachen Geräten Energie zu sparen.",
+            "news": {
+                "title": "Neuigkeiten"
+            },
             "preferences": {
                 "switchToDark": "Dunkles Design verwenden",
                 "switchToLight": "Helles Design verwenden"
@@ -514,7 +514,7 @@
             },
             "login": {
                 "title": "Anmeldeseite",
-                "description": "Was die große Fläche neben dem Anmeldeformular zeigt. Bei jedem Besuch erscheint der nächste Hintergrund, im hellen wie im dunklen Modus; ohne Hintergrund nur das Logo. Bis Sie die Liste ändern, enthält sie die HAWKI-Videos. Bilder: JPEG, PNG, WebP oder AVIF; Videos: MP4 oder WebM; jeweils bis zu 50 MB. Videos laufen stumm in Schleife und können von Besuchenden ausgeschaltet werden. Laden Sie nur Material hoch, das Ihre Einrichtung veröffentlichen darf."
+                "description": "Was die große Fläche neben dem Anmeldeformular zeigt. Bei jedem Besuch erscheint der nächste Hintergrund, im hellen wie im dunklen Modus; ohne Hintergrund nur das Logo. Bis Sie die Liste ändern, enthält sie die HAWKI-Videos. Bilder: JPEG, PNG, WebP oder AVIF; Videos: MP4 oder WebM; jeweils bis zu 50 MB. Videos laufen stumm in Schleife. Laden Sie nur Material hoch, das Ihre Einrichtung veröffentlichen darf. Darüber kann eine kleine Karte Ihre drei neuesten Neuigkeiten zeigen."
             },
             "logo": {
                 "title": "Logo",
@@ -572,6 +572,7 @@
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Eckenrundung",
             "BRAND_FONT": "Schrift",
+            "BRAND_LOGIN_NEWS": "Neuigkeiten",
             "BRAND_LOGIN_BACKGROUNDS": "Hintergründe",
             "BRAND_LOGO": "Logo",
             "BRAND_LOGO_HEIGHT": "Logohöhe",
@@ -833,6 +834,16 @@
             "database": "Datenbanküberschreibung",
             "environment": "Umgebung / Standard",
             "deployment": "Bereitstellung"
+        },
+        "news": {
+            "entry": "Neuigkeit :number",
+            "date": "Datum",
+            "title": "Titel",
+            "text": "Kurztext (optional)",
+            "remove": "Entfernen",
+            "add": "Neuigkeit hinzufügen",
+            "empty": "Keine Neuigkeiten: Die Anmeldeseite zeigt keine an.",
+            "invalid": "Prüfen Sie die Neuigkeiten: Jede braucht ein Datum und einen Titel mit bis zu 80 Zeichen; ein Text darf bis zu 280 Zeichen haben."
         },
         "media": {
             "invalid": "Verwenden Sie ein Bild (JPEG, PNG, WebP, AVIF) oder ein Video (MP4, WebM) mit bis zu 50 MB.",

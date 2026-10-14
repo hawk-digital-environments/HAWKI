@@ -96,6 +96,12 @@ const HawkiCoreSchema = z.object({
             credit: z.string().nullable(),
             link: z.string().nullable()
         })).optional(),
+        /** News on the sign-in page, newest first; empty to show none. */
+        loginNews: z.array(z.object({
+            date: z.string(),
+            title: z.string(),
+            text: z.string().nullable()
+        })).optional(),
         organizationName: z.string().nullable(),
         organizationUrl: z.string().nullable()
     }).optional(),

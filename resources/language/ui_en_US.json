@@ -110,10 +110,10 @@
                 "confirmDescription": "This permanently deletes your chats, encrypted keychain, passkey backup, and related profile data. You will then set up a new passkey and backup code. This cannot be undone.",
                 "confirm": "Reset profile"
             },
-            "claim": "Your conversations are encrypted. The key stays with you.",
             "signedInAs": "Signed in as :name",
-            "videoToggle": "Video",
-            "videoToggleHint": "Switch the background video off to save energy on low-power devices.",
+            "news": {
+                "title": "News"
+            },
             "preferences": {
                 "switchToDark": "Switch to dark theme",
                 "switchToLight": "Switch to light theme"
@@ -514,7 +514,7 @@
             },
             "login": {
                 "title": "Sign-in page",
-                "description": "What the large area next to the sign-in form shows. Each visit shows the next background, in light and dark mode alike; without any, only the logo is shown. Until you change the list, it holds the HAWKI videos. Images: JPEG, PNG, WebP or AVIF; videos: MP4 or WebM; up to 50 MB each. Videos play muted in a loop, and visitors can switch them off. Only upload material your institution may publish."
+                "description": "What the large area next to the sign-in form shows. Each visit shows the next background, in light and dark mode alike; without any, only the logo is shown. Until you change the list, it holds the HAWKI videos. Images: JPEG, PNG, WebP or AVIF; videos: MP4 or WebM; up to 50 MB each. Videos play muted in a loop. Only upload material your institution may publish. Optionally, a small card on top of it lists your three newest news entries."
             },
             "logo": {
                 "title": "Logo",
@@ -572,6 +572,7 @@
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Corner rounding",
             "BRAND_FONT": "Font",
+            "BRAND_LOGIN_NEWS": "News",
             "BRAND_LOGIN_BACKGROUNDS": "Backgrounds",
             "BRAND_LOGO": "Logo",
             "BRAND_LOGO_HEIGHT": "Logo height",
@@ -833,6 +834,16 @@
             "database": "Database override",
             "environment": "Environment / default",
             "deployment": "Deployment"
+        },
+        "news": {
+            "entry": "News :number",
+            "date": "Date",
+            "title": "Title",
+            "text": "Short text (optional)",
+            "remove": "Remove",
+            "add": "Add news",
+            "empty": "No news: the sign-in page shows none.",
+            "invalid": "Check the news: each needs a date and a title of up to 80 characters; a text may have up to 280 characters."
         },
         "media": {
             "invalid": "Use a JPEG, PNG, WebP or AVIF image or an MP4 or WebM video of up to 50 MB.",

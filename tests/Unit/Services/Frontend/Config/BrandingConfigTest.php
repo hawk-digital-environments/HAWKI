@@ -36,6 +36,7 @@ class BrandingConfigTest extends TestCase
         static::assertSame(
             ['appName' => 'UniGPT', 'logoUrl' => 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg"/>'),
                 'loginBackgrounds' => [['url' => '/api/hawki/v1/brand-media/' . str_repeat('a', 64) . '.mp4', 'kind' => 'video', 'credit' => 'Photo: A. Person', 'link' => null]],
+                'loginNews' => [],
                 'organizationName' => 'Example University', 'organizationUrl' => 'https://example.edu'],
             BrandingConfig::make($repo)->toPublicArray(Request::create('/')),
         );

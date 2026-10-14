@@ -6,6 +6,7 @@ namespace App\Services\Frontend\Config;
 
 
 use App\Services\Admin\BrandMedia;
+use App\Services\Admin\LoginNews;
 use App\Services\Config\AbstractConfig;
 use App\Services\Config\Contracts\PublicConfigInterface;
 use Illuminate\Config\Repository;
@@ -35,6 +36,13 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
      * @var list<array{url: string, kind: string, credit: string|null, link: string|null}>
      */
     public readonly array $loginBackgrounds;
+
+    /**
+     * News on the sign-in page, newest first. Empty to show none.
+     *
+     * @var list<array{date: string, title: string, text: string|null}>
+     */
+    public readonly array $loginNews;
 
     /** Operating institution shown on the sign-in page, or null when none is configured. */
     public readonly string|null $organizationName;
@@ -72,6 +80,7 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
             'appName' => (string) $repo->get('app.name'),
             'logoUrl' => self::svgUri($repo->get('hawki.branding.logo')),
             'loginBackgrounds' => self::loginBackgrounds($repo),
+            'loginNews' => LoginNews::entries($repo->get('hawki.branding.login_news')),
             'organizationName' => trim((string) $repo->get('hawki.branding.organization_name')) ?: null,
             'organizationUrl' => LegalConfig::link($repo->get('hawki.branding.organization_url')),
         ]);
@@ -94,6 +103,7 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
             'appName' => $this->appName,
             'logoUrl' => $this->logoUrl,
             'loginBackgrounds' => $this->loginBackgrounds,
+            'loginNews' => $this->loginNews,
             'organizationName' => $this->organizationName,
             'organizationUrl' => $this->organizationUrl,
         ];

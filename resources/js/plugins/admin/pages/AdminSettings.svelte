@@ -15,6 +15,7 @@
     import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
     import Slider from '$lib/components/ui/slider/Slider.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
+    import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
@@ -235,6 +236,28 @@
         else next.splice(index, 1);
         set(row, next);
     }
+    /** One news entry as the setting stores it (see `LoginNews::entries()`). */
+    interface NewsEntry {
+        date: string;
+        title: string;
+        text: string | null;
+    }
+    const MAX_NEWS = 10;
+    const newsEntries = (row: AdminSettingResource) => (Array.isArray(current(row)) ? (current(row) as NewsEntry[]) : []);
+    function changeNews(row: AdminSettingResource, index: number, change: Partial<NewsEntry> | null) {
+        const next = newsEntries(row).map((entry) => ({ ...entry }));
+        if (change) Object.assign(next[index], change);
+        else next.splice(index, 1);
+        set(row, next);
+    }
+    /** New entries start on top, dated today, as the sign-in page lists the newest first. */
+    function addNews(row: AdminSettingResource) {
+        const today = new Date();
+        const date = [today.getFullYear(), today.getMonth() + 1, today.getDate()]
+            .map((part) => String(part).padStart(2, '0'))
+            .join('-');
+        set(row, [{ date, title: '', text: null }, ...newsEntries(row)]);
+    }
     const backgroundUrl = (entry: Background) =>
         entry.source === 'upload' ? app.uriBuilder.jsonApiUri('brand-media', entry.file) : `/bg_videos/${entry.file}`;
     const isVideo = (file: unknown) => /\.(?:mp4|webm)$/.test(String(file));
@@ -348,7 +371,63 @@
                                         {/if}
                                     </div>
                                     <div class="setting-control">
-                                        {#if key === 'BRAND_LOGIN_BACKGROUNDS'}
+                                        {#if key === 'BRAND_LOGIN_NEWS'}
+                                            {@const entries = newsEntries(row)}
+                                            {#if entries.length}
+                                                <ul class="backgrounds">
+                                                    {#each entries as entry, index (index)}
+                                                        {@const name = __('admin.news.entry', { number: String(index + 1) })}
+                                                        <li class="news-entry">
+                                                            <div class="background-fields">
+                                                                <Input
+                                                                    type="date"
+                                                                    aria-label={`${name}: ${__('admin.news.date')}`}
+                                                                    bind:value={() => entry.date, (date) => changeNews(row, index, { date })}
+                                                                    disabled={locked}
+                                                                />
+                                                                <Input
+                                                                    aria-label={`${name}: ${__('admin.news.title')}`}
+                                                                    placeholder={__('admin.news.title')}
+                                                                    maxlength={80}
+                                                                    bind:value={() => entry.title, (title) => changeNews(row, index, { title })}
+                                                                    disabled={locked}
+                                                                    autocomplete="off"
+                                                                />
+                                                                <Textarea
+                                                                    aria-label={`${name}: ${__('admin.news.text')}`}
+                                                                    placeholder={__('admin.news.text')}
+                                                                    maxlength={280}
+                                                                    rows={2}
+                                                                    bind:value={
+                                                                        () => entry.text ?? '',
+                                                                        (text) => changeNews(row, index, { text: text || null })
+                                                                    }
+                                                                    disabled={locked}
+                                                                />
+                                                            </div>
+                                                            <div class="background-remove">
+                                                                <ButtonWithTooltip
+                                                                    variant="ghost"
+                                                                    iconLeft={Delete02Icon}
+                                                                    tooltip={__('admin.news.remove')}
+                                                                    disabled={locked}
+                                                                    aria-label={`${name}: ${__('admin.news.remove')}`}
+                                                                    onclick={() => changeNews(row, index, null)}
+                                                                />
+                                                            </div>
+                                                        </li>
+                                                    {/each}
+                                                </ul>
+                                            {:else}
+                                                <p class="setting-value">{__('admin.news.empty')}</p>
+                                            {/if}
+                                            <Button
+                                                variant="stroke"
+                                                size="sm"
+                                                disabled={locked || entries.length >= MAX_NEWS}
+                                                onclick={() => addNews(row)}>{__('admin.news.add')}</Button
+                                            >
+                                        {:else if key === 'BRAND_LOGIN_BACKGROUNDS'}
                                             {@const entries = backgrounds(row)}
                                             {#if entries.length}
                                                 <ul class="backgrounds">
@@ -585,9 +664,9 @@
                                             <p class="setting-error" role="alert">{errors[key]}</p>
                                         {/if}
                                     </div>
-                                    {#if (row.kind === 'json' && key !== 'BRAND_LOGIN_BACKGROUNDS') || !same(value, row.default)}
+                                    {#if (row.kind === 'json' && !['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS'].includes(key)) || !same(value, row.default)}
                                     <div class="setting-actions">
-                                        {#if row.kind === 'json' && key !== 'BRAND_LOGIN_BACKGROUNDS'}
+                                        {#if row.kind === 'json' && !['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS'].includes(key)}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -801,6 +880,14 @@
         gap: var(--space-3);
         padding: 0;
         border: 0;
+    }
+    /* A news entry has no thumbnail: fields and the remove button only. */
+    .backgrounds > li.news-entry {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .backgrounds > li.news-entry + li.news-entry {
+        padding-top: var(--space-3);
+        border-top: var(--border);
     }
     .background-remove {
         display: grid;

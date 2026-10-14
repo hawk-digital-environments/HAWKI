@@ -211,6 +211,15 @@ export const settingsSchemas: Record<string, z.ZodType> = {
     BRAND_COLOR_INFO: oklchColor,
     BRAND_CORNER_STYLE: z.enum(['round', 'soft', 'square']),
     BRAND_FONT: font,
+    BRAND_LOGIN_NEWS: z
+        .array(
+            z.object({
+                date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+                title: text(80),
+                text: optionalText(280)
+            })
+        )
+        .max(10),
     BRAND_LOGIN_BACKGROUNDS: z
         .array(
             z.object({

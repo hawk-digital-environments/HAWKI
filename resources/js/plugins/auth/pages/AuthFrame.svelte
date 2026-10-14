@@ -5,16 +5,18 @@
   panel on the left and a canvas on the right that shows the background an
   administrator configured (`branding.loginBackgrounds`, by default the videos in
   `public/bg_videos`), one per visit in turn; an image or a video. Behind it, or
-  without one, the canvas shows the encryption claim over an
+  without one, the canvas shows an
   oversized, cropped wordmark, or the deployment's own logo in its place. The
-  canvas collapses on small screens, where nothing is loaded. When the background
-  is a video, a switch in the canvas corner turns it off for good on low-power
-  devices, remembered in `localStorage` as `hawki.auth.backgroundVideo`.
+  canvas collapses on small screens, where nothing is loaded.
 
   Without `canvas` (every page after the login) the content sits in a single
   centered column on the plain page background: wordmark top-left, content in the
   middle of the viewport, preferences bottom-left and the signed-in account with
   logout bottom-right.
+
+  On the canvas, a small card in the lower left lists the newest entries of the
+  news an administrator published (`branding.loginNews`), on top of the
+  background.
 
   Both layouts end with the operator's legal links (imprint, privacy policy,
   terms of use, accessibility statement) and the operating institution, as far
@@ -32,7 +34,6 @@
     import type { Snippet } from 'svelte';
     import BrandLogo from '$lib/app/components/branding/BrandLogo.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
-    import Switch from '$lib/components/ui/switch/Switch.svelte';
     import Link from '$lib/components/util/link/Link.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
@@ -41,9 +42,7 @@
     import { useBreakpoint } from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import { useReducedMotion } from '$lib/utils/transitions/reducedMotion.svelte.js';
     import {
-        isLoginVideoEnabled,
         pickLoginBackground,
-        setLoginVideoEnabled,
         type LoginBackground
     } from './loginBackground.js';
     import AuthPreferences from './AuthPreferences.svelte';
@@ -68,19 +67,17 @@
 
     // The canvas is hidden on small screens; don't fetch a background nobody sees.
     const canvasVisible = $derived(canvas && !breakpoint.is('bpSmAndSmaller'));
-    let videoEnabled = $state(isLoginVideoEnabled(app.localStorage));
-    $effect(() => {
-        setLoginVideoEnabled(app.localStorage, videoEnabled);
-    });
     // Advances the rotation, so it runs once per visible canvas, not on every render.
     let picked = $state<LoginBackground | null>(null);
     $effect(() => {
         const backgrounds = branding?.loginBackgrounds ?? [];
         picked = canvasVisible ? pickLoginBackground(backgrounds, app.localStorage) : null;
     });
-    /** The energy switch only makes sense for a video. */
-    const playsVideo = $derived(picked?.kind === 'video');
-    const background = $derived(picked && (picked.kind === 'image' || videoEnabled) ? picked : null);
+    const background = $derived(picked);
+    /** At most three entries: the card is a glance at what is new, not an archive. */
+    const news = $derived((branding?.loginNews ?? []).slice(0, 3));
+    // Follows the language switch on this page.
+    const newsDate = $derived(new Intl.DateTimeFormat(app.localization.locale.lang.replace('_', '-'), {dateStyle: 'long'}));
     /** Which background has loaded; the canvas fades it in only then. */
     let loaded = $state<string | null>(null);
     const backgroundReady = $derived(background !== null && loaded === background.url);
@@ -121,14 +118,21 @@
         </footer>
     </div>
     {#if canvas}
-        <div class="auth-canvas" class:has-video={backgroundReady} class:has-switch={playsVideo} class:has-credit={!!background?.credit}>
-            <p class="auth-claim">{__('ui.auth.claim')}</p>
+        <div class="auth-canvas" class:has-video={backgroundReady} class:has-credit={!!background?.credit}>
             <BrandLogo class="auth-canvas-mark" aria-hidden="true"/>
-            {#if playsVideo}
-                <label class="auth-video-toggle" title={__('ui.auth.videoToggleHint')}>
-                    <span id="auth-video-toggle-label">{__('ui.auth.videoToggle')}</span>
-                    <Switch bind:checked={videoEnabled} aria-labelledby="auth-video-toggle-label"/>
-                </label>
+            {#if news.length}
+                <section class="auth-news" aria-labelledby="auth-news-title">
+                    <h2 id="auth-news-title">{__('ui.auth.news.title')}</h2>
+                    <ol>
+                        {#each news as item, index (item.date + item.title)}
+                            <li style:--i={index}>
+                                <time datetime={item.date}>{newsDate.format(new Date(`${item.date}T12:00:00`))}</time>
+                                <h3>{item.title}</h3>
+                                {#if item.text}<p>{item.text}</p>{/if}
+                            </li>
+                        {/each}
+                    </ol>
+                </section>
             {/if}
             {#if background}
                 {#key background.url}
@@ -335,32 +339,77 @@
         align-content: start;
         padding: clamp(var(--space-6), 4vw, var(--space-10));
         border-radius: var(--corner-lg);
-        /* The video switch's notch covers this corner; a square corner underneath
-           avoids a faint seam where two anti-aliased curves would overlap. The
-           bottom-right corner does the same once the credit notch fades in. */
-        border-top-right-radius: 0;
         background: color-mix(in oklab, var(--color-accent-100) 55%, var(--color-bg-secondary));
         transition: border-bottom-right-radius var(--duration-medium) var(--easing-out);
     }
-    /* No switch, no notch: the corner is rounded like the others. */
-    .auth-canvas:not(.has-switch) {
-        border-top-right-radius: var(--corner-lg);
-    }
-    /* Only the credit's notch needs the square corner; without a credit it stays rounded. */
+    /* The credit's notch covers this corner; a square corner underneath avoids a faint
+       seam where two anti-aliased curves would overlap. Without a credit it stays rounded. */
     .auth-canvas.has-video.has-credit {
         border-bottom-right-radius: 0;
     }
     :global(html.darkMode) .auth-canvas {
         background: color-mix(in oklab, var(--color-accent-fill) 45%, var(--color-bg-secondary));
     }
-    .auth-claim {
+    /* News: a quiet, solid card in the lower left, legible over any background and
+       above the wordmark and the video. */
+    .auth-news {
+        /* Inset from the canvas corner: as wide as the canvas's corner radius. */
+        --news-inset: var(--space-6);
+        position: absolute;
+        left: var(--news-inset);
+        bottom: var(--news-inset);
+        z-index: 1;
+        box-sizing: border-box;
+        width: min(22rem, calc(100% - 2 * var(--space-6)));
+        max-height: calc(100% - 2 * var(--space-6));
+        overflow-y: auto;
+        padding: var(--space-4) var(--space-5);
+        border-radius: var(--corner-md);
+        background: var(--color-surface-raised);
+        color: var(--color-text);
+        /* A slight overshoot: the card settles into place rather than stopping dead. */
+        --easing-overshoot: cubic-bezier(0.34, 1.4, 0.64, 1);
+        transform-origin: bottom left;
+        animation: auth-news-in var(--duration-medium) var(--easing-overshoot) 150ms both;
+    }
+    .auth-news h2 {
+        margin: 0 0 var(--space-2);
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
+    }
+    .auth-news ol {
         margin: 0;
-        max-width: 24ch;
-        font-size: var(--font-size-lg);
+        padding: 0;
+        list-style: none;
+    }
+    .auth-news li {
+        display: grid;
+        gap: var(--space-0_5);
+        padding-block: var(--space-3);
+        animation: auth-news-item-in var(--duration-medium) var(--easing-overshoot) both;
+        animation-delay: calc(250ms + var(--i) * 70ms);
+    }
+    .auth-news li + li {
+        border-top: var(--border);
+    }
+    .auth-news li:last-child {
+        padding-bottom: 0;
+    }
+    .auth-news time {
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xxs);
+    }
+    .auth-news h3 {
+        margin: 0;
+        font-size: var(--font-size-sm);
         font-weight: var(--font-weight-medium);
         line-height: var(--line-height-tight);
-        letter-spacing: -0.01em;
-        text-wrap: balance;
+    }
+    .auth-news p {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+        line-height: var(--line-height-normal);
     }
     /* The wordmark is set wider than the canvas and pushed below its bottom
        edge so the rounded corners crop it — the brand as material, not a badge. */
@@ -403,15 +452,12 @@
     .has-video .auth-video {
         opacity: 1;
     }
-    .has-video .auth-claim,
     .has-video :global(.auth-canvas-mark) {
         visibility: hidden;
     }
-    /* Frame notches: the video switch (top right) and the credit (bottom right)
-       sit in cut-outs of the canvas, so the page frame reaches into the picture
-       and holds them. The pseudo-elements paint the two concave fillets that join
-       each notch to the frame. */
-    .auth-video-toggle,
+    /* Frame notch: the credit (bottom right) sits in a cut-out of the canvas, so the
+       page frame reaches into the picture and holds it. The pseudo-elements paint the
+       two concave fillets that join the notch to the frame. */
     .auth-canvas :global(.auth-credit) {
         --notch-radius: var(--corner-md);
         position: absolute;
@@ -425,8 +471,6 @@
         color: var(--color-text);
         font-size: var(--font-size-xs);
     }
-    .auth-video-toggle::before,
-    .auth-video-toggle::after,
     .auth-canvas :global(.auth-credit::before),
     .auth-canvas :global(.auth-credit::after) {
         content: '';
@@ -434,30 +478,6 @@
         width: var(--notch-radius);
         height: var(--notch-radius);
         pointer-events: none;
-    }
-    /* Unlike the credit the switch stays visible without a video — it is the
-       way back to one once it has been turned off. */
-    .auth-video-toggle {
-        top: 0;
-        border-bottom-left-radius: var(--notch-radius);
-        cursor: pointer;
-        user-select: none;
-    }
-    .auth-video-toggle::before,
-    .auth-video-toggle::after {
-        background: radial-gradient(
-            circle at 0 100%,
-            transparent calc(var(--notch-radius) - 0.5px),
-            var(--color-bg-secondary) calc(var(--notch-radius) + 0.5px)
-        );
-    }
-    .auth-video-toggle::before {
-        top: 0;
-        right: 100%;
-    }
-    .auth-video-toggle::after {
-        top: 100%;
-        right: 0;
     }
     .auth-canvas :global(.auth-credit) {
         bottom: 0;
@@ -496,13 +516,23 @@
         from { opacity: 0; }
         to { opacity: 1; }
     }
+    @keyframes auth-news-in {
+        from { opacity: 0; transform: translateY(16px) scale(0.96); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes auth-news-item-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: none; }
+    }
     @keyframes auth-rise {
         from { opacity: 0; transform: translateY(34%); }
         to { opacity: 1; transform: translateY(26%); }
     }
     @media (prefers-reduced-motion: reduce) {
         .auth-body,
-        .auth-canvas :global(.auth-canvas-mark) {
+        .auth-canvas :global(.auth-canvas-mark),
+        .auth-news,
+        .auth-news li {
             animation: none;
         }
         .auth-video,

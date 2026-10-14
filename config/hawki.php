@@ -71,6 +71,9 @@ return [
             }
             return $entries;
         })(),
+        // News shown on the sign-in page, newest first: entries with a date, a title and an optional
+        // text, edited in the administration. Empty = no news.
+        'login_news' => [],
         // Height of the logo in the sidebar, in pixels (12-36). The sign-in page scales with it.
         // Empty = the logo's own size: 14 px for the HAWKI wordmark, 28 px for an uploaded logo.
         'logo_height' => env('BRAND_LOGO_HEIGHT') ? (int) env('BRAND_LOGO_HEIGHT') : null,

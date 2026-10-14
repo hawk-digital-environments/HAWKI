@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
-import {isLoginVideoEnabled, pickLoginBackground, setLoginVideoEnabled, type LoginBackground} from '../../../resources/js/plugins/auth/pages/loginBackground.js';
+import {pickLoginBackground, type LoginBackground} from '../../../resources/js/plugins/auth/pages/loginBackground.js';
 
 function storage() {
     const values = new Map<string, string>();
@@ -22,13 +22,4 @@ test('without backgrounds the canvas shows the logo', () => {
 test('unavailable browser storage does not prevent a background', () => {
     const unavailable = {getItem: () => {throw new Error('blocked');}, setItem: () => {}, removeItem: () => {}};
     assert.equal(pickLoginBackground([entry('/a.jpg')], unavailable)?.credit, 'Artist');
-});
-
-test('login video is enabled by default and only stored zero disables it', () => {
-    const saved = storage();
-    assert.equal(isLoginVideoEnabled(saved), true);
-    saved.setItem('hawki.auth.backgroundVideo', '0');
-    assert.equal(isLoginVideoEnabled(saved), false);
-    setLoginVideoEnabled(saved, true);
-    assert.equal(isLoginVideoEnabled(saved), true);
 });

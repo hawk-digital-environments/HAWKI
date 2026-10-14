@@ -19,7 +19,7 @@ export const settingsTabs = [
                 settings: ['BRAND_COLOR_SUCCESS', 'BRAND_COLOR_WARNING', 'BRAND_COLOR_ERROR', 'BRAND_COLOR_INFO']
             },
             { key: 'font', settings: ['BRAND_FONT'] },
-            { key: 'login', settings: ['BRAND_LOGIN_BACKGROUNDS'] },
+            { key: 'login', settings: ['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS'] },
             { key: 'logo', settings: ['BRAND_LOGO', 'BRAND_LOGO_HEIGHT', 'BRAND_FAVICON'] }
         ]
     },
