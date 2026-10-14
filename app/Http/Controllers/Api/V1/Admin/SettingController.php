@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\JsonApi\V1\Admin\Record;
 use App\Services\Admin\AdminAudit;
 use App\Services\Admin\BrandFonts;
+use App\Services\Admin\BrandMedia;
 use App\Services\Admin\Repositories\SettingRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,6 +49,17 @@ class SettingController extends ResourceController
         $data = $request->validate(['font' => $fonts->uploadRules()]);
 
         return response()->json(['font' => $fonts->store($data['font'])]);
+    }
+
+    /**
+     * Stores an uploaded sign-in background; it only takes effect once its setting is saved.
+     */
+    public function uploadMedia(Request $request, BrandMedia $media): JsonResponse
+    {
+        $this->resource->authorize($request->user());
+        $data = $request->validate(['media' => $media->uploadRules()]);
+
+        return response()->json(['media' => $media->store($data['media'])]);
     }
 
     protected function repository(): SettingRepository

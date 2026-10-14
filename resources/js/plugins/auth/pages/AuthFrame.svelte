@@ -2,12 +2,14 @@
   @component Shell for the authentication pages (login, keychain setup, unlock, recovery).
 
   Two layouts. With `canvas` (the login page) the page splits into a narrow form
-  panel on the left and a canvas on the right that plays the deployment's
-  background video (see `public/bg_videos/bg_videos.json`) with the creator
-  credit; without a video it shows the encryption claim over an oversized,
-  cropped wordmark, or the deployment's own logo in its place. The canvas collapses on small screens, where no video
-  is loaded. A switch in the canvas corner turns the video off for good on
-  low-power devices, remembered in `localStorage` as `hawki.auth.backgroundVideo`.
+  panel on the left and a canvas on the right that shows the background an
+  administrator configured (`branding.loginBackgrounds`, by default the videos in
+  `public/bg_videos`), one per visit in turn; an image or a video. Behind it, or
+  without one, the canvas shows the encryption claim over an
+  oversized, cropped wordmark, or the deployment's own logo in its place. The
+  canvas collapses on small screens, where nothing is loaded. When the background
+  is a video, a switch in the canvas corner turns it off for good on low-power
+  devices, remembered in `localStorage` as `hawki.auth.backgroundVideo`.
 
   Without `canvas` (every page after the login) the content sits in a single
   centered column on the plain page background: wordmark top-left, content in the
@@ -34,7 +36,6 @@
     import Link from '$lib/components/util/link/Link.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
-    import { useStore } from '$lib/app/hooks/useStore.svelte.js';
     import { useConfig } from '$lib/app/hooks/useConfig.svelte.js';
     import { useLegalLinks } from '$lib/app/hooks/useLegalLinks.svelte.js';
     import { useBreakpoint } from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
@@ -43,7 +44,7 @@
         isLoginVideoEnabled,
         pickLoginBackground,
         setLoginVideoEnabled,
-        type LoginBackgroundVideo
+        type LoginBackground
     } from './loginBackground.js';
     import AuthPreferences from './AuthPreferences.svelte';
 
@@ -56,7 +57,6 @@
     const { canvas = false, children }: Props = $props();
     const { __ } = useTranslator();
     const app = useApp();
-    const theme = useStore('theme');
     const config = useConfig();
     const branding = $derived(config.branding);
     const legalLinks = useLegalLinks();
@@ -66,32 +66,24 @@
     const connection = $derived(app.connection);
     const signedInAs = $derived(connection.hasUserInfo ? connection.userinfo.name : null);
 
-    // The canvas is hidden on small screens; don't fetch a video nobody sees.
+    // The canvas is hidden on small screens; don't fetch a background nobody sees.
     const canvasVisible = $derived(canvas && !breakpoint.is('bpSmAndSmaller'));
-    let video = $state<LoginBackgroundVideo | null>(null);
-    let videoReady = $state(false);
     let videoEnabled = $state(isLoginVideoEnabled(app.localStorage));
     $effect(() => {
         setLoginVideoEnabled(app.localStorage, videoEnabled);
     });
+    // Advances the rotation, so it runs once per visible canvas, not on every render.
+    let picked = $state<LoginBackground | null>(null);
     $effect(() => {
-        if (!videoEnabled) {
-            video = null;
-            videoReady = false;
-            return;
-        }
-        if (!canvasVisible) return;
-        const currentTheme = theme.theme;
-        let cancelled = false;
-        videoReady = false;
-        void pickLoginBackground(app.config.get().transfer.baseUrl, currentTheme, {
-            load: url => app.restApi.fetch(url, {credentials: 'omit'}),
-            storage: app.localStorage
-        }).then((picked) => {
-            if (!cancelled) video = picked;
-        });
-        return () => { cancelled = true; };
+        const backgrounds = branding?.loginBackgrounds ?? [];
+        picked = canvasVisible ? pickLoginBackground(backgrounds, app.localStorage) : null;
     });
+    /** The energy switch only makes sense for a video. */
+    const playsVideo = $derived(picked?.kind === 'video');
+    const background = $derived(picked && (picked.kind === 'image' || videoEnabled) ? picked : null);
+    /** Which background has loaded; the canvas fades it in only then. */
+    let loaded = $state<string | null>(null);
+    const backgroundReady = $derived(background !== null && loaded === background.url);
 </script>
 
 <div class="auth-page" class:canvas>
@@ -129,19 +121,30 @@
         </footer>
     </div>
     {#if canvas}
-        <div class="auth-canvas" class:has-video={video !== null && videoReady}>
+        <div class="auth-canvas" class:has-video={backgroundReady} class:has-switch={playsVideo} class:has-credit={!!background?.credit}>
             <p class="auth-claim">{__('ui.auth.claim')}</p>
             <BrandLogo class="auth-canvas-mark" aria-hidden="true"/>
-            <label class="auth-video-toggle" title={__('ui.auth.videoToggleHint')}>
-                <span id="auth-video-toggle-label">{__('ui.auth.videoToggle')}</span>
-                <Switch bind:checked={videoEnabled} aria-labelledby="auth-video-toggle-label"/>
-            </label>
-            {#if video && canvasVisible}
-                {#key video.src}
+            {#if playsVideo}
+                <label class="auth-video-toggle" title={__('ui.auth.videoToggleHint')}>
+                    <span id="auth-video-toggle-label">{__('ui.auth.videoToggle')}</span>
+                    <Switch bind:checked={videoEnabled} aria-labelledby="auth-video-toggle-label"/>
+                </label>
+            {/if}
+            {#if background}
+                {#key background.url}
+                    {#if background.kind === 'image'}
+                        <!-- Decoration, no information: skipped by assistive tech. -->
+                        <img
+                            class="auth-video"
+                            src={background.url}
+                            alt=""
+                            onload={() => { loaded = background.url; }}
+                        />
+                    {:else}
                     <!-- Ambient footage, no information: muted, no controls, and skipped by assistive tech. -->
                     <video
                         class="auth-video"
-                        src={video.src}
+                        src={background.url}
                         autoplay={!reducedMotion.current}
                         loop
                         muted
@@ -150,11 +153,18 @@
                         preload="auto"
                         tabindex="-1"
                         aria-hidden="true"
-                        oncanplay={() => { videoReady = true; }}
-                        onerror={() => { video = null; }}
+                        oncanplay={() => { loaded = background.url; }}
                     ></video>
+                    {/if}
                 {/key}
-                <Link class="auth-credit" href={video.link} target="_blank">{__('ui.auth.videoCredit', {name: video.creator})}</Link>
+                {#if background.credit}
+                    {@const credit = __(background.kind === 'video' ? 'ui.auth.videoCredit' : 'ui.auth.imageCredit', {name: background.credit})}
+                    {#if background.link}
+                        <Link class="auth-credit" href={background.link} target="_blank">{credit}</Link>
+                    {:else}
+                        <span class="auth-credit">{credit}</span>
+                    {/if}
+                {/if}
             {/if}
         </div>
     {/if}
@@ -333,7 +343,12 @@
         background: color-mix(in oklab, var(--color-accent-100) 55%, var(--color-bg-secondary));
         transition: border-bottom-right-radius var(--duration-medium) var(--easing-out);
     }
-    .auth-canvas.has-video {
+    /* No switch, no notch: the corner is rounded like the others. */
+    .auth-canvas:not(.has-switch) {
+        border-top-right-radius: var(--corner-lg);
+    }
+    /* Only the credit's notch needs the square corner; without a credit it stays rounded. */
+    .auth-canvas.has-video.has-credit {
         border-bottom-right-radius: 0;
     }
     :global(html.darkMode) .auth-canvas {

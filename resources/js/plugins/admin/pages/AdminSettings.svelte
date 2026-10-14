@@ -15,6 +15,8 @@
     import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
     import Slider from '$lib/components/ui/slider/Slider.svelte';
     import Input from '$lib/components/ui/input/Input.svelte';
+    import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
+    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import SingleSelect from '$lib/components/ui/select/SingleSelect.svelte';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
@@ -85,7 +87,11 @@
     let saving = $state(false);
     const rowsByKey = $derived(new Map(records.rows.map((row) => [row.key, row])));
     // An unset text setting is null on the server and an empty string in its input.
-    const same = (a: unknown, b: unknown) => (a ?? '') === (b ?? '');
+    // Lists and objects compare by content: a draft is never the same object as the stored value.
+    const same = (a: unknown, b: unknown) =>
+        (typeof a === 'object' && a !== null) || (typeof b === 'object' && b !== null) ?
+            JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+        :   (a ?? '') === (b ?? '');
     const current = (row: AdminSettingResource) => (row.key in draft ? draft[row.key] : row.value);
     const dirty = $derived(
         Object.keys(draft).filter((key) => {
@@ -186,6 +192,52 @@
             uploadingFont = false;
         }
     }
+    /** Upload limit of the sign-in background in bytes; `BrandMedia::MAX_KILOBYTES` enforces the same on the server. */
+    const MEDIA_MAX_BYTES = 50 * 1024 * 1024;
+    const MEDIA_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'mp4', 'm4v', 'webm'];
+    let uploadingMedia = $state(false);
+    async function uploadMedia(row: AdminSettingResource, input: HTMLInputElement) {
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file) return;
+        // The server decides from the file's content; this only catches the obvious early.
+        if (!MEDIA_EXTENSIONS.includes(file.name.split('.').pop()!.toLowerCase()) || file.size > MEDIA_MAX_BYTES) {
+            errors[row.key] = __('admin.media.invalid');
+            return;
+        }
+        const body = new FormData();
+        body.append('media', file);
+        uploadingMedia = true;
+        try {
+            // The file is stored right away; it takes effect once the setting is saved.
+            const result = await app.restApi.postToResourceAction('admin-settings', 'actions/media-upload', body, {
+                schema: z.object({ media: z.object({ file: z.string(), name: z.string(), kind: z.string() }) })
+            });
+            set(row, [...backgrounds(row), { source: 'upload', file: result.media.file, credit: null, link: null }]);
+        } catch {
+            errors[row.key] = __('admin.media.upload_failed');
+        } finally {
+            uploadingMedia = false;
+        }
+    }
+    /** One sign-in background as the setting stores it (see `BrandMedia::backgrounds()`). */
+    interface Background {
+        source: 'upload' | 'builtin';
+        file: string;
+        credit: string | null;
+        link: string | null;
+    }
+    const MAX_BACKGROUNDS = 20;
+    const backgrounds = (row: AdminSettingResource) => (Array.isArray(current(row)) ? (current(row) as Background[]) : []);
+    function changeBackground(row: AdminSettingResource, index: number, change: Partial<Background> | null) {
+        const next = backgrounds(row).map((entry) => ({ ...entry }));
+        if (change) Object.assign(next[index], change);
+        else next.splice(index, 1);
+        set(row, next);
+    }
+    const backgroundUrl = (entry: Background) =>
+        entry.source === 'upload' ? app.uriBuilder.jsonApiUri('brand-media', entry.file) : `/bg_videos/${entry.file}`;
+    const isVideo = (file: unknown) => /\.(?:mp4|webm)$/.test(String(file));
     const fontUrl = (file: string) => app.uriBuilder.jsonApiUri('brand-fonts', file);
     const fontValue = (read: (row: AdminSettingResource) => unknown) => {
         const font = rowsByKey.get('BRAND_FONT');
@@ -287,7 +339,7 @@
                                 <li>
                                     <div class="setting-label">
                                         <label id={`${id}-label`} for={id}>{label}</label>
-                                        {#if row.source === 'database'}
+                                        {#if row.source === 'database' && row.kind !== 'json'}
                                             <small
                                                 >{__('admin.fields.default')}: {row.options.length ?
                                                     fieldLabel(display(row.default))
@@ -296,7 +348,77 @@
                                         {/if}
                                     </div>
                                     <div class="setting-control">
-                                        {#if row.kind === 'json'}
+                                        {#if key === 'BRAND_LOGIN_BACKGROUNDS'}
+                                            {@const entries = backgrounds(row)}
+                                            {#if entries.length}
+                                                <ul class="backgrounds">
+                                                    {#each entries as entry, index (index)}
+                                                        {@const name = __('admin.media.entry', { number: String(index + 1) })}
+                                                        <li>
+                                                            <span class="preview media">
+                                                                {#if isVideo(entry.file)}
+                                                                    <video src={backgroundUrl(entry)} muted playsinline preload="metadata" aria-hidden="true"></video>
+                                                                {:else}
+                                                                    <img src={backgroundUrl(entry)} alt="" />
+                                                                {/if}
+                                                            </span>
+                                                            <div class="background-fields">
+                                                                <Input
+                                                                    aria-label={`${name}: ${__('admin.media.credit')}`}
+                                                                    placeholder={__('admin.media.credit')}
+                                                                    bind:value={
+                                                                        () => entry.credit ?? '',
+                                                                        (credit) => changeBackground(row, index, { credit: credit || null })
+                                                                    }
+                                                                    disabled={locked}
+                                                                    autocomplete="off"
+                                                                />
+                                                                <Input
+                                                                    type="url"
+                                                                    aria-label={`${name}: ${__('admin.media.link')}`}
+                                                                    placeholder={__('admin.media.link')}
+                                                                    bind:value={
+                                                                        () => entry.link ?? '',
+                                                                        (link) => changeBackground(row, index, { link: link || null })
+                                                                    }
+                                                                    disabled={locked}
+                                                                    autocomplete="off"
+                                                                />
+                                                            </div>
+                                                            <!-- As tall as the first field, so the button sits centered beside it. -->
+                                                            <div class="background-remove">
+                                                                <ButtonWithTooltip
+                                                                    variant="ghost"
+                                                                    iconLeft={Delete02Icon}
+                                                                    tooltip={__('admin.media.remove')}
+                                                                    disabled={locked}
+                                                                    aria-label={`${name}: ${__('admin.media.remove')}`}
+                                                                    onclick={() => changeBackground(row, index, null)}
+                                                                />
+                                                            </div>
+                                                        </li>
+                                                    {/each}
+                                                </ul>
+                                            {:else}
+                                                <p class="setting-value">{__('admin.media.empty')}</p>
+                                            {/if}
+                                            <input
+                                                {id}
+                                                class="u-sr-only"
+                                                type="file"
+                                                accept={MEDIA_EXTENSIONS.map((extension) => '.' + extension).join(',')}
+                                                tabindex="-1"
+                                                disabled={locked || uploadingMedia}
+                                                onchange={(event) => void uploadMedia(row, event.currentTarget)}
+                                            />
+                                            <Button
+                                                variant="stroke"
+                                                size="sm"
+                                                disabled={locked || uploadingMedia || entries.length >= MAX_BACKGROUNDS}
+                                                onclick={() => document.getElementById(id)?.click()}
+                                                >{__('admin.media.add')}</Button
+                                            >
+                                        {:else if row.kind === 'json'}
                                             <p class="setting-value">{display(row.value)}</p>
                                         {:else if statusOf(key)}
                                             <div class="color">
@@ -406,6 +528,7 @@
                                                 <span>{__('admin.settings_pixels', { value: String(value ?? ownLogoHeight()) })}</span>
                                             </div>
                                         {:else if key === 'BRAND_CORNER_STYLE'}
+                                            <div class="segmented" style:--options={row.options.length}>
                                             <Tabs
                                                 mode="radio"
                                                 items={row.options.map((option) => ({
@@ -417,6 +540,7 @@
                                                 aria-label={label}
                                                 disabled={locked}
                                             />
+                                            </div>
                                         {:else if row.options.length}
                                             <SingleSelect
                                                 triggerProps={{ id, 'aria-labelledby': `${id}-label ${id}` }}
@@ -461,9 +585,9 @@
                                             <p class="setting-error" role="alert">{errors[key]}</p>
                                         {/if}
                                     </div>
-                                    {#if row.kind === 'json' || !same(value, row.default)}
+                                    {#if (row.kind === 'json' && key !== 'BRAND_LOGIN_BACKGROUNDS') || !same(value, row.default)}
                                     <div class="setting-actions">
-                                        {#if row.kind === 'json'}
+                                        {#if row.kind === 'json' && key !== 'BRAND_LOGIN_BACKGROUNDS'}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -557,14 +681,14 @@
         margin: 0;
         padding: 0;
     }
-    li {
+    .settings-list > li {
         display: grid;
         grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr);
         align-items: center;
         gap: var(--space-2) var(--space-4);
         padding-block: var(--space-3);
     }
-    li + li {
+    .settings-list > li + li {
         border-top: var(--border);
     }
     label {
@@ -588,8 +712,8 @@
     }
     /* Wide enough that every option fits: the tabs share the width equally and would
        otherwise shrink to the average label, cutting the longest one off. */
-    .setting-control > :global(.tabs) {
-        width: 18rem;
+    .segmented {
+        width: min(100%, calc(var(--options) * 7.5rem));
     }
     .range {
         display: grid;
@@ -657,6 +781,49 @@
     }
     /* A fixed size, not a percentage: inside the grid a percentage height resolves
        against the image's own size and lets a large icon grow out of the box. */
+    .backgrounds {
+        display: grid;
+        gap: var(--space-3);
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .backgrounds > li {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: start;
+        gap: var(--space-3);
+        padding: 0;
+        border: 0;
+    }
+    .background-remove {
+        display: grid;
+        place-items: center;
+        height: 2.75rem;
+    }
+    /* As large as the field beside it, so the hover background has room around the icon. */
+    .background-remove :global(.btn) {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+    .background-fields {
+        display: grid;
+        gap: var(--space-2);
+        min-width: 0;
+    }
+    /* A background is a picture, not a mark: it fills its thumbnail. */
+    .preview.media {
+        padding: 0;
+        overflow: hidden;
+    }
+    .preview.media > img,
+    .preview.media > video {
+        display: block;
+        width: 5rem;
+        height: 100%;
+        object-fit: cover;
+    }
     .preview > img {
         display: block;
         width: 2.25rem;
@@ -704,8 +871,11 @@
         }
     }
     @media (--bp-xs) {
-        li {
+        .settings-list > li {
             grid-template-columns: minmax(0, 1fr);
+        }
+        .backgrounds > li {
+            grid-template-columns: auto minmax(0, 1fr);
         }
         .setting-actions {
             grid-column: 1;

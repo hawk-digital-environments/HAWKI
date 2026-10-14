@@ -22,6 +22,9 @@ class SystemSettings
     /** Settings whose value names an uploaded font file. */
     public const FONT = ['BRAND_FONT'];
 
+    /** Settings whose value lists uploaded sign-in backgrounds. */
+    public const MEDIA = ['BRAND_LOGIN_BACKGROUNDS'];
+
     /** Settings whose value is the markup of an uploaded SVG file. */
     public const SVG = ['BRAND_LOGO', 'BRAND_FAVICON'];
 
@@ -38,6 +41,7 @@ class SystemSettings
         'BRAND_COLOR_INFO' => ['hawki.branding.status_colors.info', 'string', 'nullable|string|max:60'],
         'BRAND_CORNER_STYLE' => ['hawki.branding.corner_style', 'string', 'required|in:round,soft,square'],
         'BRAND_FONT' => ['hawki.branding.font', 'string', 'nullable|string|max:80'],
+        'BRAND_LOGIN_BACKGROUNDS' => ['hawki.branding.login_backgrounds', 'json', 'present|array|max:20'],
         'BRAND_LOGO' => ['hawki.branding.logo', 'string', 'nullable|string'],
         'BRAND_LOGO_HEIGHT' => ['hawki.branding.logo_height', 'number', 'nullable|integer|min:12|max:36'],
         'BRAND_FAVICON' => ['hawki.branding.favicon', 'string', 'nullable|string'],
@@ -141,6 +145,12 @@ class SystemSettings
         }
 
         $value = Validator::make(['value' => $value], $rules)->validate()['value'];
+
+        // Checked strictly before normalizing, which would quietly drop invalid entries.
+        if (\in_array($key, self::MEDIA, true)) {
+            BrandMedia::backgrounds($value, strict: true);
+        }
+
         $value = $this->normalize($key, $value);
 
         if (\in_array($key, self::OKLCH, true) && null !== $value) {
@@ -173,7 +183,7 @@ class SystemSettings
             ['value', 'updated_by', 'updated_at'],
         );
         $this->apply();
-        $this->pruneFonts($key);
+        $this->pruneFiles($key);
     }
 
     public function reset(string $key): void
@@ -181,23 +191,29 @@ class SystemSettings
         abort_unless(isset(self::DEFINITIONS[$key]), 404);
         DB::table('admin_settings')->where('key', $key)->delete();
         $this->apply();
-        $this->pruneFonts($key);
+        $this->pruneFiles($key);
     }
 
-    /** A changed font setting can leave its previous file unused. */
-    private function pruneFonts(string $key): void
+    /** A changed font or background setting can leave its previous file unused. */
+    private function pruneFiles(string $key): void
     {
         if (\in_array($key, self::FONT, true)) {
             app(BrandFonts::class)->prune();
+        }
+
+        if (\in_array($key, self::MEDIA, true)) {
+            app(BrandMedia::class)->prune();
         }
     }
 
     public function environment(): array
     {
         $rows = array_map(
-            static fn (array $row) => \in_array($row['key'], self::SVG, true)
-                ? ['value' => null === $row['value'] ? '[not set]' : '[set]'] + $row
-                : $row,
+            static fn (array $row) => match (true) {
+                \in_array($row['key'], self::SVG, true) => ['value' => null === $row['value'] ? '[not set]' : '[set]'] + $row,
+                \in_array($row['key'], self::MEDIA, true) => ['value' => \count((array) $row['value']) . ' entries'] + $row,
+                default => $row,
+            },
             $this->rows(),
         );
 
@@ -242,6 +258,11 @@ class SystemSettings
     {
         if ('AI_MENTION_HANDLE' === $key) {
             return ltrim((string) $value, '@');
+        }
+
+        // The database may reorder the keys of a stored JSON object; one canonical shape keeps comparisons exact.
+        if (\in_array($key, self::MEDIA, true)) {
+            return BrandMedia::backgrounds($value);
         }
 
         return match (self::DEFINITIONS[$key][1]) {

@@ -211,6 +211,16 @@ export const settingsSchemas: Record<string, z.ZodType> = {
     BRAND_COLOR_INFO: oklchColor,
     BRAND_CORNER_STYLE: z.enum(['round', 'soft', 'square']),
     BRAND_FONT: font,
+    BRAND_LOGIN_BACKGROUNDS: z
+        .array(
+            z.object({
+                source: z.enum(['upload', 'builtin']),
+                file: z.string().min(1),
+                credit: optionalText(100),
+                link: url
+            })
+        )
+        .max(20),
     BRAND_LOGO: svg,
     BRAND_LOGO_HEIGHT: z.number().int().min(12).max(36).nullish(),
     BRAND_FAVICON: svg,

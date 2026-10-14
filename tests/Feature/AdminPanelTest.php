@@ -217,10 +217,13 @@ class AdminPanelTest extends TestCase
         Storage::fake(config('filesystems.avatar_storage'));
         $font = str_repeat('a', 64) . '.woff2';
         Storage::disk(config('filesystems.avatar_storage'))->put('branding/fonts/' . $font, 'wOF2');
+        $media = str_repeat('a', 64) . '.jpg';
+        Storage::disk(config('filesystems.avatar_storage'))->put('branding/media/' . $media, "\xFF\xD8\xFF");
 
         foreach (SystemSettings::DEFINITIONS as $key => [$path, $type]) {
             $value = match ($key) {
                 'BRAND_FONT' => $font,
+                'BRAND_LOGIN_BACKGROUNDS' => [['source' => 'upload', 'file' => $media, 'credit' => null, 'link' => null]],
                 'APP_NAME' => 'Test application', 'APP_ENV' => 'testing', 'APP_TIMEZONE' => 'Europe/Berlin',
                 'APP_LOCALE' => 'de_DE', 'AUTHENTICATION_METHOD' => 'LDAP',
                 'BRAND_ACCENT_COLOR' => '#a00020',

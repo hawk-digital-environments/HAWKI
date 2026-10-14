@@ -89,6 +89,13 @@ const HawkiCoreSchema = z.object({
     branding: z.object({
         appName: z.string(),
         logoUrl: z.string().nullable(),
+        /** Backgrounds of the sign-in page, shown in turn. Empty: the page shows only the logo. */
+        loginBackgrounds: z.array(z.object({
+            url: z.string(),
+            kind: z.enum(['image', 'video']),
+            credit: z.string().nullable(),
+            link: z.string().nullable()
+        })).optional(),
         organizationName: z.string().nullable(),
         organizationUrl: z.string().nullable()
     }).optional(),

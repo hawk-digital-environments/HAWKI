@@ -45,7 +45,9 @@ class BrandFontApiTest extends TestCase
 
         $this->app['auth']->forgetGuards();
         $response = $this->get(self::FONTS . $file)->assertOk()->assertHeader('Content-Type', 'font/woff2');
-        self::assertSame(self::FONT, $response->getContent());
+        self::assertSame(self::FONT, file_get_contents($response->baseResponse->getFile()->getPathname()));
+        // Byte ranges are answered, which Safari relies on for media.
+        $this->get(self::FONTS . $file, ['Range' => 'bytes=0-3'])->assertStatus(206);
         self::assertStringContainsString('immutable', (string) $response->headers->get('Cache-Control'));
         $this->get(self::FONTS . str_repeat('0', 64) . '.woff2')->assertNotFound();
 

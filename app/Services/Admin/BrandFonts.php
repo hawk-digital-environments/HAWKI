@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
-use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Stores the font file administrators upload for the interface and tells how to declare it.
  *
- * A file is named after its content hash, so it never changes once stored and can be cached
- * forever. WOFF2, WOFF, TTF and OTF are accepted and served as uploaded. Fonts no setting uses any more are removed by {@see self::prune()}. Variable fonts carry `.var` in their name: one such file covers every weight, which the
- * `@font-face` rules of {@see \App\Services\Frontend\View\BrandTheme} and the admin preview need to know.
+ * WOFF2, WOFF, TTF and OTF are accepted and served as uploaded. Variable fonts carry `.var` in
+ * their name: one such file covers every weight, which the `@font-face` rule of
+ * {@see \App\Services\Frontend\View\BrandTheme} and the admin preview need to know.
  */
-class BrandFonts
+class BrandFonts extends BrandAssets
 {
     public const MAX_KILOBYTES = 5120;
 
@@ -33,11 +31,6 @@ class BrandFonts
 
     /** A stored font file: content hash, `.var` for a variable font, and the format as extension. */
     public const FILE = '/^[a-f0-9]{64}(?:\.var)?\.(?:woff2|woff|ttf|otf)$/D';
-
-    /** How long an uploaded file may wait for its setting to be saved before cleanup removes it. */
-    public const GRACE_HOURS = 24;
-
-    private const DIRECTORY = 'branding/fonts/';
 
     public static function isFile(mixed $file): bool
     {
@@ -88,50 +81,19 @@ class BrandFonts
         $format = self::format($bytes) ?? throw ValidationException::withMessages(['font' => __('admin.fonts.invalid')]);
         $variable = self::hasVariationAxes($bytes);
         $file = hash('sha256', $bytes) . ($variable ? '.var' : '') . '.' . $format;
-        $this->disk()->put(self::DIRECTORY . $file, $bytes);
-        // Abandoned uploads are cleared whenever someone uploads again, not only when a font is saved.
-        $this->prune();
+        $this->put($file, $bytes);
 
         return ['file' => $file, 'name' => mb_substr($upload->getClientOriginalName(), 0, 255), 'variable' => $variable];
     }
 
-    /**
-     * Deletes stored fonts that no setting uses any more and returns how many were removed.
-     *
-     * Files younger than {@see self::GRACE_HOURS} are kept: an upload is stored before its setting
-     * is saved, so a fresh file may still be waiting in an administrator's unsaved changes.
-     * Cleanup never fails the operation that triggered it.
-     */
-    public function prune(): int
+    protected function directory(): string
     {
-        $used = [config('hawki.branding.font')];
-        $deleted = 0;
-
-        try {
-            foreach ($this->disk()->files(self::DIRECTORY) as $path) {
-                if (\in_array(basename($path), $used, true)
-                    || $this->disk()->lastModified($path) > now()->subHours(self::GRACE_HOURS)->getTimestamp()) {
-                    continue;
-                }
-
-                $this->disk()->delete($path);
-                ++$deleted;
-            }
-        } catch (\Throwable $exception) {
-            report($exception);
-        }
-
-        return $deleted;
+        return 'branding/fonts/';
     }
 
-    public function exists(string $file): bool
+    protected function used(): array
     {
-        return self::isFile($file) && $this->disk()->exists(self::DIRECTORY . $file);
-    }
-
-    public function read(string $file): ?string
-    {
-        return $this->exists($file) ? $this->disk()->get(self::DIRECTORY . $file) : null;
+        return [config('hawki.branding.font')];
     }
 
     /**
@@ -217,11 +179,4 @@ class BrandFonts
         return false;
     }
 
-    /**
-     * Fonts are needed on the sign-in page, on every instance of a deployment: they share the disk of the avatars.
-     */
-    private function disk(): Filesystem
-    {
-        return Storage::disk(config('filesystems.avatar_storage'));
-    }
 }

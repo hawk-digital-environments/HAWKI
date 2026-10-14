@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Frontend\Config;
 
 
+use App\Services\Admin\BrandMedia;
 use App\Services\Config\AbstractConfig;
 use App\Services\Config\Contracts\PublicConfigInterface;
 use Illuminate\Config\Repository;
@@ -27,6 +28,14 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
      */
     public readonly string|null $logoUrl;
 
+    /**
+     * Backgrounds of the sign-in page, shown in turn: `url`, `kind` (image or video) and an
+     * optional credit. Empty to show only the logo.
+     *
+     * @var list<array{url: string, kind: string, credit: string|null, link: string|null}>
+     */
+    public readonly array $loginBackgrounds;
+
     /** Operating institution shown on the sign-in page, or null when none is configured. */
     public readonly string|null $organizationName;
 
@@ -42,6 +51,18 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
         return is_string($svg) && '' !== trim($svg) ? 'data:image/svg+xml;base64,' . base64_encode($svg) : null;
     }
 
+    private static function loginBackgrounds(Repository $repo): array
+    {
+        return array_map(static fn (array $entry): array => [
+            'url' => 'upload' === $entry['source']
+                ? route('api.brand-media.show', ['file' => $entry['file']], false)
+                : '/bg_videos/' . $entry['file'],
+            'kind' => BrandMedia::kindOf($entry['file']),
+            'credit' => $entry['credit'],
+            'link' => $entry['link'],
+        ], BrandMedia::backgrounds($repo->get('hawki.branding.login_backgrounds')));
+    }
+
     /**
      * Reads the naming and logo values from the `app` and `hawki.branding` config namespaces.
      */
@@ -50,6 +71,7 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
         return self::fromArray([
             'appName' => (string) $repo->get('app.name'),
             'logoUrl' => self::svgUri($repo->get('hawki.branding.logo')),
+            'loginBackgrounds' => self::loginBackgrounds($repo),
             'organizationName' => trim((string) $repo->get('hawki.branding.organization_name')) ?: null,
             'organizationUrl' => LegalConfig::link($repo->get('hawki.branding.organization_url')),
         ]);
@@ -71,6 +93,7 @@ class BrandingConfig extends AbstractConfig implements PublicConfigInterface
         return [
             'appName' => $this->appName,
             'logoUrl' => $this->logoUrl,
+            'loginBackgrounds' => $this->loginBackgrounds,
             'organizationName' => $this->organizationName,
             'organizationUrl' => $this->organizationUrl,
         ];

@@ -112,6 +112,7 @@
             },
             "claim": "Your conversations are encrypted. The key stays with you.",
             "signedInAs": "Signed in as :name",
+            "imageCredit": "Image by :name",
             "videoCredit": "Video by :name",
             "videoToggle": "Video",
             "videoToggleHint": "Switch the background video off to save energy on low-power devices.",
@@ -513,6 +514,10 @@
                 "title": "Font",
                 "description": "One font file for the whole interface: WOFF2, WOFF, TTF or OTF, up to 5 MB. WOFF2 loads fastest. A variable font provides every weight. With any other font, upload the regular cut: the browser derives bold and italic text from it. Only upload a font your institution is licensed to use on the web."
             },
+            "login": {
+                "title": "Sign-in page",
+                "description": "What the large area next to the sign-in form shows. Each visit shows the next background, in light and dark mode alike; without any, only the logo is shown. Until you change the list, it holds the HAWKI videos. Images: JPEG, PNG, WebP or AVIF; videos: MP4 or WebM; up to 50 MB each. Videos play muted in a loop, and visitors can switch them off. Only upload material your institution may publish."
+            },
             "logo": {
                 "title": "Logo",
                 "description": "SVG files shown instead of the HAWKI wordmark and as the browser tab icon. The logo is drawn in the brand color, in light and dark mode alike; only its shape is used, not its own colors. Files must be static drawings of up to 256 KB: no scripts, external references or live text, so convert text to outlines before exporting."
@@ -569,6 +574,7 @@
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Corner rounding",
             "BRAND_FONT": "Font",
+            "BRAND_LOGIN_BACKGROUNDS": "Backgrounds",
             "BRAND_LOGO": "Logo",
             "BRAND_LOGO_HEIGHT": "Logo height",
             "BRAND_FAVICON": "Browser tab icon",
@@ -829,6 +835,17 @@
             "database": "Database override",
             "environment": "Environment / default",
             "deployment": "Deployment"
+        },
+        "media": {
+            "invalid": "Use a JPEG, PNG, WebP or AVIF image or an MP4 or WebM video of up to 50 MB.",
+            "upload_failed": "The file could not be uploaded. Use an image or video of up to 50 MB and try again.",
+            "invalid_entry": "Check the backgrounds: each needs an existing file, and, if given, a credit of up to 100 characters and an https link.",
+            "entry": "Background :number",
+            "credit": "Credit, e.g. the photographer",
+            "link": "Credit link (https://…)",
+            "remove": "Remove",
+            "add": "Add image or video",
+            "empty": "No backgrounds: the sign-in page shows only the logo."
         },
         "fonts": {
             "invalid": "Use a WOFF2, WOFF, TTF or OTF font file of up to 5 MB.",

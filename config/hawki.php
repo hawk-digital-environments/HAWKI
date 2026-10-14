@@ -53,6 +53,24 @@ return [
         // no .env equivalent. A variable font provides every weight; with any other font the browser
         // derives bold and italic text from the one file.
         'font' => null,
+        // Backgrounds of the sign-in page, shown in turn: images or videos, in light and dark mode alike. Edited in the administration (Settings > Branding); until then the videos listed
+        // in public/bg_videos/bg_videos.json. An empty list shows only the logo.
+        'login_backgrounds' => (static function (): array {
+            try {
+                $index = json_decode((string) @file_get_contents(public_path('bg_videos/bg_videos.json')), true, 8, JSON_THROW_ON_ERROR);
+            } catch (\Throwable) {
+                return [];
+            }
+            $entries = [];
+            // The built-in index lists videos per color mode; all of them take turns now.
+            foreach (['lightmode', 'darkmode'] as $list) {
+                foreach (is_array($index[$list] ?? null) ? $index[$list] : [] as $entry) {
+                    $entries[] = ['source' => 'builtin', 'file' => $entry['file'] ?? null,
+                        'credit' => $entry['creator'] ?? null, 'link' => $entry['link'] ?? null];
+                }
+            }
+            return $entries;
+        })(),
         // Height of the logo in the sidebar, in pixels (12-36). The sign-in page scales with it.
         // Empty = the logo's own size: 14 px for the HAWKI wordmark, 28 px for an uploaded logo.
         'logo_height' => env('BRAND_LOGO_HEIGHT') ? (int) env('BRAND_LOGO_HEIGHT') : null,

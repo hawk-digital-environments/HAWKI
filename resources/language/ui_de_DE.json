@@ -112,6 +112,7 @@
             },
             "claim": "Deine Gespräche sind verschlüsselt. Der Schlüssel bleibt bei dir.",
             "signedInAs": "Angemeldet als :name",
+            "imageCredit": "Bild von :name",
             "videoCredit": "Video von :name",
             "videoToggle": "Video",
             "videoToggleHint": "Hintergrundvideo ausschalten, um auf schwachen Geräten Energie zu sparen.",
@@ -513,6 +514,10 @@
                 "title": "Schrift",
                 "description": "Eine Schriftdatei für die gesamte Oberfläche: WOFF2, WOFF, TTF oder OTF mit bis zu 5 MB. WOFF2 lädt am schnellsten. Eine variable Schrift liefert alle Schriftstärken. Laden Sie bei jeder anderen Schrift den normalen Schnitt hoch: Fetten und kursiven Text leitet der Browser daraus ab. Laden Sie nur eine Schrift hoch, für die Ihre Einrichtung eine Web-Lizenz besitzt."
             },
+            "login": {
+                "title": "Anmeldeseite",
+                "description": "Was die große Fläche neben dem Anmeldeformular zeigt. Bei jedem Besuch erscheint der nächste Hintergrund, im hellen wie im dunklen Modus; ohne Hintergrund nur das Logo. Bis Sie die Liste ändern, enthält sie die HAWKI-Videos. Bilder: JPEG, PNG, WebP oder AVIF; Videos: MP4 oder WebM; jeweils bis zu 50 MB. Videos laufen stumm in Schleife und können von Besuchenden ausgeschaltet werden. Laden Sie nur Material hoch, das Ihre Einrichtung veröffentlichen darf."
+            },
             "logo": {
                 "title": "Logo",
                 "description": "SVG-Dateien, die anstelle des HAWKI-Schriftzugs und als Symbol im Browser-Tab erscheinen. Das Logo wird im hellen wie im dunklen Modus in der Markenfarbe dargestellt; verwendet wird nur seine Form, nicht seine eigenen Farben. Die Dateien müssen statische Zeichnungen bis 256 KB sein: ohne Skripte, externe Verweise oder Text als Schrift. Wandeln Sie Text vor dem Export in Pfade um."
@@ -569,6 +574,7 @@
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Eckenrundung",
             "BRAND_FONT": "Schrift",
+            "BRAND_LOGIN_BACKGROUNDS": "Hintergründe",
             "BRAND_LOGO": "Logo",
             "BRAND_LOGO_HEIGHT": "Logohöhe",
             "BRAND_FAVICON": "Symbol im Browser-Tab",
@@ -829,6 +835,17 @@
             "database": "Datenbanküberschreibung",
             "environment": "Umgebung / Standard",
             "deployment": "Bereitstellung"
+        },
+        "media": {
+            "invalid": "Verwenden Sie ein Bild (JPEG, PNG, WebP, AVIF) oder ein Video (MP4, WebM) mit bis zu 50 MB.",
+            "upload_failed": "Die Datei konnte nicht hochgeladen werden. Verwenden Sie ein Bild oder Video mit bis zu 50 MB und versuchen Sie es erneut.",
+            "invalid_entry": "Prüfen Sie die Hintergründe: Jeder braucht eine vorhandene Datei, und, falls angegeben, einen Nachweis mit bis zu 100 Zeichen und einen https-Link.",
+            "entry": "Hintergrund :number",
+            "credit": "Nachweis, z. B. Fotograf*in",
+            "link": "Link zum Nachweis (https://…)",
+            "remove": "Entfernen",
+            "add": "Bild oder Video hinzufügen",
+            "empty": "Keine Hintergründe: Die Anmeldeseite zeigt nur das Logo."
         },
         "fonts": {
             "invalid": "Verwenden Sie eine Schriftdatei im Format WOFF2, WOFF, TTF oder OTF mit bis zu 5 MB.",
