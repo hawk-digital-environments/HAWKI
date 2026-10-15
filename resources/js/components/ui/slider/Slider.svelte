@@ -126,7 +126,8 @@
         height: 20px;
         width: 100%;
         overflow: hidden;
-        border-radius: var(--corner-full);
+        /* Follows the corner style, scaled to a low control (see radius.css). */
+        border-radius: var(--corner-control-sm);
         /* Neutral fill instead of the slightly blue-tinted --color-bg-secondary. */
         background-color: var(--color-surface-light);
         border: none;
@@ -135,7 +136,11 @@
     :global(.slider-range) {
         position: absolute;
         height: 100%;
-        border-radius: var(--corner-full);
+        /* The library ends the range at the thumb's center; reaching past it by half a thumb
+           plus the thumb's inset makes the filled part enclose the thumb instead of stopping
+           under it. The track clips the overshoot at the far end. */
+        margin-right: calc(-1 * (0.25rem * 2 + 2px));
+        border-radius: var(--corner-control-sm);
         background-color: var(--color-highlight);
     }
 
@@ -143,7 +148,8 @@
         display: block;
         height: calc(0.25rem * 4);
         width: calc(0.25rem * 4);
-        border-radius: var(--corner-full);
+        /* Concentric with the track: its radius minus the 2px the thumb sits inside it. */
+        border-radius: max(0px, calc(var(--corner-control-sm) - 2px));
         background-color: var(--color-surface-raised);
         box-shadow: var(--elevation-1);
         cursor: ew-resize;

@@ -33,7 +33,7 @@ test('the preview applies a color, keeps the accent while one is half-typed and 
     assert.equal(target.values.get('--accent-hue'), '29.2');
     assert.equal(target.values.get('--corner-lg'), '0');
     assert.equal(target.values.get('--corner-control'), '0px');
-    assert.equal(target.values.get('--corner-control-sm'), '2px');
+    assert.equal(target.values.get('--corner-control-sm'), '0px');
     applyBrandTheme({ accentColor: '#ff0', cornerStyle: 'unknown' }, target as never);
     assert.equal(target.values.get('--accent-hue'), '29.2');
     assert.equal(target.values.get('--corner-lg'), '24px');

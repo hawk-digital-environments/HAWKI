@@ -33,7 +33,7 @@ class BrandTheme extends Component
 
     private const CORNERS = [
         'soft' => ['xs' => '4px', 'sm' => '6px', 'md' => '8px', 'lg' => '12px', 'control' => '8px', 'control-sm' => '5px'],
-        'square' => ['xs' => '0', 'sm' => '0', 'md' => '0', 'lg' => '0', 'control' => '0px', 'control-sm' => '2px'],
+        'square' => ['xs' => '0', 'sm' => '0', 'md' => '0', 'lg' => '0', 'control' => '0px', 'control-sm' => '0px'],
     ];
 
     /** The configured brand color as `#rrggbb`, or null when none (or an invalid one) is configured. */
