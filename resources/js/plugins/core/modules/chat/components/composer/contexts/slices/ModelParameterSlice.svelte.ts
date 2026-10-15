@@ -12,11 +12,7 @@ const defaultParameters: Record<AiModelParameterKeyType, any> = {
 export const reasoningLevels = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type ReasoningLevel = typeof reasoningLevels[number];
 
-interface ModelParameterSliceCheckpoint {
-    parameters: Record<AiModelParameterKeyType, unknown>;
-}
-
-interface ModelParameterSliceCheckpoint {
+export interface ModelParameterSliceCheckpoint {
     parameters: Record<AiModelParameterKeyType, unknown>;
 }
 

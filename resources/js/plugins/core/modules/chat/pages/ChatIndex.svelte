@@ -1,24 +1,18 @@
 <!--
-@component Page component for the chat module's `/` index route (route name
-`chat.index`, see `ChatModule.ts`) — the "new chat" screen. Shows the welcome
-hero and a fresh composer. Sending the first message makes the `ChatTransport`
-create the conversation and navigate to its `chat.conversation` route
-(`ChatConversation.svelte`), where the still-running generation is picked up
-from the store's in-flight cache.
+  @component Page component for the chat module's `/` index route (route name
+  `chat.index`, see `ChatModule.ts`) — the "new chat" screen. Renders into the
+  shared `ChatLayout`'s scroll region: the welcome hero, or the optimistic
+  first message while its conversation is being created. The composer itself
+  lives in the layout, so sending the first message keeps all of the user's
+  composer settings as the navigation to `chat.conversation` happens.
 -->
 <script lang="ts">
-    import ChatComposer from '$plugins/core/snippets/ChatComposer.svelte';
-    import ChatComposerDock from '$plugins/core/modules/chat/components/ChatComposerDock.svelte';
     import ChatMessageView from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import ChatWelcome from '$plugins/core/modules/chat/components/ChatWelcome.svelte';
-    import Page from '$lib/components/ui/page/Page.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
-    import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {ChatTransport} from '$plugins/core/modules/chat/transport/ChatTransport.js';
-    import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import type {ChatMessage} from '$plugins/core/modules/chat/types.js';
+    import {useChatComposerContext} from '$plugins/core/modules/chat/hooks/useChatComposerContext.svelte.js';
 
     // The index route matches without params; accept (and ignore) the route
     // props so the component satisfies the router's page signature.
@@ -28,29 +22,9 @@ from the store's in-flight cache.
     const {}: Props = $props();
     const app = useApp();
     const store = useStore('chat');
-    const systemPromptStore = useStore('system-prompts');
-    const router = useRouter();
     const {__} = useTranslator();
-    const defaultPrompt = systemPromptStore.getPromptByType('default').prompt;
-    const transport = new ChatTransport(app, store, {
-        // Do not pull the user back if they switched chats while the
-        // conversation was being created.
-        onConversationCreated: createdSlug => {
-            if (router.isActive('chat.index')) {
-                void router.goToRoute('chat.conversation', {slug: createdSlug});
-            }
-        },
-        onConversationPending: message => pendingMessage = message
-    });
-
-    let composer = $state<ComposerContext | null>(null);
-    let pendingMessage = $state<ChatMessage | null>(null);
-    let scrollRegion = $state<HTMLDivElement | null>(null);
-    let composerDockHeight = $state(0);
-
-    // No messages yet: welcome text and composer are centred as one block
-    // instead of the composer docking to the bottom of the scroll region.
-    const isEmpty = $derived(!pendingMessage);
+    // Reads the layout's composer session (see the hook's docs).
+    const chat = useChatComposerContext();
 
     // Opening this page always starts from a blank chat, also when coming
     // from an open conversation.
@@ -60,88 +34,35 @@ from the store's in-flight cache.
 
     // Land the cursor in the input so typing can start right away.
     $effect(() => {
-        if (!composer) return;
-        composer.autoFocusInput();
+        chat.autoFocusInput();
     });
 
     // Clicking the "new chat" button in the sidebar while this page is
     // already open should give the user an active input again.
     $effect(() => {
         return app.events.sync.on('onNewChatRequested', () => {
-            if (!composer) return;
-            composer.autoFocusInput();
+            chat.autoFocusInput();
         });
     });
 </script>
 
-<Page>
-    {#snippet body()}
-        <div class="chat-body" class:empty={isEmpty} style:--composer-dock-height="{composerDockHeight}px">
-            <div class="scroll-region" bind:this={scrollRegion}>
-                {#if pendingMessage}
-                    <div class="messages" role="log" aria-live="polite" aria-label={__('chat.page.messageHistory')}>
-                        <ChatMessageView
-                            message={pendingMessage}
-                            onDelete={() => undefined}
-                            onDeleteAttachment={() => undefined}
-                        />
-                        <div class="pending-response" role="status">
-                            <span class="spinner" aria-hidden="true"></span>
-                            <span>{__('chat.page.generating')}</span>
-                        </div>
-                    </div>
-                {:else}
-                    <ChatWelcome />
-                {/if}
-            </div>
-
-            <ChatComposerDock {scrollRegion} bind:height={composerDockHeight}>
-                <ChatComposer
-                    context="aiConv"
-                    {transport}
-                    initialSystemPrompt={defaultPrompt}
-                    onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
-                    onReady={value => composer = value}
-                />
-            </ChatComposerDock>
+{#if chat.pendingMessage}
+    <div class="messages" role="log" aria-live="polite" aria-label={__('chat.page.messageHistory')}>
+        <ChatMessageView
+            message={chat.pendingMessage}
+            onDelete={() => undefined}
+            onDeleteAttachment={() => undefined}
+        />
+        <div class="pending-response" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>{__('chat.page.generating')}</span>
         </div>
-    {/snippet}
-</Page>
+    </div>
+{:else}
+    <ChatWelcome />
+{/if}
 
 <style>
-    /* Shared canvas for the scroll region and the floating composer. Fills the
-       Page shell's body area. */
-    .chat-body {
-        position: relative;
-        height: 100%;
-        min-height: 0;
-    }
-
-    /* Empty chat: the scroll region shrinks to its content so the welcome
-       block and the composer sit together in the middle of the panel.
-       The block is nudged above the true centre — the disclaimer adds
-       visual weight at the bottom, so geometric centring reads as low. */
-    .chat-body.empty {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding-bottom: var(--space-10);
-        overflow-y: auto;
-    }
-
-    .empty .scroll-region { height: auto; flex: 0 0 auto; overflow: visible; }
-
-    .empty :global(.welcome) {
-        height: auto;
-        min-height: 0;
-        padding-bottom: var(--space-6);
-    }
-
-    .empty :global(.composer-dock) { position: static; padding-bottom: 0; }
-    .empty :global(.composer-dock::before) { display: none; }
-
-    .scroll-region { height: 100%; overflow-y: auto; }
-
     .messages {
         display: flex;
         width: min(100%, 52rem);
@@ -174,16 +95,9 @@ from the store's in-flight cache.
         .messages { padding-inline: var(--space-3); }
     }
 
-    /* Mobile: the floating nav toggle overlays the content top, so the message
-       list and the empty-state welcome reserve room to clear it (toggle inset +
-       height + gap) while still letting content scroll up under the
-       SidebarContent fade overlay. */
+    /* Mobile: the floating nav toggle overlays the content top, so the
+       message list reserves room to clear it. */
     @media (--bp-md-and-smaller) {
         .messages { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
-        .empty :global(.welcome) { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
-    }
-
-    @media print {
-        .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
     }
 </style>

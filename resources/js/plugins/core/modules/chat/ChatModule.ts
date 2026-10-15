@@ -14,6 +14,7 @@ import {
 
 const loadIndexPage = async () => import('./pages/ChatIndex.svelte');
 const loadConversationPage = async () => import('./pages/ChatConversation.svelte');
+const loadChatLayout = async () => import('./components/ChatLayout.svelte');
 
 /**
  * The "chat" feature module of the `core` plugin.
@@ -54,8 +55,8 @@ export class ChatModule implements HawkiModule {
      */
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar
-            .lazyRoute('/', loadIndexPage, {name: 'chat.index'})
-            .lazyRoute('/:slug', loadConversationPage, {name: 'chat.conversation'});
+            .lazyRoute('/', loadIndexPage, {name: 'chat.index', lazyLayout: loadChatLayout})
+            .lazyRoute('/:slug', loadConversationPage, {name: 'chat.conversation', lazyLayout: loadChatLayout});
     }
 
     /** Declare sources now; the kernel reads their runtime data after stores load. */
