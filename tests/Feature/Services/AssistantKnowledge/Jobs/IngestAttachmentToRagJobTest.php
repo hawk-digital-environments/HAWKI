@@ -9,6 +9,7 @@ use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Ai\Agents\Utils\ExtractTextCollector;
 use App\Services\Rag\Contracts\RagIngesterInterface;
+use App\Services\Rag\Exceptions\RagIngestionRequestException;
 use App\Services\Rag\Values\FileIngestionPayload;
 use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
@@ -90,6 +91,7 @@ class IngestAttachmentToRagJobTest extends TestCase
         $this->assertDatabaseHas('assistant_attachments', [
             'id' => $this->attachment->id,
             'rag_status' => 'skipped',
+            'rag_user_error' => 'rag.ingestion.stored_file_missing_error',
         ]);
     }
 
@@ -102,6 +104,7 @@ class IngestAttachmentToRagJobTest extends TestCase
         $this->assertDatabaseHas('assistant_attachments', [
             'id' => $this->attachment->id,
             'rag_status' => 'skipped',
+            'rag_user_error' => 'rag.ingestion.no_extractable_text_error',
         ]);
     }
 
@@ -119,6 +122,61 @@ class IngestAttachmentToRagJobTest extends TestCase
 
         static::assertSame('failed', $attachment->rag_status->value);
         static::assertStringContainsString('refused to provide dataset', $attachment->rag_error);
+        static::assertSame('rag.ingestion.dataset_error', $attachment->rag_user_error);
+    }
+
+    public function testItFailsWithTheDatasetErrorWhenDatasetProvisioningIsPermanentlyRejected(): void
+    {
+        $this->mockStorageAndCollector('# Knowledge');
+        $this->mock(RagIngesterInterface::class)
+            ->shouldReceive('ensureDataset')
+            ->andThrow(RagIngestionRequestException::forFailedResponse('POST', 'https://rag/datasets', 403, 'forbidden'));
+
+        $this->runJob();
+
+        $attachment = $this->attachment->refresh();
+
+        static::assertSame('failed', $attachment->rag_status->value);
+        static::assertSame('rag.ingestion.dataset_error', $attachment->rag_user_error);
+        // Technical detail stays in rag_error for admins, trimmed to a sane length.
+        static::assertSame(\mb_substr(RagIngestionRequestException::forFailedResponse('POST', 'https://rag/datasets', 403, 'forbidden')->getMessage(), 0, 500), $attachment->rag_error);
+    }
+
+    public function testItFailsWithTheIngestionErrorWhenTheIngestionPushIsPermanentlyRejected(): void
+    {
+        $this->mockStorageAndCollector('# Knowledge');
+
+        $this->mock(RagIngesterInterface::class, function ($mock): void {
+            $mock->shouldReceive('ensureDataset')->andReturn(true);
+            $mock->shouldReceive('ingest')
+                ->andThrow(RagIngestionRequestException::forFailedResponse('POST', 'https://rag/integrations/text-ingestions', 422, 'invalid'));
+        });
+
+        $this->runJob();
+
+        $attachment = $this->attachment->refresh();
+
+        static::assertSame('failed', $attachment->rag_status->value);
+        static::assertSame('rag.ingestion.file_error', $attachment->rag_user_error);
+        static::assertStringContainsString('status 422', (string)$attachment->rag_error);
+    }
+
+    public function testItFailsWithTheIngestionErrorWhenThePushReturnsNoHandle(): void
+    {
+        $this->mockStorageAndCollector('# Knowledge');
+
+        $this->mock(RagIngesterInterface::class, function ($mock): void {
+            $mock->shouldReceive('ensureDataset')->andReturn(true);
+            $mock->shouldReceive('ingest')->andReturn(new TextIngestionResult('', 'source_' . str_repeat('ab', 16)));
+        });
+
+        $this->runJob();
+
+        $attachment = $this->attachment->refresh();
+
+        static::assertSame('failed', $attachment->rag_status->value);
+        static::assertSame('rag.ingestion.file_error', $attachment->rag_user_error);
+        static::assertStringContainsString('no ingestion handle', (string)$attachment->rag_error);
     }
 
     public function testItIngestsAndMarksIngestedWhenTheTaskSucceeds(): void
@@ -169,6 +227,7 @@ class IngestAttachmentToRagJobTest extends TestCase
 
         static::assertSame('failed', $attachment->rag_status->value);
         static::assertStringContainsString('task-2', (string)$attachment->rag_error);
+        static::assertSame('rag.ingestion.file_error', $attachment->rag_user_error);
     }
 
     public function testItPollsARunningTaskOnTheNextRun(): void
@@ -274,6 +333,70 @@ class IngestAttachmentToRagJobTest extends TestCase
 
         static::assertSame('failed', $attachment->rag_status->value);
         static::assertStringContainsString('job timed out', $attachment->rag_error);
+        static::assertSame('rag.ingestion.timeout_error', $attachment->rag_user_error);
+    }
+
+    /**
+     * A transient backend failure keeps the attachment active but records
+     * the retry reason in `rag_error`; the eventual success clears it.
+     */
+    public function testItRecordsTheRetryErrorAndClearsItOnSuccess(): void
+    {
+        $this->mockStorageAndCollector('# Knowledge');
+        $sourceId = 'source_' . str_repeat('ab', 16);
+
+        $this->mock(RagIngesterInterface::class, function ($mock) use ($sourceId): void {
+            // First attempt: the backend answers 503 (transient) and the job
+            // re-releases itself; the second attempt succeeds.
+            $mock->shouldReceive('ensureDataset')->twice()->andReturn(true);
+            $mock->shouldReceive('ingest')->once()->andThrow(
+                RagIngestionRequestException::forFailedResponse('POST', 'http://rag.invalid/integrations/text-ingestions', 503, 'upstream down'),
+            );
+            $mock->shouldReceive('ingest')->once()->andReturn(new TextIngestionResult('task-r', $sourceId));
+            $mock->shouldReceive('checkIngestion')->with('task-r')->andReturn(RagIngestionCheck::succeeded());
+        });
+
+        $this->runJob();
+
+        $attachment = $this->attachment->refresh();
+
+        static::assertSame('pending', $attachment->rag_status->value);
+        static::assertStringContainsString('retry-error [push-ingestion]', (string)$attachment->rag_error);
+        static::assertStringContainsString('upstream down', (string)$attachment->rag_error);
+        static::assertNull($attachment->rag_user_error);
+
+        $this->runJob();
+
+        $attachment = $this->attachment->refresh();
+
+        static::assertSame('ingested', $attachment->rag_status->value);
+        static::assertNull($attachment->rag_error);
+        static::assertNull($attachment->rag_user_error);
+    }
+
+    /**
+     * Oversized technical detail is trimmed to a length that always fits
+     * the `rag_error` TEXT column (worst-case utf8mb4 byte math).
+     */
+    public function testItTrimsOversizedTechnicalErrorDetail(): void
+    {
+        $this->mockStorageAndCollector('# Knowledge');
+
+        $this->mock(RagIngesterInterface::class, function ($mock): void {
+            $mock->shouldReceive('ensureDataset')->andReturn(true);
+            $mock->shouldReceive('ingest')->andThrow(
+                RagIngestionRequestException::forFailedResponse('POST', 'http://rag.invalid/integrations/text-ingestions', 422, str_repeat('x', 20000)),
+            );
+        });
+
+        $this->runJob();
+
+        $attachment = $this->attachment->refresh();
+
+        static::assertSame('failed', $attachment->rag_status->value);
+        static::assertLessThanOrEqual(16000 + \strlen('…[trimmed]'), \mb_strlen((string)$attachment->rag_error));
+        static::assertStringEndsWith('…[trimmed]', (string)$attachment->rag_error);
+        static::assertSame('rag.ingestion.file_error', $attachment->rag_user_error);
     }
 
     /**

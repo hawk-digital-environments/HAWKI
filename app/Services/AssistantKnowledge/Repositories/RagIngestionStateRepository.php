@@ -6,6 +6,7 @@ namespace App\Services\AssistantKnowledge\Repositories;
 
 use App\Models\Assistants\AssistantAttachment;
 use App\Services\Rag\Values\RagIngestionStatus;
+use App\Services\Rag\Values\RagIngestionUserError;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
 use Psr\Clock\ClockInterface;
@@ -29,8 +30,9 @@ class RagIngestionStateRepository extends AbstractRepository
 
     /**
      * Sets the ingest timestamp automatically when the status becomes
-     * INGESTED; passing null for taskId/documentId/batchId/error leaves
-     * the stored values untouched.
+     * INGESTED; passing null for taskId/documentId/batchId/error/userError
+     * leaves the stored values untouched. Success clears both error
+     * columns, so a row can never carry stale failure state as ingested.
      */
     public function updateState(
         int $assistantAttachmentId,
@@ -39,6 +41,7 @@ class RagIngestionStateRepository extends AbstractRepository
         ?string $error = null,
         ?string $documentId = null,
         ?string $batchId = null,
+        ?RagIngestionUserError $userError = null,
     ): void {
         $update = ['rag_status' => $status->value];
 
@@ -48,6 +51,10 @@ class RagIngestionStateRepository extends AbstractRepository
 
         if (null !== $error) {
             $update['rag_error'] = $error;
+        }
+
+        if (null !== $userError) {
+            $update['rag_user_error'] = $userError->value;
         }
 
         if (null !== $documentId) {
@@ -60,8 +67,20 @@ class RagIngestionStateRepository extends AbstractRepository
 
         if (RagIngestionStatus::INGESTED === $status) {
             $update['rag_ingested_at'] = $this->clock->now();
+            $update['rag_error'] = null;
+            $update['rag_user_error'] = null;
         }
 
         $this->getQuery()->whereKey($assistantAttachmentId)->update($update);
+    }
+
+    /**
+     * Records the reason of a retry in `rag_error` without
+     * touching the ingestion state — diagnostic only: success clears it
+     * and a terminal failure overwrites it (see {@see updateState()}).
+     */
+    public function noteRetryReason(int $assistantAttachmentId, string $error): void
+    {
+        $this->getQuery()->whereKey($assistantAttachmentId)->update(['rag_error' => $error]);
     }
 }

@@ -18,7 +18,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string                         $name
  * @property null|string                    $rag_batch_id
  * @property null|string                    $rag_document_id backend-assigned RAG handle: `adoc_*` (file ingestion) or `source_*` (text ingestion)
+ * @property null|string                    $rag_error technical ingestion failure detail — never shown to users
  * @property null|RagIngestionStatus        $rag_status
+ * @property null|string                    $rag_user_error frontend translation key (`rag.ingestion.*`) of the user-facing failure reason
  * @property string                         $type
  * @property null|\Illuminate\Support\Carbon $updated_at
  * @property string                         $uuid

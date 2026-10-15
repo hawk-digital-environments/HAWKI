@@ -138,7 +138,7 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
 
         static::assertSame('D1', $text['documents'][0]['citeId']);
         static::assertSame('D2', $text['documents'][1]['citeId']);
-        static::assertStringContainsString('citeId', $text['instructions']);
+        static::assertArrayNotHasKey('instructions', $text);
 
         // Second search of the run: same documents keep their cite ids,
         // a new one continues the numbering.
@@ -258,9 +258,6 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
      */
     private function textResult(array $payload): string
     {
-        $payload['instructions'] = $payload['instructions']
-            ?? 'When using this tool, always rely on the response from the RAG system. Cite sources by the document names from the `documents` list.';
-
         return json_encode([
             'content' => [
                 ['type' => 'text', 'text' => json_encode($payload, JSON_THROW_ON_ERROR)],

@@ -40,6 +40,7 @@ class AssistantAttachmentSchema extends Schema
             Str::make('mime'),
             Str::make('rag_status'),
             Str::make('rag_error'),
+            Str::make('rag_user_error'),
             Str::make('identifier')->extractUsing(function (AssistantAttachment $assistantAttachment) {
                 return (string)StoredFileIdentifier::fromAssistantAttachment($assistantAttachment);
             }),

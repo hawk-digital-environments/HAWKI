@@ -6,6 +6,7 @@ namespace App\Services\Rag\Config;
 
 use App\Services\Config\AbstractConfig;
 use App\Services\Config\Contracts\PublicConfigInterface;
+use App\Services\Rag\Values\RagAttachmentIngestion;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 
@@ -62,11 +63,18 @@ class RagConfig extends AbstractConfig implements PublicConfigInterface
     public readonly string $datasetPrefix;
 
     /**
-     * What is sent to the RAG server for assistant attachments: "text"
-     * pushes locally extracted text; "file" uploads the original file and
-     * lets the RAG server's own converter pipeline run.
+     * What is sent to the RAG server for assistant attachments: extracted
+     * text or the original file (see {@see RagAttachmentIngestion}; the
+     * config value is normalized there, with text as the fallback).
      */
-    public readonly string $attachmentIngestion;
+    public readonly RagAttachmentIngestion $attachmentIngestion;
+
+    /**
+     * How long an ingestion job may keep retrying (its {@see \App\Services\AssistantKnowledge\Jobs\IngestAttachmentToRag::retryUntil()}
+     * window), in minutes; expiry afterwards funnels into the job's
+     * `failed()` handler.
+     */
+    public readonly int $ingestRetryUntilMinutes;
 
     /**
      * Local identity (ai_tools.name) of the file-knowledge query tool the
@@ -104,7 +112,8 @@ class RagConfig extends AbstractConfig implements PublicConfigInterface
             'apiKey' => (string) $repo->get('rag.api_key', ''),
             'timeout' => (int) $repo->get('rag.timeout', 30),
             'datasetPrefix' => (string) $repo->get('rag.dataset_prefix', 'assistant_'),
-            'attachmentIngestion' => (string) $repo->get('rag.attachment_ingestion', 'text'),
+            'attachmentIngestion' => RagAttachmentIngestion::fromConfigString($repo->get('rag.attachment_ingestion')),
+            'ingestRetryUntilMinutes' => (int) $repo->get('rag.ingest_retry_until_minutes', 30),
             'queryToolName' => (string) $repo->get('rag.query_tool', 'hawki-rag-query-search'),
             'webSearchToolName' => (string) $repo->get('rag.web_search_tool', 'hawki-rag-web-search-tool'),
         ]);

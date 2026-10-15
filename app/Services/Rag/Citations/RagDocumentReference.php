@@ -14,6 +14,15 @@ final class RagDocumentReference
         /** Either `documents` (managed adoc id) or `attachments` (uuid). */
         public readonly string $kind,
         public readonly string $id,
-        public string $name,
+        public readonly string $name,
     ) {}
+
+    /**
+     * The reference's stable identity — the key the citation collector
+     * dedupes by and allocates run-stable cite ids under.
+     */
+    public function key(): string
+    {
+        return $this->kind . ':' . $this->id;
+    }
 }

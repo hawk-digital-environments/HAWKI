@@ -233,15 +233,16 @@
                 "upload_allowed_extensions": "Allowed extensions",
                 "upload_rejected_type": "File type not supported",
                 "upload_browse": "Browse files",
+                "upload_progress": "Uploading files",
                 "attached_files": "Attached files",
                 "input_knowledge_databases": "Knowledge databases",
-                "upload_ingesting": "Adding to knowledge database…",
-                "rag_status": "RAG status",
-                "rag_status_pending": "Pending",
-                "rag_status_success": "Success",
-                "rag_status_failed": "Failed",
-                "ingestion_failed": ":name could not be added to the knowledge database: :reason",
-                "ingestion_failed_unknown_reason": "unknown reason",
+                "no_files": "No files uploaded yet",
+                "manage_files": "Manage files",
+                "delete_all_files": "Delete all files",
+                "delete_all_confirm_title": "Delete all files?",
+                "delete_all_confirm_description": "All attached files are permanently removed from the assistant.",
+                "delete_all_error": "Some files could not be deleted.",
+                "load_files_in_context": "Files are loaded into the conversation context.",
                 "no_model_selected": "No model selected yet.",
                 "upload_disabled_model_not_configured": "The currently selected model is not configured for the knowledge base."
             },
@@ -348,8 +349,5 @@
         "testChat": {
             "empty_hint": "Start a conversation to test the assistant."
         }
-
-
-
     }
 }
