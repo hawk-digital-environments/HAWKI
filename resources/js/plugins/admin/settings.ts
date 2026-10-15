@@ -18,7 +18,7 @@ export const settingsTabs = [
                 key: 'status',
                 settings: ['BRAND_COLOR_SUCCESS', 'BRAND_COLOR_WARNING', 'BRAND_COLOR_ERROR', 'BRAND_COLOR_INFO']
             },
-            { key: 'font', settings: ['BRAND_FONT'] },
+            { key: 'font', settings: ['BRAND_FONT', 'BRAND_FONT_500', 'BRAND_FONT_600', 'BRAND_FONT_ITALIC', 'BRAND_FONT_500_ITALIC', 'BRAND_FONT_600_ITALIC'] },
             { key: 'login', settings: ['BRAND_LOGIN_BACKGROUNDS', 'BRAND_LOGIN_NEWS'] },
             { key: 'onboarding', settings: ['BRAND_ONBOARDING'] },
             { key: 'logo', settings: ['BRAND_LOGO', 'BRAND_LOGO_HEIGHT', 'BRAND_FAVICON'] }

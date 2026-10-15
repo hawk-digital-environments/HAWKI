@@ -20,7 +20,7 @@ class SystemSettings
     public const OKLCH = ['BRAND_COLOR_SUCCESS', 'BRAND_COLOR_WARNING', 'BRAND_COLOR_ERROR', 'BRAND_COLOR_INFO'];
 
     /** Settings whose value names an uploaded font file. */
-    public const FONT = ['BRAND_FONT'];
+    public const FONT = ['BRAND_FONT', 'BRAND_FONT_500', 'BRAND_FONT_600', 'BRAND_FONT_ITALIC', 'BRAND_FONT_500_ITALIC', 'BRAND_FONT_600_ITALIC'];
 
     /** Settings whose value lists uploaded sign-in backgrounds. */
     public const MEDIA = ['BRAND_LOGIN_BACKGROUNDS'];
@@ -41,6 +41,11 @@ class SystemSettings
         'BRAND_COLOR_INFO' => ['hawki.branding.status_colors.info', 'string', 'nullable|string|max:60'],
         'BRAND_CORNER_STYLE' => ['hawki.branding.corner_style', 'string', 'required|in:round,soft,square'],
         'BRAND_FONT' => ['hawki.branding.font', 'string', 'nullable|string|max:80'],
+        'BRAND_FONT_500' => ['hawki.branding.font_500', 'string', 'nullable|string|max:80'],
+        'BRAND_FONT_600' => ['hawki.branding.font_600', 'string', 'nullable|string|max:80'],
+        'BRAND_FONT_ITALIC' => ['hawki.branding.font_italic', 'string', 'nullable|string|max:80'],
+        'BRAND_FONT_500_ITALIC' => ['hawki.branding.font_500_italic', 'string', 'nullable|string|max:80'],
+        'BRAND_FONT_600_ITALIC' => ['hawki.branding.font_600_italic', 'string', 'nullable|string|max:80'],
         'BRAND_LOGIN_BACKGROUNDS' => ['hawki.branding.login_backgrounds', 'json', 'present|array|max:20'],
         'BRAND_LOGIN_NEWS' => ['hawki.branding.login_news', 'json', 'present|array|max:' . LoginNews::MAX_ENTRIES],
         'BRAND_ONBOARDING' => ['hawki.branding.onboarding', 'json', 'present|array|max:' . Onboarding::MAX_STEPS],

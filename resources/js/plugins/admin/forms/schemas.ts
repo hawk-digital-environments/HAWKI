@@ -211,6 +211,11 @@ export const settingsSchemas: Record<string, z.ZodType> = {
     BRAND_COLOR_INFO: oklchColor,
     BRAND_CORNER_STYLE: z.enum(['round', 'soft', 'square']),
     BRAND_FONT: font,
+    BRAND_FONT_500: font,
+    BRAND_FONT_600: font,
+    BRAND_FONT_ITALIC: font,
+    BRAND_FONT_500_ITALIC: font,
+    BRAND_FONT_600_ITALIC: font,
     BRAND_ONBOARDING: z
         .array(
             z.discriminatedUnion('type', [

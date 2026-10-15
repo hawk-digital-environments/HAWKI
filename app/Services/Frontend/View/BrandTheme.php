@@ -28,6 +28,9 @@ class BrandTheme extends Component
 
     private const FONT_FAMILY = 'HAWKI Brand';
 
+    /** The weights the interface uses, regular first; one font file can be uploaded for each. */
+    private const FONT_WEIGHTS = [400, 500, 600];
+
     private const CORNERS = [
         'soft' => ['xs' => '4px', 'sm' => '6px', 'md' => '8px', 'lg' => '12px', 'control' => '8px', 'control-sm' => '5px'],
         'square' => ['xs' => '0', 'sm' => '0', 'md' => '0', 'lg' => '0', 'control' => '0px', 'control-sm' => '2px'],
@@ -91,21 +94,50 @@ class BrandTheme extends Component
     }
 
     /**
-     * The `@font-face` rule for the uploaded font, or an empty string without one.
+     * The `@font-face` rules for the uploaded fonts, or an empty string without a regular (400) one.
      *
-     * A variable font is declared for every weight. Any other font is declared as regular, so the
-     * browser thickens it where bold is asked for.
+     * Upright and italic are declared the same way, each on its own: a variable 400 file is declared
+     * for every weight and the other files of that style are left out; otherwise each file is declared
+     * at its weight, and a weight without a file falls back to the nearest one. Without italic files the
+     * browser slants the upright font; without a bold one it thickens the regular font.
      *
+     * @param array<int, mixed> $fonts the stored upright files by weight (400, 500, 600)
      * @param callable(string): string $url maps a stored file to its public URL
+     * @param array<int, mixed> $italics the stored italic files by weight, used only with a regular font
      */
-    public static function fontFace(mixed $font, callable $url): string
+    public static function fontFaces(array $fonts, callable $url, array $italics = []): string
     {
-        if (!BrandFonts::isFile($font)) {
+        if (!BrandFonts::isFile($fonts[400] ?? null)) {
             return '';
         }
 
-        return '@font-face{font-family:"' . self::FONT_FAMILY . '";src:url("' . $url($font) . '") format("' . BrandFonts::cssFormat($font)
-            . '");font-weight:' . (BrandFonts::isVariableFile($font) ? '100 900' : '400') . ';font-display:swap}';
+        return self::faces($fonts, 'normal', $url) . self::faces($italics, 'italic', $url);
+    }
+
+    /**
+     * @param array<int, mixed> $fonts
+     * @param callable(string): string $url
+     */
+    private static function faces(array $fonts, string $style, callable $url): string
+    {
+        $face = static fn (string $file, string $weight): string => '@font-face{font-family:"' . self::FONT_FAMILY . '";src:url("' . $url($file)
+            . '") format("' . BrandFonts::cssFormat($file) . '");font-weight:' . $weight
+            . ('italic' === $style ? ';font-style:italic' : '') . ';font-display:swap}';
+        $regular = $fonts[400] ?? null;
+
+        if (BrandFonts::isFile($regular) && BrandFonts::isVariableFile($regular)) {
+            return $face($regular, '100 900');
+        }
+
+        $faces = '';
+
+        foreach (self::FONT_WEIGHTS as $weight) {
+            if (BrandFonts::isFile($fonts[$weight] ?? null)) {
+                $faces .= $face($fonts[$weight], (string) $weight);
+            }
+        }
+
+        return $faces;
     }
 
     /**
@@ -141,9 +173,10 @@ class BrandTheme extends Component
             $tokens[] = '--logo-height:' . $height / 16 . 'rem';
         }
 
-        $fonts = self::fontFace(
-            config('hawki.branding.font'),
+        $fonts = self::fontFaces(
+            [400 => config('hawki.branding.font'), 500 => config('hawki.branding.font_500'), 600 => config('hawki.branding.font_600')],
             static fn (string $file): string => route('api.brand-fonts.show', ['file' => $file], false),
+            [400 => config('hawki.branding.font_italic'), 500 => config('hawki.branding.font_500_italic'), 600 => config('hawki.branding.font_600_italic')],
         );
 
         if ('' !== $fonts) {

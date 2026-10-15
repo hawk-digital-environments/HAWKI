@@ -511,7 +511,7 @@
             },
             "font": {
                 "title": "Font",
-                "description": "One font file for the whole interface: WOFF2, WOFF, TTF or OTF, up to 5 MB. WOFF2 loads fastest. A variable font provides every weight. With any other font, upload the regular cut: the browser derives bold and italic text from it. Only upload a font your institution is licensed to use on the web."
+                "description": "Font files for the whole interface, one per weight: WOFF2, WOFF, TTF or OTF, up to 5 MB each. WOFF2 loads fastest. The interface uses three weights: 400 for text, 500 for labels and headings, 600 for bold text in answers and tables. A variable font in the regular field provides every weight on its own. Otherwise upload the regular cut first; a weight without a file uses the nearest one, and semibold is thickened by the browser if no file for it exists. Italic cuts are optional and used for emphasis in answers; without them the browser slants the upright font. A variable font in the italic field provides every italic weight. Only upload fonts your institution is licensed to use on the web."
             },
             "login": {
                 "title": "Sign-in page",
@@ -576,7 +576,12 @@
             "BRAND_COLOR_ERROR": "Error",
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Corner rounding",
-            "BRAND_FONT": "Font",
+            "BRAND_FONT": "Font – regular (400)",
+            "BRAND_FONT_500": "Medium (500)",
+            "BRAND_FONT_600": "Semibold (600)",
+            "BRAND_FONT_ITALIC": "Italic (400)",
+            "BRAND_FONT_500_ITALIC": "Medium italic (500)",
+            "BRAND_FONT_600_ITALIC": "Semibold italic (600)",
             "BRAND_ONBOARDING": "Welcome steps",
             "BRAND_LOGIN_NEWS": "News",
             "BRAND_LOGIN_BACKGROUNDS": "Backgrounds",
@@ -883,6 +888,10 @@
             "upload": "Upload font",
             "replace": "Replace",
             "sample": "The quick brown fox 0123456789",
+            "needs_regular": "Upload the regular font (400) first.",
+            "needs_italic": "Upload the italic font (400) first.",
+            "covered_italic": "Provided by the variable italic font.",
+            "covered": "Provided by the variable regular font.",
             "variable": "Variable font: provides every weight"
         },
         "icons": {

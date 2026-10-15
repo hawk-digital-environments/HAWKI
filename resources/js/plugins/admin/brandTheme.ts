@@ -113,25 +113,41 @@ const PREVIEW_FONT = 'HAWKI Brand Preview';
 /** The stack of `--font-family-base` in `typography.css`, to return to when the font is removed. */
 const DEFAULT_FONT_STACK = "'Fire Sans', system-ui, sans-serif";
 
+/** The weights the interface uses, regular first; one font file can be uploaded for each. */
+export const FONT_WEIGHTS = [400, 500, 600] as const;
+export type FontWeight = (typeof FONT_WEIGHTS)[number];
+
+type FontFiles = Partial<Record<FontWeight, unknown>>;
+
 /**
- * The `@font-face` rule for the uploaded font, or an empty string without one. Mirrors
- * `BrandTheme::fontFace()`: a variable font is declared for every weight, any other as regular.
+ * The `@font-face` rules for the uploaded fonts, or an empty string without a regular (400) one.
+ * Mirrors `BrandTheme::fontFaces()`: upright and italic are declared the same way, each on its own;
+ * a variable 400 file covers every weight of its style, otherwise each file is declared at its weight.
  */
-export function fontFace(font: unknown, url: (file: string) => string, family = PREVIEW_FONT): string {
-    if (!isFontFile(font)) return '';
-    const format = FONT_FORMATS[font.split('.').pop()!];
-    const weight = isVariableFontFile(font) ? '100 900' : '400';
-    return `@font-face{font-family:"${family}";src:url("${url(font)}") format("${format}");font-weight:${weight};font-display:swap}`;
+export function fontFaces(fonts: FontFiles, url: (file: string) => string, family = PREVIEW_FONT, italics: FontFiles = {}): string {
+    if (!isFontFile(fonts[400])) return '';
+    const faces = (files: FontFiles, italic: boolean) => {
+        const face = (file: string, weight: string) =>
+            `@font-face{font-family:"${family}";src:url("${url(file)}") format("${FONT_FORMATS[file.split('.').pop()!]}");font-weight:${weight}${italic ? ';font-style:italic' : ''};font-display:swap}`;
+        const regular = files[400];
+        if (isFontFile(regular) && isVariableFontFile(regular)) return face(regular, '100 900');
+        return FONT_WEIGHTS.map((weight) => {
+            const file = files[weight];
+            return isFontFile(file) ? face(file, String(weight)) : '';
+        }).join('');
+    };
+    return faces(fonts, false) + faces(italics, true);
 }
 
-/** Previews an uploaded font on the running page; without one it returns to the built-in stack. */
+/** Previews the uploaded fonts on the running page; without a regular one it returns to the built-in stack. */
 export function applyBrandFont(
-    font: unknown,
+    fonts: FontFiles,
+    italics: FontFiles,
     url: (file: string) => string,
     doc: Document = document
 ): void {
     const id = 'brand-font-preview';
-    const css = fontFace(font, url);
+    const css = fontFaces(fonts, url, PREVIEW_FONT, italics);
     let style = doc.getElementById(id);
     if (!style) {
         style = doc.createElement('style');

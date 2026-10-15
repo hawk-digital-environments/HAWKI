@@ -511,7 +511,7 @@
             },
             "font": {
                 "title": "Schrift",
-                "description": "Eine Schriftdatei für die gesamte Oberfläche: WOFF2, WOFF, TTF oder OTF mit bis zu 5 MB. WOFF2 lädt am schnellsten. Eine variable Schrift liefert alle Schriftstärken. Laden Sie bei jeder anderen Schrift den normalen Schnitt hoch: Fetten und kursiven Text leitet der Browser daraus ab. Laden Sie nur eine Schrift hoch, für die Ihre Einrichtung eine Web-Lizenz besitzt."
+                "description": "Schriftdateien für die gesamte Oberfläche, eine je Schriftstärke: WOFF2, WOFF, TTF oder OTF mit jeweils bis zu 5 MB. WOFF2 lädt am schnellsten. Die Oberfläche nutzt drei Stärken: 400 für Text, 500 für Beschriftungen und Überschriften, 600 für fetten Text in Antworten und Tabellen. Eine variable Schrift im Feld „Normal“ liefert alle Schriftstärken allein. Laden Sie sonst zuerst den normalen Schnitt hoch; eine Stärke ohne Datei nutzt die nächstliegende, und Halbfettes verstärkt der Browser künstlich, wenn kein Schnitt dafür vorhanden ist. Kursive Schnitte sind optional und werden für Hervorhebungen in Antworten verwendet; ohne sie neigt der Browser die aufrechte Schrift. Eine variable Schrift im Feld „Kursiv“ liefert alle kursiven Stärken. Laden Sie nur Schriften hoch, für die Ihre Einrichtung eine Web-Lizenz besitzt."
             },
             "login": {
                 "title": "Anmeldeseite",
@@ -576,7 +576,12 @@
             "BRAND_COLOR_ERROR": "Fehler",
             "BRAND_COLOR_INFO": "Information",
             "BRAND_CORNER_STYLE": "Eckenrundung",
-            "BRAND_FONT": "Schrift",
+            "BRAND_FONT": "Schrift – Normal (400)",
+            "BRAND_FONT_500": "Mittel (500)",
+            "BRAND_FONT_600": "Halbfett (600)",
+            "BRAND_FONT_ITALIC": "Kursiv (400)",
+            "BRAND_FONT_500_ITALIC": "Mittel kursiv (500)",
+            "BRAND_FONT_600_ITALIC": "Halbfett kursiv (600)",
             "BRAND_ONBOARDING": "Willkommensschritte",
             "BRAND_LOGIN_NEWS": "Neuigkeiten",
             "BRAND_LOGIN_BACKGROUNDS": "Hintergründe",
@@ -883,6 +888,10 @@
             "upload": "Schrift hochladen",
             "replace": "Ersetzen",
             "sample": "Falsches Üben von Xylophonmusik 0123456789",
+            "needs_regular": "Laden Sie zuerst die normale Schrift (400) hoch.",
+            "needs_italic": "Laden Sie zuerst die kursive Schrift (400) hoch.",
+            "covered_italic": "Wird von der variablen kursiven Schrift abgedeckt.",
+            "covered": "Wird von der variablen Schrift im Feld „Normal“ abgedeckt.",
             "variable": "Variable Schrift: liefert alle Schriftstärken"
         },
         "icons": {

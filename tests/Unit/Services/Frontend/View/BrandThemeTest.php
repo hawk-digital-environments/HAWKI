@@ -21,6 +21,11 @@ class BrandThemeTest extends TestCase
             'logo_height' => null,
             'status_colors' => BrandTheme::STATUS_COLORS,
             'font' => null,
+            'font_500' => null,
+            'font_600' => null,
+            'font_italic' => null,
+            'font_500_italic' => null,
+            'font_600_italic' => null,
         ]]);
     }
 
@@ -85,17 +90,31 @@ class BrandThemeTest extends TestCase
         }
     }
 
-    public function testTheFontFaceDeclaresEveryWeightOnlyForAVariableFont(): void
+    public function testFontFacesFollowTheUploadedWeights(): void
     {
         $static = str_repeat('a', 64) . '.woff2';
         $variable = str_repeat('c', 64) . '.var.ttf';
         $url = static fn (string $file): string => '/fonts/' . $file;
 
-        static::assertSame('', BrandTheme::fontFace(null, $url));
-        static::assertSame('', BrandTheme::fontFace('x");}body{display:none', $url));
-        static::assertSame('@font-face{font-family:"HAWKI Brand";src:url("/fonts/' . $static . '") format("woff2");font-weight:400;font-display:swap}', BrandTheme::fontFace($static, $url));
-        static::assertSame('@font-face{font-family:"HAWKI Brand";src:url("/fonts/' . $variable . '") format("truetype");font-weight:100 900;font-display:swap}', BrandTheme::fontFace($variable, $url));
-        static::assertStringContainsString('.otf") format("opentype")', BrandTheme::fontFace(str_repeat('d', 64) . '.otf', $url));
+        $face = static fn (string $file, string $format, string $weight): string => '@font-face{font-family:"HAWKI Brand";src:url("/fonts/' . $file . '") format("' . $format . '");font-weight:' . $weight . ';font-display:swap}';
+        $bold = str_repeat('b', 64) . '.otf';
+
+        static::assertSame('', BrandTheme::fontFaces([], $url));
+        static::assertSame('', BrandTheme::fontFaces([400 => 'x");}body{display:none'], $url));
+        // Without a regular font no other weight is used: the whole interface would turn bold.
+        static::assertSame('', BrandTheme::fontFaces([600 => $bold], $url));
+        static::assertSame($face($static, 'woff2', '400'), BrandTheme::fontFaces([400 => $static], $url));
+        static::assertSame($face($static, 'woff2', '400') . $face($bold, 'opentype', '600'), BrandTheme::fontFaces([400 => $static, 500 => null, 600 => $bold], $url));
+        // A variable regular font provides every weight; the other files are left out.
+        static::assertSame($face($variable, 'truetype', '100 900'), BrandTheme::fontFaces([400 => $variable, 600 => $bold], $url));
+
+        // Italic cuts are declared like the upright ones, each style on its own, and only with a regular font.
+        $italic = str_repeat('e', 64) . '.woff2';
+        $variableItalic = str_repeat('f', 64) . '.var.woff2';
+        $italicFace = static fn (string $file, string $weight): string => '@font-face{font-family:"HAWKI Brand";src:url("/fonts/' . $file . '") format("woff2");font-weight:' . $weight . ';font-style:italic;font-display:swap}';
+        static::assertSame('', BrandTheme::fontFaces([], $url, [400 => $italic]));
+        static::assertSame($face($variable, 'truetype', '100 900') . $italicFace($italic, '400'), BrandTheme::fontFaces([400 => $variable], $url, [400 => $italic]));
+        static::assertSame($face($static, 'woff2', '400') . $italicFace($variableItalic, '100 900'), BrandTheme::fontFaces([400 => $static], $url, [400 => $variableItalic, 600 => $italic]));
     }
 
     public function testAnUploadedFontReplacesTheBaseFontFamily(): void

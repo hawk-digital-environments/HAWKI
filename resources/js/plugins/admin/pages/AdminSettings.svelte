@@ -43,6 +43,7 @@
         FONT_MAX_BYTES,
         isBrandColor,
         isVariableFontFile,
+        type FontWeight,
         STATUS_COLORS
     } from '../brandTheme.js';
     import { svgPreview } from '../providerIcons.js';
@@ -304,9 +305,41 @@
         entry.source === 'upload' ? app.uriBuilder.jsonApiUri('brand-media', entry.file) : `/bg_videos/${entry.file}`;
     const isVideo = (file: unknown) => /\.(?:mp4|webm)$/.test(String(file));
     const fontUrl = (file: string) => app.uriBuilder.jsonApiUri('brand-fonts', file);
-    const fontValue = (read: (row: AdminSettingResource) => unknown) => {
-        const font = rowsByKey.get('BRAND_FONT');
-        return font && read(font);
+    /** The font settings by the weight and style they are uploaded for. */
+    const FONT_KEYS: Record<string, { weight: FontWeight; italic: boolean }> = {
+        BRAND_FONT: { weight: 400, italic: false },
+        BRAND_FONT_500: { weight: 500, italic: false },
+        BRAND_FONT_600: { weight: 600, italic: false },
+        BRAND_FONT_ITALIC: { weight: 400, italic: true },
+        BRAND_FONT_500_ITALIC: { weight: 500, italic: true },
+        BRAND_FONT_600_ITALIC: { weight: 600, italic: true }
+    };
+    const fontValues = (read: (row: AdminSettingResource) => unknown, italic: boolean) =>
+        Object.fromEntries(
+            Object.entries(FONT_KEYS)
+                .filter(([, slot]) => slot.italic === italic)
+                .map(([key, slot]) => {
+                    const row = rowsByKey.get(key);
+                    return [slot.weight, row && read(row)];
+                })
+        ) as Partial<Record<FontWeight, unknown>>;
+    const currentFont = (key: string) => {
+        const row = rowsByKey.get(key);
+        return row && current(row);
+    };
+    /**
+     * Why a slot cannot take a file yet, as a translation key, or null when it can. Every slot builds
+     * on the regular font; the other weights of a style build on its 400 file, and a variable 400 file
+     * already provides them.
+     */
+    const fontBlocked = (key: string): string | null => {
+        const slot = FONT_KEYS[key];
+        if (!slot || key === 'BRAND_FONT') return null;
+        if (!currentFont('BRAND_FONT')) return 'admin.fonts.needs_regular';
+        if (slot.weight === 400) return null;
+        const base = currentFont(slot.italic ? 'BRAND_FONT_ITALIC' : 'BRAND_FONT');
+        if (!base) return 'admin.fonts.needs_italic';
+        return isVariableFontFile(base) ? (slot.italic ? 'admin.fonts.covered_italic' : 'admin.fonts.covered') : null;
     };
 
     /** Height the logo has while none is set: the wordmark is smaller than an uploaded logo. */
@@ -342,7 +375,7 @@
         if (rowsByKey.size) applyBrandTheme(brand());
     });
     $effect(() => {
-        if (rowsByKey.size) applyBrandFont(fontValue(current), fontUrl);
+        if (rowsByKey.size) applyBrandFont(fontValues(current, false), fontValues(current, true), fontUrl);
     });
     // The logo previews where it lives: the sidebar reads it from the app configuration.
     const config = app.config.get();
@@ -354,7 +387,7 @@
         // Leaving with unsaved changes returns the page to the stored theme and logo.
         if (!rowsByKey.size) return;
         if (dirty.includes('BRAND_LOGO')) void app.config.refresh().catch(() => {});
-        applyBrandFont(fontValue((row) => row.value), fontUrl);
+        applyBrandFont(fontValues((row) => row.value, false), fontValues((row) => row.value, true), fontUrl);
         applyBrandTheme({
             accentColor: rowsByKey.get('BRAND_ACCENT_COLOR')?.value,
             cornerStyle: rowsByKey.get('BRAND_CORNER_STYLE')?.value,
@@ -675,10 +708,10 @@
                                                     spellcheck={false}
                                                 />
                                             </div>
-                                        {:else if key === 'BRAND_FONT'}
+                                        {:else if FONT_KEYS[key]}
                                             <div class="upload">
                                                 {#if value}
-                                                    <span class="sample">{__('admin.fonts.sample')}</span>
+                                                    <span class="sample" style:font-weight={FONT_KEYS[key].weight} style:font-style={FONT_KEYS[key].italic ? 'italic' : undefined}>{__('admin.fonts.sample')}</span>
                                                 {/if}
                                                 <input
                                                     {id}
@@ -688,13 +721,13 @@
                                                         .map((extension) => '.' + extension)
                                                         .join(',')}
                                                     tabindex="-1"
-                                                    disabled={locked || uploadingFont}
+                                                    disabled={locked || uploadingFont || !!fontBlocked(key)}
                                                     onchange={(event) => void uploadFont(row, event.currentTarget)}
                                                 />
                                                 <Button
                                                     variant="stroke"
                                                     size="sm"
-                                                    disabled={locked || uploadingFont}
+                                                    disabled={locked || uploadingFont || !!fontBlocked(key)}
                                                     aria-label={`${label}: ${__(value ? 'admin.fonts.replace' : 'admin.fonts.upload')}`}
                                                     onclick={() => document.getElementById(id)?.click()}
                                                     >{__(value ? 'admin.fonts.replace' : 'admin.fonts.upload')}</Button
@@ -702,6 +735,9 @@
                                             </div>
                                             {#if isVariableFontFile(value)}
                                                 <small>{__('admin.fonts.variable')}</small>
+                                            {/if}
+                                            {#if fontBlocked(key)}
+                                                <small>{__(fontBlocked(key)!)}</small>
                                             {/if}
                                         {:else if uploads.includes(key)}
                                             <!-- Always shows the asset in use: the upload, or the built-in one it would replace. -->

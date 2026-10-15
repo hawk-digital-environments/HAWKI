@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { accentTokens, applyBrandTheme, fontFace, isFontFile, oklch } from '../../../resources/js/plugins/admin/brandTheme.js';
+import { accentTokens, applyBrandTheme, fontFaces, isFontFile, oklch } from '../../../resources/js/plugins/admin/brandTheme.js';
 
 const root = () => {
     const values = new Map<string, string>();
@@ -48,20 +48,24 @@ test('the preview applies a color, keeps the accent while one is half-typed and 
     assert.equal(target.values.get('--accent-chroma'), '1');
 });
 
-test('the font face declares every weight only for a variable font (BrandThemeTest.php pins the same rules)', () => {
-    const fixed = 'a'.repeat(64) + '.woff2';
+test('font faces follow the uploaded weights (BrandThemeTest.php pins the same rules)', () => {
+    const regular = 'a'.repeat(64) + '.woff2';
+    const bold = 'b'.repeat(64) + '.otf';
     const variable = 'c'.repeat(64) + '.var.ttf';
     const url = (file: string) => '/fonts/' + file;
+    const face = (file: string, format: string, weight: string) =>
+        `@font-face{font-family:"HAWKI Brand";src:url("/fonts/${file}") format("${format}");font-weight:${weight};font-display:swap}`;
     assert.equal(isFontFile('x");}body{display:none'), false);
     assert.equal(isFontFile('f'.repeat(64) + '.ttc'), false);
-    assert.equal(fontFace(null, url), '');
+    assert.equal(fontFaces({}, url), '');
+    assert.equal(fontFaces({600: bold}, url), '');
+    assert.equal(fontFaces({400: regular}, url, 'HAWKI Brand'), face(regular, 'woff2', '400'));
+    assert.equal(fontFaces({400: regular, 600: bold}, url, 'HAWKI Brand'), face(regular, 'woff2', '400') + face(bold, 'opentype', '600'));
+    assert.equal(fontFaces({400: variable, 600: bold}, url, 'HAWKI Brand'), face(variable, 'truetype', '100 900'));
+    const italic = 'e'.repeat(64) + '.woff2';
+    assert.equal(fontFaces({}, url, 'HAWKI Brand', {400: italic}), '');
     assert.equal(
-        fontFace(fixed, url, 'HAWKI Brand'),
-        `@font-face{font-family:"HAWKI Brand";src:url("/fonts/${fixed}") format("woff2");font-weight:400;font-display:swap}`
+        fontFaces({400: regular}, url, 'HAWKI Brand', {400: italic}),
+        face(regular, 'woff2', '400') + face(italic, 'woff2', '400').replace(';font-display', ';font-style:italic;font-display')
     );
-    assert.equal(
-        fontFace(variable, url, 'HAWKI Brand'),
-        `@font-face{font-family:"HAWKI Brand";src:url("/fonts/${variable}") format("truetype");font-weight:100 900;font-display:swap}`
-    );
-    assert.ok(fontFace('d'.repeat(64) + '.otf', url).includes('.otf") format("opentype")'));
 });

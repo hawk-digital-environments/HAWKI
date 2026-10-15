@@ -93,7 +93,8 @@ class BrandFonts extends BrandAssets
 
     protected function used(): array
     {
-        return [config('hawki.branding.font')];
+        return [config('hawki.branding.font'), config('hawki.branding.font_500'), config('hawki.branding.font_600'),
+            config('hawki.branding.font_italic'), config('hawki.branding.font_500_italic'), config('hawki.branding.font_600_italic')];
     }
 
     /**

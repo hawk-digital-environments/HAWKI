@@ -49,10 +49,18 @@ return [
         // administration (Settings > Branding), which validates the files; there is no .env equivalent.
         'logo' => null,
         'favicon' => null,
-        // Font file of the interface, uploaded in the administration (Settings > Branding). There is
-        // no .env equivalent. A variable font provides every weight; with any other font the browser
-        // derives bold and italic text from the one file.
+        // Font files of the interface, one per weight, uploaded in the administration (Settings >
+        // Branding). There is no .env equivalent. The interface uses 400 for text, 500 for labels and
+        // headings and 600 for bold text. A variable font in `font` provides every weight; otherwise a
+        // missing weight falls back to the nearest one.
         'font' => null,
+        'font_500' => null,
+        'font_600' => null,
+        // Optional italic cuts of the same weights, for emphasis in answers; without them the browser
+        // slants the upright font. A variable font in `font_italic` provides every italic weight.
+        'font_italic' => null,
+        'font_500_italic' => null,
+        'font_600_italic' => null,
         // Backgrounds of the sign-in page, shown in turn: images or videos, in light and dark mode alike. Edited in the administration (Settings > Branding); until then the videos listed
         // in public/bg_videos/bg_videos.json. An empty list shows only the logo.
         'login_backgrounds' => (static function (): array {
