@@ -76,7 +76,7 @@
  * ```
  */
 import {onDestroy} from 'svelte';
-import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
+import {createStableContext} from '$lib/utils/stableContext.js';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
 import {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
@@ -333,8 +333,11 @@ export class ComposerContext {
 
         status.response.then((res) => {
             res.body.then(() => {
-                // Clear the send status only after the response body has been fully received
-                this._sendStatus = null;
+                // Clear the send status only after the response body has been fully received,
+                // and only if no newer send has taken its place in the meantime
+                if (this._sendStatus === status) {
+                    this._sendStatus = null;
+                }
             });
         });
 
@@ -389,13 +392,12 @@ export class ComposerContext {
 /**
  * Svelte context accessor pair for the composer.
  *
- * `createHmrSafeContext()` mirrors Svelte's `createContext()` `[get, set]`
- * tuple but keeps its key stable across Vite HMR module re-evaluations (see
- * its doc block). `get` is re-exported below as {@link useComposerContext}
- * with an extra guard so a missing provider produces an actionable message
- * instead of the generic one.
+ * `createStableContext()` provides a `[get, set]` tuple whose key identity
+ * stays stable across module (re-)evaluations (see its doc block). `get` is
+ * re-exported below as {@link useComposerContext} with an extra guard so a
+ * missing provider produces an actionable message instead of the generic one.
  */
-const [get, set] = createHmrSafeContext<ComposerContext>('hawki.chat.composer-context');
+const [get, set] = createStableContext<ComposerContext>('hawki.chat.composer-context');
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {
@@ -409,6 +411,22 @@ export function useComposerContext(): ComposerContext {
         throw new Error('No ComposerContext found in Svelte context tree. Make sure to call createComposerContext() in a parent component.');
     }
     return context;
+}
+
+/**
+ * Returns the {@link ComposerContext} published by the nearest ancestor that
+ * created one, or `null` when there is none.
+ *
+ * Lets `ChatComposer` adopt a context owned higher up the tree (the chat
+ * layout's — see `useChatComposerContext`) instead of always building its own,
+ * without a try/catch at the call site.
+ */
+export function findComposerContext(): ComposerContext | null {
+    try {
+        return get();
+    } catch {
+        return null;
+    }
 }
 
 /**

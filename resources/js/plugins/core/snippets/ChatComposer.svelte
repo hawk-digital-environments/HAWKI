@@ -1,24 +1,33 @@
 <!--
-@component Primary chat input panel — a `<svelte-snippet>` entry point registered by
-`core.plugin.ts`. Combines the message textarea, model selector, tool/file controls,
-system-prompt editing, and a conflict resolver for capability mismatches. It is a thin shell:
-all send/attachment/tool state lives in the `ComposerContext` it creates internally
-(`createComposerContext`), keyed by the `context` prop.
+  @component Primary chat input panel — a `<svelte-snippet>` entry point registered by
+  `core.plugin.ts`. Combines the message textarea, model selector, tool/file controls,
+  system-prompt editing, and a conflict resolver for capability mismatches. It is a thin shell:
+  all send/attachment/tool state lives in the `ComposerContext` it wires up
+  (`createComposerContext`), keyed by the `context` prop.
 
-Rendered once per page for either an AI conversation or a group room chat (see
-`resources/views/modules/chat.blade.php` and `resources/views/modules/groupchat.blade.php`):
-```blade
-<x-svelte type="ChatComposer" :props="['context' => 'aiConv']" />
-<x-svelte type="ChatComposer" :props="['context' => 'room']" />
-```
+  Rendered once per page for either an AI conversation or a group room chat (see
+  `resources/views/modules/chat.blade.php` and `resources/views/modules/groupchat.blade.php`):
+  ```blade
+  <x-svelte type="ChatComposer" :props="['context' => 'aiConv']" />
+  <x-svelte type="ChatComposer" :props="['context' => 'room']" />
+  ```
+
+  Inside the routed chat pages the `ChatLayout` above already owns the composer
+  context (created through `useChatComposerContext`); this component adopts it
+  via `findComposerContext` instead of building its own, which is what keeps
+  the composer's state alive across the pages' navigation.
 -->
 <script lang="ts">
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
-    import {type ComposerContext, type ComposerContextType, createComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import type {MessageSenderTransportInterface} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
+    import {
+        type ComposerContext,
+        type ComposerContextType,
+        createComposerContext,
+        findComposerContext
+    } from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import OldUiStyling from '$plugins/core/modules/chat/components/composer/OldUiStyling.svelte';
     import FileDragAndDrop from '$plugins/core/modules/chat/components/composer/FileDragAndDrop.svelte';
     import ComposerBorderBeam from '$plugins/core/modules/chat/components/composer/ComposerBorderBeam.svelte';
@@ -38,47 +47,24 @@ Rendered once per page for either an AI conversation or a group room chat (see
     interface Props {
         /** Which kind of chat this composer sends into ('aiConv' for a 1:1 AI conversation, 'room' for a group room); determines context-specific behavior (e.g. write-access checks, name menu variant). */
         context: ComposerContextType;
-        /** Optional native transport used by routed plugin pages. */
-        transport?: MessageSenderTransportInterface;
-        /** Prompt of the currently opened conversation. */
-        initialSystemPrompt?: string;
-        /** Called when the user changes the system prompt. */
-        onSystemPromptChange?: (prompt: string) => void;
-        /** Native draft-improvement callback. */
-        onImproveMessage?: (message: string, systemPrompt: string) => Promise<string>;
-        /** Forces the composer into its active state while an external request is running. */
-        forcedActive?: boolean;
-        /** Gives the parent access to edit/regen mode controls. */
-        onReady?: (context: ComposerContext) => void;
     }
 
     const {
-        context: contextType = 'aiConv',
-        transport,
-        initialSystemPrompt,
-        onSystemPromptChange,
-        onImproveMessage,
-        forcedActive = false,
-        onReady
+        context: contextType = 'aiConv'
     }: Props = $props();
 
     const app = useApp();
     const toastContext = useToastContext();
     const experiments = useStore('experiments');
-    // This is a bit of a hack to work around the "state_referenced_locally" warning thrown by svelte.
-    const initialOptions = (() => ({
-        transport,
-        initialSystemPrompt,
-        onSetSystemPrompt: onSystemPromptChange,
-        onImproveMessage,
-        useLegacyBridge: !transport
-    }))();
-    const chatContext = createComposerContext(app, (() => contextType)(), toastContext, initialOptions);
-    (() => onReady)()?.(chatContext);
 
-    $effect(() => {
-        chatContext.forcedActive = forcedActive;
-    });
+    // The routed chat pages sit below the ChatLayout, whose composer context
+    // (see `useChatComposerContext`) is already published in the context
+    // tree — adopt it. Everywhere else — the legacy blade snippets and room
+    // chats — no context is published, so build a fresh per-mount one. The
+    // context type is fixed for the lifetime of the mount either way.
+    const chatContext: ComposerContext = (() => {
+        return findComposerContext() ?? createComposerContext(app, contextType, toastContext);
+    })();
 
     let textareaEl = $state(null as HTMLTextAreaElement | null);
     let buttonEl = $state(null as HTMLButtonElement | null);
