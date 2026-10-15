@@ -24,8 +24,8 @@
     import { useConfig } from '$lib/app/hooks/useConfig.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {ActionIcon, StatusIcon} from '$lib/components/ui/icons';
+    import BorderBeam from '$lib/components/ui/border-beam/BorderBeam.svelte';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
-    import RadialProgress from '$lib/components/ui/radial-progress/RadialProgress.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
@@ -56,8 +56,11 @@
     let currentFiles = $derived((builder.draft.files ?? []) as UploadFile[]);
 
     /**
-     * Mean progress (0–100) over the currently uploading/pending batch;
-     * `undefined` while no upload is in flight, which restores the icon.
+     * Mean progress (0–100) over all uploading/pending files; `undefined`
+     * while no upload is in flight, which deactivates the icon's border
+     * beam, restores its full color and hides the centered progress pill.
+     * Batches may stack — new picks join the running mean instead of
+     * blocking.
      */
     let uploadProgress = $derived.by(() => {
         const active = currentFiles.filter((f) => f.status === 'uploading' || f.status === 'pending');
@@ -352,7 +355,7 @@
      * expressed here as per-file `patchFile(...)` updates on the builder store.
      */
     async function addFiles(fileList: FileList): Promise<void> {
-        if (disabled || uploadProgress !== undefined) return; // disabled or upload in flight — dropzone is disabled
+        if (disabled) return; // uploads may stack — an in-flight batch never blocks new ones
 
         const incoming = Array.from(fileList);
         const accepted = incoming.filter(isFileAccepted);
@@ -463,7 +466,7 @@
     }
 
     function browse(): void {
-        if (disabled || uploadProgress !== undefined) return; // disabled or upload in flight — dropzone is disabled
+        if (disabled) return;
         fileInput?.click();
     }
 
@@ -488,8 +491,8 @@
         class="upload-container"
         class:isDisabled={disabled}
         role="button"
-        tabindex={disabled || uploadProgress !== undefined ? -1 : 0}
-        aria-disabled={disabled || uploadProgress !== undefined}
+        tabindex={disabled ? -1 : 0}
+        aria-disabled={disabled}
         onclick={browse}
         onkeydown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -514,49 +517,56 @@
         />
 
         <div class="content-box" aria-busy={uploadProgress !== undefined}>
-            {#if uploadProgress !== undefined}
-                <div class="upload-progress-box">
-                    <div class="upload-progress-ring">
-                        <RadialProgress value={uploadProgress} size={64} strokeWidth={6} />
-                        <span class="upload-progress-percent">{uploadProgress}%</span>
-                    </div>
-                </div>
-            {:else}
-                <StatusIcon icon={FileUploadIcon} tone="neutral" size="xl"/>
-                <div class="text-wrapper">
-                    <p class="u-label">{__('assistants.builder.knowledge.upload_title')}</p>
-                    <p class="description">
-                        {__('assistants.builder.knowledge.upload_hint')}
-                        {#if maxFileSize > 0}
-                            <Tooltip focusable={false} hiddenLabel={restrictionText}>
-                                {#snippet children({props})}
-                                    <span {...props} class="hint-icon" aria-hidden="true">
-                                        <InformationCircleIcon size="13" />
-                                    </span>
-                                {/snippet}
-                                {#snippet tooltip()}
-                                    <div class="restriction-label">
-                                        {__('assistants.builder.knowledge.upload_max_size')}
-                                    </div>
-                                    <div class="restriction-value">{formatSize(maxFileSize)}</div>
-                                    <div class="restriction-divider" aria-hidden="true"></div>
-                                    <div class="restriction-label">
-                                        {__('assistants.builder.knowledge.upload_allowed_extensions')}
-                                    </div>
-                                    <div class="restriction-value">{extensionDisplay}</div>
-                                {/snippet}
-                            </Tooltip>
-                        {/if}
-                    </p>
-                </div>
-                <!-- No own click handler: the click bubbles to the drop section,
-                     which opens the picker — one code path for both. -->
-                <Button
-                    variant="fill"
-                    size="md"
-                    type="button">{__('assistants.builder.knowledge.upload_browse')}</Button
+            <BorderBeam size="md" theme="auto" active={uploadProgress !== undefined}>
+                <div
+                    class="upload-icon-wrap"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={uploadProgress}
+                    aria-label={__('assistants.builder.knowledge.upload_progress')}
                 >
-            {/if}
+                    <div class="upload-icon" class:upload-icon--faded={uploadProgress !== undefined}>
+                        <StatusIcon icon={FileUploadIcon} tone="neutral" size="xl"/>
+                    </div>
+                    {#if uploadProgress !== undefined}
+                        <span class="upload-progress-center" aria-hidden="true">{uploadProgress}%</span>
+                    {/if}
+                </div>
+            </BorderBeam>
+            <div class="text-wrapper">
+                <p class="u-label">{__('assistants.builder.knowledge.upload_title')}</p>
+                <p class="description">
+                    {__('assistants.builder.knowledge.upload_hint')}
+                    {#if maxFileSize > 0}
+                        <Tooltip focusable={false} hiddenLabel={restrictionText}>
+                            {#snippet children({props})}
+                                <span {...props} class="hint-icon" aria-hidden="true">
+                                    <InformationCircleIcon size="13" />
+                                </span>
+                            {/snippet}
+                            {#snippet tooltip()}
+                                <div class="restriction-label">
+                                    {__('assistants.builder.knowledge.upload_max_size')}
+                                </div>
+                                <div class="restriction-value">{formatSize(maxFileSize)}</div>
+                                <div class="restriction-divider" aria-hidden="true"></div>
+                                <div class="restriction-label">
+                                    {__('assistants.builder.knowledge.upload_allowed_extensions')}
+                                </div>
+                                <div class="restriction-value">{extensionDisplay}</div>
+                            {/snippet}
+                        </Tooltip>
+                    {/if}
+                </p>
+            </div>
+            <!-- No own click handler: the click bubbles to the drop section,
+                 which opens the picker — one code path for both. -->
+            <Button
+                variant="fill"
+                size="md"
+                type="button">{__('assistants.builder.knowledge.upload_browse')}</Button
+            >
         </div>
 
         {#if dragState !== 'idle'}
@@ -603,7 +613,7 @@
                             {__('assistants.builder.knowledge.no_files')}
                         {/snippet}
                     </Tooltip>
-                {:else if uploadProgress === undefined}
+                {:else}
                     <ConfirmDialog
                         bind:open={deleteAllOpen}
                         title={__('assistants.builder.knowledge.delete_all_confirm_title')}
@@ -637,14 +647,16 @@
                             <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => (deleteFailedOpen = true)}>
                                 {__('rag.delete_failed_files')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => (deleteAllOpen = true)}>
-                                {__('assistants.builder.knowledge.delete_all_files')}
-                            </DropdownMenuItem>
                         {/if}
+                        <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => (deleteAllOpen = true)}>
+                            {__('assistants.builder.knowledge.delete_all_files')}
+                        </DropdownMenuItem>
                     </DropdownMenu>
                 {/if}
             {/snippet}
-            {#if currentFiles.length >= 0}
+            {#if currentFiles.length === 0}
+                <p class="empty-message">{__('assistants.builder.knowledge.no_files')}</p>
+            {:else}
                 {#each visibleFiles as file, index (index)}
                     {@const indicator = ragIndicator(file)}
                     {@const indicatorTooltip = indicator
@@ -709,33 +721,48 @@
         border-color: var(--color-accent-300);
         background-color: var(--color-hover);
     }
-    .upload-container:has(.upload-progress-box) {
-        pointer-events: none; /* uploading — no drop, click or hover feedback */
-    }
     .upload-container.isDisabled {
         pointer-events: none; /* disabled (e.g. no model selected) — no drop, click or hover feedback */
         opacity: .75;
         cursor: not-allowed;
     }
-    .upload-progress-box {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: var(--space-8);
-    }
-    .upload-progress-ring {
+    /* Carries the corner radius the beam's auto-detection hugs; the faded
+       icon, the centered progress pill and the progressbar semantics ride
+       on the same wrapper. */
+    .upload-icon-wrap {
         position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-text-muted);
+        display: flex;
+        border-radius: var(--corner-sm);
     }
-    .upload-progress-percent {
+    .upload-icon {
+        display: flex;
+        transition:
+            opacity var(--duration-fast),
+            filter var(--duration-fast);
+    }
+    .upload-icon--faded {
+        opacity: .3;
+        filter: grayscale(1);
+    }
+    .upload-progress-center {
         position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 0 0.375rem;
+        border-radius: var(--corner-full);
+        /* Button-grade pairing (accent fill + on-fill label): the fill stays
+           dark in both themes, so the white label keeps contrast over the
+           faded icon and the beam's glow. */
+        background-color: var(--color-accent-fill);
         font-size: var(--font-size-xs);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-text-muted);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-on-accent-fill);
         font-variant-numeric: tabular-nums;
+        line-height: 1.3;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 1;
     }
     .content-box {
         display: flex;

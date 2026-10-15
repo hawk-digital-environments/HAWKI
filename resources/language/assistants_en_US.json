@@ -233,6 +233,7 @@
                 "upload_allowed_extensions": "Allowed extensions",
                 "upload_rejected_type": "File type not supported",
                 "upload_browse": "Browse files",
+                "upload_progress": "Uploading files",
                 "attached_files": "Attached files",
                 "input_knowledge_databases": "Knowledge databases",
                 "no_files": "No files uploaded yet",

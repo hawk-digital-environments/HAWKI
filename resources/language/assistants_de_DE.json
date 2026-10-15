@@ -233,6 +233,7 @@
                 "upload_allowed_extensions": "Erlaubte Dateiendungen",
                 "upload_rejected_type": "Dateityp nicht unterstützt",
                 "upload_browse": "Dateien durchsuchen",
+                "upload_progress": "Dateien werden hochgeladen…",
                 "attached_files": "Angehängte Dateien",
                 "input_knowledge_databases": "Wissensdatenbanken",
                 "no_files": "Noch keine Dateien hochgeladen.",
