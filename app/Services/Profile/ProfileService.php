@@ -93,6 +93,12 @@ class ProfileService
     {
 
         try {
+            // TODO: User deletion workflow needs revision — enabling this
+            // dispatch also wakes the dormant ExtAppUser cleanup listener
+            // (\App\Services\ExtApp\Listeners\UserRemovalListener), which
+            // deletes the removed user's ExtApp connections.
+            // \App\Services\Users\Events\UserRemovedEvent::dispatch($user);
+
             $roomService = $this->getService(RoomService::class);
             $rooms = $user->rooms()->get();
 
