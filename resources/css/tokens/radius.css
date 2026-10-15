@@ -15,5 +15,8 @@
            default; a deployment's corner style squares them off, which --corner-full —
            reserved for shapes that are circles by nature, like avatars — never does. */
         --corner-control: var(--corner-full);
+        /* The same for low controls, the toggle switch: about half a button's height,
+           so the button radius would still round it into a pill. */
+        --corner-control-sm: var(--corner-full);
     }
 }

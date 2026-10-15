@@ -81,7 +81,8 @@
         width: calc(0.25rem * 7);
         flex-shrink: 0;
         align-items: center;
-        border-radius: var(--corner-full, 999px);
+        /* Follows the corner style, scaled to a low control (see radius.css). */
+        border-radius: var(--corner-control-sm, 999px);
         background-color: color-mix(in oklch, var(--color-text-muted) 35%, var(--color-bg));
         padding: 1px;
         border: none;
@@ -110,7 +111,8 @@
         display: block;
         height: calc(0.25rem * 3.5);
         width: calc(0.25rem * 3.5);
-        border-radius: var(--corner-full, 999px);
+        /* Concentric with the track: its radius minus the 1px inset. */
+        border-radius: max(0px, calc(var(--corner-control-sm, 999px) - 1px));
         background-color: var(--color-bg);
         box-shadow: var(--shadow-xs, 0 1px 2px rgb(0 0 0 / 0.18));
         transition: transform var(--duration-fast, 150ms);

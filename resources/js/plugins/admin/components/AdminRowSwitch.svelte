@@ -54,7 +54,8 @@
         align-items: center;
         padding: var(--space-1);
         border: 0;
-        border-radius: var(--corner-full);
+        /* Concentric around the switch: its radius plus this padding. */
+        border-radius: calc(var(--corner-control-sm) + var(--space-1));
         background: none;
         cursor: pointer;
     }

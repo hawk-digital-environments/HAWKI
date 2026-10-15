@@ -43,7 +43,8 @@ on the page element.
         height: 3.25rem;
         margin-bottom: var(--space-4);
         place-items: center;
-        border-radius: var(--corner-lg);
+        /* An avatar of the chat: round whatever corner style a deployment chose. */
+        border-radius: var(--corner-full);
         background: var(--color-active-surface);
         color: var(--color-active-text);
     }

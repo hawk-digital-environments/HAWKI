@@ -51,7 +51,8 @@ class BrandThemeTest extends TestCase
 
         static::assertStringStartsWith('<style>:root{--accent-hue:29.2;--accent-chroma:1;', $html);
         static::assertStringContainsString('--corner-lg:0', $html);
-        static::assertStringContainsString('--corner-control:0', $html);
+        // Units throughout: the control radii are used in calc().
+        static::assertStringContainsString('--corner-control:0px;--corner-control-sm:2px', $html);
         static::assertStringNotContainsString('@layer', $html);
     }
 

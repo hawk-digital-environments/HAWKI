@@ -162,7 +162,8 @@
         padding: calc(var(--space-1) / 2);
         background: var(--color-surface);
         border: none;
-        border-radius: var(--corner-full);
+        /* Follows the buttons' corner style; indicator and tabs sit concentric inside. */
+        border-radius: var(--corner-control);
     }
 
     .tabs-indicator {
@@ -171,7 +172,7 @@
         bottom: calc(var(--space-1) / 2);
         left: 0;
         background: var(--color-surface-raised);
-        border-radius: var(--corner-full);
+        border-radius: max(0px, calc(var(--corner-control) - var(--space-1) / 2));
         box-shadow: var(--elevation-1);
         pointer-events: none;
         /* Indicator slides below the tabs, which sit at --tab-z. */
@@ -188,7 +189,7 @@
         border: none;
         cursor: pointer;
         padding: calc(var(--space-1) * 1.5) var(--space-2);
-        border-radius: var(--corner-full);
+        border-radius: max(0px, calc(var(--corner-control) - var(--space-1) / 2));
         background: transparent;
         color: var(--color-text-muted);
         font-family: inherit;
