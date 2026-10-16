@@ -70,10 +70,11 @@ class OpenaiResponseRequest extends FormRequest
                     return;
                 }
 
-                // Service-locator fallback is unavoidable here: this FormRequest
-                // is also instantiated reflectively (without the container) by
-                // the OpenAPI SchemaBuilder to introspect rules, so constructor
-                // injection of AiService cannot be used.
+                // Resolved via the service locator because this is a plain
+                // validation closure, which cannot receive method injection
+                // (the OpenAPI SchemaBuilder introspects rules() through the
+                // container, so injected rules() dependencies themselves are
+                // fine).
                 if (app(AiService::class)->getModels()->findOne($modelId) === null) {
                     $validator->errors()->add(
                         'model',

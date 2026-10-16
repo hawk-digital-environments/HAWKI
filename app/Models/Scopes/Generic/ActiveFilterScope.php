@@ -22,8 +22,16 @@ readonly class ActiveFilterScope implements Scope
     {
     }
 
+    /**
+     * Filters the query to active records of the owning model.
+     *
+     * The column is qualified with the owning model's table so the filter
+     * stays valid on queries that join other tables carrying the same
+     * column — an unqualified reference would make those queries fail with
+     * an ambiguous-column error.
+     */
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->where($this->fieldName, $this->activeValue);
+        $builder->where($model->getTable() . '.' . $this->fieldName, $this->activeValue);
     }
 }

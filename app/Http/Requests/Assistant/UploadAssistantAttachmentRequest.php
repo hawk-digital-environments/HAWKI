@@ -10,12 +10,12 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * The storage service is resolved via the container in {@see rules()} rather
- * than constructor injection: {@see \App\Services\OpenApi\Builders\SchemaBuilder}
- * reflects action FormRequests with `new $class()` (no constructor args) to
- * derive their OpenAPI schema, so a required constructor dependency would
- * break spec generation. The app is always booted when these rules are
- * evaluated (live request or spec build).
+ * The storage service is resolved via the container in {@see rules()}:
+ * action FormRequests are introspected for the OpenAPI spec through the
+ * container (see {@see \App\Services\OpenApi\Builders\SchemaBuilder}), so
+ * injected rules() dependencies would work too — this class simply keeps
+ * the local resolution style it was written with. The app is always booted
+ * when these rules are evaluated (live request or spec build).
  */
 class UploadAssistantAttachmentRequest extends FormRequest
 {

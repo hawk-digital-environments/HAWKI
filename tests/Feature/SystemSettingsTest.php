@@ -6,7 +6,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Services\Admin\SystemSettings;
 use App\Services\Config\EnvironmentConfigProxy;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -15,7 +15,7 @@ use Tests\TestCase;
 #[CoversNothing]
 class SystemSettingsTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     private SystemSettings $settings;
     private User $user;

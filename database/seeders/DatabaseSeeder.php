@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             AssistantSettingSeeder::class,
             AssistantSeeder::class,
             AiToolSeeder::class,
+            Rag\RagToolSeeder::class,
         ]);
     }
 }

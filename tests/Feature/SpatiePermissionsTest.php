@@ -12,7 +12,7 @@ use App\Services\Admin\Permission;
 use App\Services\Admin\PermissionService;
 use App\Services\Admin\Repositories\RoleRepository;
 use App\Services\Admin\RoleAssignmentService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -23,7 +23,7 @@ use Tests\TestCase;
 #[CoversNothing()]
 class SpatiePermissionsTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     public function testManualAndMappedSourcesProjectToOneMembership(): void
     {

@@ -61,7 +61,8 @@ const HawkiCoreSchema = z.object({
      * into the conversation context per request instead.
      */
     rag: z.object({
-        enabled: z.boolean()
+        enabled: z.boolean(),
+        fileKnowledgeTool: z.string()
     }).optional(),
     /**
      * Per-purpose salts for the frontend's client-side key derivation

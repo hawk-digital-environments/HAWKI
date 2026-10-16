@@ -21,6 +21,7 @@ class AssistantRelationshipEndpointsTest extends TestCase
     public function testOwnerCanAttachAndDetachAiTools(): void
     {
         $owner = User::factory()->create();
+        $this->grantInternalToolAccess($owner);
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
         $tool = $this->createAiTool();
 
@@ -55,6 +56,9 @@ class AssistantRelationshipEndpointsTest extends TestCase
         $tool = $this->createAiTool();
 
         $other = User::factory()->create();
+        // The tool must be visible to the caller so the 403 genuinely comes
+        // from the ownership policy, not from tool discovery.
+        $this->grantInternalToolAccess($other);
         $this->actingAsUser($other);
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/relationships/ai-tools", [

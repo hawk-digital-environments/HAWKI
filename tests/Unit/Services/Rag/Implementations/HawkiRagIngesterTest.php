@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Rag\Implementations;
 
+use App\Services\Rag\Config\RagConfig;
 use App\Services\Rag\Exceptions\RagIngestionRequestException;
 use App\Services\Rag\Implementations\HawkiRagIngester;
 use App\Services\Rag\Values\FileIngestionPayload;
@@ -30,7 +31,11 @@ class HawkiRagIngesterTest extends TestCase
             'rag.timeout' => 7,
         ]);
 
-        $this->sut = new HawkiRagIngester(self::API_URL, 'test-key', 7);
+        $this->sut = new HawkiRagIngester(RagConfig::fromArray([
+            'apiUrl' => self::API_URL,
+            'apiKey' => 'test-key',
+            'timeout' => 7,
+        ]));
     }
 
     public function testItConstructs(): void

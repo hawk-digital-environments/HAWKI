@@ -33,7 +33,7 @@ class ExampleBuilderFilterTest extends TestCase
             'ai-providers' => $schemas->schemaFor('ai-providers'),
         ];
 
-        $this->builder = new ExampleBuilder(new SchemaBuilder());
+        $this->builder = new ExampleBuilder($this->app->make(SchemaBuilder::class));
     }
 
     public function testWhereHasFilterReturnsEmpty(): void

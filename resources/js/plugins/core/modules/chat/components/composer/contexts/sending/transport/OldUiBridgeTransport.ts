@@ -20,7 +20,8 @@ export class OldUiBridgeTransport implements MessageSenderTransportInterface {
             const code = error instanceof Error ? error.message : '';
             opt.setResponseFailed(this.app.translator.__(code === 'TOOL_AUTHORIZATION_REFRESHING'
                 ? 'chat.tools.authorizationRefreshing' : code === 'TOOL_UNAVAILABLE'
-                    ? 'chat.tools.unavailable' : 'chat.tools.accessDenied'));
+                    ? 'chat.tools.unavailable' : code === 'TOOL_OFFLINE'
+                        ? 'chat.tools.requiredOffline' : 'chat.tools.accessDenied'));
             return;
         }
         const toolTransfers = Object.freeze(tools.map(tool => tool.toTransferString()));
@@ -43,7 +44,8 @@ export class OldUiBridgeTransport implements MessageSenderTransportInterface {
                     const code = error instanceof Error ? error.message : '';
                     opt.setResponseFailed(this.app.translator.__(opt.status.accepted ? 'chat.tools.messageAccepted' : code === 'TOOL_AUTHORIZATION_REFRESHING'
                         ? 'chat.tools.authorizationRefreshing' : code === 'TOOL_UNAVAILABLE'
-                            ? 'chat.tools.unavailable' : 'chat.tools.accessDenied'));
+                            ? 'chat.tools.unavailable' : code === 'TOOL_OFFLINE'
+                                ? 'chat.tools.requiredOffline' : 'chat.tools.accessDenied'));
                     return false;
                 }
             },

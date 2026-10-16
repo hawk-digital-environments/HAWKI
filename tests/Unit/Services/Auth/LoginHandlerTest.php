@@ -20,7 +20,7 @@ use Tests\TestCase;
 #[CoversClass(LoginHandler::class)]
 class LoginHandlerTest extends TestCase
 {
-    use \Illuminate\Foundation\Testing\DatabaseTransactions;
+    use \Illuminate\Foundation\Testing\RefreshDatabase;
 
     public function testKnownIdentityReplacesThePreviouslyAuthenticatedUser(): void
     {

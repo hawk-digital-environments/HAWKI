@@ -9,6 +9,7 @@ use App\Models\Assistants\AssistantSetting;
 use App\Models\User;
 use App\Services\Assistant\AssistantPromptComposer;
 use App\Services\Assistant\Values\AssistantPromptTemplate;
+use App\Services\AssistantKnowledge\Values\AssistantKnowledgePromptTemplate;
 use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
@@ -122,13 +123,15 @@ class AssistantPromptComposerTest extends TestCase
     }
 
     /**
-     * Clean cut: while RAG ingestion is enabled, extracted file content must
-     * not be stuffed into the prompt at all — the assistant's knowledge is
-     * reached through the knowledge_base tool instead.
+     * Clean cut: while an agent tool delivers the assistant's knowledge
+     * (e.g. the RAG module's knowledge_base search over the ingested
+     * dataset), extracted file content must not be stuffed into the prompt
+     * at all. The decision is made by the run composer via the agent-tool
+     * registry and handed in as a flag — the prompt composer itself no
+     * longer reads any RAG configuration.
      */
-    public function testNoKnowledgeFragmentWhenRagHandlesKnowledge(): void
+    public function testNoKnowledgeFragmentWhenAnAgentToolHandlesKnowledge(): void
     {
-        config(['rag.enabled' => true]);
         Storage::fake(config('filesystems.file_storage', 'local_file_storage'));
 
         $user = User::factory()->create();
@@ -139,9 +142,42 @@ class AssistantPromptComposerTest extends TestCase
         ]);
         $this->attachKnowledgeFiles($assistant, $user);
 
-        $prompt = app(AssistantPromptComposer::class)->compose($assistant, $user);
+        $prompt = app(AssistantPromptComposer::class)->compose($assistant, $user, knowledgeHandledByAgentTool: true);
 
         static::assertSame('BASE PROMPT', $prompt);
+    }
+
+    /**
+     * Usage-instruction modules contributed by active agent tools are
+     * appended after the composed settings modules — and when the agent
+     * tool also delivers the knowledge, no file content is inlined: the
+     * instructions replace the knowledge-files fragment as the prompt's
+     * tail.
+     */
+    public function testAgentToolUsageInstructionsAreAppendedAsThePromptTail(): void
+    {
+        Storage::fake(config('filesystems.file_storage', 'local_file_storage'));
+
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'system_prompt' => 'BASE PROMPT',
+            'creator_id' => $user->id,
+            'max_tokens' => 0,
+        ]);
+        $this->attachKnowledgeFiles($assistant, $user);
+
+        $instructions = strtr(AssistantKnowledgePromptTemplate::KNOWLEDGE_TOOL, [
+            '{{tool_name}}' => 'hawki-rag-query-search',
+        ]);
+
+        $prompt = app(AssistantPromptComposer::class)->compose(
+            $assistant,
+            $user,
+            knowledgeHandledByAgentTool: true,
+            agentToolInstructions: [$instructions],
+        );
+
+        self::assertSame('BASE PROMPT' . "\n\n" . $instructions, $prompt);
     }
 
     /**

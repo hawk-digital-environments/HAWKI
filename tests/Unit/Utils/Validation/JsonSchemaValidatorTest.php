@@ -331,4 +331,122 @@ class JsonSchemaValidatorTest extends TestCase
         yield 'age below minimum' => [['name' => 'Alice', 'age' => -1], false];
         yield 'age as string instead of integer' => [['name' => 'Alice', 'age' => 'thirty'], false];
     }
+
+    // =========================================================================
+    // Lenient coercion — absorbs small-model type sloppiness
+    // =========================================================================
+
+    /**
+     * Values that convert cleanly against the schema's property types are
+     * coerced and pass validation with the converted value returned.
+     */
+    #[DataProvider('provideCoercibleToolArguments')]
+    public function testItCoercesCleanlyConvertibleArguments(array $data, array $expected, array $schema): void
+    {
+        $result = (new JsonSchemaValidator())->validate($schema, $data);
+
+        static::assertIsArray($result);
+        static::assertSame($expected, $result);
+    }
+
+    public static function provideCoercibleToolArguments(): iterable
+    {
+        $factory = new JsonSchemaTypeFactory();
+
+        yield 'numeric string for integer' => [
+            ['query' => 'test', 'top_k' => '5'],
+            ['query' => 'test', 'top_k' => 5],
+            ['query' => $factory->string()->required(), 'top_k' => $factory->integer()],
+        ];
+
+        yield 'integral float for integer' => [
+            ['top_k' => 3.0],
+            ['top_k' => 3],
+            ['top_k' => $factory->integer()],
+        ];
+
+        yield 'integral float string for integer' => [
+            ['top_k' => '3.0'],
+            ['top_k' => 3],
+            ['top_k' => $factory->integer()],
+        ];
+
+        yield 'numeric string for number' => [
+            ['score' => '1.5'],
+            ['score' => 1.5],
+            ['score' => $factory->number()],
+        ];
+
+        yield 'quoted true for boolean' => [
+            ['verbose' => 'true'],
+            ['verbose' => true],
+            ['verbose' => $factory->boolean()],
+        ];
+
+        yield 'quoted false for boolean' => [
+            ['verbose' => 'False'],
+            ['verbose' => false],
+            ['verbose' => $factory->boolean()],
+        ];
+
+        yield 'one and zero for boolean' => [
+            ['verbose' => 1, 'cache' => 0],
+            ['verbose' => true, 'cache' => false],
+            ['verbose' => $factory->boolean(), 'cache' => $factory->boolean()],
+        ];
+
+        yield 'integer for string' => [
+            ['folder' => 42],
+            ['folder' => '42'],
+            ['folder' => $factory->string()],
+        ];
+
+        yield 'null for optional property is dropped' => [
+            ['query' => 'test', 'top_k' => null],
+            ['query' => 'test'],
+            ['query' => $factory->string()->required(), 'top_k' => $factory->integer()],
+        ];
+    }
+
+    /**
+     * The leniency stops at clean conversions: garbage keeps failing strict
+     * validation, so the schema contract itself is not loosened.
+     */
+    #[DataProvider('provideNonCoercibleToolArguments')]
+    public function testItStillRejectsNonCoercibleArguments(array $data, array $schema): void
+    {
+        $result = (new JsonSchemaValidator())->validate($schema, $data);
+
+        static::assertIsString($result);
+    }
+
+    public static function provideNonCoercibleToolArguments(): iterable
+    {
+        $factory = new JsonSchemaTypeFactory();
+
+        yield 'non-numeric string for integer' => [
+            ['top_k' => 'many'],
+            ['top_k' => $factory->integer()],
+        ];
+
+        yield 'fractional value for integer' => [
+            ['top_k' => 2.5],
+            ['top_k' => $factory->integer()],
+        ];
+
+        yield 'array for string' => [
+            ['query' => ['nested']],
+            ['query' => $factory->string()->required()],
+        ];
+
+        yield 'null dropped from a required property surfaces as missing' => [
+            ['query' => null],
+            ['query' => $factory->string()->required()],
+        ];
+
+        yield 'non-boolean word for boolean' => [
+            ['verbose' => 'yes'],
+            ['verbose' => $factory->boolean()],
+        ];
+    }
 }

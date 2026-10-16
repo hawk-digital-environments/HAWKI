@@ -198,6 +198,44 @@ class AssistantRepository extends AbstractRepository
         return $this->getQuery()->where('handle', $handle)->first();
     }
 
+    /**
+     * Deletes a creator's draft and private assistants, including ones with
+     * a pending publication request — the current stage decides, not the
+     * requested one. Public assistants (organizational/federated) are kept.
+     *
+     * Deletes row by row through the model so the deleting observer fires per
+     * assistant and cleans up the stored attachment files ({@see \App\Services\Assistant\Observers\AssistantObserver::deleting()});
+     * a bulk delete would skip those model events and orphan the files.
+     *
+     * @return int The number of assistants deleted.
+     */
+    public function deleteNonPublicForCreator(User $user): int
+    {
+        $assistants = $this->getQuery()
+            ->where('creator_id', $user->id)
+            ->whereIn('release_stage', [
+                AssistantReleaseStage::DRAFT->value,
+                AssistantReleaseStage::PRIVATE->value,
+            ])
+            ->get();
+
+        $assistants->each(static fn (Assistant $assistant) => $assistant->delete());
+
+        return $assistants->count();
+    }
+
+    /**
+     * Detaches a user's pivot rows on assistants they did not create
+     * (favorites and shares received from others). User removal is
+     * soft, so the FK cascades never fire — without this the pivots
+     * would linger invisibly forever.
+     */
+    public function detachPivotsForUser(User $user): void
+    {
+        $user->favoriteAssistants()->detach();
+        $user->sharedAssistants()->detach();
+    }
+
     public function filterByIsFavorite(Builder $query, User $user, bool $isFavorite): Builder
     {
         $method = $isFavorite ? 'whereHas' : 'whereDoesntHave';

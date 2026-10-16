@@ -30,12 +30,13 @@ final class RagDocumentCitation extends Citation implements Arrayable, JsonSeria
         string $title,
         public readonly array $ranges = [],
         public readonly bool $document = true,
+        public readonly ?string $citeId = null,
     ) {
         parent::__construct($title);
     }
 
     /**
-     * @return array{url: string, title: string|null, ranges: list<array{int, int}>, document: bool}
+     * @return array{url: string, title: string|null, ranges: list<array{int, int}>, document: bool, citeId: string|null}
      */
     public function toArray(): array
     {
@@ -44,6 +45,7 @@ final class RagDocumentCitation extends Citation implements Arrayable, JsonSeria
             'title' => $this->title,
             'ranges' => $this->ranges,
             'document' => $this->document,
+            'citeId' => $this->citeId,
         ];
     }
 

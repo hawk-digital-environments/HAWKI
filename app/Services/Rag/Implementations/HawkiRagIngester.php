@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Rag\Implementations;
 
+use App\Services\Rag\Config\RagConfig;
 use App\Services\Rag\Contracts\RagIngesterInterface;
 use App\Services\Rag\Exceptions\RagIngestionRequestException;
 use App\Services\Rag\Values\FileIngestionPayload;
 use App\Services\Rag\Values\FileIngestionResult;
 use App\Services\Rag\Values\RagIngestionCheck;
-use App\Services\Rag\Values\RagIngestionOutcome;
 use App\Services\Rag\Values\TextIngestionPayload;
 use App\Services\Rag\Values\TextIngestionResult;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
@@ -40,12 +39,7 @@ class HawkiRagIngester implements RagIngesterInterface
     private const int DELETE_RETRY_DELAY_MS = 1000;
 
     public function __construct(
-        #[Config('rag.api_url')]
-        private string $apiUrl,
-        #[Config('rag.api_key')]
-        private string $apiKey,
-        #[Config('rag.timeout')]
-        private int $timeout,
+        private readonly RagConfig $config,
     ) {
     }
 
@@ -58,7 +52,7 @@ class HawkiRagIngester implements RagIngesterInterface
             return $this->selfGrantIngest($datasetId, null);
         }
 
-        $url = "{$this->apiUrl}/datasets";
+        $url = "{$this->config->apiUrl}/datasets";
 
         $response = $this->request()->post($url, [
             'dataset_id' => $datasetId,
@@ -104,7 +98,7 @@ class HawkiRagIngester implements RagIngesterInterface
      */
     private function selfGrantIngest(string $datasetId, ?string $grantToken): bool
     {
-        $url = "{$this->apiUrl}/datasets/{$datasetId}/ingest-grants/self";
+        $url = "{$this->config->apiUrl}/datasets/{$datasetId}/ingest-grants/self";
 
         $response = $this->request()->post($url, null !== $grantToken ? ['grant_token' => $grantToken] : null);
 
@@ -123,7 +117,7 @@ class HawkiRagIngester implements RagIngesterInterface
      */
     public function datasetExists(string $datasetId): bool
     {
-        $url = "{$this->apiUrl}/datasets/{$datasetId}";
+        $url = "{$this->config->apiUrl}/datasets/{$datasetId}";
 
         $response = $this->request()->get($url);
 
@@ -139,7 +133,7 @@ class HawkiRagIngester implements RagIngesterInterface
      */
     public function ingest(TextIngestionPayload $payload, string $idempotencyKey): TextIngestionResult
     {
-        $url = "{$this->apiUrl}/integrations/text-ingestions";
+        $url = "{$this->config->apiUrl}/integrations/text-ingestions";
 
         $response = $this->request()
             ->withHeader('Idempotency-Key', $idempotencyKey)
@@ -183,8 +177,8 @@ class HawkiRagIngester implements RagIngesterInterface
         $replacing = null !== $existingDocumentId && '' !== $existingDocumentId;
 
         $url = $replacing
-            ? "{$this->apiUrl}/documents/{$existingDocumentId}"
-            : "{$this->apiUrl}/documents";
+            ? "{$this->config->apiUrl}/documents/{$existingDocumentId}"
+            : "{$this->config->apiUrl}/documents";
 
         $form = [
             'display_name' => $payload->displayName,
@@ -268,14 +262,14 @@ class HawkiRagIngester implements RagIngesterInterface
             // Deletion requires an Idempotency-Key whose charset forbids
             // the underscores in dataset/source ids, hence the hash.
             return $this->deleteWithRetry(
-                "{$this->apiUrl}/integrations/text-ingestions/{$externalDocumentId}",
+                "{$this->config->apiUrl}/integrations/text-ingestions/{$externalDocumentId}",
                 'delete-' . hash('sha256', "{$datasetId}|{$externalDocumentId}"),
             );
         }
 
         // Unified document endpoint: keys by the managed document id
         // (`adoc_*`) or the legacy indexed uuid alone — no dataset scope.
-        return $this->deleteWithRetry("{$this->apiUrl}/documents/{$externalDocumentId}");
+        return $this->deleteWithRetry("{$this->config->apiUrl}/documents/{$externalDocumentId}");
     }
 
     /**
@@ -318,7 +312,7 @@ class HawkiRagIngester implements RagIngesterInterface
      */
     private function fetchTaskStatus(string $taskId): string
     {
-        $url = "{$this->apiUrl}/pipeline/tasks/{$taskId}";
+        $url = "{$this->config->apiUrl}/pipeline/tasks/{$taskId}";
 
         $response = $this->request()->get($url);
 
@@ -334,8 +328,8 @@ class HawkiRagIngester implements RagIngesterInterface
 
     private function request(): \Illuminate\Http\Client\PendingRequest
     {
-        return Http::withToken($this->apiKey)
+        return Http::withToken($this->config->apiKey)
             ->acceptJson()
-            ->timeout($this->timeout);
+            ->timeout($this->config->timeout);
     }
 }
