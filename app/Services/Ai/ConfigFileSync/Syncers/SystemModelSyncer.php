@@ -8,6 +8,7 @@ use App\Services\Admin\DeletedRecords;
 
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\SystemModels\SystemModelRegistry;
 use App\Services\Ai\SystemModels\SystemModelRepository;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
@@ -38,6 +39,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         private array                 $systemModels,
         #[Config('model_providers.system_models_ext_app', [])]
         private array                 $extAppSystemModels,
+        private SystemModelRegistry   $registry,
         private Repository            $configRepository,
         private SystemModelRepository $systemModelRepository,
         private AiModelRepository     $modelRepository,
@@ -50,15 +52,16 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
     {
         return md5(
             json_encode([
-                'systemModels' => $this->systemModels,
-                'extAppSystemModels' => $this->extAppSystemModels
+                'systemModels' => $this->mergedSystemModels(),
+                'extAppSystemModels' => $this->extAppSystemModels,
+                'registryEntries' => $this->registry->entries(),
             ])
         );
     }
 
     public function sync(JobMetrics $metrics): void
     {
-        $systemModels = $this->systemModels;
+        $systemModels = $this->mergedSystemModels();
         $defaultModelFromLegacyConfig = $this->warnForLegacyConfiguration($metrics);
         if ($defaultModelFromLegacyConfig !== null) {
             $systemModels['default_model'] = $defaultModelFromLegacyConfig;
@@ -107,6 +110,20 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             $metrics->warning("The 'model_providers.default_models' configuration is still in use. Please move 'model_providers.default_models.default_model' to 'model_providers.system_models.default_model' and remove 'model_providers.default_models' completely.");
         }
         return null;
+    }
+
+    /**
+     * The file-based configuration with the registry's domain-contributed
+     * entries merged over it (per key, registry wins): domains own their
+     * defaults in their own config and declare them through the
+     * {@see SystemModelRegistry} instead of writing into the Ai core's
+     * config file.
+     *
+     * @return array<string, string|null>
+     */
+    private function mergedSystemModels(): array
+    {
+        return array_merge($this->systemModels, $this->registry->systemModels());
     }
 
     private function syncModel(string $usageType, string $key, string $modelId, JobMetrics $metrics): void

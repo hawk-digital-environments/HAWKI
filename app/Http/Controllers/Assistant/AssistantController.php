@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Assistant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Assistant\AddFavoriteAssistantRequest;
-use App\Http\Requests\Assistant\AssistantBuilderGuideRequest;
 use App\Http\Requests\Assistant\DeleteAssistantAttachmentRequest;
 use App\Http\Requests\Assistant\RemixAssistantRequest;
 use App\Http\Requests\Assistant\RemoveFavoriteAssistantRequest;
@@ -17,13 +16,11 @@ use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
 use App\Models\Assistants\Assistant;
 use App\Policies\Traits\AuthorizesSensitiveIncludesTrait;
 use App\Services\Assistant\AssistantService;
-use App\Services\Assistant\BuilderGuide\AssistantBuilderGuideService;
 use App\Services\Assistant\Events\AssistantCreatedEvent;
 use App\Services\Assistant\Events\AssistantUpdatedEvent;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Storage\Values\FileReference;
 use Illuminate\Contracts\Support\Responsable;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use LaravelJsonApi\Contracts\Routing\Route;
 use LaravelJsonApi\Contracts\Store\Store as StoreContract;
@@ -54,11 +51,7 @@ class AssistantController extends Controller
 
     /**
      * Override json api life cycle hook to register create events.
-     * Details: https://laraveljsonapi.io/5.x/routing/controllers.html#store
-     * @param Assistant $assistant
-     * @param AssistantRequest $request
-     * @param AssistantQuery $query
-     * @return void
+     * Details: https://laraveljsonapi.io/5.x/routing/controllers.html#store.
      */
     public function created(Assistant $assistant, AssistantRequest $request, AssistantQuery $query): void
     {
@@ -74,9 +67,6 @@ class AssistantController extends Controller
      *
      * `is_favorite` is hydrated centrally by the schema's `loaderFor` hook
      * and needs no controller-side work on this path.
-     * @param Assistant $assistant
-     * @param Request $request
-     * @return void
      */
     public function read(Assistant $assistant, Request $request): void
     {
@@ -90,11 +80,7 @@ class AssistantController extends Controller
 
     /**
      * Override for json api life cycle hook to toggle update events.
-     * Details see: https://laraveljsonapi.io/5.x/routing/controllers.html#update
-     * @param Assistant $assistant
-     * @param AssistantRequest $request
-     * @param AssistantQuery $query
-     * @return void
+     * Details see: https://laraveljsonapi.io/5.x/routing/controllers.html#update.
      */
     public function updated(Assistant $assistant, AssistantRequest $request, AssistantQuery $query): void
     {
@@ -131,10 +117,7 @@ class AssistantController extends Controller
     /**
      * Remix an assisant for another user.
      * Sensitive fields are not remixed to the new assistant.
-     * @param RemixAssistantRequest $request
-     * @param Route $route
-     * @param StoreContract $store
-     * @param Assistant $assistant
+     *
      * @return DataResponse
      */
     public function remix(
@@ -151,10 +134,7 @@ class AssistantController extends Controller
     /**
      * Request a release stage for the assistant.
      * For public assistants this triggers a review process.
-     * @param ReleaseAssistantRequest $request
-     * @param Route $route
-     * @param StoreContract $store
-     * @param Assistant $assistant
+     *
      * @return DataResponse
      */
     public function release(
@@ -224,10 +204,7 @@ class AssistantController extends Controller
 
     /**
      * Delete an attachment (and its underlying stored file) from the assistant.
-     * @param DeleteAssistantAttachmentRequest $request
-     * @param Route $route
-     * @param StoreContract $store
-     * @param Assistant $assistant
+     *
      * @return DataResponse
      */
     public function deleteAttachment(
@@ -248,39 +225,11 @@ class AssistantController extends Controller
     }
 
     /**
-     * One turn of the builder's guide chat: an LLM that walks the creator
-     * through the setup and proposes field values via structured output. The
-     * result is not persisted here; the builder applies `updates` to its draft
-     * and saves them through the regular update flow.
-     */
-    public function builderGuide(
-        AssistantBuilderGuideRequest $request,
-        AssistantBuilderGuideService $guide,
-        Assistant $assistant,
-    ): JsonResponse {
-        $result = $guide->respond(
-            $assistant,
-            $request->draft(),
-            $request->guideMessages(),
-            app()->getLocale(),
-            $request->avatarBackgrounds(),
-        );
-
-        // Cast so a reply that fills nothing still sends `updates` as `{}`,
-        // not the `[]` an empty PHP array encodes to.
-        return response()->json(['data' => [...$result, 'updates' => (object)$result['updates']]]);
-    }
-
-    /**
      * Re-fetch the assistant through the JSON:API store so the schema's
      * `loaderFor` hook fires (per-user `is_favorite`, include paths, etc.) and
      * the model is serialised through the same pipeline as the framework's
      * FetchOne/Store/Update actions. Avoids the `DataResponse::make($model)`
      * pattern on an un-hydrated model that bypasses every schema hook.
-     * @param Route $route
-     * @param StoreContract $store
-     * @param Assistant $assistant
-     * @return DataResponse
      */
     private function refetchedResponse(Route $route, StoreContract $store, Assistant $assistant): DataResponse
     {
@@ -296,8 +245,6 @@ class AssistantController extends Controller
     /**
      * The rule that update events should be propagated to workflows for
      * assistants that have been released to the community.
-     * @param Assistant $assistant
-     * @return bool
      */
     private function shouldNotifyUpdate(Assistant $assistant): bool
     {

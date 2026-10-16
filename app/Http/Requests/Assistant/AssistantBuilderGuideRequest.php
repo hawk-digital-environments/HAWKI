@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Assistant;
 
+use App\Services\Assistant\BuilderGuide\Values\AssistantBuilderDraftSchema;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 
@@ -28,24 +29,7 @@ class AssistantBuilderGuideRequest extends FormRequest
             'messages.*.role' => ['required', 'string', 'in:user,assistant'],
             'messages.*.content' => ['required', 'string', 'max:20000'],
             'draft' => ['present', 'array'],
-            'draft.name' => ['nullable', 'string'],
-            'draft.handle' => ['nullable', 'string'],
-            'draft.categoryId' => ['nullable', 'string'],
-            'draft.model' => ['nullable', 'string'],
-            'draft.description' => ['nullable', 'string'],
-            'draft.detailDescription' => ['nullable', 'string'],
-            'draft.systemPrompt' => ['nullable', 'string'],
-            'draft.greeting' => ['nullable', 'string'],
-            'draft.starterPrompts' => ['nullable', 'array'],
-            'draft.starterPrompts.*' => ['string'],
-            'draft.language' => ['nullable', 'string'],
-            'draft.formality' => ['nullable', 'string'],
-            'draft.answerStyle' => ['nullable', 'string'],
-            'draft.tags' => ['nullable', 'array'],
-            'draft.tags.*' => ['string'],
-            'draft.avatar' => ['nullable', 'array'],
-            'draft.avatar.emoji' => ['nullable', 'string', 'max:32'],
-            'draft.avatar.background' => ['nullable', 'string', 'max:64'],
+            ...AssistantBuilderDraftSchema::draftRules(),
             'avatarBackgrounds' => ['sometimes', 'array', 'max:50'],
             'avatarBackgrounds.*' => ['string', 'distinct', 'regex:/^[a-z0-9-]{1,64}$/'],
         ];

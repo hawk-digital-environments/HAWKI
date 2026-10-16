@@ -1,7 +1,8 @@
 <?php
 
-return [
+declare(strict_types=1);
 
+return [
     /*
     |--------------------------------------------------------------------------
     |   Default AI Models
@@ -9,25 +10,23 @@ return [
     |   These Models are used as predefined models for each task.
     |   Make sure that the model is included and active in the providers list below.
     |
-    */
+     */
     'default_models' => [
         'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
         'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-2.0-flash'),
         'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'qwen3-omni-30b-a3b-instruct'),
         'default_vision_model' => env('DEFAULT_VISION_MODEL', 'qwen3-omni-30b-a3b-instruct'),
     ],
-
     /*
      * The default models to use when accessing HAWKI via an external application
      * If null, the general default models are used above (can be useful to prevent high cost models being used by external apps)
      */
     'default_models_ext_app' => [
-//        'default_model' => null,
-//        'default_web_search_model' => null,
-//        'default_file_upload_model' => null,
-//        'default_vision_model' => null,
+        //        'default_model' => null,
+        //        'default_web_search_model' => null,
+        //        'default_file_upload_model' => null,
+        //        'default_vision_model' => null,
     ],
-
     /*
     |--------------------------------------------------------------------------
     |   System Models
@@ -38,29 +37,26 @@ return [
     |   Add your desired models id.
     |   Make sure that the model is included and active in the providers list below.
     |
-    */
+     */
     'system_models' => [
-//        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
+        //        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
         'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
         'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
         'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
         'translator' => env('TRANSLATOR_MODEL', 'gpt-4.1-nano'),
-        'assistant_guide' => env('ASSISTANT_GUIDE_MODEL', 'gpt-5.6-luna'),
     ],
-
     /*
      * The system models to use when accessing HAWKI via an external application
      * If null, the general system models are used above (can be useful to prevent high cost models being used by external apps)
      */
     'system_models_ext_app' => [
-//        'default_model' => null,
-//        'title_generator' => null,
-//        'prompt_improver' => null,
-//        'summarizer' => null,
-//        'translator' => null,
-//        'assistant_guide' => null,
+        //        'default_model' => null,
+        //        'title_generator' => null,
+        //        'prompt_improver' => null,
+        //        'summarizer' => null,
+        //        'translator' => null,
+        //        'assistant_guide' => null,
     ],
-
     /*
     |--------------------------------------------------------------------------
     |   Model Providers
@@ -71,7 +67,7 @@ return [
     |   To include other providers in this list please refer to the
     |   documentation of HAWKI
     |
-    */
+     */
     'providers' => [
         'openAi' => [
             'active' => env('OPENAI_ACTIVE', true),
@@ -108,6 +104,6 @@ return [
             'api_url' => env('OPEN_WEB_UI_API_URL'),
             'ping_url' => env('OPEN_WEB_UI_PING_URL'),
             'models' => require __DIR__ . env('OPEN_WEB_UI_MODEL_LIST_DIR', '/model_lists/openwebui_models.php'),
-        ]
-    ]
+        ],
+    ],
 ];

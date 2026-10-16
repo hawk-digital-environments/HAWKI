@@ -29,9 +29,10 @@ use Tests\Feature\Services\Ai\Agents\ChatAgentAssistantPayloadTransformationTest
 use Tests\TestCase;
 
 /**
- * The builder's guide chat action: authorization, request validation and the
- * structured-output round trip through the real agent pipeline, with the
- * provider boundary faked by a {@see CapturingTextGateway}.
+ * The builder's guide chat endpoint (`POST /assistants/{id}/guide-turns`):
+ * authorization, request validation and the structured-output round trip
+ * through the real agent pipeline, with the provider boundary faked by a
+ * {@see CapturingTextGateway}.
  */
 #[CoversClass(AssistantBuilderGuideService::class)]
 class AssistantBuilderGuideTest extends TestCase
@@ -52,7 +53,7 @@ class AssistantBuilderGuideTest extends TestCase
             'updates' => [
                 'name' => 'Statistics Tutor',
                 'handle' => 'Statistics Tutor!',
-                'categoryId' => (string)$category->id,
+                'categoryId' => (string) $category->id,
                 'model' => 'guide-model',
                 'description' => null,
                 'detailDescription' => '   ',
@@ -64,38 +65,33 @@ class AssistantBuilderGuideTest extends TestCase
         $this->mockProviderInfrastructure($gateway);
 
         $response = $this->postJson(
-            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
-            [
-                'messages' => [
-                    ['role' => 'user', 'content' => 'Hi'],
-                    ['role' => 'assistant', 'content' => 'What should your assistant do?'],
-                    ['role' => 'user', 'content' => 'Tutor first-year students in statistics.'],
-                ],
-                'draft' => ['name' => 'Draft name', 'starterPrompts' => [], 'model' => null],
-            ],
-            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([
+                ['role' => 'user', 'content' => 'Hi'],
+                ['role' => 'assistant', 'content' => 'What should your assistant do?'],
+                ['role' => 'user', 'content' => 'Tutor first-year students in statistics.'],
+            ], ['name' => 'Draft name', 'starterPrompts' => [], 'model' => null]),
         );
 
-        $response->assertOk()->assertExactJson(['data' => [
-            'reply' => 'I drafted a first version.',
-            'updates' => [
-                'handle' => 'statistics-tutor-2',
-                'categoryId' => (string)$category->id,
-                'model' => 'guide-model',
-                'name' => 'Statistics Tutor',
-                'systemPrompt' => 'You are a patient statistics tutor.',
-                'starterPrompts' => ['What is a p-value?', 'Explain variance'],
-            ],
-        ]]);
+        $structured = $this->dataOf($response->assertOk());
+        self::assertSame('I drafted a first version.', $structured['reply']);
+        self::assertSame([
+            'handle' => 'statistics-tutor-2',
+            'categoryId' => (string) $category->id,
+            'model' => 'guide-model',
+            'name' => 'Statistics Tutor',
+            'systemPrompt' => 'You are a patient statistics tutor.',
+            'starterPrompts' => ['What is a p-value?', 'Explain variance'],
+        ], $structured['updates']);
 
-        static::assertCount(1, $gateway->capturedSteps);
+        self::assertCount(1, $gateway->capturedSteps);
         $step = $gateway->capturedSteps[0];
-        static::assertStringContainsString('"name": "Draft name"', $step['instructions']);
-        static::assertStringContainsString("- {$category->id}: Teaching", $step['instructions']);
-        static::assertStringContainsString('- guide-model: Guide Model', $step['instructions']);
-        static::assertStringContainsString('Still empty: handle, description, categoryId, systemPrompt, model.', $step['instructions']);
-        static::assertCount(3, $step['messages']);
-        static::assertSame('Tutor first-year students in statistics.', $step['messages'][2]->content);
+        self::assertStringContainsString('"name": "Draft name"', $step['instructions']);
+        self::assertStringContainsString("- {$category->id}: Teaching", $step['instructions']);
+        self::assertStringContainsString('- guide-model: Guide Model', $step['instructions']);
+        self::assertStringContainsString('Still empty: handle, description, categoryId, systemPrompt, model.', $step['instructions']);
+        self::assertCount(3, $step['messages']);
+        self::assertSame('Tutor first-year students in statistics.', $step['messages'][2]->content);
     }
 
     public function testUnknownCategoryAndModelAreDropped(): void
@@ -109,11 +105,14 @@ class AssistantBuilderGuideTest extends TestCase
             'updates' => ['categoryId' => '999999', 'model' => 'not-available', 'handle' => '!!!'],
         ]]));
 
-        $this->postJson(
-            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
-            ['messages' => [['role' => 'user', 'content' => 'Build it for me']], 'draft' => []],
-            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
-        )->assertOk()->assertExactJson(['data' => ['reply' => 'Done.', 'updates' => []]]);
+        $response = $this->postJson(
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([['role' => 'user', 'content' => 'Build it for me']], []),
+        );
+
+        $structured = $this->dataOf($response->assertOk());
+        self::assertSame('Done.', $structured['reply']);
+        self::assertSame([], $structured['updates']);
     }
 
     public function testSettingsAreFilledFromTheirOptions(): void
@@ -121,6 +120,7 @@ class AssistantBuilderGuideTest extends TestCase
         $owner = User::factory()->create();
         $assistant = $this->createAssistant($owner);
         $this->actingAsUser($owner);
+
         foreach (['language' => ['', 'en', 'de'], 'formality' => ['', 'casual', 'academic']] as $key => $values) {
             AssistantSetting::query()->create([
                 'key' => $key,
@@ -137,20 +137,21 @@ class AssistantBuilderGuideTest extends TestCase
         ]]);
         $this->mockProviderInfrastructure($gateway);
 
-        $this->postJson(
-            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
-            [
-                'messages' => [['role' => 'user', 'content' => 'Answer in German']],
-                'draft' => ['language' => null, 'formality' => 'academic', 'answerStyle' => null],
-            ],
-            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
-        )->assertOk()->assertExactJson(['data' => ['reply' => 'Set the tone.', 'updates' => ['language' => 'de']]]);
+        $response = $this->postJson(
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([['role' => 'user', 'content' => 'Answer in German']],
+                ['language' => null, 'formality' => 'academic', 'answerStyle' => null]),
+        );
+
+        $structured = $this->dataOf($response->assertOk());
+        self::assertSame('Set the tone.', $structured['reply']);
+        self::assertSame(['language' => 'de'], $structured['updates']);
 
         $instructions = $gateway->capturedSteps[0]['instructions'];
-        static::assertStringContainsString('"formality": "academic"', $instructions);
-        static::assertStringContainsString('- language: en, de', $instructions);
-        static::assertStringContainsString('- formality: casual, academic', $instructions);
-        static::assertStringNotContainsString('- answerStyle:', $instructions);
+        self::assertStringContainsString('"formality": "academic"', $instructions);
+        self::assertStringContainsString('- language: en, de', $instructions);
+        self::assertStringContainsString('- formality: casual, academic', $instructions);
+        self::assertStringNotContainsString('- answerStyle:', $instructions);
     }
 
     public function testTagsTakeTheExistingSpellingAndAreCapped(): void
@@ -166,19 +167,19 @@ class AssistantBuilderGuideTest extends TestCase
         ]]);
         $this->mockProviderInfrastructure($gateway);
 
-        $this->postJson(
-            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
-            ['messages' => [['role' => 'user', 'content' => 'Add tags']], 'draft' => ['tags' => ['Maths']]],
-            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
-        )->assertOk()->assertExactJson(['data' => [
-            'reply' => 'Tagged it.',
-            'updates' => ['tags' => ['Statistics', 'Tutoring', 'Maths', 'R', 'Exams']],
-        ]]);
+        $response = $this->postJson(
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([['role' => 'user', 'content' => 'Add tags']], ['tags' => ['Maths']]),
+        );
+
+        $structured = $this->dataOf($response->assertOk());
+        self::assertSame('Tagged it.', $structured['reply']);
+        self::assertSame(['tags' => ['Statistics', 'Tutoring', 'Maths', 'R', 'Exams']], $structured['updates']);
 
         $instructions = $gateway->capturedSteps[0]['instructions'];
-        static::assertStringContainsString('"Maths"', $instructions);
+        self::assertStringContainsString('"Maths"', $instructions);
         // The guide only proposes tags; creating them is the frontend's job.
-        static::assertSame(1, AssistantTag::query()->count());
+        self::assertSame(1, AssistantTag::query()->count());
     }
 
     public function testAvatarKeepsOnlyAnEmojiAndAnOfferedBackground(): void
@@ -193,24 +194,26 @@ class AssistantBuilderGuideTest extends TestCase
         ]);
         $this->mockProviderInfrastructure($gateway);
 
-        $request = [
-            'messages' => [['role' => 'user', 'content' => 'Suggest an avatar']],
-            'draft' => ['avatar' => ['emoji' => '🤖', 'background' => 'aurora']],
-            'avatarBackgrounds' => ['aurora', 'midnight'],
-        ];
-        $headers = ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'];
-        $url = "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide";
+        $first = $this->postJson(
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([['role' => 'user', 'content' => 'Suggest an avatar']],
+                ['avatar' => ['emoji' => '🤖', 'background' => 'aurora']], ['aurora', 'midnight']),
+        )->assertOk();
+        $structured = $this->dataOf($first);
+        self::assertSame('New look.', $structured['reply']);
+        self::assertSame(['avatar' => ['emoji' => '📊', 'background' => 'midnight']], $structured['updates']);
 
-        $this->postJson($url, $request, $headers)->assertOk()->assertExactJson(['data' => [
-            'reply' => 'New look.',
-            'updates' => ['avatar' => ['emoji' => '📊', 'background' => 'midnight']],
-        ]]);
         // Plain text is no emoji, and an unknown background is no preset.
-        $this->postJson($url, $request, $headers)->assertOk()->assertExactJson(['data' => ['reply' => 'New look.', 'updates' => []]]);
+        $second = $this->dataOf($this->postJson(
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([['role' => 'user', 'content' => 'Suggest an avatar']],
+                ['avatar' => ['emoji' => '🤖', 'background' => 'aurora']], ['aurora', 'midnight']),
+        )->assertOk());
+        self::assertSame([], $second['updates']);
 
         $instructions = $gateway->capturedSteps[0]['instructions'];
-        static::assertStringContainsString('background ids that suits it: aurora, midnight.', $instructions);
-        static::assertStringContainsString('"emoji": "🤖"', $instructions);
+        self::assertStringContainsString('background ids that suits it: aurora, midnight.', $instructions);
+        self::assertStringContainsString('"emoji": "🤖"', $instructions);
     }
 
     public function testAReplyWithoutUpdatesStillSendsAnObject(): void
@@ -225,13 +228,12 @@ class AssistantBuilderGuideTest extends TestCase
         ]]));
 
         $response = $this->postJson(
-            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
-            ['messages' => [['role' => 'user', 'content' => 'Which model do you use?']], 'draft' => []],
-            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([['role' => 'user', 'content' => 'Which model do you use?']], []),
         )->assertOk();
 
         // The client validates `updates` as an object; PHP encodes an empty array as `[]`.
-        static::assertStringContainsString('"updates":{}', $response->getContent());
+        self::assertStringContainsString('"updates":{}', $response->getContent());
     }
 
     public function testNonOwnerIsForbidden(): void
@@ -240,9 +242,8 @@ class AssistantBuilderGuideTest extends TestCase
         $this->actingAsUser(User::factory()->create());
 
         $this->postJson(
-            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
-            ['messages' => [['role' => 'user', 'content' => 'Hi']], 'draft' => []],
-            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([['role' => 'user', 'content' => 'Hi']], []),
         )->assertForbidden();
     }
 
@@ -253,20 +254,57 @@ class AssistantBuilderGuideTest extends TestCase
         $this->actingAsUser($owner);
 
         $this->postJson(
-            "/api/hawki/v1/assistants/{$assistant->id}/actions/builder-guide",
-            ['messages' => [['role' => 'assistant', 'content' => 'Hi']], 'draft' => []],
-            ['Accept' => 'application/vnd.api+json', 'Content-Type' => 'application/vnd.api+json'],
+            "/api/hawki/v1/assistants/{$assistant->id}/guide-turns",
+            $this->request([['role' => 'assistant', 'content' => 'Hi']], []),
         )->assertUnprocessable();
     }
 
     private function createAssistant(User $creator, ?string $handle = null): Assistant
     {
-        return Assistant::factory()->create([
+        $data = [
             'creator_id' => $creator->id,
             'release_stage' => 'draft',
             'model' => 'guide-model',
-            'handle' => $handle,
-        ]);
+        ];
+
+        // Omitted (not null!) so the factory's generated handle applies —
+        // guide turns address the assistant by its handle.
+        if (null !== $handle) {
+            $data['handle'] = $handle;
+        }
+
+        return Assistant::factory()->create($data);
+    }
+
+    /**
+     * One guide turn as the builder's guide chat sends it: the conversation,
+     * the draft and the avatar background presets.
+     *
+     * @param list<array{role: string, content: string}> $messages
+     * @param array<string, mixed> $draft
+     * @param list<string> $avatarBackgrounds
+     * @return array<string, mixed>
+     */
+    private function request(array $messages, array $draft, array $avatarBackgrounds = []): array
+    {
+        return [
+            'messages' => $messages,
+            'draft' => $draft,
+            'avatarBackgrounds' => $avatarBackgrounds,
+        ];
+    }
+
+    /**
+     * The `{reply, updates}` payload under the endpoint's `data` envelope.
+     *
+     * @return array{reply: string, updates: array<string, mixed>}
+     */
+    private function dataOf(\Illuminate\Testing\TestResponse $response): array
+    {
+        /** @var array{reply: string, updates: array<string, mixed>} $data */
+        $data = $response->json('data');
+
+        return $data;
     }
 
     /**
@@ -279,7 +317,7 @@ class AssistantBuilderGuideTest extends TestCase
     {
         $this->app->instance(
             LoggingMiddleware::class,
-            (new LoggingMiddleware())->useServiceContainerFallback(true)
+            (new LoggingMiddleware())->useServiceContainerFallback(true),
         );
 
         $events = $this->app->make(Dispatcher::class);
@@ -308,16 +346,14 @@ class AssistantBuilderGuideTest extends TestCase
         $flags->method('hasFeatureSamplingParameters')->willReturn(false);
 
         $model = $this->createMock(AiModel::class);
-        $model->method('__get')->willReturnCallback(
-            static fn (string $key): mixed => match ($key) {
-                'flags' => $flags,
-                'model_id' => 'guide-model',
-                'label' => 'Guide Model',
-                'active' => true,
-                'parameters' => new AiModelParameters(),
-                default => null,
-            }
-        );
+        $model->method('__get')->willReturnCallback(static fn (string $key): mixed => match ($key) {
+            'flags' => $flags,
+            'model_id' => 'guide-model',
+            'label' => 'Guide Model',
+            'active' => true,
+            'parameters' => new AiModelParameters(),
+            default => null,
+        });
 
         $this->mock(AiModelRepository::class, static function ($mock) use ($model): void {
             $mock->shouldReceive('findOneOrFail')->andReturn($model);

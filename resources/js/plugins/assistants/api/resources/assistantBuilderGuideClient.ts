@@ -40,22 +40,22 @@ export type BuilderGuideMessage = { role: "user" | "assistant"; content: string 
 const BuilderGuideResponseSchema = z.object({
     data: z.object({
         reply: z.string(),
-        updates: z.object({
-            name: z.string().optional(),
-            handle: z.string().optional(),
-            categoryId: z.string().optional(),
-            model: z.string().optional(),
-            description: z.string().optional(),
-            detailDescription: z.string().optional(),
-            systemPrompt: z.string().optional(),
-            greeting: z.string().optional(),
-            starterPrompts: z.array(z.string()).optional(),
-            language: z.string().optional(),
-            formality: z.string().optional(),
-            answerStyle: z.string().optional(),
-            /** Tag names: existing tags spelled as stored, new ones still to be created. */
-            tags: z.array(z.string()).optional(),
-            /** Either part may be missing when the guide's pick wasn't usable. */
+    updates: z.object({
+        name: z.string().optional(),
+        handle: z.string().optional(),
+        categoryId: z.string().optional(),
+        model: z.string().optional(),
+        description: z.string().optional(),
+        detailDescription: z.string().optional(),
+        systemPrompt: z.string().optional(),
+        greeting: z.string().optional(),
+        starterPrompts: z.array(z.string()).optional(),
+        language: z.string().optional(),
+        formality: z.string().optional(),
+        answerStyle: z.string().optional(),
+        /** Tag names: existing tags spelled as stored, new ones still to be created. */
+        tags: z.array(z.string()).optional(),
+        /** Either part may be missing when the guide's pick wasn't usable. */
             avatar: z.object({
                 emoji: z.string().optional(),
                 /** Id of one of the {@link BACKGROUNDS}. */
@@ -68,10 +68,12 @@ const BuilderGuideResponseSchema = z.object({
 export type BuilderGuideUpdates = z.infer<typeof BuilderGuideResponseSchema>["data"]["updates"];
 
 /**
- * One turn of the builder's guide chat (`POST assistants/{id}/actions/builder-guide`).
- * The server runs an LLM with structured output and returns its reply plus
- * the builder fields it wants filled; nothing is persisted server-side — the
- * caller applies `updates` to the draft, which then saves via autosave.
+ * One turn of the builder's guide chat
+ * (`POST /assistants/{id}/guide-turns`, the Assistant domain's nested
+ * endpoint). The server runs an LLM with structured output and returns its
+ * reply plus the builder fields it wants filled; nothing is persisted
+ * server-side — the caller applies `updates` to the draft, which then saves
+ * via autosave.
  */
 export async function requestBuilderGuide(
     draft: Assistant,
@@ -91,12 +93,15 @@ export async function requestBuilderGuide(
         },
     };
     try {
+        // The nested route builds the same URL as a resource action, minus
+        // the `actions/` segment: `{base}/assistants/{id}/guide-turns`.
         const response = await useApp().restApi.postToResourceAction(
             ASSISTANTS,
-            `${draft.id}/actions/builder-guide`,
+            `${draft.id}/guide-turns`,
             { messages, draft: draftFields, avatarBackgrounds: BACKGROUNDS.map((bg) => bg.id) },
             { schema: BuilderGuideResponseSchema, signal },
         );
+
         return response.data;
     } catch (err) {
         throw logApiError("requestBuilderGuide", err, { assistantId: draft.id });

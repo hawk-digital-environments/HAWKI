@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\Assistant\BuilderGuide;
-
 
 use App\Models\Ai\AiModel;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
@@ -20,7 +19,7 @@ class AssistantBuilderGuideAgentFactory extends AbstractAgentFactory
     /**
      * @param array{model: AiModel, instructions: string, messages: list<Message>, categoryIds: list<string>, modelIds: list<string>, settingOptions: array<string, list<string>>, avatarBackgrounds?: list<string>} $request
      */
-    public function createAgent(mixed $request): AgentInterface|null
+    public function createAgent(mixed $request): ?AgentInterface
     {
         return new AssistantBuilderGuideAgent(
             context: $this->createRequestContext($request['model']),

@@ -82,7 +82,7 @@ export const createOpenField = (
  *
  * The builder test panel's second conversation: instead of talking to the
  * assistant under test, the creator talks to a setup guide (an LLM behind
- * `assistants/{id}/actions/builder-guide`) that asks what the assistant should
+ * `hawkiExtensions.assistant_builder`) that asks what the assistant should
  * do, answers questions and fills builder fields through structured output.
  * Returned field values are written straight into the draft via
  * `builder.set()`, so they autosave like any manual edit and show up on the

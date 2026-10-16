@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\Assistant\BuilderGuide;
-
 
 use App\Models\Ai\AiModel;
 use App\Models\Assistants\Assistant;
@@ -14,7 +13,7 @@ use App\Services\Ai\Agents\Utils\ExtractTextCollector;
 use App\Services\Ai\AiService;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
-use App\Services\Assistant\Values\WellKnownAssistantSettingKeys;
+use App\Services\Assistant\BuilderGuide\Values\AssistantBuilderDraftSchema;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Support\Facades\DB;
@@ -37,41 +36,15 @@ use Laravel\Ai\Responses\StructuredAgentResponse;
  */
 class AssistantBuilderGuideService
 {
-    public const int MAX_STARTER_PROMPTS = 6;
-
-    public const int MAX_TAGS = 5;
-
-    /** Longest tag the guide may propose. */
-    private const int MAX_TAG_CHARS = 40;
-
-    /** Per-file cap on the knowledge excerpts handed to the guide. */
+    /**
+     * Per-file cap on the knowledge excerpts handed to the guide.
+     */
     private const int FILE_EXCERPT_CHARS = 4000;
 
-    /** Cap on all knowledge excerpts together. */
+    /**
+     * Cap on all knowledge excerpts together.
+     */
     private const int FILES_TOTAL_CHARS = 16000;
-
-    /** The free-text draft fields the guide may read and fill. */
-    public const array TEXT_FIELDS = ['name', 'description', 'detailDescription', 'systemPrompt', 'greeting', 'starterPrompts'];
-
-    /** The settings fields the guide may read and fill, keyed by draft field, with their `assistant_settings` key. */
-    public const array SETTING_FIELDS = [
-        'language' => 'language',
-        'formality' => 'formality',
-        'answerStyle' => WellKnownAssistantSettingKeys::ANSWER_STYLE,
-    ];
-
-    /** What each settings field means, for the structured-output schema. */
-    public const array SETTING_DESCRIPTIONS = [
-        'language' => 'Language the assistant answers in.',
-        'formality' => 'How formal the assistant\'s tone is.',
-        'answerStyle' => 'How long and detailed the assistant\'s answers are.',
-    ];
-
-    /** Every draft field the guide may read and fill. */
-    public const array FIELDS = [...self::TEXT_FIELDS, 'handle', 'categoryId', 'model', 'language', 'formality', 'answerStyle', 'tags', 'avatar'];
-
-    /** Fields the builder requires before the assistant can be released (see `builderValidationRules.ts`). */
-    private const array REQUIRED_FIELDS = ['name', 'handle', 'description', 'categoryId', 'systemPrompt', 'model'];
 
     public function __construct(
         private readonly AssistantBuilderGuideAgentFactory $agentFactory,
@@ -83,13 +56,22 @@ class AssistantBuilderGuideService
     }
 
     /**
-     * @param array<string, mixed> $draft The current builder draft, keyed by {@see self::FIELDS}.
-     * @param list<array{role: string, content: string}> $messages The guide conversation; the last one is the creator's.
-     * @param list<string> $avatarBackgrounds Ids of the avatar background presets the builder offers (they live in the frontend); none leaves the avatar to the creator.
-     * @return array{reply: string, updates: array<string, string|list<string>|array<string, string>>}
+     * One guide turn: builds the agent, sends it, and normalizes the
+     * structured output into the shape the builder applies.
+     *
+     * @param array<string, mixed>                       $draft             the current builder draft, keyed by {@see AssistantBuilderDraftSchema::FIELDS}
+     * @param list<array{role: string, content: string}> $messages          the guide conversation; the last one is the creator's
+     * @param list<string>                               $avatarBackgrounds ids of the avatar background presets the builder offers (they live in the frontend); none leaves the avatar to the creator
+     *
+     * @return array{reply: string, updates: array<string, array<string, string>|list<string>|string>}
      */
-    public function respond(Assistant $assistant, array $draft, array $messages, string $locale, array $avatarBackgrounds = []): array
-    {
+    public function respond(
+        Assistant $assistant,
+        array $draft,
+        array $messages,
+        string $locale,
+        array $avatarBackgrounds = [],
+    ): array {
         $categories = AssistantCategory::query()->orderBy('text')->pluck('text', 'id')->all();
         $models = $this->modelRepository->findAll()
             ->filter(static fn (AiModel $model): bool => $model->active)
@@ -131,17 +113,19 @@ class AssistantBuilderGuideService
     private function loadSettingOptions(): array
     {
         $settings = AssistantSetting::query()
-            ->whereIn('key', array_values(self::SETTING_FIELDS))
+            ->whereIn('key', array_values(AssistantBuilderDraftSchema::SETTING_FIELDS))
             ->get()
             ->keyBy('key');
 
         $out = [];
-        foreach (self::SETTING_FIELDS as $field => $key) {
+
+        foreach (AssistantBuilderDraftSchema::SETTING_FIELDS as $field => $key) {
             $values = array_map(
-                static fn (mixed $option): string => \is_array($option) ? (string)($option['value'] ?? '') : '',
+                static fn (mixed $option): string => \is_array($option) ? (string) ($option['value'] ?? '') : '',
                 $settings->get($key)->ui_options ?? [],
             );
             $values = array_values(array_filter($values, static fn (string $value): bool => '' !== $value));
+
             if ([] !== $values) {
                 $out[$field] = $values;
             }
@@ -163,13 +147,14 @@ class AssistantBuilderGuideService
             }
         }
 
-        abort_if('' === (string)$assistant->model, 422, 'No model available.');
+        abort_if('' === (string) $assistant->model, 422, 'No model available.');
 
         return $this->modelRepository->findOneOrFail($assistant->model);
     }
 
     /**
      * @param list<array{role: string, content: string}> $messages
+     *
      * @return list<Message>
      */
     private function toMessages(array $messages): array
@@ -183,26 +168,28 @@ class AssistantBuilderGuideService
     }
 
     /**
-     * @param array<string, mixed> $draft
-     * @param array<int|string, string> $categories Category text by id.
-     * @param array<string, string> $models Model label by model_id.
-     * @param array<string, list<string>> $settingOptions Option values per settings field.
-     * @param list<string> $avatarBackgrounds
+     * @param array<string, mixed>        $draft
+     * @param array<int|string, string>   $categories        category text by id
+     * @param array<string, string>       $models            model label by model_id
+     * @param array<string, list<string>> $settingOptions    option values per settings field
+     * @param list<string>                $avatarBackgrounds
      */
     private function buildInstructions(Assistant $assistant, array $draft, string $locale, array $categories, array $models, array $settingOptions, array $avatarBackgrounds): string
     {
         $current = [];
-        foreach (self::FIELDS as $field) {
+
+        foreach (AssistantBuilderDraftSchema::FIELDS as $field) {
             $current[$field] = $draft[$field] ?? null;
         }
+
         $jsonFlags = \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES;
         $currentJson = json_encode($current, $jsonFlags);
         $files = $this->collectKnowledge($assistant);
-        $maxPrompts = self::MAX_STARTER_PROMPTS;
-        $maxTags = self::MAX_TAGS;
-        $required = implode(', ', self::REQUIRED_FIELDS);
+        $maxPrompts = AssistantBuilderDraftSchema::MAX_STARTER_PROMPTS;
+        $maxTags = AssistantBuilderDraftSchema::MAX_TAGS;
+        $required = implode(', ', AssistantBuilderDraftSchema::REQUIRED_FIELDS);
         $missing = array_values(array_filter(
-            self::REQUIRED_FIELDS,
+            AssistantBuilderDraftSchema::REQUIRED_FIELDS,
             static fn (string $field): bool => null === ($current[$field] ?? null) || '' === $current[$field],
         ));
         $missingText = [] === $missing ? '(none)' : implode(', ', $missing);
@@ -297,7 +284,7 @@ class AssistantBuilderGuideService
         foreach ($assistant->assistantAttachments as $attachment) {
             $excerpt = '';
 
-            if ($budget > 0) {
+            if (0 < $budget) {
                 $file = $this->fileStorage->retrieve(StoredFileIdentifier::fromAssistantAttachment($attachment));
                 $content = null === $file ? '' : $this->extractTextCollector->collect($file);
                 $excerpt = mb_substr($content, 0, min(self::FILE_EXCERPT_CHARS, $budget));
@@ -321,11 +308,12 @@ class AssistantBuilderGuideService
      * settings are re-checked against the options even though the schema enumerates them:
      * not every provider enforces structured output strictly.
      *
-     * @param array<int|string, string> $categories
-     * @param array<string, string> $models
+     * @param array<int|string, string>   $categories
+     * @param array<string, string>       $models
      * @param array<string, list<string>> $settingOptions
-     * @param list<string> $avatarBackgrounds
-     * @return array<string, string|list<string>|array<string, string>>
+     * @param list<string>                $avatarBackgrounds
+     *
+     * @return array<string, array<string, string>|list<string>|string>
      */
     private function normalizeUpdates(mixed $updates, Assistant $assistant, array $categories, array $models, array $settingOptions, array $avatarBackgrounds): array
     {
@@ -336,22 +324,26 @@ class AssistantBuilderGuideService
         $out = [];
 
         $handle = \is_string($updates['handle'] ?? null) ? $this->uniqueHandle($updates['handle'], $assistant) : null;
+
         if (null !== $handle) {
             $out['handle'] = $handle;
         }
 
         $categoryId = $updates['categoryId'] ?? null;
+
         if ((\is_string($categoryId) || \is_int($categoryId)) && \array_key_exists($categoryId, $categories)) {
-            $out['categoryId'] = (string)$categoryId;
+            $out['categoryId'] = (string) $categoryId;
         }
 
         $model = $updates['model'] ?? null;
+
         if (\is_string($model) && \array_key_exists($model, $models)) {
             $out['model'] = $model;
         }
 
         foreach ($settingOptions as $field => $values) {
             $value = $updates[$field] ?? null;
+
             if (\is_string($value) && \in_array($value, $values, true)) {
                 $out[$field] = $value;
             }
@@ -362,22 +354,24 @@ class AssistantBuilderGuideService
         }
 
         $avatar = \is_array($updates['avatar'] ?? null) ? $this->normalizeAvatar($updates['avatar'], $avatarBackgrounds) : [];
+
         if ([] !== $avatar) {
             $out['avatar'] = $avatar;
         }
 
-        foreach (self::TEXT_FIELDS as $field) {
+        foreach (AssistantBuilderDraftSchema::TEXT_FIELDS as $field) {
             $value = $updates[$field] ?? null;
 
             if ('starterPrompts' === $field) {
                 if (!\is_array($value)) {
                     continue;
                 }
+
                 $prompts = array_values(array_unique(array_filter(
                     array_map(static fn ($p): string => \is_string($p) ? trim($p) : '', $value),
                     static fn (string $p): bool => '' !== $p,
                 )));
-                $out[$field] = \array_slice($prompts, 0, self::MAX_STARTER_PROMPTS);
+                $out[$field] = \array_slice($prompts, 0, AssistantBuilderDraftSchema::MAX_STARTER_PROMPTS);
 
                 continue;
             }
@@ -399,6 +393,7 @@ class AssistantBuilderGuideService
      *
      * @param array<mixed> $proposal
      * @param list<string> $backgrounds
+     *
      * @return array{emoji?: string, background?: string}
      */
     private function normalizeAvatar(array $proposal, array $backgrounds): array
@@ -406,11 +401,13 @@ class AssistantBuilderGuideService
         $out = [];
 
         $emoji = \is_string($proposal['emoji'] ?? null) ? trim($proposal['emoji']) : '';
+
         if (1 === preg_match('/^\X$/u', $emoji) && 0 === preg_match('/^[\p{L}\p{N}\p{P}\p{Z}]/u', $emoji)) {
             $out['emoji'] = $emoji;
         }
 
         $background = $proposal['background'] ?? null;
+
         if (\is_string($background) && \in_array($background, $backgrounds, true)) {
             $out['background'] = $background;
         }
@@ -419,27 +416,32 @@ class AssistantBuilderGuideService
     }
 
     /**
-     * Trimmed, de-duplicated tag names, at most {@see self::MAX_TAGS}. A name
+     * Trimmed, de-duplicated tag names, at most {@see AssistantBuilderDraftSchema::MAX_TAGS}. A name
      * matching an existing tag up to case is replaced by that tag's spelling:
      * the frontend reuses tags by exact name, and creating "statistics" next
      * to "Statistics" would fail the case-insensitive unique check. Only the
      * proposed names are looked up, so this is one small query however many
      * tags exist.
      *
-     * @param array<mixed> $proposal
+     * @param list<mixed> $proposal
+     *
      * @return list<string>
      */
     private function normalizeTags(array $proposal): array
     {
         $names = [];
+
         foreach ($proposal as $name) {
             $name = \is_string($name) ? trim($name) : '';
-            if ('' === $name || mb_strlen($name) > self::MAX_TAG_CHARS) {
+
+            if ('' === $name || mb_strlen($name) > AssistantBuilderDraftSchema::MAX_TAG_CHARS) {
                 continue;
             }
+
             $names[mb_strtolower($name)] ??= $name;
         }
-        $names = \array_slice($names, 0, self::MAX_TAGS, true);
+
+        $names = \array_slice($names, 0, AssistantBuilderDraftSchema::MAX_TAGS, true);
 
         if ([] === $names) {
             return [];
@@ -452,6 +454,7 @@ class AssistantBuilderGuideService
             ->all();
 
         $out = [];
+
         foreach ($names as $key => $name) {
             $out[] = $existing[$key] ?? $name;
         }
@@ -466,7 +469,7 @@ class AssistantBuilderGuideService
      */
     private function uniqueHandle(string $proposal, Assistant $assistant): ?string
     {
-        $base = trim((string)preg_replace('/[^a-z0-9_-]+/', '-', Str::lower(Str::ascii($proposal))), '-_');
+        $base = trim((string) preg_replace('/[^a-z0-9_-]+/', '-', Str::lower(Str::ascii($proposal))), '-_');
         $base = rtrim(mb_substr($base, 0, 60), '-_');
 
         if ('' === $base) {
@@ -474,6 +477,7 @@ class AssistantBuilderGuideService
         }
 
         $candidate = $base;
+
         for ($suffix = 2; $this->handleTaken($candidate, $assistant); ++$suffix) {
             $candidate = "{$base}-{$suffix}";
         }

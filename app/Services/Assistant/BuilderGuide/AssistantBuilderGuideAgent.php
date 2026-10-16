@@ -1,12 +1,12 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
 
 namespace App\Services\Assistant\BuilderGuide;
 
-
 use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use App\Services\Assistant\BuilderGuide\Values\AssistantBuilderDraftSchema;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 
@@ -25,10 +25,10 @@ use Laravel\Ai\Contracts\HasStructuredOutput;
 class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements HasStructuredOutput
 {
     /**
-     * @param list<string> $categoryIds
-     * @param list<string> $modelIds
-     * @param array<string, list<string>> $settingOptions Option values per settings field, e.g. `formality`.
-     * @param list<string> $avatarBackgrounds Ids of the avatar background presets; none leaves the avatar out.
+     * @param list<string>                $categoryIds
+     * @param list<string>                $modelIds
+     * @param array<string, list<string>> $settingOptions    Option values per settings field, e.g. `formality`.
+     * @param list<string>                $avatarBackgrounds ids of the avatar background presets; none leaves the avatar out
      */
     public function __construct(
         AgentRequestContext $context,
@@ -45,15 +45,17 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
     public function schema(JsonSchema $schema): array
     {
         $settings = [];
+
         foreach ($this->settingOptions as $field => $options) {
             $settings[$field] = $schema->string()
                 ->enum([...$options, null])
-                ->description(AssistantBuilderGuideService::SETTING_DESCRIPTIONS[$field] . ' null to keep the current value.')
+                ->description(AssistantBuilderDraftSchema::SETTING_DESCRIPTIONS[$field] . ' null to keep the current value.')
                 ->nullable()
                 ->required();
         }
 
         $avatar = [];
+
         if ([] !== $this->avatarBackgrounds) {
             $avatar['avatar'] = $schema->object([
                 'emoji' => $schema->string()
@@ -70,7 +72,7 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
         }
 
         return [
-            'reply' =>$schema->string()
+            'reply' => $schema->string()
                 ->description('The message shown to the creator in the chat. Markdown is allowed.')
                 ->required(),
             'updates' => $schema->object([
@@ -110,13 +112,13 @@ class AssistantBuilderGuideAgent extends AbstractTextGeneratingAgent implements 
                     ->required(),
                 'starterPrompts' => $schema->array()
                     ->items($schema->string())
-                    ->max(AssistantBuilderGuideService::MAX_STARTER_PROMPTS)
+                    ->max(AssistantBuilderDraftSchema::MAX_STARTER_PROMPTS)
                     ->description('The complete list of suggested opening prompts for users, replacing the current list. null to keep the current value.')
                     ->nullable()
                     ->required(),
                 'tags' => $schema->array()
                     ->items($schema->string())
-                    ->max(AssistantBuilderGuideService::MAX_TAGS)
+                    ->max(AssistantBuilderDraftSchema::MAX_TAGS)
                     ->description('The complete list of tag names, replacing the current tags. Prefer existing tags. null to keep the current value.')
                     ->nullable()
                     ->required(),
