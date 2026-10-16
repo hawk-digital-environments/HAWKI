@@ -428,6 +428,7 @@
             },
             "empty_hint": "Schreib eine Nachricht, um ihn auszuprobieren. Änderungen wirken sofort, ohne Speichern.",
             "no_model_hint": "Wähle ein Modell, um mit dem Testen zu beginnen.",
+            "required_fields": "Erforderliche Felder:",
             "unnamed": "Dein Assistent",
             "placeholder": "Nachricht an deinen Assistenten…",
             "send": "Senden"

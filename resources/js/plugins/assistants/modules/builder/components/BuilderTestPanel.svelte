@@ -15,7 +15,7 @@
     import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
     import {createChatStore} from '$plugins/assistants/components/testChat/stream/chatStore.svelte.js';
     import {createChatConfig, type ChatVariant} from '$plugins/assistants/components/testChat/stream/chatConfig.svelte.js';
-    import {createBuilderGuideChat} from '$plugins/assistants/modules/builder/contexts/builderGuideChat.svelte.js';
+    import {createBuilderGuideChat, createOpenField} from '$plugins/assistants/modules/builder/contexts/builderGuideChat.svelte.js';
     import {KnowledgeUploader} from '$plugins/assistants/modules/builder/components/fileUpload/knowledgeUploader.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
@@ -30,9 +30,14 @@
     const {__} = useTranslator();
     const builder = useBuilderContext();
     const uid = $props.id();
+    const router = useRouter();
+
+    // Jump target for the test chat's required-field chips — the same
+    // step+scroll behaviour the guide's applied-field chips use.
+    const openField = createOpenField(builder, router);
 
     const testChat = createChatStore(createChatConfig(() => builder.draft));
-    const guideChat = createBuilderGuideChat(builder, new KnowledgeUploader(), __, useRouter());
+    const guideChat = createBuilderGuideChat(builder, new KnowledgeUploader(), __, router);
 
     let mode = $state<ChatVariant>('guide');
     const chat = $derived(mode === 'guide' ? guideChat : testChat);
@@ -65,7 +70,7 @@
         <!-- Keyed so each conversation mounts its own chatbox; the chats
              themselves live above, so switching loses nothing. -->
         {#key mode}
-            <Chatbox assistant={builder.draft} variant={mode} chat={chat}/>
+            <Chatbox assistant={builder.draft} variant={mode} chat={chat} {openField}/>
         {/key}
     </div>
 </ChatDock>

@@ -55,6 +55,29 @@ const FIELD_LABELS: Record<BuilderGuideField | BuilderGuideSettingField | "handl
 };
 
 /**
+ * Opens the builder step a field lives on and scrolls to the field — shared
+ * by the guide chat's applied-field chips and the test chat's
+ * required-field chips. The scroll is requested before navigating (the
+ * field picks it up once its page has mounted; `isRouteActive` can still
+ * report the old step right after `goToRoute` resolves), and only when the
+ * step lock will let the navigation through, so a vetoed one leaves no
+ * request pending.
+ */
+export const createOpenField = (
+    builder: BuilderContext,
+    router: Pick<ReturnType<typeof useRouter>, "goToRoute" | "isRouteActive">,
+): ((key: keyof typeof FIELD_LABELS) => Promise<void>) => {
+    return async (key: keyof typeof FIELD_LABELS): Promise<void> => {
+        const step = FIELD_STEPS[key];
+        const route = `assistants.builder.${step}`;
+        if (BUILDER_STEPS.indexOf(step) <= builder.validator.firstIncompleteStep) {
+            builder.requestScrollTo(key);
+        }
+        if (!router.isRouteActive(route)) await router.goToRoute(route);
+    };
+};
+
+/**
  * # Builder guide chat
  *
  * The builder test panel's second conversation: instead of talking to the
@@ -88,6 +111,8 @@ export function createBuilderGuideChat(
     let filesPending = false;
     let abortCtrl: AbortController | null = null;
 
+    const openField = createOpenField(builder, router);
+
     /** What the guide reads for a message: its text, and a note about the files that landed. */
     const toGuideContent = (m: ChatMessage): string => m.parts
         .map((p) => {
@@ -114,22 +139,6 @@ export function createBuilderGuideChat(
             else out.push({ role: m.role, content });
         }
         return out;
-    };
-
-    /**
-     * Open the step a field lives on and scroll to the field. The scroll is
-     * requested before navigating (the field picks it up once its page has
-     * mounted; `isRouteActive` can still report the old step right after
-     * `goToRoute` resolves), and only when the step lock will let the
-     * navigation through, so a vetoed one leaves no request pending.
-     */
-    const openField = async (key: keyof typeof FIELD_LABELS): Promise<void> => {
-        const step = FIELD_STEPS[key];
-        const route = `assistants.builder.${step}`;
-        if (BUILDER_STEPS.indexOf(step) <= builder.validator.firstIncompleteStep) {
-            builder.requestScrollTo(key);
-        }
-        if (!router.isRouteActive(route)) await router.goToRoute(route);
     };
 
     /**

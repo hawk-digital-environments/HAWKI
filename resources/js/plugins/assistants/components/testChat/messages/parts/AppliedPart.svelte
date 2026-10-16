@@ -4,17 +4,18 @@
     import type {AppliedField} from '../../types';
 
     /** The builder fields the guide filled in with this reply. */
-    let {fields}: { fields: AppliedField[] } = $props();
+    let {fields, heading}: { fields: AppliedField[]; heading?: string } = $props();
 
     const {__} = useTranslator();
 </script>
 
 <!-- A quiet summary under the reply: one chip per filled field, each opening
-     the builder step that shows it and scrolling to the field. -->
+     the builder step that shows it and scrolling to the field. `heading`
+     swaps the caption (e.g. the test chat's required-fields chips). -->
 <div class="applied">
     <p class="heading">
         <span class="icon" aria-hidden="true"><CheckmarkCircle02Icon size="1em"/></span>
-        {__('assistants.builder.guide.applied')}
+        {heading ?? __('assistants.builder.guide.applied')}
     </p>
     <ul class="fields">
         {#each fields as field (field.label)}

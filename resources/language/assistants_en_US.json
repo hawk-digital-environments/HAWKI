@@ -428,6 +428,7 @@
             },
             "empty_hint": "Send a message to try it out. Your changes apply instantly, no need to save.",
             "no_model_hint": "Pick a model to start testing.",
+            "required_fields": "Required fields:",
             "unnamed": "Your assistant",
             "placeholder": "Message your assistant…",
             "send": "Send"

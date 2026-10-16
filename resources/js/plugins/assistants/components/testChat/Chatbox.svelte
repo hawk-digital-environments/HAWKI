@@ -24,13 +24,22 @@
          * fresh test chat owned by the chatbox. Fixed for its lifetime.
          */
         chat?: ChatStoreApi;
+        /**
+         * Opens the builder step showing a required field (test chat's
+         * empty-state chips). Absent outside the builder — chips then
+         * render without a jump target.
+         */
+        openField?: (key: "systemPrompt" | "handle") => void;
     }
 
-    const {assistant, header, variant = "test", chat: ownedChat}: Props = $props();
+    const {assistant, header, variant = "test", chat: ownedChat, openField}: Props = $props();
 
     // Chatbox is the context provider: it exposes the chat + config state to
-    // children via the useChatStore() / useChatConfig() hooks.
-    const config = provideChatConfig(() => assistant, untrack(() => variant));
+    // children via the useChatStore() / useChatConfig() hooks. Variant and
+    // openField are captured once on purpose: the config is fixed for the
+    // component's lifetime (the builder hands in a stable jump function).
+    // svelte-ignore state_referenced_locally
+    const config = provideChatConfig(() => assistant, untrack(() => variant), {openField});
     const chat = provideChatStore(config, untrack(() => ownedChat));
 
     const {__} = useTranslator();

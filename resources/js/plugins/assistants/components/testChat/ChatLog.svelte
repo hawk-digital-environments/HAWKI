@@ -3,7 +3,8 @@
     import AiMessage from "./messages/AiMessage.svelte";
     import {useChatStore} from "./stream/chatStore.svelte.js";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
-    import {useChatConfig} from "./stream/chatConfig.svelte.js";
+    import {useChatConfig, REQUIRED_FIELD_LABELS} from "./stream/chatConfig.svelte.js";
+    import AppliedPart from "./messages/parts/AppliedPart.svelte";
     import AssistantAvatarIcon from "$plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte";
     import {resolveAssistantAvatar} from "$plugins/assistants/utils/resolveAssistantAvatar";
     import {StatusIcon} from "$lib/components/ui/icons";
@@ -49,6 +50,16 @@
                 <p class="empty-hint">
                     {config.hasModel ? __('assistants.testChat.empty_hint') : __('assistants.testChat.no_model_hint')}
                 </p>
+                {#if config.missingRequired.length > 0}
+                    <!-- Nothing to test yet (no system prompt, no tools): point at
+                         the builder fields to fill, as jump chips like the guide's
+                         applied-field ones. -->
+                    <AppliedPart heading={__('assistants.testChat.required_fields')}
+                                 fields={config.missingRequired.map((key) => ({
+                                     label: __(REQUIRED_FIELD_LABELS[key]),
+                                     open: config.openField ? () => config.openField?.(key) : undefined,
+                                 }))}/>
+                {/if}
             {/if}
         </div>
     {/if}
