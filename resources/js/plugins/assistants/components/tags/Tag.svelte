@@ -30,6 +30,8 @@
         gap: var(--space-1);
         height: 2.25rem;
         width: max-content;
+        /* The text stays on one line; whole tags wrap instead (TagInput). */
+        white-space: nowrap;
         justify-content: space-between;
         padding: 0 var(--space-1_5) 0 var(--space-3);
         align-items: center;

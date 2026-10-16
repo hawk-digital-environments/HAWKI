@@ -1,14 +1,15 @@
 <script lang="ts">
-    import StatusCard from '$plugins/assistants/components/report/StatusCard.svelte';
+    import Alert from '$lib/components/ui/alert/Alert.svelte';
     import KnowledgeBases from "$plugins/assistants/modules/builder/components/KnowledgeBases.svelte";
     import FileUpload from "$plugins/assistants/modules/builder/components/FileUpload.svelte";
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
-    import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {useConfig} from '$lib/app/hooks/useConfig.svelte';
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useStore} from '$lib/app/hooks/useStore.svelte';
     import {isAiToolAvailableFor, knowledgeToolsOf} from "$plugins/core/stores/aiToolStoreData.js";
+    import {mockVectorDatabasesEnabled} from "$plugins/assistants/mocks/mockVectorDatabases.svelte.js";
+    import MockedVectorDatabases from "$plugins/assistants/mocks/MockedVectorDatabases.svelte";
     /**
      * The kernel's route renderer instantiates page components without passing
      * any props (see core's ChatIndex.svelte), so this interface is intentionally
@@ -25,7 +26,10 @@
     const toolStore = useStore('ai-tools');
 
     // RAG mode decides where uploaded files go: ingested into the assistant's
-    // knowledge-base dataset (rag on) or injected into the conversation context per request (rag off)
+    // preassembled knowledge-base dataset (rag on) or injected into the
+    // conversation context per request (rag off). Ingestion is an upload-time
+    // workflow, so with rag on the model must already be decided (FileUpload
+    // gates itself, see `knowledgeUploader.svelte.ts`).
     const ragEnabled = $derived(config.rag?.enabled === true);
 
     // The file-knowledge tool's name, published by the Rag slice through the public config
@@ -52,13 +56,8 @@
 
     // With rag on, uploading requires a model whose knowledge-base tool the
     // assistant can use — the files are preassembled into that dataset.
-    const uploadDisabled = $derived(ragEnabled && !knowledgeToolAvailable);
-    const uploadDisabledHint = $derived(
-        ragEnabled && currentModel !== null && !knowledgeToolAvailable
-            ? __('assistants.builder.knowledge.upload_disabled_model_not_configured')
-            : undefined
-    );
-
+    // FileUpload gates itself on this (see `knowledgeUploader.svelte.ts`),
+    // including the user-facing hint.
 </script>
 
 <div class="page-wrapper">
@@ -68,23 +67,29 @@
             <p class="page-description">{__('assistants.builder.knowledge.description')}</p>
         </div>
 
-        <StatusCard
-                label={__('assistants.builder.knowledge.warning_knowledge_sources')}
+        <Alert
+                size="small"
+                description={__('assistants.builder.knowledge.warning_knowledge_sources')}
                 icon={AlertCircleIcon}
-                type={ValidationState.WARNING}
+                tone="neutral"
         />
 
         {#if ragEnabled && currentModel === null}
-            <StatusCard
-                    label={__('assistants.builder.knowledge.no_model_selected')}
+            <Alert
+                    size="small"
+                    description={__('assistants.builder.knowledge.no_model_selected')}
                     icon={AlertCircleIcon}
-                    type={ValidationState.WARNING}
+                    tone="warning"
             />
         {/if}
 
-        <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
-
-        {#if attachableKnowledgeTools.length > 0}
+        <FileUpload/>
+        <!-- Mock mode (VITE_MOCK_VECTOR_DATABASES): the mocked list fully
+             replaces the real knowledge-databases component; see
+             mocks/mockVectorDatabases.svelte.ts. -->
+        {#if mockVectorDatabasesEnabled}
+            <MockedVectorDatabases/>
+        {:else if attachableKnowledgeTools.length > 0}
             <KnowledgeBases tools={attachableKnowledgeTools}/>
         {/if}
 

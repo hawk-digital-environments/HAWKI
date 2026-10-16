@@ -134,7 +134,9 @@
         stroke-width: 3;
     }
 
-    :global(.info-button-popover) {
+    /* Chained with .popover-content to beat its roomier default padding. */
+    :global(.popover-content.info-button-popover) {
+        padding: var(--space-2) var(--space-3);
         font-size: var(--font-size-xxs);
         max-width: 300px;
         max-height: 400px;

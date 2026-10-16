@@ -32,6 +32,7 @@
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {ReasoningPart} from '$plugins/core/modules/chat/types.js';
     import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
+    import ShimmerText from '$lib/components/ui/shimmer-text/ShimmerText.svelte';
 
     const STORAGE_KEY = 'hawkiReasoningOpen';
     /** Sources shown before the rest fold into a nested "+N more" section. */
@@ -272,7 +273,7 @@
         {#if !sub}
             <span class="brain" aria-hidden="true"><AiBrain01Icon size={16} /></span>
         {/if}
-        <span class="label" class:shimmer={active && !sub}>{label}</span>
+        <span class="label"><ShimmerText active={active && !sub}>{label}</ShimmerText></span>
         {#if !sub && searchCount > 0}
             <span class="count"><GlobalSearchIcon size={12} /> {searchCount}</span>
         {/if}
@@ -304,7 +305,7 @@
 
                         <div class="content">
                             {#if label}
-                                <span class="step-label" class:shimmer={isActive}>{isActive ? withEllipsis(label) : label}</span>
+                                <span class="step-label"><ShimmerText active={isActive}>{isActive ? withEllipsis(label) : label}</ShimmerText></span>
                             {/if}
 
                             {#if step.kind === 'search'}
@@ -597,30 +598,6 @@
     .prose :global([data-node-type]:last-child) { margin-bottom: 0; }
     .prose :global(strong) { color: var(--color-text); font-weight: var(--font-weight-semibold); }
 
-    /* A highlight travelling along the text, rather than the whole label
-       blinking: the label stays readable while it runs. */
-    .shimmer {
-        --shimmer-base: color-mix(in oklab, var(--color-accent-text) 60%, var(--color-text-muted));
-        background: linear-gradient(
-            90deg,
-            var(--shimmer-base) 0%,
-            var(--shimmer-base) 35%,
-            var(--color-accent-text) 50%,
-            var(--shimmer-base) 65%,
-            var(--shimmer-base) 100%
-        );
-        background-size: 300% 100%;
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        animation: shimmer 1.5s ease-in-out infinite;
-    }
-
-    @keyframes shimmer {
-        from { background-position: 0% 0; }
-        to { background-position: 100% 0; }
-    }
-
     @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.35; }
@@ -633,12 +610,6 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .shimmer {
-            animation: none;
-            background: none;
-            color: var(--color-accent-text);
-        }
-
         .dot.pulse { animation: none; }
         .sources > li { animation: none; }
         .chevron { transition: none; }

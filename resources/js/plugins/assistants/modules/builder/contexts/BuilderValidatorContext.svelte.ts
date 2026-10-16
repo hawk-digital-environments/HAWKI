@@ -10,9 +10,13 @@ import {
     type CheckItem,
     type FieldErrorMap,
     type ReportGroup,
+    type BuilderStep,
+    type CompletenessRule,
+    BUILDER_STEPS,
 } from "./builderValidationRules.js";
 
-export type {CheckItem, FieldErrorMap, ReportGroup} from "./builderValidationRules.js";
+export type {CheckItem, FieldErrorMap, ReportGroup, BuilderStep} from "./builderValidationRules.js";
+export {BUILDER_STEPS} from "./builderValidationRules.js";
 
 /** Thrown by {@link BuilderValidatorContext.validate} when required fields are
  *  not satisfied; `failures` carries the unsatisfied checks for reporting. */
@@ -135,12 +139,13 @@ export class BuilderValidatorContext {
         const draft = this.getDraft();
         const remix = this.getMode() === 'remix';
         return COMPLETENESS_RULES.map(rule => {
-            const ok = remix
+            const ok = (remix
                 ? rule.keys.some(k => this.isChanged(k))
-                : rule.isFilled(draft);
+                : rule.isFilled(draft)) && !this.hasFieldError(rule);
             return {
                 id: rule.id,
                 group: rule.group,
+                step: rule.step,
                 ok,
                 status: ok ? ValidationState.SAFE : (rule.failStatus ?? ValidationState.WARNING),
                 label: ok ? rule.okLabel : rule.failLabel,
@@ -191,5 +196,50 @@ export class BuilderValidatorContext {
     validate(): void {
         const failures = this.completeness.filter(c => !c.ok);
         if (failures.length) throw new ValidationError(failures);
+    }
+
+    /** Index (in {@link BUILDER_STEPS}) of the first step with an unfilled
+     *  required field, or the step count when all are complete. Steps up to
+     *  and including it are reachable; later ones are locked. */
+    readonly firstIncompleteStep = $derived.by(() => {
+        const draft = this.getDraft();
+        const i = BUILDER_STEPS.findIndex(step =>
+            COMPLETENESS_RULES.some(rule => rule.step === step
+                && (!rule.isFilled(draft) || this.hasFieldError(rule))));
+        return i === -1 ? BUILDER_STEPS.length : i;
+    });
+
+    /** Whether one of the rule's fields carries an inline error — on a filled
+     *  field that is a value the server rejected (e.g. a taken handle). */
+    private hasFieldError(rule: CompletenessRule): boolean {
+        return rule.keys.some(k => k in this.fieldErrors);
+    }
+
+    /** Whether `step` holds a filled-in required field the server rejected. */
+    hasRejectedField(step: BuilderStep): boolean {
+        const draft = this.getDraft();
+        return COMPLETENESS_RULES.some(rule => rule.step === step
+            && rule.keys.some(k => draft[k] && k in this.fieldErrors));
+    }
+
+    /**
+     * Gate for the step footer's "Continue": checks the required fields of
+     * `step` and marks each empty one with `message` as an inline error
+     * (cleared again on edit). Returns whether the step is complete — which
+     * it also isn't while a required field still shows a server error.
+     */
+    validateStep(step: BuilderStep, message: string): boolean {
+        const draft = this.getDraft();
+        const patch: FieldErrorMap = {};
+        for (const rule of COMPLETENESS_RULES) {
+            if (rule.step !== step || rule.isFilled(draft)) continue;
+            const empty = rule.keys.filter(k => !draft[k]);
+            for (const key of empty.length ? empty : rule.keys) patch[key] = message;
+        }
+        if (!Object.keys(patch).length) {
+            return !COMPLETENESS_RULES.some(rule => rule.step === step && this.hasFieldError(rule));
+        }
+        this.fieldErrors = { ...this.fieldErrors, ...patch };
+        return false;
     }
 }

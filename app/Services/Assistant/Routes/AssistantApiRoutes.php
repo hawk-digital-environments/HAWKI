@@ -13,6 +13,7 @@ use App\Http\Controllers\Assistant\AssistantSettingController;
 use App\Http\Controllers\Assistant\AssistantSettingValueController;
 use App\Http\Controllers\Assistant\AssistantTagController;
 use App\Http\Controllers\Assistant\AssistantUserPromptController;
+use App\Http\Controllers\Assistant\AssistantGuideTurnController;
 use App\Http\Controllers\ClientSchemaController;
 use Illuminate\Support\Facades\Route;
 use LaravelJsonApi\Laravel\Routing\ActionRegistrar;
@@ -31,13 +32,18 @@ use LaravelJsonApi\Laravel\Routing\ResourceRegistrar;
 final class AssistantApiRoutes
 {
     /**
-     * The client-schema endpoint the assistants frontend plugin bootstraps
-     * from. Called from the authenticated API-prefix group in
-     * `routes/api.php`.
+     * The slice's plain routes. Called from the authenticated API-prefix
+     * group in `routes/api.php`.
      */
     public static function plainRoutes(): void
     {
         Route::get('/assistants/schema', ClientSchemaController::class);
+
+        // The builder guide's turns: a create-operation on the guide
+        // conversation of one assistant, authorized by the update gate in
+        // the request (see AssistantBuilderGuideRequest).
+        Route::post('/assistants/{assistant}/guide-turns', AssistantGuideTurnController::class)
+            ->name('api.assistants.guide-turns.store');
     }
 
     /**

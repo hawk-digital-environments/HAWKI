@@ -9,7 +9,7 @@ import z from 'zod';
  * Registers the resource under the key `'system-models'` in `HawkiResourceSchemas` (see the
  * `declare module` augmentation below).
  */
-export const WellKnownSystemModelTypes = ['default', 'title_generation', 'prompt_improvement', 'summary', 'translation'] as const;
+export const WellKnownSystemModelTypes = ['default', 'title_generation', 'prompt_improvement', 'summary', 'translation', 'assistant_guide'] as const;
 export type WellKnownSystemModelType = (typeof WellKnownSystemModelTypes)[number];
 
 const SystemModelsSchema = z.object({

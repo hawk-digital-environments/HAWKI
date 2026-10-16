@@ -63,7 +63,8 @@ class SystemModelRepository extends ConfigurationRepository
             DB::table('system_prompts')->where($originalSystemPromptKey)->delete();
         }
 
-        if (WellKnownSystemModelTypes::TRANSLATION === $data['model_type']) {
+        // These types run with a built-in prompt, so no system prompt is kept for them.
+        if (\in_array($data['model_type'], [WellKnownSystemModelTypes::TRANSLATION, WellKnownSystemModelTypes::ASSISTANT_GUIDE], true)) {
             DB::table('system_prompts')->where($promptKey)->delete();
         } elseif (\array_key_exists('prompts', $data)) {
             foreach (['en_US', 'de_DE'] as $locale) {

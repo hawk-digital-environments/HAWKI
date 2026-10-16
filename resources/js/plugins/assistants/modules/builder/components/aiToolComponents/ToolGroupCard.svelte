@@ -110,14 +110,15 @@
 </div>
 
 <style>
+    /* Flat rows; a hairline only between consecutive cards. */
     .tool-group-card{
         position: relative;
         min-height: 3rem;
-        border: var(--border);
-        border-radius: var(--corner-md);
-        padding: .75rem;
-        margin-top: .5rem;
-        background: var(--color-surface-raised);
+        padding: .75rem 0;
+    }
+
+    :global(.tool-group-card) + .tool-group-card{
+        border-top: var(--border);
     }
 
     .header{
@@ -165,7 +166,7 @@
         display: inline-flex;
         align-items: center;
         flex-shrink: 0;
-        transition: transform var(--duration-medium);
+        transition: transform var(--duration-medium) var(--easing-spring);
     }
 
     .chevron.open{
@@ -178,7 +179,7 @@
         overflow: hidden;
         width: 100%;
         margin-top: 0;
-        transition: all var(--duration-medium);
+        transition: all var(--duration-medium) var(--easing-spring);
     }
 
     .details-wrapper.active{

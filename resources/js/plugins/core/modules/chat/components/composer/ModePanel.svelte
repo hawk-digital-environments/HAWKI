@@ -108,7 +108,7 @@
             title={cancelButtonTitle}
             aria-label={cancelButtonTitle}
             variant="ghost"
-            size="xs"
+            size="sm"
         />
     </div>
 {/if}

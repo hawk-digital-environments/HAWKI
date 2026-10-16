@@ -7,7 +7,7 @@
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { createDraft, prepareValues, serverFieldErrors } from '../form.js';
-    import { editorSchema, formValidationSchema } from '../forms/schemas.js';
+    import { editorSchema, formValidationSchema, promptlessModelSlots } from '../forms/schemas.js';
     import { controlFor, isFieldVisible, normalizeControlValue, type Control } from '../forms/controls.js';
     import { fieldHint } from '../forms/hints.js';
     import { issueMessage } from '../forms/validationMessages.js';
@@ -262,7 +262,7 @@
                                 if (
                                     section === 'system-models' &&
                                     definition.key === 'model_type' &&
-                                    value === 'translation'
+                                    (promptlessModelSlots as readonly unknown[]).includes(value)
                                 )
                                     form.setFieldValue('prompts', {});
                                 modelLookup?.adoptLabel(value);

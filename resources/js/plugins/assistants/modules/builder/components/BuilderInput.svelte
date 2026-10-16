@@ -10,10 +10,15 @@
     import AddableItemList from "$plugins/assistants/components/itemList/AddableItemList.svelte";
     import FullWidthToggle from "$plugins/assistants/components/toggle/FullWidthToggle.svelte";
     import Slider from "$lib/components/ui/slider/Slider.svelte";
-    import Tooltip from "$lib/components/ui/tooltip/Tooltip.svelte";
-    import AlertCircleIcon from "$lib/components/ui/icons/iconset/AlertCircleIcon.svelte";
+    import InfoPopover from "$lib/components/ui/popover/InfoPopover.svelte";
     import type {IconComponent} from '$lib/components/ui/icons';
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    import AiFillReveal from "$plugins/assistants/modules/builder/components/AiFillReveal.svelte";
+    import CheckmarkCircle02Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle02Icon.svelte';
+    import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
+    import Loading03Icon from '$lib/components/ui/icons/iconset/Loading03Icon.svelte';
+    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import RequiredMark from "$plugins/assistants/modules/builder/components/RequiredMark.svelte";
     import {getScrollableParent} from "$plugins/assistants/components/testChat/textarea-resizer";
 
 
@@ -34,6 +39,8 @@
         min?: number;
         max?: number;
         isInteger?: boolean;
+        /** Slider step; defaults to 1 for integer sliders. */
+        step?: number;
         assistantValueKey: keyof Assistant;
         // style vars
         render?: 'block' | 'inline';
@@ -54,6 +61,7 @@
         min,
         max,
         isInteger = false,
+        step,
         render = 'block',
         addItemLabel
 
@@ -73,7 +81,10 @@
     // Inline server validation error for this field, if any.
     let error = $derived(builder.validator.errorFor(assistantValueKey));
 
+    // A handle derived from the name is held back until the server confirmed
+    // it (or picked a free suffix for it), then shown in one go.
     let currentValue = $derived(
+        assistantValueKey === 'handle' && builder.handleChecking ? '' :
         isCategory ? builder.draft?.category?.id :
             isFormality ? builder.draft.formality :
                 isLanguage ? builder.draft.language:
@@ -81,6 +92,15 @@
                         builder.draft[assistantValueKey] as any
     );
     let booleanValue = $derived(Boolean(currentValue));
+
+    // The handle field shows a spinner while the server checks a changed
+    // handle, and confirms one it accepted as free.
+    let handlePending = $derived(assistantValueKey === 'handle' && builder.handlePending);
+    let handleAvailable = $derived(assistantValueKey === 'handle' && builder.handleAvailable);
+    // ... and flags one it rejected, e.g. because it is taken.
+    let handleRejected = $derived(
+        assistantValueKey === 'handle' && !!error && !!builder.draft.handle && !builder.handlePending
+    );
 
 
 
@@ -207,22 +227,14 @@
   inline with the switch) and so renders on its own.
 -->
 {#snippet fieldHeader()}
-    {#if label || error || hint || type === 'slider'}
+    {#if label || hint || type === 'slider'}
         <div class="field-header">
             {#if label}
-                <label for={name}>{label}</label>
+                <label for={name}>{label}<RequiredMark field={assistantValueKey}/></label>
             {/if}
             {#if hint}
-                <!-- Hint text is hidden until the trigger is hovered/focused. -->
-                <Tooltip tooltip={hint} side="top" delayDuration={150}>
-                    {#snippet children({props})}
-                        <button type="button" class="hint-trigger" aria-label={hint} {...props}>
-                            <AlertCircleIcon size="1em" />
-                        </button>
-                    {/snippet}
-                </Tooltip>
+                <InfoPopover {label} info={hint}/>
             {/if}
-            <InputError message={error} />
             {#if type === 'slider'}
                 <span class="slider-value">{numberValue}</span>
             {/if}
@@ -247,47 +259,11 @@
     <div class="input-container"
          class:renderBlock={render === 'block'}
          class:renderInline={render === 'inline'}
+         class:sliderDisabled={type === 'slider' && disabled}
     >
         {@render fieldHeader()}
 
-        {#if type === 'input'}
-            <Input
-                id={name}
-                {placeholder}
-                {disabled}
-                value={currentValue ?? ''}
-                oninput={(e) => update(e.currentTarget.value)}
-            />
-
-        {:else if type === 'textarea'}
-            <Textarea
-                bind:ref={textareaRef}
-                onpointerdown={handleResizePointerDown}
-                id={name}
-                {placeholder}
-                {disabled}
-                value={currentValue ?? ''}
-                oninput={(e) => update(e.currentTarget.value)}
-            />
-
-        {:else if type === 'select'}
-            <Select
-                id={name}
-                options={selectOptions}
-                value={selectValue}
-                {disabled}
-                oninput={(e) => update(e.currentTarget.value)}
-            />
-
-        {:else if type === 'itemList'}
-            <AddableItemList
-                defaultValue={stringArrayValue}
-                {addItemLabel}
-                {disabled}
-                onchange={update}
-            />
-
-        {:else if type === 'slider'}
+        {#if type === 'slider'}
             {#if description}
                 <p class="field-note">{description}</p>
             {/if}
@@ -295,11 +271,83 @@
                 value={numberValue}
                 min={min}
                 max={max}
-                step={isInteger ? 1 : undefined}
+                step={step ?? (isInteger ? 1 : undefined)}
                 {disabled}
                 onValueChange={update}
             />
+        {:else}
+            <!-- Blue reveal when the AI guide fills this field. -->
+            <AiFillReveal field={assistantValueKey}>
+                {#if type === 'input'}
+                    <div class="input-wrap" class:hasStatus={handlePending || handleAvailable || handleRejected}>
+                        <Input
+                            id={name}
+                            {placeholder}
+                            {disabled}
+                            value={currentValue ?? ''}
+                            oninput={(e) => update(e.currentTarget.value)}
+                        />
+                        {#if handlePending}
+                            <span class="input-status input-status--pending" role="status"
+                                  aria-label={__('assistants.builder.general.handle_checking')}>
+                                <Loading03Icon size="1.125rem"/>
+                            </span>
+                        {:else if handleAvailable}
+                            <Tooltip tooltip={__('assistants.builder.general.handle_available')}
+                                     delayDuration={300} focusable={false}>
+                                {#snippet children({props})}
+                                    <span class="input-status" role="img"
+                                          aria-label={__('assistants.builder.general.handle_available')}
+                                          {...props}>
+                                        <CheckmarkCircle02Icon size="1.125rem"/>
+                                    </span>
+                                {/snippet}
+                            </Tooltip>
+                        {:else if handleRejected}
+                            <Tooltip tooltip={error} delayDuration={300} focusable={false}>
+                                {#snippet children({props})}
+                                    <span class="input-status input-status--error" role="img"
+                                          aria-label={error}
+                                          {...props}>
+                                        <AlertCircleIcon size="1.125rem"/>
+                                    </span>
+                                {/snippet}
+                            </Tooltip>
+                        {/if}
+                    </div>
+
+                {:else if type === 'textarea'}
+                    <Textarea
+                        bind:ref={textareaRef}
+                        onpointerdown={handleResizePointerDown}
+                        id={name}
+                        {placeholder}
+                        {disabled}
+                        value={currentValue ?? ''}
+                        oninput={(e) => update(e.currentTarget.value)}
+                    />
+
+                {:else if type === 'select'}
+                    <Select
+                        id={name}
+                        options={selectOptions}
+                        value={selectValue}
+                        {disabled}
+                        oninput={(e) => update(e.currentTarget.value)}
+                    />
+
+                {:else if type === 'itemList'}
+                    <AddableItemList
+                        defaultValue={stringArrayValue}
+                        {addItemLabel}
+                        {disabled}
+                        onchange={update}
+                    />
+
+                {/if}
+            </AiFillReveal>
         {/if}
+        <InputError message={error} />
     </div>
 {/if}
 
@@ -308,25 +356,54 @@
         max-height: 15rem;
         overflow-y: auto;
     }
-    .hint-trigger {
-        display: inline-flex;
-        align-items: center;
-        padding: 0;
-        background: none;
-        border: none;
-        cursor: help;
-        color: var(--color-text-muted);
-        transition: color var(--duration-fast);
+    .input-wrap {
+        position: relative;
     }
-    .hint-trigger:hover,
-    .hint-trigger:focus-visible {
-        color: var(--color-text);
+    /* The check sits centred in a square as tall as the field, so its gap to
+       the top, bottom and end edge is the same; the text keeps clear of it. */
+    .input-wrap.hasStatus :global(.input) {
+        padding-inline-end: var(--space-10);
+    }
+    .input-status {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-end: 0;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-success);
+    }
+    .input-status--error {
+        color: var(--color-error);
+    }
+    .input-status--pending {
+        color: var(--color-text-disabled);
+    }
+    .input-status--pending :global(svg) {
+        animation: input-status-spin 700ms linear infinite;
+    }
+    @keyframes input-status-spin {
+        to {
+            rotate: 1turn;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .input-status--pending :global(svg) {
+            animation-duration: 1400ms;
+        }
     }
     .slider-value {
         margin-inline-start: auto;
         font-size: var(--font-size-sm);
         color: var(--color-text-muted);
         font-variant-numeric: tabular-nums;
+    }
+    /* A disabled slider mutes its whole field, not just the track. */
+    .sliderDisabled label,
+    .sliderDisabled .slider-value,
+    .sliderDisabled .field-note {
+        color: var(--color-text-disabled);
     }
     .field-note {
         margin: 0;

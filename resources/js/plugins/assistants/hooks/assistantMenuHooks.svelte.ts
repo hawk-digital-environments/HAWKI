@@ -42,6 +42,8 @@ export interface AssistantMenuEntry {
     route?: string;
     onSelect?: (ctx: SidebarContext) => void;
     active?: boolean;
+    /** Shown but not selectable (e.g. a builder step that isn't reachable yet). */
+    disabled?: boolean;
     /** Fully custom row: rendered instead of the default `SidebarItem`. */
     component?: Component;
 }

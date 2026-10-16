@@ -151,7 +151,9 @@ export const toolsSchema = z.object({
     models: ids
 });
 const promptSlot = z.enum(['default', 'title_generation', 'prompt_improvement', 'summary']);
-const modelSlot = z.enum([...promptSlot.options, 'translation']);
+/** Model slots whose feature brings its own prompt, so they take no system prompt. */
+export const promptlessModelSlots = ['translation', 'assistant_guide'] as const;
+const modelSlot = z.enum([...promptSlot.options, ...promptlessModelSlots]);
 const usage = z.enum(['main', 'external']);
 export const systemModelsSchema = z.object({
     model_type: modelSlot,

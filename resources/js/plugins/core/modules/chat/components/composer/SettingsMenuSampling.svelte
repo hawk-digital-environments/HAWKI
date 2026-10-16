@@ -17,6 +17,7 @@
     import Alert from '$lib/components/ui/alert/Alert.svelte';
     import Alert01Icon from '$lib/components/ui/icons/iconset/Alert01Icon.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
+    import {samplingPresets, type SamplingPresetKey} from '$plugins/core/modules/chat/components/composer/samplingPresets.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {slide} from 'svelte/transition';
     import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
@@ -24,14 +25,10 @@
     const composerContext = useComposerContext();
     const {__} = useTranslator();
 
-    type Preset = 'creative' | 'balanced' | 'precise' | null;
+    type Preset = SamplingPresetKey | null;
 
-    const presets: { key: Preset; label: string; temp: number; topP: number }[] = [
-        {key: 'creative', label: __('chat.composer.settings.presetCreative'), temp: 1.4, topP: 0.95},
-        {key: 'balanced', label: __('chat.composer.settings.presetBalanced'), temp: 0.7, topP: 0.9},
-        {key: 'precise', label: __('chat.composer.settings.presetPrecise'), temp: 0.2, topP: 0.5}
-    ];
-    const tabItems: TabItem[] = presets.map(p => ({key: p.key as string, label: p.label}));
+    const presets = samplingPresets;
+    const tabItems: TabItem[] = presets.map(p => ({key: p.key, label: __(p.labelKey)}));
 
     const activePreset = $derived<Preset>(
         presets.find(p => composerContext.modelParameters.intersects({temperature: p.temp, top_p: p.topP}))?.key ?? null
@@ -77,7 +74,7 @@
         {/if}
 
         <div class="slider-group">
-            <div class="slider-header">
+            <div class="slider-header" class:is-disabled={samplingDisabled}>
                 <Txt size="xs">
                     {__('chat.composer.settings.temperature')}
                     <InfoPopover
@@ -99,7 +96,7 @@
         </div>
 
         <div class="slider-group">
-            <div class="slider-header">
+            <div class="slider-header" class:is-disabled={samplingDisabled}>
                 <Txt size="xs">
                     {__('chat.composer.settings.topP')}
                     <InfoPopover
@@ -172,5 +169,10 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+    }
+
+    /* A disabled slider mutes its label and value, not just the track. */
+    .slider-header.is-disabled {
+        color: var(--color-text-disabled);
     }
 </style>

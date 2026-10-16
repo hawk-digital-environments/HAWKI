@@ -22,7 +22,7 @@
     import {onMount} from 'svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useConfig} from '$lib/app/hooks/useConfig.svelte.js';
-    import {useSidebarSlots} from '$lib/app/ui/useSidebarHooks.svelte.js';
+    import {useModuleSelectorEntries, useSidebarSlots} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
@@ -34,6 +34,11 @@
     const chatStore = useStore('chat');
     const config = useConfig();
     const {__} = useTranslator();
+
+    // A focused flow (e.g. the assistant builder's wizard) may empty the
+    // collected entries to take the switcher out of the sidebar altogether.
+    const moduleSelector = useModuleSelectorEntries();
+    const hasModuleSelector = $derived(moduleSelector.entries.length > 0);
 
     const sidebarSlots = useSidebarSlots();
     const slots = $derived(sidebarSlots.entries);
@@ -79,9 +84,11 @@
             <HeaderExtra />
         {/each}
     </SidebarHeader>
-    <nav class="module-selector" aria-label={__('ui.navigation.mainLabel')}>
-        <ModuleSelector />
-    </nav>
+    {#if hasModuleSelector}
+        <nav class="module-selector" aria-label={__('ui.navigation.mainLabel')}>
+            <ModuleSelector />
+        </nav>
+    {/if}
     <div class="module-sidebar">
         {#each panels as panel (panel.id)}
             {@const Panel = panel.component}

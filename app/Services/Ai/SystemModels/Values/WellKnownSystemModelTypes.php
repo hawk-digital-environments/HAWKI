@@ -29,4 +29,9 @@ interface WellKnownSystemModelTypes
      * Generally speaking this can be a smaller/cheap model since translations are short and requested rarely.
      */
     public const string TRANSLATION = 'translation';
+    /**
+     * This model runs the assistant builder's AI guide, which walks creators through setting up an assistant and fills the builder fields via structured output.
+     * It needs to follow long instructions and produce reliable structured output, so a capable model is recommended.
+     */
+    public const string ASSISTANT_GUIDE = 'assistant_guide';
 }
