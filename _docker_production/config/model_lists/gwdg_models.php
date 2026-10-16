@@ -22,28 +22,28 @@ return [
             'top_p' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_PARAMS_TOP_P', 1.0),
         ],
     ],
-    [
-        'active' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_ACTIVE', true),
-        'id' => 'gemma-4-31b-it',
-        'label' => 'GWDG Gemma 4 31B Instruct',
-        'input' => [
-            'text',
-            'image',
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
-        ],
-        'default_params' => [
-            // GWDG lists no specific recommendation; API defaults apply unless overridden via env
-            'temp' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_PARAMS_TOP_P'),
-        ],
-    ],
+//    [
+//        'active' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_ACTIVE', true),
+//        'id' => 'gemma-4-31b-it',
+//        'label' => 'GWDG Gemma 4 31B Instruct',
+//        'input' => [
+//            'text',
+//            'image',
+//        ],
+//        'output' => [
+//            'text',
+//        ],
+//        'tools' => [
+//            'stream' => true,
+//            'tool_calling' => true,
+//            'file_upload' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+//        ],
+//        'default_params' => [
+//            // GWDG lists no specific recommendation; API defaults apply unless overridden via env
+//            'temp' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_PARAMS_TEMP'),
+//            'top_p' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_PARAMS_TOP_P'),
+//        ],
+//    ],
     [
         'active' => env('MODELS_GWDG_GLM_5_3_FLASH_ACTIVE', true),
         'id' => 'glm-5.3-flash',
