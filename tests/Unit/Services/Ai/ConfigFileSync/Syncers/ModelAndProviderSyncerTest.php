@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Ai\ConfigFileSync\Syncers;
 
+use App\Models\Ai\AiModel;
+use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Syncers\ModelAndProviderSyncer;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Models\Repositories\AiModelDescriptionRepository;
@@ -128,6 +130,57 @@ class ModelAndProviderSyncerTest extends TestCase
     public function testItRecordsErrorForProviderWithNoAdapterKeyAndNoBuiltInMapping(): void
     {
         $sut = $this->makeSut(['unknownProvider' => ['active' => true, 'models' => []]]);
+        $metrics = new JobMetrics('test', new NullLogger());
+
+        $sut->sync($metrics);
+
+        static::assertTrue($metrics->hasErrors());
+    }
+
+    // =========================================================================
+    // sync — identifier constraints
+    // =========================================================================
+
+    public function testItRecordsErrorForProviderIdContainingTheIdentifierSeparator(): void
+    {
+        $providerRepository = $this->createMock(AiProviderRepository::class);
+        $providerRepository->expects(static::never())->method('upsert');
+
+        $sut = new ModelAndProviderSyncer(
+            providers: ['my/provider' => ['active' => true, 'adapter_key' => 'openai', 'models' => []]],
+            modelRepository: $this->createMock(AiModelRepository::class),
+            modelDescriptionRepository: $this->createMock(AiModelDescriptionRepository::class),
+            providerRepository: $providerRepository,
+            providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
+            useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
+            modelInfoFetcher: $this->createMock(ModelInfoFetcher::class),
+        );
+        $metrics = new JobMetrics('test', new NullLogger());
+
+        $sut->sync($metrics);
+
+        static::assertTrue($metrics->hasErrors());
+    }
+
+    public function testItSyncsAModelIdOnlyOncePerProvider(): void
+    {
+        $providerRepository = $this->createMock(AiProviderRepository::class);
+        $providerRepository->method('upsert')->willReturn(new AiProvider(['provider_id' => 'gwdg']));
+        $modelRepository = $this->createMock(AiModelRepository::class);
+        $modelRepository->expects(static::once())->method('upsert')->willReturn(new AiModel());
+
+        $sut = new ModelAndProviderSyncer(
+            providers: ['gwdg' => ['active' => true, 'adapter_key' => 'openai', 'models' => [
+                ['id' => 'gemma-4-31b-it'],
+                ['id' => 'gemma-4-31b-it'],
+            ]]],
+            modelRepository: $modelRepository,
+            modelDescriptionRepository: $this->createMock(AiModelDescriptionRepository::class),
+            providerRepository: $providerRepository,
+            providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
+            useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
+            modelInfoFetcher: $this->createMock(ModelInfoFetcher::class),
+        );
         $metrics = new JobMetrics('test', new NullLogger());
 
         $sut->sync($metrics);

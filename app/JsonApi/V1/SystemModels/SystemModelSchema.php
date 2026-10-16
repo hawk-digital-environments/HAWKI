@@ -6,7 +6,7 @@ use App\Models\Ai\SystemModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use LaravelJsonApi\Eloquent\Fields\ID;
-use LaravelJsonApi\Eloquent\Fields\Relations\HasOne;
+use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Filters\Where;
 use LaravelJsonApi\Eloquent\QueryBuilder\JsonApiBuilder;
@@ -22,6 +22,11 @@ class SystemModelSchema extends Schema
     public static string $model = SystemModel::class;
 
     /**
+     * The model and its provider are needed to build the qualified `model_id`.
+     */
+    protected array $with = ['model.provider'];
+
+    /**
      * Get the resource fields.
      *
      * @return array
@@ -32,8 +37,11 @@ class SystemModelSchema extends Schema
             ID::make(),
             Str::make('model_type'),
             Str::make('usage_type'),
-            Str::make('model_id'),
-            HasOne::make('model')->type('ai-models')->readOnly(),
+            // Same provider-qualified format as `ai-models.model_id`, so clients can match both.
+            Str::make('model_id')
+                ->extractUsing(fn(SystemModel $systemModel) => $systemModel->model?->getIdentifier() ?? $systemModel->model_id)
+                ->readOnly(),
+            BelongsTo::make('model')->type('ai-models')->readOnly(),
         ];
     }
 
@@ -47,7 +55,7 @@ class SystemModelSchema extends Schema
         return [
             Where::make('usage_type'),
             Where::make('model_type'),
-            Where::make('model_id'),
+            new SystemModelModelIdFilter(),
         ];
     }
 

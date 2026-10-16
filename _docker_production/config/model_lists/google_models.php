@@ -129,7 +129,7 @@ return [
     [
         'active' => env('MODELS_GOOGLE_GEMMA_4_26B_A4B_INSTRUCT_ACTIVE', true),
         'id' => 'gemma-4-26b-a4b-it',
-        'label' => 'Google Gemma 4 26B A4B Instruct',
+        'label' => 'Gemma 4 26B A4B Instruct',
         "input" => [
             "text",
             "image"
@@ -152,7 +152,7 @@ return [
     [
         'active' => env('MODELS_GOOGLE_GEMMA_4_31B_INSTRUCT_ACTIVE', true),
         'id' => 'gemma-4-31b-it',
-        'label' => 'Google Gemma 4 31B Instruct',
+        'label' => 'Gemma 4 31B Instruct',
         "input" => [
             "text",
             "image"

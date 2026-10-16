@@ -25,7 +25,7 @@ use App\Utils\JobMetrics;
  * catalog, so their metadata (description, flags, default parameters, token limits,
  * documentation URL) is maintained manually in the static DATA array, keyed by model ID.
  *
- * Only models whose `model_id` appears in DATA are affected; all others are returned
+ * Only models of a provider using the {@see GwdgAdapter} whose `model_id` appears in DATA are affected; all others are returned
  * unchanged. A model-specific documentation URL is only applied when the model still has
  * the provider-level default URL ({@see GwdgAdapter::DEFAULT_DOCUMENTATION_URL}).
  */
@@ -201,10 +201,15 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
     /**
      * Looks up the model's ID in the static DATA table and applies any available metadata.
      *
-     * Returns the model unchanged when its ID is not in DATA.
+     * Returns the model unchanged when the provider is not a GWDG provider or its ID is not in DATA,
+     * so the same model ID served by another provider (e.g. Gemma on Google) is left untouched.
      */
     public function enrichModelInfo(AiModel $modelInfo, AiProviderProxy $provider, JobMetrics $jobMetrics): AiModel
     {
+        if (!$provider->adapter instanceof GwdgAdapter) {
+            return $modelInfo;
+        }
+
         $modelData = self::DATA[$modelInfo->model_id] ?? null;
         if ($modelData === null) {
             return $modelInfo;

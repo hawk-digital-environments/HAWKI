@@ -7,6 +7,7 @@ use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\AiService;
+use App\Services\Ai\Models\Identifiers\ModelFinder;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
@@ -39,7 +40,8 @@ class StreamController extends Controller
         private readonly GroupMessageHandler  $groupMessageHandler,
         private readonly LoggerInterface      $logger,
         private readonly UserRepository       $userRepository,
-        private readonly CitationUrlCleaner   $citationCleaner
+        private readonly CitationUrlCleaner   $citationCleaner,
+        private readonly ModelFinder          $modelFinder
     )
     {
     }
@@ -130,7 +132,7 @@ class StreamController extends Controller
         if ($validatedData['broadcast']) {
             $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
             try {
-                $model = $this->aiService->getModels()->findOneOrFail($validatedData['payload']['model']);
+                $model = $this->modelFinder->findOrFail($validatedData['payload']['model']);
             } catch (\Throwable) {
                 return response()->json(['error' => 'The requested model is not available.'], 400);
             }
