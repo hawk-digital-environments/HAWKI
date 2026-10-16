@@ -56,13 +56,8 @@
 
     // With rag on, uploading requires a model whose knowledge-base tool the
     // assistant can use — the files are preassembled into that dataset.
-    const uploadDisabled = $derived(ragEnabled && !knowledgeToolAvailable);
-    const uploadDisabledHint = $derived(
-        ragEnabled && currentModel !== null && !knowledgeToolAvailable
-            ? __('assistants.builder.knowledge.upload_disabled_model_not_configured')
-            : undefined
-    );
-
+    // FileUpload gates itself on this (see `knowledgeUploader.svelte.ts`),
+    // including the user-facing hint.
 </script>
 
 <div class="page-wrapper">
@@ -88,7 +83,7 @@
             />
         {/if}
 
-        <FileUpload disabled={uploadDisabled} disabledHint={uploadDisabledHint}/>
+        <FileUpload/>
         <!-- Mock mode (VITE_MOCK_VECTOR_DATABASES): the mocked list fully
              replaces the real knowledge-databases component; see
              mocks/mockVectorDatabases.svelte.ts. -->

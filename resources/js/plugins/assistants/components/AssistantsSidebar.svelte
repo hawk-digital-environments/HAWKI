@@ -149,9 +149,9 @@
                             </p>
                             <p class="wizard-position">
                                 <span class="wizard-position-current">
-                                    {__('assistants.builder.steps.step_current', {current: stepCurrent})}
+                                    {__('assistants.builder.steps.step_current', {current: String(stepCurrent)})}
                                 </span>
-                                <span>{__('assistants.builder.steps.step_total', {total: stepRows.length})}</span>
+                                <span>{__('assistants.builder.steps.step_total', {total: String(stepRows.length)})}</span>
                             </p>
                         </div>
                     {/if}
