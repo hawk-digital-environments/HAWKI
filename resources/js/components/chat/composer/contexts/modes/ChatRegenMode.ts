@@ -57,8 +57,9 @@ export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRe
         context.reset();
 
         if (data.model) {
-            let model = this.modelStore.getModelByIdOrFallback(data.model);
-            if (model.model_id !== data.model) {
+            const model = this.modelStore.getModelByIdOrFallback(data.model);
+            // Older messages store the plain model id, so compare the resolved model instead of the strings
+            if (model !== this.modelStore.getOneById(data.model)) {
                 this.toast.info(__('chat.composer.regen.modelNotAvailable', {model: data.model, fallback: model.label}));
             }
 

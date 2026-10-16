@@ -6,6 +6,8 @@ namespace App\Services\Ai\ConfigFileSync\Syncers;
 
 
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
+use App\Services\Ai\Exceptions\AmbiguousModelIdException;
+use App\Services\Ai\Models\Identifiers\ModelFinder;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\SystemModels\SystemModelRepository;
 use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
@@ -39,7 +41,8 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         private array                 $extAppSystemModels,
         private Repository            $configRepository,
         private SystemModelRepository $systemModelRepository,
-        private AiModelRepository     $modelRepository
+        private AiModelRepository     $modelRepository,
+        private ModelFinder           $modelFinder
     )
     {
     }
@@ -100,7 +103,22 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
 
     private function syncModel(string $usageType, string $key, string $modelId, JobMetrics $metrics): void
     {
-        $model = $this->modelRepository->findOne($modelId, $this->modelRepository->makeScopeOverrides());
+        $scopeOverrides = $this->modelRepository->makeScopeOverrides();
+        try {
+            $model = $this->modelFinder->find($modelId, $scopeOverrides);
+        } catch (AmbiguousModelIdException) {
+            // Keep plain ids working for existing configurations: deterministically use the model that was created first
+            $candidates = $this->modelRepository->findAllByModelId($modelId, $scopeOverrides)->sortBy('id')->values();
+            $model = $candidates->first();
+            $metrics->warning(sprintf(
+                "The model ID '%s' for type '%s' is offered by multiple providers (%s), '%s' is used. Please use the provider-qualified ID instead, e.g. '%s'.",
+                $modelId,
+                $key,
+                $candidates->map->getIdentifier()->implode(', '),
+                $model->getIdentifier(),
+                $model->getIdentifier()
+            ));
+        }
         if (!$model) {
             $metrics->error("Model with ID '$modelId' for type '$key' not found in database.");
             return;
@@ -126,15 +144,15 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
     {
         foreach ($this->systemModelRepository->findAllFiltered(scopeOverrides: $this->systemModelRepository->makeScopeOverrides()) as $systemModel) {
             if (!$systemModel->model) {
-                $metrics->error("System model with ID '{$systemModel->id}' is linked to a non-existing model with ID '{$systemModel->model_id}'.");
+                $metrics->error("System model with ID '{$systemModel->id}' is linked to a non-existing model with ID '{$systemModel->ai_model_id}' (model_id '{$systemModel->model_id}').");
                 continue;
             }
             if (!$systemModel->model->active) {
-                $metrics->error("System model with ID '{$systemModel->id}' is linked to an inactive model with ID '{$systemModel->model_id}'.");
+                $metrics->error("System model with ID '{$systemModel->id}' is linked to an inactive model with ID '{$systemModel->model->getIdentifier()}'.");
                 continue;
             }
             if (!$systemModel->model->usageRules->isAllowedIn($systemModel->usage_type)) {
-                $metrics->error("System model with ID '{$systemModel->id}' is linked to a model with ID '{$systemModel->model_id}' that is not allowed for usage type '{$systemModel->usage_type}' according to its usage rules.");
+                $metrics->error("System model with ID '{$systemModel->id}' is linked to a model with ID '{$systemModel->model->getIdentifier()}' that is not allowed for usage type '{$systemModel->usage_type}' according to its usage rules.");
             }
         }
     }

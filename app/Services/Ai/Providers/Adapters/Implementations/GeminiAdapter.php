@@ -47,6 +47,12 @@ class GeminiAdapter extends AbstractProviderAdapter
 {
     use CreatesGeminiClient;
 
+    /**
+     * Model flag for models that reject a `thinkingBudget` with a 400 (e.g. Gemma), even though
+     * they do think. Attached by {@see \App\Services\Ai\ModelInformation\Enrichment\Implementations\StaticGoogleEnricher}.
+     */
+    public const string FLAG_NO_THINKING_BUDGET = 'gemini-no-thinking-budget';
+
     public function __construct(
         private readonly LocaleService $localeService
     )
@@ -79,6 +85,7 @@ class GeminiAdapter extends AbstractProviderAdapter
      *
      * The thinking budget is capped at half the total max-token allowance so that the model
      * cannot spend all its token budget on internal reasoning at the expense of the final answer.
+     * Models flagged with {@see self::FLAG_NO_THINKING_BUDGET} get no budget at all.
      * Safety filtering is relaxed to "block only high" for dangerous content because HAWKI's
      * own content policy sits above the model layer.
      *
@@ -92,13 +99,15 @@ class GeminiAdapter extends AbstractProviderAdapter
             $maxThinkingTokens = $context->modelParameters->getMaxThinkingTokens();
             $maxThinkingTokensLimited = min($maxThinkingTokens, $maxTokens / 2);
 
+            $thinkingConfig = ['includeThoughts' => true];
+            if (!$context->model->flags->has(self::FLAG_NO_THINKING_BUDGET)) {
+                $thinkingConfig['thinkingBudget'] = $maxThinkingTokensLimited;
+            }
+
             return [
                 'generationConfig' => [
                     'topK' => 10,
-                    'thinkingConfig' => [
-                        'includeThoughts' => true,
-                        'thinkingBudget' => $maxThinkingTokensLimited
-                    ]
+                    'thinkingConfig' => $thinkingConfig
                 ],
                 'safetySettings' => [
                     [

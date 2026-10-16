@@ -6,6 +6,7 @@ namespace App\Services\Ai\ConfigFileSync\Syncers;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
+use App\Services\Ai\Models\Identifiers\Values\AiModelIdentifier;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\ModelTypes\Values\WellKnownModelTypes;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
@@ -75,6 +76,16 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
 
     private function syncProvider(string $providerId, array $config, JobMetrics $metrics): void
     {
+        if (str_contains($providerId, AiModelIdentifier::SEPARATOR)) {
+            $metrics->error(sprintf(
+                'The provider ID "%s" must not contain "%s", because it is used as prefix of the model identifiers ("<provider_id>%s<model_id>").',
+                $providerId,
+                AiModelIdentifier::SEPARATOR,
+                AiModelIdentifier::SEPARATOR
+            ));
+            return;
+        }
+
         $adapterKey = $config['adapter_key'] ?? self::BUILT_IN_PROVIDER_ID_TO_ADAPTER_KEY_MAP[$providerId] ?? null;
         if (empty($adapterKey)) {
             $metrics->error(sprintf(
@@ -110,6 +121,15 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
 
         $syncedModelIds = [];
         foreach ($config['models'] ?? [] as $modelConfig) {
+            if (in_array($modelConfig['id'] ?? null, $syncedModelIds, true)) {
+                $metrics->error(sprintf(
+                    'The model ID "%s" is configured more than once for provider "%s", only the first entry is used.',
+                    $modelConfig['id'],
+                    $providerId
+                ));
+                continue;
+            }
+
             $modelId = $this->syncModel($provider, $modelConfig, $metrics);
             if (!empty($modelId)) {
                 $syncedModelIds[] = $modelId;

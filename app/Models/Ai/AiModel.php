@@ -12,6 +12,7 @@ use App\Models\Scopes\Generic\UsageTypeFilterOnRelationScope;
 use App\Policies\AiModelPolicy;
 use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
+use App\Services\Ai\Models\Identifiers\Values\AiModelIdentifier;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\Limits\AiModelLimitRegistry;
 use App\Services\Ai\Models\Limits\AiModelLimitsInterface;
@@ -50,6 +51,7 @@ use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
  * @property AiModelFlags $flags
  * @property NativeAiModelCapabilities $native_capabilities
  * @property bool $active
+ * @property-read AiProvider|null $provider
  * @property-read AiToolCollection $tools
  */
 #[CollectedBy(AiModelCollection::class)]
@@ -150,6 +152,15 @@ class AiModel extends Model
         return $this->belongsToMany(AiTool::class, 'ai_model_tools', 'ai_model_id', 'ai_tool_id')
             ->withPivot(['type', 'source_id'])
             ->withTimestamps();
+    }
+
+    /**
+     * Returns the provider-qualified identifier (`<provider_id>/<model_id>`) that clients use to
+     * address this model, because the plain `model_id` may be offered by several providers.
+     */
+    public function getIdentifier(): string
+    {
+        return AiModelIdentifier::fromModel($this)->toString();
     }
 
     /**

@@ -75,8 +75,8 @@ GOOGLE_ACTIVE=true
 GOOGLE_API_KEY=your-key
 
 # Set defaults
-DEFAULT_MODEL=gpt-4.1-nano
-DEFAULT_WEBSEARCH_MODEL=gemini-2.0-flash
+DEFAULT_MODEL=gpt-5-nano
+DEFAULT_WEBSEARCH_MODEL=gemini-3.8-flash
 DEFAULT_FILEUPLOAD_MODEL=qwen3-omni-30b-a3b-instruct
 DEFAULT_VISION_MODEL=qwen3-omni-30b-a3b-instruct
 ```
@@ -125,7 +125,7 @@ php hawki tools assign
 Follow the interactive prompts, or use direct flags:
 
 ```bash
-php hawki tools assign --tool=my-tool --model=gpt-4.1
+php hawki tools assign --tool=my-tool --model=gpt-5.4
 ```
 
 ### Step 7 — Start the application
@@ -152,16 +152,16 @@ Defines global defaults, system models, and a list of providers:
 
 ```php
 'default_models' => [
-    'default_model'            => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
-    'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-2.0-flash'),
+    'default_model'            => env('DEFAULT_MODEL', 'gpt-5-nano'),
+    'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-3.8-flash'),
     'default_file_upload_model'=> env('DEFAULT_FILEUPLOAD_MODEL', 'qwen3-omni-30b-a3b-instruct'),
     'default_vision_model'     => env('DEFAULT_VISION_MODEL', 'qwen3-omni-30b-a3b-instruct'),
 ],
 
 'system_models' => [
-    'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
-    'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
-    'summarizer'      => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
+    'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-5-nano'),
+    'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-5-nano'),
+    'summarizer'      => env('SUMMARIZER_MODEL', 'gpt-5-nano'),
 ],
 
 'providers' => [
@@ -186,8 +186,8 @@ Each file returns an array of model definitions:
 // config/model_lists/openai_models.php
 return [
     [
-        'active'        => env('MODELS_OPENAI_GPT4_1_ACTIVE', true),
-        'id'            => 'gpt-4.1',
+        'active'        => env('MODELS_OPENAI_GPT5_4_ACTIVE', true),
+        'id'            => 'gpt-5.4',
         'label'         => 'OpenAI GPT 4.1',
         'input'         => ['text', 'image'],
         'output'        => ['text'],
@@ -200,8 +200,8 @@ return [
             'knowledge_base' => 'native',
         ],
         'default_params' => [
-            'temp'  => env('MODELS_OPENAI_GPT4_1_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_OPENAI_GPT4_1_PARAMS_TOP_P', 1.0),
+            'temp'  => env('MODELS_OPENAI_GPT5_4_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_OPENAI_GPT5_4_PARAMS_TOP_P', 1.0),
         ],
     ],
     // ...
@@ -306,9 +306,9 @@ The `ai_model_tools` pivot table links specific AI models to the tools they are 
 ```bash
 php hawki tools assign --list                                             # view all assignments
 php hawki tools assign                                                    # interactive
-php hawki tools assign --tool=hawki-rag-search --model=gpt-4.1           # direct assignment
+php hawki tools assign --tool=hawki-rag-search --model=gpt-5.4           # direct assignment
 php hawki tools assign --tool=hawki-rag-search --provider=openAi         # assign to all OpenAI models
-php hawki tools assign --tool=hawki-rag-search --model=gpt-4.1 --detach  # remove assignment
+php hawki tools assign --tool=hawki-rag-search --model=gpt-5.4 --detach  # remove assignment
 ```
 
 ---
@@ -326,7 +326,7 @@ ai_providers
 
 ai_models
 ├── id (PK)
-├── model_id    (unique string, e.g. "gpt-4.1")
+├── model_id    (unique string, e.g. "gpt-5.4")
 ├── label
 ├── active      (bool)
 ├── input       (json — ["text","image"])
@@ -391,7 +391,7 @@ ai_model_tools  (pivot)
 
 ```bash
 # In .env
-MODELS_OPENAI_GPT5_ACTIVE=false
+MODELS_OPENAI_GPT5_5_ACTIVE=false
 
 # Clear cache and re-sync
 php hawki clear-cache

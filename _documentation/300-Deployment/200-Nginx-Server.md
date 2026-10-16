@@ -608,8 +608,8 @@ OLLAMA_ACTIVE=false
 Set your default models:
 
 ```
-DEFAULT_MODEL=gpt-4.1-nano
-DEFAULT_WEBSEARCH_MODEL=gemini-2.0-flash
+DEFAULT_MODEL=gpt-5-nano
+DEFAULT_WEBSEARCH_MODEL=gemini-3.8-flash
 DEFAULT_FILEUPLOAD_MODEL=qwen3-omni-30b-a3b-instruct
 DEFAULT_VISION_MODEL=qwen3-omni-30b-a3b-instruct
 ```
