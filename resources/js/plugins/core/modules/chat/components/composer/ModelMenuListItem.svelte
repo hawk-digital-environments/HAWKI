@@ -131,13 +131,12 @@
         display: none;
     }
 
-    :global(.dropdown-radio-item.model-menu-item[data-disabled]) {
+    /* Disabled rows still take the pointer (bits-ui ignores their selection), so hovering
+       one reveals its info chevron like any other row — the user can still read why. The
+       doubled class outranks the radio item's own `pointer-events: none`. */
+    :global(.dropdown-radio-item.model-menu-item.model-menu-item[data-disabled]) {
+        pointer-events: auto;
         cursor: not-allowed;
-    }
-
-    /* Disabled rows keep the info chevron reachable, so the user can still read why. */
-    :global(.dropdown-radio-item.model-menu-item[data-disabled] .model-item-info) {
-        pointer-events: all;
     }
 
     /* A single-line row: the controls must not stand taller than the label, or they would
@@ -154,7 +153,7 @@
     }
 
     :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted]) .menu-pin-button),
-    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted], [data-disabled]) .model-item-info) {
+    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted]) .model-item-info) {
         opacity: 1;
     }
 
