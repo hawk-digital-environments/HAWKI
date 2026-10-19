@@ -27,8 +27,6 @@
     import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {chipPop} from '$lib/utils/transitions/chipPop';
-    import {flip} from 'svelte/animate';
-    import {backOut} from 'svelte/easing';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
@@ -206,16 +204,19 @@
 {#if tools.length > 0}
     <!-- Visible row -->
     <div class="tool-chips" bind:this={rowEl} transition:growTransition={{mode: 'horizontal'}}>
-        {#each visibleTools as tool, i (tool)}
+        <!-- Keyed by name, not object: `tools.enable()` reconciles and rebuilds every
+             wrapper, so identity keys would replay every chip's out/in on each toggle. -->
+        {#each visibleTools as tool, i (tool.name)}
             <!-- Wrapper carries the motion so the snippet stays shared with the
                  offscreen measurement row, which must never animate. The intro is
                  `|global` so the first chip pops in with the row instead of just being
-                 revealed by it. -->
+                 revealed by it. No `animate:flip`: Svelte pins an outroing animated item
+                 with `position: absolute`, so a removed chip would float over the neighbours
+                 sliding into its place. chipPop's width unroll moves them instead. -->
             <span
                 class="tool-chip-slot"
                 in:chipPop|global
                 out:chipPop={{direction: 'out'}}
-                animate:flip={{duration: 260, easing: backOut}}
             >
                 {@render chip(tool, i)}
             </span>
@@ -235,7 +236,7 @@
     <!-- Offscreen measurement row: renders every chip plus the badge so we
          can compute how many fit before deciding what to show above. -->
     <div class="tool-chips tool-chips-measure" bind:this={measureEl} aria-hidden="true">
-        {#each tools as tool, i (tool)}
+        {#each tools as tool, i (tool.name)}
             <span data-chip>{@render chip(tool, i, true)}</span>
         {/each}
         <span data-badge class="tool-chip tool-chip-badge">+{tools.length}</span>

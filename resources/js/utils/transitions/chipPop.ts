@@ -27,7 +27,7 @@
  * // Assistant tag: a plain unroll, since the chip animates its own arrival afterwards.
  * <span in:chipPop={{duration: 280, scaleFrom: 0.94, overshoot: false}}>…</span>
  */
-import {backOut, cubicIn, cubicOut} from 'svelte/easing';
+import {backOut, cubicOut} from 'svelte/easing';
 import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
 export interface ChipPopParams {
@@ -44,7 +44,9 @@ export function chipPop(node: Element, params?: ChipPopParams) {
     const entering = direction === 'in';
     return {
         duration: motionDuration(duration ?? (entering ? 320 : 180)),
-        easing: entering ? (overshoot ? backOut : cubicOut) : cubicIn,
+        // Svelte plays an outro as `1 - easing(p)`, so cubicOut collapses straight away.
+        // cubicIn held the chip near full width and snapped it shut, which read as sluggish.
+        easing: entering && overshoot ? backOut : cubicOut,
         css: (t: number, u: number) => `
             width: ${Math.max(0, t * width)}px;
             opacity: ${Math.min(1, t * 1.6)};
