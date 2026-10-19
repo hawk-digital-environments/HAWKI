@@ -180,15 +180,57 @@
         app.events.sync.triggerVoid('modelsRequested');
     }
 
-    // Arrowing out of the search field lands on the current model rather than the first
-    // row, so the keyboard starts from the current choice. Runs in the capture phase, ahead
-    // of bits-ui's own roving focus; falls through when that row is filtered out.
-    function onContentKeydownCapture(event: KeyboardEvent): void {
-        if (event.key !== 'ArrowDown' || !(event.target instanceof HTMLInputElement) || !current) {
+    function currentRow(container: ParentNode): HTMLElement | null {
+        return current
+            ? container.querySelector<HTMLElement>(`[data-model-id="${CSS.escape(current.model_id)}"]:not([data-disabled])`)
+            : null;
+    }
+
+    // The list opens on the current model: its row takes focus, centred in the scrolling
+    // viewport. Two frames, so this lands after `MenuSearchField` claims focus on mount.
+    // Falls back to the search field when the row is folded away or offline.
+    $effect(() => {
+        if (!open) {
             return;
         }
-        const row = (event.currentTarget as HTMLElement)
-            .querySelector<HTMLElement>(`[data-model-id="${CSS.escape(current.model_id)}"]:not([data-disabled])`);
+        let frame = requestAnimationFrame(() => {
+            frame = requestAnimationFrame(() => {
+                const row = currentRow(document.querySelector('.model-menu-content') ?? document);
+                if (!row) {
+                    return;
+                }
+                row.focus({preventScroll: true});
+                const viewport = row.closest<HTMLElement>('.viewport');
+                if (viewport) {
+                    viewport.scrollTop += row.getBoundingClientRect().top - viewport.getBoundingClientRect().top
+                        - (viewport.clientHeight - row.offsetHeight) / 2;
+                }
+            });
+        });
+        return () => cancelAnimationFrame(frame);
+    });
+
+    // Keyboard handling ahead of bits-ui's own (capture phase):
+    // - Typing while a row has focus goes to the search field instead of bits-ui's
+    //   typeahead, so the list still filters as you type.
+    // - Arrowing out of the search field lands on the current model rather than the first
+    //   row; falls through when that row is filtered out.
+    function onContentKeydownCapture(event: KeyboardEvent): void {
+        const content = event.currentTarget as HTMLElement;
+        const inSearch = event.target instanceof HTMLInputElement;
+        if (!inSearch && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && event.key !== ' ') {
+            const search = content.querySelector<HTMLInputElement>('.menu-search input');
+            if (search) {
+                // Focus moves before the key's default action, so the character lands in the field.
+                event.stopPropagation();
+                search.focus();
+            }
+            return;
+        }
+        if (event.key !== 'ArrowDown' || !inSearch) {
+            return;
+        }
+        const row = currentRow(content);
         if (!row) {
             return;
         }
