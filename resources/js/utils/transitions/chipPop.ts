@@ -4,7 +4,8 @@
  * chip blinking into existence. Because the width is animated in real layout, whatever sits
  * next to the chip glides aside instead of jumping. Leave is the same motion, faster.
  *
- * Shared by the composer's tool chips and by the assistant tags next to the model picker.
+ * Shared by the composer's tool chips, the assistant tags next to the model picker, and the
+ * tool/assistant menu triggers (which pass `blur` so they grow and blur in rather than slide).
  * A chip that plays its own arrival animation on the inside (`MentionChip` reveals its
  * handle and then fills the pill in) should turn the overshoot off and start near its final
  * size, so the row's motion stays a plain unroll and doesn't compete with what follows it.

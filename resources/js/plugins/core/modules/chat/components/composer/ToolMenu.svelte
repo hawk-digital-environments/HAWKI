@@ -86,7 +86,7 @@
     import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import {setToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {chipPop} from '$lib/utils/transitions/chipPop';
     import ZshIcon from '$lib/components/ui/icons/iconset/ZshIcon.svelte';
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -290,7 +290,7 @@
 </script>
 
 {#if filteredEntries.length > 0}
-    <div transition:growTransition={{mode: 'horizontal'}}>
+    <div in:chipPop={{blur: 6}} out:chipPop={{direction: 'out', blur: 6}}>
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open

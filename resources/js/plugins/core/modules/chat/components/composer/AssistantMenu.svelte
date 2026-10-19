@@ -37,7 +37,7 @@
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {chipPop} from '$lib/utils/transitions/chipPop';
     import AtIcon from '$lib/components/ui/icons/iconset/AtIcon.svelte';
     import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance';
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
@@ -253,7 +253,7 @@
 </script>
 
 {#if hawkiEntry || otherEntries.length > 0}
-    <div transition:growTransition={{mode: 'horizontal'}}>
+    <div in:chipPop={{blur: 6}} out:chipPop={{direction: 'out', blur: 6}}>
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('input', false)}
             bind:open
