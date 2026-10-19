@@ -137,7 +137,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
         display: grid;
         width: 3.25rem;
         height: 3.25rem;
-        margin-bottom: var(--space-4);
+        margin-bottom: var(--space-5);
         place-items: center;
         border-radius: var(--corner-full);
         background: var(--color-active-surface);

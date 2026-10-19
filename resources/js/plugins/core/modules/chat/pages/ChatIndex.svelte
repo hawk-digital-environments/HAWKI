@@ -143,7 +143,7 @@ from the store's in-flight cache.
     .empty :global(.welcome) {
         height: auto;
         min-height: 0;
-        padding-bottom: var(--space-6);
+        padding-bottom: var(--space-10);
     }
 
     .empty :global(.composer-dock) { position: static; padding-bottom: 0; }
