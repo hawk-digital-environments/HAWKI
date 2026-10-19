@@ -15,6 +15,8 @@
  * @param params.overshoot - Whether the enter swings past its final width and settles back
  *   (`backOut`). Turn it off for a chip whose neighbours should not be nudged twice.
  * @param params.duration - Overrides the duration in ms (default 320 entering, 180 leaving).
+ * @param params.blur - Blur in px the chip is at when fully collapsed (default 0). Lets a
+ *   chip whose fill blurs in on arrival blur back out the same way instead of just shrinking.
  *
  * @example
  * // Tool chip: a pop with overshoot.
@@ -25,25 +27,28 @@
  * <span in:chipPop={{duration: 280, scaleFrom: 0.94, overshoot: false}}>…</span>
  */
 import {backOut, cubicIn, cubicOut} from 'svelte/easing';
+import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
 export interface ChipPopParams {
     direction?: 'in' | 'out';
     scaleFrom?: number;
     overshoot?: boolean;
     duration?: number;
+    blur?: number;
 }
 
 export function chipPop(node: Element, params?: ChipPopParams) {
-    const {direction = 'in', scaleFrom = 0.7, overshoot = true, duration} = params ?? {};
+    const {direction = 'in', scaleFrom = 0.7, overshoot = true, duration, blur = 0} = params ?? {};
     const width = node.getBoundingClientRect().width;
     const entering = direction === 'in';
     return {
-        duration: duration ?? (entering ? 320 : 180),
+        duration: motionDuration(duration ?? (entering ? 320 : 180)),
         easing: entering ? (overshoot ? backOut : cubicOut) : cubicIn,
-        css: (t: number) => `
+        css: (t: number, u: number) => `
             width: ${Math.max(0, t * width)}px;
             opacity: ${Math.min(1, t * 1.6)};
             transform: scale(${scaleFrom + (1 - scaleFrom) * t});
+            ${blur > 0 ? `filter: blur(${u * blur}px);` : ''}
             overflow: hidden;
             white-space: nowrap;
         `,

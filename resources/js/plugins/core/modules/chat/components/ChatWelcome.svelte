@@ -16,6 +16,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
     import type {ChatWelcomeSection} from '$plugins/core/modules/chat/hooks/chatWelcomeHooks.js';
+    import {textRise} from '$lib/utils/transitions/textRise.js';
 
     interface Props {
         /** The page's composer; starter prompts pre-fill it. May be null until ready. */
@@ -46,6 +47,21 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
         return {...resolved, starterPrompts: resolved.starterPrompts ?? []};
     });
 
+    /**
+     * What the hero shows, as one value per participant. Rendered through a one-item keyed
+     * `{#each}` rather than `{#key}`: an outgoing each-item keeps the value it was rendered
+     * with, so the old hero fades out with its own copy instead of the new one.
+     */
+    const hero = $derived({
+        key: section ? `${section.id}:${section.handle ?? section.title}` : 'default',
+        icon: section?.icon,
+        tint: section?.tint,
+        title: section ? section.title : __('chat.page.welcomeTitle'),
+        description: section ? (section.description ?? '') : __('chat.page.welcomeDescription'),
+        starterPrompts: section?.starterPrompts ?? []
+    });
+    const leave = {direction: 'out'} as const;
+
     function selectPrompt(prompt: string) {
         if (!composer) return;
         composer.message = prompt;
@@ -56,39 +72,56 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     }
 </script>
 
-{#if section}
-    <div class="welcome">
-        <span class="welcome-icon" class:personalized={section.icon} style:--assistant-tint={section.tint} aria-hidden="true">
-            {#if section.icon}
-                <span class="welcome-glyph">{section.icon}</span>
-            {:else}
-                <BubbleChatAddIcon size={28} />
-            {/if}
-        </span>
-        <svelte:element this={`h${headingLevel}`} class="title">{section.title}</svelte:element>
-        {#if section.description}
-            <p>{section.description}</p>
-        {/if}
-        {#if section.starterPrompts.length > 0}
-            <ul class="starter-prompts" aria-label={__('chat.page.starterPrompts')}>
-                {#each section.starterPrompts as prompt}
+<!-- Keyed on the addressed participant: tagging or swapping an assistant swaps the whole
+     hero, the old copy fading out quietly while the new one rises in line by line. Both
+     share one grid cell during the hand-off so the layout doesn't jump. On first render
+     the hero appears without motion (local transitions skip the initial mount). -->
+<div class="welcome-stage">
+    {#each [hero] as current (current.key)}
+        <div class="welcome">
+            <span
+                class="welcome-icon"
+                class:personalized={current.icon}
+                style:--assistant-tint={current.tint}
+                aria-hidden="true"
+                in:textRise={{index: 0}}
+                out:textRise={leave}>
+                {#if current.icon}
+                    <span class="welcome-glyph">{current.icon}</span>
+                {:else}
+                    <BubbleChatAddIcon size={28} />
+                {/if}
+            </span>
+            <svelte:element
+                this={`h${headingLevel}`}
+                class="title"
+                in:textRise={{index: 1}}
+                out:textRise={leave}>{current.title}</svelte:element>
+            <p class:empty={!current.description} in:textRise={{index: 2}} out:textRise={leave}>{current.description}</p>
+            <ul
+                class="starter-prompts"
+                class:empty={current.starterPrompts.length === 0}
+                aria-label={__('chat.page.starterPrompts')}
+                in:textRise={{index: 3}}
+                out:textRise={leave}>
+                {#each current.starterPrompts as prompt}
                     <li>
                         <button type="button" class="starter-prompt" onclick={() => selectPrompt(prompt)}>{prompt}</button>
                     </li>
                 {/each}
             </ul>
-        {/if}
-    </div>
-{:else}
-    <div class="welcome">
-        <span class="welcome-icon" aria-hidden="true"><BubbleChatAddIcon size={28} /></span>
-        <svelte:element this={`h${headingLevel}`} class="title">{__('chat.page.welcomeTitle')}</svelte:element>
-        <p>{__('chat.page.welcomeDescription')}</p>
-    </div>
-{/if}
+        </div>
+    {/each}
+</div>
 
 <style>
+    .welcome-stage {
+        display: grid;
+        height: 100%;
+    }
+
     .welcome {
+        grid-area: 1 / 1;
         display: flex;
         height: 100%;
         min-height: 18rem;
@@ -124,6 +157,8 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
 
     .title { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
     p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }
+
+    .welcome .empty { display: none; }
 
     .starter-prompts {
         display: flex;
