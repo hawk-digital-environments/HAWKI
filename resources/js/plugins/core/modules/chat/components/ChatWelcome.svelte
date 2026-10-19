@@ -17,6 +17,8 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
     import type {ChatWelcomeSection} from '$plugins/core/modules/chat/hooks/chatWelcomeHooks.js';
     import {textRise} from '$lib/utils/transitions/textRise.js';
+    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
+    import {tick} from 'svelte';
 
     interface Props {
         /** The page's composer; starter prompts pre-fill it. May be null until ready. */
@@ -62,6 +64,33 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     });
     const leave = {direction: 'out'} as const;
 
+    let stage = $state<HTMLDivElement | null>(null);
+    let resize: Animation | null = null;
+
+    // Glide the stage between the old and the new hero's height instead of snapping, so
+    // the composer centred below it travels along. Measured before the swap (the current,
+    // possibly mid-animation height) and after it (the incoming hero alone). In a layout
+    // where the hero fills the panel both heights match and nothing animates.
+    $effect.pre(() => {
+        const key = hero.key;
+        if (!stage) return;
+        const from = stage.getBoundingClientRect().height;
+
+        void tick().then(() => {
+            const incoming = stage?.querySelector<HTMLElement>(`[data-hero-key="${CSS.escape(key)}"]`);
+            if (!stage || !incoming || key !== hero.key) return;
+            const to = incoming.getBoundingClientRect().height;
+            resize?.cancel();
+            resize = null;
+            const duration = motionDuration(500);
+            if (Math.abs(from - to) < 1 || duration === 0) return;
+            resize = stage.animate(
+                [{height: `${from}px`}, {height: `${to}px`}],
+                {duration, easing: 'cubic-bezier(0.22, 1, 0.36, 1)'}
+            );
+        });
+    });
+
     function selectPrompt(prompt: string) {
         if (!composer) return;
         composer.message = prompt;
@@ -76,9 +105,9 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
      hero, the old copy fading out quietly while the new one rises in line by line. Both
      share one grid cell during the hand-off so the layout doesn't jump. On first render
      the hero appears without motion (local transitions skip the initial mount). -->
-<div class="welcome-stage">
+<div class="welcome-stage" bind:this={stage}>
     {#each [hero] as current (current.key)}
-        <div class="welcome">
+        <div class="welcome" data-hero-key={current.key}>
             <span
                 class="welcome-icon"
                 class:personalized={current.icon}
@@ -115,9 +144,13 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
 </div>
 
 <style>
+    /* Items centre instead of stretching so each hero keeps its own height —
+       the stage animates between them (a hero that fills via `height: 100%`
+       is unaffected). */
     .welcome-stage {
         display: grid;
         height: 100%;
+        align-items: center;
     }
 
     .welcome {
