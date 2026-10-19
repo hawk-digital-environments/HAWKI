@@ -74,10 +74,24 @@
     const listRow = useMenuListRow();
     const magnetic = $derived(!!listRow && !disabled);
 
+    // Gap between the trigger row and the parent panel's outer edge (its padding + border),
+    // measured on mount and again on each open: the flyout clears that edge instead of overlapping the parent panel,
+    // whatever padding the parent menu uses.
+    let triggerEl = $state<HTMLElement | null>(null);
+    let parentInset = $state(0);
+    $effect(() => {
+        void open;
+        if (!triggerEl) return;
+        const panel = triggerEl.closest('.dropdown-content');
+        if (panel) parentInset = panel.getBoundingClientRect().right - triggerEl.getBoundingClientRect().right;
+    });
+
     const fullContentProps = $derived.by(() => mergeProps(
         breakpoint.is('bpSmallerThanMd')
             ? {side: 'bottom', align: 'end', sideOffset: 4}
-            : {sideOffset: 8},
+            // Sit flush against the parent panel, and pull the flyout up by its own
+            // padding + border so its first row lines up with the trigger row.
+            : {sideOffset: parentInset, alignOffset: -5},
         {
             class: 'dropdown-content dropdown-content--dropdown dropdown-sub-content'
         },
@@ -89,7 +103,7 @@
 <DropdownMenuPrimitive.Sub bind:open>
     <DropdownMenuPrimitive.SubTrigger {disabled} {openDelay}>
         {#snippet child({props})}
-            <div {@attach magnetic ? listRow : null} {...mergeProps({class: [`dropdown-sub-trigger${className ? ` ${className}` : ''}`, magnetic && 'magnetic']}, restProps, props)}>
+            <div bind:this={triggerEl} {@attach magnetic ? listRow : null} {...mergeProps({class: [`dropdown-sub-trigger${className ? ` ${className}` : ''}`, magnetic && 'magnetic']}, restProps, props)}>
                 {#if IconLeft}
                     <IconLeft size="14" aria-hidden="true"/>
                 {/if}
@@ -159,6 +173,38 @@
 
     :global(.dropdown-sub-content) {
         min-width: calc(0.25rem * 40);
+    }
+
+    /* Grow out of the trigger row and drift in from it, instead of the root menu's centred scale. */
+    :global(.dropdown-content.dropdown-sub-content[data-state="open"]) {
+        transform-origin: var(--bits-dropdown-menu-content-transform-origin);
+        animation: dropdown-sub-in var(--duration-extra-fast) var(--easing-spring);
+    }
+
+    :global(.dropdown-content.dropdown-sub-content[data-state="closed"]) {
+        transform-origin: var(--bits-dropdown-menu-content-transform-origin);
+        animation: dropdown-sub-out var(--duration-extra-fast) var(--easing-in);
+    }
+
+    :global(.dropdown-sub-content[data-side="right"]) { --dropdown-sub-shift: -4px 0; }
+    :global(.dropdown-sub-content[data-side="left"]) { --dropdown-sub-shift: 4px 0; }
+    :global(.dropdown-sub-content[data-side="bottom"]) { --dropdown-sub-shift: 0 -4px; }
+    :global(.dropdown-sub-content[data-side="top"]) { --dropdown-sub-shift: 0 4px; }
+
+    @keyframes -global-dropdown-sub-in {
+        from {
+            opacity: 0;
+            scale: 0.96;
+            translate: var(--dropdown-sub-shift, 0 0);
+        }
+    }
+
+    @keyframes -global-dropdown-sub-out {
+        to {
+            opacity: 0;
+            scale: 0.98;
+            translate: var(--dropdown-sub-shift, 0 0);
+        }
     }
 
     @media (--bp-smaller-than-md) {
