@@ -26,15 +26,23 @@
 
     type Preset = 'creative' | 'balanced' | 'precise' | null;
 
-    const presets: { key: Preset; label: string; temp: number; topP: number }[] = [
+    // "Balanced" is the current model's own defaults, so a fresh composer always
+    // has an active preset; fixed values would never match most models' defaults.
+    const balanced = $derived({
+        temp: composerContext.modelParameters.defaults.temperature ?? 0.7,
+        topP: composerContext.modelParameters.defaults.top_p ?? 0.9
+    });
+    const presets = $derived<{ key: Preset; label: string; temp: number; topP: number }[]>([
         {key: 'creative', label: __('chat.composer.settings.presetCreative'), temp: 1.4, topP: 0.95},
-        {key: 'balanced', label: __('chat.composer.settings.presetBalanced'), temp: 0.7, topP: 0.9},
+        {key: 'balanced', label: __('chat.composer.settings.presetBalanced'), ...balanced},
         {key: 'precise', label: __('chat.composer.settings.presetPrecise'), temp: 0.2, topP: 0.5}
-    ];
-    const tabItems: TabItem[] = presets.map(p => ({key: p.key as string, label: p.label}));
+    ]);
+    const tabItems = $derived<TabItem[]>(presets.map(p => ({key: p.key as string, label: p.label})));
 
+    // Balanced is checked first so it wins if a model's defaults equal another preset.
     const activePreset = $derived<Preset>(
-        presets.find(p => composerContext.modelParameters.intersects({temperature: p.temp, top_p: p.topP}))?.key ?? null
+        [presets[1], presets[0], presets[2]]
+            .find(p => composerContext.modelParameters.intersects({temperature: p.temp, top_p: p.topP}))?.key ?? null
     );
     const samplingDisabled = $derived.by(() => !composerContext.model.current.flags?.includes('feature-sampling-parameters'));
 

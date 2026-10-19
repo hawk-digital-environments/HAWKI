@@ -167,7 +167,9 @@
         position: relative;
         --tab-z: 1;
         z-index: var(--tab-z);
-        flex: 1;
+        /* Size to the label first, then share leftover space — equal widths
+           truncate longer labels (e.g. "Ausgewogen") in narrow containers. */
+        flex: 1 0 auto;
         appearance: none;
         border: none;
         cursor: pointer;
