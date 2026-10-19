@@ -32,7 +32,7 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
-    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
+    import {toolAvailabilityFor, toolCategoryOf} from '$plugins/core/stores/aiToolStoreData.js';
 
     const {__} = useTranslator();
 
@@ -172,7 +172,7 @@
         tabindex={measuring ? -1 : 0}
         aria-hidden={measuring}
         data-tool-chip={measuring ? undefined : ''}
-        data-capability={tool.capability_key ?? undefined}
+        data-tool-category={toolCategoryOf(tool)}
         onclick={() => onChipClick(tool)}
         onkeydown={(event) => onChipKeydown(event, tool, index)}
         aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName}) + (availabilityLabel ? `, ${availabilityLabel}` : '')}
@@ -259,8 +259,7 @@
         max-width: min(16rem, 100%);
         flex-shrink: 0;
         border-radius: var(--corner-full);
-        /* Neutral and light: the chip is a container for the tool's own icon swatch,
-           which already carries the color. Tinting the pill too made the row shout. */
+        /* Neutral fallback; the section tint below normally takes over. */
         background-color: color-mix(in oklab, var(--color-text) 8%, var(--color-surface-raised));
         color: var(--color-text);
         padding-inline: var(--space-2);
@@ -302,13 +301,32 @@
         }
     }
 
-    .tool-chip[data-capability] {
-        background-color: var(--capability-surface);
-        color: var(--capability-color);
+    /* Same section ink as the tool's swatch in the picker, so a chip keeps the color
+       of the row it was picked from. */
+    .tool-chip[data-tool-category='capability'] {
+        --chip-ink: var(--color-tool-category-capability);
     }
 
-    .tool-chip[data-capability]:hover {
-        background-color: var(--capability-surface-hover);
+    .tool-chip[data-tool-category='function'] {
+        --chip-ink: var(--color-tool-category-function);
+    }
+
+    .tool-chip[data-tool-category='mcp'] {
+        --chip-ink: var(--color-tool-category-mcp);
+    }
+
+    .tool-chip[data-tool-category] {
+        background-color: color-mix(in oklab, var(--chip-ink) 12%, var(--color-surface-raised));
+        color: var(--chip-ink);
+    }
+
+    .tool-chip[data-tool-category]:hover {
+        background-color: color-mix(in oklab, var(--chip-ink) 20%, var(--color-surface-raised));
+    }
+
+    /* The glyph follows the chip's ink, not its own capability color. */
+    .tool-chip :global(.tool-icon) {
+        color: inherit;
     }
 
     .tool-chip.incompatible {

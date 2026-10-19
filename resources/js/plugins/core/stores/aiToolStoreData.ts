@@ -29,6 +29,20 @@ export type AiToolOrCapability = AiToolWrapper | AiToolCapabilityWrapper;
  */
 export const KNOWLEDGE_BASE_CAPABILITY = 'knowledge_base';
 
+/** The tool-picker section a tool belongs to; drives its `--color-tool-category-*` ink. */
+export type ToolCategory = 'capability' | 'function' | 'mcp';
+
+/**
+ * Sorts a tool into its tool-picker section, mirroring the grouping in `ToolMenu`:
+ * capabilities, HAWKI function tools (no MCP server), then MCP-server tools.
+ */
+export function toolCategoryOf(tool: AiToolOrCapability): ToolCategory {
+    if (tool.is_capability) {
+        return 'capability';
+    }
+    return tool.server ? 'mcp' : 'function';
+}
+
 /**
  * All knowledge-database tools in a combined store list. The store folds
  * tools whose `capability_key` matches a registered capability into that

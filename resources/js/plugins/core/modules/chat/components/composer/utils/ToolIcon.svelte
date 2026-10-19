@@ -21,7 +21,7 @@
 -->
 <script lang="ts">
 
-    import type {AiToolOrCapability} from '$plugins/core/stores/aiToolStoreData.js';
+    import {type AiToolOrCapability, toolCategoryOf} from '$plugins/core/stores/aiToolStoreData.js';
     import ToolboxIcon from '$lib/components/ui/icons/iconset/ToolboxIcon.svelte';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
 
@@ -37,9 +37,8 @@
 
     const {tool, size = 16, swatch = false, checked = false}: Props = $props();
 
-    // The swatch is tinted by the tool-picker section the tool lives in, mirroring the
-    // grouping in `ToolMenu`: capabilities, HAWKI function tools, then MCP-server tools.
-    const category = $derived(tool.is_capability ? 'capability' : tool.server ? 'mcp' : 'function');
+    // The swatch is tinted by the tool-picker section the tool lives in.
+    const category = $derived(toolCategoryOf(tool));
 </script>
 
 {#snippet glyph()}
