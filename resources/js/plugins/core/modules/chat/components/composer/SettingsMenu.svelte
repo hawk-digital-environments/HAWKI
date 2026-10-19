@@ -119,5 +119,7 @@
 
     :global(.dropdown-content--dropdown.model-settings-content) {
         width: calc(0.25rem * 64);
+        /* Same cap as the model picker; the panel scrolls once it outgrows it. */
+        max-height: min(24rem, calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4)));
     }
 </style>

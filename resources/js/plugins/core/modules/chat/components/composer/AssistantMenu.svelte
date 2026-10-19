@@ -299,6 +299,8 @@
     */
     :global(.dropdown-content.dropdown-content--dropdown.assistant-menu-content) {
         width: calc(0.25rem * 76);
+        /* Same cap as the model picker; the list scrolls inside the detail-view viewport. */
+        max-height: min(24rem, calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4)));
         max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
         display: flex;
         flex-direction: column;
