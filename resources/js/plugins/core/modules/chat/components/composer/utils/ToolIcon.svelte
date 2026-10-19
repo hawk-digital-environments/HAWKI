@@ -36,6 +36,10 @@
     }
 
     const {tool, size = 16, swatch = false, checked = false}: Props = $props();
+
+    // The swatch is tinted by the tool-picker section the tool lives in, mirroring the
+    // grouping in `ToolMenu`: capabilities, HAWKI function tools, then MCP-server tools.
+    const category = $derived(tool.is_capability ? 'capability' : tool.server ? 'mcp' : 'function');
 </script>
 
 {#snippet glyph()}
@@ -61,7 +65,11 @@
 
 {#if swatch}
     <!-- The tool's name sits right next to it, so the icon is decoration rather than content. -->
-    <span class={['tool-icon-swatch', checked && 'tool-icon-swatch--checked']} aria-hidden="true">
+    <span
+        class={['tool-icon-swatch', checked && 'tool-icon-swatch--checked']}
+        data-tool-category={category}
+        aria-hidden="true"
+    >
         {@render glyph()}
         {#if checked}
             <span class="tool-icon-check"><Tick02Icon size={16}/></span>
@@ -95,10 +103,9 @@
 
     /*
       The counterpart to `.assistant-row-emoji`: same box, same radius, same low-alpha
-      diagonal tint, so the two menus share one rhythm and one weight. Only the color
-      differs — assistants are color-coded because the tint says *who* you are addressing,
-      and tools carry no such identity, so theirs stays neutral per the token file's rule
-      that chrome is neutral and chroma is reserved for accent and status.
+      diagonal tint, so the two menus share one rhythm and one weight. The tint follows
+      the tool's picker section (`--color-tool-category-*`, tuned per theme), so every
+      row in a section shares one color.
     */
     .tool-icon-swatch {
         position: relative;
@@ -114,16 +121,27 @@
         /* `--corner-sm` would land at three quarters of this box and swell it toward a
            circle — a step down keeps it a rounded rect, as on the assistant swatch. */
         border-radius: var(--corner-xs);
-        /*
-          Blue rather than neutral, so a tool swatch reads as the tool counterpart of the
-          assistant's color-coded one instead of as disabled chrome. `--color-accent-text`
-          is the accent stop that is already tuned per theme — deep blue on light chrome,
-          light blue on dark — so the same mix holds up in both.
-        */
-        background-color: color-mix(in oklab, var(--color-accent-text) 15%, transparent);
-        /* The glyph inherits the same blue, so swatch and icon read as one mark. */
-        color: var(--color-accent-text);
+        background-color: color-mix(in oklab, var(--swatch-ink) 15%, transparent);
+        /* The glyph inherits the same ink, so swatch and icon read as one mark. */
+        color: var(--swatch-ink);
         line-height: 0;
+    }
+
+    .tool-icon-swatch[data-tool-category='capability'] {
+        --swatch-ink: var(--color-tool-category-capability);
+    }
+
+    .tool-icon-swatch[data-tool-category='function'] {
+        --swatch-ink: var(--color-tool-category-function);
+    }
+
+    .tool-icon-swatch[data-tool-category='mcp'] {
+        --swatch-ink: var(--color-tool-category-mcp);
+    }
+
+    /* On a swatch the glyph takes the section ink, not its own capability color. */
+    .tool-icon-swatch .tool-icon {
+        color: inherit;
     }
 
     /*
@@ -132,7 +150,7 @@
       surface rather than toward `transparent`, so the fill is opaque.
     */
     .tool-icon-swatch--checked {
-        background-color: color-mix(in oklab, var(--color-accent-text) 35%, var(--color-surface-raised));
+        background-color: color-mix(in oklab, var(--swatch-ink) 35%, var(--color-surface-raised));
     }
 
     .tool-icon-check {
@@ -143,6 +161,6 @@
         align-items: center;
         justify-content: center;
         inset: 0;
-        color: var(--color-accent-text);
+        color: var(--swatch-ink);
     }
 </style>
