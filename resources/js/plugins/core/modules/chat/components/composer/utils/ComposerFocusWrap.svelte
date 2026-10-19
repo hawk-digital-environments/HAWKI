@@ -14,6 +14,10 @@
   before focusing so the textarea/button's enabled state has settled first
   (e.g. right after a send completes and re-enables the input).
 
+  Sets `data-focus-visible` while focus inside the card arrived via Tab, so the
+  focus ring only shows for keyboard navigation. `:focus-visible` can't do this:
+  a `<textarea>` always matches it, even when clicked.
+
   @example
   ```svelte
   <ComposerFocusWrap {textareaEl} {buttonEl} class="chat-composer-card">
@@ -80,12 +84,45 @@
     }
 
     $effect(() => composerContext.onFocusInput(doFocus));
+
+    // Last interaction was a Tab press (keyboard navigation) rather than a pointer.
+    let tabNavigating = false;
+    let focusVisible = $state(false);
+
+    $effect(() => {
+        const onKeydown = (e: KeyboardEvent) => {
+            if (e.key === 'Tab') tabNavigating = true;
+        };
+        const onPointerdown = () => {
+            tabNavigating = false;
+        };
+        document.addEventListener('keydown', onKeydown, true);
+        document.addEventListener('pointerdown', onPointerdown, true);
+        return () => {
+            document.removeEventListener('keydown', onKeydown, true);
+            document.removeEventListener('pointerdown', onPointerdown, true);
+        };
+    });
+
+    function handleFocusin() {
+        focusVisible = tabNavigating;
+    }
+
+    function handleFocusout(e: FocusEvent) {
+        const next = e.relatedTarget;
+        if (!(next instanceof Node) || !(e.currentTarget as HTMLElement).contains(next)) {
+            focusVisible = false;
+        }
+    }
 </script>
 <!-- svelte-ignore a11y_no_static_element_interactions -- click on spare card space focuses the composer. -->
 <!-- svelte-ignore a11y_click_events_have_key_events -- keyboard activation would steal button/menu focus. -->
 <div
     class={cssClass}
+    data-focus-visible={focusVisible || undefined}
     onclick={focusTextareaFromComposer}
+    onfocusin={handleFocusin}
+    onfocusout={handleFocusout}
 >
     {@render children()}
 </div>
