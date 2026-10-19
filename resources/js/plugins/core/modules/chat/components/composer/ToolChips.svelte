@@ -58,8 +58,28 @@
     const tools = $derived(composerContext.tools.active);
     const hiddenCount = $derived(Math.max(0, tools.length - visibleCount));
 
+    // Set while a measurement is deferred until the row's grow/shrink transition ends.
+    let measurePending = false;
+
     function measure() {
-        if (!rowEl || !measureEl) return;
+        if (!rowEl || !measureEl || !rowEl.isConnected) return;
+
+        // The row animates its own width when it appears and disappears. Measuring mid-way
+        // reads a few pixels, hides the chip, and pulls it straight back, catching it at 0px
+        // so its pop has nothing to grow to. Measure the settled width instead.
+        // Only running ones: Svelte leaves finished transitions attached, and waiting on
+        // those would resolve at once and re-enter here forever.
+        const running = rowEl.getAnimations().filter(animation => animation.playState === 'running');
+        if (running.length > 0) {
+            if (!measurePending) {
+                measurePending = true;
+                void Promise.allSettled(running.map(animation => animation.finished)).then(() => {
+                    measurePending = false;
+                    measure();
+                });
+            }
+            return;
+        }
 
         const available = rowEl.clientWidth;
         const chips = Array.from(measureEl.querySelectorAll<HTMLElement>('[data-chip]'));
@@ -188,10 +208,12 @@
     <div class="tool-chips" bind:this={rowEl} transition:growTransition={{mode: 'horizontal'}}>
         {#each visibleTools as tool, i (tool)}
             <!-- Wrapper carries the motion so the snippet stays shared with the
-                 offscreen measurement row, which must never animate. -->
+                 offscreen measurement row, which must never animate. The intro is
+                 `|global` so the first chip pops in with the row instead of just being
+                 revealed by it. -->
             <span
                 class="tool-chip-slot"
-                in:chipPop
+                in:chipPop|global
                 out:chipPop={{direction: 'out'}}
                 animate:flip={{duration: 260, easing: backOut}}
             >

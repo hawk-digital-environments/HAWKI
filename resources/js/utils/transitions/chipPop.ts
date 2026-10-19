@@ -49,7 +49,7 @@ export function chipPop(node: Element, params?: ChipPopParams) {
             width: ${Math.max(0, t * width)}px;
             opacity: ${Math.min(1, t * 1.6)};
             transform: scale(${scaleFrom + (1 - scaleFrom) * t});
-            ${blur > 0 ? `filter: blur(${u * blur}px);` : ''}
+            ${blur > 0 ? `filter: blur(${Math.max(0, u * blur)}px);` : ''}
             overflow: hidden;
             white-space: nowrap;
         `,
