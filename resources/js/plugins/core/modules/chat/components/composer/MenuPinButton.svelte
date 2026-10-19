@@ -1,11 +1,12 @@
 <!--
-  @component The favourite toggle shown on a row in `AssistantMenu` / `ToolMenu`.
+  @component The favourite toggle shown on a row in `AssistantMenu` / `ToolMenu` / `ModelPickerV2`.
 
   A small heart button (filled when set) that favourites the row's assistant/tool via the
   `composer-pins` store, lifting it into the menu's "Favorites" section. Rows whose
   favourite lives on the server (a hook-provided assistant flagged `favorite`) instead
   pass the controlled `pinned`/`onToggle` props, routing the toggle to their own
-  backend action. Like the neighbouring info chevron it stops pointer/keyboard
+  backend action; so do model rows, whose favourites live in the `model-favorites` store
+  (`kind`/`id` are then not needed). Like the neighbouring info chevron it stops pointer/keyboard
   propagation so favouriting never also toggles the row it sits in.
 
   In the `row` variant (default) a non-favourite row only reveals the button on hover/focus
@@ -34,10 +35,12 @@
     const {__} = useTranslator();
 
     interface Props {
-        /** Which menu this row belongs to — pins are kept per kind. */
-        kind: ComposerPinKind;
-        /** The row's stable id: the assistant's id, or the tool's name. */
-        id: string;
+        /** Which menu this row belongs to — pins are kept per kind. Required unless
+         *  `pinned` and `onToggle` are both passed. */
+        kind?: ComposerPinKind;
+        /** The row's stable id: the assistant's id, or the tool's name. Required unless
+         *  `pinned` and `onToggle` are both passed. */
+        id?: string;
         /** `row` (default) is the compact icon shown on menu rows; `detail` is the
          *  labelled, always-visible variant for a detail panel's header. */
         variant?: 'row' | 'detail';
@@ -51,7 +54,7 @@
 
     const {kind, id, variant = 'row', pinned: pinnedOverride, onToggle}: Props = $props();
 
-    const pinned = $derived(pinnedOverride ?? pinStore.isPinned(kind, id));
+    const pinned = $derived(pinnedOverride ?? (kind && id ? pinStore.isPinned(kind, id) : false));
     const label = $derived(pinned ? __('chat.composer.favorite.remove') : __('chat.composer.favorite.add'));
 
     // A touch larger in the detail header, where it sits next to the toggle rather than
@@ -63,7 +66,7 @@
         event.stopPropagation();
         if (onToggle) {
             onToggle();
-        } else {
+        } else if (kind && id) {
             pinStore.toggle(kind, id);
         }
     }

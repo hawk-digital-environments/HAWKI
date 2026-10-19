@@ -14,19 +14,20 @@
   so the same component works in the narrow picker column and on the page.
 
   ## Usage
-  Rendered as the detail panel of `ModelPickerV2` (next to the model list on
-  desktop; `compact` above the list in the mobile sheet) and as the grid cards
-  on the `/models` showcase page:
+  Rendered `dense` in `ModelMenuDetail` (the detail panel of `ModelPickerV2`) and
+  as the grid cards on the `/models` showcase page:
   ```svelte
   <ModelCard model={model}/>            borderless, for embedding
   <ModelCard model={model} bordered/>   self-contained card, for the page
   <ModelCard model={model} compact/>    header + chips + one meta line only
+  <ModelCard model={model} dense/>      minimal, at menu type sizes, for dropdown panels
   ```
 -->
 <script lang="ts">
     import type {Component} from 'svelte';
     import type {HugeiconsProps} from '@hugeicons/svelte';
     import ProviderIcon from './ProviderIcon.svelte';
+    import ProviderSwatch from '$plugins/core/modules/chat/components/composer/utils/ProviderSwatch.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import Link from '$lib/components/util/link/Link.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
@@ -53,9 +54,12 @@
         bordered?: boolean;
         /** Space-saving variant for the mobile sheet: header, chips and a single meta line — no description, no facts panel. */
         compact?: boolean;
+        /** Minimal variant for a dropdown menu's detail panel (~20rem wide): menu type sizes,
+         *  the provider logo on the picker rows' swatch, no eyebrows, quiet chips and the facts as a label/value list. */
+        dense?: boolean;
     }
 
-    const {model, bordered = false, compact = false}: Props = $props();
+    const {model, bordered = false, compact = false, dense = false}: Props = $props();
 
     const app = useApp();
     const aiModelStore = useStore('ai-models');
@@ -158,11 +162,15 @@
     <dt class="model-card__eyebrow">{label}</dt>
 {/snippet}
 
-<article class="model-card" class:model-card--bordered={bordered} class:model-card--compact={compact}>
+<article class="model-card" class:model-card--bordered={bordered} class:model-card--compact={compact} class:model-card--dense={dense}>
     <div class="model-card__body">
         <div class="model-card__main">
             <header class="model-card__header">
-                <ProviderIcon name={providerName} light={model.provider?.icon_url} dark={model.provider?.icon_url_dark} size={compact ? 32 : 40}/>
+                {#if dense}
+                    <ProviderSwatch {model}/>
+                {:else}
+                    <ProviderIcon name={providerName} light={model.provider?.icon_url} dark={model.provider?.icon_url_dark} size={compact ? 32 : 40}/>
+                {/if}
                 <div class="model-card__title">
                     <h3>{model.label}</h3>
                     <span class="model-card__provider">{providerName}</span>
@@ -181,7 +189,7 @@
 
             {#if hasChips}
                 <div class="model-card__capabilities">
-                    {#if !compact}
+                    {#if !compact && !dense}
                         <span class="model-card__eyebrow">{__('ai.model.card.capabilities')}</span>
                     {/if}
                     <ul class="model-card__chips">
@@ -189,7 +197,7 @@
                             {@const Icon = capability.icon}
                             <li class="model-card__chip" data-capability={capability.id}>
                                 {#if Icon}
-                                    <Icon size={14} aria-hidden="true"/>
+                                    <Icon size={dense ? 12 : 14} aria-hidden="true"/>
                                 {/if}
                                 {capability.label}
                             </li>
@@ -257,7 +265,7 @@
                 {#if documentationUrl}
                     <Link href={documentationUrl} target="_blank" class="model-card__docs">
                         <span>{__('ai.model.card.documentation')}</span>
-                        <ArrowRight01Icon size={16} aria-hidden="true"/>
+                        <ArrowRight01Icon size={dense ? 14 : 16} aria-hidden="true"/>
                     </Link>
                 {/if}
             </aside>
@@ -385,6 +393,12 @@
         list-style: none;
     }
 
+    /* Flag chips sit in a plain `<li>` (for their tooltip wrapper); as a flex box it
+       takes the chip's height instead of the text line box, matching capability chips. */
+    .model-card__chips > li:not(.model-card__chip) {
+        display: flex;
+    }
+
     .model-card__chip {
         display: inline-flex;
         align-items: center;
@@ -495,15 +509,121 @@
         color: var(--color-text);
     }
 
+    /* ── Dense (dropdown menu detail panel) ───────────────────────────── */
+
+    /* A quieter take for a menu's narrow detail panel: menu type sizes (the title stays a
+       step above the xs body text), the provider logo on the picker rows' swatch, no
+       eyebrows, outlined chips that keep
+       only their capability-tinted icon, and the facts as a plain label/value list in
+       place of the filled panel. */
+    .model-card--dense {
+        .model-card__body,
+        .model-card__main {
+            gap: var(--space-3);
+        }
+
+        .model-card__header {
+            gap: var(--space-2);
+        }
+
+        .model-card__title {
+            gap: 0;
+        }
+
+        .model-card__title h3 {
+            font-size: var(--font-size-sm);
+        }
+
+        .model-card__provider {
+            font-weight: var(--font-weight-normal);
+            color: var(--color-text-muted);
+        }
+
+        .model-card__description {
+            font-size: var(--font-size-xs);
+        }
+
+        .model-card__chips {
+            gap: var(--space-1);
+        }
+
+        .model-card__chip {
+            box-sizing: border-box;
+            height: calc(0.25rem * 5.5);
+            gap: var(--space-1);
+            padding: 0 var(--space-2);
+            border: var(--border);
+            border-radius: var(--corner-full);
+            background: none;
+            color: var(--color-text-muted);
+            font-size: var(--font-size-xxs);
+            font-weight: var(--font-weight-normal);
+        }
+
+        .model-card__chip[data-capability] :global(svg) {
+            color: var(--capability-color);
+        }
+
+        .model-card__facts {
+            gap: 0;
+            margin-top: 0;
+            padding: 0;
+            border-radius: 0;
+            background: none;
+
+            dl {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 0;
+            }
+
+            dd {
+                font-size: var(--font-size-xs);
+                font-variant-numeric: tabular-nums;
+            }
+        }
+
+        .model-card__fact {
+            flex-direction: row;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: var(--space-3);
+            padding-block: var(--space-1_5);
+            border-top: var(--border);
+        }
+
+        .model-card__fact .model-card__eyebrow {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-normal);
+            letter-spacing: normal;
+            text-transform: none;
+        }
+
+        /* The documentation link closes the list as one more row. */
+        .model-card__facts :global(.model-card__docs) {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0;
+            padding-block: var(--space-1_5);
+            border-top: var(--border);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-normal);
+            color: var(--color-text-muted);
+
+            &:hover {
+                color: var(--color-text);
+            }
+        }
+    }
+
     /* ── Wide cards: facts panel beside the main column ───────────────── */
 
     @container (min-width: 26rem) {
-        .model-card:not(.model-card--compact) .model-card__body {
+        .model-card:not(.model-card--compact):not(.model-card--dense) .model-card__body {
             flex-direction: row;
             align-items: stretch;
         }
 
-        .model-card:not(.model-card--compact) .model-card__facts {
+        .model-card:not(.model-card--compact):not(.model-card--dense) .model-card__facts {
             width: 11rem;
             flex-shrink: 0;
             margin-top: 0;

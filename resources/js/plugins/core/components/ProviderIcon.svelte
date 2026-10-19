@@ -5,8 +5,17 @@
         name,
         light,
         dark,
-        size = 32
-    }: { name: string; light?: string | null; dark?: string | null; size?: number } = $props();
+        size = 32,
+        bare = false
+    }: {
+        name: string;
+        light?: string | null;
+        dark?: string | null;
+        size?: number;
+        /** Without a logo, render just the provider's initial instead of a round avatar —
+         *  for hosts that already draw their own tile around the icon. */
+        bare?: boolean;
+    } = $props();
     const theme = useStore('theme');
     let failed = $state(false);
     const src = $derived((theme.isDark ? (dark ?? light) : light) || undefined);
@@ -24,6 +33,10 @@
         height={size}
         onerror={() => (failed = true)}
     />
+{:else if bare}
+    <span class="initial" style:width="{size}px" style:height="{size}px" style:font-size="{size * 0.75}px" aria-hidden="true">
+        {name.trim().charAt(0).toUpperCase()}
+    </span>
 {:else}
     <Avatar
         {name}
@@ -38,5 +51,15 @@
     img {
         object-fit: contain;
         flex-shrink: 0;
+    }
+
+    .initial {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        font-weight: var(--font-weight-medium, 500);
+        line-height: 1;
+        color: var(--color-text-muted);
     }
 </style>

@@ -255,16 +255,14 @@
                 "switchModel": "Aktuelles Modell wechseln",
                 "placeholder": "Modellauswahl",
                 "searchPlaceholder": "Modelle durchsuchen…",
-                "allTab": "Alle",
                 "otherProvider": "Sonstige",
-                "providerTab": "Modelle von :provider anzeigen",
                 "noResults": "Keine Modelle gefunden.",
-                "favorites": "Favoriten",
-                "addFavorite": ":model zu Favoriten hinzufügen",
-                "removeFavorite": ":model aus Favoriten entfernen",
-                "listAriaLabel": "Verfügbare Modelle",
                 "switchModelCurrent": "Modell wechseln, aktuell: :model",
-                "allModelsLink": "Alle Modelle entdecken"
+                "allModelsLink": "Alle Modelle entdecken",
+                "backButton": "Modelle",
+                "infoDefault": "Mehr Informationen zum Modell anzeigen",
+                "useModel": "Modell verwenden",
+                "currentModel": "Aktuelles Modell"
             },
             "fileChips": {
                 "conflictMessage": "Vom aktuellen Modell nicht unterstützt",

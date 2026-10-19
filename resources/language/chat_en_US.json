@@ -255,16 +255,14 @@
                 "switchModel": "Switch current model",
                 "placeholder": "Select model",
                 "searchPlaceholder": "Search models…",
-                "allTab": "All",
                 "otherProvider": "Other",
-                "providerTab": "Show :provider models",
                 "noResults": "No models found.",
-                "favorites": "Favorites",
-                "addFavorite": "Add :model to favorites",
-                "removeFavorite": "Remove :model from favorites",
-                "listAriaLabel": "Available models",
                 "switchModelCurrent": "Switch model, current: :model",
-                "allModelsLink": "Explore all models"
+                "allModelsLink": "Explore all models",
+                "backButton": "Models",
+                "infoDefault": "Show more information about the model",
+                "useModel": "Use model",
+                "currentModel": "Current model"
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
