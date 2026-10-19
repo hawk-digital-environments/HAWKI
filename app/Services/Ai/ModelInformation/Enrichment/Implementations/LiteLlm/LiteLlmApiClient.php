@@ -11,7 +11,7 @@ use Illuminate\Http\Client\Factory;
  * HTTP client for the LiteLLM model catalog (`model_prices_and_context_window.json`).
  *
  * The catalog is a single JSON object keyed by model ID; each entry names its provider in
- * `litellm_provider`. Non-model entries (e.g. `sample_spec`) carry no provider and are skipped.
+ * `litellm_provider`. Non-model entries (`sample_spec` and entries without a provider) are skipped.
  * Every yielded record is normalized to carry `id` (the object key) and `provider`
  * (the `litellm_provider` value), which is the shape the data stores expect.
  *
@@ -28,6 +28,12 @@ readonly class LiteLlmApiClient
     {
     }
 
+    /** Returns the URL the catalog is downloaded from. */
+    public function getUrl(): string
+    {
+        return self::API_URL;
+    }
+
     /**
      * Downloads the LiteLLM model catalog and yields each model record as a normalized array.
      *
@@ -36,7 +42,8 @@ readonly class LiteLlmApiClient
     public function fetchData(string|null $providerName = null): iterable
     {
         foreach ($this->makeApiRequest() as $modelId => $row) {
-            if (!is_array($row) || empty($row['litellm_provider']) || !is_string($row['litellm_provider'])) {
+            // `sample_spec` documents the schema and holds placeholder strings instead of real values
+            if ($modelId === 'sample_spec' || !is_array($row) || empty($row['litellm_provider']) || !is_string($row['litellm_provider'])) {
                 continue;
             }
 
