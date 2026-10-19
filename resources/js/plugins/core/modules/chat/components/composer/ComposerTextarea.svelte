@@ -152,8 +152,12 @@
     const mentionsEnabled = $derived(taggableAssistants.length > 0);
     // The `/` menu is the tool menu by another route, so it follows the same guard — and,
     // like the tool button, stays available in a room chat that tags nobody yet, so tools
-    // can be picked before choosing who they are for.
-    const toolsEnabled = $derived(!composerContext.guard.disablesFeature('tools'));
+    // can be picked before choosing who they are for. A tagged assistant brings its own
+    // tools, so the menu goes away with the tool button once one is addressed.
+    const toolsEnabled = $derived(
+        !composerContext.guard.disablesFeature('tools')
+        && !composerContext.handlesInMessage.some(handle => handle !== aiHandleStore.hawkiHandle)
+    );
 
     const matchingAssistants = $derived.by(() => {
         if (mention?.trigger !== '@') {

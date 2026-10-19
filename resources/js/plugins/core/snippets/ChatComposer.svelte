@@ -92,8 +92,8 @@ Rendered once per page for either an AI conversation or a group room chat (see
 
     const aiHandleStore = useStore('ai-handle');
 
-    // Model and settings belong to HAWKI itself: an assistant brings its own model and
-    // configuration, so tagging one hides both controls. Nothing tagged (a 1:1 AI chat, or
+    // Model, settings and tools belong to HAWKI itself: an assistant brings its own model,
+    // configuration and tools, so tagging one hides those controls. Nothing tagged (a 1:1 AI chat, or
     // regen in a room) still counts as addressing HAWKI.
     const isAssistant = $derived(
         chatContext.handlesInMessage.some(handle => handle !== aiHandleStore.hawkiHandle)
@@ -261,10 +261,14 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                 <div class="chat-bottom-left">
                                     <FilePicker/>
                                     <AssistantMenu/>
-                                    <ToolMenu bind:open={toolPickerOpen}/>
-                                    <div class="chat-tool-chip-lane">
-                                        <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
-                                    </div>
+                                    <!-- An assistant brings its own tools, so tagging one hides the
+                                         tool controls just like the model and settings. -->
+                                    {#if !isAssistant}
+                                        <ToolMenu bind:open={toolPickerOpen}/>
+                                        <div class="chat-tool-chip-lane">
+                                            <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
+                                        </div>
+                                    {/if}
                                 </div>
                                 <div class="chat-bottom-right">
                                     <ComposerActionButtons
