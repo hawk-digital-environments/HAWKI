@@ -85,6 +85,7 @@
     import ToolMenuList from '$plugins/core/modules/chat/components/composer/ToolMenuList.svelte';
     import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import {setToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
     import {chipPop} from '$lib/utils/transitions/chipPop';
     import ZshIcon from '$lib/components/ui/icons/iconset/ZshIcon.svelte';
@@ -294,6 +295,7 @@
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open
+            magneticHover={false}
             contentProps={{class: 'tool-menu-content'}}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
@@ -319,7 +321,10 @@
                 {#if orderedEntries.length === 0}
                     <p class="no-results">{__('chat.composer.toolMenu.noResults')}</p>
                 {:else}
-                    <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+                    <!-- Inside the scrolling viewport, so the sliding hover scrolls with the rows. -->
+                    <MenuList class="dropdown-menu-list" bridgeSections>
+                        <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+                    </MenuList>
                 {/if}
             </DropdownMenuDetailView>
         </DropdownMenu>

@@ -30,6 +30,9 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import {noHoverFocusProps} from '$lib/components/ui/dropdown-menu/noHoverFocus.js';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
+    import {useMenuListRow} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -66,6 +69,11 @@
 
     const breakpoint = useBreakpoint();
 
+    // The trigger joins the parent menu's sliding hover (see DropdownMenuItem); the
+    // submenu panel gets a list of its own.
+    const listRow = useMenuListRow();
+    const magnetic = $derived(!!listRow && !disabled);
+
     const fullContentProps = $derived.by(() => mergeProps(
         breakpoint.is('bpSmallerThanMd')
             ? {side: 'bottom', align: 'end', sideOffset: 4}
@@ -73,6 +81,7 @@
         {
             class: 'dropdown-content dropdown-content--dropdown dropdown-sub-content'
         },
+        noHoverFocusProps,
         contentProps ?? {}
     ) as DropdownMenuSubContentProps);
 </script>
@@ -80,7 +89,7 @@
 <DropdownMenuPrimitive.Sub bind:open>
     <DropdownMenuPrimitive.SubTrigger {disabled} {openDelay}>
         {#snippet child({props})}
-            <div {...mergeProps({class: `dropdown-sub-trigger${className ? ` ${className}` : ''}`}, restProps, props)}>
+            <div {@attach magnetic ? listRow : null} {...mergeProps({class: [`dropdown-sub-trigger${className ? ` ${className}` : ''}`, magnetic && 'magnetic']}, restProps, props)}>
                 {#if IconLeft}
                     <IconLeft size="14" aria-hidden="true"/>
                 {/if}
@@ -98,7 +107,9 @@
     </DropdownMenuPrimitive.SubTrigger>
     <DropdownMenuPrimitive.Portal>
         <DropdownMenuPrimitive.SubContent {...fullContentProps as any}>
-            {@render children?.()}
+            <MenuList class="dropdown-menu-list" bridgeSections>
+                {@render children?.()}
+            </MenuList>
         </DropdownMenuPrimitive.SubContent>
     </DropdownMenuPrimitive.Portal>
 </DropdownMenuPrimitive.Sub>
@@ -107,7 +118,7 @@
     .dropdown-sub-trigger {
         position: relative;
         display: flex;
-        cursor: default;
+        cursor: pointer;
         align-items: center;
         gap: var(--space-2, calc(0.25rem * 2));
         border-radius: var(--corner-sm);
@@ -121,7 +132,7 @@
         transition: background-color var(--duration-fast, 150ms);
     }
 
-    .dropdown-sub-trigger[data-highlighted],
+    .dropdown-sub-trigger:is([data-highlighted]:not(.magnetic), [data-highlighted]:focus-visible, :hover:not([data-disabled], .magnetic)),
     .dropdown-sub-trigger[data-state="open"] {
         background-color: var(--color-hover);
         color: var(--color-text);

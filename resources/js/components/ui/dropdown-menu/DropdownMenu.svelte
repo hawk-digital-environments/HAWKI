@@ -34,6 +34,8 @@
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
+    import {noHoverFocusProps} from '$lib/components/ui/dropdown-menu/noHoverFocus.js';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
 
     interface Props {
         /** Whether the dropdown is open. Supports bind:open. */
@@ -58,6 +60,14 @@
         sideOffset?: number;
         /** Additional props forwarded to the DropdownMenu.Content element. */
         contentProps?: Omit<DropdownMenuContentProps, 'children'>;
+        /**
+         * Wraps the items in a `MenuList`, so a single highlight slides to the row nearest
+         * the pointer (the sidebar's "magnetic" hover). Turn off when the content lays out
+         * its own scroll area — then wrap the rows inside it in
+         * `<MenuList class="dropdown-menu-list" bridgeSections>` instead.
+         * @defaultValue true
+         */
+        magneticHover?: boolean;
     }
 
     let {
@@ -69,7 +79,8 @@
         side = 'bottom',
         align = undefined,
         sideOffset = 4,
-        contentProps
+        contentProps,
+        magneticHover = true
     }: Props = $props();
 
     let triggerEl = $state<HTMLElement | null>(null);
@@ -115,6 +126,7 @@
                 class: 'dropdown-content',
                 onPlaced: lockPlacedSide
             },
+            noHoverFocusProps,
             contentProps ?? {}
         ) as DropdownMenuContentProps;
 
@@ -123,6 +135,16 @@
         return lockedSide ? {...merged, side: lockedSide, avoidCollisions: false} : merged;
     });
 </script>
+
+{#snippet items()}
+    {#if magneticHover}
+        <MenuList class="dropdown-menu-list" bridgeSections>
+            {@render children?.()}
+        </MenuList>
+    {:else}
+        {@render children?.()}
+    {/if}
+{/snippet}
 
 <DropdownMenuPrimitive.Root bind:open {onOpenChange}>
     {#if trigger}
@@ -142,7 +164,7 @@
         {#snippet bpSmallerThanMd()}
             <BottomSheet bind:open={open} title={title}>
                 <DropdownMenuPrimitive.ContentStatic {...mergeProps(fullContentProps, {class: 'dropdown-content--sheet'}) as any}>
-                    {@render children?.()}
+                    {@render items()}
                 </DropdownMenuPrimitive.ContentStatic>
             </BottomSheet>
         {/snippet}
@@ -154,7 +176,7 @@
                             <SnippetOrString value={title}/>
                         </div>
                     {/if}
-                    {@render children?.()}
+                    {@render items()}
                 </DropdownMenuPrimitive.Content>
             </DropdownMenuPrimitive.Portal>
         {/snippet}
@@ -176,6 +198,14 @@
         box-shadow: var(--elevation-1);
         max-height: calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4));
         overflow: auto;
+    }
+
+    /* The MenuList around the rows only carries the sliding hover; layout and
+       scrolling stay with the panel. Doubled class to beat MenuList's own styles. */
+    :global(.list.dropdown-menu-list.dropdown-menu-list) {
+        display: block;
+        flex: none;
+        overflow: visible;
     }
 
     :global(.dropdown-content[data-state="open"]) {

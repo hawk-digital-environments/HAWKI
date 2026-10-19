@@ -36,6 +36,7 @@
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
+    import {useMenuListRow} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import Switch from '../switch/Switch.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
@@ -88,6 +89,11 @@
         ...restProps
     }: Props = $props();
 
+    // Inside a MenuList (every DropdownMenu provides one) the row is highlighted by the
+    // list's sliding "magnetic" hover instead of its own :hover background.
+    const listRow = useMenuListRow();
+    const magnetic = $derived(!!listRow && !disabled);
+
     function rowProps(props: Record<string, unknown>): Record<string, unknown> {
         if (!toggleOnIndicatorOnly) {
             return props;
@@ -117,14 +123,15 @@
 
 <DropdownMenuPrimitive.CheckboxItem bind:checked {onCheckedChange} {disabled} {closeOnSelect}>
     {#snippet child({props, checked: isChecked})}
-        <div {...mergeProps(
+        <div {@attach magnetic ? listRow : null} {...mergeProps(
             {
                 class: className
             },
             {
                 class: [
                     'dropdown-checkbox-item',
-                    rowClickable && 'dropdown-checkbox-item--clickable'
+                    rowClickable && 'dropdown-checkbox-item--clickable',
+                    magnetic && 'magnetic'
                 ]
             },
             restProps,
@@ -171,7 +178,7 @@
         padding-right: calc(0.25rem * 12);
     }
 
-    .dropdown-checkbox-item[data-highlighted] {
+    .dropdown-checkbox-item:is([data-highlighted]:not(.magnetic), [data-highlighted]:focus-visible, :hover:not([data-disabled], .magnetic)) {
         background-color: var(--color-hover);
         color: var(--color-text);
     }

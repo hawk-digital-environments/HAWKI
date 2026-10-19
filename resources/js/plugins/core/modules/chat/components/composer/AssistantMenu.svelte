@@ -31,6 +31,7 @@
     import {untrack} from 'svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
     import AssistantMenuListItem, {type AssistantMenuEntry} from '$plugins/core/modules/chat/components/composer/AssistantMenuListItem.svelte';
     import AssistantMenuDetail from '$plugins/core/modules/chat/components/composer/AssistantMenuDetail.svelte';
@@ -257,6 +258,7 @@
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('input', false)}
             bind:open
+            magneticHover={false}
             contentProps={{class: 'assistant-menu-content', onkeydowncapture: onContentKeydownCapture}}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
@@ -280,21 +282,24 @@
                     {/if}
                 {/snippet}
 
-                {#if pinnedEntries.length > 0}
-                    <DropdownMenuLabel>{__('chat.composer.favorite.label')}</DropdownMenuLabel>
-                    {#each pinnedEntries as entry (entry.assistant.id)}
-                        <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
-                    {/each}
-                {/if}
-
-                {#each groups as group (group.id)}
-                    {#if group.entries.length > 0}
-                        <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
-                        {#each group.entries as entry (entry.assistant.id)}
+                <!-- Inside the scrolling viewport, so the sliding hover scrolls with the rows. -->
+                <MenuList class="dropdown-menu-list" bridgeSections>
+                    {#if pinnedEntries.length > 0}
+                        <DropdownMenuLabel>{__('chat.composer.favorite.label')}</DropdownMenuLabel>
+                        {#each pinnedEntries as entry (entry.assistant.id)}
                             <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
                         {/each}
                     {/if}
-                {/each}
+
+                    {#each groups as group (group.id)}
+                        {#if group.entries.length > 0}
+                            <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                            {#each group.entries as entry (entry.assistant.id)}
+                                <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
+                            {/each}
+                        {/if}
+                    {/each}
+                </MenuList>
 
                 {#if !shownHawkiEntry && shownOtherEntries.length === 0}
                     <p class="no-results">{__('chat.composer.assistantMenu.noResults')}</p>
