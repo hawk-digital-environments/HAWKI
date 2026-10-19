@@ -77,6 +77,17 @@
         /** Tools backed by an MCP server, one `McpEntryGroup` per server, sorted by server label. */
         mcpTools: McpEntryGroup[];
     }
+
+    /** Orders tools the way the menu lists them once its sections are flattened:
+     *  capabilities, then HAWKI function tools, then MCP tools by server label — each
+     *  alphabetically by display name. Lets the `/` popup in `ComposerTextarea` follow
+     *  the same order without the section headers. */
+    export function compareToolsInMenuOrder(a: AiToolOrCapability, b: AiToolOrCapability): number {
+        const section = (tool: AiToolOrCapability) => tool.is_capability ? 0 : tool.server ? 2 : 1;
+        return section(a) - section(b)
+            || (a.server?.server_label ?? '').localeCompare(b.server?.server_label ?? '')
+            || a.displayName.localeCompare(b.displayName);
+    }
 </script>
 <script lang="ts">
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';

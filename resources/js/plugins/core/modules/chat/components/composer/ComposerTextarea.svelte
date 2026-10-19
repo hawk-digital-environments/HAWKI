@@ -40,6 +40,7 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import AssistantMentionPopup, {assistantMentionOptionId} from '$plugins/core/modules/chat/components/composer/AssistantMentionPopup.svelte';
     import ToolMentionPopup, {toolMentionOptionId, type ToolMentionEntry} from '$plugins/core/modules/chat/components/composer/ToolMentionPopup.svelte';
+    import {compareToolsInMenuOrder} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
     import {getTextareaCaretRect, type CaretRect} from '$plugins/core/modules/chat/components/composer/utils/textareaCaret.js';
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -48,6 +49,7 @@
     const composerContext = useComposerContext();
     const aiHandleStore = useStore('ai-handle');
     const aiToolStore = useStore('ai-tools');
+    const pinStore = useStore('composer-pins');
     const translator = useTranslator();
     const {__} = translator;
 
@@ -175,16 +177,20 @@
 
     // Only tools the current model can actually run are offered: unlike the tool menu,
     // which also lists the unusable ones with a warning so they can be inspected, this
-    // list exists to turn something on in a single keystroke.
+    // list exists to turn something on in a single keystroke. Otherwise it keeps the tool
+    // menu's order — pinned tools first, then the menu's sections — so a tool sits in the
+    // same place in both.
     const matchingTools = $derived.by(() => {
         if (mention?.trigger !== '/') {
             return [];
         }
         const query = mention.query.toLowerCase();
-        return aiToolStore.tools
+        const tools = aiToolStore.tools
             .filter(tool => tool.status !== 'offline' && tool.isAvailableFor(composerContext.model.current))
             .filter(tool => query === '' || tool.displayName.toLowerCase().includes(query))
-            .sort((a, b) => a.displayName.localeCompare(b.displayName))
+            .sort(compareToolsInMenuOrder);
+        const {pinned, rest} = pinStore.partition('tool', tools, tool => tool.name);
+        return [...pinned, ...rest]
             .map((tool): ToolMentionEntry => ({tool, active: composerContext.tools.isActive(tool)}));
     });
 
