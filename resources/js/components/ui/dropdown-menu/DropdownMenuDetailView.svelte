@@ -30,7 +30,7 @@
 -->
 <script lang="ts">
 
-    import {type Snippet} from 'svelte';
+    import {type Snippet, untrack} from 'svelte';
     import {Spring} from 'svelte/motion';
     import {drillTransition} from '$lib/utils/transitions/drillTransition';
     import type {HTMLAttributes} from 'svelte/elements';
@@ -85,6 +85,21 @@
         return Math.max(0, cap - chrome - siblings);
     }
 
+    // The cap behind `availableHeight()` isn't final when the menu opens: bits-ui sets the
+    // available-height variable only once it has positioned the panel, so the first
+    // measurement can see the 24rem fallback. Re-measure whenever the panel resizes
+    // (a tighter cap, a search field coming or going) so the clamp tracks the real space.
+    let available = $state(Infinity);
+    $effect(() => {
+        const panel = viewport?.parentElement;
+        if (!panel) return;
+        const measure = () => (available = availableHeight());
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(panel);
+        return () => observer.disconnect();
+    });
+
     // Snap to the natural height on first measurement so the popover doesn't
     // visibly grow from 0 on open; only spring on later list<->detail switches.
     // The target is clamped to the space the panel actually has: springing toward
@@ -93,13 +108,20 @@
     let initialized = $state(false);
     $effect(() => {
         if (naturalHeight <= 0) return;
-        const targetHeight = Math.min(naturalHeight, availableHeight());
+        const cap = Math.min(available, availableHeight());
+        const targetHeight = Math.min(naturalHeight, cap);
         if (!initialized || reducedMotion.current) {
             viewportHeight.set(targetHeight, {instant: true});
             initialized = true;
-        } else {
-            viewportHeight.target = targetHeight;
+            return;
         }
+        // Past the cap the panel already clips the viewport, so pulling the spring's
+        // value down to it is invisible — but it keeps the next switch from starting at
+        // a height nobody can see, which reads as a stall followed by a lurch.
+        if (untrack(() => viewportHeight.current) > cap) {
+            void viewportHeight.set(cap, {instant: true});
+        }
+        viewportHeight.target = targetHeight;
     });
 
 </script>
