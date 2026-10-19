@@ -139,12 +139,12 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
         height: 3.25rem;
         margin-bottom: var(--space-4);
         place-items: center;
-        border-radius: var(--corner-lg);
+        border-radius: var(--corner-full);
         background: var(--color-active-surface);
         color: var(--color-active-text);
     }
 
-    /* A section that brings its own glyph paints the square in its tint —
+    /* A section that brings its own glyph paints the circle in its tint —
        the same treatment an assistant-authored message's circle gets. */
     .welcome-icon.personalized {
         background: color-mix(in oklab, var(--assistant-tint, var(--color-active-surface)) 18%, transparent);
