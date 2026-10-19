@@ -62,13 +62,38 @@
     const viewportHeight = new Spring(0, {stiffness: 0.15, damping: 0.85});
 
     // Each view reports its natural height; the spring follows the active one.
-    const targetHeight = $derived(open ? detailHeight : defaultHeight);
+    const naturalHeight = $derived(open ? detailHeight : defaultHeight);
+
+    let viewport = $state<HTMLDivElement | null>(null);
+
+    /**
+     * The most height the viewport can take inside a panel capped with `max-height`
+     * (e.g. the composer menus): the panel's cap minus its padding, borders and the
+     * viewport's siblings (like a search field). Infinity when the panel is uncapped.
+     */
+    function availableHeight(): number {
+        const panel = viewport?.parentElement;
+        if (!viewport || !panel) return Infinity;
+        const style = getComputedStyle(panel);
+        const cap = parseFloat(style.maxHeight);
+        if (!Number.isFinite(cap)) return Infinity;
+        const chrome = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+            .reduce((sum, key) => sum + (parseFloat(style[key as keyof CSSStyleDeclaration] as string) || 0), 0);
+        const siblings = Array.from(panel.children)
+            .filter((child) => child !== viewport)
+            .reduce((sum, child) => sum + (child as HTMLElement).offsetHeight, 0);
+        return Math.max(0, cap - chrome - siblings);
+    }
 
     // Snap to the natural height on first measurement so the popover doesn't
     // visibly grow from 0 on open; only spring on later list<->detail switches.
+    // The target is clamped to the space the panel actually has: springing toward
+    // a long list's full height would spend most of the motion past the cap,
+    // leaving only a few frames of visible movement — an abrupt jump.
     let initialized = $state(false);
     $effect(() => {
-        if (targetHeight <= 0) return;
+        if (naturalHeight <= 0) return;
+        const targetHeight = Math.min(naturalHeight, availableHeight());
         if (!initialized || reducedMotion.current) {
             viewportHeight.set(targetHeight, {instant: true});
             initialized = true;
@@ -84,6 +109,7 @@
   on the list<->detail switch, not when the menu itself opens or closes.
 -->
 <div
+    bind:this={viewport}
     style:height={`${viewportHeight.current}px`}
     {...mergeProps(
         {class: 'viewport'},

@@ -30,7 +30,7 @@
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, type DropdownMenuContentProps, mergeProps} from 'bits-ui';
-    import type {Snippet} from 'svelte';
+    import {tick, type Snippet} from 'svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
@@ -87,16 +87,40 @@
         return 'center';
     }
 
+    type Side = NonNullable<Props['side']>;
+
+    // The side the panel landed on when it opened (after collision flipping). Held for as
+    // long as the menu stays open so content that grows or shrinks inside it — e.g. a
+    // detail view replacing a list — can't flip the panel to the other side of the trigger.
+    let contentEl = $state<HTMLElement | null>(null);
+    let lockedSide = $state<Side | null>(null);
+
+    $effect(() => {
+        if (!open) lockedSide = null;
+    });
+
+    function lockPlacedSide() {
+        void tick().then(() => {
+            const placed = contentEl?.dataset.side as Side | undefined;
+            if (open && placed && !lockedSide) lockedSide = placed;
+        });
+    }
+
     const fullContentProps = $derived.by(() => {
-        return mergeProps(
+        const merged = mergeProps(
             {
                 side,
                 align: resolvedAlign(),
                 sideOffset,
-                class: 'dropdown-content'
+                class: 'dropdown-content',
+                onPlaced: lockPlacedSide
             },
             contentProps ?? {}
         ) as DropdownMenuContentProps;
+
+        // Once locked, pin the side and stop flipping; the size middleware still caps the
+        // panel's height to the space available on that side.
+        return lockedSide ? {...merged, side: lockedSide, avoidCollisions: false} : merged;
     });
 </script>
 
@@ -124,7 +148,7 @@
         {/snippet}
         {#snippet children()}
             <DropdownMenuPrimitive.Portal>
-                <DropdownMenuPrimitive.Content {...mergeProps(fullContentProps, {class: 'dropdown-content--dropdown'}) as any}>
+                <DropdownMenuPrimitive.Content bind:ref={contentEl} {...mergeProps(fullContentProps, {class: 'dropdown-content--dropdown'}) as any}>
                     {#if title}
                         <div class="dropdown-title">
                             <SnippetOrString value={title}/>
