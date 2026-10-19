@@ -56,10 +56,12 @@
     let backEl = $state<HTMLButtonElement | null>(null);
     let selectEl = $state<HTMLButtonElement | null>(null);
 
-    // Move focus into the panel when it opens, landing on the primary control.
+    // Move focus into the panel when it opens, landing on the primary control. That button
+    // sits at the bottom of a panel that may be height-capped, and a plain focus() would
+    // scroll the viewport to it while the panel is still sliding in.
     onMount(() => {
         const raf = requestAnimationFrame(() => {
-            (selectEl && !selectEl.disabled ? selectEl : backEl)?.focus();
+            (selectEl && !selectEl.disabled ? selectEl : backEl)?.focus({preventScroll: true});
         });
         return () => cancelAnimationFrame(raf);
     });

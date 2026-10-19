@@ -30,7 +30,7 @@
 -->
 <script lang="ts">
 
-    import {type Snippet, untrack} from 'svelte';
+    import {type Snippet, tick, untrack} from 'svelte';
     import {Spring} from 'svelte/motion';
     import {drillTransition} from '$lib/utils/transitions/drillTransition';
     import type {HTMLAttributes} from 'svelte/elements';
@@ -106,13 +106,25 @@
     // a long list's full height would spend most of the motion past the cap,
     // leaving only a few frames of visible movement — an abrupt jump.
     let initialized = $state(false);
+    // The cap of the previous run; untracked bookkeeping, not state.
+    let lastCap = Infinity;
     $effect(() => {
         if (naturalHeight <= 0) return;
         const cap = Math.min(available, availableHeight());
         const targetHeight = Math.min(naturalHeight, cap);
+        const previousCap = lastCap;
+        lastCap = cap;
         if (!initialized || reducedMotion.current) {
             viewportHeight.set(targetHeight, {instant: true});
             initialized = true;
+            return;
+        }
+        // Full before and full after: the panel stays at its maximum, so there is nothing to
+        // animate. The cap itself may still have grown — siblings like a search field leave
+        // with the switch — and springing into that space would shrink the panel for a frame
+        // and grow it back.
+        if (untrack(() => viewportHeight.current) >= previousCap - 1 && naturalHeight >= cap) {
+            void viewportHeight.set(cap, {instant: true});
             return;
         }
         // Past the cap the panel already clips the viewport, so pulling the spring's
@@ -122,6 +134,26 @@
             void viewportHeight.set(cap, {instant: true});
         }
         viewportHeight.target = targetHeight;
+    });
+
+    // Both views scroll in the one viewport, so its offset would carry over: a detail view
+    // taller than the panel opened from a row far down the list would start scrolled to
+    // its bottom. Start the detail at its top, and hand the list its offset back on return.
+    let listScrollTop = 0;
+    let wasOpen = untrack(() => open);
+    $effect.pre(() => {
+        if (open === wasOpen || !viewport) {
+            wasOpen = open;
+            return;
+        }
+        wasOpen = open;
+        if (open) {
+            listScrollTop = viewport.scrollTop;
+        }
+        const target = open ? 0 : listScrollTop;
+        void tick().then(() => {
+            if (viewport) viewport.scrollTop = target;
+        });
     });
 
 </script>
