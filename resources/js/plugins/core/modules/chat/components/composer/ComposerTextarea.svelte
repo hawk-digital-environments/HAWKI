@@ -239,10 +239,17 @@
         // Anchor to the trigger character rather than the moving caret, so the popup stays
         // put while typing.
         caret = getTextareaCaretRect(textarea, next.start);
-        if (next.start !== mention?.start || next.trigger !== mention?.trigger) {
-            activeIndex = 0;
-        }
+        const isNewMention = next.start !== mention?.start || next.trigger !== mention?.trigger;
         mention = next;
+        if (isNewMention) {
+            // A fresh `@` list starts on the assistant already tagged, so the keyboard
+            // begins from the current choice; `/` and untagged messages start at the top.
+            const taggedHandle = composerContext.handlesInMessage[0];
+            const taggedIndex = next.trigger === '@' && taggedHandle
+                ? matchingAssistants.findIndex(assistant => assistant.handle === taggedHandle)
+                : -1;
+            activeIndex = Math.max(taggedIndex, 0);
+        }
     }
 
     /** Drops the typed trigger and its query from the text and puts the caret back where

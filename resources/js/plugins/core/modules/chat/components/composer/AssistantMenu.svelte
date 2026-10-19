@@ -206,6 +206,25 @@
         });
     }
 
+    // Arrowing out of the search field lands on the tagged assistant rather than the first
+    // row, so the keyboard starts from the current choice. Runs in the capture phase, ahead
+    // of bits-ui's own roving focus; falls through when that row is filtered out.
+    function onContentKeydownCapture(event: KeyboardEvent) {
+        if (event.key !== 'ArrowDown' || !(event.target instanceof HTMLInputElement)) {
+            return;
+        }
+        const handle = composerContext.handlesInMessage[0];
+        const row = handle && shownEntries.some(entry => entry.assistant.handle === handle)
+            ? (event.currentTarget as HTMLElement).querySelector<HTMLElement>(`[data-assistant-handle="${handle}"]`)
+            : null;
+        if (!row) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        row.focus();
+    }
+
     // When closing the menu, the detail view is kept for a short delay to avoid flickering
     // mid-close; matches the tool picker.
     $effect(() => {
@@ -238,7 +257,7 @@
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('input', false)}
             bind:open
-            contentProps={{class: 'assistant-menu-content'}}>
+            contentProps={{class: 'assistant-menu-content', onkeydowncapture: onContentKeydownCapture}}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"
