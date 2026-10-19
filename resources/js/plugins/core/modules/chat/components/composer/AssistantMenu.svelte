@@ -14,9 +14,10 @@
   out (`ComposerContext.addHandleToMessage` replaces rather than appends), so the rows behave
   as one choice even though they are rendered as checkable items.
 
-  Pinned assistants are lifted into a "Pinned" section above the content sections: rows the
-  user pinned locally (the `composer-pins` store, toggled per row by `MenuPinButton`) plus
-  rows a hook flagged `pinned` (a favourited assistant). The remaining rows are grouped by
+  Favourite assistants are lifted into a "Favorites" section above the content sections: rows
+  a hook flagged `favorite` (the assistant's server-side favourite) plus rows favourited
+  locally (the `composer-pins` store, for rows without a server-side favourite such as HAWKI;
+  toggled per row by `MenuPinButton`). The remaining rows are grouped by
   their entry's `group` — the assistant's real category — with one fallback section for
   ungrouped rows.
 
@@ -124,17 +125,17 @@
         ...shownOtherEntries
     ]);
 
-    // A row is lifted into the "Pinned" section by a local composer pin or by the entry's
-    // server-side `pinned` flag (a favourited assistant).
+    // A row is lifted into the "Favorites" section by a local composer pin or by the entry's
+    // server-side `favorite` flag.
     function isLifted(entry: AssistantMenuEntry): boolean {
-        return pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned;
+        return pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.favorite;
     }
 
-    // Pinned rows: local pins in the order they were pinned, then favourite-pinned rows in
+    // Favourite rows: local pins in the order they were set, then server-side favourites in
     // list order — and dropped from the sections below, so each assistant appears exactly once.
     const pinnedEntries = $derived([
         ...pinStore.partition('assistant', shownEntries, entry => entry.assistant.id).pinned,
-        ...shownEntries.filter(entry => entry.assistant.pinned && !pinStore.isPinned('assistant', entry.assistant.id))
+        ...shownEntries.filter(entry => entry.assistant.favorite && !pinStore.isPinned('assistant', entry.assistant.id))
     ]);
     const unpinnedHawkiEntry = $derived(
         shownHawkiEntry && !isLifted(shownHawkiEntry) ? shownHawkiEntry : null
@@ -261,7 +262,7 @@
                 {/snippet}
 
                 {#if pinnedEntries.length > 0}
-                    <DropdownMenuLabel>{__('chat.composer.pin.pinnedLabel')}</DropdownMenuLabel>
+                    <DropdownMenuLabel>{__('chat.composer.favorite.label')}</DropdownMenuLabel>
                     {#each pinnedEntries as entry (entry.assistant.id)}
                         <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
                     {/each}

@@ -3,9 +3,9 @@
   `modelPickerV2` experiments flag; the stable counterpart is `ModelPicker`).
 
   A richer picker in the style of a command palette: a provider tab rail
-  (first tab: all models, pinned first), a search input that filters
+  (first tab: all models, favourites first), a search input that filters
   across all providers,
-  a fixed-height result list and per-row extras (pin
+  a fixed-height result list and per-row extras (favourite
   button, Alt+Shift+1..9 quick-select). Desktop renders a popover with a
   `ModelCard` detail column next to the list (following the highlighted row);
   below the `md` breakpoint a bottom sheet with the current model's card on
@@ -15,7 +15,7 @@
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
   `composerContext.model.set(modelId)` (same contract as `ModelPicker`).
-  Pinned models are persisted per browser by the registered `model-favorites` store.
+  Favourite models are persisted per browser by the registered `model-favorites` store.
 
   Without props it is the self-contained composer feature. Passing `onSelect`
   detaches it from the composer context: the selection then comes from `model`
@@ -44,7 +44,7 @@
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import SearchIcon from '$lib/components/ui/icons/iconset/SearchIcon.svelte';
-    import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
+    import FavouriteIcon from '$lib/components/ui/icons/iconset/FavouriteIcon.svelte';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import ModelCard from '$plugins/core/components/ModelCard.svelte';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
@@ -348,7 +348,7 @@
             onmousedown={(e) => e.preventDefault()}
             onclick={(e) => toggleFavorite(e, model)}
         >
-            <PinIcon size={16}/>
+            <FavouriteIcon size={16}/>
         </button>
     </div>
 {/snippet}
@@ -447,7 +447,7 @@
                     aria-pressed={!searching && activeTab === ALL_TAB}
                     onclick={() => selectTab(ALL_TAB)}
                 >
-                    <PinIcon size={14}/>
+                    <FavouriteIcon size={14}/>
                     {__('chat.composer.modelPicker.allTab')}
                 </button>
                 {#each providers as provider (provider.id)}
@@ -846,7 +846,7 @@
         cursor: pointer;
     }
 
-    /* The option fills the row up to the pin button. */
+    /* The option fills the row up to the favourite button. */
     .mp2-option {
         display: flex;
         align-items: center;
@@ -921,9 +921,9 @@
         color: var(--color-text-muted);
     }
 
-    /* Unpinned rows only reveal the pin button while hovered/highlighted
-       (or while the button itself has keyboard focus); pinned rows always
-       show it so the pinned state stays readable at a glance. */
+    /* Non-favourite rows only reveal the favourite button while hovered/highlighted
+       (or while the button itself has keyboard focus); favourite rows always
+       show it so the state stays readable at a glance. */
     .mp2-pin {
         display: flex;
         align-items: center;
@@ -954,11 +954,11 @@
     }
 
     .mp2-pin--active {
-        color: var(--color-warning);
+        color: var(--color-text);
         opacity: 1;
 
         &:hover {
-            color: var(--color-warning);
+            color: var(--color-text);
         }
 
         :global(svg path) {

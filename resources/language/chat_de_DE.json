@@ -259,9 +259,9 @@
                 "otherProvider": "Sonstige",
                 "providerTab": "Modelle von :provider anzeigen",
                 "noResults": "Keine Modelle gefunden.",
-                "favorites": "Angepinnte Modelle",
-                "addFavorite": ":model anpinnen",
-                "removeFavorite": ":model loslösen",
+                "favorites": "Favoriten",
+                "addFavorite": ":model zu Favoriten hinzufügen",
+                "removeFavorite": ":model aus Favoriten entfernen",
                 "listAriaLabel": "Verfügbare Modelle",
                 "switchModelCurrent": "Modell wechseln, aktuell: :model",
                 "allModelsLink": "Alle Modelle entdecken"
@@ -327,10 +327,10 @@
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
                 "sendError": "Fehler beim Senden der Nachricht."
             },
-            "pin": {
-                "pinnedLabel": "Angeheftet",
-                "pin": "Oben in diesem Menü anheften",
-                "unpin": "Nicht mehr anheften"
+            "favorite": {
+                "label": "Favoriten",
+                "add": "Zu Favoriten hinzufügen",
+                "remove": "Aus Favoriten entfernen"
             }
         },
         "tools": {

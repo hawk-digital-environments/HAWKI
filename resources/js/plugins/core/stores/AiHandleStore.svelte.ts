@@ -19,7 +19,7 @@ declare module '$lib/kernel/extendableTypes.js' {
  * {@link AiHandleStore.hawkiAssistant}); everything else is contributed by
  * other plugins through the `aiAssistants` hook — e.g. the assistants
  * plugin appends the user's real assistants there, grouped by their
- * category, with favourites flagged as pinned.
+ * category, with favourites flagged.
  */
 export interface AiAssistant {
     /** Stable id, namespaced by its provider (e.g. `'hawki'`, `'assistant:<uuid>'`). */
@@ -33,9 +33,9 @@ export interface AiAssistant {
     /** Which section of the `@` menu the row belongs to (e.g. the assistant's
      *  category). Rows without a group share the menu's default section. */
     group?: {id: string; label: string};
-    /** Server-side pinned hint; lifts the row into the menu's "Pinned" section
+    /** Server-side favourite; lifts the row into the menu's "Favorites" section
      *  the same way a local composer pin does. */
-    pinned?: boolean;
+    favorite?: boolean;
     /** What the participant allows the user to configure when addressed.
      *  Absent capabilities are unrestricted (the HAWKI default). */
     capabilities?: {
@@ -54,9 +54,9 @@ export interface AiAssistant {
     chatBinding?: string;
     /** Presentation override; falls back to the shared default appearance. */
     appearance?: AssistantAppearance;
-    /** Server-side pin toggle for this row (e.g. toggling the favourite).
-     *  Absent = the row pins through the local `composer-pins` store. */
-    onTogglePin?: (pinned: boolean) => void;
+    /** Server-side favourite toggle for this row.
+     *  Absent = the row is favourited through the local `composer-pins` store. */
+    onToggleFavorite?: (favorite: boolean) => void;
 }
 
 /** Context for the `aiAssistants` hook: handlers may resolve labels in the user's language. */

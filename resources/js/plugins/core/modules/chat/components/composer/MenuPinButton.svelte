@@ -1,16 +1,16 @@
 <!--
-  @component The pin toggle shown on a row in `AssistantMenu` / `ToolMenu`.
+  @component The favourite toggle shown on a row in `AssistantMenu` / `ToolMenu`.
 
-  A small icon button that pins or unpins the row's assistant/tool via the
-  `composer-pins` store, lifting it into the menu's "Pinned" section. Rows whose
-  pin lives on the server (a hook-provided assistant flagged `pinned`) instead
+  A small heart button (filled when set) that favourites the row's assistant/tool via the
+  `composer-pins` store, lifting it into the menu's "Favorites" section. Rows whose
+  favourite lives on the server (a hook-provided assistant flagged `favorite`) instead
   pass the controlled `pinned`/`onToggle` props, routing the toggle to their own
   backend action. Like the neighbouring info chevron it stops pointer/keyboard
-  propagation so pinning never also toggles the row it sits in.
+  propagation so favouriting never also toggles the row it sits in.
 
-  In the `row` variant (default) an unpinned row only reveals the button on hover/focus
-  (see the `.menu-pin-button` styles the host row scopes); a pinned row keeps it visible so
-  the pin state is always readable. The `detail` variant is the same control for the
+  In the `row` variant (default) a non-favourite row only reveals the button on hover/focus
+  (see the `.menu-pin-button` styles the host row scopes); a favourite row keeps it visible so
+  the state is always readable. The `detail` variant is the same control for the
   `AssistantMenuDetail`/`ToolMenuDetail` header: always visible, sized to sit beside the
   panel's on/off toggle, and reachable by the detail panel's own arrow/Tab focus handling.
 
@@ -25,8 +25,7 @@
   ```
 -->
 <script lang="ts">
-    import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
-    import PinOffIcon from '$lib/components/ui/icons/iconset/PinOffIcon.svelte';
+    import FavouriteIcon from '$lib/components/ui/icons/iconset/FavouriteIcon.svelte';
     import type {ComposerPinKind} from '$plugins/core/stores/ComposerPinStore.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -43,7 +42,7 @@
          *  labelled, always-visible variant for a detail panel's header. */
         variant?: 'row' | 'detail';
         /** Overrides the pin state read from the `composer-pins` store — for rows whose
-         *  pin lives on the server (a hook-provided assistant flagged `pinned`). */
+         *  favourite lives on the server (a hook-provided assistant flagged `favorite`). */
         pinned?: boolean;
         /** Overrides the store toggle — routes the pin to the row's own backend action
          *  (e.g. toggling the assistant favourite) instead of the local pins. */
@@ -53,6 +52,7 @@
     const {kind, id, variant = 'row', pinned: pinnedOverride, onToggle}: Props = $props();
 
     const pinned = $derived(pinnedOverride ?? pinStore.isPinned(kind, id));
+    const label = $derived(pinned ? __('chat.composer.favorite.remove') : __('chat.composer.favorite.add'));
 
     // A touch larger in the detail header, where it sits next to the toggle rather than
     // inside a dense list row.
@@ -75,8 +75,8 @@
     class:menu-pin-button--pinned={pinned}
     class:menu-pin-button--detail={variant === 'detail'}
     aria-pressed={pinned}
-    aria-label={pinned ? __('chat.composer.pin.unpin') : __('chat.composer.pin.pin')}
-    title={pinned ? __('chat.composer.pin.unpin') : __('chat.composer.pin.pin')}
+    aria-label={label}
+    title={label}
     tabindex={variant === 'detail' ? 0 : -1}
     onpointerdown={(e) => e.stopPropagation()}
     onpointerup={(e) => e.stopPropagation()}
@@ -86,11 +86,7 @@
         }
     }}
     onclick={togglePin}>
-    {#if pinned}
-        <PinOffIcon size={iconSize}/>
-    {:else}
-        <PinIcon size={iconSize}/>
-    {/if}
+    <FavouriteIcon size={iconSize}/>
 </button>
 
 <style>
@@ -108,7 +104,7 @@
         color: var(--color-text-muted);
         cursor: pointer;
 
-        /* Unpinned rows keep the affordance out of the way until the row is hovered or
+        /* Non-favourite rows keep the affordance out of the way until the row is hovered or
            focused; the row styles opt it back in (`:hover`/`:focus-within`). */
         opacity: 0;
     }
@@ -120,6 +116,11 @@
     .menu-pin-button--pinned {
         opacity: 1;
         color: var(--color-text);
+    }
+
+    /* A set favourite fills its heart, as on the assistant store's favourite button. */
+    .menu-pin-button--pinned :global(svg) {
+        fill: currentColor;
     }
 
     /* In a detail panel there is no row to hover it out of, so the icon is always shown;

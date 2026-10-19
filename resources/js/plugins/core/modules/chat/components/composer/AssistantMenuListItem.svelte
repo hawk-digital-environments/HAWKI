@@ -21,7 +21,7 @@
 
     /** One assistant row, pre-wired with its appearance and toggle callback by `AssistantMenu`. */
     export interface AssistantMenuEntry {
-        /** The assistant (handle, label, grouping, pin state) this row represents. */
+        /** The assistant (handle, label, grouping, favourite state) this row represents. */
         assistant: AiAssistant;
         /** Emoji shown at the start of the row. */
         emoji: string;
@@ -54,16 +54,16 @@
 
     const {entry, onOpenDetail}: Props = $props();
 
-    // A row is lifted into the "Pinned" section by a local composer pin or by its
-    // server-side flag (a favourite); the pin button targets whichever mechanism
-    // owns the row's pin.
+    // A row is lifted into the "Favorites" section by a local composer pin (assistants
+    // without a server-side favourite, e.g. HAWKI) or by its server-side favourite; the
+    // favourite button targets whichever mechanism owns the row's state.
     const pinned = $derived(
-        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned
+        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.favorite
     );
 
     function togglePin() {
-        if (entry.assistant.onTogglePin) {
-            entry.assistant.onTogglePin(!pinned);
+        if (entry.assistant.onToggleFavorite) {
+            entry.assistant.onToggleFavorite(!pinned);
         } else {
             pinStore.toggle('assistant', entry.assistant.id);
         }
@@ -144,7 +144,7 @@
 
     /* Mirrors `.tool-item-info`: a chevron that only opens the detail view. Rendered at
        full strength, with no hover state, so it reads as a plain affordance. */
-    /* The pin only shows on the row the user is pointing at; pinned rows keep their own
+    /* The favourite only shows on the row the user is pointing at; favourite rows keep their own
        button visible. Mirrors `ToolMenuListItem`. */
     :global(.dropdown-checkbox-item.assistant-menu-item:hover .menu-pin-button),
     :global(.dropdown-checkbox-item.assistant-menu-item:focus-within .menu-pin-button) {

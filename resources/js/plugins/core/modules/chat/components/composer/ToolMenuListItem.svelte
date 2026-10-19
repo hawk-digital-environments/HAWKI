@@ -199,7 +199,7 @@
         font-size: var(--font-size-xs);
     }
 
-    /* The pin only shows on the row the user is pointing at (a pinned row keeps its own
+    /* The favourite only shows on the row the user is pointing at (a favourite row keeps its own
        button visible), so the list stays quiet when nothing is being aimed at. */
     :global(.dropdown-checkbox-item.tool-menu-item:hover .menu-pin-button),
     :global(.dropdown-checkbox-item.tool-menu-item:focus-within .menu-pin-button) {

@@ -43,8 +43,8 @@ function isTaggable(assistant: Assistant): assistant is TaggableAssistant {
  * its own.
  *
  * Rows are grouped by the assistant's real category and favourites are
- * flagged `pinned`, which the menu lifts into its "Pinned" section; the pin
- * button on such a row toggles the server-side favourite
+ * flagged `favorite`, which the menu lifts into its "Favorites" section; the
+ * favourite button on such a row toggles the server-side favourite
  * (see {@link toggleFavorite}).
  *
  * Singleton on purpose (the `@` menus are session-global), following the
@@ -111,7 +111,7 @@ class AssistantHandlesStore implements DataStore {
     }
 
     /** Toggles the user's favourite on one assistant and mirrors the new flag
-     *  into the held list, so pinned sections re-render immediately. */
+     *  into the held list, so favourite sections re-render immediately. */
     public async toggleFavorite(id: string, favorite: boolean): Promise<void> {
         const assistant = this.assistants.find(candidate => candidate.id === id);
         if (!assistant) {
@@ -143,7 +143,7 @@ class AssistantHandlesStore implements DataStore {
             group: assistant.category
                 ? {id: `assistant-category:${assistant.category.id}`, label: translate(assistant.category.text)}
                 : undefined,
-            pinned: assistant.isFavorite,
+            favorite: assistant.isFavorite,
             // An assistant defines its own run: model (unless it allows
             // selection) and tools are fixed while it is addressed.
             capabilities: {modelSelect: assistant.allowModelSelect, toolSelect: false},
@@ -151,8 +151,8 @@ class AssistantHandlesStore implements DataStore {
             // handle travels as `payload.hawkiExtensions.assistant_handle`.
             chatBinding: assistant.handle,
             appearance: assistantRowAppearance(assistant),
-            onTogglePin: (pinned: boolean) => {
-                void this.toggleFavorite(assistant.id, pinned);
+            onToggleFavorite: (favorite: boolean) => {
+                void this.toggleFavorite(assistant.id, favorite);
             }
         }));
     }

@@ -68,7 +68,7 @@
 
     /** Entries partitioned into the three sections `ToolMenuList` renders, in display order. */
     export interface ToolMenuGroupedEntries {
-        /** Entries the user pinned, lifted out of their normal section and shown first. */
+        /** Entries the user favourited, lifted out of their normal section and shown first. */
         pinned: ToolMenuEntry[];
         /** Capability entries (e.g. web search, image generation) shown first, ungrouped. */
         capabilities: ToolMenuEntry[];
@@ -187,7 +187,7 @@
         const functionTools: ToolMenuEntry[] = [];
         const mcpTools: Record<string, ToolMenuEntry[]> = {};
 
-        // Pinned tools are shown once, in their own section — never also in the section
+        // Favourite tools are shown once, in their own section — never also in the section
         // they would otherwise belong to.
         const {pinned, rest} = pinStore.partition('tool', searchedEntries, entry => entry.tool.name);
 

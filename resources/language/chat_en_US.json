@@ -259,9 +259,9 @@
                 "otherProvider": "Other",
                 "providerTab": "Show :provider models",
                 "noResults": "No models found.",
-                "favorites": "Pinned models",
-                "addFavorite": "Pin :model",
-                "removeFavorite": "Unpin :model",
+                "favorites": "Favorites",
+                "addFavorite": "Add :model to favorites",
+                "removeFavorite": "Remove :model from favorites",
                 "listAriaLabel": "Available models",
                 "switchModelCurrent": "Switch model, current: :model",
                 "allModelsLink": "Explore all models"
@@ -327,10 +327,10 @@
                 "responseError": "An error occurred while processing the response.",
                 "sendError": "An error occurred while sending the message."
             },
-            "pin": {
-                "pinnedLabel": "Pinned",
-                "pin": "Pin to the top of this menu",
-                "unpin": "Remove from pinned"
+            "favorite": {
+                "label": "Favorites",
+                "add": "Add to favorites",
+                "remove": "Remove from favorites"
             }
         },
         "tools": {
