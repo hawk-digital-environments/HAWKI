@@ -8,8 +8,8 @@
   (`ProviderSwatch`), which carries the check for the current model. Next to it is a single
   line with the model's label, plus its provider where no section label names it
   (`showProvider`, used for the favourites). Status and demand only appear
-  when they deserve a look: a model that isn't online, or one under medium/high demand.
-  Offline models are listed but disabled.
+  when they deserve a look: a model whose status is unknown, or one under medium/high demand.
+  Offline models are listed but disabled — greyed out, with no indicators.
 
   A favourite button (`MenuPinButton`, wired to the `model-favorites` store) and an info
   chevron are revealed on the row being pointed at or focused — in the mobile sheet, which has
@@ -56,8 +56,9 @@
     const offline = $derived(model.status === 'offline');
     const providerName = $derived(model.provider?.name ?? __('chat.composer.modelPicker.otherProvider'));
 
-    // The list only surfaces exceptions; the detail view always shows both indicators.
-    const showStatus = $derived(model.status !== 'online');
+    // The list only surfaces exceptions; the detail view always shows both indicators. An
+    // offline row is already greyed out as disabled, so it needs no dot on top.
+    const showStatus = $derived(model.status === 'unknown');
     const showDemand = $derived(!offline && model.demand !== 'low');
 
     function openDetail(event: MouseEvent) {
