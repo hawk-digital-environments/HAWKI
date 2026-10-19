@@ -103,8 +103,9 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
 
 <!-- Keyed on the addressed participant: tagging or swapping an assistant swaps the whole
      hero, the old copy fading out quietly while the new one rises in line by line. Both
-     share one grid cell during the hand-off so the layout doesn't jump. On first render
-     the hero appears without motion (local transitions skip the initial mount). -->
+     share one grid cell during the hand-off so the layout doesn't jump. Entrances are
+     global so the hero also rises in when the welcome first mounts; exits stay local so
+     leaving the empty state (first message sent) doesn't hold the old hero on screen. -->
 <div class="welcome-stage" bind:this={stage}>
     {#each [hero] as current (current.key)}
         <div class="welcome" data-hero-key={current.key}>
@@ -113,7 +114,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
                 class:personalized={current.icon}
                 style:--assistant-tint={current.tint}
                 aria-hidden="true"
-                in:textRise={{index: 0}}
+                in:textRise|global={{index: 0}}
                 out:textRise={leave}>
                 {#if current.icon}
                     <span class="welcome-glyph">{current.icon}</span>
@@ -124,14 +125,14 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
             <svelte:element
                 this={`h${headingLevel}`}
                 class="title"
-                in:textRise={{index: 1}}
+                in:textRise|global={{index: 1}}
                 out:textRise={leave}>{current.title}</svelte:element>
-            <p class:empty={!current.description} in:textRise={{index: 2}} out:textRise={leave}>{current.description}</p>
+            <p class:empty={!current.description} in:textRise|global={{index: 2}} out:textRise={leave}>{current.description}</p>
             <ul
                 class="starter-prompts"
                 class:empty={current.starterPrompts.length === 0}
                 aria-label={__('chat.page.starterPrompts')}
-                in:textRise={{index: 3}}
+                in:textRise|global={{index: 3}}
                 out:textRise={leave}>
                 {#each current.starterPrompts as prompt}
                     <li>
@@ -189,7 +190,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     }
 
     .title { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
-    p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }
+    p { max-width: 40rem; margin: 0; color: var(--color-text-muted); text-wrap: balance; }
 
     .welcome .empty { display: none; }
 
