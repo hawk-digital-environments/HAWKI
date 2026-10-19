@@ -8,28 +8,9 @@ declare(strict_types=1);
 return [
     array (
   'id' => 'firecrawl/search',
-  'object' => 'model_catalog.entry',
   'provider' => 'firecrawl',
+  'litellm_provider' => 'firecrawl',
   'mode' => 'search',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'tiered_pricing' => 
   array (
     0 => 

@@ -8,28 +8,9 @@ declare(strict_types=1);
 return [
     array (
   'id' => 'runwayml/gen4_turbo',
-  'object' => 'model_catalog.entry',
   'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.05,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
   'supported_modalities' => 
@@ -47,30 +28,11 @@ return [
   ),
 ),
     array (
-  'id' => 'runwayml/gen4_aleph',
-  'object' => 'model_catalog.entry',
+  'id' => 'runwayml/gen4.5',
   'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
-  'output_cost_per_video_per_second' => 0.15,
+  'output_cost_per_second' => 0.12,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
   'supported_modalities' => 
   array (
@@ -83,34 +45,173 @@ return [
   ),
   'metadata' => 
   array (
-    'comment' => '15 credits per second @ $0.01 per credit = $0.15 per second',
+    'comment' => '12 credits per second @ $0.01 per credit = $0.12 per second',
   ),
 ),
     array (
-  'id' => 'runwayml/gen3a_turbo',
-  'object' => 'model_catalog.entry',
+  'id' => 'runwayml/aleph2',
   'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
-  'output_cost_per_video_per_second' => 0.05,
+  'output_cost_per_second' => 0.28,
+  'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'video',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'metadata' => 
+  array (
+    'comment' => '28 credits per second @ $0.01 per credit = $0.28 per second; 56 credit minimum per task not modeled',
+  ),
+),
+    array (
+  'id' => 'runwayml/seedance2',
+  'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
+  'mode' => 'video_generation',
+  'output_cost_per_second' => 0.36,
+  'output_cost_per_second_1080p' => 0.4,
+  'output_cost_per_second_4k' => 1.5,
+  'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'metadata' => 
+  array (
+    'comment' => '36 credits per second at 480p/720p, 40 at 1080p, 150 at 4K @ $0.01 per credit',
+  ),
+),
+    array (
+  'id' => 'runwayml/seedance2_fast',
+  'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
+  'mode' => 'video_generation',
+  'output_cost_per_second' => 0.29,
+  'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'metadata' => 
+  array (
+    'comment' => '29 credits per second at 480p/720p @ $0.01 per credit = $0.29 per second',
+  ),
+),
+    array (
+  'id' => 'runwayml/seedance2_mini',
+  'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
+  'mode' => 'video_generation',
+  'output_cost_per_second' => 0.16,
+  'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'metadata' => 
+  array (
+    'comment' => '16 credits per second @ $0.01 per credit = $0.16 per second; 64 credit minimum per task not modeled',
+  ),
+),
+    array (
+  'id' => 'runwayml/seedance2_5',
+  'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
+  'mode' => 'video_generation',
+  'output_cost_per_second' => 0.3,
+  'output_cost_per_second_480p' => 0.2,
+  'output_cost_per_second_1080p' => 0.68,
+  'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'Output: 20/30/68 credits per second at 480p/720p/1080p @ $0.01 per credit; input video billed additionally at 10/15/34 credits per input second and the 80 credit minimum per task are not modeled',
+  ),
+),
+    array (
+  'id' => 'runwayml/hailuo3',
+  'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
+  'mode' => 'video_generation',
+  'output_cost_per_second' => 0.1,
+  'output_cost_per_second_1080p' => 0.15,
+  'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'metadata' => 
+  array (
+    'comment' => '10 credits per second at 768P, 15 at 2K (mapped to the 1080p tier) @ $0.01 per credit; 2 credits per reference image not modeled',
+  ),
+),
+    array (
+  'id' => 'runwayml/gemini_omni_flash',
+  'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
+  'mode' => 'video_generation',
+  'output_cost_per_second' => 0.1,
+  'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'metadata' => 
+  array (
+    'comment' => '10 credits per second @ $0.01 per credit = $0.10 per second',
+  ),
+),
+    array (
+  'id' => 'runwayml/veo3.1',
+  'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
+  'mode' => 'video_generation',
+  'output_cost_per_second' => 0.4,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
   'supported_modalities' => 
   array (
@@ -123,33 +224,35 @@ return [
   ),
   'metadata' => 
   array (
-    'comment' => '5 credits per second @ $0.01 per credit = $0.05 per second',
+    'comment' => '40 credits per second with audio, 20 without @ $0.01 per credit; priced at the with-audio rate',
+  ),
+),
+    array (
+  'id' => 'runwayml/veo3.1_fast',
+  'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
+  'mode' => 'video_generation',
+  'output_cost_per_second' => 0.15,
+  'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'metadata' => 
+  array (
+    'comment' => '15 credits per second with audio, 10 without @ $0.01 per credit; priced at the with-audio rate',
   ),
 ),
     array (
   'id' => 'runwayml/gen4_image',
-  'object' => 'model_catalog.entry',
   'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
   'mode' => 'image_generation',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'input_cost_per_image' => 0.05,
   'output_cost_per_image' => 0.05,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -169,28 +272,9 @@ return [
 ),
     array (
   'id' => 'runwayml/gen4_image_turbo',
-  'object' => 'model_catalog.entry',
   'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
   'mode' => 'image_generation',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'input_cost_per_image' => 0.02,
   'output_cost_per_image' => 0.02,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -210,28 +294,9 @@ return [
 ),
     array (
   'id' => 'runwayml/eleven_multilingual_v2',
-  'object' => 'model_catalog.entry',
   'provider' => 'runwayml',
+  'litellm_provider' => 'runwayml',
   'mode' => 'audio_speech',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'input_cost_per_character' => 3.0E-7,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
   'metadata' => 
