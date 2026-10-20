@@ -272,6 +272,21 @@
         transform-origin: left center;
     }
 
+    /* The cap lives on the wrappers, not on the chip: a chip's percentage max-width
+       can't resolve against a shrink-to-fit wrapper, so the wrapper kept the width of
+       the full label (long once "not supported by …" is appended) and left a gap after
+       the truncated pill. Here 100% resolves against the row, and the chip fills the
+       capped wrapper and ellipsizes. */
+    .tool-chip-slot,
+    [data-chip] {
+        max-width: min(16rem, 100%);
+    }
+
+    .tool-chip-slot > .tool-chip,
+    [data-chip] > .tool-chip {
+        max-width: 100%;
+    }
+
     .tool-chip {
         display: inline-flex;
         align-items: center;
@@ -279,7 +294,6 @@
         gap: var(--space-1);
         /* Same source as the picker and the assistant tags above; already this value. */
         height: var(--chat-composer-control-height, 2rem);
-        max-width: min(16rem, 100%);
         flex-shrink: 0;
         border-radius: var(--corner-full);
         /* Neutral fallback; the section tint below normally takes over. */
