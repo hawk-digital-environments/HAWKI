@@ -36,6 +36,7 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import {noHoverFocusProps} from '$lib/components/ui/dropdown-menu/noHoverFocus.js';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
+    import {provideExclusiveMenuGroup, useExclusiveMenuGroup} from '$lib/components/ui/dropdown-menu/exclusiveMenuGroup.js';
 
     interface Props {
         /** Whether the dropdown is open. Supports bind:open. */
@@ -87,6 +88,21 @@
     const onOpenChange = (openNew: boolean) => {
         open = openNew;
     };
+
+    // Within an exclusive group (see `provideExclusiveMenuGroup`) opening this menu closes
+    // the group's other one. Menus nested in this one's content don't join the group, or
+    // opening them would close this one.
+    const menuGroup = useExclusiveMenuGroup();
+    provideExclusiveMenuGroup(null);
+    const closeMenu = () => {
+        open = false;
+    };
+
+    $effect(() => {
+        if (!menuGroup || !open) return;
+        menuGroup.claim(closeMenu);
+        return () => menuGroup.release(closeMenu);
+    });
 
     function resolvedAlign(): 'start' | 'center' | 'end' {
         if (align) return align;

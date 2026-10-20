@@ -37,6 +37,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import AssistantMenu from '$plugins/core/modules/chat/components/composer/AssistantMenu.svelte';
     import MentionChips from '$plugins/core/modules/chat/components/composer/MentionChips.svelte';
     import ComposerActionButtons from '$plugins/core/modules/chat/components/composer/ComposerActionButtons.svelte';
+    import {provideExclusiveMenuGroup} from '$lib/components/ui/dropdown-menu/exclusiveMenuGroup.js';
 
     interface Props {
         /** Which kind of chat this composer sends into ('aiConv' for a 1:1 AI conversation, 'room' for a group room); determines context-specific behavior (e.g. write-access checks, name menu variant). */
@@ -82,6 +83,10 @@ Rendered once per page for either an AI conversation or a group room chat (see
     $effect(() => {
         chatContext.forcedActive = forcedActive;
     });
+
+    // The composer's menus (model, settings, assistants, tools) never stack: opening one
+    // closes the other.
+    provideExclusiveMenuGroup();
 
     let textareaEl = $state(null as HTMLTextAreaElement | null);
     let buttonEl = $state(null as HTMLButtonElement | null);
