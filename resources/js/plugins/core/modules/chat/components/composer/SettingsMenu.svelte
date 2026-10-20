@@ -68,10 +68,7 @@
     side="top"
     align="end"
     disabled={composerContext.guard.disablesFeature('settings')}
-    contentProps={{
-        class: 'model-settings-content',
-        onCloseAutoFocus: (e) => e.preventDefault()
-    }}
+    contentProps={{class: 'model-settings-content'}}
 >
     {#snippet trigger({props})}
         <ButtonWithTooltip

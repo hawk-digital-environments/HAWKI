@@ -122,6 +122,37 @@
     }
     let lockedSide = $state<Side | null>(null);
 
+    // bits-ui hands focus back to the trigger on close. Moving focus by script out of a
+    // field that shows a ring (the menu's search input always does) makes the trigger show
+    // one too, even when the menu was closed with the pointer. So the last interaction while
+    // open decides: a keyboard close keeps the default ring, a pointer close refocuses the
+    // trigger without it.
+    let closedByKeyboard = false;
+
+    $effect(() => {
+        if (!open) return;
+        const track = (event: Event) => {
+            closedByKeyboard = event.type === 'keydown';
+        };
+        window.addEventListener('pointerdown', track, true);
+        window.addEventListener('keydown', track, true);
+        return () => {
+            window.removeEventListener('pointerdown', track, true);
+            window.removeEventListener('keydown', track, true);
+        };
+    });
+
+    function returnFocusToTrigger(event: Event) {
+        if (closedByKeyboard) return;
+        const selector = '[data-dropdown-menu-trigger]';
+        const target = triggerEl?.matches(selector) ? triggerEl : triggerEl?.querySelector<HTMLElement>(selector);
+        if (!target || target.matches(':disabled')) return;
+        event.preventDefault();
+        // Blur first so the ring of the field losing focus can't carry over to the trigger.
+        (document.activeElement as HTMLElement | null)?.blur();
+        target.focus({preventScroll: true, focusVisible: false} as FocusOptions);
+    }
+
     $effect(() => {
         if (!open) lockedSide = null;
     });
@@ -143,7 +174,9 @@
                 onPlaced: lockPlacedSide
             },
             noHoverFocusProps,
-            contentProps ?? {}
+            contentProps ?? {},
+            // Last, so a consumer that places focus itself (preventDefault) skips it.
+            {onCloseAutoFocus: returnFocusToTrigger}
         ) as DropdownMenuContentProps;
 
         // Once locked, pin the side and stop flipping; the size middleware still caps the
