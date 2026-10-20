@@ -177,7 +177,7 @@
     .conflict-container {
         overflow: hidden;
         border-radius: var(--corner-md);
-        background-color: color-mix(in oklch, var(--color-warning) 12%, transparent);
+        background-color: var(--color-surface-light);
         border: none;
     }
 
@@ -193,8 +193,9 @@
         padding-bottom: calc(0.25rem * 1.5);
     }
 
+    /* Sits flush in the header padding, so it is inset equally from the panel's top
+       and left edge; the title is nudged down to it instead. */
     .conflict-icon-wrapper {
-        margin-top: calc(0.25rem * 0.5);
         display: flex;
         height: calc(0.25rem * 5);
         width: calc(0.25rem * 5);
@@ -202,7 +203,7 @@
         align-items: center;
         justify-content: center;
         border-radius: var(--corner-xs);
-        background-color: color-mix(in oklch, var(--color-warning) 18%, transparent);
+        background-color: color-mix(in oklch, var(--color-text) 8%, transparent);
         border: none;
     }
 
@@ -213,6 +214,8 @@
 
     .conflict-title {
         margin: 0;
+        /* Centers the first line on the 1.25rem icon square beside it. */
+        margin-top: calc((1.25rem - 1lh) / 2);
         font-size: var(--font-size-xxs);
         font-weight: var(--font-weight-medium, 500);
         line-height: 1.25;
@@ -267,10 +270,12 @@
         padding: calc(0.25rem * 2.5);
         text-align: left;
         cursor: pointer;
-        transition: box-shadow var(--duration-fast, 150ms) var(--easing-default);
+        transition: background-color var(--duration-fast, 150ms) var(--easing-default);
 
+        /* A faint text-colored wash rather than --color-hover, whose blue (light) and
+           accent fill (dark) would be the only colored surface in this neutral panel. */
         &:hover {
-            box-shadow: var(--elevation-1);
+            background-color: color-mix(in oklch, var(--color-text) 8%, var(--color-surface-raised));
         }
 
         &:focus-visible {
