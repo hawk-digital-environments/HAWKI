@@ -325,6 +325,7 @@
         border: none;
         cursor: pointer;
         font-size: var(--font-size-xxs);
+        transition: background-color var(--duration-fast, 150ms);
     }
 
     .tool-chip-label {
@@ -391,8 +392,15 @@
         color: inherit;
     }
 
+    /* Overrides the section ink (declared later, same specificity), so the tint and
+       its hover state both stay red. */
     .tool-chip.incompatible {
-        background-color: color-mix(in oklab, var(--color-error) 12%, var(--color-surface-raised));
-        color: var(--color-error);
+        --chip-ink: var(--color-error);
+        background-color: color-mix(in oklab, var(--chip-ink) 12%, var(--color-surface-raised));
+        color: var(--chip-ink);
+    }
+
+    .tool-chip.incompatible:hover {
+        background-color: color-mix(in oklab, var(--chip-ink) 20%, var(--color-surface-raised));
     }
 </style>
