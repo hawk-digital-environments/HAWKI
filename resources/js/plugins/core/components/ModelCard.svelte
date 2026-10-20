@@ -172,14 +172,16 @@
                     <ProviderIcon name={providerName} light={model.provider?.icon_url} dark={model.provider?.icon_url_dark} size={compact ? 32 : 40}/>
                 {/if}
                 <div class="model-card__title">
-                    <h3>{model.label}</h3>
+                    <div class="model-card__name">
+                        <h3>{model.label}</h3>
+                        <div class="model-card__live">
+                            {#if model.status !== 'offline'}
+                                <ModelDemandBars {model} focusable={false}/>
+                            {/if}
+                            <StatusDotForModel {model} focusable={false}/>
+                        </div>
+                    </div>
                     <span class="model-card__provider">{providerName}</span>
-                </div>
-                <div class="model-card__live">
-                    {#if model.status !== 'offline'}
-                        <ModelDemandBars {model} focusable={false}/>
-                    {/if}
-                    <StatusDotForModel {model} focusable={false}/>
                 </div>
             </header>
 
@@ -337,6 +339,7 @@
             font-weight: var(--font-weight-medium, 500);
             line-height: var(--line-height-tight);
             letter-spacing: -0.01em;
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -353,10 +356,18 @@
         color: var(--color-accent-text);
     }
 
+    /* The label with the live status (demand, availability) pushed to the row's end. */
+    .model-card__name {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        min-width: 0;
+    }
+
     .model-card__live {
         display: flex;
         align-items: center;
-        align-self: flex-start;
         gap: var(--space-2);
         flex-shrink: 0;
     }

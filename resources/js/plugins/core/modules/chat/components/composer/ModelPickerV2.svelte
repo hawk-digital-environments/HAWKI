@@ -9,7 +9,8 @@
   section first, then one section per provider in store order; offline models are
   listed but disabled. Sections (favourites included) collapse from their header (a menu item, so the
   keyboard reaches it too); a search shows every match regardless. Each row's info icon (or ArrowRight) drills into `ModelMenuDetail`,
-  which shows the model's `ModelCard`.
+  which shows the model's `ModelCard`. In the dropdown (not the mobile sheet), pointing at or
+  arrowing onto a row also previews that card beside the menu (`ModelMenuPreview`).
 
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
@@ -49,6 +50,8 @@
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import ModelMenuListItem from '$plugins/core/modules/chat/components/composer/ModelMenuListItem.svelte';
     import ModelMenuDetail from '$plugins/core/modules/chat/components/composer/ModelMenuDetail.svelte';
+    import ModelMenuPreview from '$plugins/core/modules/chat/components/composer/ModelMenuPreview.svelte';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import {revealMenuRow} from '$plugins/core/modules/chat/components/composer/utils/revealMenuRow.js';
     import {textPopIn} from '$lib/utils/transitions/textPopIn.js';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
@@ -77,6 +80,7 @@
     const modelFavorites = useStore('model-favorites');
     const {__} = useTranslator();
     const app = useApp();
+    const breakpoint = useBreakpoint();
 
     let open = $state(false);
 
@@ -146,7 +150,50 @@
             : [...collapsedGroups, groupId];
     }
 
+    // The row being pointed at or focused, previewed beside the menu. Leaving the rows hides
+    // the preview only after a beat, so crossing a section header doesn't drop it.
+    let menuEl = $state<HTMLElement | null>(null);
+    let previewModelId = $state<string | null>(null);
+    let previewHideTimer: ReturnType<typeof setTimeout> | undefined;
+
+    function previewRowAt(target: EventTarget | null): void {
+        const row = target instanceof Element ? target.closest<HTMLElement>('.model-menu-item[data-model-id]') : null;
+        const modelId = row?.dataset.modelId;
+        clearTimeout(previewHideTimer);
+        if (!modelId) {
+            previewHideTimer = setTimeout(() => {
+                previewModelId = null;
+            }, 150);
+            return;
+        }
+        previewModelId = modelId;
+    }
+
+    function onContentPointerOver(event: PointerEvent): void {
+        if (event.pointerType !== 'mouse') {
+            return;
+        }
+        menuEl = event.currentTarget as HTMLElement;
+        previewRowAt(event.target);
+    }
+
+    function onContentFocusIn(event: FocusEvent): void {
+        menuEl = event.currentTarget as HTMLElement;
+        previewRowAt(event.target);
+    }
+
+    // The pointer left the menu: fall back to the row the keyboard sits on, if any.
+    function onContentPointerLeave(event: PointerEvent): void {
+        if (event.target === event.currentTarget) {
+            previewRowAt(document.activeElement);
+        }
+    }
+
     const detailModel = $derived(detailModelId ? aiModelStore.models.find(m => m.model_id === detailModelId) ?? null : null);
+
+    const previewModel = $derived(open && !detailModel && previewModelId && !breakpoint.is('bpSmallerThanMd')
+        ? aiModelStore.models.find(m => m.model_id === previewModelId) ?? null
+        : null);
 
     function selectModel(modelId: string): void {
         const picked = aiModelStore.models.find(m => m.model_id === modelId);
@@ -242,6 +289,8 @@
     $effect(() => {
         if (!open) {
             query = '';
+            clearTimeout(previewHideTimer);
+            previewModelId = null;
         }
     });
 
@@ -282,7 +331,10 @@
         magneticHover={false}
         contentProps={{
             class: ['model-menu-content', variant === 'field' && 'model-menu-content--field'],
-            onkeydowncapture: onContentKeydownCapture
+            onkeydowncapture: onContentKeydownCapture,
+            onpointerover: onContentPointerOver,
+            onpointerleave: onContentPointerLeave,
+            onfocusin: onContentFocusIn
         }}>
         {#snippet trigger({props})}
             <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>
@@ -360,6 +412,7 @@
             {/if}
         </DropdownMenuDetailView>
     </DropdownMenu>
+    <ModelMenuPreview model={previewModel} anchor={menuEl}/>
 {/if}
 
 <style>
