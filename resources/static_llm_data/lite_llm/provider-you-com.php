@@ -10,7 +10,6 @@ return [
   'id' => 'you_com/search',
   'provider' => 'you_com',
   'input_cost_per_query' => 0.0,
-  'litellm_provider' => 'you_com',
   'mode' => 'search',
 ),
 ];

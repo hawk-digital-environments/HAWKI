@@ -10,7 +10,6 @@ return [
   'id' => 'deepseek-v3-2-251201',
   'provider' => 'volcengine',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 98304,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -26,7 +25,6 @@ return [
   'id' => 'glm-4-7-251222',
   'provider' => 'volcengine',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 204800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -42,7 +40,6 @@ return [
   'id' => 'kimi-k2-thinking-251104',
   'provider' => 'volcengine',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 229376,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -58,7 +55,6 @@ return [
   'id' => 'doubao-embedding',
   'provider' => 'volcengine',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 4096,
   'max_tokens' => 4096,
   'metadata' => 
@@ -73,7 +69,6 @@ return [
   'id' => 'doubao-embedding-large',
   'provider' => 'volcengine',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 4096,
   'max_tokens' => 4096,
   'metadata' => 
@@ -88,7 +83,6 @@ return [
   'id' => 'doubao-embedding-large-text-240915',
   'provider' => 'volcengine',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 4096,
   'max_tokens' => 4096,
   'metadata' => 
@@ -103,7 +97,6 @@ return [
   'id' => 'doubao-embedding-large-text-250515',
   'provider' => 'volcengine',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 4096,
   'max_tokens' => 4096,
   'metadata' => 
@@ -118,7 +111,6 @@ return [
   'id' => 'doubao-embedding-text-240715',
   'provider' => 'volcengine',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 4096,
   'max_tokens' => 4096,
   'metadata' => 
@@ -132,7 +124,6 @@ return [
     array (
   'id' => 'volcengine/doubao-seed-2-0-pro-260215',
   'provider' => 'volcengine',
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -181,7 +172,6 @@ return [
   'provider' => 'volcengine',
   'cache_read_input_token_cost' => 1.725E-7,
   'input_cost_per_token' => 8.625E-7,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
   'max_tokens' => 256000,
@@ -199,7 +189,6 @@ return [
   'provider' => 'volcengine',
   'cache_read_input_token_cost' => 8.625E-8,
   'input_cost_per_token' => 4.3125E-7,
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
   'max_tokens' => 256000,
@@ -215,7 +204,6 @@ return [
     array (
   'id' => 'volcengine/doubao-seed-2-0-lite-260215',
   'provider' => 'volcengine',
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -262,7 +250,6 @@ return [
     array (
   'id' => 'volcengine/doubao-seed-2-0-mini-260215',
   'provider' => 'volcengine',
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -309,7 +296,6 @@ return [
     array (
   'id' => 'volcengine/doubao-seed-2-0-code-preview-260215',
   'provider' => 'volcengine',
-  'litellm_provider' => 'volcengine',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -356,7 +342,6 @@ return [
     array (
   'id' => 'volcengine/doubao-seedance-2-5-260628',
   'provider' => 'volcengine',
-  'litellm_provider' => 'volcengine',
   'mode' => 'video_generation',
   'source' => 'https://www.volcengine.com/docs/82379/1544106',
   'output_cost_per_second' => 0.216,
@@ -410,7 +395,6 @@ return [
     array (
   'id' => 'volcengine/doubao-seedance-2-0-260128',
   'provider' => 'volcengine',
-  'litellm_provider' => 'volcengine',
   'mode' => 'video_generation',
   'source' => 'https://www.volcengine.com/docs/82379/1544106',
   'output_cost_per_second' => 0.141942857,
@@ -465,7 +449,6 @@ return [
     array (
   'id' => 'volcengine/doubao-seedance-2-0-fast-260128',
   'provider' => 'volcengine',
-  'litellm_provider' => 'volcengine',
   'mode' => 'video_generation',
   'source' => 'https://www.volcengine.com/docs/82379/1544106',
   'output_cost_per_second' => 0.114171429,
@@ -518,7 +501,6 @@ return [
     array (
   'id' => 'volcengine/doubao-seedance-2-0-mini-260615',
   'provider' => 'volcengine',
-  'litellm_provider' => 'volcengine',
   'mode' => 'video_generation',
   'source' => 'https://www.volcengine.com/docs/82379/1544106',
   'output_cost_per_second' => 0.070971429,

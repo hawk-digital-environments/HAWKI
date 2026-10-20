@@ -10,7 +10,6 @@ return [
   'id' => 'jina-reranker-v2-base-multilingual',
   'provider' => 'jina_ai',
   'input_cost_per_token' => 5.0E-8,
-  'litellm_provider' => 'jina_ai',
   'max_input_tokens' => 1024,
   'max_output_tokens' => 1024,
   'max_tokens' => 1024,

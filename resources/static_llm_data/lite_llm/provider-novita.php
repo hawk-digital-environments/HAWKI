@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-v3.2',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.69E-7,
   'output_cost_per_token' => 4.0E-7,
@@ -28,7 +27,6 @@ return [
     array (
   'id' => 'novita/minimax/minimax-m2.1',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 1.2E-6,
@@ -46,7 +44,6 @@ return [
     array (
   'id' => 'novita/zai-org/glm-4.7',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 6.0E-7,
   'output_cost_per_token' => 2.2E-6,
@@ -65,7 +62,6 @@ return [
     array (
   'id' => 'novita/xiaomimimo/mimo-v2-flash',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.1E-7,
   'output_cost_per_token' => 3.3E-7,
@@ -84,7 +80,6 @@ return [
     array (
   'id' => 'novita/zai-org/autoglm-phone-9b-multilingual',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.5E-8,
   'output_cost_per_token' => 1.38E-7,
@@ -97,7 +92,6 @@ return [
     array (
   'id' => 'novita/moonshotai/kimi-k2-thinking',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 6.0E-7,
   'output_cost_per_token' => 2.5E-6,
@@ -116,7 +110,6 @@ return [
     array (
   'id' => 'novita/minimax/minimax-m2',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 1.2E-6,
@@ -135,7 +128,6 @@ return [
     array (
   'id' => 'novita/paddlepaddle/paddleocr-vl',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.0E-8,
   'output_cost_per_token' => 2.0E-8,
@@ -148,7 +140,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-v3.2-exp',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.7E-7,
   'output_cost_per_token' => 4.1E-7,
@@ -165,7 +156,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-vl-235b-a22b-thinking',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 9.8E-7,
   'output_cost_per_token' => 3.95E-6,
@@ -181,7 +171,6 @@ return [
     array (
   'id' => 'novita/zai-org/glm-4.6v',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 9.0E-7,
@@ -201,7 +190,6 @@ return [
     array (
   'id' => 'novita/zai-org/glm-4.6',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 5.5E-7,
   'output_cost_per_token' => 2.2E-6,
@@ -220,7 +208,6 @@ return [
     array (
   'id' => 'novita/kwaipilot/kat-coder-pro',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 1.2E-6,
@@ -238,7 +225,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-next-80b-a3b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 1.5E-6,
@@ -255,7 +241,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-next-80b-a3b-thinking',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 1.5E-6,
@@ -272,7 +257,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-ocr',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-8,
   'output_cost_per_token' => 3.0E-8,
@@ -287,7 +271,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-v3.1-terminus',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.7E-7,
   'output_cost_per_token' => 1.0E-6,
@@ -306,7 +289,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-vl-235b-a22b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 1.5E-6,
@@ -323,7 +305,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-max',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.11E-6,
   'output_cost_per_token' => 8.45E-6,
@@ -339,7 +320,6 @@ return [
     array (
   'id' => 'novita/skywork/r1v4-lite',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 6.0E-7,
@@ -354,7 +334,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-v3.1',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.7E-7,
   'output_cost_per_token' => 1.0E-6,
@@ -373,7 +352,6 @@ return [
     array (
   'id' => 'novita/moonshotai/kimi-k2-0905',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 6.0E-7,
   'output_cost_per_token' => 2.5E-6,
@@ -389,7 +367,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-coder-480b-a35b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.8E-7,
   'output_cost_per_token' => 1.55E-6,
@@ -405,7 +382,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-coder-30b-a3b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 2.7E-7,
@@ -421,7 +397,6 @@ return [
     array (
   'id' => 'novita/openai/gpt-oss-120b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 5.0E-8,
   'output_cost_per_token' => 2.5E-7,
@@ -439,7 +414,6 @@ return [
     array (
   'id' => 'novita/moonshotai/kimi-k2-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 5.7E-7,
   'output_cost_per_token' => 2.3E-6,
@@ -455,7 +429,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-v3-0324',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.7E-7,
   'output_cost_per_token' => 1.12E-6,
@@ -473,7 +446,6 @@ return [
     array (
   'id' => 'novita/zai-org/glm-4.5',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 6.0E-7,
   'output_cost_per_token' => 2.2E-6,
@@ -491,7 +463,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-235b-a22b-thinking-2507',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 3.0E-6,
@@ -507,7 +478,6 @@ return [
     array (
   'id' => 'novita/meta-llama/llama-3.1-8b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.0E-8,
   'output_cost_per_token' => 5.0E-8,
@@ -520,7 +490,6 @@ return [
     array (
   'id' => 'novita/google/gemma-3-12b-it',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 5.0E-8,
   'output_cost_per_token' => 1.0E-7,
@@ -535,7 +504,6 @@ return [
     array (
   'id' => 'novita/zai-org/glm-4.5v',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 6.0E-7,
   'output_cost_per_token' => 1.8E-6,
@@ -555,7 +523,6 @@ return [
     array (
   'id' => 'novita/openai/gpt-oss-20b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 4.0E-8,
   'output_cost_per_token' => 1.5E-7,
@@ -571,7 +538,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-235b-a22b-instruct-2507',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 9.0E-8,
   'output_cost_per_token' => 5.8E-7,
@@ -587,7 +553,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-r1-distill-qwen-14b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 1.5E-7,
@@ -602,7 +567,6 @@ return [
     array (
   'id' => 'novita/meta-llama/llama-3.3-70b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.35E-7,
   'output_cost_per_token' => 4.0E-7,
@@ -618,7 +582,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen-2.5-72b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.8E-7,
   'output_cost_per_token' => 4.0E-7,
@@ -634,7 +597,6 @@ return [
     array (
   'id' => 'novita/mistralai/mistral-nemo',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 4.0E-8,
   'output_cost_per_token' => 1.7E-7,
@@ -648,7 +610,6 @@ return [
     array (
   'id' => 'novita/minimaxai/minimax-m1-80k',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 5.5E-7,
   'output_cost_per_token' => 2.2E-6,
@@ -665,7 +626,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-r1-0528',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-7,
   'output_cost_per_token' => 2.5E-6,
@@ -684,7 +644,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-r1-distill-qwen-32b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 3.0E-7,
@@ -699,7 +658,6 @@ return [
     array (
   'id' => 'novita/meta-llama/llama-3-8b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 4.0E-8,
   'output_cost_per_token' => 4.0E-8,
@@ -712,7 +670,6 @@ return [
     array (
   'id' => 'novita/microsoft/wizardlm-2-8x22b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 6.2E-7,
   'output_cost_per_token' => 6.2E-7,
@@ -725,7 +682,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-r1-0528-qwen3-8b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 6.0E-8,
   'output_cost_per_token' => 9.0E-8,
@@ -738,7 +694,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-r1-distill-llama-70b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 8.0E-7,
   'output_cost_per_token' => 8.0E-7,
@@ -753,7 +708,6 @@ return [
     array (
   'id' => 'novita/meta-llama/llama-3-70b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 5.1E-7,
   'output_cost_per_token' => 7.4E-7,
@@ -767,7 +721,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-235b-a22b-fp8',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 8.0E-7,
@@ -781,7 +734,6 @@ return [
     array (
   'id' => 'novita/meta-llama/llama-4-maverick-17b-128e-instruct-fp8',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.7E-7,
   'output_cost_per_token' => 8.5E-7,
@@ -795,7 +747,6 @@ return [
     array (
   'id' => 'novita/meta-llama/llama-4-scout-17b-16e-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.8E-7,
   'output_cost_per_token' => 5.9E-7,
@@ -808,7 +759,6 @@ return [
     array (
   'id' => 'novita/nousresearch/hermes-2-pro-llama-3-8b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.4E-7,
   'output_cost_per_token' => 1.4E-7,
@@ -822,7 +772,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen2.5-vl-72b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 8.0E-7,
   'output_cost_per_token' => 8.0E-7,
@@ -835,7 +784,6 @@ return [
     array (
   'id' => 'novita/sao10k/l3-70b-euryale-v2.1',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.48E-6,
   'output_cost_per_token' => 1.48E-6,
@@ -850,7 +798,6 @@ return [
     array (
   'id' => 'novita/baidu/ernie-4.5-21B-a3b-thinking',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 2.8E-7,
@@ -863,7 +810,6 @@ return [
     array (
   'id' => 'novita/sao10k/l3-8b-lunaris',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 5.0E-8,
   'output_cost_per_token' => 5.0E-8,
@@ -877,7 +823,6 @@ return [
     array (
   'id' => 'novita/baichuan/baichuan-m2-32b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 7.0E-8,
@@ -889,7 +834,6 @@ return [
     array (
   'id' => 'novita/baidu/ernie-4.5-vl-424b-a47b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 4.2E-7,
   'output_cost_per_token' => 1.25E-6,
@@ -903,7 +847,6 @@ return [
     array (
   'id' => 'novita/baidu/ernie-4.5-300b-a47b-paddle',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.8E-7,
   'output_cost_per_token' => 1.1E-6,
@@ -917,7 +860,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-prover-v2-671b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-7,
   'output_cost_per_token' => 2.5E-6,
@@ -929,7 +871,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-32b-fp8',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 4.5E-7,
@@ -942,7 +883,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-30b-a3b-fp8',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 9.0E-8,
   'output_cost_per_token' => 4.5E-7,
@@ -957,7 +897,6 @@ return [
     array (
   'id' => 'novita/google/gemma-3-27b-it',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.19E-7,
   'output_cost_per_token' => 2.0E-7,
@@ -970,7 +909,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-v3-turbo',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 4.0E-7,
   'output_cost_per_token' => 1.3E-6,
@@ -985,7 +923,6 @@ return [
     array (
   'id' => 'novita/deepseek/deepseek-r1-turbo',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-7,
   'output_cost_per_token' => 2.5E-6,
@@ -1002,7 +939,6 @@ return [
     array (
   'id' => 'novita/Sao10K/L3-8B-Stheno-v3.2',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 5.0E-8,
   'output_cost_per_token' => 5.0E-8,
@@ -1017,7 +953,6 @@ return [
     array (
   'id' => 'novita/gryphe/mythomax-l2-13b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 9.0E-8,
   'output_cost_per_token' => 9.0E-8,
@@ -1029,7 +964,6 @@ return [
     array (
   'id' => 'novita/baidu/ernie-4.5-vl-28b-a3b-thinking',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.9E-7,
   'output_cost_per_token' => 3.9E-7,
@@ -1047,7 +981,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-vl-8b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 8.0E-8,
   'output_cost_per_token' => 5.0E-7,
@@ -1064,7 +997,6 @@ return [
     array (
   'id' => 'novita/zai-org/glm-4.5-air',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.3E-7,
   'output_cost_per_token' => 8.5E-7,
@@ -1082,7 +1014,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-vl-30b-a3b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 7.0E-7,
@@ -1099,7 +1030,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-vl-30b-a3b-thinking',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 1.0E-6,
@@ -1116,7 +1046,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-omni-30b-a3b-thinking',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.5E-7,
   'output_cost_per_token' => 9.7E-7,
@@ -1135,7 +1064,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-omni-30b-a3b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.5E-7,
   'output_cost_per_token' => 9.7E-7,
@@ -1154,7 +1082,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen-mt-plus',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 2.5E-7,
   'output_cost_per_token' => 7.5E-7,
@@ -1166,7 +1093,6 @@ return [
     array (
   'id' => 'novita/baidu/ernie-4.5-vl-28b-a3b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.4E-7,
   'output_cost_per_token' => 5.6E-7,
@@ -1183,7 +1109,6 @@ return [
     array (
   'id' => 'novita/baidu/ernie-4.5-21B-a3b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 2.8E-7,
@@ -1198,7 +1123,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-8b-fp8',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.5E-8,
   'output_cost_per_token' => 1.38E-7,
@@ -1211,7 +1135,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-4b-fp8',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-8,
   'output_cost_per_token' => 3.0E-8,
@@ -1226,7 +1149,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen2.5-7b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 7.0E-8,
@@ -1242,7 +1164,6 @@ return [
     array (
   'id' => 'novita/meta-llama/llama-3.2-3b-instruct',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-8,
   'output_cost_per_token' => 5.0E-8,
@@ -1257,7 +1178,6 @@ return [
     array (
   'id' => 'novita/sao10k/l31-70b-euryale-v2.2',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'chat',
   'input_cost_per_token' => 1.48E-6,
   'output_cost_per_token' => 1.48E-6,
@@ -1272,7 +1192,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-embedding-0.6b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'embedding',
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 0,
@@ -1283,7 +1202,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-embedding-8b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'embedding',
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 0,
@@ -1294,7 +1212,6 @@ return [
     array (
   'id' => 'novita/baai/bge-m3',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'embedding',
   'input_cost_per_token' => 1.0E-8,
   'output_cost_per_token' => 1.0E-8,
@@ -1305,7 +1222,6 @@ return [
     array (
   'id' => 'novita/qwen/qwen3-reranker-8b',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'rerank',
   'input_cost_per_token' => 5.0E-8,
   'output_cost_per_token' => 5.0E-8,
@@ -1316,7 +1232,6 @@ return [
     array (
   'id' => 'novita/baai/bge-reranker-v2-m3',
   'provider' => 'novita',
-  'litellm_provider' => 'novita',
   'mode' => 'rerank',
   'input_cost_per_token' => 1.0E-8,
   'output_cost_per_token' => 1.0E-8,
@@ -1329,7 +1244,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.6E-7,
   'input_cost_per_token' => 1.4E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1348,7 +1262,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.3200000000000002E-7,
   'input_cost_per_token' => 1.32E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -1367,7 +1280,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_token' => 3.0E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'max_tokens' => 1048576,
@@ -1386,7 +1298,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 3.5E-8,
   'input_cost_per_token' => 1.4E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'max_tokens' => 262144,
@@ -1405,7 +1316,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.6E-7,
   'input_cost_per_token' => 1.4E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1424,7 +1334,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.9E-7,
   'input_cost_per_token' => 9.499999999999999E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'max_tokens' => 262144,
@@ -1443,7 +1352,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.8E-8,
   'input_cost_per_token' => 4.4E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -1462,7 +1370,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.8E-8,
   'input_cost_per_token' => 4.4E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -1481,7 +1388,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_token' => 1.5E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1499,7 +1405,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 6.0E-8,
   'input_cost_per_token' => 3.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1518,7 +1423,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.8E-8,
   'input_cost_per_token' => 1.4E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -1537,7 +1441,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.35E-7,
   'input_cost_per_token' => 1.6000000000000001E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -1556,7 +1459,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.2E-8,
   'input_cost_per_token' => 6.0E-8,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -1574,7 +1476,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.5E-7,
   'input_cost_per_token' => 2.0E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1593,7 +1494,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.2E-8,
   'input_cost_per_token' => 6.0E-8,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -1611,7 +1511,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 8.0E-8,
   'input_cost_per_token' => 4.5000000000000003E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -1629,7 +1528,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 4.0E-8,
   'input_cost_per_token' => 2.0000000000000002E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 256000,
   'max_tokens' => 256000,
@@ -1647,7 +1545,6 @@ return [
   'id' => 'novita/nvidia/nemotron-3-nano-30b-a3b',
   'provider' => 'novita',
   'input_cost_per_token' => 5.0000000000000004E-8,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -1665,7 +1562,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 7.0E-8,
   'input_cost_per_token' => 2.8E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1683,7 +1579,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 3.4E-9,
   'input_cost_per_token' => 1.6800000000000002E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1702,7 +1597,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.5E-7,
   'input_cost_per_token' => 1.25E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1721,7 +1615,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 4.3E-9,
   'input_cost_per_token' => 5.22E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1739,7 +1632,6 @@ return [
   'id' => 'novita/qwen/qwen3.6-27b',
   'provider' => 'novita',
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1757,7 +1649,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.6E-7,
   'input_cost_per_token' => 8.000000000000001E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'max_tokens' => 262144,
@@ -1776,7 +1667,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.6E-7,
   'input_cost_per_token' => 1.38E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 204800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1795,7 +1685,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 6.0E-8,
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 204800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1814,7 +1703,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.4E-7,
   'input_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 204800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1832,7 +1720,6 @@ return [
   'id' => 'novita/google/gemma-4-26b-a4b-it',
   'provider' => 'novita',
   'input_cost_per_token' => 1.3E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1849,7 +1736,6 @@ return [
   'id' => 'novita/google/gemma-4-31b-it',
   'provider' => 'novita',
   'input_cost_per_token' => 1.4E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1867,7 +1753,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.4E-7,
   'input_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 202800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1886,7 +1771,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 6.0E-8,
   'input_cost_per_token' => 3.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 204800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1905,7 +1789,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 3.0E-8,
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 204800,
   'max_output_tokens' => 131100,
   'max_tokens' => 131100,
@@ -1923,7 +1806,6 @@ return [
   'id' => 'novita/qwen/qwen3.5-27b',
   'provider' => 'novita',
   'input_cost_per_token' => 3.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1940,7 +1822,6 @@ return [
   'id' => 'novita/qwen/qwen3.5-122b-a10b',
   'provider' => 'novita',
   'input_cost_per_token' => 4.0000000000000003E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1957,7 +1838,6 @@ return [
   'id' => 'novita/qwen/qwen3.5-35b-a3b',
   'provider' => 'novita',
   'input_cost_per_token' => 2.5E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1974,7 +1854,6 @@ return [
   'id' => 'novita/qwen/qwen3.5-397b-a17b',
   'provider' => 'novita',
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1992,7 +1871,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 3.0E-8,
   'input_cost_per_token' => 3.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 204800,
   'max_output_tokens' => 131100,
   'max_tokens' => 131100,
@@ -2011,7 +1889,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 2.0000000000000002E-7,
   'input_cost_per_token' => 1.0E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 202800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -2029,7 +1906,6 @@ return [
   'id' => 'novita/qwen/qwen3-coder-next',
   'provider' => 'novita',
   'input_cost_per_token' => 2.0000000000000002E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -2045,7 +1921,6 @@ return [
   'id' => 'novita/deepseek/deepseek-ocr-2',
   'provider' => 'novita',
   'input_cost_per_token' => 3.0E-8,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -2059,7 +1934,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.0000000000000001E-7,
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'max_tokens' => 262144,
@@ -2078,7 +1952,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.1E-7,
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 204800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -2097,7 +1970,6 @@ return [
   'provider' => 'novita',
   'cache_read_input_token_cost' => 1.0E-8,
   'input_cost_per_token' => 7.0E-8,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 200000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -2115,7 +1987,6 @@ return [
   'id' => 'novita/qwen/qwen3.6-35b-a3b',
   'provider' => 'novita',
   'input_cost_per_token' => 2.48E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -2132,7 +2003,6 @@ return [
   'id' => 'novita/deepseek/deepseek_v3',
   'provider' => 'novita',
   'input_cost_per_token' => 8.900000000000001E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 64000,
   'max_output_tokens' => 16000,
   'max_tokens' => 16000,
@@ -2147,7 +2017,6 @@ return [
   'id' => 'novita/deepseek/deepseek-r1',
   'provider' => 'novita',
   'input_cost_per_token' => 4.0E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 64000,
   'max_output_tokens' => 16000,
   'max_tokens' => 16000,
@@ -2163,7 +2032,6 @@ return [
   'id' => 'novita/deepseek/deepseek-v3/community',
   'provider' => 'novita',
   'input_cost_per_token' => 8.900000000000001E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 64000,
   'max_output_tokens' => 8000,
   'max_tokens' => 8000,
@@ -2178,7 +2046,6 @@ return [
   'id' => 'novita/deepseek/deepseek-r1/community',
   'provider' => 'novita',
   'input_cost_per_token' => 4.0E-6,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 64000,
   'max_output_tokens' => 8000,
   'max_tokens' => 8000,
@@ -2194,7 +2061,6 @@ return [
   'id' => 'novita/thudm/glm-4-32b-0414',
   'provider' => 'novita',
   'input_cost_per_token' => 5.5E-7,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 32000,
   'max_tokens' => 32000,
@@ -2210,7 +2076,6 @@ return [
   'id' => 'novita/meta-llama/llama-3.2-1b-instruct',
   'provider' => 'novita',
   'input_cost_per_token' => 2.0E-8,
-  'litellm_provider' => 'novita',
   'max_input_tokens' => 131000,
   'max_output_tokens' => 32000,
   'max_tokens' => 32000,

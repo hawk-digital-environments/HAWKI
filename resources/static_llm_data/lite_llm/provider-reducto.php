@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'reducto/parse-legacy',
   'provider' => 'reducto',
-  'litellm_provider' => 'reducto',
   'mode' => 'ocr',
   'ocr_cost_per_credit' => 0.015,
   'source' => 'https://reducto.ai/pricing',
@@ -21,7 +20,6 @@ return [
     array (
   'id' => 'reducto/parse-v3',
   'provider' => 'reducto',
-  'litellm_provider' => 'reducto',
   'mode' => 'ocr',
   'ocr_cost_per_credit' => 0.015,
   'source' => 'https://reducto.ai/pricing',

@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'exa_ai/search',
   'provider' => 'exa_ai',
-  'litellm_provider' => 'exa_ai',
   'mode' => 'search',
   'tiered_pricing' => 
   array (

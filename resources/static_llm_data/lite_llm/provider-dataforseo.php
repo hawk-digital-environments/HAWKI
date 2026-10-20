@@ -10,7 +10,6 @@ return [
   'id' => 'dataforseo/search',
   'provider' => 'dataforseo',
   'input_cost_per_query' => 0.003,
-  'litellm_provider' => 'dataforseo',
   'mode' => 'search',
 ),
 ];

@@ -10,7 +10,6 @@ return [
   'id' => 'aws_polly/standard',
   'provider' => 'aws_polly',
   'input_cost_per_character' => 4.0E-6,
-  'litellm_provider' => 'aws_polly',
   'mode' => 'audio_speech',
   'supported_endpoints' => 
   array (
@@ -22,7 +21,6 @@ return [
   'id' => 'aws_polly/neural',
   'provider' => 'aws_polly',
   'input_cost_per_character' => 1.6E-5,
-  'litellm_provider' => 'aws_polly',
   'mode' => 'audio_speech',
   'supported_endpoints' => 
   array (
@@ -34,7 +32,6 @@ return [
   'id' => 'aws_polly/long-form',
   'provider' => 'aws_polly',
   'input_cost_per_character' => 0.0001,
-  'litellm_provider' => 'aws_polly',
   'mode' => 'audio_speech',
   'supported_endpoints' => 
   array (
@@ -46,7 +43,6 @@ return [
   'id' => 'aws_polly/generative',
   'provider' => 'aws_polly',
   'input_cost_per_character' => 3.0E-5,
-  'litellm_provider' => 'aws_polly',
   'mode' => 'audio_speech',
   'supported_endpoints' => 
   array (

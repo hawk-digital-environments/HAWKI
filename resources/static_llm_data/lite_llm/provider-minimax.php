@@ -10,7 +10,6 @@ return [
   'id' => 'minimax/speech-02-hd',
   'provider' => 'minimax',
   'input_cost_per_character' => 0.0001,
-  'litellm_provider' => 'minimax',
   'mode' => 'audio_speech',
   'supported_endpoints' => 
   array (
@@ -21,7 +20,6 @@ return [
   'id' => 'minimax/speech-02-turbo',
   'provider' => 'minimax',
   'input_cost_per_character' => 6.0E-5,
-  'litellm_provider' => 'minimax',
   'mode' => 'audio_speech',
   'supported_endpoints' => 
   array (
@@ -32,7 +30,6 @@ return [
   'id' => 'minimax/speech-2.6-hd',
   'provider' => 'minimax',
   'input_cost_per_character' => 0.0001,
-  'litellm_provider' => 'minimax',
   'mode' => 'audio_speech',
   'supported_endpoints' => 
   array (
@@ -43,7 +40,6 @@ return [
   'id' => 'minimax/speech-2.6-turbo',
   'provider' => 'minimax',
   'input_cost_per_character' => 6.0E-5,
-  'litellm_provider' => 'minimax',
   'mode' => 'audio_speech',
   'supported_endpoints' => 
   array (
@@ -57,7 +53,6 @@ return [
   'output_cost_per_token' => 1.2E-6,
   'cache_read_input_token_cost' => 3.0E-8,
   'cache_creation_input_token_cost' => 3.75E-7,
-  'litellm_provider' => 'minimax',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_tool_choice' => true,
@@ -74,7 +69,6 @@ return [
   'output_cost_per_token' => 2.4E-6,
   'cache_read_input_token_cost' => 3.0E-8,
   'cache_creation_input_token_cost' => 3.75E-7,
-  'litellm_provider' => 'minimax',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_tool_choice' => true,
@@ -91,7 +85,6 @@ return [
   'output_cost_per_token' => 1.2E-6,
   'cache_read_input_token_cost' => 3.0E-8,
   'cache_creation_input_token_cost' => 3.75E-7,
-  'litellm_provider' => 'minimax',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_tool_choice' => true,
@@ -108,7 +101,6 @@ return [
   'output_cost_per_token' => 2.4E-6,
   'cache_read_input_token_cost' => 3.0E-8,
   'cache_creation_input_token_cost' => 3.75E-7,
-  'litellm_provider' => 'minimax',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_tool_choice' => true,
@@ -125,7 +117,6 @@ return [
   'output_cost_per_token' => 1.2E-6,
   'cache_read_input_token_cost' => 3.0E-8,
   'cache_creation_input_token_cost' => 3.75E-7,
-  'litellm_provider' => 'minimax',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_tool_choice' => true,
@@ -144,7 +135,6 @@ return [
   'output_cost_per_token_above_512k_tokens' => 2.4E-6,
   'cache_read_input_token_cost' => 6.0E-8,
   'cache_read_input_token_cost_above_512k_tokens' => 1.2E-7,
-  'litellm_provider' => 'minimax',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_tool_choice' => true,
@@ -158,7 +148,6 @@ return [
     array (
   'id' => 'minimax/MiniMax-H3',
   'provider' => 'minimax',
-  'litellm_provider' => 'minimax',
   'mode' => 'video_generation',
   'source' => 'https://platform.minimax.io/docs/guides/pricing-paygo',
   'output_cost_per_second' => 0.08,
@@ -191,7 +180,6 @@ return [
     array (
   'id' => 'minimax/MiniMax-H3-Max',
   'provider' => 'minimax',
-  'litellm_provider' => 'minimax',
   'mode' => 'video_generation',
   'source' => 'https://platform.minimax.io/docs/guides/pricing-paygo',
   'output_cost_per_second' => 0.08,

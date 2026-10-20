@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'heroku/claude-3-5-haiku',
   'provider' => 'heroku',
-  'litellm_provider' => 'heroku',
   'max_tokens' => 8192,
   'mode' => 'chat',
   'supports_function_calling' => true,
@@ -21,7 +20,6 @@ return [
     array (
   'id' => 'heroku/claude-3-5-sonnet-latest',
   'provider' => 'heroku',
-  'litellm_provider' => 'heroku',
   'max_tokens' => 8192,
   'mode' => 'chat',
   'supports_function_calling' => true,
@@ -33,7 +31,6 @@ return [
     array (
   'id' => 'heroku/claude-3-7-sonnet',
   'provider' => 'heroku',
-  'litellm_provider' => 'heroku',
   'max_tokens' => 8192,
   'mode' => 'chat',
   'supports_function_calling' => true,
@@ -45,7 +42,6 @@ return [
     array (
   'id' => 'heroku/claude-4-sonnet',
   'provider' => 'heroku',
-  'litellm_provider' => 'heroku',
   'max_tokens' => 8192,
   'mode' => 'chat',
   'supports_function_calling' => true,

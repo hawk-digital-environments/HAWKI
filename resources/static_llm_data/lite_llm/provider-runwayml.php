@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'runwayml/gen4_turbo',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_video_per_second' => 0.05,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -30,7 +29,6 @@ return [
     array (
   'id' => 'runwayml/gen4.5',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.12,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -51,7 +49,6 @@ return [
     array (
   'id' => 'runwayml/aleph2',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.28,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -72,7 +69,6 @@ return [
     array (
   'id' => 'runwayml/seedance2',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.36,
   'output_cost_per_second_1080p' => 0.4,
@@ -96,7 +92,6 @@ return [
     array (
   'id' => 'runwayml/seedance2_fast',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.29,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -118,7 +113,6 @@ return [
     array (
   'id' => 'runwayml/seedance2_mini',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.16,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -140,7 +134,6 @@ return [
     array (
   'id' => 'runwayml/seedance2_5',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.3,
   'output_cost_per_second_480p' => 0.2,
@@ -164,7 +157,6 @@ return [
     array (
   'id' => 'runwayml/hailuo3',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.1,
   'output_cost_per_second_1080p' => 0.15,
@@ -187,7 +179,6 @@ return [
     array (
   'id' => 'runwayml/gemini_omni_flash',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.1,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -209,7 +200,6 @@ return [
     array (
   'id' => 'runwayml/veo3.1',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.4,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -230,7 +220,6 @@ return [
     array (
   'id' => 'runwayml/veo3.1_fast',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'video_generation',
   'output_cost_per_second' => 0.15,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
@@ -251,7 +240,6 @@ return [
     array (
   'id' => 'runwayml/gen4_image',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'image_generation',
   'input_cost_per_image' => 0.05,
   'output_cost_per_image' => 0.05,
@@ -273,7 +261,6 @@ return [
     array (
   'id' => 'runwayml/gen4_image_turbo',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'image_generation',
   'input_cost_per_image' => 0.02,
   'output_cost_per_image' => 0.02,
@@ -295,7 +282,6 @@ return [
     array (
   'id' => 'runwayml/eleven_multilingual_v2',
   'provider' => 'runwayml',
-  'litellm_provider' => 'runwayml',
   'mode' => 'audio_speech',
   'input_cost_per_character' => 3.0E-7,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',

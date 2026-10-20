@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'microsoft_365_copilot/chat',
   'provider' => 'microsoft_365_copilot',
-  'litellm_provider' => 'microsoft_365_copilot',
   'mode' => 'chat',
   'supports_mid_conversation_system' => true,
   'input_cost_per_token' => 0.0,

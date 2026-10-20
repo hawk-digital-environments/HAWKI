@@ -10,42 +10,36 @@ return [
   'id' => 'fireworks-ai-4.1b-to-16b',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'output_cost_per_token' => 2.0E-7,
 ),
     array (
   'id' => 'fireworks-ai-56b-to-176b',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'output_cost_per_token' => 1.2E-6,
 ),
     array (
   'id' => 'fireworks-ai-above-16b',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'output_cost_per_token' => 9.0E-7,
 ),
     array (
   'id' => 'fireworks-ai-default',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'output_cost_per_token' => 0.0,
 ),
     array (
   'id' => 'fireworks-ai-moe-up-to-56b',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'output_cost_per_token' => 5.0E-7,
 ),
     array (
   'id' => 'fireworks-ai-up-to-4b',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'output_cost_per_token' => 1.0E-7,
   'source' => 'https://docs.fireworks.ai/serverless/pricing',
 ),
@@ -53,7 +47,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-coder-v2-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 65536,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -68,7 +61,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-r1',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 3.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 163840,
   'max_output_tokens' => 20480,
   'max_tokens' => 20480,
@@ -82,7 +74,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-r1-0528',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 3.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 163840,
   'max_output_tokens' => 160000,
   'max_tokens' => 160000,
@@ -96,7 +87,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-r1-basic',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 5.5E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 163840,
   'max_output_tokens' => 20480,
   'max_tokens' => 20480,
@@ -110,7 +100,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-v3',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -124,7 +113,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-v3-0324',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'max_tokens' => 163840,
@@ -138,7 +126,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-v3p1',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 5.6E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -153,7 +140,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-v3p1-terminus',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 5.6E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -168,7 +154,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/deepseek-v3p2',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 5.6E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'max_tokens' => 163840,
@@ -185,7 +170,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 2.8E-8,
   'input_cost_per_token' => 1.4E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 384000,
   'max_tokens' => 384000,
@@ -206,7 +190,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 1.32E-6,
   'input_cost_per_token_priority' => 1.65E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -228,7 +211,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 1.32E-6,
   'input_cost_per_token_priority' => 1.65E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -246,7 +228,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/firefunction-v2',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -261,7 +242,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/glm-4p5',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 5.5E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 96000,
   'max_tokens' => 96000,
@@ -277,7 +257,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/glm-4p5-air',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 2.2E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 96000,
   'max_tokens' => 96000,
@@ -294,7 +273,6 @@ return [
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 5.5E-7,
   'output_cost_per_token' => 2.19E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 202752,
   'max_output_tokens' => 202800,
   'max_tokens' => 202800,
@@ -310,7 +288,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 202752,
   'max_output_tokens' => 202800,
   'max_tokens' => 202800,
@@ -327,7 +304,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 2.6E-7,
   'input_cost_per_token' => 1.4E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 202752,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -348,7 +324,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 1.4E-6,
   'input_cost_per_token_priority' => 1.75E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -367,16 +342,16 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.5E-8,
   'cache_read_input_token_cost_priority' => 1.8E-8,
+  'deprecation_date' => '2026-11-07',
   'input_cost_per_token' => 1.5E-7,
   'input_cost_per_token_priority' => 1.8E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-7,
   'output_cost_per_token_priority' => 7.2E-7,
-  'source' => 'https://api.fireworks.ai/v1/serverless/models',
+  'source' => 'https://api.fireworks.ai/v1/serverless/models?format=nested',
   'supports_function_calling' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
@@ -388,7 +363,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 3.5E-8,
   'input_cost_per_token' => 7.0E-8,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -405,7 +379,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/kimi-k2-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -420,7 +393,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/kimi-k2-instruct-0905',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -435,7 +407,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/kimi-k2-thinking',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'max_tokens' => 262144,
@@ -452,7 +423,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.0E-7,
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -471,7 +441,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 9.5E-7,
   'input_cost_per_token_priority' => 1.5E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -493,7 +462,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 9.5E-7,
   'input_cost_per_token_priority' => 1.425E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -511,7 +479,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/llama-v3p1-405b-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 3.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -526,7 +493,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/llama-v3p1-8b-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -541,7 +507,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/llama-v3p2-11b-vision-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -557,7 +522,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/llama-v3p2-1b-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -572,7 +536,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/llama-v3p2-3b-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -587,7 +550,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/llama-v3p2-90b-vision-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -602,7 +564,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/llama4-maverick-instruct-basic',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 2.2E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -616,7 +577,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/llama4-scout-instruct-basic',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.5E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -631,7 +591,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 3.0E-8,
   'input_cost_per_token' => 3.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 196608,
   'max_output_tokens' => 204800,
   'max_tokens' => 204800,
@@ -649,7 +608,6 @@ return [
   'cache_read_input_token_cost_priority' => 9.0E-8,
   'input_cost_per_token' => 3.0E-7,
   'input_cost_per_token_priority' => 4.5E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 512000,
   'max_output_tokens' => 512000,
   'max_tokens' => 512000,
@@ -667,7 +625,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/mixtral-8x22b-instruct-hf',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 65536,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -682,7 +639,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/qwen2-72b-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -697,7 +653,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/qwen2p5-coder-32b-instruct',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -712,7 +667,6 @@ return [
   'id' => 'fireworks_ai/accounts/fireworks/models/yi-large',
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 3.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -728,7 +682,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 2.8E-8,
   'input_cost_per_token' => 1.4E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 384000,
   'max_tokens' => 384000,
@@ -746,7 +699,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 202752,
   'max_output_tokens' => 202800,
   'max_tokens' => 202800,
@@ -763,7 +715,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 2.6E-7,
   'input_cost_per_token' => 1.4E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 202752,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -781,7 +732,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 5.2E-7,
   'input_cost_per_token' => 2.8E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 202800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -802,7 +752,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 1.4E-6,
   'input_cost_per_token_priority' => 1.75E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -821,16 +770,16 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.5E-8,
   'cache_read_input_token_cost_priority' => 1.8E-8,
+  'deprecation_date' => '2026-11-07',
   'input_cost_per_token' => 1.5E-7,
   'input_cost_per_token_priority' => 1.8E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-7,
   'output_cost_per_token_priority' => 7.2E-7,
-  'source' => 'https://api.fireworks.ai/v1/serverless/models',
+  'source' => 'https://api.fireworks.ai/v1/serverless/models?format=nested',
   'supports_function_calling' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
@@ -842,7 +791,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 3.5E-8,
   'input_cost_per_token' => 7.0E-8,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -860,7 +808,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.0E-7,
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -879,7 +826,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 9.5E-7,
   'input_cost_per_token_priority' => 1.5E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -899,7 +845,6 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'deprecation_date' => '2026-08-27',
   'input_cost_per_token' => 2.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -920,7 +865,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 9.5E-7,
   'input_cost_per_token_priority' => 1.425E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -940,7 +884,6 @@ return [
   'cache_read_input_token_cost' => 3.8E-7,
   'deprecation_date' => '2026-08-27',
   'input_cost_per_token' => 1.9E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -958,7 +901,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 3.0E-8,
   'input_cost_per_token' => 3.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 196608,
   'max_output_tokens' => 204800,
   'max_tokens' => 204800,
@@ -976,7 +918,6 @@ return [
   'cache_read_input_token_cost_priority' => 9.0E-8,
   'input_cost_per_token' => 3.0E-7,
   'input_cost_per_token_priority' => 4.5E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 512000,
   'max_output_tokens' => 512000,
   'max_tokens' => 512000,
@@ -995,7 +936,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 8.0E-8,
   'input_cost_per_token' => 4.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1016,7 +956,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 4.5E-7,
   'output_cost_per_token' => 1.8E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
   'supports_reasoning' => true,
 ),
@@ -1028,7 +967,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 4.0E-8,
   'output_cost_per_token' => 4.0E-8,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -1039,7 +977,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.3E-10,
   'output_cost_per_token' => 1.3E-10,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -1050,7 +987,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1061,7 +997,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1072,7 +1007,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1083,7 +1017,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1094,7 +1027,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1105,7 +1037,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1116,7 +1047,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1127,7 +1057,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1138,7 +1067,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1149,7 +1077,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1160,7 +1087,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1171,7 +1097,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1182,7 +1107,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1193,7 +1117,6 @@ return [
   'max_output_tokens' => 65536,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1204,7 +1127,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1215,7 +1137,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1226,7 +1147,6 @@ return [
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1237,7 +1157,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1248,7 +1167,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1259,7 +1177,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1270,7 +1187,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1281,7 +1197,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1292,7 +1207,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 8.0E-8,
   'output_cost_per_token' => 8.0E-8,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -1303,7 +1217,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1314,7 +1227,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1325,7 +1237,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1336,7 +1247,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1347,7 +1257,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1358,7 +1267,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1369,7 +1277,6 @@ return [
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1380,7 +1287,6 @@ return [
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1391,7 +1297,6 @@ return [
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1402,7 +1307,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1413,7 +1317,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1424,7 +1327,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1435,7 +1337,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1446,7 +1347,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1457,7 +1357,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1468,7 +1367,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1479,7 +1377,6 @@ return [
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1490,7 +1387,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1501,7 +1397,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1512,7 +1407,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1523,7 +1417,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1534,7 +1427,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1545,7 +1437,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1556,7 +1447,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1567,7 +1457,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1578,7 +1467,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1589,7 +1477,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1600,7 +1487,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1611,7 +1497,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1622,7 +1507,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 0.0,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'audio_transcription',
 ),
     array (
@@ -1633,7 +1517,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 0.0,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'audio_transcription',
 ),
     array (
@@ -1644,7 +1527,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1655,7 +1537,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-9,
   'output_cost_per_token' => 1.0E-9,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1666,7 +1547,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 5.0E-10,
   'output_cost_per_token' => 5.0E-10,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -1677,7 +1557,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1688,7 +1567,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 3.5E-10,
   'output_cost_per_token' => 3.5E-10,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -1699,7 +1577,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1710,7 +1587,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1721,7 +1597,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1732,7 +1607,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1743,7 +1617,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1754,7 +1627,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
   'supports_reasoning' => true,
 ),
@@ -1766,7 +1638,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1777,7 +1648,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1788,7 +1658,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1799,7 +1668,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1810,7 +1678,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1821,7 +1688,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1832,7 +1698,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.3E-10,
   'output_cost_per_token' => 1.3E-10,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -1843,7 +1708,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1854,7 +1718,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1865,7 +1728,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1876,7 +1738,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1887,7 +1748,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1898,7 +1758,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1909,7 +1768,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1920,7 +1778,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1931,7 +1788,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1942,7 +1798,6 @@ return [
   'max_output_tokens' => 2048,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1953,7 +1808,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1964,7 +1818,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1975,7 +1828,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1986,7 +1838,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -1997,7 +1848,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2008,7 +1858,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2019,7 +1868,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2030,7 +1878,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2041,7 +1888,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2052,7 +1898,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2063,7 +1908,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2074,7 +1918,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2085,7 +1928,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2096,7 +1938,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2107,7 +1948,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2118,7 +1958,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2129,7 +1968,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2140,7 +1978,6 @@ return [
   'max_output_tokens' => 256000,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2151,7 +1988,6 @@ return [
   'max_output_tokens' => 256000,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2162,7 +1998,6 @@ return [
   'max_output_tokens' => 256000,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2173,7 +2008,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2184,7 +2018,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2195,7 +2028,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2206,7 +2038,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2217,7 +2048,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2228,7 +2058,6 @@ return [
   'max_output_tokens' => 256000,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2239,7 +2068,6 @@ return [
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2250,7 +2078,6 @@ return [
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2261,7 +2088,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2272,7 +2098,6 @@ return [
   'max_output_tokens' => 65536,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2283,7 +2108,6 @@ return [
   'max_output_tokens' => 65536,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2294,7 +2118,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2305,7 +2128,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2316,7 +2138,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2327,7 +2148,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2338,7 +2158,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2349,7 +2168,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2360,7 +2178,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2371,7 +2188,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2382,7 +2198,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2393,7 +2208,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2404,7 +2218,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2415,7 +2228,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2426,7 +2238,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2437,7 +2248,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2448,7 +2258,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2459,7 +2268,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2470,7 +2278,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2481,7 +2288,6 @@ return [
   'max_output_tokens' => 2048,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2492,7 +2298,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2503,7 +2308,6 @@ return [
   'max_output_tokens' => 32064,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2514,7 +2318,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2525,7 +2328,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2536,7 +2338,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2547,7 +2348,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.3E-10,
   'output_cost_per_token' => 1.3E-10,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -2558,7 +2358,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.3E-10,
   'output_cost_per_token' => 1.3E-10,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -2569,7 +2368,6 @@ return [
   'max_output_tokens' => 2048,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2580,7 +2378,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2591,7 +2388,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2602,7 +2398,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2613,7 +2408,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2624,7 +2418,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2635,7 +2428,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2646,7 +2438,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2657,7 +2448,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2668,7 +2458,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2679,7 +2468,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2690,7 +2478,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2701,7 +2488,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2712,7 +2498,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2723,7 +2508,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2734,7 +2518,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2745,7 +2528,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2756,7 +2538,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2767,7 +2548,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2778,7 +2558,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2789,7 +2568,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2800,7 +2578,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2811,7 +2588,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2822,7 +2598,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2833,7 +2608,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2844,7 +2618,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2855,7 +2628,6 @@ return [
   'max_output_tokens' => 65536,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2866,7 +2638,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2877,7 +2648,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2888,7 +2658,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2899,7 +2668,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2910,7 +2678,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2921,7 +2688,6 @@ return [
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2932,7 +2698,6 @@ return [
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2943,7 +2708,6 @@ return [
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2954,7 +2718,6 @@ return [
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2965,7 +2728,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2976,7 +2738,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2987,7 +2748,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -2998,7 +2758,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3009,7 +2768,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3020,7 +2778,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3031,7 +2788,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.2E-7,
   'output_cost_per_token' => 8.8E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3042,7 +2798,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 2.2E-7,
   'output_cost_per_token' => 8.8E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3053,7 +2808,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 2.2E-7,
   'output_cost_per_token' => 8.8E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3064,7 +2818,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3075,7 +2828,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 5.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3086,7 +2838,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3097,7 +2848,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
   'supports_reasoning' => true,
 ),
@@ -3109,7 +2859,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3120,7 +2869,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3131,7 +2879,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
   'supports_reasoning' => true,
 ),
@@ -3143,7 +2890,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3154,7 +2900,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3165,7 +2910,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 0.0,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'embedding',
 ),
     array (
@@ -3176,7 +2920,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 0.0,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'embedding',
 ),
     array (
@@ -3187,7 +2930,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3198,7 +2940,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3209,7 +2950,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 0.0,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'rerank',
 ),
     array (
@@ -3220,7 +2960,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 0.0,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'rerank',
 ),
     array (
@@ -3231,7 +2970,6 @@ return [
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'rerank',
   'source' => 'https://api.fireworks.ai/v1/serverless/models',
 ),
@@ -3243,7 +2981,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 2.2E-7,
   'output_cost_per_token' => 8.8E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3254,7 +2991,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 2.2E-7,
   'output_cost_per_token' => 8.8E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3265,7 +3001,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3276,7 +3011,6 @@ return [
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3287,7 +3021,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3298,7 +3031,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3306,7 +3038,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 8.0E-8,
   'input_cost_per_token' => 4.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -3327,7 +3058,6 @@ return [
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3338,7 +3068,6 @@ return [
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3349,7 +3078,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3360,7 +3088,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.3E-10,
   'output_cost_per_token' => 1.3E-10,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'image_generation',
 ),
     array (
@@ -3371,7 +3098,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3382,7 +3108,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3393,7 +3118,6 @@ return [
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3404,7 +3128,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3415,7 +3138,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3426,7 +3148,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3437,7 +3158,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3448,7 +3168,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3459,7 +3178,6 @@ return [
   'max_output_tokens' => 200000,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3470,7 +3188,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 9.0E-7,
   'output_cost_per_token' => 9.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3481,7 +3198,6 @@ return [
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3492,7 +3208,6 @@ return [
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
 ),
     array (
@@ -3500,7 +3215,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 5.2E-7,
   'input_cost_per_token' => 2.8E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 202800,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3519,7 +3233,6 @@ return [
   'cache_read_input_token_cost' => 3.0E-7,
   'deprecation_date' => '2026-08-27',
   'input_cost_per_token' => 2.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -3538,7 +3251,6 @@ return [
   'cache_read_input_token_cost' => 3.8E-7,
   'deprecation_date' => '2026-08-27',
   'input_cost_per_token' => 1.9E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -3559,7 +3271,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 2.2E-7,
   'input_cost_per_token_priority' => 2.75E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3580,7 +3291,6 @@ return [
   'cache_read_input_token_cost_priority' => 7.5E-9,
   'input_cost_per_token' => 3.0E-7,
   'input_cost_per_token_priority' => 3.75E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -3602,7 +3312,6 @@ return [
   'cache_read_input_token_cost_priority' => 1.125E-8,
   'input_cost_per_token' => 4.5E-7,
   'input_cost_per_token_priority' => 5.625E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -3625,7 +3334,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 2.2E-7,
   'input_cost_per_token_priority' => 2.75E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -3644,7 +3352,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.75E-7,
   'input_cost_per_token' => 3.0E-6,
   'input_cost_per_token_priority' => 3.75E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3672,7 +3379,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 2.2E-7,
   'input_cost_per_token_priority' => 2.75E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3693,7 +3399,6 @@ return [
   'cache_read_input_token_cost_priority' => 7.5E-9,
   'input_cost_per_token' => 3.0E-7,
   'input_cost_per_token_priority' => 3.75E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -3715,7 +3420,6 @@ return [
   'cache_read_input_token_cost_priority' => 1.125E-8,
   'input_cost_per_token' => 4.5E-7,
   'input_cost_per_token_priority' => 5.625E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -3738,7 +3442,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 2.2E-7,
   'input_cost_per_token_priority' => 2.75E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -3756,7 +3459,6 @@ return [
   'cache_read_input_token_cost' => 2.1E-7,
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 2.1E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3775,7 +3477,6 @@ return [
   'cache_read_input_token_cost' => 2.1E-7,
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 2.1E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3795,7 +3496,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.75E-7,
   'input_cost_per_token' => 3.0E-6,
   'input_cost_per_token_priority' => 3.75E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3820,7 +3520,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 4.5E-7,
   'input_cost_per_token' => 4.5E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3846,7 +3545,6 @@ return [
   'cache_read_input_token_cost_priority' => 5.625E-7,
   'input_cost_per_token' => 4.5E-6,
   'input_cost_per_token_priority' => 5.625E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -3873,7 +3571,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.75E-7,
   'input_cost_per_token' => 2.0E-6,
   'input_cost_per_token_priority' => 3.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-6,
@@ -3893,7 +3590,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 3.5E-7,
   'input_cost_per_token_priority' => 5.25E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -3912,16 +3608,16 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.0E-8,
   'cache_read_input_token_cost_priority' => 1.25E-8,
+  'deprecation_date' => '2026-11-07',
   'input_cost_per_token' => 5.0E-8,
   'input_cost_per_token_priority' => 6.25E-8,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'output_cost_per_token_priority' => 2.5E-7,
-  'source' => 'https://docs.fireworks.ai/serverless/pricing',
+  'source' => 'https://api.fireworks.ai/v1/serverless/models?format=nested',
   'supports_function_calling' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
@@ -3933,16 +3629,16 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.2E-7,
   'cache_read_input_token_cost_priority' => 1.5E-7,
+  'deprecation_date' => '2026-11-07',
   'input_cost_per_token' => 6.0E-7,
   'input_cost_per_token_priority' => 7.5E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 2.4E-6,
   'output_cost_per_token_priority' => 3.0E-6,
-  'source' => 'https://api.fireworks.ai/v1/serverless/models',
+  'source' => 'https://api.fireworks.ai/v1/serverless/models?format=nested',
   'supports_function_calling' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
@@ -3957,7 +3653,6 @@ return [
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 3.5E-7,
   'input_cost_per_token_priority' => 5.25E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -3976,7 +3671,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.5E-7,
   'input_cost_per_token' => 1.25E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'mode' => 'chat',
   'output_cost_per_token' => 4.25E-6,
@@ -3989,16 +3683,16 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.0E-8,
   'cache_read_input_token_cost_priority' => 1.25E-8,
+  'deprecation_date' => '2026-11-07',
   'input_cost_per_token' => 5.0E-8,
   'input_cost_per_token_priority' => 6.25E-8,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'output_cost_per_token_priority' => 2.5E-7,
-  'source' => 'https://docs.fireworks.ai/serverless/pricing',
+  'source' => 'https://api.fireworks.ai/v1/serverless/models?format=nested',
   'supports_function_calling' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
@@ -4010,16 +3704,16 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.2E-7,
   'cache_read_input_token_cost_priority' => 1.5E-7,
+  'deprecation_date' => '2026-11-07',
   'input_cost_per_token' => 6.0E-7,
   'input_cost_per_token_priority' => 7.5E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 2.4E-6,
   'output_cost_per_token_priority' => 3.0E-6,
-  'source' => 'https://api.fireworks.ai/v1/serverless/models',
+  'source' => 'https://api.fireworks.ai/v1/serverless/models?format=nested',
   'supports_function_calling' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
@@ -4033,7 +3727,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.75E-7,
   'input_cost_per_token' => 2.0E-6,
   'input_cost_per_token_priority' => 3.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-6,
@@ -4051,7 +3744,6 @@ return [
   'cache_read_input_token_cost' => 2.1E-7,
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 2.1E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -4070,7 +3762,6 @@ return [
   'cache_read_input_token_cost' => 2.1E-7,
   'deprecation_date' => '2026-09-25',
   'input_cost_per_token' => 2.1E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -4088,7 +3779,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 4.5E-7,
   'input_cost_per_token' => 4.5E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -4114,7 +3804,6 @@ return [
   'cache_read_input_token_cost_priority' => 5.625E-7,
   'input_cost_per_token' => 4.5E-6,
   'input_cost_per_token_priority' => 5.625E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -4141,7 +3830,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.25E-7,
   'input_cost_per_token' => 1.4E-6,
   'input_cost_per_token_priority' => 1.75E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -4162,7 +3850,6 @@ return [
   'cache_read_input_token_cost_priority' => 4.875E-7,
   'input_cost_per_token' => 2.1E-6,
   'input_cost_per_token_priority' => 2.625E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -4183,7 +3870,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.25E-7,
   'input_cost_per_token' => 1.4E-6,
   'input_cost_per_token_priority' => 1.75E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -4204,7 +3890,6 @@ return [
   'cache_read_input_token_cost_priority' => 4.875E-7,
   'input_cost_per_token' => 2.1E-6,
   'input_cost_per_token_priority' => 2.625E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -4223,7 +3908,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 3.9E-7,
   'input_cost_per_token' => 2.1E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -4238,7 +3922,6 @@ return [
     array (
   'id' => 'fireworks_ai/accounts/fireworks/routers/auto',
   'provider' => 'fireworks_ai',
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
   'source' => 'https://docs.fireworks.ai/nexus/firerouter#example-router-ids',
   'supports_function_calling' => true,
@@ -4249,7 +3932,6 @@ return [
     array (
   'id' => 'fireworks_ai/accounts/fireworks/routers/auto-instant',
   'provider' => 'fireworks_ai',
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
   'source' => 'https://docs.fireworks.ai/nexus/firerouter#example-router-ids',
   'supports_function_calling' => true,
@@ -4260,7 +3942,6 @@ return [
     array (
   'id' => 'fireworks_ai/accounts/fireworks/routers/firerouter',
   'provider' => 'fireworks_ai',
-  'litellm_provider' => 'fireworks_ai',
   'mode' => 'chat',
   'source' => 'https://docs.fireworks.ai/nexus/firerouter#example-router-ids',
   'supports_function_calling' => true,
@@ -4273,7 +3954,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 3.9E-7,
   'input_cost_per_token' => 2.1E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -4292,7 +3972,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.75E-8,
   'input_cost_per_token' => 1.5E-7,
   'input_cost_per_token_priority' => 1.875E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -4311,7 +3990,6 @@ return [
   'cache_read_input_token_cost_priority' => 5.625E-8,
   'input_cost_per_token' => 2.25E-7,
   'input_cost_per_token_priority' => 2.8125E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -4330,7 +4008,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.75E-8,
   'input_cost_per_token' => 1.5E-7,
   'input_cost_per_token_priority' => 1.875E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -4349,7 +4026,6 @@ return [
   'cache_read_input_token_cost_priority' => 5.625E-8,
   'input_cost_per_token' => 2.25E-7,
   'input_cost_per_token_priority' => 2.8125E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -4366,9 +4042,9 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 1.7E-7,
   'cache_read_input_token_cost_priority' => 1.7E-7,
+  'deprecation_date' => '2026-11-07',
   'input_cost_per_token' => 1.0E-6,
   'input_cost_per_token_priority' => 1.0E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_tokens' => 1048576,
   'mode' => 'chat',
@@ -4385,7 +4061,6 @@ return [
   'provider' => 'fireworks_ai',
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 40960,
   'max_output_tokens' => 40960,
   'max_tokens' => 40960,
@@ -4400,7 +4075,6 @@ return [
   'deprecation_date' => '2026-08-27',
   'input_cost_per_token' => 1.2E-6,
   'input_cost_per_token_priority' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -4420,7 +4094,6 @@ return [
   'cache_read_input_token_cost_priority' => 6.0E-7,
   'deprecation_date' => '2026-08-27',
   'input_cost_per_token_priority' => 1.2E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 196608,
   'max_output_tokens' => 196608,
   'max_tokens' => 196608,
@@ -4436,7 +4109,6 @@ return [
   'provider' => 'fireworks_ai',
   'cache_read_input_token_cost' => 8.4E-9,
   'input_cost_per_token' => 4.2E-8,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 262144,
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
@@ -4449,7 +4121,6 @@ return [
   'cache_read_input_token_cost_priority' => 3.75E-7,
   'input_cost_per_token' => 3.0E-6,
   'input_cost_per_token_priority' => 3.75E-6,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-5,
@@ -4468,7 +4139,6 @@ return [
   'cache_read_input_token_cost_priority' => 7.5E-9,
   'input_cost_per_token' => 3.0E-7,
   'input_cost_per_token_priority' => 3.75E-7,
-  'litellm_provider' => 'fireworks_ai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -4476,11 +4146,31 @@ return [
   'output_cost_per_token' => 1.2E-6,
   'output_cost_per_token_priority' => 1.5E-6,
   'source' => 'https://api.fireworks.ai/v1/serverless/models?format=nested',
-  'supports_function_calling' => false,
+  'supports_function_calling' => true,
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
-  'supports_tool_choice' => false,
+  'supports_tool_choice' => true,
+  'supports_vision' => true,
+),
+    array (
+  'id' => 'fireworks_ai/accounts/fireworks/models/minimax-m3p1-flash',
+  'provider' => 'fireworks_ai',
+  'cache_read_input_token_cost' => 1.5E-8,
+  'cache_read_input_token_cost_priority' => 2.25E-8,
+  'input_cost_per_token' => 1.5E-7,
+  'input_cost_per_token_priority' => 2.25E-7,
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
+  'max_tokens' => 1048576,
+  'mode' => 'chat',
+  'output_cost_per_token' => 6.0E-7,
+  'output_cost_per_token_priority' => 9.0E-7,
+  'source' => 'https://platform.minimax.io/docs/guides/pricing',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
   'supports_vision' => true,
 ),
 ];

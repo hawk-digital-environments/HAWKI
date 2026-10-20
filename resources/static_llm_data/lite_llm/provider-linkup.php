@@ -10,14 +10,12 @@ return [
   'id' => 'linkup/search',
   'provider' => 'linkup',
   'input_cost_per_query' => 0.00587,
-  'litellm_provider' => 'linkup',
   'mode' => 'search',
 ),
     array (
   'id' => 'linkup/search-deep',
   'provider' => 'linkup',
   'input_cost_per_query' => 0.05867,
-  'litellm_provider' => 'linkup',
   'mode' => 'search',
 ),
 ];

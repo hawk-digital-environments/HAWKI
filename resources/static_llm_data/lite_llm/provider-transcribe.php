@@ -10,7 +10,6 @@ return [
   'id' => 'transcribe/StartTranscriptionJob',
   'provider' => 'transcribe',
   'input_cost_per_second' => 0.0001,
-  'litellm_provider' => 'transcribe',
   'mode' => 'audio_transcription',
   'output_cost_per_second' => 0.0,
   'source' => 'https://aws.amazon.com/transcribe/pricing/',

@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'aiml/dall-e-2',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'DALL-E 2 via AI/ML API - Reliable text-to-image generation',
@@ -25,7 +24,6 @@ return [
     array (
   'id' => 'aiml/dall-e-3',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'DALL-E 3 via AI/ML API - High-quality text-to-image generation',
@@ -41,7 +39,6 @@ return [
     array (
   'id' => 'aiml/flux-pro',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'Flux Dev - Development version optimized for experimentation',
@@ -57,7 +54,6 @@ return [
     array (
   'id' => 'aiml/flux-pro/v1.1',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.052,
   'supported_endpoints' => 
@@ -68,7 +64,6 @@ return [
     array (
   'id' => 'aiml/flux-pro/v1.1-ultra',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.063,
   'supported_endpoints' => 
@@ -79,7 +74,6 @@ return [
     array (
   'id' => 'aiml/flux-realism',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'Flux Pro - Professional-grade image generation model',
@@ -95,7 +89,6 @@ return [
     array (
   'id' => 'aiml/flux/dev',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'Flux Dev - Development version optimized for experimentation',
@@ -111,7 +104,6 @@ return [
     array (
   'id' => 'aiml/flux/kontext-max/text-to-image',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'Flux Pro v1.1 - Enhanced version with improved capabilities and 6x faster inference speed',
@@ -127,7 +119,6 @@ return [
     array (
   'id' => 'aiml/flux/kontext-pro/text-to-image',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'Flux Pro v1.1 - Enhanced version with improved capabilities and 6x faster inference speed',
@@ -143,7 +134,6 @@ return [
     array (
   'id' => 'aiml/flux/schnell',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'Flux Schnell - Fast generation model optimized for speed',
@@ -159,7 +149,6 @@ return [
     array (
   'id' => 'aiml/google/imagen-4.0-ultra-generate-001',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'Imagen 4.0 Ultra Generate API - Photorealistic image generation with precise text rendering',
@@ -175,7 +164,6 @@ return [
     array (
   'id' => 'aiml/google/nano-banana-pro',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'Gemini 3 Pro Image (Nano Banana Pro) - Advanced text-to-image generation with reasoning and 4K resolution support',
@@ -191,7 +179,6 @@ return [
     array (
   'id' => 'aiml/openai/gpt-image-2',
   'provider' => 'aiml',
-  'litellm_provider' => 'aiml',
   'metadata' => 
   array (
     'notes' => 'OpenAI gpt-image-2 via AI/ML API - flagship multimodal image generation and editing model with reasoning and 2K output. output_cost_per_image is AI/ML\'s published medium-quality rate; like the other aiml image entries it is billed as a flat per-image price',

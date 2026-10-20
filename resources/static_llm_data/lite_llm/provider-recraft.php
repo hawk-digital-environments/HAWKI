@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'recraft/recraftv2',
   'provider' => 'recraft',
-  'litellm_provider' => 'recraft',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.022,
   'source' => 'https://www.recraft.ai/docs#pricing',
@@ -21,7 +20,6 @@ return [
     array (
   'id' => 'recraft/recraftv3',
   'provider' => 'recraft',
-  'litellm_provider' => 'recraft',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.04,
   'source' => 'https://www.recraft.ai/docs#pricing',

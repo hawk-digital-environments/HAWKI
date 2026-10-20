@@ -10,14 +10,12 @@ return [
   'id' => 'perplexity/search',
   'provider' => 'perplexity',
   'input_cost_per_query' => 0.005,
-  'litellm_provider' => 'perplexity',
   'mode' => 'search',
 ),
     array (
   'id' => 'perplexity/codellama-34b-instruct',
   'provider' => 'perplexity',
   'input_cost_per_token' => 3.5E-7,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 16384,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -28,7 +26,6 @@ return [
   'id' => 'perplexity/codellama-70b-instruct',
   'provider' => 'perplexity',
   'input_cost_per_token' => 7.0E-7,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 16384,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -39,7 +36,6 @@ return [
   'id' => 'perplexity/llama-2-70b-chat',
   'provider' => 'perplexity',
   'input_cost_per_token' => 7.0E-7,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -50,7 +46,6 @@ return [
   'id' => 'perplexity/llama-3.1-70b-instruct',
   'provider' => 'perplexity',
   'input_cost_per_token' => 1.0E-6,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -61,7 +56,6 @@ return [
   'id' => 'perplexity/llama-3.1-8b-instruct',
   'provider' => 'perplexity',
   'input_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -72,7 +66,6 @@ return [
   'id' => 'perplexity/mistral-7b-instruct',
   'provider' => 'perplexity',
   'input_cost_per_token' => 7.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -83,7 +76,6 @@ return [
   'id' => 'perplexity/mixtral-8x7b-instruct',
   'provider' => 'perplexity',
   'input_cost_per_token' => 7.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -94,7 +86,6 @@ return [
   'id' => 'perplexity/pplx-70b-chat',
   'provider' => 'perplexity',
   'input_cost_per_token' => 7.0E-7,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -106,7 +97,6 @@ return [
   'provider' => 'perplexity',
   'input_cost_per_request' => 0.005,
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -117,7 +107,6 @@ return [
   'id' => 'perplexity/pplx-7b-chat',
   'provider' => 'perplexity',
   'input_cost_per_token' => 7.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -129,7 +118,6 @@ return [
   'provider' => 'perplexity',
   'input_cost_per_request' => 0.005,
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -140,7 +128,6 @@ return [
   'id' => 'perplexity/pplx-decider-v1-27b',
   'provider' => 'perplexity',
   'input_cost_per_token' => 2.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 262144,
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
@@ -150,7 +137,6 @@ return [
   'id' => 'perplexity/pplx-decider-v1.1-27b',
   'provider' => 'perplexity',
   'input_cost_per_token' => 2.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 262144,
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
@@ -160,7 +146,6 @@ return [
   'id' => 'perplexity/pplx-decider-v1.2',
   'provider' => 'perplexity',
   'input_cost_per_token' => 2.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 262144,
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
@@ -170,7 +155,6 @@ return [
   'id' => 'perplexity/pplx-decider-latest',
   'provider' => 'perplexity',
   'input_cost_per_token' => 2.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 262144,
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
@@ -180,7 +164,6 @@ return [
   'id' => 'perplexity/pplx-decider-flash-v1.2',
   'provider' => 'perplexity',
   'input_cost_per_token' => 1.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 262144,
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
@@ -190,7 +173,6 @@ return [
   'id' => 'perplexity/pplx-decider-flash-latest',
   'provider' => 'perplexity',
   'input_cost_per_token' => 1.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 262144,
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
@@ -200,7 +182,6 @@ return [
   'id' => 'perplexity/sonar',
   'provider' => 'perplexity',
   'input_cost_per_token' => 1.0E-6,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 128000,
   'max_tokens' => 128000,
   'mode' => 'chat',
@@ -218,7 +199,6 @@ return [
   'provider' => 'perplexity',
   'citation_cost_per_token' => 2.0E-6,
   'input_cost_per_token' => 2.0E-6,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 128000,
   'max_tokens' => 128000,
   'mode' => 'chat',
@@ -237,7 +217,6 @@ return [
   'id' => 'perplexity/sonar-medium-chat',
   'provider' => 'perplexity',
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 16384,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -249,7 +228,6 @@ return [
   'provider' => 'perplexity',
   'input_cost_per_request' => 0.005,
   'input_cost_per_token' => 0,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 12000,
   'max_output_tokens' => 12000,
   'max_tokens' => 12000,
@@ -260,7 +238,6 @@ return [
   'id' => 'perplexity/sonar-pro',
   'provider' => 'perplexity',
   'input_cost_per_token' => 3.0E-6,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 200000,
   'max_output_tokens' => 8000,
   'max_tokens' => 8000,
@@ -278,7 +255,6 @@ return [
   'id' => 'perplexity/sonar-reasoning',
   'provider' => 'perplexity',
   'input_cost_per_token' => 1.0E-6,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 128000,
   'max_tokens' => 128000,
   'mode' => 'chat',
@@ -296,7 +272,6 @@ return [
   'id' => 'perplexity/sonar-reasoning-pro',
   'provider' => 'perplexity',
   'input_cost_per_token' => 2.0E-6,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 128000,
   'max_tokens' => 128000,
   'mode' => 'chat',
@@ -314,7 +289,6 @@ return [
   'id' => 'perplexity/sonar-small-chat',
   'provider' => 'perplexity',
   'input_cost_per_token' => 7.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 16384,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -326,7 +300,6 @@ return [
   'provider' => 'perplexity',
   'input_cost_per_request' => 0.005,
   'input_cost_per_token' => 0,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 12000,
   'max_output_tokens' => 12000,
   'max_tokens' => 12000,
@@ -336,7 +309,6 @@ return [
     array (
   'id' => 'perplexity/preset/fast-search',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -344,7 +316,6 @@ return [
     array (
   'id' => 'perplexity/preset/pro-search',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -352,7 +323,6 @@ return [
     array (
   'id' => 'perplexity/preset/deep-research',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -360,7 +330,6 @@ return [
     array (
   'id' => 'perplexity/preset/advanced-deep-research',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -368,7 +337,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.2',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => true,
@@ -381,7 +349,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.1',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -394,7 +361,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5-mini',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -409,7 +375,6 @@ return [
   'provider' => 'perplexity',
   'supports_adaptive_thinking' => true,
   'supports_legacy_thinking' => true,
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -424,7 +389,6 @@ return [
   'id' => 'perplexity/anthropic/claude-opus-4-7',
   'provider' => 'perplexity',
   'supports_adaptive_thinking' => true,
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -438,7 +402,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-opus-4-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -452,7 +415,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-sonnet-4-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -465,7 +427,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-haiku-4-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -478,7 +439,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3-pro-preview',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -487,7 +447,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3-flash-preview',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -500,7 +459,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-2.5-pro',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -509,7 +467,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-2.5-flash',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -519,7 +476,6 @@ return [
     array (
   'id' => 'perplexity/xai/grok-4-1-fast-non-reasoning',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -528,7 +484,6 @@ return [
     array (
   'id' => 'perplexity/perplexity/sonar',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_reasoning' => false,
@@ -543,7 +498,6 @@ return [
   'provider' => 'perplexity',
   'cache_read_input_token_cost' => 2.8E-8,
   'input_cost_per_token' => 1.3E-7,
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'output_cost_per_token' => 2.6E-7,
   'source' => 'https://docs.perplexity.ai/docs/agent-api/models',
@@ -554,7 +508,6 @@ return [
     array (
   'id' => 'perplexity/perplexity/deepseek-v4-pro-0813',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 1.32E-6,
   'output_cost_per_token' => 3.96E-6,
@@ -566,7 +519,6 @@ return [
   'provider' => 'perplexity',
   'cache_read_input_token_cost' => 1.4E-7,
   'input_cost_per_token' => 1.4E-6,
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'output_cost_per_token' => 4.4E-6,
   'source' => 'https://docs.perplexity.ai/docs/agent-api/models',
@@ -579,7 +531,6 @@ return [
   'provider' => 'perplexity',
   'cache_read_input_token_cost' => 3.0E-7,
   'input_cost_per_token' => 3.0E-6,
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'output_cost_per_token' => 1.5E-5,
   'reasoning_effort_levels' => 
@@ -601,7 +552,6 @@ return [
   'provider' => 'perplexity',
   'cache_read_input_token_cost' => 1.9E-7,
   'input_cost_per_token' => 9.5E-7,
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'output_cost_per_token' => 4.0E-6,
   'source' => 'https://docs.perplexity.ai/docs/agent-api/models',
@@ -613,7 +563,6 @@ return [
   'id' => 'perplexity/pplx-embed-v1-0.6b',
   'provider' => 'perplexity',
   'input_cost_per_token' => 4.0E-9,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'embedding',
@@ -625,7 +574,6 @@ return [
   'id' => 'perplexity/pplx-embed-v1-4b',
   'provider' => 'perplexity',
   'input_cost_per_token' => 3.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'embedding',
@@ -637,7 +585,6 @@ return [
   'id' => 'perplexity/pplx-embed-context-v1-0.6b',
   'provider' => 'perplexity',
   'input_cost_per_token' => 8.0E-9,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'embedding',
@@ -649,7 +596,6 @@ return [
   'id' => 'perplexity/pplx-embed-context-v1-4b',
   'provider' => 'perplexity',
   'input_cost_per_token' => 5.0E-8,
-  'litellm_provider' => 'perplexity',
   'max_input_tokens' => 32768,
   'max_tokens' => 32768,
   'mode' => 'embedding',
@@ -660,7 +606,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-fable-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_adaptive_thinking' => true,
   'thinking_always_on' => true,
@@ -674,7 +619,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-opus-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_adaptive_thinking' => true,
   'prompt_cache_min_tokens' => 512,
@@ -688,7 +632,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-opus-4-8',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_adaptive_thinking' => true,
   'supports_web_search' => true,
@@ -701,7 +644,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-sonnet-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_adaptive_thinking' => true,
   'supports_web_search' => true,
@@ -714,7 +656,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-sonnet-4-6',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -726,7 +667,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.6-sol',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -741,7 +681,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.6-terra',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -756,7 +695,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.6-luna',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -771,7 +709,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -785,7 +722,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.4',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -799,7 +735,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.4-mini',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -811,7 +746,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.4-nano',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -823,7 +757,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -835,7 +768,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5-nano',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 5.0E-8,
   'output_cost_per_token' => 4.0E-7,
@@ -845,7 +777,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-5.3-codex',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 3.5E-6,
   'output_cost_per_token' => 2.8E-5,
@@ -855,7 +786,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3.1-pro-preview',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -870,7 +800,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3.1-flash-lite',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -882,7 +811,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3.5-flash',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -894,7 +822,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3.5-flash-lite',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -906,7 +833,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3.6-flash',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -918,7 +844,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3.7-flash',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -930,7 +855,6 @@ return [
     array (
   'id' => 'perplexity/xai/grok-4.6',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -945,7 +869,6 @@ return [
     array (
   'id' => 'perplexity/xai/grok-4.5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -960,7 +883,6 @@ return [
     array (
   'id' => 'perplexity/xai/grok-4.3',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -974,7 +896,6 @@ return [
     array (
   'id' => 'perplexity/xai/grok-4.20-reasoning',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -988,7 +909,6 @@ return [
     array (
   'id' => 'perplexity/xai/grok-4.20-non-reasoning',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -1002,7 +922,6 @@ return [
     array (
   'id' => 'perplexity/xai/grok-4.20-multi-agent',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -1016,7 +935,6 @@ return [
     array (
   'id' => 'perplexity/perplexity/glm-5.3',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -1028,7 +946,6 @@ return [
     array (
   'id' => 'perplexity/perplexity/glm-5.3-flash',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -1040,7 +957,6 @@ return [
     array (
   'id' => 'perplexity/perplexity/nemotron-3.5-lightning-30b-a3b',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -1053,7 +969,6 @@ return [
     array (
   'id' => 'perplexity/perplexity/nemotron-3-ultra-550b-a55b',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_web_search' => true,
   'supports_function_calling' => true,
@@ -1066,7 +981,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-sonnet-5-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_adaptive_thinking' => true,
   'supports_web_search' => true,
@@ -1079,7 +993,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-fable-5-1',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 1.0E-5,
   'output_cost_per_token' => 5.0E-5,
@@ -1089,7 +1002,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-opus-5-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 4.0E-6,
   'output_cost_per_token' => 2.0E-5,
@@ -1099,7 +1011,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-6.1-sol',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 2.0E-6,
   'output_cost_per_token' => 1.0E-5,
@@ -1112,7 +1023,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-6-sol',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 2.0E-6,
   'output_cost_per_token' => 1.0E-5,
@@ -1125,7 +1035,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-6-astra',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 1.0E-5,
   'output_cost_per_token' => 5.0E-5,
@@ -1136,7 +1045,6 @@ return [
     array (
   'id' => 'perplexity/openai/gpt-6-luna',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 5.0E-7,
@@ -1149,7 +1057,6 @@ return [
     array (
   'id' => 'perplexity/google/gemini-3.8-flash',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 7.5E-7,
   'output_cost_per_token' => 3.75E-6,
@@ -1159,7 +1066,6 @@ return [
     array (
   'id' => 'perplexity/xai/grok-4.7',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'input_cost_per_token' => 2.0E-6,
   'output_cost_per_token' => 6.0E-6,
@@ -1172,7 +1078,6 @@ return [
     array (
   'id' => 'perplexity/anthropic/claude-haiku-5-5',
   'provider' => 'perplexity',
-  'litellm_provider' => 'perplexity',
   'mode' => 'responses',
   'supports_adaptive_thinking' => true,
   'supports_web_search' => true,

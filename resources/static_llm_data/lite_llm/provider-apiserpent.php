@@ -10,7 +10,6 @@ return [
   'id' => 'apiserpent/search',
   'provider' => 'apiserpent',
   'input_cost_per_query' => 0.0006,
-  'litellm_provider' => 'apiserpent',
   'mode' => 'search',
   'metadata' => 
   array (
@@ -21,7 +20,6 @@ return [
   'id' => 'apiserpent/deep_search',
   'provider' => 'apiserpent',
   'input_cost_per_query' => 0.0006,
-  'litellm_provider' => 'apiserpent',
   'mode' => 'search',
   'metadata' => 
   array (

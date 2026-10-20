@@ -10,7 +10,6 @@ return [
   'id' => 'tinyfish/search',
   'provider' => 'tinyfish',
   'input_cost_per_query' => 0.0,
-  'litellm_provider' => 'tinyfish',
   'mode' => 'search',
   'metadata' => 
   array (

@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'friendliai/zai-org/GLM-5.3-Flash',
   'provider' => 'friendliai',
-  'litellm_provider' => 'friendliai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'max_tokens' => 1048576,
@@ -40,7 +39,6 @@ return [
     array (
   'id' => 'friendliai/zai-org/GLM-5.3',
   'provider' => 'friendliai',
-  'litellm_provider' => 'friendliai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'max_tokens' => 1048576,
@@ -71,7 +69,6 @@ return [
     array (
   'id' => 'friendliai/google/gemma-4-31B-it',
   'provider' => 'friendliai',
-  'litellm_provider' => 'friendliai',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'max_tokens' => 262144,
@@ -98,7 +95,6 @@ return [
     array (
   'id' => 'friendliai/zai-org/GLM-5.2',
   'provider' => 'friendliai',
-  'litellm_provider' => 'friendliai',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'max_tokens' => 1048576,
@@ -128,7 +124,6 @@ return [
     array (
   'id' => 'friendliai/deepseek-ai/DeepSeek-V3.2',
   'provider' => 'friendliai',
-  'litellm_provider' => 'friendliai',
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'max_tokens' => 163840,
@@ -156,7 +151,6 @@ return [
     array (
   'id' => 'friendliai/MiniMaxAI/MiniMax-M2.5',
   'provider' => 'friendliai',
-  'litellm_provider' => 'friendliai',
   'max_input_tokens' => 196608,
   'max_output_tokens' => 196608,
   'max_tokens' => 196608,
@@ -184,7 +178,6 @@ return [
     array (
   'id' => 'friendliai/zai-org/GLM-5.1',
   'provider' => 'friendliai',
-  'litellm_provider' => 'friendliai',
   'max_input_tokens' => 202752,
   'max_output_tokens' => 202752,
   'max_tokens' => 202752,

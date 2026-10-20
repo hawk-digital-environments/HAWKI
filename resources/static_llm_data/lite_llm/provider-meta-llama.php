@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'meta_llama/Llama-3.3-70B-Instruct',
   'provider' => 'meta_llama',
-  'litellm_provider' => 'meta_llama',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4028,
   'max_tokens' => 4028,
@@ -29,7 +28,6 @@ return [
     array (
   'id' => 'meta_llama/Llama-3.3-8B-Instruct',
   'provider' => 'meta_llama',
-  'litellm_provider' => 'meta_llama',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4028,
   'max_tokens' => 4028,
@@ -49,7 +47,6 @@ return [
     array (
   'id' => 'meta_llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
   'provider' => 'meta_llama',
-  'litellm_provider' => 'meta_llama',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 4028,
   'max_tokens' => 4028,
@@ -70,7 +67,6 @@ return [
     array (
   'id' => 'meta_llama/Llama-4-Scout-17B-16E-Instruct-FP8',
   'provider' => 'meta_llama',
-  'litellm_provider' => 'meta_llama',
   'max_input_tokens' => 10000000,
   'max_output_tokens' => 4028,
   'max_tokens' => 4028,

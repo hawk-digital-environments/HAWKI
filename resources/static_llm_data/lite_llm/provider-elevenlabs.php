@@ -10,7 +10,6 @@ return [
   'id' => 'elevenlabs/scribe_v1',
   'provider' => 'elevenlabs',
   'input_cost_per_second' => 6.11E-5,
-  'litellm_provider' => 'elevenlabs',
   'metadata' => 
   array (
     'calculation' => '$0.22/hour = $0.00366/minute = $0.0000611 per second (enterprise pricing)',
@@ -29,7 +28,6 @@ return [
   'id' => 'elevenlabs/scribe_v1_experimental',
   'provider' => 'elevenlabs',
   'input_cost_per_second' => 6.11E-5,
-  'litellm_provider' => 'elevenlabs',
   'metadata' => 
   array (
     'calculation' => '$0.22/hour = $0.00366/minute = $0.0000611 per second (enterprise pricing)',
@@ -48,7 +46,6 @@ return [
   'id' => 'elevenlabs/eleven_v3',
   'provider' => 'elevenlabs',
   'input_cost_per_character' => 0.00018,
-  'litellm_provider' => 'elevenlabs',
   'metadata' => 
   array (
     'calculation' => '$0.18/1000 characters (Scale plan pricing, 1 credit per character)',
@@ -65,7 +62,6 @@ return [
   'id' => 'elevenlabs/eleven_multilingual_v2',
   'provider' => 'elevenlabs',
   'input_cost_per_character' => 0.00018,
-  'litellm_provider' => 'elevenlabs',
   'metadata' => 
   array (
     'calculation' => '$0.18/1000 characters (Scale plan pricing, 1 credit per character)',
@@ -82,7 +78,6 @@ return [
   'id' => 'elevenlabs/scribe_v2',
   'provider' => 'elevenlabs',
   'input_cost_per_second' => 6.11E-5,
-  'litellm_provider' => 'elevenlabs',
   'mode' => 'audio_transcription',
   'output_cost_per_second' => 0.0,
   'source' => 'https://elevenlabs.io/pricing/api',

@@ -10,7 +10,6 @@ return [
   'id' => 'deepgram/base',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0125/60 seconds = $0.00020833 per second',
@@ -28,7 +27,6 @@ return [
   'id' => 'deepgram/base-conversationalai',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0125/60 seconds = $0.00020833 per second',
@@ -46,7 +44,6 @@ return [
   'id' => 'deepgram/base-finance',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0125/60 seconds = $0.00020833 per second',
@@ -64,7 +61,6 @@ return [
   'id' => 'deepgram/base-general',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0125/60 seconds = $0.00020833 per second',
@@ -82,7 +78,6 @@ return [
   'id' => 'deepgram/base-meeting',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0125/60 seconds = $0.00020833 per second',
@@ -100,7 +95,6 @@ return [
   'id' => 'deepgram/base-phonecall',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0125/60 seconds = $0.00020833 per second',
@@ -118,7 +112,6 @@ return [
   'id' => 'deepgram/base-video',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0125/60 seconds = $0.00020833 per second',
@@ -136,7 +129,6 @@ return [
   'id' => 'deepgram/base-voicemail',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0125/60 seconds = $0.00020833 per second',
@@ -154,7 +146,6 @@ return [
   'id' => 'deepgram/enhanced',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00024167,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0145/60 seconds = $0.00024167 per second',
@@ -172,7 +163,6 @@ return [
   'id' => 'deepgram/enhanced-finance',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00024167,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0145/60 seconds = $0.00024167 per second',
@@ -190,7 +180,6 @@ return [
   'id' => 'deepgram/enhanced-general',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00024167,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0145/60 seconds = $0.00024167 per second',
@@ -208,7 +197,6 @@ return [
   'id' => 'deepgram/enhanced-meeting',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00024167,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0145/60 seconds = $0.00024167 per second',
@@ -226,7 +214,6 @@ return [
   'id' => 'deepgram/enhanced-phonecall',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00024167,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0145/60 seconds = $0.00024167 per second',
@@ -244,7 +231,6 @@ return [
   'id' => 'deepgram/nova',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -262,7 +248,6 @@ return [
   'id' => 'deepgram/nova-2',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -280,7 +265,6 @@ return [
   'id' => 'deepgram/nova-2-atc',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -298,7 +282,6 @@ return [
   'id' => 'deepgram/nova-2-automotive',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -316,7 +299,6 @@ return [
   'id' => 'deepgram/nova-2-conversationalai',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -334,7 +316,6 @@ return [
   'id' => 'deepgram/nova-2-drivethru',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -352,7 +333,6 @@ return [
   'id' => 'deepgram/nova-2-finance',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -370,7 +350,6 @@ return [
   'id' => 'deepgram/nova-2-general',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -388,7 +367,6 @@ return [
   'id' => 'deepgram/nova-2-meeting',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -406,7 +384,6 @@ return [
   'id' => 'deepgram/nova-2-phonecall',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -424,7 +401,6 @@ return [
   'id' => 'deepgram/nova-2-video',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -442,7 +418,6 @@ return [
   'id' => 'deepgram/nova-2-voicemail',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -460,7 +435,6 @@ return [
   'id' => 'deepgram/nova-3',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -478,7 +452,6 @@ return [
   'id' => 'deepgram/nova-3-general',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -496,7 +469,6 @@ return [
   'id' => 'deepgram/nova-3-medical',
   'provider' => 'deepgram',
   'input_cost_per_second' => 8.667E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0052/60 seconds = $0.00008667 per second (multilingual)',
@@ -514,7 +486,6 @@ return [
   'id' => 'deepgram/nova-general',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -532,7 +503,6 @@ return [
   'id' => 'deepgram/nova-phonecall',
   'provider' => 'deepgram',
   'input_cost_per_second' => 7.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0043/60 seconds = $0.00007167 per second',
@@ -550,7 +520,6 @@ return [
   'id' => 'deepgram/streaming/nova-3',
   'provider' => 'deepgram',
   'input_cost_per_second' => 8.0E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0048/60 seconds = $0.00008000 per second',
@@ -569,7 +538,6 @@ return [
   'id' => 'deepgram/streaming/nova-3-multilingual',
   'provider' => 'deepgram',
   'input_cost_per_second' => 9.667E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0058/60 seconds = $0.00009667 per second',
@@ -588,7 +556,6 @@ return [
   'id' => 'deepgram/streaming/redact',
   'provider' => 'deepgram',
   'input_cost_per_second' => 3.333E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0020/60 seconds = $0.00003333 per second',
@@ -607,7 +574,6 @@ return [
   'id' => 'deepgram/streaming/keyterm',
   'provider' => 'deepgram',
   'input_cost_per_second' => 2.167E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0013/60 seconds = $0.00002167 per second',
@@ -626,7 +592,6 @@ return [
   'id' => 'deepgram/streaming/detect_entities',
   'provider' => 'deepgram',
   'input_cost_per_second' => 2.833E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0017/60 seconds = $0.00002833 per second',
@@ -645,7 +610,6 @@ return [
   'id' => 'deepgram/streaming/diarize',
   'provider' => 'deepgram',
   'input_cost_per_second' => 3.333E-5,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'calculation' => '$0.0020/60 seconds = $0.00003333 per second',
@@ -664,7 +628,6 @@ return [
   'id' => 'deepgram/whisper',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.0001,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'notes' => 'Deepgram\'s hosted OpenAI Whisper models - pricing may differ from native Deepgram models',
@@ -681,7 +644,6 @@ return [
   'id' => 'deepgram/whisper-base',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.0001,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'notes' => 'Deepgram\'s hosted OpenAI Whisper models - pricing may differ from native Deepgram models',
@@ -698,7 +660,6 @@ return [
   'id' => 'deepgram/whisper-large',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.0001,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'notes' => 'Deepgram\'s hosted OpenAI Whisper models - pricing may differ from native Deepgram models',
@@ -715,7 +676,6 @@ return [
   'id' => 'deepgram/whisper-medium',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.0001,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'notes' => 'Deepgram\'s hosted OpenAI Whisper models - pricing may differ from native Deepgram models',
@@ -732,7 +692,6 @@ return [
   'id' => 'deepgram/whisper-small',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.0001,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'notes' => 'Deepgram\'s hosted OpenAI Whisper models - pricing may differ from native Deepgram models',
@@ -749,7 +708,6 @@ return [
   'id' => 'deepgram/whisper-tiny',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.0001,
-  'litellm_provider' => 'deepgram',
   'metadata' => 
   array (
     'notes' => 'Deepgram\'s hosted OpenAI Whisper models - pricing may differ from native Deepgram models',

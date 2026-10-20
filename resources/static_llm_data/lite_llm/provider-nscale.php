@@ -10,7 +10,6 @@ return [
   'id' => 'nscale/Qwen/QwQ-32B',
   'provider' => 'nscale',
   'input_cost_per_token' => 1.8E-7,
-  'litellm_provider' => 'nscale',
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'source' => 'https://docs.nscale.com/docs/inference/serverless-models/current#chat-models',
@@ -19,7 +18,6 @@ return [
   'id' => 'nscale/Qwen/Qwen2.5-Coder-32B-Instruct',
   'provider' => 'nscale',
   'input_cost_per_token' => 6.0E-8,
-  'litellm_provider' => 'nscale',
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'source' => 'https://docs.nscale.com/docs/inference/serverless-models/current#chat-models',
@@ -28,7 +26,6 @@ return [
   'id' => 'nscale/Qwen/Qwen2.5-Coder-3B-Instruct',
   'provider' => 'nscale',
   'input_cost_per_token' => 1.0E-8,
-  'litellm_provider' => 'nscale',
   'mode' => 'chat',
   'output_cost_per_token' => 3.0E-8,
   'source' => 'https://docs.nscale.com/docs/inference/serverless-models/current#chat-models',
@@ -37,7 +34,6 @@ return [
   'id' => 'nscale/Qwen/Qwen2.5-Coder-7B-Instruct',
   'provider' => 'nscale',
   'input_cost_per_token' => 1.0E-8,
-  'litellm_provider' => 'nscale',
   'mode' => 'chat',
   'output_cost_per_token' => 3.0E-8,
   'source' => 'https://docs.nscale.com/docs/inference/serverless-models/current#chat-models',
@@ -46,7 +42,6 @@ return [
   'id' => 'nscale/black-forest-labs/FLUX.1-schnell',
   'provider' => 'nscale',
   'input_cost_per_pixel' => 1.3E-9,
-  'litellm_provider' => 'nscale',
   'mode' => 'image_generation',
   'output_cost_per_pixel' => 0.0,
   'source' => 'https://docs.nscale.com/docs/inference/serverless-models/current#image-models',
@@ -59,7 +54,6 @@ return [
   'id' => 'nscale/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
   'provider' => 'nscale',
   'input_cost_per_token' => 3.75E-7,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $0.75/1M tokens total. Assumed 50/50 split for input/output.',
@@ -72,7 +66,6 @@ return [
   'id' => 'nscale/deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
   'provider' => 'nscale',
   'input_cost_per_token' => 2.5E-8,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $0.05/1M tokens total. Assumed 50/50 split for input/output.',
@@ -85,7 +78,6 @@ return [
   'id' => 'nscale/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
   'provider' => 'nscale',
   'input_cost_per_token' => 9.0E-8,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $0.18/1M tokens total. Assumed 50/50 split for input/output.',
@@ -98,7 +90,6 @@ return [
   'id' => 'nscale/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B',
   'provider' => 'nscale',
   'input_cost_per_token' => 7.0E-8,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $0.14/1M tokens total. Assumed 50/50 split for input/output.',
@@ -111,7 +102,6 @@ return [
   'id' => 'nscale/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B',
   'provider' => 'nscale',
   'input_cost_per_token' => 1.5E-7,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $0.30/1M tokens total. Assumed 50/50 split for input/output.',
@@ -124,7 +114,6 @@ return [
   'id' => 'nscale/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
   'provider' => 'nscale',
   'input_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $0.40/1M tokens total. Assumed 50/50 split for input/output.',
@@ -137,7 +126,6 @@ return [
   'id' => 'nscale/meta-llama/Llama-3.1-8B-Instruct',
   'provider' => 'nscale',
   'input_cost_per_token' => 3.0E-8,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $0.06/1M tokens total. Assumed 50/50 split for input/output.',
@@ -150,7 +138,6 @@ return [
   'id' => 'nscale/meta-llama/Llama-3.3-70B-Instruct',
   'provider' => 'nscale',
   'input_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $0.40/1M tokens total. Assumed 50/50 split for input/output.',
@@ -163,7 +150,6 @@ return [
   'id' => 'nscale/meta-llama/Llama-4-Scout-17B-16E-Instruct',
   'provider' => 'nscale',
   'input_cost_per_token' => 9.0E-8,
-  'litellm_provider' => 'nscale',
   'mode' => 'chat',
   'output_cost_per_token' => 2.9E-7,
   'source' => 'https://docs.nscale.com/docs/inference/serverless-models/current#chat-models',
@@ -172,7 +158,6 @@ return [
   'id' => 'nscale/mistralai/mixtral-8x22b-instruct-v0.1',
   'provider' => 'nscale',
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'nscale',
   'metadata' => 
   array (
     'notes' => 'Pricing listed as $1.20/1M tokens total. Assumed 50/50 split for input/output.',
@@ -185,7 +170,6 @@ return [
   'id' => 'nscale/stabilityai/stable-diffusion-xl-base-1.0',
   'provider' => 'nscale',
   'input_cost_per_pixel' => 3.0E-9,
-  'litellm_provider' => 'nscale',
   'mode' => 'image_generation',
   'output_cost_per_pixel' => 0.0,
   'source' => 'https://docs.nscale.com/docs/inference/serverless-models/current#image-models',

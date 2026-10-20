@@ -10,7 +10,6 @@ return [
   'id' => 'serper/search',
   'provider' => 'serper',
   'input_cost_per_query' => 0.001,
-  'litellm_provider' => 'serper',
   'mode' => 'search',
   'metadata' => 
   array (

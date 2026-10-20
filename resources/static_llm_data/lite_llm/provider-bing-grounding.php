@@ -10,7 +10,6 @@ return [
   'id' => 'bing_grounding/search',
   'provider' => 'bing_grounding',
   'input_cost_per_query' => 0.014,
-  'litellm_provider' => 'bing_grounding',
   'mode' => 'search',
   'metadata' => 
   array (

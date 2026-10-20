@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'stability/sd3',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.065,
   'supported_endpoints' => 
@@ -20,7 +19,6 @@ return [
     array (
   'id' => 'stability/sd3-large',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.065,
   'supported_endpoints' => 
@@ -31,7 +29,6 @@ return [
     array (
   'id' => 'stability/sd3-large-turbo',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.04,
   'supported_endpoints' => 
@@ -42,7 +39,6 @@ return [
     array (
   'id' => 'stability/sd3-medium',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.035,
   'supported_endpoints' => 
@@ -53,7 +49,6 @@ return [
     array (
   'id' => 'stability/sd3.5-large',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.065,
   'supported_endpoints' => 
@@ -64,7 +59,6 @@ return [
     array (
   'id' => 'stability/sd3.5-large-turbo',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.04,
   'supported_endpoints' => 
@@ -75,7 +69,6 @@ return [
     array (
   'id' => 'stability/sd3.5-medium',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.035,
   'supported_endpoints' => 
@@ -86,7 +79,6 @@ return [
     array (
   'id' => 'stability/stable-image-ultra',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.08,
   'supported_endpoints' => 
@@ -97,7 +89,6 @@ return [
     array (
   'id' => 'stability/inpaint',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.005,
   'supported_endpoints' => 
@@ -108,7 +99,6 @@ return [
     array (
   'id' => 'stability/outpaint',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.004,
   'supported_endpoints' => 
@@ -119,7 +109,6 @@ return [
     array (
   'id' => 'stability/erase',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.005,
   'supported_endpoints' => 
@@ -130,7 +119,6 @@ return [
     array (
   'id' => 'stability/search-and-replace',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.005,
   'supported_endpoints' => 
@@ -141,7 +129,6 @@ return [
     array (
   'id' => 'stability/search-and-recolor',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.005,
   'supported_endpoints' => 
@@ -152,7 +139,6 @@ return [
     array (
   'id' => 'stability/remove-background',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.005,
   'supported_endpoints' => 
@@ -163,7 +149,6 @@ return [
     array (
   'id' => 'stability/replace-background-and-relight',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.008,
   'supported_endpoints' => 
@@ -174,7 +159,6 @@ return [
     array (
   'id' => 'stability/sketch',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.005,
   'supported_endpoints' => 
@@ -185,7 +169,6 @@ return [
     array (
   'id' => 'stability/structure',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.005,
   'supported_endpoints' => 
@@ -196,7 +179,6 @@ return [
     array (
   'id' => 'stability/style',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.005,
   'supported_endpoints' => 
@@ -207,7 +189,6 @@ return [
     array (
   'id' => 'stability/style-transfer',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.008,
   'supported_endpoints' => 
@@ -218,7 +199,6 @@ return [
     array (
   'id' => 'stability/fast',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.002,
   'supported_endpoints' => 
@@ -229,7 +209,6 @@ return [
     array (
   'id' => 'stability/conservative',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.04,
   'supported_endpoints' => 
@@ -240,7 +219,6 @@ return [
     array (
   'id' => 'stability/creative',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.06,
   'supported_endpoints' => 
@@ -251,7 +229,6 @@ return [
     array (
   'id' => 'stability/stable-image-core',
   'provider' => 'stability',
-  'litellm_provider' => 'stability',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.03,
   'supported_endpoints' => 

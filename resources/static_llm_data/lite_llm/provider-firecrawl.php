@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'firecrawl/search',
   'provider' => 'firecrawl',
-  'litellm_provider' => 'firecrawl',
   'mode' => 'search',
   'tiered_pricing' => 
   array (

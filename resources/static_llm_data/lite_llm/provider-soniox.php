@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'soniox/stt-async-v4',
   'provider' => 'soniox',
-  'litellm_provider' => 'soniox',
   'max_output_tokens' => 8000,
   'max_tokens' => 8000,
   'input_cost_per_second' => 0.0,
@@ -25,7 +24,6 @@ return [
     array (
   'id' => 'soniox/stt-async-v5',
   'provider' => 'soniox',
-  'litellm_provider' => 'soniox',
   'max_output_tokens' => 8000,
   'max_tokens' => 8000,
   'input_cost_per_second' => 0.0,

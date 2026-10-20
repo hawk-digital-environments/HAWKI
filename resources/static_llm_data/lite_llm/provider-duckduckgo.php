@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'duckduckgo/search',
   'provider' => 'duckduckgo',
-  'litellm_provider' => 'duckduckgo',
   'mode' => 'search',
   'input_cost_per_query' => 0.0,
   'metadata' => 

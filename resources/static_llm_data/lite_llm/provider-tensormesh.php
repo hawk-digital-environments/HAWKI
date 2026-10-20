@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'tensormesh/Qwen/Qwen3.5-397B-A17B-FP8',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 6.0E-7,
   'output_cost_per_token' => 3.6E-6,
@@ -27,7 +26,6 @@ return [
     array (
   'id' => 'tensormesh/Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 4.5E-7,
   'output_cost_per_token' => 1.8E-6,
@@ -44,7 +42,6 @@ return [
     array (
   'id' => 'tensormesh/Qwen/Qwen3.6-27B-FP8',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 3.2E-7,
   'output_cost_per_token' => 3.2E-6,
@@ -62,7 +59,6 @@ return [
     array (
   'id' => 'tensormesh/lukealonso/GLM-5.1-NVFP4-MTP',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 1.4E-6,
   'output_cost_per_token' => 4.4E-6,
@@ -80,7 +76,6 @@ return [
     array (
   'id' => 'tensormesh/deepseek-ai/DeepSeek-V4-Flash',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 1.4E-7,
   'output_cost_per_token' => 2.8E-7,
@@ -98,7 +93,6 @@ return [
     array (
   'id' => 'tensormesh/moonshotai/Kimi-K2.6',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 9.6E-7,
   'output_cost_per_token' => 4.0E-6,
@@ -116,7 +110,6 @@ return [
     array (
   'id' => 'tensormesh/MiniMaxAI/MiniMax-M2.5',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 1.2E-6,
@@ -134,7 +127,6 @@ return [
     array (
   'id' => 'tensormesh/google/gemma-4-31B-it',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 1.4E-7,
   'output_cost_per_token' => 5.6E-7,
@@ -152,7 +144,6 @@ return [
     array (
   'id' => 'tensormesh/openai/gpt-oss-120b',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 6.0E-7,
@@ -170,7 +161,6 @@ return [
     array (
   'id' => 'tensormesh/openai/gpt-oss-20b',
   'provider' => 'tensormesh',
-  'litellm_provider' => 'tensormesh',
   'mode' => 'chat',
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 2.8E-7,

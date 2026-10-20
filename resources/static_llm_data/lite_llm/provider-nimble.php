@@ -10,7 +10,6 @@ return [
   'id' => 'nimble/search',
   'provider' => 'nimble',
   'input_cost_per_query' => 0.005,
-  'litellm_provider' => 'nimble',
   'mode' => 'search',
   'metadata' => 
   array (

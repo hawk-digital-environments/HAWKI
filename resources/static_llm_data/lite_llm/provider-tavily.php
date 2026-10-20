@@ -10,14 +10,12 @@ return [
   'id' => 'tavily/search',
   'provider' => 'tavily',
   'input_cost_per_query' => 0.008,
-  'litellm_provider' => 'tavily',
   'mode' => 'search',
 ),
     array (
   'id' => 'tavily/search-advanced',
   'provider' => 'tavily',
   'input_cost_per_query' => 0.016,
-  'litellm_provider' => 'tavily',
   'mode' => 'search',
 ),
 ];

@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-6-sol',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -33,7 +32,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-6-luna',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -57,7 +55,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-6-astra',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -81,7 +78,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-6.1-sol',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -105,7 +101,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.5',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'source' => 'https://platform.openai.com/docs/models/gpt-5.5',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
@@ -128,7 +123,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.6-luna',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'source' => 'https://platform.openai.com/docs/models/gpt-5.6-luna',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
@@ -151,7 +145,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.6-sol',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'source' => 'https://platform.openai.com/docs/models/gpt-5.6-sol',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
@@ -174,7 +167,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.6-terra',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'source' => 'https://platform.openai.com/docs/models/gpt-5.6-terra',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
@@ -197,7 +189,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.4',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -220,7 +211,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.4-pro',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -241,7 +231,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.3-codex',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -255,14 +244,13 @@ return [
   'supports_response_schema' => true,
   'supports_vision' => true,
   'supports_reasoning' => true,
-  'supports_none_reasoning_effort' => false,
-  'supports_xhigh_reasoning_effort' => false,
-  'supports_minimal_reasoning_effort' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
 ),
     array (
   'id' => 'chatgpt/gpt-5.3-codex-spark',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -279,7 +267,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.3-instant',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 64000,
   'max_tokens' => 64000,
@@ -297,7 +284,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.3-chat-latest',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 64000,
   'max_tokens' => 64000,
@@ -316,7 +302,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.2-codex',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -334,7 +319,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.2',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 64000,
   'max_tokens' => 64000,
@@ -357,7 +341,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.1-codex-max',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
@@ -375,7 +358,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-5.1-codex-mini',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 64000,
   'max_tokens' => 64000,
@@ -393,7 +375,6 @@ return [
     array (
   'id' => 'chatgpt/gpt-rosalind-discovery',
   'provider' => 'chatgpt',
-  'litellm_provider' => 'chatgpt',
   'mode' => 'responses',
   'source' => 'https://developers.openai.com/api/docs/pricing',
   'supported_endpoints' => 

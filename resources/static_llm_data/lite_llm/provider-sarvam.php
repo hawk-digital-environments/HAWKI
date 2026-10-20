@@ -13,7 +13,6 @@ return [
   'cache_creation_input_token_cost_above_1hr' => 0,
   'cache_read_input_token_cost' => 0,
   'input_cost_per_token' => 0,
-  'litellm_provider' => 'sarvam',
   'max_input_tokens' => 8192,
   'max_output_tokens' => 32000,
   'max_tokens' => 32000,

@@ -10,7 +10,6 @@ return [
   'id' => 'google_pse/search',
   'provider' => 'google_pse',
   'input_cost_per_query' => 0.005,
-  'litellm_provider' => 'google_pse',
   'mode' => 'search',
 ),
 ];

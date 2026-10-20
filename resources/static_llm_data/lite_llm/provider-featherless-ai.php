@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'featherless_ai/featherless-ai/Qwerky-72B',
   'provider' => 'featherless_ai',
-  'litellm_provider' => 'featherless_ai',
   'max_input_tokens' => 32768,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -18,7 +17,6 @@ return [
     array (
   'id' => 'featherless_ai/featherless-ai/Qwerky-QwQ-32B',
   'provider' => 'featherless_ai',
-  'litellm_provider' => 'featherless_ai',
   'max_input_tokens' => 32768,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,

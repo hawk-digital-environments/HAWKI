@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'snowflake/claude-3-5-sonnet',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 200000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -27,7 +26,6 @@ return [
     array (
   'id' => 'snowflake/deepseek-r1',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -40,7 +38,6 @@ return [
     array (
   'id' => 'snowflake/gemma-7b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 8000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -49,7 +46,6 @@ return [
     array (
   'id' => 'snowflake/jamba-1.5-large',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -58,7 +54,6 @@ return [
     array (
   'id' => 'snowflake/jamba-1.5-mini',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -67,7 +62,6 @@ return [
     array (
   'id' => 'snowflake/jamba-instruct',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -76,7 +70,6 @@ return [
     array (
   'id' => 'snowflake/llama2-70b-chat',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -85,7 +78,6 @@ return [
     array (
   'id' => 'snowflake/llama3-70b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 8000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -94,7 +86,6 @@ return [
     array (
   'id' => 'snowflake/llama3-8b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 8000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -103,7 +94,6 @@ return [
     array (
   'id' => 'snowflake/llama3.1-405b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -116,7 +106,6 @@ return [
     array (
   'id' => 'snowflake/llama3.1-70b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -129,7 +118,6 @@ return [
     array (
   'id' => 'snowflake/llama3.1-8b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -141,7 +129,6 @@ return [
     array (
   'id' => 'snowflake/llama3.2-1b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -150,7 +137,6 @@ return [
     array (
   'id' => 'snowflake/llama3.2-3b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -164,7 +150,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 7.2E-7,
   'output_cost_per_token' => 7.2E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_system_messages' => true,
@@ -172,7 +157,6 @@ return [
     array (
   'id' => 'snowflake/mistral-7b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -181,7 +165,6 @@ return [
     array (
   'id' => 'snowflake/mistral-large',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -190,7 +173,6 @@ return [
     array (
   'id' => 'snowflake/mistral-large2',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -204,7 +186,6 @@ return [
     array (
   'id' => 'snowflake/mixtral-8x7b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -213,7 +194,6 @@ return [
     array (
   'id' => 'snowflake/reka-core',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -222,7 +202,6 @@ return [
     array (
   'id' => 'snowflake/reka-flash',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 100000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -231,7 +210,6 @@ return [
     array (
   'id' => 'snowflake/snowflake-arctic',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 4096,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -240,7 +218,6 @@ return [
     array (
   'id' => 'snowflake/snowflake-llama-3.1-405b',
   'provider' => 'snowflake',
-  'litellm_provider' => 'snowflake',
   'max_input_tokens' => 8000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -254,7 +231,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 7.2E-7,
   'output_cost_per_token' => 7.2E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_system_messages' => true,
@@ -268,7 +244,6 @@ return [
   'input_cost_per_token' => 3.0E-6,
   'output_cost_per_token' => 1.5E-5,
   'cache_read_input_token_cost' => 3.0E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_vision' => true,
@@ -288,7 +263,6 @@ return [
   'input_cost_per_token' => 3.0E-6,
   'output_cost_per_token' => 1.5E-5,
   'cache_read_input_token_cost' => 3.0E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_vision' => true,
@@ -306,7 +280,6 @@ return [
   'input_cost_per_token' => 3.0E-6,
   'output_cost_per_token' => 1.5E-5,
   'cache_read_input_token_cost' => 3.0E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_vision' => true,
@@ -324,7 +297,6 @@ return [
   'input_cost_per_token' => 5.0E-6,
   'output_cost_per_token' => 2.5E-5,
   'cache_read_input_token_cost' => 5.0E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_vision' => true,
@@ -343,7 +315,6 @@ return [
   'input_cost_per_token' => 1.0E-6,
   'output_cost_per_token' => 5.0E-6,
   'cache_read_input_token_cost' => 1.0E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_vision' => true,
@@ -361,7 +332,6 @@ return [
   'input_cost_per_token' => 3.0E-6,
   'output_cost_per_token' => 1.5E-5,
   'cache_read_input_token_cost' => 3.0E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_vision' => true,
@@ -379,7 +349,6 @@ return [
   'input_cost_per_token' => 2.0E-6,
   'output_cost_per_token' => 8.0E-6,
   'cache_read_input_token_cost' => 5.0E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_vision' => true,
@@ -396,7 +365,6 @@ return [
   'input_cost_per_token' => 1.25E-6,
   'output_cost_per_token' => 1.0E-5,
   'cache_read_input_token_cost' => 1.25E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_vision' => true,
@@ -413,7 +381,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 1.2E-6,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_system_messages' => true,
@@ -427,7 +394,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_system_messages' => true,
@@ -441,7 +407,6 @@ return [
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.4E-7,
   'output_cost_per_token' => 9.7E-7,
-  'litellm_provider' => 'snowflake',
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_system_messages' => true,
@@ -453,7 +418,6 @@ return [
   'max_input_tokens' => 8192,
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'snowflake',
   'mode' => 'embedding',
 ),
     array (
@@ -463,7 +427,6 @@ return [
   'max_input_tokens' => 8192,
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 0.0,
-  'litellm_provider' => 'snowflake',
   'mode' => 'embedding',
 ),
 ];

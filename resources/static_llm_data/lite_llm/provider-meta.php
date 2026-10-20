@@ -11,7 +11,6 @@ return [
   'provider' => 'meta',
   'cache_read_input_token_cost' => 1.5E-7,
   'input_cost_per_token' => 1.25E-6,
-  'litellm_provider' => 'meta',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -58,7 +57,6 @@ return [
   'provider' => 'meta',
   'cache_read_input_token_cost' => 1.5E-7,
   'input_cost_per_token' => 1.25E-6,
-  'litellm_provider' => 'meta',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -105,7 +103,6 @@ return [
   'provider' => 'meta',
   'cache_read_input_token_cost' => 2.0E-9,
   'input_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'meta',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -152,7 +149,6 @@ return [
   'provider' => 'meta',
   'cache_read_input_token_cost' => 1.5E-7,
   'input_cost_per_token' => 1.25E-6,
-  'litellm_provider' => 'meta',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -199,7 +195,6 @@ return [
   'provider' => 'meta',
   'cache_read_input_token_cost' => 2.0E-9,
   'input_cost_per_token' => 1.0E-7,
-  'litellm_provider' => 'meta',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -245,7 +240,6 @@ return [
   'id' => 'meta/muse-voice-transcribe-1.0',
   'provider' => 'meta',
   'input_cost_per_second' => 5.0E-5,
-  'litellm_provider' => 'meta',
   'mode' => 'audio_transcription',
   'source' => 'https://dev.meta.ai/docs/speech-to-text',
   'supported_endpoints' => 
@@ -267,7 +261,6 @@ return [
   'provider' => 'meta',
   'cache_read_input_token_cost' => 2.0E-7,
   'input_cost_per_token' => 4.0E-6,
-  'litellm_provider' => 'meta',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -314,7 +307,6 @@ return [
     array (
   'id' => 'meta/muse-image-1.0',
   'provider' => 'meta',
-  'litellm_provider' => 'meta',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.01,
   'source' => 'https://dev.meta.ai/docs/pricing-rate-limits',
@@ -332,6 +324,27 @@ return [
   'supported_output_modalities' => 
   array (
     0 => 'image',
+  ),
+),
+    array (
+  'id' => 'meta/sam-3.1',
+  'provider' => 'meta',
+  'input_cost_per_image' => 0.0025,
+  'mode' => 'responses',
+  'source' => 'https://dev.meta.ai/docs/pricing-rate-limits.md',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/responses',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
   ),
 ),
 ];

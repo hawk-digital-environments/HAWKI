@@ -12,7 +12,6 @@ return [
   'cache_read_input_token_cost' => 6.0E-8,
   'deprecation_date' => '2026-10-21',
   'input_cost_per_token' => 6.0E-7,
-  'litellm_provider' => 'vertex_ai-moonshot_models',
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
   'max_tokens' => 256000,

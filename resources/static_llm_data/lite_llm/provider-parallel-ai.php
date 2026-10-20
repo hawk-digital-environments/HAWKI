@@ -10,28 +10,24 @@ return [
   'id' => 'parallel_ai/search',
   'provider' => 'parallel_ai',
   'input_cost_per_query' => 0.005,
-  'litellm_provider' => 'parallel_ai',
   'mode' => 'search',
 ),
     array (
   'id' => 'parallel_ai/search-fast',
   'provider' => 'parallel_ai',
   'input_cost_per_query' => 0.001,
-  'litellm_provider' => 'parallel_ai',
   'mode' => 'search',
 ),
     array (
   'id' => 'parallel_ai/search-pro',
   'provider' => 'parallel_ai',
   'input_cost_per_query' => 0.005,
-  'litellm_provider' => 'parallel_ai',
   'mode' => 'search',
 ),
     array (
   'id' => 'parallel_ai/search-turbo',
   'provider' => 'parallel_ai',
   'input_cost_per_query' => 0.001,
-  'litellm_provider' => 'parallel_ai',
   'mode' => 'search',
 ),
 ];

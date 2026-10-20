@@ -11,7 +11,6 @@ return [
   'provider' => 'qwencloud',
   'cache_read_input_token_cost' => 4.0E-8,
   'input_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -29,7 +28,6 @@ return [
   'provider' => 'qwencloud',
   'cache_read_input_token_cost' => 4.0E-8,
   'input_cost_per_token' => 2.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -47,7 +45,6 @@ return [
   'provider' => 'qwencloud',
   'cache_read_input_token_cost' => 2.0E-7,
   'input_cost_per_token' => 2.4E-6,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 393216,
   'max_tokens' => 393216,
@@ -65,7 +62,6 @@ return [
   'provider' => 'qwencloud',
   'cache_read_input_token_cost' => 2.6E-7,
   'input_cost_per_token' => 1.4E-6,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 202745,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -83,7 +79,6 @@ return [
   'provider' => 'qwencloud',
   'cache_read_input_token_cost' => 2.8E-7,
   'input_cost_per_token' => 1.4E-6,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -101,7 +96,6 @@ return [
   'provider' => 'qwencloud',
   'cache_read_input_token_cost' => 1.9E-7,
   'input_cost_per_token' => 9.5E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 229376,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -119,7 +113,6 @@ return [
   'id' => 'qwencloud/qwen-coder',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 3.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -133,7 +126,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-flash',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -169,7 +161,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-flash-2025-07-28',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -206,7 +197,6 @@ return [
   'id' => 'qwencloud/qwen-max',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 1.6E-6,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 30720,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -221,7 +211,6 @@ return [
   'id' => 'qwencloud/qwen-plus',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 4.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -236,7 +225,6 @@ return [
   'id' => 'qwencloud/qwen-plus-2025-01-25',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 4.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 129024,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -251,7 +239,6 @@ return [
   'id' => 'qwencloud/qwen-plus-2025-04-28',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 4.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -267,7 +254,6 @@ return [
   'id' => 'qwencloud/qwen-plus-2025-07-14',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 4.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -282,7 +268,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-plus-2025-07-28',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -320,7 +305,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-plus-2025-09-11',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -358,7 +342,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-plus-latest',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -397,7 +380,6 @@ return [
   'id' => 'qwencloud/qwen-turbo',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 5.0E-8,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -413,7 +395,6 @@ return [
   'id' => 'qwencloud/qwen-turbo-2024-11-01',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 5.0E-8,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -428,7 +409,6 @@ return [
   'id' => 'qwencloud/qwen-turbo-2025-04-28',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 5.0E-8,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -444,7 +424,6 @@ return [
   'id' => 'qwencloud/qwen-turbo-latest',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 5.0E-8,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -459,7 +438,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-30b-a3b',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
@@ -472,7 +450,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-coder-flash',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -532,7 +509,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-coder-flash-2025-07-28',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -588,7 +564,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-coder-plus',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -648,7 +623,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-coder-plus-2025-07-22',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -704,7 +678,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-max-preview',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 258048,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -750,7 +723,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-max',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 258048,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -796,7 +768,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-max-2026-01-23',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 258048,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -843,7 +814,6 @@ return [
   'id' => 'qwencloud/qwen3-next-80b-a3b-instruct',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 1.5E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -857,7 +827,6 @@ return [
   'id' => 'qwencloud/qwen3-next-80b-a3b-thinking',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 1.5E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -872,7 +841,6 @@ return [
   'id' => 'qwencloud/qwen3-vl-235b-a22b-instruct',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 4.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -887,7 +855,6 @@ return [
   'id' => 'qwencloud/qwen3-vl-235b-a22b-thinking',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 4.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -903,7 +870,6 @@ return [
   'id' => 'qwencloud/qwen3-vl-32b-instruct',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 1.6E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -918,7 +884,6 @@ return [
   'id' => 'qwencloud/qwen3-vl-32b-thinking',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 1.6E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -933,7 +898,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3-vl-plus',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 260096,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
@@ -980,7 +944,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3.5-plus',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 991808,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1017,9 +980,10 @@ return [
     array (
   'id' => 'qwencloud/qwen3.7-max',
   'provider' => 'qwencloud',
+  'cache_creation_input_token_cost' => 3.125E-6,
   'cache_read_input_token_cost' => 5.0E-7,
+  'explicit_cache_read_input_token_cost' => 2.5E-7,
   'input_cost_per_token' => 2.5E-6,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 991808,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1035,7 +999,6 @@ return [
     array (
   'id' => 'qwencloud/qwen3.7-plus',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 991808,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
@@ -1078,7 +1041,6 @@ return [
   'provider' => 'qwencloud',
   'cache_read_input_token_cost' => 2.5E-7,
   'input_cost_per_token' => 2.0E-6,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 991808,
   'max_output_tokens' => 131072,
   'max_tokens' => 131072,
@@ -1096,7 +1058,6 @@ return [
   'id' => 'qwencloud/qwq-plus',
   'provider' => 'qwencloud',
   'input_cost_per_token' => 8.0E-7,
-  'litellm_provider' => 'qwencloud',
   'max_input_tokens' => 98304,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
@@ -1110,7 +1071,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-image-2.0',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'image_generation',
   'source' => 'https://www.qwencloud.com/models',
   'supported_endpoints' => 
@@ -1121,7 +1081,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-image-2.0-pro',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'image_generation',
   'source' => 'https://www.qwencloud.com/models',
   'supported_endpoints' => 
@@ -1132,7 +1091,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-image-3.0',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'image_generation',
   'source' => 'https://www.qwencloud.com/models',
   'supported_endpoints' => 
@@ -1143,7 +1101,6 @@ return [
     array (
   'id' => 'qwencloud/qwen-image-3.0-pro',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'image_generation',
   'source' => 'https://www.qwencloud.com/models',
   'supported_endpoints' => 
@@ -1154,7 +1111,6 @@ return [
     array (
   'id' => 'qwencloud/wan3.0-video',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan3-0-video',
   'output_cost_per_second' => 0.2,
@@ -1188,7 +1144,6 @@ return [
     array (
   'id' => 'qwencloud/wan3.0-video-prime',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan3-0-video-prime',
   'output_cost_per_second' => 0.28,
@@ -1222,7 +1177,6 @@ return [
     array (
   'id' => 'qwencloud/happyhorse-1.1-t2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-1-t2v',
   'output_cost_per_second' => 0.18,
@@ -1253,7 +1207,6 @@ return [
     array (
   'id' => 'qwencloud/happyhorse-1.1-i2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-1-i2v',
   'output_cost_per_second' => 0.18,
@@ -1285,7 +1238,6 @@ return [
     array (
   'id' => 'qwencloud/happyhorse-1.1-r2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-1-r2v',
   'output_cost_per_second' => 0.18,
@@ -1317,7 +1269,6 @@ return [
     array (
   'id' => 'qwencloud/happyhorse-1.0-t2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-0-t2v',
   'output_cost_per_second' => 0.24,
@@ -1347,7 +1298,6 @@ return [
     array (
   'id' => 'qwencloud/happyhorse-1.0-i2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-0-i2v',
   'output_cost_per_second' => 0.24,
@@ -1378,7 +1328,6 @@ return [
     array (
   'id' => 'qwencloud/happyhorse-1.0-r2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-0-r2v',
   'output_cost_per_second' => 0.24,
@@ -1409,7 +1358,6 @@ return [
     array (
   'id' => 'qwencloud/wan2.7-t2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan2-7-t2v',
   'output_cost_per_second' => 0.15,
@@ -1440,7 +1388,6 @@ return [
     array (
   'id' => 'qwencloud/wan2.7-i2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan2-7-i2v',
   'output_cost_per_second' => 0.15,
@@ -1473,7 +1420,6 @@ return [
     array (
   'id' => 'qwencloud/wan2.7-r2v',
   'provider' => 'qwencloud',
-  'litellm_provider' => 'qwencloud',
   'mode' => 'video_generation',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan2-7-r2v',
   'output_cost_per_second' => 0.15,

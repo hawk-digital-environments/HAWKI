@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'vertex_ai/veo-3.1-generate-preview',
   'provider' => 'vertex_ai-video-models',
-  'litellm_provider' => 'vertex_ai-video-models',
   'max_input_tokens' => 1024,
   'max_tokens' => 1024,
   'mode' => 'video_generation',
@@ -28,7 +27,6 @@ return [
     array (
   'id' => 'vertex_ai/veo-3.1-fast-generate-preview',
   'provider' => 'vertex_ai-video-models',
-  'litellm_provider' => 'vertex_ai-video-models',
   'max_input_tokens' => 1024,
   'max_tokens' => 1024,
   'mode' => 'video_generation',
@@ -49,7 +47,6 @@ return [
   'id' => 'vertex_ai/veo-3.1-generate-001',
   'provider' => 'vertex_ai-video-models',
   'deprecation_date' => '2026-11-17',
-  'litellm_provider' => 'vertex_ai-video-models',
   'max_input_tokens' => 1024,
   'max_tokens' => 1024,
   'mode' => 'video_generation',
@@ -69,7 +66,6 @@ return [
   'id' => 'vertex_ai/veo-3.1-fast-generate-001',
   'provider' => 'vertex_ai-video-models',
   'deprecation_date' => '2026-11-17',
-  'litellm_provider' => 'vertex_ai-video-models',
   'max_input_tokens' => 1024,
   'max_tokens' => 1024,
   'mode' => 'video_generation',
@@ -89,7 +85,6 @@ return [
     array (
   'id' => 'vertex_ai/veo-3.1-lite-generate-001',
   'provider' => 'vertex_ai-video-models',
-  'litellm_provider' => 'vertex_ai-video-models',
   'max_input_tokens' => 1024,
   'max_tokens' => 1024,
   'mode' => 'video_generation',
@@ -110,7 +105,6 @@ return [
   'id' => 'vertex_ai/veo-3.0-generate-001',
   'provider' => 'vertex_ai-video-models',
   'deprecation_date' => '2026-06-30',
-  'litellm_provider' => 'vertex_ai-video-models',
   'max_input_tokens' => 1024,
   'max_tokens' => 1024,
   'mode' => 'video_generation',
@@ -130,7 +124,6 @@ return [
   'id' => 'vertex_ai/veo-3.0-fast-generate-001',
   'provider' => 'vertex_ai-video-models',
   'deprecation_date' => '2026-06-30',
-  'litellm_provider' => 'vertex_ai-video-models',
   'max_input_tokens' => 1024,
   'max_tokens' => 1024,
   'mode' => 'video_generation',
@@ -150,7 +143,6 @@ return [
     array (
   'id' => 'vertex_ai/veo-2.0-generate-001',
   'provider' => 'vertex_ai-video-models',
-  'litellm_provider' => 'vertex_ai-video-models',
   'max_input_tokens' => 1024,
   'max_tokens' => 1024,
   'mode' => 'video_generation',

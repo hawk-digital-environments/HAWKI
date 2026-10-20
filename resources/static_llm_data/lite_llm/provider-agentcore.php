@@ -10,7 +10,6 @@ return [
   'id' => 'agentcore/search',
   'provider' => 'agentcore',
   'input_cost_per_query' => 0.007,
-  'litellm_provider' => 'agentcore',
   'mode' => 'search',
   'metadata' => 
   array (

@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'searxng/search',
   'provider' => 'searxng',
-  'litellm_provider' => 'searxng',
   'mode' => 'search',
   'input_cost_per_query' => 0.0,
   'metadata' => 

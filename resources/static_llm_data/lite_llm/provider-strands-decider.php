@@ -10,7 +10,6 @@ return [
   'id' => 'strands_decider/strands-decider-2B-hobson-v19',
   'provider' => 'strands_decider',
   'input_cost_per_token' => 0.0,
-  'litellm_provider' => 'strands_decider',
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
   'source' => 'https://huggingface.co/StrandsAgents/strands-decider-2B-hobson-v19',

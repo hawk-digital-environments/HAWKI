@@ -11,7 +11,6 @@ return [
   'provider' => 'text-completion-inception',
   'cache_read_input_token_cost' => 2.5E-8,
   'input_cost_per_token' => 2.5E-7,
-  'litellm_provider' => 'text-completion-inception',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,

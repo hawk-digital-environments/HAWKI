@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'black_forest_labs/flux-kontext-pro',
   'provider' => 'black_forest_labs',
-  'litellm_provider' => 'black_forest_labs',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.04,
   'source' => 'https://bfl.ai/pricing',
@@ -22,7 +21,6 @@ return [
     array (
   'id' => 'black_forest_labs/flux-kontext-max',
   'provider' => 'black_forest_labs',
-  'litellm_provider' => 'black_forest_labs',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.08,
   'source' => 'https://bfl.ai/pricing',
@@ -35,7 +33,6 @@ return [
     array (
   'id' => 'black_forest_labs/flux-pro-1.0-fill',
   'provider' => 'black_forest_labs',
-  'litellm_provider' => 'black_forest_labs',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.05,
   'source' => 'https://bfl.ai/pricing',
@@ -47,7 +44,6 @@ return [
     array (
   'id' => 'black_forest_labs/flux-pro-1.0-expand',
   'provider' => 'black_forest_labs',
-  'litellm_provider' => 'black_forest_labs',
   'mode' => 'image_edit',
   'output_cost_per_image' => 0.05,
   'source' => 'https://bfl.ai/pricing',
@@ -59,7 +55,6 @@ return [
     array (
   'id' => 'black_forest_labs/flux-pro-1.1',
   'provider' => 'black_forest_labs',
-  'litellm_provider' => 'black_forest_labs',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.04,
   'source' => 'https://bfl.ai/pricing',
@@ -71,7 +66,6 @@ return [
     array (
   'id' => 'black_forest_labs/flux-pro-1.1-ultra',
   'provider' => 'black_forest_labs',
-  'litellm_provider' => 'black_forest_labs',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.06,
   'source' => 'https://bfl.ai/pricing',
@@ -83,7 +77,6 @@ return [
     array (
   'id' => 'black_forest_labs/flux-dev',
   'provider' => 'black_forest_labs',
-  'litellm_provider' => 'black_forest_labs',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.025,
   'source' => 'https://bfl.ai/pricing',
@@ -95,7 +88,6 @@ return [
     array (
   'id' => 'black_forest_labs/flux-pro',
   'provider' => 'black_forest_labs',
-  'litellm_provider' => 'black_forest_labs',
   'mode' => 'image_generation',
   'output_cost_per_image' => 0.05,
   'source' => 'https://bfl.ai/pricing',
