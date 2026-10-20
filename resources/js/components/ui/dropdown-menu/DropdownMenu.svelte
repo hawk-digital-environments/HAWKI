@@ -143,7 +143,9 @@
     });
 
     function returnFocusToTrigger(event: Event) {
-        if (closedByKeyboard) return;
+        // `mergeProps` only composes DOM event handlers; this one is chained like a plain
+        // callback, so it runs even after a consumer's handler placed focus itself.
+        if (event.defaultPrevented || closedByKeyboard) return;
         const selector = '[data-dropdown-menu-trigger]';
         const target = triggerEl?.matches(selector) ? triggerEl : triggerEl?.querySelector<HTMLElement>(selector);
         if (!target || target.matches(':disabled')) return;
@@ -175,7 +177,7 @@
             },
             noHoverFocusProps,
             contentProps ?? {},
-            // Last, so a consumer that places focus itself (preventDefault) skips it.
+            // Last, so it can tell whether a consumer already placed focus (preventDefault).
             {onCloseAutoFocus: returnFocusToTrigger}
         ) as DropdownMenuContentProps;
 
