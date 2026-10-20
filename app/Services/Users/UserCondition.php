@@ -38,13 +38,7 @@ class UserCondition
         if (!$user) {
             return false;
         }
-        return app(\App\Services\Admin\PermissionService::class)->has($user, 'admin.access');
-    }
-
-    public static function cannot(User|Request|null $user, string $permission): bool
-    {
-        if ($user instanceof Request) $user = $user->user();
-        return !app(\App\Services\Admin\PermissionService::class)->has($user, $permission);
+        return $user->employeetype === 'admin';
     }
 
     /**

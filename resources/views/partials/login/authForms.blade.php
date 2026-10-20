@@ -11,12 +11,7 @@
         <button id="loginButton" class="btn-lg-fill align-end top-gap-1" type="button"
                 onclick="submitLogin()">{{ __('Login') }}</button>
     </div>
-    @if($showRedirectLogin)
-        <div id="provider-login-panel" class="top-gap-1">
-            <a class="btn-lg-stroke" href="/auth/redirect">{{ __('LoginWithProvider') }}</a>
-        </div>
-    @endif
-@elseif($showRedirectLogin)
+@else
     <form class="form-column" method="post" id="hawkiLoginForm" action="/req/login">
         @csrf
         @if($errors->has('login_error'))

@@ -58,7 +58,6 @@ export class AssistantMenu {
             locale: this.app.localization.locale,
             translate: this.translate,
             router: this.router,
-            can: (permission: string) => this.app.can(permission)
         } satisfies SidebarContext;
         return this.app.hooks.apply('assistantMenuEntries', [] as AssistantMenuEntry[], ctx);
     });

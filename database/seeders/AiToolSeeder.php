@@ -143,7 +143,6 @@ class AiToolSeeder extends Seeder
                 'mcp_name' => 'get_file_contents',
                 'description' => 'Fetches the contents of a file at a given path and ref.',
                 'capability' => WellKnownCapabilities::WEB_FETCH,
-                'access_rule' => 'web_fetch',
             ],
             [
                 'server' => 'github',
@@ -200,7 +199,6 @@ class AiToolSeeder extends Seeder
                     'description' => $def['description'],
                     'capability' => $def['capability'],
                     'mapped_capability' => $def['mapped_capability'] ?? null,
-                    'access_rule' => $def['access_rule'] ?? 'internal_search',
                     'active' => $def['active'] ?? true,
                     'added_by_file' => false,
                     'updated_at' => $now,
@@ -222,7 +220,6 @@ class AiToolSeeder extends Seeder
                 'description' => 'A test tool for verifying tool calling.',
                 'capability' => null,
                 'mapped_capability' => null,
-                'access_rule' => 'internal_search',
                 'active' => true,
                 'added_by_file' => false,
                 'updated_at' => $now,

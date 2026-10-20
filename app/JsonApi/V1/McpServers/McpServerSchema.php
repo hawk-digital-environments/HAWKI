@@ -32,26 +32,29 @@ class McpServerSchema extends Schema
         return [
             ID::make(),
             Str::make('type')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('url')
                 // @todo is this needed for creation of assistants?
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('server_label'),
             Str::make('status')->readOnly(),
             Str::make('version')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('protocol_version')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('description'),
             Str::make('require_approval'),
             ArrayHash::make('timeouts')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage'))
+                ->hidden(UserCondition::isNonAdmin(...))
                 ->serializeUsing(fn(McpServerTimeouts $timeouts) => $timeouts->toArray()),
-            Str::make('api_key')->hidden(),
+            Str::make('api_key')
+                ->hidden(UserCondition::isNonAdmin(...))
+                ->serializeUsing(ValueSerializer::apiKey(...)),
             Boolean::make('added_by_file')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage'))
+                ->hidden(UserCondition::isNonAdmin(...))
                 ->readOnly(),
-            ArrayHash::make('additional_config')->hidden(),
+            ArrayHash::make('additional_config')
+                ->hidden(UserCondition::isNonAdmin(...)),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
 

@@ -50,7 +50,6 @@ use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
  * @property AiModelFlags $flags
  * @property NativeAiModelCapabilities $native_capabilities
  * @property bool $active
- * @property bool $admin_managed
  * @property-read AiToolCollection $tools
  */
 #[CollectedBy(AiModelCollection::class)]

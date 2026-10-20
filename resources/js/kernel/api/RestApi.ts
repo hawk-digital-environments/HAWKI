@@ -168,7 +168,8 @@ export class RestApi {
 
     /**
      * Fetches the machine-readable client schema describing every JSON:API
-     * resource: endpoints (with policy-derived `allowed` flags), attributes with
+     * resource: endpoints (with policy-derived `allowed` flags — employee-type
+     * based), attributes with
      * constraints and writable paths, relationships, actions, and the
      * per-resource JSON-Schema block used for form rendering. Validated against
      * {@link ClientSchemaDocumentSchema}.

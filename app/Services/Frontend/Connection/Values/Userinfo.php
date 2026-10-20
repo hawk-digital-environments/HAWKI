@@ -28,7 +28,6 @@ readonly class Userinfo
         /** Reference to the user's avatar file; `null` when no avatar has been uploaded. */
         public StoredFileIdentifier|null $avatar = null,
         public string|null               $bio = null,
-        public array                     $permissions = [],
     )
     {
     }

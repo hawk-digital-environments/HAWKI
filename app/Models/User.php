@@ -8,7 +8,6 @@ use App\Models\Assistants\Assistant;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\KnownUsersAccessScope;
 use App\Policies\UserPolicy;
-use App\Services\Announcements\RegistrationPolicyService;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use App\Services\Users\Events\UserCreatedEvent;
@@ -20,31 +19,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
 
 #[UsePolicy(UserPolicy::class)]
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
     use HasContextualScopesTrait;
-    use HasRoles;
-
-    protected $guard_name = 'web';
-
-    /**
-     * Apply HAWKI account and role-only grant rules to Spatie permission checks.
-     */
-    public function hasPermissionTo($permission, ?string $guardName = null): bool
-    {
-        if (null !== $guardName && 'web' !== $guardName) {
-            return false;
-        }
-
-        $permission = $this->filterPermission($permission, 'web');
-
-        return 'web' === $permission->guard_name
-            && app(\App\Services\Admin\PermissionService::class)->has($this, $permission->name);
-    }
 
     protected $dispatchesEvents = [
         'created' => UserCreatedEvent::class
@@ -60,36 +40,15 @@ class User extends Authenticatable
         'bio',
         'locale',
         'isRemoved',
-        'registration_fingerprint',
-    ];
-
-    protected $hidden = [
-        'local_password',
     ];
 
     protected $casts = [
         'isRemoved' => 'boolean',
-        'admin_disabled' => 'boolean',
-        'last_login_at' => 'datetime',
     ];
-
-    protected static function booted(): void
-    {
-        static::created(function (User $user) {
-            if (!app()->runningInConsole() || \Illuminate\Support\Facades\Schema::hasTable('model_has_roles')) {
-                app(\App\Services\Admin\EmployeeTypeRoleSyncer::class)->sync($user);
-            }
-        });
-    }
 
     protected static function registerScopes(ScopeRegistrar $registrar): void
     {
         $registrar
-            ->setDefaultDisablingGuard(function (#[\Illuminate\Container\Attributes\CurrentUser] ?User $user) {
-                return $user
-                    ? !\App\Services\Users\UserCondition::cannot($user, 'users.view')
-                    : app()->runningInConsole();
-            })
             ->addScope('access', new KnownUsersAccessScope())
             ->addScope('active', new ActiveFilterScope('isRemoved', '0'));
     }
@@ -131,8 +90,6 @@ class User extends Authenticatable
     public function revokProfile(): void
     {
         $this->update(['isRemoved' => 1]);
-        // Removal happens outside RoleGuard::mutate(), so drop the memoized eligibility here.
-        app(\App\Services\Admin\PermissionService::class)->forget((int) $this->getKey());
     }
 
     /**
@@ -184,7 +141,7 @@ class User extends Authenticatable
     {
         $now = now();
 
-        return Announcement::query()->where('is_published', true)
+        return Announcement::query()
             ->where(function ($q) use ($now) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
             })
@@ -194,7 +151,6 @@ class User extends Authenticatable
             ->where(function ($q) {
                 $q->where('is_global', true)
                     ->orWhereJsonContains('target_users', $this->id);
-                foreach (app(\App\Services\Admin\PermissionService::class)->roleIds($this) as $role) $q->orWhereJsonContains('target_roles', $role);
             })
             ->whereDoesntHave('users', function ($q) {
                 $q->where('user_id', $this->id)->whereNotNull('accepted_at');
@@ -211,12 +167,6 @@ class User extends Authenticatable
 
     public function markAnnouncementAsAccepted($announcementId): void
     {
-        $announcement = Announcement::query()->findOrFail($announcementId);
-        if ($announcement->type === 'policy') {
-            app(RegistrationPolicyService::class)->acceptAnnouncement($this, $announcement);
-            return;
-        }
-
         $this->announcements()->syncWithoutDetaching([
             $announcementId => ['accepted_at' => now()],
         ]);

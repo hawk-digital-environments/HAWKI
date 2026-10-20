@@ -90,7 +90,6 @@ class AssistantStoreTest extends TestCase
         $tool = $this->createAiTool();
 
         $user = User::factory()->create();
-        $this->grantInternalToolAccess($user);
         $this->actingAsUser($user);
 
         $this->jsonApiRaw('post', '/api/hawki/v1/assistants?include=ai_tools', $this->createJsonApiPayload([], [

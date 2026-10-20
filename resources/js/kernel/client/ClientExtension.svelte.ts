@@ -12,14 +12,10 @@ import type {Connection} from '$lib/app/schemas/resources/connections.schema.js'
 import {AiApi} from '$lib/kernel/ai/AiApi.js';
 import {ConnectionHandle} from '$lib/kernel/client/connection/ConnectionHandle.svelte.js';
 import type {HawkiEvents} from '$lib/kernel/events/EventExtension.js';
-import {assignAuthPage, authPageUrl} from '$lib/kernel/auth/navigation.js';
-import {LogoutResponseSchema} from '$lib/kernel/auth/schemas.js';
 import {registerConnectionRefresher} from '$lib/kernel/client/connection/connectionRefresher.js';
-import {can} from '$lib/kernel/auth/permissions.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
-        can(permission: string): boolean;
         readonly client: HawkiClient;
         readonly restApi: RestApi;
         readonly aiApi: AiApi;
@@ -29,7 +25,6 @@ declare module '$lib/kernel/extendableTypes.js' {
         readonly connectionOrNull: Connection | null;
         readonly isAuthenticatedConnection: boolean;
         readonly isAuthenticated: boolean;
-        readonly cryptoReady: boolean;
         readonly authorizationRefreshing: boolean;
         readonly logoutState: 'idle' | 'pending' | 'failed';
 
@@ -69,7 +64,7 @@ export class ClientExtension implements HawkiAppExtension {
             this.sessionLost = true;
             this.connectionHandle.invalidate();
             this.events.sync.trigger('sessionLost');
-            if (this.app) assignAuthPage(this.app.router, 'login', undefined, 'session_expired');
+            window.location.assign('/');
         });
         const transport = (async (path, options) => {
             const actor = this.connectionHandle?.tryGetConnection();
@@ -128,10 +123,7 @@ export class ClientExtension implements HawkiAppExtension {
             } catch (error) {
                 console.error('A logout listener failed.', error);
             }
-            const response = await this.client.restApi.postToResourceAction('auth', 'actions/logout', {}, {
-                schema: LogoutResponseSchema
-            });
-            window.location.assign(response.meta.redirect_url ?? authPageUrl(this.app!.router, 'login'));
+            window.location.assign(this.uriBuilder.logoutUri());
         } catch (error) {
             this.logoutStatus = 'failed';
             throw error;
@@ -153,25 +145,21 @@ export class ClientExtension implements HawkiAppExtension {
             this.sessionLost = true;
             this.connectionHandle.invalidate();
             this.events.sync.trigger('sessionLost');
-            assignAuthPage(this.app.router, 'login', undefined, 'session_expired');
+            window.location.assign('/');
         });
 
         // Public config is connection-dependent. Preserve the initial bootstrap
-        // ordering, but refresh it when an established session changes type
-        // (for example internal_registering_user -> internal_authenticated).
+        // ordering, but refresh it when an established session changes.
         this.events.async.on('connectionChanged', async connection => {
             // Logout owns navigation until its provider response or a successful retry arrives.
             if (this.sessionLost || this.logoutStatus !== 'idle') return;
             const established = this.hadUserInfo;
             this.hadUserInfo = connection.hasUserInfo;
-            if (established && this.app?.isMounted) {
+            if (established && this.app?.isMounted && !connection.hasUserInfo) {
                 this.connectionHandle.invalidate();
                 this.events.sync.trigger('sessionLost');
-                const page = connection.isAuthenticated
-                    ? connection.keychain_state === 'setup_required' ? 'register'
-                    : connection.keychain_state === 'inconsistent' ? 'inconsistent' : 'handshake'
-                    : connection.hasUserInfo ? 'register' : 'login';
-                if (assignAuthPage(this.app.router, page)) return;
+                window.location.assign('/');
+                return;
             }
             await app.config?.refresh();
         });
@@ -180,7 +168,6 @@ export class ClientExtension implements HawkiAppExtension {
     public provideProperties(): Record<string, unknown> {
         const extension = this;
         return {
-            can: (permission: string) => can(extension.connectionHandle.tryGetConnection(), permission),
             get client(): HawkiClient {
                 return extension.client;
             },
@@ -215,10 +202,6 @@ export class ClientExtension implements HawkiAppExtension {
             },
             get isAuthenticated(): boolean {
                 return extension.connectionHandle.tryGetConnection()?.isAuthenticated ?? false;
-            },
-            get cryptoReady(): boolean {
-                return extension.logoutStatus === 'idle' && !extension.sessionLost &&
-                    (extension.app?.passkeySession.cryptoReady ?? false);
             },
             get authorizationRefreshing() {
                 return extension.connectionHandle.refreshing;

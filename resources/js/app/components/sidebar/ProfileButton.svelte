@@ -61,11 +61,6 @@
         onOpenSettings();
     }
 
-    function openAnnouncements(): void {
-        menuOpen = false;
-        app.events.sync.triggerVoid('announcementsRequested');
-    }
-
     function openModels(): void {
         menuOpen = false;
         app.events.sync.triggerVoid('modelsRequested');
@@ -116,9 +111,6 @@
         {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
-    <DropdownMenuItem iconLeft={Megaphone01Icon} onclick={openAnnouncements}>
-        {__('ui.profile.announcements')}
-    </DropdownMenuItem>
     <DropdownMenuItem iconLeft={AiChipIcon} onclick={openModels}>
         {__('ui.profile.models')}
     </DropdownMenuItem>

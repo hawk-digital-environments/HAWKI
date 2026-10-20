@@ -20,8 +20,6 @@ use App\Services\Frontend\Migrations\Values\MigrationToApply;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Services\System\UserTypes\Values\RegisteringUser;
 use App\Services\Translation\LocaleService;
-use App\Services\Users\Keychain\KeychainStateResolver;
-use App\Services\Users\Keychain\Value\KeychainState;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Http\Request;
@@ -61,8 +59,7 @@ readonly class ConnectionFactory
         private Request                     $request,
         private FrontendMigrationRepository $migrationRepository,
         private LoggerInterface             $logger,
-        private LocaleService               $localeService,
-        private KeychainStateResolver       $keychainStateResolver
+        private LocaleService               $localeService
     )
     {
     }
@@ -114,8 +111,7 @@ readonly class ConnectionFactory
             version: $this->version,
             locale: $this->localeService->getCurrentLocale(),
             userinfo: $userinfo,
-            migrationsToApply: count($pendingMigrations),
-            keychainState: $this->resolveKeychainState($pendingMigrations)
+            migrationsToApply: count($pendingMigrations)
         );
     }
 
@@ -238,8 +234,7 @@ readonly class ConnectionFactory
             email: $user->email,
             hash: md5($user->id . '-' . $user->publicKey),
             avatar: StoredFileIdentifier::tryFromUserAvatar($user),
-            bio: $user->bio,
-            permissions: app(\App\Services\Admin\PermissionService::class)->permissionsOf($user)
+            bio: $user->bio
         );
     }
 
@@ -263,26 +258,5 @@ readonly class ConnectionFactory
             ->findAllMigrationsToApplyForUser($user)
             ->values()
             ->all();
-    }
-
-    /**
-     * @param list<MigrationToApply> $pendingMigrations
-     */
-    private function resolveKeychainState(array $pendingMigrations): KeychainState|null
-    {
-        $user = $this->request->user();
-        if (!$user) {
-            return null;
-        }
-
-        $legacyMigration = collect($pendingMigrations)->first(
-            static fn(MigrationToApply $migration): bool => $migration->name === KeychainStateResolver::LEGACY_KEYCHAIN_MIGRATION
-        );
-        $hasLegacyMigrationBlob = $legacyMigration instanceof MigrationToApply
-            && is_array($legacyMigration->data)
-            && isset($legacyMigration->data['blob'])
-            && $legacyMigration->data['blob'] !== '';
-
-        return $this->keychainStateResolver->resolveForUser($user, $hasLegacyMigrationBlob);
     }
 }

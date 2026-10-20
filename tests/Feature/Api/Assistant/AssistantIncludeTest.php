@@ -116,7 +116,6 @@ class AssistantIncludeTest extends TestCase
         $assistant->ai_tools()->sync([$this->createAiTool()->id]);
         // The owner performs the include request; the tool must be visible
         // to them through the discovery scope.
-        $this->grantInternalToolAccess($owner);
         $assistant->sharedUsers()->sync([User::factory()->create()->id]);
 
         // Bare attachment row — no on-disk file is needed for the include test,

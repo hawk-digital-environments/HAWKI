@@ -39,7 +39,6 @@
             locale: app.localization.locale,
             translate,
             router,
-            can: (permission: string) => app.can(permission)
         });
     }
 

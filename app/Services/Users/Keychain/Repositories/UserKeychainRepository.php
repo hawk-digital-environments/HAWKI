@@ -105,7 +105,6 @@ class UserKeychainRepository extends AbstractRepositoryWithContextualScopes
      *
      * Only the `type` column is read: this answers "what shape is this user's keychain in"
      * without pulling the encrypted values, which are large and useless to the server anyway.
-     * @see \App\Services\Users\Keychain\KeychainStateResolver
      * @return list<string> Raw {@see UserKeychainValueType} values, with duplicates.
      */
     public function findAllValueTypesOfUser(User $user): array

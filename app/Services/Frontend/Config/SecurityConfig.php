@@ -18,9 +18,6 @@ use Illuminate\Http\Request;
  */
 class SecurityConfig extends AbstractConfig implements PublicConfigInterface
 {
-    /** Whether registration generates a random passkey instead of asking the user to choose one. */
-    public readonly bool $passkeyAutoGenerate;
-
     /**
      * When true, the user may paste their passkey into the input box.
      * When false, the input rejects clipboard paste events so the user must type the passkey manually.
@@ -40,7 +37,6 @@ class SecurityConfig extends AbstractConfig implements PublicConfigInterface
     {
         $repo->get('hawki.security.passkey.allow_paste');
         return self::fromArray([
-            'passkeyAutoGenerate' => $repo->get('hawki.security.passkey.auto_generate', false),
             'passkeyAllowPaste' => $repo->get('hawki.security.passkey.allow_paste', true),
             'passkeyRestrictCharacters' => $repo->get('hawki.security.passkey.char_limitation', true),
         ]);
@@ -61,7 +57,6 @@ class SecurityConfig extends AbstractConfig implements PublicConfigInterface
     public function toPublicArray(Request $request): array|null
     {
         return [
-            'passkeyAutoGenerate' => $this->passkeyAutoGenerate,
             'passkeyAllowPaste' => $this->passkeyAllowPaste,
             'passkeyRestrictCharacters' => $this->passkeyRestrictCharacters,
         ];

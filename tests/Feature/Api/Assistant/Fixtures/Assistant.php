@@ -7,9 +7,7 @@ namespace Tests\Feature\Api\Assistant\Fixtures;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Ai\AiTool;
-use App\Models\Role;
 use App\Models\User;
-use App\Services\Admin\RoleAssignmentService;
 use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Limits\Values\NullAiModelLimits;
@@ -79,12 +77,8 @@ trait Assistant
     }
 
     /**
-     * A discoverable test tool: since the RBAC tool-access rework, every
-     * API-path ai_tools query runs through the `tool_discovery` global scope
-     * ({@see \App\Models\Ai\AiTool::booted()}), so a fixture tool needs an
-     * access rule, an acting user holding that rule's grants (see
-     * {@see grantInternalToolAccess()}), and linkage to an active
-     * tool-calling model — otherwise relationship reads/writes 404.
+     * A discoverable test tool linked to an active tool-calling model, so
+     * relationship reads/writes do not 404.
      */
     private function createAiTool(): AiTool
     {
@@ -131,23 +125,5 @@ trait Assistant
         $model->tools()->attach($tool->id, ['type' => 'manual']);
 
         return $tool;
-    }
-
-    /**
-     * Grants the internal-search tool access rule to a user, mirroring the
-     * RBAC setup of {@see \Tests\Feature\ToolAuthorizationTest}: without the
-     * `tools.use` + `tools.internal_search.use` grants the tool created by
-     * {@see createAiTool()} stays invisible to them.
-     */
-    private function grantInternalToolAccess(User $user): void
-    {
-        $role = Role::create([
-            'name' => 'assistant-fixture-tool-grant-' . uniqid(),
-            'display_name' => 'Assistant fixture tool grant',
-            'guard_name' => 'web',
-        ]);
-        $role->syncPermissions(['tools.use', 'tools.internal_search.use']);
-
-        app(RoleAssignmentService::class)->replace($user, [$role->id]);
     }
 }

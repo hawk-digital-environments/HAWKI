@@ -35,22 +35,22 @@ class AiToolSchema extends Schema
         return [
             ID::make(),
             Boolean::make('active')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('type')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('name'),
             Str::make('class_name')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('mcp_name')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             ArrayHash::make('mcp_config')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('description'),
             Str::make('server_capability_key', 'capability')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage'))
+                ->hidden(UserCondition::isNonAdmin(...))
                 ->readOnly(),
             Str::make('mapped_capability_key')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage')),
+                ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('capability_key', 'effective_capability')
                 ->extractUsing(fn(AiTool $tool) => $tool->getEffectiveCapability()),
             Str::make('status')
@@ -61,7 +61,7 @@ class AiToolSchema extends Schema
                     return $tool->server->status->value ?? OnlineStatus::UNKNOWN->value;
                 }),
             Boolean::make('added_by_file')
-                ->hidden(fn($request) => UserCondition::cannot($request, 'mcp.manage'))
+                ->hidden(UserCondition::isNonAdmin(...))
                 ->readOnly(),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),

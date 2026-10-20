@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Services\Users\Keychain\Value\KeychainBatch;
 use App\Services\Users\Keychain\Value\UserKeychainValueToRemove;
 use App\Services\Users\Keychain\Value\UserKeychainValueToSet;
 use App\Services\Users\Keychain\Value\UserKeychainValueType;
@@ -33,19 +32,6 @@ class UserKeychainUpdateValuesRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
-    }
-
-    /**
-     * The requested changes as the keychain writer applies them.
-     */
-    public function getBatch(): KeychainBatch
-    {
-        return new KeychainBatch(
-            clean: $this->isCleaning(),
-            publicKey: $this->hasNewPublicKey() ? $this->getNewPublicKey() : null,
-            set: iterator_to_array($this->getSetList(), false),
-            remove: iterator_to_array($this->getRemoveList(), false)
-        );
     }
 
     /**

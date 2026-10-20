@@ -14,10 +14,6 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StorageProxyController;
 use App\Http\Controllers\StreamController;
 use App\Http\Middleware\ExtApp\ExtAppUserOrTokenForbiddenMiddleware;
-use App\Http\Middleware\RejectSpaLegacyRegistration;
-use App\Http\Middleware\RedirectToSpaAuth;
-use App\Http\Controllers\Auth\RedirectLoginController;
-use App\Services\Auth\SpaAuthHandoff;
 use Illuminate\Support\Facades\Route;
 
 // Health check routes (no authentication required for Docker health checks)
@@ -27,22 +23,12 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
 
     Route::get('/', [LoginController::class, 'index']);
 
-    $spaEntry = static function (\Illuminate\Http\Request $request, SpaAuthHandoff $handoff) {
-        if ($request->getUserContext()->isRegisteringUser()) {
-            $handoff->markSpaRegistration($request);
-        }
-
-        return view('index');
-    };
-    Route::group(['prefix' => '/new'], static function () use ($spaEntry) {
-        Route::fallback($spaEntry)->name('new.fallback');
+    Route::group(['prefix' => '/new'], static function () {
+        Route::fallback(static fn() => view('index'))->name('new.fallback');
     });
-    Route::get('/new', $spaEntry)->name('new.index');
+    Route::get('/new', static fn() => view('index'))->name('new.index');
     Route::get('/login', [LoginController::class, 'index'])
-        ->middleware(RedirectToSpaAuth::class . ':login')->name('login');
-
-    Route::get('/auth/redirect', RedirectLoginController::class)
-        ->name('web.auth.redirect');
+        ->name('login');
 
     Route::get('/req/login', [AuthenticationController::class, 'handleLogin'])
         ->name('web.auth.login.get');
@@ -72,14 +58,11 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
     Route::middleware([
         'registrationAccess'
     ])->group(function () {
-        Route::get('/register', [AuthenticationController::class, 'register'])
-            ->middleware(RedirectToSpaAuth::class . ':register');
+        Route::get('/register', [AuthenticationController::class, 'register']);
         Route::post('/req/profile/validatePasskey', [ProfileController::class, 'validatePasskey'])
             ->middleware('deprecated');
-        Route::post('/req/profile/backupPassKey', [ProfileController::class, 'backupPassKey'])
-            ->middleware(RejectSpaLegacyRegistration::class);
-        Route::post('/req/complete_registration', [AuthenticationController::class, 'completeRegistration'])
-            ->middleware(RejectSpaLegacyRegistration::class);
+        Route::post('/req/profile/backupPassKey', [ProfileController::class, 'backupPassKey']);
+        Route::post('/req/complete_registration', [AuthenticationController::class, 'completeRegistration']);
     });
 
 
@@ -99,8 +82,7 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
         'expiry_check'
     ])->group(function () {
 
-        Route::get('/handshake', [AuthenticationController::class, 'handshake'])
-            ->middleware(RedirectToSpaAuth::class . ':handshake');
+        Route::get('/handshake', [AuthenticationController::class, 'handshake']);
 
         // AI CONVERSATION ROUTES
         Route::get('/chat', [HomeController::class, 'index']);
