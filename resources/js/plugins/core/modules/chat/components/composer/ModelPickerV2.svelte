@@ -47,6 +47,7 @@
     import ModelMenuListItem from '$plugins/core/modules/chat/components/composer/ModelMenuListItem.svelte';
     import ModelMenuDetail from '$plugins/core/modules/chat/components/composer/ModelMenuDetail.svelte';
     import {revealMenuRow} from '$plugins/core/modules/chat/components/composer/utils/revealMenuRow.js';
+    import {textPopIn} from '$lib/utils/transitions/textPopIn.js';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -287,7 +288,7 @@
                         {#if current}
                             <ProviderSwatch model={current} size="sm" round/>
                         {/if}
-                        <span class="mp2-trigger-label">{current?.label ?? __('chat.composer.modelPicker.placeholder')}</span>
+                        <span class="mp2-trigger-label" use:textPopIn={current?.label ?? __('chat.composer.modelPicker.placeholder')}></span>
                         <ChevronDownIcon size={14} class="mp2-trigger-chevron"/>
                     </button>
                 {/snippet}
