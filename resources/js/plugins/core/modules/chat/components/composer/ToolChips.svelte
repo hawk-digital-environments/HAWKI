@@ -33,6 +33,7 @@
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {mergeProps} from 'bits-ui';
     import {toolAvailabilityFor, toolCategoryOf} from '$plugins/core/stores/aiToolStoreData.js';
+    import {getRootTool} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 
     const {__} = useTranslator();
 
@@ -185,24 +186,28 @@
     {@const availability = toolAvailabilityFor(tool, composerContext.model.current)}
     {@const incompatible = availability !== 'available'}
     {@const availabilityLabel = availability === 'offline' ? __('chat.composer.statusDot.tool.offlineLabel') : availability === 'model-incompatible' ? __('chat.composer.statusDot.tool.notSupportedTooltip', {model: composerContext.model.current?.label ?? ''}) : ''}
-    <!-- The reason lives in a tooltip rather than the label, so the chip keeps the
-         tool's name readable instead of truncating it behind "(Not supported …)". -->
-    {#if availabilityLabel && !measuring}
-        <Tooltip tooltip={availabilityLabel}>
+    <!-- The chip shows only the bare tool name; the selection addendum ("(auto)",
+         "(native)", …) and any availability reason live in a tooltip instead, so the
+         name isn't truncated behind them. -->
+    {@const label = getRootTool(tool).displayName}
+    {@const fullName = label !== tool.displayName ? tool.displayName : ''}
+    {@const tooltip = fullName && availabilityLabel ? `${fullName}: ${availabilityLabel}` : fullName || availabilityLabel}
+    {#if tooltip && !measuring}
+        <Tooltip {tooltip}>
             {#snippet children(a)}
-                {@render chipButton(tool, index, measuring, incompatible, availabilityLabel, a.props)}
+                {@render chipButton(tool, index, measuring, incompatible, label, availabilityLabel, a.props)}
             {/snippet}
         </Tooltip>
     {:else}
-        {@render chipButton(tool, index, measuring, incompatible, availabilityLabel)}
+        {@render chipButton(tool, index, measuring, incompatible, label, availabilityLabel)}
     {/if}
 {/snippet}
 
-{#snippet chipButton(tool: typeof tools[number], index: number, measuring: boolean, incompatible: boolean, availabilityLabel: string, tooltipProps: Record<string, unknown> = {})}
+{#snippet chipButton(tool: typeof tools[number], index: number, measuring: boolean, incompatible: boolean, label: string, availabilityLabel: string, tooltipProps: Record<string, unknown> = {})}
     <button
         {...mergeProps(tooltipProps, {
             class: ['tool-chip', incompatible && 'incompatible'],
-            title: availabilityLabel ? undefined : tool.displayName,
+            title: label !== tool.displayName || availabilityLabel ? undefined : tool.displayName,
             tabindex: measuring ? -1 : 0,
             'aria-hidden': measuring,
             'data-tool-chip': measuring ? undefined : '',
@@ -213,7 +218,7 @@
         })}
     >
         <ToolIcon tool={tool} size={16}/>
-        <span class="tool-chip-label">{tool.displayName}</span>
+        <span class="tool-chip-label">{label}</span>
         <span class="tool-chip-remove" aria-hidden="true"><Cancel01Icon size={16}/></span>
     </button>
 {/snippet}
