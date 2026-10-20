@@ -43,7 +43,7 @@
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import AiChipIcon from '$lib/components/ui/icons/iconset/AiChipIcon.svelte';
+    import AiBookIcon from '$lib/components/ui/icons/iconset/AiBookIcon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
@@ -313,7 +313,7 @@
                     <ButtonWithTooltip
                         variant="ghost"
                         size="sm"
-                        iconLeft={AiChipIcon}
+                        iconLeft={AiBookIcon}
                         tooltip={__('chat.composer.modelPicker.openModels')}
                         onclick={openModelsOverview}/>
                 {/snippet}

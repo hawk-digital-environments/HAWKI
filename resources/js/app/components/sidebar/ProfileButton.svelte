@@ -15,7 +15,7 @@
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
     import Megaphone01Icon from '$lib/components/ui/icons/iconset/Megaphone01Icon.svelte';
-    import AiChipIcon from '$lib/components/ui/icons/iconset/AiChipIcon.svelte';
+    import AiBookIcon from '$lib/components/ui/icons/iconset/AiBookIcon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -119,7 +119,7 @@
     <DropdownMenuItem iconLeft={Megaphone01Icon} onclick={openAnnouncements}>
         {__('ui.profile.announcements')}
     </DropdownMenuItem>
-    <DropdownMenuItem iconLeft={AiChipIcon} onclick={openModels}>
+    <DropdownMenuItem iconLeft={AiBookIcon} onclick={openModels}>
         {__('ui.profile.models')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
