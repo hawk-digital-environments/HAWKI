@@ -27,6 +27,7 @@
     import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {chipPop} from '$lib/utils/transitions/chipPop';
+    import {textPopIn} from '$lib/utils/transitions/textPopIn';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
@@ -250,7 +251,7 @@
                 aria-label={__('chat.composer.toolChips.showMore', {count: String(hiddenCount)})}
                 onclick={() => onShowMore?.()}
             >
-                +{hiddenCount}
+                <span use:textPopIn={`+${hiddenCount}`}></span>
             </button>
         {/if}
     </div>
@@ -333,7 +334,10 @@
         white-space: nowrap;
     }
 
+    /* Circle at the chip height; a rare 3-digit count still grows into a pill. */
     .tool-chip-badge {
+        min-width: var(--chat-composer-control-height, 2rem);
+        padding-inline: var(--space-1);
         font-variant-numeric: tabular-nums;
         font-weight: var(--font-weight-medium, 500);
     }
