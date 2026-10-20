@@ -207,17 +207,74 @@
         });
     }
 
-    // Arrowing out of the search field lands on the tagged assistant rather than the first
-    // row, so the keyboard starts from the current choice. Runs in the capture phase, ahead
-    // of bits-ui's own roving focus; falls through when that row is filtered out.
-    function onContentKeydownCapture(event: KeyboardEvent) {
-        if (event.key !== 'ArrowDown' || !(event.target instanceof HTMLInputElement)) {
+    // The tagged assistant's row, unless it is filtered out.
+    function activeRow(container: ParentNode): HTMLElement | null {
+        const handle = composerContext.handlesInMessage[0];
+        return handle && shownEntries.some(entry => entry.assistant.handle === handle)
+            ? container.querySelector<HTMLElement>(`[data-assistant-handle="${CSS.escape(handle)}"]`)
+            : null;
+    }
+
+    // The list opens on the tagged assistant: its row takes focus and is scrolled into the
+    // viewport. Two frames, so this lands after `MenuSearchField` claims focus on mount.
+    // Leaves focus in the search field when no assistant is tagged; matches the model picker.
+    $effect(() => {
+        if (!open) {
             return;
         }
-        const handle = composerContext.handlesInMessage[0];
-        const row = handle && shownEntries.some(entry => entry.assistant.handle === handle)
-            ? (event.currentTarget as HTMLElement).querySelector<HTMLElement>(`[data-assistant-handle="${handle}"]`)
-            : null;
+        let frame = requestAnimationFrame(() => {
+            frame = requestAnimationFrame(() => {
+                const row = activeRow(document.querySelector('.assistant-menu-content') ?? document);
+                if (!row) {
+                    return;
+                }
+                row.focus({preventScroll: true});
+                const viewport = row.closest<HTMLElement>('.viewport');
+                if (viewport) {
+                    // Minimal scroll: stay at the top while the row is visible there; otherwise
+                    // scroll just far enough to rest it on the bottom edge, keeping the view's
+                    // bottom padding so it doesn't sit flush against the panel border.
+                    // Rects are read mid open animation, while the panel is still scaled down, so
+                    // convert them back to layout pixels before mixing with scroll offsets.
+                    const viewportRect = viewport.getBoundingClientRect();
+                    const scale = viewportRect.height / viewport.offsetHeight || 1;
+                    const rowTop = (row.getBoundingClientRect().top - viewportRect.top) / scale + viewport.scrollTop;
+                    // The panel's max-height can clip the viewport, so only count what is visible.
+                    const panel = viewport.closest<HTMLElement>('.assistant-menu-content');
+                    const visibleHeight = panel
+                        ? Math.min(viewport.clientHeight, (panel.getBoundingClientRect().bottom - viewportRect.top) / scale)
+                        : viewport.clientHeight;
+                    const view = row.closest<HTMLElement>('.view');
+                    const gap = view ? parseFloat(getComputedStyle(view).paddingBottom) || 0 : 0;
+                    const rowBottom = rowTop + row.offsetHeight + gap;
+                    viewport.scrollTop = rowBottom <= visibleHeight ? 0 : rowBottom - visibleHeight;
+                }
+            });
+        });
+        return () => cancelAnimationFrame(frame);
+    });
+
+    // Keyboard handling ahead of bits-ui's own (capture phase):
+    // - Typing while a row has focus goes to the search field instead of bits-ui's
+    //   typeahead, so the list still filters as you type.
+    // - Arrowing out of the search field lands on the tagged assistant rather than the first
+    //   row; falls through when that row is filtered out.
+    function onContentKeydownCapture(event: KeyboardEvent) {
+        const content = event.currentTarget as HTMLElement;
+        const inSearch = event.target instanceof HTMLInputElement;
+        if (!inSearch && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && event.key !== ' ') {
+            const search = content.querySelector<HTMLInputElement>('.menu-search input');
+            if (search) {
+                // Focus moves before the key's default action, so the character lands in the field.
+                event.stopPropagation();
+                search.focus();
+            }
+            return;
+        }
+        if (event.key !== 'ArrowDown' || !inSearch) {
+            return;
+        }
+        const row = activeRow(content);
         if (!row) {
             return;
         }
