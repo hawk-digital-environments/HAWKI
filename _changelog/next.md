@@ -20,6 +20,7 @@
 - MCP tools failed because processes were decoupled using `autoSse=true` (the default). New default is `autoSse=false`. 
 - Large chat messages fail to encrypt with a `RangeError: too many arguments provided for a function call`: the client-side encryption encoded the ciphertext with one `String.fromCharCode.apply()` over every byte, which exceeds the browser's argument limit at roughly 100k bytes. Base64 conversion now runs in 32k chunks, in both the new kernel encryption and the legacy bundle.
 - Multiple Mermaid diagram previews failed to render at the same time: generated diagrams could receive duplicate render IDs, causing the renderer to silently draw only one and skip the rest. Fixed upstream in `markstream` 2.0.15.
+- Model enrichment (pricing, context windows, feature flags) stopped updating because LiteLLM discontinued their catalog API. Lookups always fell back to the static files. The catalog is now read from LiteLLM's GitHub file.
 
 ### Internals
 
@@ -46,6 +47,8 @@
 - Provider dialects are resolved on the client in one place: `resources/js/plugins/core/modules/chat/utils/thinkingEvents.ts` is a pure reducer that folds the forwarded packets into a `ReasoningPart[]` timeline. It maps OpenAI's completed `web_search_call` action and Anthropic's `server_tool_use` (completed) + `web_search_tool_result` pair to `web_search` parts. Adding a provider means extending this reducer, not the controller.
 - `ExtendedOpenAiGateway` no longer fabricates extra `ReasoningEnd`/`ReasoningStart` pairs to mark OpenAI reasoning summary parts. It keeps one lifecycle per reasoning item and only prefixes the first delta of each subsequent part with a blank line, so the concatenated summary keeps its markdown sections. Covered by `ExtendedOpenAiGatewayTest` using a raw SSE fixture stream.
 - Added `App\Services\Ai\Providers\Adapters\Values\AnthropicThinkingConfig`, a value object shared by the Anthropic and AWS Bedrock adapters that decides the extended-thinking budget (capped at half of max tokens, minimum 1,024) and the sampling overrides Anthropic requires. Every deviation from the user's configured parameters (thinking disabled, temperature/top-p neutralised) is returned as a warning and logged by the adapters. Behaviour change: a requested thinking budget below 1,024 tokens now disables thinking with a warning instead of being silently raised to the minimum.
+- LiteLLM catalog: downloaded once into a shared cache and filtered per provider, kept fresh via ETag revalidation every 5 minutes. During upstream outages cached data is served for up to 24 h, then the static files take over.
+- The `static_llm_data` updater no longer deletes the old files when the catalog is unreachable.
 
 ### Deprecation
 
