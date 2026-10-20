@@ -46,6 +46,7 @@
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {revealMenuRow} from '$plugins/core/modules/chat/components/composer/utils/revealMenuRow.js';
     import {createCommandMenu, createCommandKeeper, type MenuCommand} from '$plugins/core/modules/chat/components/composer/utils/commandMenu.js';
 
     const composerContext = useComposerContext();
@@ -249,8 +250,8 @@
         return () => cancelAnimationFrame(frame);
     });
 
-    // The list opens on the tagged assistant: its row takes focus and is scrolled into the
-    // viewport. Two frames, so this lands after `MenuSearchField` claims focus on mount.
+    // The list opens on the tagged assistant: its row takes focus and is minimally scrolled
+    // into the viewport. Two frames, so this lands after `MenuSearchField` claims focus on mount.
     // Leaves focus in the search field when no assistant is tagged; matches the model picker.
     // Not in command mode, where focus stays in the textarea.
     $effect(() => {
@@ -263,27 +264,7 @@
                 if (!row) {
                     return;
                 }
-                row.focus({preventScroll: true});
-                const viewport = row.closest<HTMLElement>('.viewport');
-                if (viewport) {
-                    // Minimal scroll: stay at the top while the row is visible there; otherwise
-                    // scroll just far enough to rest it on the bottom edge, keeping the view's
-                    // bottom padding so it doesn't sit flush against the panel border.
-                    // Rects are read mid open animation, while the panel is still scaled down, so
-                    // convert them back to layout pixels before mixing with scroll offsets.
-                    const viewportRect = viewport.getBoundingClientRect();
-                    const scale = viewportRect.height / viewport.offsetHeight || 1;
-                    const rowTop = (row.getBoundingClientRect().top - viewportRect.top) / scale + viewport.scrollTop;
-                    // The panel's max-height can clip the viewport, so only count what is visible.
-                    const panel = viewport.closest<HTMLElement>('.assistant-menu-content');
-                    const visibleHeight = panel
-                        ? Math.min(viewport.clientHeight, (panel.getBoundingClientRect().bottom - viewportRect.top) / scale)
-                        : viewport.clientHeight;
-                    const view = row.closest<HTMLElement>('.view');
-                    const gap = view ? parseFloat(getComputedStyle(view).paddingBottom) || 0 : 0;
-                    const rowBottom = rowTop + row.offsetHeight + gap;
-                    viewport.scrollTop = rowBottom <= visibleHeight ? 0 : rowBottom - visibleHeight;
-                }
+                revealMenuRow(row, '.assistant-menu-content');
             });
         });
         return () => cancelAnimationFrame(frame);

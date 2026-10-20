@@ -46,6 +46,7 @@
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import ModelMenuListItem from '$plugins/core/modules/chat/components/composer/ModelMenuListItem.svelte';
     import ModelMenuDetail from '$plugins/core/modules/chat/components/composer/ModelMenuDetail.svelte';
+    import {revealMenuRow} from '$plugins/core/modules/chat/components/composer/utils/revealMenuRow.js';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -179,9 +180,9 @@
             : null;
     }
 
-    // The list opens on the current model: its row takes focus, centred in the scrolling
-    // viewport. Two frames, so this lands after `MenuSearchField` claims focus on mount.
-    // Falls back to the search field when the row is folded away or offline.
+    // The list opens on the current model: its row takes focus and is minimally scrolled
+    // into the viewport; matches the assistant picker. Two frames, so this lands after
+    // `MenuSearchField` claims focus on mount. Falls back to the search field when the row is folded away or offline.
     $effect(() => {
         if (!open) {
             return;
@@ -192,12 +193,7 @@
                 if (!row) {
                     return;
                 }
-                row.focus({preventScroll: true});
-                const viewport = row.closest<HTMLElement>('.viewport');
-                if (viewport) {
-                    viewport.scrollTop += row.getBoundingClientRect().top - viewport.getBoundingClientRect().top
-                        - (viewport.clientHeight - row.offsetHeight) / 2;
-                }
+                revealMenuRow(row, '.model-menu-content');
             });
         });
         return () => cancelAnimationFrame(frame);
