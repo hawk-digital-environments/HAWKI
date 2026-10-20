@@ -258,7 +258,6 @@
                 "otherProvider": "Sonstige",
                 "noResults": "Keine Modelle gefunden.",
                 "switchModelCurrent": "Modell wechseln, aktuell: :model",
-                "allModelsLink": "Alle Modelle entdecken",
                 "backButton": "Modelle",
                 "infoDefault": "Mehr Informationen zum Modell anzeigen",
                 "useModel": "Modell verwenden",

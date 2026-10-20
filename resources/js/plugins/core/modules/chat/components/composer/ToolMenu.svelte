@@ -16,8 +16,8 @@
   Rendered once by `ChatComposer.svelte` in the bottom-left control row, next to `FilePicker`
   and `ToolChips`. `open` is bound so the tool-chip overflow badge ("+N") can open the same
   popover externally. Typing `/` in the message opens it in command mode (`command` set): the
-  textarea keeps focus, what is typed after the `/` filters the tools the current model can
-  run in place of the search field, and picking one toggles it and closes the menu — see
+  textarea keeps focus, what is typed after the `/` filters the same tools in place of the
+  search field, and picking one toggles it and closes the menu — see
   `utils/commandMenu.ts`:
   ```svelte
   let toolPickerOpen = $state(false);
@@ -171,18 +171,10 @@
         });
     });
 
-    // What the list panel shows: the entries matching the search field, by tool name,
-    // description or the label of the MCP server providing it. A typed command offers only
-    // the tools the current model can run, by name: it exists to switch one on in a single
-    // keystroke, not to inspect the unusable ones.
+    // What the list panel shows: the entries matching the search field — or the typed
+    // command's query — by tool name, description or the label of the MCP server providing it.
     const searchedEntries = $derived.by(() => {
-        if (shownCommand) {
-            const commandNeedle = shownCommand.query.trim().toLowerCase();
-            return filteredEntries.filter(entry => entry.available
-                && !entry.disabled
-                && entry.tool.displayName.toLowerCase().includes(commandNeedle));
-        }
-        const needle = query.trim().toLowerCase();
+        const needle = (shownCommand ? shownCommand.query : query).trim().toLowerCase();
         if (!needle) {
             return filteredEntries;
         }
@@ -303,7 +295,22 @@
         }
     });
 
-    const commandMenu = createCommandMenu('.tool-menu-content', () => shownCommand);
+    // The highlight starts on the tool switched on most recently (`tools.active` keeps
+    // activation order), so the keyboard begins from the current state — the same way the `@`
+    // menu starts on the tagged assistant. Falls back to earlier ones the query filtered out.
+    function lastActiveRow(content: ParentNode): HTMLElement | null {
+        for (const tool of [...composerContext.tools.active].reverse()) {
+            const row = content.querySelector<HTMLElement>(
+                `[data-tool-name="${CSS.escape(tool.name)}"]:not([data-disabled])`
+            );
+            if (row) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    const commandMenu = createCommandMenu('.tool-menu-content', () => shownCommand, lastActiveRow);
 
     /** Moves the command highlight; called by `ComposerTextarea` on ArrowUp/ArrowDown. */
     export function move(delta: number): boolean {
@@ -315,8 +322,9 @@
         return commandMenu.selectActive();
     }
 
-    // In command mode the highlight starts on the first row, and starts over whenever the
-    // typed query changes the rows. A frame later, so the filtered rows have rendered.
+    // In command mode the highlight starts on the last tool switched on, else the first row, and
+    // starts over whenever the typed query changes the rows. A frame later, so the filtered
+    // rows have rendered.
     // Keyed on the query string, not the command object, so only real filtering resets it.
     const commandQuery = $derived(shownCommand?.query ?? null);
     $effect(() => {

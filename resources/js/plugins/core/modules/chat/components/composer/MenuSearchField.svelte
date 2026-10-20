@@ -41,9 +41,14 @@
     }
 
     // The field mounts with the menu, and bits-ui focuses the content on open — so claim
-    // focus back after that, letting the user type straight into the filter.
+    // focus back after that, letting the user type straight into the filter. Not in a bottom
+    // sheet, which opens with the on-screen keyboard down (see `DropdownMenu`).
     $effect(() => {
-        const frame = requestAnimationFrame(() => inputEl?.focus());
+        const frame = requestAnimationFrame(() => {
+            if (!inputEl?.closest('.dropdown-content--sheet')) {
+                inputEl?.focus();
+            }
+        });
         return () => cancelAnimationFrame(frame);
     });
 </script>

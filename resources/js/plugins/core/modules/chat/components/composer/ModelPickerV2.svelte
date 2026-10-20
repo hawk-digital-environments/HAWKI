@@ -9,7 +9,7 @@
   section first, then one section per provider in store order; offline models are
   listed but disabled. Sections (favourites included) collapse from their header (a menu item, so the
   keyboard reaches it too); a search shows every match regardless. Each row's info icon (or ArrowRight) drills into `ModelMenuDetail`,
-  which shows the model's `ModelCard`. A footer item opens the `/models` showcase.
+  which shows the model's `ModelCard`.
 
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
@@ -49,7 +49,6 @@
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 
     interface Props {
@@ -71,7 +70,6 @@
     const composerContext = onSelect ? null : useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
-    const app = useApp();
     const {__} = useTranslator();
 
     let open = $state(false);
@@ -173,11 +171,6 @@
                 .querySelector<HTMLElement>(`.model-menu-content [data-model-id="${CSS.escape(modelId)}"]`)
                 ?.focus();
         });
-    }
-
-    function openModelsDialog(): void {
-        open = false;
-        app.events.sync.triggerVoid('modelsRequested');
     }
 
     function currentRow(container: ParentNode): HTMLElement | null {
@@ -350,14 +343,6 @@
                 </MenuList>
             {/if}
         </DropdownMenuDetailView>
-
-        {#if !detailModel}
-            <div class="mp2-footer">
-                <DropdownMenuItem class="mp2-all-models" onSelect={openModelsDialog}>
-                    {__('chat.composer.modelPicker.allModelsLink')}
-                </DropdownMenuItem>
-            </div>
-        {/if}
     </DropdownMenu>
 {/if}
 
@@ -479,19 +464,6 @@
     /* Next to a form field the menu spans the field instead. */
     :global(.dropdown-content.dropdown-content--dropdown.model-menu-content.model-menu-content--field) {
         width: var(--bits-dropdown-menu-anchor-width, calc(0.25rem * 80));
-    }
-
-    /* Pinned below the scrolling list, set off by a divider so rows never run into it. */
-    .mp2-footer {
-        flex-shrink: 0;
-        padding: var(--space-1);
-        border-top: var(--border);
-    }
-
-    :global(.dropdown-item.mp2-all-models) {
-        justify-content: center;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-xxs);
     }
 
     /* Section headers read like the menu's section labels (`DropdownMenuLabel`), with a

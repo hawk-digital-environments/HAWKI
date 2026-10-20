@@ -20,7 +20,7 @@
 
     interface Props {
         model: AiModel;
-        /** Darkens the tint and lays a check over the logo. */
+        /** Tints the swatch HAWKI blue and lays a check over the logo, like a selected tool. */
         checked?: boolean;
         /** `md` (default) matches the tool/assistant row swatch; `sm` is for compact controls. */
         size?: 'sm' | 'md';
@@ -69,7 +69,10 @@
         border-radius: var(--corner-full);
     }
 
+    /* Selected like a tool row: the HAWKI-blue ink, tinted the same strength as `.tool-icon-swatch--checked`. */
     .provider-swatch--checked {
+        --swatch-ink: var(--color-accent-text);
+
         background-color: color-mix(in oklab, var(--swatch-ink) 35%, var(--color-surface-raised));
     }
 
@@ -81,6 +84,6 @@
         justify-content: center;
         border-radius: inherit;
         background-color: inherit;
-        color: var(--color-text);
+        color: var(--swatch-ink);
     }
 </style>

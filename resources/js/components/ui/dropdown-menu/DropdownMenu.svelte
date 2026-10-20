@@ -104,6 +104,22 @@
     // long as the menu stays open so content that grows or shrinks inside it — e.g. a
     // detail view replacing a list — can't flip the panel to the other side of the trigger.
     let contentEl = $state<HTMLElement | null>(null);
+
+    // A sheet opens with the on-screen keyboard down: neither the dialog nor the menu may
+    // autofocus their first field (usually a search input), and `MenuSearchField` holds back
+    // inside a sheet too. The panel itself takes focus instead, which also blurs a textarea
+    // that opened the menu, so focus still lives inside the sheet for keyboard and
+    // screen-reader users.
+    let sheetContentEl = $state<HTMLElement | null>(null);
+
+    function preventAutoFocus(event: Event) {
+        event.preventDefault();
+    }
+
+    function focusSheetPanel(event: Event) {
+        event.preventDefault();
+        requestAnimationFrame(() => sheetContentEl?.focus({preventScroll: true}));
+    }
     let lockedSide = $state<Side | null>(null);
 
     $effect(() => {
@@ -162,8 +178,10 @@
     {/if}
     <Breakpoint>
         {#snippet bpSmallerThanMd()}
-            <BottomSheet bind:open={open} title={title}>
-                <DropdownMenuPrimitive.ContentStatic {...mergeProps(fullContentProps, {class: 'dropdown-content--sheet'}) as any}>
+            <BottomSheet bind:open={open} title={title} contentProps={{onOpenAutoFocus: preventAutoFocus}}>
+                <DropdownMenuPrimitive.ContentStatic
+                    bind:ref={sheetContentEl}
+                    {...mergeProps(fullContentProps, {class: 'dropdown-content--sheet', onOpenAutoFocus: focusSheetPanel}) as any}>
                     {@render items()}
                 </DropdownMenuPrimitive.ContentStatic>
             </BottomSheet>

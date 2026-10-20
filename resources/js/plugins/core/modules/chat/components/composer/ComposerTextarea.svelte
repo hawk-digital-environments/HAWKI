@@ -19,6 +19,8 @@
   name, and ArrowUp/ArrowDown/Enter/Tab/Escape drive it — the textarea keeps focus
   throughout. Picking a row drops the typed `@query`/`/query` again: an assistant
   becomes a handle on the message, a tool is toggled in `composerContext.tools`.
+  Below the `md` breakpoint, where the menus are bottom sheets, a trigger opens the menu
+  the same way its button does instead.
 
   Reads/writes `ComposerContext` directly — there is no props-based way to
   set the message text; bind to `composerContext.message` from a parent if
@@ -45,6 +47,7 @@
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import type {CommandMenuHandle, MenuCommand} from '$plugins/core/modules/chat/components/composer/utils/commandMenu.js';
     import {getTextareaCaretRect, type CaretRect} from '$plugins/core/modules/chat/components/composer/utils/textareaCaret.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -188,9 +191,18 @@
     );
     const menu = $derived(mention?.trigger === '@' ? assistantMenu : mention?.trigger === '/' ? toolMenu : null);
 
+    // Below `md` the menus are bottom sheets, and a sheet over the on-screen keyboard can't
+    // be driven from the textarea — so there a trigger opens the menu just like its button
+    // (search field, focus inside, focus back to the button on close). Only the typed
+    // trigger's pick-or-dismiss handling below still applies.
+    const breakpoint = useBreakpoint();
+    const commandMode = $derived(!breakpoint.is('bpSmallerThanMd'));
+
     // What the menus filter by.
     $effect(() => {
-        command = mention ? {trigger: mention.trigger, query: mention.query, anchor: mention.anchor} : null;
+        command = mention && commandMode
+            ? {trigger: mention.trigger, query: mention.query, anchor: mention.anchor}
+            : null;
     });
 
     function setMenuOpen(trigger: MentionTrigger, value: boolean) {
@@ -229,9 +241,10 @@
                 consumeMention();
             } else {
                 dismissMention();
-                // Unless the user clicked somewhere else that took focus.
+                // Unless the user clicked somewhere else that took focus, or the menu was a
+                // sheet, which hands focus back to its button.
                 const focused = document.activeElement;
-                if (!focused || focused === document.body || focused.closest('.dropdown-content')) {
+                if (commandMode && (!focused || focused === document.body || focused.closest('.dropdown-content'))) {
                     ref?.focus();
                 }
             }
@@ -301,6 +314,7 @@
         }
 
         const {start, query} = mention;
+        const refocus = commandMode;
         const end = start + 1 + query.length;
         setBody(textarea.value.slice(0, start) + textarea.value.slice(end));
         mention = null;
@@ -311,7 +325,9 @@
         // caret where the mention was on the next frame.
         requestAnimationFrame(() => {
             awaitingFlush = false;
-            textarea.focus();
+            if (refocus) {
+                textarea.focus();
+            }
             textarea.setSelectionRange(start, start);
         });
     }
@@ -345,7 +361,7 @@
 
     /** Menu-first key handling; returns true when the key was consumed by the menu. */
     function handleMentionKeyDown(e: KeyboardEvent): boolean {
-        if (!mention || !menuOpen) {
+        if (!mention || !menuOpen || !commandMode) {
             return false;
         }
 
