@@ -102,7 +102,9 @@ export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
         if (this.toolStore.authorizationState !== 'ready') return;
         const requested = createToolOrCapabilityWithState(tool, toolSelection, toolSettings);
         const current = createToolOrCapabilityWithStateFromTransferString(requested.toTransferString(), this.toolStore);
-        if (!current || !current.isAvailableFor(this.model.current, true)) return;
+        // Only authorization gates activation here. A tool the current model can't use stays
+        // active so ModelUsageSlice can surface the conflict; validatedActive() blocks it on send.
+        if (!current) return;
         if (this._active[current.name]) {
             this._active[current.name] = current;
         } else {
