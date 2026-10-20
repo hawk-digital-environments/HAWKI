@@ -1,6 +1,7 @@
 <script lang="ts">
     import Avatar from '$lib/components/ui/avatar/Avatar.svelte';
     import { useStore } from '$lib/app/hooks/useStore.svelte.js';
+    import { trimSvgIcon } from '$lib/utils/trimSvgIcon.js';
     let {
         name,
         light,
@@ -18,7 +19,9 @@
     } = $props();
     const theme = useStore('theme');
     let failed = $state(false);
-    const src = $derived((theme.isDark ? (dark ?? light) : light) || undefined);
+    const raw = $derived((theme.isDark ? (dark ?? light) : light) || undefined);
+    // Cropped to the artwork, so logos with and without built-in padding match in size.
+    const src = $derived(raw && trimSvgIcon(raw));
     $effect(() => {
         src;
         failed = false;
