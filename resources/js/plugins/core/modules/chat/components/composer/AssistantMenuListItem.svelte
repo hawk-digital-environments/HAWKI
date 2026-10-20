@@ -4,8 +4,9 @@
   a checkbox (checked = the handle is currently present in the message); the visuals come
   from `AssistantRow`, shared with the caret-anchored `AssistantMentionPopup`.
 
-  A separate info button on the right — or ArrowRight — opens `AssistantMenuDetail` for that
-  assistant instead of toggling it, stopping propagation so it never also tags.
+  A separate info chevron on the right — revealed on the row being pointed at or focused, as in
+  `ModelMenuListItem` — or ArrowRight opens `AssistantMenuDetail` for that assistant instead
+  of toggling it, stopping propagation so it never also tags.
 
   ## Usage
   Rendered by `AssistantMenu`, once per assistant from the `ai-handle` store:
@@ -157,12 +158,20 @@
         display: none;
     }
 
-    /* Mirrors `.tool-item-info`: a chevron that only opens the detail view. Rendered at
-       full strength, with no hover state, so it reads as a plain affordance. */
     /* The favourite only shows on the row the user is pointing at; favourite rows keep their own
        button visible. Mirrors `ToolMenuListItem`. */
     :global(.dropdown-checkbox-item.assistant-menu-item:hover .menu-pin-button),
     :global(.dropdown-checkbox-item.assistant-menu-item:focus-within .menu-pin-button) {
+        opacity: 1;
+    }
+
+    /* In the dropdown the info chevron stays out of sight until the row is pointed at or
+       focused, as in `ModelMenuListItem`; the mobile sheet has no hover, so it stays there. */
+    :global(.dropdown-content--dropdown .dropdown-checkbox-item.assistant-menu-item .assistant-item-info) {
+        opacity: 0;
+    }
+
+    :global(.dropdown-content .dropdown-checkbox-item.assistant-menu-item:is(:hover, :focus-within, [data-highlighted]) .assistant-item-info) {
         opacity: 1;
     }
 
@@ -177,7 +186,11 @@
         background: none;
         pointer-events: all;
         line-height: 0;
-        color: var(--color-text);
+        color: var(--color-text-muted);
         cursor: pointer;
+    }
+
+    .assistant-item-info:hover {
+        color: var(--color-text);
     }
 </style>

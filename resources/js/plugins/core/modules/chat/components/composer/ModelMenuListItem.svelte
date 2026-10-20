@@ -57,8 +57,8 @@
     const providerName = $derived(model.provider?.name ?? __('chat.composer.modelPicker.otherProvider'));
 
     // The list only surfaces exceptions; the detail view always shows both indicators. An
-    // offline row is already greyed out as disabled, so it needs no dot on top.
-    const showStatus = $derived(model.status === 'unknown');
+    // offline row is faded as disabled and also carries its red dot.
+    const showStatus = $derived(model.status !== 'online');
     const showDemand = $derived(!offline && model.demand !== 'low');
 
     function openDetail(event: MouseEvent) {
