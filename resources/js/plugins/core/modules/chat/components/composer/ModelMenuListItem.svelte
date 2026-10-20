@@ -161,8 +161,10 @@
         opacity: 0;
     }
 
-    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted], [data-state='checked']) .menu-pin-button),
-    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted], [data-state='checked']) .model-item-info) {
+    /* Focus only counts when it came from the keyboard: a click leaves focus on the row, which
+       would otherwise keep its controls shown after the pointer has moved on. */
+    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .menu-pin-button),
+    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .model-item-info) {
         opacity: 1;
     }
 

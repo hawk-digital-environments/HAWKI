@@ -228,7 +228,7 @@
        button visible, and so does an active one, so its options are at hand), so the list stays
        quiet when nothing is being aimed at. */
     :global(.dropdown-checkbox-item.tool-menu-item:hover .menu-pin-button),
-    :global(.dropdown-checkbox-item.tool-menu-item:focus-within .menu-pin-button),
+    :global(.dropdown-checkbox-item.tool-menu-item:is(:focus-visible, :has(:focus-visible)) .menu-pin-button),
     :global(.dropdown-checkbox-item.tool-menu-item[data-state='checked'] .menu-pin-button) {
         opacity: 1;
     }
@@ -240,7 +240,9 @@
         opacity: 0;
     }
 
-    :global(.dropdown-content .dropdown-checkbox-item.tool-menu-item:is(:hover, :focus-within, [data-highlighted], [data-state='checked']) .tool-item-info) {
+    /* Focus only counts when it came from the keyboard: a click leaves focus on the row, which
+       would otherwise keep its controls shown after the pointer has moved on. */
+    :global(.dropdown-content .dropdown-checkbox-item.tool-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .tool-item-info) {
         opacity: 1;
     }
 
