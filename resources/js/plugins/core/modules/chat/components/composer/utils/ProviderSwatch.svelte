@@ -6,7 +6,7 @@
   tint deepens and a check covers the logo, the way a selected tool or assistant row marks
   itself.
 
-  `size="sm"` is a 20px tile for compact controls; `round` makes it a circle, for pill-shaped
+  `size="sm"` is a 24px tile for compact controls; `round` makes it a circle, for pill-shaped
   hosts such as the `ModelPickerV2` trigger.
 
   @example
@@ -61,8 +61,8 @@
     }
 
     .provider-swatch--sm {
-        width: calc(0.25rem * 5);
-        height: calc(0.25rem * 5);
+        width: calc(0.25rem * 6);
+        height: calc(0.25rem * 6);
     }
 
     .provider-swatch--round {

@@ -378,7 +378,7 @@
         border: 1px solid transparent;
         border-radius: var(--corner-full);
         /* The provider tile sits close to the rounded start, the chevron gets more room. */
-        padding-inline: var(--space-1_5) var(--space-2_5);
+        padding-inline: var(--space-1) var(--space-2_5);
         white-space: nowrap;
         transition: background-color var(--duration-fast, 150ms) var(--easing-default);
 
