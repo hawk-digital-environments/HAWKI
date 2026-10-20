@@ -4,7 +4,7 @@
 
   The panel reveals sideways out of the menu edge with a cross-blur (transitions.dev
   "panel reveal", turned onto the X axis), after a short intent delay so sweeping the pointer
-  across the menu doesn't flash it. While it is open, moving to another row cross-blurs the
+  across the menu doesn't flash it. While it is open, moving to another row cross-fades the
   card in place ("text swap soft"): nothing moves, so even a quick sweep stays calm, and the
   panel eases to the new card's height ("card resize") instead of snapping.
 
@@ -36,7 +36,6 @@
     // transitions.dev: panel reveal (open/close) and text swap soft (card swap).
     const INTENT_DELAY = 200;
     const SWAP_DURATION = 200;
-    const SWAP_BLUR = 2;
     const RESIZE_DURATION = 240;
     const GAP = 4;
     const VIEWPORT_MARGIN = 8;
@@ -118,7 +117,7 @@
         return {destroy: () => observer.disconnect()};
     }
 
-    // The new card cross-blurs in on top of the old one, which stays fully opaque underneath
+    // The new card fades in on top of the old one, which stays fully opaque underneath
     // until it's covered: fading both at once would dim everything the two cards share (the
     // layout, the labels) halfway through, which reads as a blink. No swap while the panel
     // itself is revealing; its own cross-blur covers that.
@@ -126,10 +125,9 @@
         return {
             duration: open ? motionDuration(SWAP_DURATION) : 0,
             easing: cubicInOut,
-            css: (t: number, u: number) => `
+            css: (t: number) => `
                 z-index: 1;
                 opacity: ${t};
-                filter: blur(${SWAP_BLUR * u}px);
             `
         };
     }
