@@ -30,6 +30,8 @@
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {tick} from 'svelte';
+    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import {mergeProps} from 'bits-ui';
     import {toolAvailabilityFor, toolCategoryOf} from '$plugins/core/stores/aiToolStoreData.js';
 
     const {__} = useTranslator();
@@ -182,21 +184,36 @@
 {#snippet chip(tool: typeof tools[number], index: number, measuring = false)}
     {@const availability = toolAvailabilityFor(tool, composerContext.model.current)}
     {@const incompatible = availability !== 'available'}
-    {@const availabilityLabel = availability === 'offline' ? __('chat.composer.statusDot.tool.offlineLabel') : availability === 'model-incompatible' ? __('chat.composer.statusDot.tool.notSupportedLabel', {model: composerContext.model.current?.label ?? ''}) : ''}
+    {@const availabilityLabel = availability === 'offline' ? __('chat.composer.statusDot.tool.offlineLabel') : availability === 'model-incompatible' ? __('chat.composer.statusDot.tool.notSupportedTooltip', {model: composerContext.model.current?.label ?? ''}) : ''}
+    <!-- The reason lives in a tooltip rather than the label, so the chip keeps the
+         tool's name readable instead of truncating it behind "(Not supported …)". -->
+    {#if availabilityLabel && !measuring}
+        <Tooltip tooltip={availabilityLabel}>
+            {#snippet children(a)}
+                {@render chipButton(tool, index, measuring, incompatible, availabilityLabel, a.props)}
+            {/snippet}
+        </Tooltip>
+    {:else}
+        {@render chipButton(tool, index, measuring, incompatible, availabilityLabel)}
+    {/if}
+{/snippet}
+
+{#snippet chipButton(tool: typeof tools[number], index: number, measuring: boolean, incompatible: boolean, availabilityLabel: string, tooltipProps: Record<string, unknown> = {})}
     <button
-        class="tool-chip"
-        class:incompatible
-        title={tool.displayName}
-        tabindex={measuring ? -1 : 0}
-        aria-hidden={measuring}
-        data-tool-chip={measuring ? undefined : ''}
-        data-tool-category={toolCategoryOf(tool)}
-        onclick={() => onChipClick(tool)}
-        onkeydown={(event) => onChipKeydown(event, tool, index)}
-        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName}) + (availabilityLabel ? `, ${availabilityLabel}` : '')}
+        {...mergeProps(tooltipProps, {
+            class: ['tool-chip', incompatible && 'incompatible'],
+            title: availabilityLabel ? undefined : tool.displayName,
+            tabindex: measuring ? -1 : 0,
+            'aria-hidden': measuring,
+            'data-tool-chip': measuring ? undefined : '',
+            'data-tool-category': toolCategoryOf(tool),
+            onclick: () => onChipClick(tool),
+            onkeydown: (event: KeyboardEvent) => onChipKeydown(event, tool, index),
+            'aria-label': __('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName}) + (availabilityLabel ? `, ${availabilityLabel}` : '')
+        })}
     >
         <ToolIcon tool={tool} size={16}/>
-        <span class="tool-chip-label">{tool.displayName}{availabilityLabel ? ` (${availabilityLabel})` : ''}</span>
+        <span class="tool-chip-label">{tool.displayName}</span>
         <span class="tool-chip-remove" aria-hidden="true"><Cancel01Icon size={16}/></span>
     </button>
 {/snippet}
@@ -274,8 +291,7 @@
 
     /* The cap lives on the wrappers, not on the chip: a chip's percentage max-width
        can't resolve against a shrink-to-fit wrapper, so the wrapper kept the width of
-       the full label (long once "not supported by …" is appended) and left a gap after
-       the truncated pill. Here 100% resolves against the row, and the chip fills the
+       the full label and left a gap after the truncated pill. Here 100% resolves against the row, and the chip fills the
        capped wrapper and ellipsizes. */
     .tool-chip-slot,
     [data-chip] {
