@@ -152,6 +152,16 @@
         background-color: color-mix(in oklab, var(--swatch-ink) 35%, var(--color-surface-raised));
     }
 
+    /* The gray MCP ink reads heavier than a colored one, so it tints a step lighter — the
+       same strengths as the model picker's `ProviderSwatch`. */
+    .tool-icon-swatch[data-tool-category='mcp'] {
+        background-color: color-mix(in oklab, var(--swatch-ink) 10%, transparent);
+    }
+
+    .tool-icon-swatch--checked[data-tool-category='mcp'] {
+        background-color: color-mix(in oklab, var(--swatch-ink) 20%, var(--color-surface-raised));
+    }
+
     .tool-icon-check {
         position: absolute;
         border-radius: inherit;

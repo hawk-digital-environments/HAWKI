@@ -3,7 +3,7 @@
   rows use (`ToolIcon swatch`, `AssistantRow`), so the model picker shares their rhythm.
   The tint is neutral, since provider logos bring their own colors; a provider without a
   logo shows its initial on the tile rather than a round avatar. When `checked`, the
-  tint deepens and a check covers the logo, the way a selected tool or assistant row marks
+  gray tint deepens and a check covers the logo, the way a selected MCP tool row marks
   itself.
 
   `size="sm"` is a 24px tile for compact controls; `round` makes it a circle, for pill-shaped
@@ -20,7 +20,7 @@
 
     interface Props {
         model: AiModel;
-        /** Tints the swatch HAWKI blue and lays a check over the logo, like a selected tool. */
+        /** Deepens the gray tint and lays a check over the logo, like a selected MCP tool. */
         checked?: boolean;
         /** `md` (default) matches the tool/assistant row swatch; `sm` is for compact controls. */
         size?: 'sm' | 'md';
@@ -44,7 +44,8 @@
 </span>
 
 <style>
-    /* Same box, radius and tint strengths as `.tool-icon-swatch`. */
+    /* Same box and radius as `.tool-icon-swatch`, at lighter tint strengths: the gray reads
+       heavier than a colored ink would. */
     .provider-swatch {
         --swatch-ink: var(--color-text-muted);
 
@@ -56,7 +57,7 @@
         width: calc(0.25rem * 8);
         height: calc(0.25rem * 8);
         border-radius: var(--corner-xs);
-        background-color: color-mix(in oklab, var(--swatch-ink) 15%, transparent);
+        background-color: color-mix(in oklab, var(--swatch-ink) 10%, transparent);
         line-height: 0;
     }
 
@@ -69,11 +70,9 @@
         border-radius: var(--corner-full);
     }
 
-    /* Selected like a tool row: the HAWKI-blue ink, tinted the same strength as `.tool-icon-swatch--checked`. */
+    /* Selected like a gray MCP tool row, a step lighter than `.tool-icon-swatch--checked`. */
     .provider-swatch--checked {
-        --swatch-ink: var(--color-accent-text);
-
-        background-color: color-mix(in oklab, var(--swatch-ink) 35%, var(--color-surface-raised));
+        background-color: color-mix(in oklab, var(--swatch-ink) 20%, var(--color-surface-raised));
     }
 
     .provider-swatch-check {
