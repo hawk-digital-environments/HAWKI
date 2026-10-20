@@ -260,10 +260,10 @@
         return () => cancelAnimationFrame(frame);
     });
 
-    // The list opens on the tagged assistant: its row takes focus and is minimally scrolled
-    // into the viewport. Two frames, so this lands after `MenuSearchField` claims focus on mount.
-    // Leaves focus in the search field when no assistant is tagged; matches the model picker.
-    // Not in command mode, where focus stays in the textarea.
+    // The list opens scrolled minimally to the tagged assistant, while focus stays in the
+    // search field; ArrowDown then lands on that row. Matches the model picker. Two frames, so
+    // the list has laid out after `MenuSearchField` mounts. Not in command mode, where the
+    // command highlight takes over.
     $effect(() => {
         if (!open || untrack(() => shownCommand)) {
             return;

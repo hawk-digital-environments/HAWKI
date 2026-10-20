@@ -1,16 +1,16 @@
 /**
- * Focuses a composer menu row and scrolls it into the menu's viewport — shared by
- * `AssistantMenu` and `ModelPickerV2` so both open on their current choice the same way.
+ * Scrolls a composer menu row into the menu's viewport without focusing it — shared by
+ * `AssistantMenu` and `ModelPickerV2` so both open on their current choice the same way,
+ * while focus stays in the menu's search field.
  *
  * Minimal scroll: stay at the top while the row is visible there; otherwise scroll just far
  * enough to rest it on the bottom edge, keeping the view's bottom padding so it doesn't sit
  * flush against the panel border.
  *
- * @param row The row to focus.
+ * @param row The row to reveal.
  * @param panelSelector The menu content's class selector, whose max-height can clip the viewport.
  */
 export function revealMenuRow(row: HTMLElement, panelSelector: string): void {
-    row.focus({preventScroll: true});
     const viewport = row.closest<HTMLElement>('.viewport');
     if (!viewport) {
         return;

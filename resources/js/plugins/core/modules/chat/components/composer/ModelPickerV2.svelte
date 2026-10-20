@@ -191,9 +191,9 @@
             : null;
     }
 
-    // The list opens on the current model: its row takes focus and is minimally scrolled
-    // into the viewport; matches the assistant picker. Two frames, so this lands after
-    // `MenuSearchField` claims focus on mount. Falls back to the search field when the row is folded away or offline.
+    // The list opens scrolled minimally to the current model, while focus stays in the search
+    // field like in the assistant and tool pickers; ArrowDown then lands on that row. Two
+    // frames, so the list has laid out after `MenuSearchField` mounts.
     $effect(() => {
         if (!open) {
             return;
