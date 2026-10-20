@@ -102,6 +102,13 @@
         color: var(--color-text);
     }
 
+    /* The row a composer `@`/`/` command points at while focus stays in the textarea
+       (see `composer/utils/commandMenu.ts`). */
+    .dropdown-checkbox-item[data-command-active] {
+        background-color: var(--color-hover);
+        color: var(--color-text);
+    }
+
     .dropdown-checkbox-item[data-disabled] {
         color: var(--color-text-disabled);
         cursor: not-allowed;

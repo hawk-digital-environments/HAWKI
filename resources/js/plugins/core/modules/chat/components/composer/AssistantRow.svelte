@@ -4,8 +4,8 @@
   one-line description. When checked, the swatch darkens and carries the check over the emoji.
 
   Deliberately renders no interactive element of its own so it can sit inside whatever
-  wrapper the surrounding list needs — a `DropdownMenuCheckboxItem` in `AssistantMenuListItem`,
-  or a plain option row in `AssistantMentionPopup`.
+  wrapper the surrounding list needs — currently a `DropdownMenuCheckboxItem` in
+  `AssistantMenuListItem`.
 
   ## Usage
   ```svelte

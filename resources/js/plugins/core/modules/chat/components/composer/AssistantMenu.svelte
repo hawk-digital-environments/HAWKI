@@ -24,8 +24,10 @@
   Each row's info icon (or ArrowRight) drills into `AssistantMenuDetail` in place of the
   list — a two-panel `DropdownMenuDetailView`, same as the tool picker.
 
-  This is the browse-all entry point; typing `@` in the message instead opens
-  `AssistantMentionPopup` at the caret, which filters the same assistants as you type.
+  Typing `@` in the message opens this same menu in command mode (`command` set): the
+  textarea keeps focus, what is typed after the `@` filters the list in place of the search
+  field, and the textarea drives the highlight through `move`/`selectActive` — see
+  `utils/commandMenu.ts`.
 -->
 <script lang="ts">
     import {untrack} from 'svelte';
@@ -44,6 +46,7 @@
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {createCommandMenu, createCommandKeeper, type MenuCommand} from '$plugins/core/modules/chat/components/composer/utils/commandMenu.js';
 
     const composerContext = useComposerContext();
     const aiHandleStore = useStore('ai-handle');
@@ -53,10 +56,16 @@
     interface Props {
         /** Whether the tagging menu is open. Supports bind:open. */
         open?: boolean;
+        /** Set while a typed `@query` drives the menu from the message textarea. */
+        command?: MenuCommand | null;
     }
 
     // Bindable so the menu can be opened externally, e.g. when the user types "@".
-    let {open = $bindable(false)}: Props = $props();
+    let {open = $bindable(false), command = null}: Props = $props();
+
+    // What the menu shows: the command, kept while the menu closes after it ended.
+    const keepCommand = createCommandKeeper();
+    const shownCommand = $derived(keepCommand(open, command));
 
     // When set, the picker shows the detail view for this assistant instead of the list.
     let detailAssistantId = $state<string | null>(null);
@@ -114,7 +123,7 @@
             .some(text => text.toLowerCase().includes(needle));
     }
 
-    const needle = $derived(query.trim().toLowerCase());
+    const needle = $derived((shownCommand ? shownCommand.query : query).trim().toLowerCase());
     const shownHawkiEntry = $derived(
         hawkiEntry && (!needle || matchesQuery(hawkiEntry, needle)) ? hawkiEntry : null
     );
@@ -215,11 +224,37 @@
             : null;
     }
 
+    const commandMenu = createCommandMenu('.assistant-menu-content', () => shownCommand, activeRow);
+
+    /** Moves the command highlight; called by `ComposerTextarea` on ArrowUp/ArrowDown. */
+    export function move(delta: number): boolean {
+        return commandMenu.move(delta);
+    }
+
+    /** Toggles the highlighted row; called by `ComposerTextarea` on Enter/Tab. */
+    export function selectActive(): boolean {
+        return commandMenu.selectActive();
+    }
+
+    // In command mode the highlight starts on the tagged assistant, else the first row, and
+    // starts over whenever the typed query changes the rows. A frame later, so the content
+    // has mounted and the filtered rows have rendered.
+    // Keyed on the query string, not the command object, so only real filtering resets it.
+    const commandQuery = $derived(shownCommand?.query ?? null);
+    $effect(() => {
+        if (!open || commandQuery === null) {
+            return;
+        }
+        const frame = requestAnimationFrame(() => commandMenu.reset());
+        return () => cancelAnimationFrame(frame);
+    });
+
     // The list opens on the tagged assistant: its row takes focus and is scrolled into the
     // viewport. Two frames, so this lands after `MenuSearchField` claims focus on mount.
     // Leaves focus in the search field when no assistant is tagged; matches the model picker.
+    // Not in command mode, where focus stays in the textarea.
     $effect(() => {
-        if (!open) {
+        if (!open || untrack(() => shownCommand)) {
             return;
         }
         let frame = requestAnimationFrame(() => {
@@ -316,7 +351,15 @@
             disabled={composerContext.guard.disablesFeature('input', false)}
             bind:open
             magneticHover={false}
-            contentProps={{class: 'assistant-menu-content', onkeydowncapture: onContentKeydownCapture}}>
+            contentProps={{
+                class: 'assistant-menu-content',
+                onkeydowncapture: onContentKeydownCapture,
+                onOpenAutoFocus: commandMenu.onOpenAutoFocus,
+                onCloseAutoFocus: commandMenu.onCloseAutoFocus,
+                onInteractOutside: commandMenu.onInteractOutside,
+                onmousemove: commandMenu.onMouseMove,
+                ...commandMenu.anchorProps()
+            }}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"
@@ -326,7 +369,7 @@
                     {...props}/>
             {/snippet}
 
-            {#if !detailEntry && searchEnabled}
+            {#if !detailEntry && searchEnabled && !shownCommand}
                 <MenuSearchField
                     bind:value={query}
                     placeholder={__('chat.composer.assistantMenu.searchPlaceholder')}/>

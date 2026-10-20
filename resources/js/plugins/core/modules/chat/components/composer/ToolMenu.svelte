@@ -15,7 +15,10 @@
   ## Usage
   Rendered once by `ChatComposer.svelte` in the bottom-left control row, next to `FilePicker`
   and `ToolChips`. `open` is bound so the tool-chip overflow badge ("+N") can open the same
-  popover externally:
+  popover externally. Typing `/` in the message opens it in command mode (`command` set): the
+  textarea keeps focus, what is typed after the `/` filters the tools the current model can
+  run in place of the search field, and picking one toggles it and closes the menu — see
+  `utils/commandMenu.ts`:
   ```svelte
   let toolPickerOpen = $state(false);
   <ToolMenu bind:open={toolPickerOpen}/>
@@ -78,20 +81,11 @@
         mcpTools: McpEntryGroup[];
     }
 
-    /** Orders tools the way the menu lists them once its sections are flattened:
-     *  capabilities, then HAWKI function tools, then MCP tools by server label — each
-     *  alphabetically by display name. Lets the `/` popup in `ComposerTextarea` follow
-     *  the same order without the section headers. */
-    export function compareToolsInMenuOrder(a: AiToolOrCapability, b: AiToolOrCapability): number {
-        const section = (tool: AiToolOrCapability) => tool.is_capability ? 0 : tool.server ? 2 : 1;
-        return section(a) - section(b)
-            || (a.server?.server_label ?? '').localeCompare(b.server?.server_label ?? '')
-            || a.displayName.localeCompare(b.displayName);
-    }
 </script>
 <script lang="ts">
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {createCommandMenu, createCommandKeeper, type MenuCommand} from '$plugins/core/modules/chat/components/composer/utils/commandMenu.js';
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
     import ToolMenuList from '$plugins/core/modules/chat/components/composer/ToolMenuList.svelte';
     import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
@@ -115,11 +109,17 @@
     interface Props {
         /** Whether the tool picker is open. Supports bind:open. */
         open?: boolean;
+        /** Set while a typed `/query` drives the menu from the message textarea. */
+        command?: MenuCommand | null;
     }
 
     // Drives both the desktop dropdown and the mobile bottom sheet so the
     // picker can be opened externally (e.g. from the tool-chip overflow badge).
-    let {open = $bindable(false)}: Props = $props();
+    let {open = $bindable(false), command = null}: Props = $props();
+
+    // What the menu shows: the command, kept while the menu closes after it ended.
+    const keepCommand = createCommandKeeper();
+    const shownCommand = $derived(keepCommand(open, command));
 
     // When set, the picker shows the detail view for this tool instead of the list.
     let detailToolName = $state<string | null>(null);
@@ -143,6 +143,10 @@
                             composerContext.tools.enable(tool);
                         } else {
                             composerContext.tools.disable(tool);
+                        }
+                        // A typed command switches one tool, then hands back to the message.
+                        if (shownCommand) {
+                            open = false;
                         }
                     },
                     onCapabilitySet({selection, settings}) {
@@ -168,8 +172,16 @@
     });
 
     // What the list panel shows: the entries matching the search field, by tool name,
-    // description or the label of the MCP server providing it.
+    // description or the label of the MCP server providing it. A typed command offers only
+    // the tools the current model can run, by name: it exists to switch one on in a single
+    // keystroke, not to inspect the unusable ones.
     const searchedEntries = $derived.by(() => {
+        if (shownCommand) {
+            const commandNeedle = shownCommand.query.trim().toLowerCase();
+            return filteredEntries.filter(entry => entry.available
+                && !entry.disabled
+                && entry.tool.displayName.toLowerCase().includes(commandNeedle));
+        }
         const needle = query.trim().toLowerCase();
         if (!needle) {
             return filteredEntries;
@@ -291,6 +303,30 @@
         }
     });
 
+    const commandMenu = createCommandMenu('.tool-menu-content', () => shownCommand);
+
+    /** Moves the command highlight; called by `ComposerTextarea` on ArrowUp/ArrowDown. */
+    export function move(delta: number): boolean {
+        return commandMenu.move(delta);
+    }
+
+    /** Toggles the highlighted row; called by `ComposerTextarea` on Enter/Tab. */
+    export function selectActive(): boolean {
+        return commandMenu.selectActive();
+    }
+
+    // In command mode the highlight starts on the first row, and starts over whenever the
+    // typed query changes the rows. A frame later, so the filtered rows have rendered.
+    // Keyed on the query string, not the command object, so only real filtering resets it.
+    const commandQuery = $derived(shownCommand?.query ?? null);
+    $effect(() => {
+        if (!open || commandQuery === null) {
+            return;
+        }
+        const frame = requestAnimationFrame(() => commandMenu.reset());
+        return () => cancelAnimationFrame(frame);
+    });
+
     // Focus lands on the search field when the menu opens (`MenuSearchField` claims it),
     // so keyboard users start by filtering and arrow down into the rows from there.
 
@@ -307,7 +343,14 @@
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open
             magneticHover={false}
-            contentProps={{class: 'tool-menu-content'}}>
+            contentProps={{
+                class: 'tool-menu-content',
+                onOpenAutoFocus: commandMenu.onOpenAutoFocus,
+                onCloseAutoFocus: commandMenu.onCloseAutoFocus,
+                onInteractOutside: commandMenu.onInteractOutside,
+                onmousemove: commandMenu.onMouseMove,
+                ...commandMenu.anchorProps()
+            }}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"
@@ -316,7 +359,7 @@
                     highlight={props['data-state']}
                     {...props}/>
             {/snippet}
-            {#if !detailEntry}
+            {#if !detailEntry && !shownCommand}
                 <MenuSearchField
                     bind:value={query}
                     placeholder={__('chat.composer.toolMenu.searchPlaceholder')}/>

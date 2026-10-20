@@ -27,6 +27,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import ModelPicker from '$plugins/core/modules/chat/components/composer/ModelPicker.svelte';
     import ModelPickerV2 from '$plugins/core/modules/chat/components/composer/ModelPickerV2.svelte';
     import SettingsMenu from '$plugins/core/modules/chat/components/composer/SettingsMenu.svelte';
+    import type {ComponentProps} from 'svelte';
     import ComposerTextarea from '$plugins/core/modules/chat/components/composer/ComposerTextarea.svelte';
     import ModelConflictPicker from '$plugins/core/modules/chat/components/composer/ModelConflictPicker.svelte';
     import FileChips from '$plugins/core/modules/chat/components/composer/FileChips.svelte';
@@ -87,6 +88,13 @@ Rendered once per page for either an AI conversation or a group room chat (see
 
     // Shared so the tool-chip overflow badge can open the picker.
     let toolPickerOpen = $state(false);
+
+    // Typing `@` or `/` in the textarea opens these same menus in command mode, filtered by
+    // what follows the trigger and driven from the textarea.
+    let assistantMenuOpen = $state(false);
+    let command = $state<ComponentProps<typeof ComposerTextarea>['command']>(null);
+    let assistantMenu = $state<ReturnType<typeof AssistantMenu> | null>(null);
+    let toolMenu = $state<ReturnType<typeof ToolMenu> | null>(null);
 
     const hasFiles = $derived(chatContext.attachments.list.length > 0);
 
@@ -241,7 +249,14 @@ Rendered once per page for either an AI conversation or a group room chat (see
                             <!-- Separator -->
                             <div class="chat-composer-sep"></div>
 
-                            <ComposerTextarea bind:ref={textareaEl} onSend={handleSend}/>
+                            <ComposerTextarea
+                                bind:ref={textareaEl}
+                                bind:command
+                                bind:assistantMenuOpen
+                                bind:toolMenuOpen={toolPickerOpen}
+                                {assistantMenu}
+                                {toolMenu}
+                                onSend={handleSend}/>
                             <ModelConflictPicker/>
 
                             <!-- File chips -->
@@ -260,11 +275,17 @@ Rendered once per page for either an AI conversation or a group room chat (see
                             <div class="chat-composer-bottom-row">
                                 <div class="chat-bottom-left">
                                     <FilePicker/>
-                                    <AssistantMenu/>
+                                    <AssistantMenu
+                                        bind:this={assistantMenu}
+                                        bind:open={assistantMenuOpen}
+                                        command={command?.trigger === '@' ? command : null}/>
                                     <!-- An assistant brings its own tools, so tagging one hides the
                                          tool controls just like the model and settings. -->
                                     {#if !isAssistant}
-                                        <ToolMenu bind:open={toolPickerOpen}/>
+                                        <ToolMenu
+                                            bind:this={toolMenu}
+                                            bind:open={toolPickerOpen}
+                                            command={command?.trigger === '/' ? command : null}/>
                                         <div class="chat-tool-chip-lane">
                                             <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
                                         </div>
