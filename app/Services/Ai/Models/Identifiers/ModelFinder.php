@@ -14,17 +14,14 @@ use App\Services\Ai\Providers\Repositories\AiProviderRepository;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
 
 /**
- * Resolves the model references that clients send (e.g. the `model` of a chat request payload
- * or a system model in the config) to an {@see AiModel}.
+ * Resolves model references (e.g. the `model` of a chat request payload) to an {@see AiModel}.
  *
- * Accepted forms:
- * - The provider-qualified identifier `<provider_id>/<model_id>` (see {@see AiModelIdentifier}).
- * - A numeric primary key.
- * - A plain `model_id` (legacy UI, external apps, stored messages, config). It is only resolved
- *   when exactly one provider offers it, otherwise an {@see AmbiguousModelIdException} is thrown.
+ * Inside HAWKI a model is only referenced by its provider-qualified identifier
+ * `<provider_id>/<model_id>` (see {@see AiModelIdentifier}) or by its numeric primary key,
+ * which is what {@see find()} accepts.
  *
- * A qualified identifier whose prefix is not a known provider, or that does not match a model of
- * that provider, is retried as a plain `model_id`, because model ids may contain the separator.
+ * External surfaces (the external app API and the config files) still accept a plain `model_id`.
+ * They resolve it with {@see findAllowingPlainModelId()} and continue with the qualified identifier.
  *
  * @api
  */
@@ -38,35 +35,65 @@ readonly class ModelFinder
     }
 
     /**
-     * Returns the model for the given reference or null when no model matches.
+     * Returns the model for a provider-qualified identifier or a numeric primary key,
+     * or null when no model matches. A plain `model_id` never matches.
      *
      * @param ScopeOverrides|null $scopeOverrides Applied to the model query. When given, the provider is
      *                                            looked up without contextual scopes as well (e.g. admin/CLI),
      *                                            otherwise with the scopes of the current user.
-     * @throws AmbiguousModelIdException
      */
     public function find(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel|null
     {
         if (is_int($reference) || is_numeric($reference)) {
-            return $this->modelRepository->findOne($reference, $scopeOverrides);
+            return $this->modelRepository->findOne((int)$reference, $scopeOverrides);
         }
 
         $identifier = AiModelIdentifier::fromString($reference);
-        if ($identifier->isQualified()) {
-            // Only bypass the provider scopes when the caller bypasses the model scopes as well,
-            // regular users are not allowed to disable them (403)
-            $provider = $this->providerRepository->findOneByProviderId(
-                $identifier->providerId,
-                $scopeOverrides === null ? null : $this->providerRepository->makeScopeOverrides()
-            );
-            if ($provider) {
-                $model = $this->modelRepository->findOneByProvider($provider, $identifier->modelId, $scopeOverrides);
-                if ($model) {
-                    return $model;
-                }
-            }
+        if (!$identifier->isQualified()) {
+            return null;
         }
 
+        // Only bypass the provider scopes when the caller bypasses the model scopes as well,
+        // regular users are not allowed to disable them (403)
+        $provider = $this->providerRepository->findOneByProviderId(
+            $identifier->providerId,
+            $scopeOverrides === null ? null : $this->providerRepository->makeScopeOverrides()
+        );
+        if (!$provider) {
+            return null;
+        }
+
+        return $this->modelRepository->findOneByProvider($provider, $identifier->modelId, $scopeOverrides);
+    }
+
+    /**
+     * Like {@see find()} but throws {@see ModelIdNotAvailableException} when no model matches.
+     *
+     * @throws ModelIdNotAvailableException
+     */
+    public function findOrFail(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel
+    {
+        $model = $this->find($reference, $scopeOverrides);
+        if (!$model) {
+            throw ModelIdNotAvailableException::forModelId($reference);
+        }
+        return $model;
+    }
+
+    /**
+     * Like {@see find()}, but also resolves a plain `model_id` when exactly one provider offers it.
+     * Only meant for external surfaces that have to keep accepting plain ids (external app API, config).
+     *
+     * @throws AmbiguousModelIdException when the plain `model_id` is offered by more than one provider.
+     */
+    public function findAllowingPlainModelId(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel|null
+    {
+        $model = $this->find($reference, $scopeOverrides);
+        if ($model || is_int($reference) || is_numeric($reference)) {
+            return $model;
+        }
+
+        // Model ids may contain the separator themselves, so a qualified-looking reference is tried as plain id as well
         $models = $this->modelRepository->findAllByModelId($reference, $scopeOverrides);
         if ($models->count() > 1) {
             throw AmbiguousModelIdException::forModelId($reference, $models->map->getIdentifier()->all());
@@ -76,14 +103,14 @@ readonly class ModelFinder
     }
 
     /**
-     * Like {@see find()} but throws {@see ModelIdNotAvailableException} when no model matches.
+     * Like {@see findAllowingPlainModelId()} but throws {@see ModelIdNotAvailableException} when no model matches.
      *
      * @throws AmbiguousModelIdException
      * @throws ModelIdNotAvailableException
      */
-    public function findOrFail(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel
+    public function findAllowingPlainModelIdOrFail(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel
     {
-        $model = $this->find($reference, $scopeOverrides);
+        $model = $this->findAllowingPlainModelId($reference, $scopeOverrides);
         if (!$model) {
             throw ModelIdNotAvailableException::forModelId($reference);
         }

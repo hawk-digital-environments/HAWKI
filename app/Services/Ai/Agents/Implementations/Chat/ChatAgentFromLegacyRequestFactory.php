@@ -29,7 +29,7 @@ use Psr\Log\LoggerInterface;
  * ```php
  * [
  *     'payload' => [
- *         'model'     => 'openAi/gpt-4o',    // required: `<provider_id>/<model_id>`, a plain model_id is still accepted when unambiguous
+ *         'model'     => 'openAi/gpt-4o',    // required: `<provider_id>/<model_id>` or the numeric id
  *         'messages'  => [                    // required
  *             ['role' => 'system',    'content' => ['text' => '...']],  // system instructions
  *             ['role' => 'user',      'content' => ['text' => '...', 'attachments' => ['uuid1']]],

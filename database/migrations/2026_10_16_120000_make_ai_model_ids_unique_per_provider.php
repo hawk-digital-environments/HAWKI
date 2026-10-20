@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * `ai_models.model_id` becomes unique per provider instead of globally. `system_models` can therefore no
  * longer reference a model by `model_id`, so it gets an `ai_model_id` foreign key to the numeric id.
- * `system_models.model_id` is kept (and still filled) for backwards compatibility until the next major release.
+ * `system_models.model_id` is dropped by the next migration, which also converts the stored model references.
  */
 return new class extends Migration {
     public function up(): void

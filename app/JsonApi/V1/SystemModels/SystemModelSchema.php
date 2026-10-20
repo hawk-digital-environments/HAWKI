@@ -39,7 +39,7 @@ class SystemModelSchema extends Schema
             Str::make('usage_type'),
             // Same provider-qualified format as `ai-models.model_id`, so clients can match both.
             Str::make('model_id')
-                ->extractUsing(fn(SystemModel $systemModel) => $systemModel->model?->getIdentifier() ?? $systemModel->model_id)
+                ->extractUsing(fn(SystemModel $systemModel) => $systemModel->model?->getIdentifier())
                 ->readOnly(),
             BelongsTo::make('model')->type('ai-models')->readOnly(),
         ];

@@ -12,9 +12,8 @@ use LaravelJsonApi\Eloquent\Filters\Concerns\DeserializesValue;
 use LaravelJsonApi\Eloquent\Filters\Concerns\IsSingular;
 
 /**
- * Filters system models by the `model_id` of their model. Accepts the provider-qualified
- * identifier (`<provider_id>/<model_id>`, as serialized by the schema) and, for backwards
- * compatibility, the plain `model_id`.
+ * Filters system models by the provider-qualified identifier (`<provider_id>/<model_id>`)
+ * of their model, as serialized in the `model_id` field of the schema.
  */
 class SystemModelModelIdFilter implements Filter
 {
@@ -26,18 +25,15 @@ class SystemModelModelIdFilter implements Filter
      */
     public function apply($query, $value)
     {
-        $value = (string)$this->deserialize($value);
-        $identifier = AiModelIdentifier::fromString($value);
+        $identifier = AiModelIdentifier::fromString((string)$this->deserialize($value));
+        if (!$identifier->isQualified()) {
+            return $query->whereRaw('1 = 0');
+        }
 
-        return $query->where(function (Builder $query) use ($value, $identifier) {
-            $query->where('model_id', $value);
-            if ($identifier->isQualified()) {
-                $query->orWhereHas('model', fn(Builder $query) => $query
-                    ->where('model_id', $identifier->modelId)
-                    ->whereHas('provider', fn(Builder $query) => $query->where('provider_id', $identifier->providerId))
-                );
-            }
-        });
+        return $query->whereHas('model', fn(Builder $query) => $query
+            ->where('model_id', $identifier->modelId)
+            ->whereHas('provider', fn(Builder $query) => $query->where('provider_id', $identifier->providerId))
+        );
     }
 
     /**

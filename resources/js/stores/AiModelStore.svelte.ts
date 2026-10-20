@@ -38,11 +38,6 @@ export class AiModelStore {
      * Flexible model lookup — accepts an `AiModel` object, a numeric ID (as
      * number or numeric string), or a `model_id` string. Returns `null` when
      * no match is found.
-     *
-     * `model_id` is provider-qualified (`<provider_id>/<model_id>`), because the same
-     * plain id may be offered by several providers. A plain id (e.g. stored in older
-     * messages or in the legacy UI's local storage) is still resolved when exactly one
-     * provider offers it.
      */
     public getOneById(modelId: AiModel | string | number): AiModel | null {
         if (!modelId) {
@@ -55,12 +50,7 @@ export class AiModelStore {
             const numericId = Number(modelId);
             return this.models.find(m => m.id === String(numericId)) ?? null;
         }
-        return this.modelMap.get(String(modelId)) ?? this.findOneByPlainModelId(String(modelId));
-    }
-
-    private findOneByPlainModelId(plainModelId: string): AiModel | null {
-        const matches = this.models.filter(model => model.model_id.endsWith(`/${plainModelId}`));
-        return matches.length === 1 ? matches[0] : null;
+        return this.modelMap.get(String(modelId)) ?? null;
     }
 
     /**
