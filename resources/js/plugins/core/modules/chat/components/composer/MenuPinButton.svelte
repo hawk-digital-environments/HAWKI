@@ -99,7 +99,9 @@
         align-items: center;
         justify-content: center;
         padding: 6px 2px;
-        margin: 0;
+        /* On a row the info chevron always follows, so pull it closer than the row's gap
+           — the two read as one pair of controls. */
+        margin: 0 calc(-1 * var(--space-1_5)) 0 0;
         border: none;
         background: none;
         pointer-events: all;
@@ -131,6 +133,7 @@
        the icon color changes on hover, as in a list row. */
     .menu-pin-button--detail {
         padding: var(--space-1, 0.25rem);
+        margin: 0;
         opacity: 1;
     }
 </style>
