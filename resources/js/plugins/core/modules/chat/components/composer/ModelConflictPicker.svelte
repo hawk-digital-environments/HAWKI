@@ -170,6 +170,8 @@
 
     .chat-conflict-wrapper {
         margin-inline: var(--space-2, calc(0.25rem * 2));
+        /* Breathing room below the textarea's last line. */
+        margin-top: var(--space-2, calc(0.25rem * 2));
         padding-bottom: var(--space-2, calc(0.25rem * 2));
         animation: composer-section-slide-up var(--duration-fast, 300ms) var(--easing-spring) both;
     }
