@@ -154,14 +154,15 @@
     }
 
     /* In the dropdown the controls stay out of sight until the row is pointed at or focused —
-       favourites included, since those already sit under their own section label. */
+       favourites included, since those already sit under their own section label. The current
+       model keeps them shown, so its options are at hand without hunting for them. */
     :global(.dropdown-content--dropdown .dropdown-radio-item.model-menu-item .menu-pin-button),
     :global(.dropdown-content--dropdown .dropdown-radio-item.model-menu-item .model-item-info) {
         opacity: 0;
     }
 
-    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted]) .menu-pin-button),
-    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted]) .model-item-info) {
+    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted], [data-state='checked']) .menu-pin-button),
+    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-within, [data-highlighted], [data-state='checked']) .model-item-info) {
         opacity: 1;
     }
 

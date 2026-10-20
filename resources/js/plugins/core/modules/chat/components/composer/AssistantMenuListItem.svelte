@@ -159,19 +159,22 @@
     }
 
     /* The favourite only shows on the row the user is pointing at; favourite rows keep their own
-       button visible. Mirrors `ToolMenuListItem`. */
+       button visible, and so do tagged ones, so their options are at hand. Mirrors
+       `ToolMenuListItem`. */
     :global(.dropdown-checkbox-item.assistant-menu-item:hover .menu-pin-button),
-    :global(.dropdown-checkbox-item.assistant-menu-item:focus-within .menu-pin-button) {
+    :global(.dropdown-checkbox-item.assistant-menu-item:focus-within .menu-pin-button),
+    :global(.dropdown-checkbox-item.assistant-menu-item[data-state='checked'] .menu-pin-button) {
         opacity: 1;
     }
 
     /* In the dropdown the info chevron stays out of sight until the row is pointed at or
-       focused, as in `ModelMenuListItem`; the mobile sheet has no hover, so it stays there. */
+       focused, as in `ModelMenuListItem` — tagged rows keep it shown; the mobile sheet has no
+       hover, so it stays there. */
     :global(.dropdown-content--dropdown .dropdown-checkbox-item.assistant-menu-item .assistant-item-info) {
         opacity: 0;
     }
 
-    :global(.dropdown-content .dropdown-checkbox-item.assistant-menu-item:is(:hover, :focus-within, [data-highlighted]) .assistant-item-info) {
+    :global(.dropdown-content .dropdown-checkbox-item.assistant-menu-item:is(:hover, :focus-within, [data-highlighted], [data-state='checked']) .assistant-item-info) {
         opacity: 1;
     }
 
