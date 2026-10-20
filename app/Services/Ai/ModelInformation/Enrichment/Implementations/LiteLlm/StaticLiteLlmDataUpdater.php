@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm;
 
 
-use App\Console\Commands\Dev\UpdateLiteLlmStaticDataCommand;
 use App\Utils\JobMetrics;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 
 /**
@@ -21,7 +19,7 @@ use Illuminate\Http\Client\RequestException;
  * These files are committed to the repository and serve as an offline fallback for
  * {@see StaticLiteLlmDataStore} when the live API is unavailable.
  *
- * Invoked exclusively by {@see UpdateLiteLlmStaticDataCommand}.
+ * Invoked exclusively by {@see \App\Console\Commands\Dev\UpdateLiteLlmStaticDataCommand}.
  */
 readonly class StaticLiteLlmDataUpdater
 {
@@ -62,37 +60,27 @@ readonly class StaticLiteLlmDataUpdater
 
         // Download everything before touching the existing files, so a failed request leaves them intact
         try {
-            $rows = iterator_to_array($this->apiClient->fetchData(), false);
+            $catalog = $this->apiClient->fetchRawCatalog()->catalog;
         } catch (\Throwable $e) {
-            $rows = [];
             $metrics->error($this->describeFetchFailure($e));
-        }
-
-        if (empty($rows)) {
-            if (!$metrics->hasErrors()) {
-                $metrics->error(sprintf(
-                    'The LiteLLM catalog at %s returned no model records. The URL may be wrong or the response format may have changed.',
-                    $this->apiClient->getUrl()
-                ));
-            }
             $metrics->info('The existing static LiteLLM data files were left untouched.');
             $metrics->announceCompletion();
             return $metrics;
         }
 
-        $this->clearExistingStaticLiteLlmDataFiles($metrics);
+        $clearedExistingFiles = false;
+        foreach ($this->apiClient->normalizeCatalog($catalog) as $row) {
+            // Only delete the old files once the catalog actually yielded a record, so that a
+            // catalog without any recognizable model records also leaves the existing files intact
+            if (!$clearedExistingFiles) {
+                $this->clearExistingStaticLiteLlmDataFiles($metrics);
+                $clearedExistingFiles = true;
+            }
 
-        foreach ($rows as $row) {
             try {
-                $providerName = $row['provider'] ?? null;
-                if (!$providerName) {
-                    $metrics->warning('Row missing provider name', ['row' => $row]);
-                    continue;
-                }
+                $addPhpArrayAsSubArrayToFile($row['provider'], $row);
 
-                $addPhpArrayAsSubArrayToFile($providerName, $row);
-
-                $metrics->increment('Models of "' . $providerName . '" processed');
+                $metrics->increment('Models of "' . $row['provider'] . '" processed');
             } catch (\Throwable $e) {
                 $metrics->error('Error processing row', ['row' => $row, 'exception' => $e]);
             }
@@ -102,6 +90,14 @@ readonly class StaticLiteLlmDataUpdater
         foreach ($fileToWrite as $providerName => $fileHandle) {
             $this->closeFile($fileHandle);
             $metrics->debug('Closed file for provider ' . $providerName);
+        }
+
+        if ($fileToWrite === []) {
+            $metrics->error(sprintf(
+                'The LiteLLM catalog at %s contained no model records. The URL may be wrong or the response format may have changed.',
+                $this->apiClient->getUrl()
+            ));
+            $metrics->info('The existing static LiteLLM data files were left untouched.');
         }
 
         $metrics->announceCompletion();
@@ -114,24 +110,8 @@ readonly class StaticLiteLlmDataUpdater
     {
         $url = $this->apiClient->getUrl();
 
-        if ($e instanceof ConnectionException) {
-            return sprintf(
-                'Could not connect to the LiteLLM catalog at %s. Check your internet connection and whether the host is reachable. (%s)',
-                $url,
-                $e->getMessage()
-            );
-        }
-
         if ($e instanceof RequestException) {
-            $status = $e->response->status();
-            $hint = match (true) {
-                $status === 404, $status === 410 => 'The URL may be wrong, or the catalog was moved or deprecated.',
-                $status === 401, $status === 403 => 'Access to the catalog was denied.',
-                $status === 429 => 'The server is rate limiting requests; try again later.',
-                $status >= 500 => 'The server is currently unavailable; try again later.',
-                default => 'The server rejected the request.',
-            };
-            return sprintf('The LiteLLM catalog at %s responded with HTTP %d. %s', $url, $status, $hint);
+            return sprintf('The LiteLLM catalog at %s responded with HTTP %d.', $url, $e->response->status());
         }
 
         return sprintf('Failed to download the LiteLLM catalog from %s: %s', $url, $e->getMessage());
