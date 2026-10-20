@@ -157,6 +157,21 @@
         cursor: pointer;
         /* Check now lives on the icon swatch, so drop the reserved right padding. */
         padding-right: var(--space-2, calc(0.25rem * 2));
+        /* Matches the vertical inset, so the swatch sits evenly in the row's corner. */
+        padding-left: var(--space-1_5);
+    }
+
+    /* Concentric with the row's highlight: its corner radius minus the inset, so the gap
+       around the swatch stays even into the corner too. */
+    :global(.dropdown-checkbox-item.tool-menu-item .tool-icon-swatch) {
+        border-radius: calc(var(--corner-sm) - var(--space-1_5));
+    }
+
+    /* Two lines at the shared tight leading run a fraction past the 32px swatch and stretch
+       the row; a 16px line each keeps the text exactly swatch-tall, so the swatch's inset
+       above and below matches the one on the left. */
+    :global(.dropdown-checkbox-item.tool-menu-item :is(.tool-item-label, .tool-item-description)) {
+        line-height: calc(0.25rem * 4);
     }
 
     :global(.dropdown-checkbox-item.tool-menu-item[data-disabled]) {

@@ -123,9 +123,16 @@
 </DropdownMenuRadioItem>
 
 <style>
-    /* The check lives on the swatch, so drop the radio dot and its reserved padding. */
+    /* The check lives on the swatch, so drop the radio dot and its reserved padding. The
+       left inset matches the vertical one, so the swatch sits evenly in the row's corner. */
     :global(.dropdown-radio-item.model-menu-item) {
-        padding-left: var(--space-2, calc(0.25rem * 2));
+        padding-left: var(--space-1_5);
+    }
+
+    /* Concentric with the row's highlight: its corner radius minus the inset, so the gap
+       around the swatch stays even into the corner too. */
+    :global(.dropdown-radio-item.model-menu-item .provider-swatch) {
+        border-radius: calc(var(--corner-sm) - var(--space-1_5));
     }
 
     :global(.dropdown-radio-item.model-menu-item .dropdown-item-indicator) {
