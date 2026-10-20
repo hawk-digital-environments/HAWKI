@@ -246,6 +246,7 @@
                     "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum"
                 },
                 "searchPlaceholder": "Assistenten suchen",
+                "openStore": "Assistenten-Store öffnen",
                 "noResults": "Keine passenden Assistenten"
             },
             "mentionChips": {
@@ -255,6 +256,7 @@
                 "switchModel": "Aktuelles Modell wechseln",
                 "placeholder": "Modellauswahl",
                 "searchPlaceholder": "Modelle durchsuchen…",
+                "openModels": "Alle Modelle anzeigen",
                 "otherProvider": "Sonstige",
                 "noResults": "Keine Modelle gefunden.",
                 "switchModelCurrent": "Modell wechseln, aktuell: :model",

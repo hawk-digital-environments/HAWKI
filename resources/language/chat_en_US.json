@@ -246,6 +246,7 @@
                     "hawkiDescription": "The general HAWKI assistant for this room"
                 },
                 "searchPlaceholder": "Search assistants",
+                "openStore": "Open assistant store",
                 "noResults": "No matching assistants"
             },
             "mentionChips": {
@@ -255,6 +256,7 @@
                 "switchModel": "Switch current model",
                 "placeholder": "Select model",
                 "searchPlaceholder": "Search models…",
+                "openModels": "Show all models",
                 "otherProvider": "Other",
                 "noResults": "No models found.",
                 "switchModelCurrent": "Switch model, current: :model",

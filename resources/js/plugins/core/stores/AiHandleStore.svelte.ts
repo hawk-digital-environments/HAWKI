@@ -9,6 +9,9 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
     interface HawkiHooks {
         aiAssistants: {value: AiAssistant[]; ctx: AiAssistantsContext};
+        /** Named route of a page listing all assistants (e.g. the assistant store),
+         *  linked from the composer's `@` menu. `null` while no plugin provides one. */
+        aiAssistantsOverviewRoute: {value: string | null; ctx: AiAssistantsContext};
     }
 }
 
@@ -113,6 +116,17 @@ export class AiHandleStore implements DataStore {
             return [];
         }
         return this._app.hooks.apply('aiAssistants', [this.hawkiAssistant], {
+            translate: this._app.localization.translator.translate
+        });
+    }
+
+    /** Named route of the assistant overview contributed via the
+     *  `aiAssistantsOverviewRoute` hook, or `null` when no plugin offers one. */
+    public get overviewRoute(): string | null {
+        if (this._app === null) {
+            return null;
+        }
+        return this._app.hooks.apply('aiAssistantsOverviewRoute', null, {
             translate: this._app.localization.translator.translate
         });
     }

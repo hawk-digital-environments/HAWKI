@@ -41,6 +41,8 @@
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {chipPop} from '$lib/utils/transitions/chipPop';
+    import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
     import AtIcon from '$lib/components/ui/icons/iconset/AtIcon.svelte';
     import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance';
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
@@ -53,6 +55,7 @@
     const aiHandleStore = useStore('ai-handle');
     const pinStore = useStore('composer-pins');
     const {__} = useTranslator();
+    const router = useRouter();
 
     interface Props {
         /** Whether the tagging menu is open. Supports bind:open. */
@@ -198,6 +201,13 @@
         const entry = entries.find(e => e.assistant.id === detailAssistantId);
         return entry ? {...entry} : null;
     });
+
+    // Shortcut next to the search field to the full assistant overview (the store), when a
+    // plugin provides one.
+    function openOverview(route: string) {
+        open = false;
+        void router.goToRoute(route);
+    }
 
     function openAssistantDetail(entry: AssistantMenuEntry) {
         detailAssistantId = entry.assistant.id;
@@ -353,7 +363,19 @@
             {#if !detailEntry && searchEnabled && !shownCommand}
                 <MenuSearchField
                     bind:value={query}
-                    placeholder={__('chat.composer.assistantMenu.searchPlaceholder')}/>
+                    placeholder={__('chat.composer.assistantMenu.searchPlaceholder')}>
+                    {#snippet action()}
+                        {@const route = aiHandleStore.overviewRoute}
+                        {#if route}
+                            <ButtonWithTooltip
+                                variant="ghost"
+                                size="sm"
+                                iconLeft={Store01Icon}
+                                tooltip={__('chat.composer.assistantMenu.openStore')}
+                                onclick={() => openOverview(route)}/>
+                        {/if}
+                    {/snippet}
+                </MenuSearchField>
             {/if}
 
             <DropdownMenuDetailView open={!!detailEntry}>

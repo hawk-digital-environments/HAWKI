@@ -87,6 +87,8 @@ export default class AssistantsPlugin implements HawkiPlugin {
             (assistants, ctx) => [...assistants, ...assistantHandlesStore.menuAssistants(ctx.translate)],
             { order: 10 }
         );
+        // The composer's `@` menu links here as its "all assistants" shortcut.
+        registrar.add('aiAssistantsOverviewRoute', () => 'assistants.dashboard.store');
 
         // Pins an assistant-addressed chat send to the assistant (binding,
         // model/tools/params, display author) and shows the assistant's

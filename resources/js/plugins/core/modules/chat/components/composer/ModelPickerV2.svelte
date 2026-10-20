@@ -42,6 +42,9 @@
     import DropdownMenuRadioGroup from '$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
+    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
+    import AiChipIcon from '$lib/components/ui/icons/iconset/AiChipIcon.svelte';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import ModelMenuListItem from '$plugins/core/modules/chat/components/composer/ModelMenuListItem.svelte';
@@ -73,6 +76,7 @@
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
     const {__} = useTranslator();
+    const app = useApp();
 
     let open = $state(false);
 
@@ -155,6 +159,12 @@
             composerContext?.model.set(picked.model_id);
         }
         open = false;
+    }
+
+    // Shortcut next to the search field to the models dialog owned by `AppSidebar`.
+    function openModelsOverview(): void {
+        open = false;
+        app.events.sync.triggerVoid('modelsRequested');
     }
 
     function openModelDetail(m: AiModel): void {
@@ -298,7 +308,16 @@
         {#if !detailModel}
             <MenuSearchField
                 bind:value={query}
-                placeholder={__('chat.composer.modelPicker.searchPlaceholder')}/>
+                placeholder={__('chat.composer.modelPicker.searchPlaceholder')}>
+                {#snippet action()}
+                    <ButtonWithTooltip
+                        variant="ghost"
+                        size="sm"
+                        iconLeft={AiChipIcon}
+                        tooltip={__('chat.composer.modelPicker.openModels')}
+                        onclick={openModelsOverview}/>
+                {/snippet}
+            </MenuSearchField>
         {/if}
 
         <DropdownMenuDetailView open={!!detailModel}>
