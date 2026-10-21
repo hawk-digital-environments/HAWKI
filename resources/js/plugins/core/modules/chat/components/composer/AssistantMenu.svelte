@@ -43,7 +43,7 @@
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {chipPop} from '$lib/utils/transitions/chipPop';
     import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
-    import {useRouter} from '$lib/components/ui/routing/index.js';
+    import {type RouterScope, useRouterScope} from '$lib/components/ui/routing/index.js';
     import AtIcon from '$lib/components/ui/icons/iconset/AtIcon.svelte';
     import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
@@ -56,7 +56,15 @@
     const aiHandleStore = useStore('ai-handle');
     const pinStore = useStore('composer-pins');
     const {__} = useTranslator();
-    const router = useRouter();
+
+    // Captured defensively: on legacy Blade pages the composer mounts through the snippet
+    // loader without a `RouterView` above it, so no router exists here. The store shortcut
+    // below — the router's only use in this component — then simply stays hidden. Same
+    // pattern as `Link.svelte`.
+    let routerScope: RouterScope | undefined;
+    try {
+        routerScope = useRouterScope();
+    } catch { /* not rendered inside a <RouterView> (legacy snippet mount) */ }
 
     interface Props {
         /** Whether the tagging menu is open. Supports bind:open. */
@@ -206,7 +214,7 @@
     // plugin provides one.
     function openOverview(route: string) {
         open = false;
-        void router.goToRoute(route);
+        void routerScope?.current.goToRoute(route);
     }
 
     function openAssistantDetail(entry: AssistantMenuEntry) {
@@ -369,7 +377,7 @@
                     placeholder={__('chat.composer.assistantMenu.searchPlaceholder')}>
                     {#snippet action()}
                         {@const route = aiHandleStore.overviewRoute}
-                        {#if route}
+                        {#if route && routerScope}
                             <ButtonWithTooltip
                                 variant="ghost"
                                 size="sm"
