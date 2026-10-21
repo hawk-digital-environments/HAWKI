@@ -7,6 +7,10 @@ on:
         description: 'Reason for the rebuild'
         required: true
         default: 'Hotfix for current version'
+      ref:
+        description: 'Branch, tag or full commit SHA to rebuild from. Only a rebuild of the tip of main also replaces the latest tag.'
+        required: true
+        default: 'main'
 
 permissions:
   packages: write
@@ -22,20 +26,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ inputs.ref }}
+
+      # Rebuilding anything but main's tip must not replace the latest image
+      # tag, otherwise republishing an older release would regress it.
+      - name: Check whether this checkout is main's tip
+        id: ref_info
+        uses: hawk-digital-environments/hawk-pipeline-actions/check-branch-tip@v1
+        with:
+          branch: main
 
       - name: Read version from config
         id: get_version
-        run: |
-          VERSION=$(jq -r .version config/hawki_version.json)
-
-          if [ -z "$VERSION" ] || [ "$VERSION" == "null" ]; then
-            echo "Error: Could not read version from config/hawki_version.json"
-            exit 1
-          fi
-
-          echo "Detected version: $VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        uses: hawk-digital-environments/hawk-pipeline-actions/detect-version@v1
+        with:
+          strategy: version-json
+          version-json: config/hawki_version.json
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -66,8 +72,10 @@ jobs:
           push: true
           target: app_prod
           platforms: linux/amd64,linux/arm64
+          # The latest line renders empty for rebuilds of older refs and is
+          # then dropped by the action's list parser, which skips empty lines.
           tags: |
-            digitalenvironments/hawki:latest
+            ${{ steps.ref_info.outputs.is-branch-tip == 'true' && 'digitalenvironments/hawki:latest' || '' }}
             digitalenvironments/hawki:${{ steps.get_version.outputs.version }}
           # Imports the per-arch caches written by the release gate in
           # trigger-release.yml. A hotfix rebuild of main may only hit these
@@ -89,6 +97,6 @@ jobs:
         with:
           webhook-url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
           release-name: "Hotfix Rebuild: ${{ steps.get_version.outputs.version }}"
-          release-body: "Manual rebuild triggering by workflow dispatch. Reason: ${{ inputs.reason }}"
+          release-body: "Manual rebuild triggering by workflow dispatch from ref '${{ inputs.ref }}' (${{ steps.ref_info.outputs.head-sha }}).${{ steps.ref_info.outputs.is-branch-tip != 'true' && ' The digitalenvironments/hawki:latest tag was left untouched.' || '' }} Reason: ${{ inputs.reason }}"
           release-url: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          content: "||@everyone|| ⚠️ **HAWKI ${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Hotfix)."
+          content: "||@everyone|| ⚠️ **HAWKI ${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Hotfix, ref: ${{ inputs.ref }})."
