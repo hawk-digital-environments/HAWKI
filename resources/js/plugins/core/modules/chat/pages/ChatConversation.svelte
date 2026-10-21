@@ -248,7 +248,7 @@ exists; a generation started there keeps streaming through the store.
                         {/if}
                     </div>
                 {:else if !store.active || store.active.messages.length === 0}
-                    <ChatWelcome />
+                    <ChatWelcome headingLevel={2} {composer} conversation={store.active} />
                 {:else}
                     <div
                         class="messages"
