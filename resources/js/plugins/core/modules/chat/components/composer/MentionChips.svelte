@@ -59,7 +59,9 @@
     // the unroll rather than on top of it. No overshoot and barely any scale: the chip
     // makes its entrance on the inside, and a bouncing row would only fight it.
     const enter = {duration: 95, scaleFrom: 0.94, overshoot: false} as const;
-    const leave = {direction: 'out', scaleFrom: 0.94} as const;
+    // Leaving blurs out as it collapses, the reverse of the pill's blur-in arrival, so a
+    // removed tag dissolves rather than being squeezed shut with sharp text inside it.
+    const leave = {direction: 'out', scaleFrom: 0.94, blur: 2} as const;
 </script>
 
 {#each chips as chip (chip.handle)}

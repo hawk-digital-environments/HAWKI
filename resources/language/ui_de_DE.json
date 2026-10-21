@@ -90,7 +90,7 @@
                 "flags": {
                     "modelPickerV2": {
                         "title": "Neue Modellauswahl",
-                        "description": "Eine erweiterte Modellauswahl mit Anbieter-Tabs, Suche, Favoriten und Tastaturkürzeln."
+                        "description": "Eine Modellauswahl im Stil des Tool- und Assistenten-Menüs, mit Suche, Favoriten und Modelldetails."
                     },
                     "statsForNerds": {
                         "title": "Statistiken für Nerds",

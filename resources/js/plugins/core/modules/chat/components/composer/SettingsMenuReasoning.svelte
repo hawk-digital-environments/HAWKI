@@ -6,7 +6,8 @@
   Hover/keyboard behaviour comes from the submenu primitive. Renders nothing
   when the model supports no adjustable level. Must live inside the
   `DropdownMenu` of `SettingsMenu`. Takes no props — reads/writes
-  `ComposerContext` directly.
+  `ComposerContext` directly. A leading "Default" item clears the selection so
+  the model's own default applies again.
 -->
 <script lang="ts">
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
@@ -33,7 +34,7 @@
     const effort = $derived.by(() => composerContext.modelParameters.reasoningEffort);
 
     function handleChange(value: string) {
-        if (value) composerContext.modelParameters.set('reasoning_effort', value as ReasoningLevel);
+        composerContext.modelParameters.set('reasoning_effort', value ? value as ReasoningLevel : null);
     }
 </script>
 
@@ -44,6 +45,9 @@
         aria-label={__('chat.composer.settings.reasoningAriaLabel')}
     >
         <DropdownMenuRadioGroup value={effort ?? ''} onValueChange={handleChange}>
+            <DropdownMenuRadioItem value="" indicator="check" closeOnSelect={false}>
+                {__('chat.composer.settings.reasoningDefault')}
+            </DropdownMenuRadioItem>
             {#each levels as level (level)}
                 <DropdownMenuRadioItem value={level} indicator="check" closeOnSelect={false}>
                     {levelLabels[level]}

@@ -231,7 +231,14 @@
     <DropdownMenuDetailView open={!!detailModel}>
         {#snippet details()}
             {#if detailModel}
-                <ModelMenuDetail model={detailModel} onCloseDetail={closeModelDetail}/>
+                <ModelMenuDetail
+                    model={detailModel}
+                    selected={detailModel.model_id === currentModelId}
+                    onSelect={(model) => {
+                        handleModelChange(model.model_id);
+                        open = false;
+                    }}
+                    onCloseDetail={closeModelDetail}/>
             {/if}
         {/snippet}
 
@@ -249,7 +256,7 @@
                     }>
                 {#if sections.pinned.length > 0}
                     <DropdownMenuSection
-                        label={__('chat.composer.pin.pinnedLabel')}
+                        label={__('chat.composer.favorite.label')}
                         expanded={isExpanded(PINNED_SECTION_KEY)}
                         onToggle={() => toggleSection(PINNED_SECTION_KEY)}>
                         {#each sections.pinned as model (model.model_id)}

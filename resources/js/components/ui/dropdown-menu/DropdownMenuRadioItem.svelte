@@ -26,6 +26,7 @@
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
+    import {useMenuListRow} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
@@ -62,14 +63,20 @@
         iconRight: IconRight,
         ...restProps
     }: Props = $props();
+
+    // Inside a MenuList (every DropdownMenu provides one) the row is highlighted by the
+    // list's sliding "magnetic" hover instead of its own :hover background.
+    const listRow = useMenuListRow();
+    const magnetic = $derived(!!listRow && !disabled);
 </script>
 
 <DropdownMenuPrimitive.RadioItem {value} {disabled} {closeOnSelect}>
     {#snippet child({props, checked: isChecked})}
-        <div {...mergeProps({
+        <div {@attach magnetic ? listRow : null} {...mergeProps({
             class: [
                 'dropdown-radio-item',
                 `dropdown-item--indicator-${indicator === 'none' ? 'none' : indicatorSide}`,
+                magnetic && 'magnetic',
                 className
             ]
         }, restProps, props)}>
@@ -77,7 +84,7 @@
                 <span class="dropdown-item-indicator">
                     {#if isChecked}
                         {#if indicator === 'check'}
-                            <Tick02Icon size={12}/>
+                            <Tick02Icon size={12} aria-hidden="true"/>
                         {:else}
                             <span class="dropdown-radio-dot"></span>
                         {/if}
@@ -127,7 +134,7 @@
     }
 
     .dropdown-radio-item:hover,
-    .dropdown-radio-item:focus-within {
+    .dropdown-radio-item:is(:focus-visible, :has(:focus-visible)) {
         --dropdown-item-action-opacity: 1;
     }
 
@@ -141,7 +148,7 @@
         min-height: 2.5rem;
     }
 
-    .dropdown-radio-item[data-highlighted] {
+    .dropdown-radio-item:is([data-highlighted]:not(.magnetic), [data-highlighted]:focus-visible, :hover:not([data-disabled], .magnetic)) {
         background-color: var(--color-hover);
         color: var(--color-text);
     }

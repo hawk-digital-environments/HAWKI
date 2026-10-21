@@ -115,6 +115,8 @@
         "composer": {
             "textareaLabel": "Nachricht an HAWKI",
             "textareaLabelRoom": "Gruppennachricht",
+            "textareaHint": "Enter sendet die Nachricht, Umschalt+Enter fügt einen Zeilenumbruch ein.",
+            "textareaHintEscape": "Escape verlässt den aktuellen Modus.",
             "textareaPlaceholder": "Hier kannst du deine Anfrage stellen…",
             "textareaPlaceholderRoom": "Schreibe eine Gruppennachricht oder nutze die KI mit @hawki...",
             "attachFileTooltip": "Datei anhängen",
@@ -225,6 +227,7 @@
                     "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum"
                 },
                 "searchPlaceholder": "Assistenten suchen",
+                "openStore": "Assistenten-Store öffnen",
                 "noResults": "Keine passenden Assistenten"
             },
             "mentionChips": {
@@ -234,19 +237,20 @@
                 "switchModel": "Aktuelles Modell wechseln",
                 "placeholder": "Modellauswahl",
                 "searchPlaceholder": "Modelle durchsuchen…",
-                "allTab": "Alle",
                 "otherProvider": "Sonstige",
-                "providerTab": "Modelle von :provider anzeigen",
                 "noResults": "Keine Modelle gefunden.",
                 "favorites": "Favoriten",
                 "addFavorite": ":model zu Favoriten hinzufügen",
                 "removeFavorite": ":model aus Favoriten entfernen",
                 "listAriaLabel": "Verfügbare Modelle",
                 "backButton": "Modelle",
-                "infoDefault": "Weitere Informationen zum Modell anzeigen",
+                "infoDefault": "Mehr Informationen zum Modell anzeigen",
                 "statusLabel": "Verfügbarkeit",
                 "demandLabel": "Auslastung",
-                "identifierLabel": "Modell-ID"
+                "identifierLabel": "Modell-ID",
+                "switchModelCurrent": "Modell wechseln, aktuell: :model",
+                "useModel": "Modell verwenden",
+                "currentModel": "Aktuelles Modell"
             },
             "fileChips": {
                 "conflictMessage": "Vom aktuellen Modell nicht unterstützt",
@@ -312,10 +316,10 @@
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
                 "sendError": "Fehler beim Senden der Nachricht."
             },
-            "pin": {
-                "pinnedLabel": "Angeheftet",
-                "pin": "Oben in diesem Menü anheften",
-                "unpin": "Nicht mehr anheften"
+            "favorite": {
+                "label": "Favoriten",
+                "add": "Zu Favoriten hinzufügen",
+                "remove": "Aus Favoriten entfernen"
             }
         }
     }

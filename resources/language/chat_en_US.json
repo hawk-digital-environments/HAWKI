@@ -115,6 +115,8 @@
         "composer": {
             "textareaLabel": "Message to HAWKI",
             "textareaLabelRoom": "Group message",
+            "textareaHint": "Enter sends the message, Shift+Enter inserts a line break.",
+            "textareaHintEscape": "Escape leaves the current mode.",
             "textareaPlaceholder": "Enter your message here…",
             "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
             "attachFileTooltip": "Attach file",
@@ -225,6 +227,7 @@
                     "hawkiDescription": "The general HAWKI assistant for this room"
                 },
                 "searchPlaceholder": "Search assistants",
+                "openStore": "Open assistant store",
                 "noResults": "No matching assistants"
             },
             "mentionChips": {
@@ -234,9 +237,7 @@
                 "switchModel": "Switch current model",
                 "placeholder": "Select model",
                 "searchPlaceholder": "Search models…",
-                "allTab": "All",
                 "otherProvider": "Other",
-                "providerTab": "Show :provider models",
                 "noResults": "No models found.",
                 "favorites": "Favorites",
                 "addFavorite": "Add :model to favorites",
@@ -246,7 +247,10 @@
                 "infoDefault": "Show more information about the model",
                 "statusLabel": "Availability",
                 "demandLabel": "Load",
-                "identifierLabel": "Model ID"
+                "identifierLabel": "Model ID",
+                "switchModelCurrent": "Switch model, current: :model",
+                "useModel": "Use model",
+                "currentModel": "Current model"
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
@@ -312,10 +316,10 @@
                 "responseError": "An error occurred while processing the response.",
                 "sendError": "An error occurred while sending the message."
             },
-            "pin": {
-                "pinnedLabel": "Pinned",
-                "pin": "Pin to the top of this menu",
-                "unpin": "Remove from pinned"
+            "favorite": {
+                "label": "Favorites",
+                "add": "Add to favorites",
+                "remove": "Remove from favorites"
             }
         }
     }

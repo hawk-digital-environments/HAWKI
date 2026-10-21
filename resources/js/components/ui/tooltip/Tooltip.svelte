@@ -168,7 +168,7 @@
         border-radius: var(--corner-sm);
         border: var(--border);
         padding-inline: var(--space-3);
-        padding-block: var(--space-1);
+        padding-block: var(--space-2);
         font-size: var(--font-size-xxs);
         line-height: var(--line-height-normal);
         background-color: var(--tooltip-bg);

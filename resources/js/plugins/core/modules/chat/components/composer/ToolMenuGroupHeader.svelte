@@ -83,6 +83,8 @@
             ariaLabel={__('chat.composer.toolMenu.showGroupDescription', {label})}
             triggerProps={{
                 tabindex: -1,
+                // Hovering the icon brightens it rather than moving the list's row highlight.
+                'data-list-no-hover': '',
                 onkeydown: onKeydown,
                 onpointerdown: (e: Event) => e.stopPropagation(),
                 onpointerup: (e: Event) => e.stopPropagation()
@@ -90,3 +92,18 @@
     {/if}
 </DropdownMenuLabel>
 
+<style>
+    :global(.tool-menu-group-label) {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1, 0.25rem);
+    }
+
+    /* Like the favourite icon on tool rows: hover brightens the icon instead of
+       putting a surface behind it. Doubled class to beat ActionIcon's own hover. */
+    :global(.tool-menu-group-label .info-button.info-button:hover:not(:disabled)) {
+        opacity: 1;
+        color: var(--color-text);
+        background-color: transparent;
+    }
+</style>

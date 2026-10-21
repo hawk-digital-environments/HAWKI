@@ -2,20 +2,25 @@
   @component Experimental AI model selector for the composer (behind the
   `modelPickerV2` experiments flag; the stable counterpart is `ModelPicker`).
 
-  A richer picker in the style of a command palette: a provider tab rail
-  (first tab: all models, favorites first), a search input that filters
-  across all providers,
-  a fixed-height result list and per-row extras (demand bars, status dot,
-  favorite star, Ctrl+1..9 quick-select). Desktop renders a two-column
-  popover, below the `md` breakpoint a bottom sheet with a horizontal
-  provider pill row instead of the rail.
+  Built from the same dropdown pattern as `ToolMenu` and `AssistantMenu`: a
+  `DropdownMenu` (a bottom sheet below the `md` breakpoint) with a `MenuSearchField`
+  on top and a two-panel `DropdownMenuDetailView` below. The list panel shows the
+  models as one-line `ModelMenuListItem` radio rows — favourites lifted into their own
+  section first, then one section per provider in store order; offline models are
+  listed but disabled. Sections (favourites included) collapse from their header (a menu item, so the
+  keyboard reaches it too); a search shows every match regardless. Each row's info icon (or ArrowRight) drills into `ModelMenuDetail`,
+  which shows the model's `ModelCard`. In the dropdown (not the mobile sheet), pointing at or
+  arrowing onto a row also previews that card beside the menu (`ModelMenuPreview`).
 
   Reads models from the `ai-models` store, the current selection from
   `composerContext.model.current` and writes changes through
   `composerContext.model.set(modelId)` (same contract as `ModelPicker`).
-  Favorites are persisted per browser by the registered `model-favorites` store.
+  Favourite models are persisted per browser by the `model-favorites` store.
 
-  Takes no props — it is a self-contained composer feature component.
+  Without props it is the self-contained composer feature. Passing `onSelect`
+  detaches it from the composer context: the selection then comes from `model`
+  (may be empty) and changes are reported to the callback — used by the
+  assistant builder's `ModelSelector`, with `variant="field"`.
 
   ## Usage
   Rendered by `ChatComposer.svelte` in the top-left of the composer card when
@@ -30,416 +35,381 @@
 -->
 <script lang="ts">
     import {mergeProps} from 'bits-ui';
-    import Popover from '$lib/components/ui/popover/Popover.svelte';
-    import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
-    import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
+    import ProviderSwatch from '$plugins/core/modules/chat/components/composer/utils/ProviderSwatch.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
-    import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
+    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
+    import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
+    import DropdownMenuEmpty from '$lib/components/ui/dropdown-menu/DropdownMenuEmpty.svelte';
+    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
+    import DropdownMenuRadioGroup from '$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
-    import SearchIcon from '$lib/components/ui/icons/iconset/SearchIcon.svelte';
-    import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
-    import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
-    import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
-    import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
+    import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
+    import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
+    import ModelMenuListItem from '$plugins/core/modules/chat/components/composer/ModelMenuListItem.svelte';
+    import ModelMenuDetail from '$plugins/core/modules/chat/components/composer/ModelMenuDetail.svelte';
+    import ModelMenuPreview from '$plugins/core/modules/chat/components/composer/ModelMenuPreview.svelte';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import {revealMenuRow} from '$plugins/core/modules/chat/components/composer/utils/revealMenuRow.js';
+    import {textPopIn} from '$lib/utils/transitions/textPopIn.js';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
-    import AppleReminderIcon from '$lib/components/ui/icons/iconset/AppleReminderIcon.svelte';
 
-    const composerContext = useComposerContext();
+    interface Props {
+        /** Selected model when used outside the composer (requires `onSelect`). */
+        model?: AiModel | null;
+        /** Receives the picked `model_id`. When set, the composer context is not used. */
+        onSelect?: (modelId: string) => void;
+        /** Disables the trigger; outside the composer this replaces the composer guard. */
+        disabled?: boolean;
+        /** Id for the trigger button, e.g. to associate a `<label>`. */
+        id?: string;
+        /** `pill` is the compact composer chip; `field` a full-width trigger styled like a form input. */
+        variant?: 'pill' | 'field';
+    }
+
+    const {model, onSelect, disabled: disabledProp = false, id, variant = 'pill'}: Props = $props();
+
+    // svelte-ignore state_referenced_locally
+    const composerContext = onSelect ? null : useComposerContext();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
     const {__} = useTranslator();
-
-    const ALL_TAB = '__all__';
-    const OTHER_TAB = '__other__';
-    const HIDE_PROVIDER = '__hidden__';
-
-    const uid = $props.id();
-    const listId = `mp2-list-${uid}`;
+    const breakpoint = useBreakpoint();
 
     let open = $state(false);
+
+    // Free-text filter over the list panel; cleared whenever the menu closes.
     let query = $state('');
-    let activeTab = $state<string>(ALL_TAB);
-    let highlightedId = $state<string | null>(null);
-    // True between picking a model and the picker closing.
-    let modelPicked = false;
-    let searchInputEl = $state<HTMLInputElement | null>(null);
 
-    const disabled = $derived(composerContext.guard.disablesFeature('models'));
-    const current = $derived(composerContext.model.current);
+    // When set, the picker shows the detail view for this model instead of the list.
+    let detailModelId = $state<string | null>(null);
 
-    // Unique providers in model order; models without a provider share the "other" tab.
-    const providers = $derived.by(() => {
-        const map = new Map<string, {id: string; label: string}>();
-        for (const model of aiModelStore.models) {
-            const id = model.provider?.provider_id ?? OTHER_TAB;
-            if (!map.has(id)) {
-                map.set(id, {id, label: model.provider?.name ?? __('chat.composer.modelPicker.otherProvider')});
+    // Sections the user folded away (provider ids, or `FAVORITES_GROUP`); kept while the
+    // composer lives, so the menu reopens the way it was left.
+    const FAVORITES_GROUP = '__favorites__';
+    let collapsedGroups = $state<string[]>([]);
+
+    const disabled = $derived(disabledProp || (composerContext?.guard.disablesFeature('models') ?? false));
+    const current = $derived<AiModel | null>(composerContext ? composerContext.model.current : (model ?? null));
+
+    const triggerLabel = $derived(current
+        ? __('chat.composer.modelPicker.switchModelCurrent', {model: current.label})
+        : __('chat.composer.modelPicker.placeholder'));
+
+    // Rows are matched on what the user can see, plus the technical id people search by.
+    const needle = $derived(query.trim().toLowerCase());
+    const shownModels = $derived(needle
+        ? aiModelStore.models.filter(m => [m.label, m.provider?.name, m.model_id]
+            .some(text => text?.toLowerCase().includes(needle)))
+        : aiModelStore.models);
+
+    // Favourites in the order they were set — and dropped from their provider section,
+    // so each model appears exactly once.
+    const favoriteModels = $derived(modelFavorites.ids
+        .map(modelId => shownModels.find(m => m.model_id === modelId))
+        .filter((m): m is AiModel => !!m));
+
+    interface ProviderGroup {
+        id: string;
+        label: string;
+        models: AiModel[];
+    }
+
+    // The remaining models grouped by provider, in first-appearance (store) order.
+    const providerGroups = $derived.by(() => {
+        const groups = new Map<string, ProviderGroup>();
+        for (const m of shownModels) {
+            if (modelFavorites.has(m.model_id)) {
+                continue;
             }
+            const groupId = m.provider?.provider_id ?? '_other';
+            let group = groups.get(groupId);
+            if (!group) {
+                group = {id: groupId, label: m.provider?.name ?? __('chat.composer.modelPicker.otherProvider'), models: []};
+                groups.set(groupId, group);
+            }
+            group.models.push(m);
         }
-        return [...map.values()];
+        return [...groups.values()];
     });
 
-    const searching = $derived(query.trim().length > 0);
-
-    // A non-empty query searches across ALL providers and overrides the tabs.
-    const visibleModels = $derived.by(() => {
-        if (searching) {
-            const q = query.trim().toLowerCase();
-            return Map.groupBy(aiModelStore.models.filter(model => `${model.label} ${model.provider?.name ?? ''} ${model.model_id}`.toLowerCase().includes(q)), () => HIDE_PROVIDER);
-        }
-        const favoritesFirst = (a: AiModel, b: AiModel) => Number(modelFavorites.has(b.model_id)) - Number(modelFavorites.has(a.model_id));
-        if (activeTab === ALL_TAB) {
-            return Map.groupBy(aiModelStore.models.toSorted(favoritesFirst), (model) => modelFavorites.has(model.model_id) ? __('chat.composer.modelPicker.favorites') : model.provider!.name);
-        }
-        return Map.groupBy(aiModelStore.models.filter(model => (model.provider?.provider_id ?? OTHER_TAB) === activeTab).toSorted(favoritesFirst), () => HIDE_PROVIDER);
-    });
-
-    const selectableModels = $derived(visibleModels.entries().flatMap(([_, models]) => models).filter((model) => model.status !== 'offline').toArray());
-
-    // Ctrl+N quick-select targets: the first 9 selectable visible rows.
-    const kbdIndexById = $derived.by(() => {
-        const map = new Map<string, number>();
-        selectableModels.slice(0, 9).forEach((model, i) => map.set(model.model_id, i + 1));
-        return map;
-    });
-
-    // Highlight resets to the first selectable row whenever the filtered list changes.
-    $effect(() => {
-        highlightedId = selectableModels[0]?.model_id ?? null;
-    });
-
-    // On open (popover and sheet share `open`): clear the query and land on the
-    // all tab if any favorites exist, otherwise on the current model's provider.
-    let wasOpen = false;
-    $effect(() => {
-        const isOpen = open;
-        if (isOpen && !wasOpen) {
-            query = '';
-            activeTab = modelFavorites.ids.length > 0
-                ? ALL_TAB
-                : (current?.provider?.provider_id ?? providers[0]?.id ?? ALL_TAB);
-        }
-        wasOpen = isOpen;
-    });
-
-    function optionDomId(modelId: string): string {
-        return `mp2-opt-${uid}-${modelId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    // A search shows every match, folded section or not.
+    function isCollapsed(groupId: string): boolean {
+        return !needle && collapsedGroups.includes(groupId);
     }
 
-    function selectTab(id: string): void {
-        activeTab = id;
-        query = '';
-        searchInputEl?.focus();
+    function toggleGroup(groupId: string): void {
+        collapsedGroups = collapsedGroups.includes(groupId)
+            ? collapsedGroups.filter(id => id !== groupId)
+            : [...collapsedGroups, groupId];
     }
 
-    function selectModel(model: AiModel): void {
-        if (model.status === 'offline') {
+    // The row being pointed at or focused, previewed beside the menu. Leaving the rows hides
+    // the preview only after a beat, so crossing a section header doesn't drop it.
+    let menuEl = $state<HTMLElement | null>(null);
+    let previewModelId = $state<string | null>(null);
+    let previewHideTimer: ReturnType<typeof setTimeout> | undefined;
+
+    function previewRowAt(target: EventTarget | null): void {
+        const row = target instanceof Element ? target.closest<HTMLElement>('.model-menu-item[data-model-id]') : null;
+        const modelId = row?.dataset.modelId;
+        clearTimeout(previewHideTimer);
+        if (!modelId) {
+            previewHideTimer = setTimeout(() => {
+                previewModelId = null;
+            }, 150);
             return;
         }
-        composerContext.model.set(model.model_id);
-        modelPicked = true;
+        previewModelId = modelId;
+    }
+
+    function onContentPointerOver(event: PointerEvent): void {
+        if (event.pointerType !== 'mouse') {
+            return;
+        }
+        menuEl = event.currentTarget as HTMLElement;
+        previewRowAt(event.target);
+    }
+
+    function onContentFocusIn(event: FocusEvent): void {
+        menuEl = event.currentTarget as HTMLElement;
+        previewRowAt(event.target);
+    }
+
+    // The pointer left the menu: fall back to the row the keyboard sits on, if any.
+    function onContentPointerLeave(event: PointerEvent): void {
+        if (event.target === event.currentTarget) {
+            previewRowAt(document.activeElement);
+        }
+    }
+
+    const detailModel = $derived(detailModelId ? aiModelStore.models.find(m => m.model_id === detailModelId) ?? null : null);
+
+    const previewModel = $derived(open && !detailModel && previewModelId && !breakpoint.is('bpSmallerThanMd')
+        ? aiModelStore.models.find(m => m.model_id === previewModelId) ?? null
+        : null);
+
+    function selectModel(modelId: string): void {
+        const picked = aiModelStore.models.find(m => m.model_id === modelId);
+        if (!picked || picked.status === 'offline') {
+            return;
+        }
+        if (onSelect) {
+            onSelect(picked.model_id);
+        } else {
+            composerContext?.model.set(picked.model_id);
+            modelPicked = true;
+        }
         open = false;
     }
 
+    // True between picking a model in the composer and the picker closing.
+    let modelPicked = false;
+
     function handleCloseAutoFocus(e: Event): void {
-        // bits-ui would return focus to the trigger; after picking a model, hand the
+        // The dropdown would return focus to the trigger; after picking a model, hand the
         // cursor back to the input instead so typing can continue right away.
         if (modelPicked) {
             e.preventDefault();
-            composerContext.autoFocusInput();
+            composerContext?.autoFocusInput();
         }
         modelPicked = false;
     }
 
-    function toggleFavorite(e: Event, model: AiModel): void {
-        // Keep the popover open and the row unselected.
-        e.preventDefault();
-        e.stopPropagation();
-        modelFavorites.toggle(model.model_id);
+    function openModelDetail(m: AiModel): void {
+        detailModelId = m.model_id;
     }
 
-    function moveHighlight(delta: number): void {
-        const list = selectableModels;
-        if (list.length === 0) {
+    function closeModelDetail(): void {
+        const modelId = detailModelId;
+        detailModelId = null;
+        if (!modelId) {
             return;
         }
-        const index = list.findIndex(model => model.model_id === highlightedId);
-        const next = index === -1 ? 0 : Math.min(Math.max(index + delta, 0), list.length - 1);
-        highlightedId = list[next].model_id;
+        // Return focus to the row that opened the detail once the list re-renders.
         requestAnimationFrame(() => {
-            if (!highlightedId) {
-                return;
-            }
-            document.getElementById(optionDomId(highlightedId))?.scrollIntoView({block: 'nearest'});
+            document
+                .querySelector<HTMLElement>(`.model-menu-content [data-model-id="${CSS.escape(modelId)}"]`)
+                ?.focus();
         });
     }
 
-    function onPanelKeydown(e: KeyboardEvent): void {
-        // Attached to both the panel and the popover content (in case focus sits on
-        // the content itself), so skip keys the inner handler already processed.
-        if (e.defaultPrevented) {
+    function currentRow(container: ParentNode): HTMLElement | null {
+        return current
+            ? container.querySelector<HTMLElement>(`[data-model-id="${CSS.escape(current.model_id)}"]:not([data-disabled])`)
+            : null;
+    }
+
+    // The list opens scrolled minimally to the current model, while focus stays in the search
+    // field like in the assistant and tool pickers; ArrowDown then lands on that row. Two
+    // frames, so the list has laid out after `MenuSearchField` mounts.
+    $effect(() => {
+        if (!open) {
             return;
         }
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            moveHighlight(e.key === 'ArrowDown' ? 1 : -1);
-            return;
-        }
-        if (e.key === 'Enter') {
-            const model = selectableModels.find(m => m.model_id === highlightedId);
-            if (model) {
-                e.preventDefault();
-                selectModel(model);
+        let frame = requestAnimationFrame(() => {
+            frame = requestAnimationFrame(() => {
+                const row = currentRow(document.querySelector('.model-menu-content') ?? document);
+                if (!row) {
+                    return;
+                }
+                revealMenuRow(row, '.model-menu-content');
+            });
+        });
+        return () => cancelAnimationFrame(frame);
+    });
+
+    // Keyboard handling ahead of bits-ui's own (capture phase):
+    // - Typing while a row has focus goes to the search field instead of bits-ui's
+    //   typeahead, so the list still filters as you type.
+    // - Arrowing out of the search field lands on the current model rather than the first
+    //   row; falls through when that row is filtered out.
+    function onContentKeydownCapture(event: KeyboardEvent): void {
+        const content = event.currentTarget as HTMLElement;
+        const inSearch = event.target instanceof HTMLInputElement;
+        if (!inSearch && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && event.key !== ' ') {
+            const search = content.querySelector<HTMLInputElement>('.menu-search input');
+            if (search) {
+                // Focus moves before the key's default action, so the character lands in the field.
+                event.stopPropagation();
+                search.focus();
             }
+            return;
         }
+        if (event.key !== 'ArrowDown' || !inSearch) {
+            return;
+        }
+        const row = currentRow(content);
+        if (!row) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        row.focus();
     }
 
-    function handleOpenAutoFocus(e: Event): void {
-        // bits-ui would focus the first rail tab; land on the search input instead.
-        // Double rAF so the focus lands after bits-ui's own focus management settled.
-        e.preventDefault();
-        requestAnimationFrame(() => requestAnimationFrame(() => searchInputEl?.focus()));
-    }
-
-    function providerInitials(name: string): string {
-        const words = name.trim().split(/\s+/).filter(Boolean);
-        if (words.length >= 2) {
-            return (words[0][0] + words[1][0]).toUpperCase();
+    $effect(() => {
+        if (!open) {
+            query = '';
+            clearTimeout(previewHideTimer);
+            previewModelId = null;
         }
-        return name.trim().slice(0, 2).toUpperCase();
-    }
+    });
+
+    // When closing the menu, the detail view is kept for a short delay to avoid flickering
+    // mid-close; matches the tool and assistant pickers.
+    $effect(() => {
+        if (!open && detailModelId) {
+            const t = setTimeout(() => {
+                detailModelId = null;
+            }, 200);
+            return () => clearTimeout(t);
+        }
+    });
 </script>
 
-{#snippet triggerContent()}
-    <span class="mp2-provider-chip" aria-hidden="true">
-        {providerInitials(current.provider?.name ?? current.label)}
-    </span>
-    <span class="mp2-trigger-label">{current.label}</span>
-    <ChevronDownIcon size={14} class="mp2-trigger-chevron"/>
-{/snippet}
-
-{#snippet searchBox()}
-    <div class="mp2-search">
-        <SearchIcon size={16} aria-hidden="true"/>
-        <input
-            bind:this={searchInputEl}
-            bind:value={query}
-            type="text"
-            class="mp2-search-input"
-            placeholder={__('chat.composer.modelPicker.searchPlaceholder')}
-            aria-label={__('chat.composer.modelPicker.searchPlaceholder')}
-            role="combobox"
-            aria-expanded="true"
-            aria-controls={listId}
-            aria-activedescendant={highlightedId ? optionDomId(highlightedId) : undefined}
-            autocomplete="off"
-            spellcheck="false"
-        />
-    </div>
-{/snippet}
-
-{#snippet modelList(layout: 'popover' | 'sheet')}
-    <div
-        id={listId}
-        class="mp2-list"
-        role="listbox"
-        aria-label={__('chat.composer.modelPicker.listAriaLabel')}
-    >
-        {#if visibleModels.size === 0}
-            <div class="mp2-empty">
-                {__('chat.composer.modelPicker.noResults')}
-            </div>
-        {:else}
-            {#each visibleModels.entries() as [provider, models] (provider)}
-                {#if provider !== HIDE_PROVIDER}
-                    <div class="mp2-row mp2-provider">{provider}</div>
-                {/if}
-                {#each models as model (model.model_id)}
-                    {@const offline = model.status === 'offline'}
-                    {@const selected = model.model_id === current.model_id}
-                    {@const favorite = modelFavorites.has(model.model_id)}
-                    {@const kbdIndex = layout === 'popover' ? kbdIndexById.get(model.model_id) : undefined}
-                    <!-- Keyboard interaction lives on the panel (aria-activedescendant pattern),
-                         so the option row itself only needs a click handler. -->
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <div
-                        id={optionDomId(model.model_id)}
-                        data-model-id={model.model_id}
-                        class="mp2-row"
-                        class:mp2-row--highlighted={model.model_id === highlightedId}
-                        class:mp2-row--offline={offline}
-                        role="option"
-                        tabindex={-1}
-                        aria-selected={selected}
-                        aria-disabled={offline || undefined}
-                        onclick={() => selectModel(model)}
-                        onmouseenter={() => {
-                        if (!offline) highlightedId = model.model_id;
-                    }}
-                    >
-                    <span class="mp2-row-text">
-                        <span class="mp2-row-label">{model.label}</span>
-                        <span class="mp2-row-provider">{model.provider?.name ?? __('chat.composer.modelPicker.otherProvider')}</span>
-                    </span>
-                        <span class="mp2-row-side">
-                        {#if selected}
-                            <Tick02Icon size={16} class="mp2-row-check"/>
-                        {/if}
-                            {#if !offline}
-                            <ModelDemandBars model={model} focusable={false}/>
-                        {/if}
-                            <StatusDotForModel model={model} focusable={false}/>
-                            {#if kbdIndex}
-                            <!-- Handles the Ctrl+N quick-select itself: listens
-                                 globally while the row is mounted and shows the
-                                 combination only while Ctrl (⌘ on Apple) is held. -->
-                            <Kbd key={String(kbdIndex)} ctrl onPress={() => selectModel(model)}/>
-                        {/if}
-                            <button
-                                type="button"
-                                class="mp2-star"
-                                class:mp2-star--active={favorite}
-                                aria-label={__(
-                                favorite
-                                    ? 'chat.composer.modelPicker.removeFavorite'
-                                    : 'chat.composer.modelPicker.addFavorite',
-                                {model: model.label}
-                            )}
-                                aria-pressed={favorite}
-                                onmousedown={(e) => e.preventDefault()}
-                                onclick={(e) => toggleFavorite(e, model)}
-                            >
-                            <StarIcon size={16}/>
-                        </button>
-                    </span>
-                    </div>
-                {/each}
-            {/each}
+{#snippet groupHeader(groupId: string, label: string, count: number)}
+    {@const collapsed = isCollapsed(groupId)}
+    <DropdownMenuItem
+        class="mp2-group"
+        closeOnSelect={false}
+        aria-expanded={!collapsed}
+        onSelect={() => toggleGroup(groupId)}>
+        <ArrowRight01Icon size={14} class={`mp2-group-chevron${collapsed ? '' : ' mp2-group-chevron--open'}`}/>
+        <span class="mp2-group-label">{label}</span>
+        {#if collapsed}
+            <span class="mp2-group-count">{count}</span>
         {/if}
-    </div>
-{/snippet}
-
-{#snippet panel(layout: 'popover' | 'sheet')}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class={`mp2-panel mp2-panel--${layout}`} onkeydown={onPanelKeydown}>
-        {#if layout === 'popover'}
-            <div class="mp2-rail">
-                <Tooltip tooltip={__('chat.composer.modelPicker.allTab')} side="right" delayDuration={300}>
-                    {#snippet children(t)}
-                        <button
-                            type="button"
-                            class="mp2-tab"
-                            class:mp2-tab--active={!searching && activeTab === ALL_TAB}
-                            aria-label={__('chat.composer.modelPicker.allTab')}
-                            aria-pressed={!searching && activeTab === ALL_TAB}
-                            {...mergeProps(t.props, {onclick: () => selectTab(ALL_TAB)})}
-                        >
-                            <AppleReminderIcon size={18}/>
-                        </button>
-                    {/snippet}
-                </Tooltip>
-                {#each providers as provider (provider.id)}
-                    <Tooltip tooltip={provider.label} side="right" delayDuration={300}>
-                        {#snippet children(t)}
-                            <button
-                                type="button"
-                                class="mp2-tab"
-                                class:mp2-tab--active={!searching && activeTab === provider.id}
-                                aria-label={__('chat.composer.modelPicker.providerTab', {provider: provider.label})}
-                                aria-pressed={!searching && activeTab === provider.id}
-                                {...mergeProps(t.props, {onclick: () => selectTab(provider.id)})}
-                            >
-                                <span class="mp2-provider-chip mp2-provider-chip--tab" aria-hidden="true">
-                                    {providerInitials(provider.label)}
-                                </span>
-                            </button>
-                        {/snippet}
-                    </Tooltip>
-                {/each}
-            </div>
-            <div class="mp2-main">
-                {@render searchBox()}
-                {@render modelList(layout)}
-            </div>
-        {:else}
-            {@render searchBox()}
-            <div class="mp2-pills">
-                <button
-                    type="button"
-                    class="mp2-pill"
-                    class:mp2-pill--active={!searching && activeTab === ALL_TAB}
-                    aria-pressed={!searching && activeTab === ALL_TAB}
-                    onclick={() => selectTab(ALL_TAB)}
-                >
-                    <StarIcon size={14}/>
-                    {__('chat.composer.modelPicker.allTab')}
-                </button>
-                {#each providers as provider (provider.id)}
-                    <button
-                        type="button"
-                        class="mp2-pill"
-                        class:mp2-pill--active={!searching && activeTab === provider.id}
-                        aria-pressed={!searching && activeTab === provider.id}
-                        onclick={() => selectTab(provider.id)}
-                    >
-                        {provider.label}
-                    </button>
-                {/each}
-            </div>
-            {@render modelList(layout)}
-        {/if}
-    </div>
+    </DropdownMenuItem>
 {/snippet}
 
 {#if aiModelStore.models.length === 0}
     <span class="mp2-no-models">{__('chat.composer.modelPicker.placeholder')}</span>
 {:else}
-    <Breakpoint>
-        {#snippet bpSmallerThanMd()}
-            <button
-                type="button"
-                class="mp2-trigger chat-model-trigger"
-                {disabled}
-                aria-label={__('chat.composer.modelPicker.switchModel')}
-                onclick={() => (open = true)}
-            >
-                {@render triggerContent()}
-            </button>
-            <BottomSheet bind:open title={__('chat.composer.modelPicker.switchModel')}>
-                {@render panel('sheet')}
-            </BottomSheet>
-        {/snippet}
-        {#snippet children()}
-            <Popover
-                bind:open
-                side="top"
-                align="start"
-                contentProps={{class: 'mp2-content', onOpenAutoFocus: handleOpenAutoFocus, onCloseAutoFocus: handleCloseAutoFocus, onkeydown: onPanelKeydown}}
-            >
-                {#snippet children({props})}
-                    <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>
-                        {#snippet children(t)}
-                            <button
-                                type="button"
-                                class="mp2-trigger chat-model-trigger"
-                                class:mp2-trigger--open={open}
-                                {disabled}
-                                {...mergeProps(props, t.props)}
-                            >
-                                {@render triggerContent()}
-                            </button>
-                        {/snippet}
-                    </Tooltip>
+    <DropdownMenu
+        {disabled}
+        bind:open
+        align="start"
+        magneticHover={false}
+        contentProps={{
+            class: ['model-menu-content', variant === 'field' && 'model-menu-content--field'],
+            onkeydowncapture: onContentKeydownCapture,
+            onpointerover: onContentPointerOver,
+            onpointerleave: onContentPointerLeave,
+            onfocusin: onContentFocusIn,
+            onCloseAutoFocus: handleCloseAutoFocus
+        }}>
+        {#snippet trigger({props})}
+            <Tooltip tooltip={__('chat.composer.modelPicker.switchModel')}>
+                {#snippet children(t)}
+                    <button
+                        type="button"
+                        class="mp2-trigger chat-model-trigger"
+                        class:mp2-trigger--field={variant === 'field'}
+                        {id}
+                        {disabled}
+                        aria-label={triggerLabel}
+                        {...mergeProps(props, t.props)}>
+                        {#if current}
+                            <ProviderSwatch model={current} size="sm" round/>
+                        {/if}
+                        <span class="mp2-trigger-label" use:textPopIn={current?.label ?? __('chat.composer.modelPicker.placeholder')}></span>
+                        <ChevronDownIcon size={14} class="mp2-trigger-chevron"/>
+                    </button>
                 {/snippet}
-                {#snippet popover()}
-                    {@render panel('popover')}
-                {/snippet}
-            </Popover>
+            </Tooltip>
         {/snippet}
-    </Breakpoint>
+
+        {#if !detailModel}
+            <MenuSearchField
+                bind:value={query}
+                placeholder={__('chat.composer.modelPicker.searchPlaceholder')}/>
+        {/if}
+
+        <DropdownMenuDetailView open={!!detailModel}>
+            {#snippet details()}
+                {#if detailModel}
+                    <ModelMenuDetail
+                        model={detailModel}
+                        selected={detailModel.model_id === current?.model_id}
+                        onSelect={(m) => selectModel(m.model_id)}
+                        onCloseDetail={closeModelDetail}/>
+                {/if}
+            {/snippet}
+
+            {#if shownModels.length === 0}
+                <DropdownMenuEmpty>{__('chat.composer.modelPicker.noResults')}</DropdownMenuEmpty>
+            {:else}
+                <!-- Inside the scrolling viewport, so the sliding hover scrolls with the rows. -->
+                <MenuList class="dropdown-menu-list" bridgeSections>
+                    <DropdownMenuRadioGroup value={current?.model_id ?? ''} onValueChange={selectModel}>
+                        {#if favoriteModels.length > 0}
+                            {@render groupHeader(FAVORITES_GROUP, __('chat.composer.favorite.label'), favoriteModels.length)}
+                            {#if !isCollapsed(FAVORITES_GROUP)}
+                                {#each favoriteModels as m (m.model_id)}
+                                    <ModelMenuListItem model={m} selected={m.model_id === current?.model_id} showProvider onOpenDetail={openModelDetail}/>
+                                {/each}
+                            {/if}
+                        {/if}
+
+                        {#each providerGroups as group (group.id)}
+                            {@const collapsed = isCollapsed(group.id)}
+                            {@render groupHeader(group.id, group.label, group.models.length)}
+                            {#if !collapsed}
+                                {#each group.models as m (m.model_id)}
+                                    <ModelMenuListItem model={m} selected={m.model_id === current?.model_id} onOpenDetail={openModelDetail}/>
+                                {/each}
+                            {/if}
+                        {/each}
+                    </DropdownMenuRadioGroup>
+                </MenuList>
+            {/if}
+        </DropdownMenuDetailView>
+    </DropdownMenu>
+    <ModelMenuPreview model={previewModel} anchor={menuEl}/>
 {/if}
 
 <style>
@@ -451,12 +421,15 @@
         gap: var(--space-1_5);
         max-width: 13rem;
         min-width: 0;
+        /* Pinned to the height the assistant tags and tool chips in the same row share. */
+        height: var(--chat-composer-control-height, 2rem);
         font-size: var(--font-size-xs);
         color: var(--color-text);
         background: var(--color-surface-light);
         border: 1px solid transparent;
         border-radius: var(--corner-full);
-        padding: var(--space-1) var(--space-2_5);
+        /* The provider tile sits close to the rounded start, the chevron gets more room. */
+        padding-inline: var(--space-1) var(--space-2_5);
         white-space: nowrap;
         transition: background-color var(--duration-fast, 150ms) var(--easing-default);
 
@@ -487,23 +460,41 @@
         transition: rotate var(--duration-fast, 150ms) var(--easing-default);
     }
 
-    .mp2-trigger--open :global(.mp2-trigger-chevron) {
+    .mp2-trigger[data-state='open'] :global(.mp2-trigger-chevron) {
         rotate: 180deg;
     }
 
-    .mp2-provider-chip {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        width: 1.25rem;
-        height: 1.25rem;
-        border-radius: var(--corner-sm);
-        background: var(--color-bg-secondary);
-        color: var(--color-text-muted);
-        font-size: 0.55rem;
-        font-weight: var(--font-weight-medium, 500);
-        letter-spacing: 0.03em;
+    /* `field` variant: sized and outlined like the form inputs/selects it sits
+       next to, chevron pushed to the far end. */
+    .mp2-trigger--field {
+        width: 100%;
+        max-width: none;
+        height: auto;
+        min-height: 2.5rem;
+        padding: var(--space-2) var(--space-2_5);
+        border: var(--border);
+        border-radius: var(--corner-md);
+        background: transparent;
+        font-size: var(--font-size-sm);
+
+        &:hover:not([disabled]),
+        &[data-state='open'] {
+            background: transparent;
+        }
+
+        &:focus-visible {
+            border-color: var(--color-focus-ring);
+            outline: 1px solid var(--color-focus-ring);
+            outline-offset: 0;
+        }
+
+        &[disabled] {
+            opacity: 0.5;
+        }
+    }
+
+    .mp2-trigger--field :global(.mp2-trigger-chevron) {
+        margin-left: auto;
     }
 
     .mp2-no-models {
@@ -512,258 +503,65 @@
         padding-inline: var(--space-2);
     }
 
-    /* ── Popover shell ────────────────────────────────────────────────── */
+    /* ── Menu ─────────────────────────────────────────────────────────── */
 
-    /* Combined selector so this wins over the .popover-content defaults. */
-    :global(.popover-content.mp2-content) {
-        width: auto;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    /* ── Panel ────────────────────────────────────────────────────────── */
-
-    .mp2-panel--popover {
-        display: flex;
-        width: 24rem;
+    /*
+      Match the tool and assistant pickers: one fixed width, and scrolling inside the
+      animated detail-view viewport so the dropdown chrome stays anchored while the
+      panels slide.
+    */
+    :global(.dropdown-content.dropdown-content--dropdown.model-menu-content) {
+        width: calc(0.25rem * 80);
+        max-height: min(28rem, calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4)));
         max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
-    }
-
-    .mp2-panel--sheet {
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
-    }
+        overflow: hidden;
 
-    .mp2-rail {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
-        padding: var(--space-1_5);
-        border-right: var(--border);
-        overflow-y: auto;
-    }
-
-    .mp2-tab {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2.25rem;
-        height: 2.25rem;
-        flex-shrink: 0;
-        border: none;
-        border-radius: var(--corner-sm);
-        background: transparent;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        transition: background-color var(--duration-fast, 150ms) var(--easing-default),
-            color var(--duration-fast, 150ms) var(--easing-default);
-
-        &:hover {
-            color: var(--color-text);
-        }
-    }
-
-    .mp2-tab--active {
-        background: var(--color-hover);
-        color: var(--color-text);
-    }
-
-    .mp2-provider-chip--tab {
-        width: 1.5rem;
-        height: 1.5rem;
-        font-size: 0.625rem;
-        background: var(--color-bg-secondary);
-    }
-
-    .mp2-tab--active .mp2-provider-chip--tab {
-        color: var(--color-text);
-    }
-
-    .mp2-main {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-width: 0;
-    }
-
-    /* ── Search ───────────────────────────────────────────────────────── */
-
-    .mp2-search {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding-inline: var(--space-3);
-        border-bottom: var(--border);
-        color: var(--color-text-muted);
-    }
-
-    .mp2-panel--sheet .mp2-search {
-        border: var(--border);
-        border-radius: var(--corner-md);
-    }
-
-    .mp2-search-input {
-        flex: 1;
-        min-width: 0;
-        height: 2.25rem;
-        border: none;
-        background: transparent;
-        color: var(--color-text);
-        font-size: var(--font-size-xs);
-        outline: none;
-
-        &::placeholder {
-            color: var(--color-text-muted);
-        }
-    }
-
-    /* ── List ─────────────────────────────────────────────────────────── */
-
-    .mp2-list {
-        padding: var(--space-1);
-        overflow-y: auto;
-    }
-
-    /* Fixed height on desktop so the popover does not resize while filtering. */
-    .mp2-panel--popover .mp2-list {
-        height: 18rem;
-    }
-
-    .mp2-panel--sheet .mp2-list {
-        max-height: 50vh;
-    }
-
-    .mp2-empty {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        min-height: 6rem;
-        padding: var(--space-4);
-        text-align: center;
-        color: var(--color-text);
-        font-size: var(--font-size-xs);
-    }
-
-    .mp2-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-1_5) var(--space-2_5);
-        border-radius: var(--corner-sm);
-        cursor: pointer;
-    }
-
-    .mp2-provider {
-        color: var(--color-text-muted);
-        cursor: default;
+        /* The padding collides with the inner view container (overflow: hidden), so the
+           inner view handles its own padding instead. */
         padding: 0;
-    }
 
-    .mp2-row--highlighted {
-        background: var(--color-hover);
-    }
-
-    .mp2-row--offline {
-        cursor: not-allowed;
-
-        .mp2-row-label,
-        .mp2-row-provider {
-            color: var(--color-text-muted);
+        :global(.view) {
+            padding: var(--space-1);
         }
     }
 
-    .mp2-row-text {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-0_5);
+    /* Next to a form field the menu spans the field instead. */
+    :global(.dropdown-content.dropdown-content--dropdown.model-menu-content.model-menu-content--field) {
+        width: var(--bits-dropdown-menu-anchor-width, calc(0.25rem * 80));
+    }
+
+    /* Section headers read like the menu's section labels (`DropdownMenuLabel`), with a
+       chevron that turns down while the section is open. */
+    :global(.dropdown-item.mp2-group) {
+        gap: var(--space-1);
+        font-size: var(--font-size-xxs);
+        font-weight: var(--font-weight-medium, 500);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+    }
+
+    :global(.dropdown-item.mp2-group .mp2-group-chevron) {
+        flex-shrink: 0;
+        transition: rotate var(--duration-fast, 150ms) var(--easing-default);
+    }
+
+    :global(.dropdown-item.mp2-group .mp2-group-chevron--open) {
+        rotate: 90deg;
+    }
+
+    .mp2-group-label {
         flex: 1;
         min-width: 0;
-    }
-
-    .mp2-row-label {
-        font-size: var(--font-size-xs);
-        font-weight: var(--font-weight-medium, 500);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .mp2-row-provider {
-        font-size: var(--font-size-xxs);
-        color: var(--color-text-muted);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .mp2-row-side {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
+    .mp2-group-count {
         flex-shrink: 0;
-    }
-
-    .mp2-row-side :global(.mp2-row-check) {
-        color: var(--color-text-muted);
-    }
-
-    .mp2-star {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: var(--space-0_5);
-        border: none;
-        border-radius: var(--corner-sm);
-        background: transparent;
-        color: color-mix(in oklch, var(--color-text-muted) 55%, transparent);
-        cursor: pointer;
-        transition: color var(--duration-fast, 150ms) var(--easing-default);
-
-        &:hover {
-            color: var(--color-text-muted);
-        }
-    }
-
-    .mp2-star--active {
-        color: var(--color-warning);
-
-        &:hover {
-            color: var(--color-warning);
-        }
-
-        :global(svg path) {
-            fill: currentColor;
-        }
-    }
-
-    /* ── Sheet provider pills ─────────────────────────────────────────── */
-
-    .mp2-pills {
-        display: flex;
-        gap: var(--space-1_5);
-        overflow-x: auto;
-        padding-block: var(--space-0_5);
-        scrollbar-width: none;
-    }
-
-    .mp2-pill {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-        flex-shrink: 0;
-        border: var(--border);
-        border-radius: var(--corner-full);
-        background: transparent;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-xxs);
-        padding: var(--space-1) var(--space-2_5);
-        cursor: pointer;
-    }
-
-    .mp2-pill--active {
-        background: var(--color-hover);
-        color: var(--color-text);
+        letter-spacing: normal;
     }
 </style>

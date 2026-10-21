@@ -40,7 +40,7 @@
 
 {#each Object.keys(entries) as groupKey (groupKey)}
     {#if groupKey === 'pinned' && entries.pinned.length > 0}
-        <DropdownMenuLabel>{__('chat.composer.pin.pinnedLabel')}</DropdownMenuLabel>
+        <DropdownMenuLabel>{__('chat.composer.favorite.label')}</DropdownMenuLabel>
         {#each entries.pinned as entry (entry.tool.name)}
             <ToolMenuListItem entry={entry} onOpenDetail={onOpenDetail}/>
         {/each}

@@ -90,7 +90,7 @@
                 "flags": {
                     "modelPickerV2": {
                         "title": "New model picker",
-                        "description": "A richer model picker with provider tabs, search, favorites and keyboard shortcuts."
+                        "description": "A model picker built like the tool and assistant menus, with search, favorites and model details."
                     },
                     "statsForNerds": {
                         "title": "Stats for nerds",
