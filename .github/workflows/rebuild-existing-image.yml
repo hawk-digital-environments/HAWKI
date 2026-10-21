@@ -19,23 +19,31 @@ jobs:
     name: Rebuild & Publish
     runs-on: ubuntu-latest
     steps:
+      # The "Use workflow from" selector of the workflow_dispatch form IS the
+      # ref input: it selects the branch or tag this job rebuilds. Anything
+      # but main or a release tag must be rejected here - the selector
+      # defaults to development, whose version tags must never be
+      # republished from an unreleased state.
+      - name: Guard the dispatched ref
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ] \
+             && ! echo "$GITHUB_REF" | grep -Eq '^refs/tags/[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Dispatch this workflow from 'main' or a release tag (e.g. 'refs/tags/2.5.2'), not '$GITHUB_REF_NAME'."
+            exit 1
+          fi
+          echo "Rebuilding from: $GITHUB_REF"
+
       - name: Checkout repository
         uses: actions/checkout@v7
-        with:
-          ref: main
+        # No ref: checks out the branch or tag selected in the
+        # "Use workflow from" dropdown of the dispatch form.
 
       - name: Read version from config
         id: get_version
-        run: |
-          VERSION=$(jq -r .version config/hawki_version.json)
-
-          if [ -z "$VERSION" ] || [ "$VERSION" == "null" ]; then
-            echo "Error: Could not read version from config/hawki_version.json"
-            exit 1
-          fi
-
-          echo "Detected version: $VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        uses: hawk-digital-environments/hawk-pipeline-actions/detect-version@v1
+        with:
+          strategy: version-json
+          version-json: config/hawki_version.json
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -66,8 +74,12 @@ jobs:
           push: true
           target: app_prod
           platforms: linux/amd64,linux/arm64
+          # Only a dispatch from main may replace the latest image tag -
+          # republishing anything older would regress it. The empty line
+          # below is dropped by the action's list parser, which skips
+          # empty lines.
           tags: |
-            digitalenvironments/hawki:latest
+            ${{ github.ref_name == 'main' && 'digitalenvironments/hawki:latest' || '' }}
             digitalenvironments/hawki:${{ steps.get_version.outputs.version }}
           # Imports the per-arch caches written by the release gate in
           # trigger-release.yml. A hotfix rebuild of main may only hit these
@@ -89,6 +101,6 @@ jobs:
         with:
           webhook-url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
           release-name: "Hotfix Rebuild: ${{ steps.get_version.outputs.version }}"
-          release-body: "Manual rebuild triggering by workflow dispatch. Reason: ${{ inputs.reason }}"
+          release-body: "Manual rebuild triggering by workflow dispatch from '${{ github.ref_name }}' (${{ github.sha }}).${{ github.ref_name != 'main' && ' The digitalenvironments/hawki:latest tag was left untouched.' || '' }} Reason: ${{ inputs.reason }}"
           release-url: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          content: "||@everyone|| ⚠️ **HAWKI ${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Hotfix)."
+          content: "||@everyone|| ⚠️ **HAWKI ${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Hotfix, ref: ${{ github.ref_name }})."
