@@ -7,6 +7,10 @@ on:
         description: 'Reason for the rebuild'
         required: true
         default: 'Hotfix for current version'
+      rebuild_ref:
+        description: 'Branch, tag or full commit SHA to rebuild from. Only a rebuild of main also replaces the latest tag.'
+        required: true
+        default: 'main'
 
 permissions:
   packages: write
@@ -19,24 +23,42 @@ jobs:
     name: Rebuild & Publish
     runs-on: ubuntu-latest
     steps:
-      # The "Use workflow from" selector of the workflow_dispatch form IS the
-      # ref input: it selects the branch or tag this job rebuilds. Anything
-      # but main or a release tag must be rejected here - the selector
-      # defaults to development, whose version tags must never be
-      # republished from an unreleased state.
-      - name: Guard the dispatched ref
+      # The "Use workflow from" dropdown does NOT select what gets rebuilt:
+      # it selects which copy of this workflow file runs - and older tags
+      # still carry the previous pipeline without the rebuild_ref input.
+      # The rebuild target is therefore chosen by the rebuild_ref input, and
+      # dispatching from a tag is rejected to keep the two roles apart.
+      - name: Guard the dispatch and the rebuild target
+        env:
+          REBUILD_REF: ${{ inputs.rebuild_ref }}
         run: |
-          if [ "$GITHUB_REF" != "refs/heads/main" ] \
-             && ! echo "$GITHUB_REF" | grep -Eq '^refs/tags/[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Dispatch this workflow from 'main' or a release tag (e.g. 'refs/tags/2.5.2'), not '$GITHUB_REF_NAME'."
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "::error::Do not dispatch this workflow from a tag: the 'Use workflow from' dropdown picks which workflow file runs, not what gets rebuilt. Dispatch from a branch instead and name the tag or commit to rebuild in 'rebuild_ref'."
             exit 1
           fi
-          echo "Rebuilding from: $GITHUB_REF"
 
-      - name: Checkout repository
+          if [ "$REBUILD_REF" != "main" ] \
+             && ! echo "$REBUILD_REF" | grep -Eq '^([0-9]+\.[0-9]+\.[0-9]+|[0-9a-f]{40})$'; then
+            echo "::error::rebuild_ref must be 'main', a release tag like '2.5.2' or a full commit SHA - got '$REBUILD_REF'. Rebuilding development or feature branches would republish unreleased versions."
+            exit 1
+          fi
+
+          echo "Dispatched from: $GITHUB_REF"
+          echo "Rebuilding from: $REBUILD_REF"
+
+      - name: Checkout the rebuild target
         uses: actions/checkout@v7
-        # No ref: checks out the branch or tag selected in the
-        # "Use workflow from" dropdown of the dispatch form.
+        with:
+          # The dropdown ref only selects which workflow file runs; this
+          # input selects what actually gets built.
+          ref: ${{ inputs.rebuild_ref }}
+
+      # For the report below: github.sha belongs to the dispatch ref, not to
+      # the rebuild target, so resolve the checked-out commit ourselves.
+      - name: Resolve the rebuilt commit
+        id: build_info
+        run: |
+          echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Read version from config
         id: get_version
@@ -74,12 +96,12 @@ jobs:
           push: true
           target: app_prod
           platforms: linux/amd64,linux/arm64
-          # Only a dispatch from main may replace the latest image tag -
+          # Only a rebuild of main may replace the latest image tag -
           # republishing anything older would regress it. The empty line
-          # below is dropped by the action's list parser, which skips
-          # empty lines.
+          # for other refs is dropped by the action's list parser, which
+          # skips empty lines.
           tags: |
-            ${{ github.ref_name == 'main' && 'digitalenvironments/hawki:latest' || '' }}
+            ${{ inputs.rebuild_ref == 'main' && 'digitalenvironments/hawki:latest' || '' }}
             digitalenvironments/hawki:${{ steps.get_version.outputs.version }}
           # Imports the per-arch caches written by the release gate in
           # trigger-release.yml. A hotfix rebuild of main may only hit these
@@ -101,6 +123,6 @@ jobs:
         with:
           webhook-url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
           release-name: "Hotfix Rebuild: ${{ steps.get_version.outputs.version }}"
-          release-body: "Manual rebuild triggering by workflow dispatch from '${{ github.ref_name }}' (${{ github.sha }}).${{ github.ref_name != 'main' && ' The digitalenvironments/hawki:latest tag was left untouched.' || '' }} Reason: ${{ inputs.reason }}"
+          release-body: "Manual rebuild triggering by workflow dispatch, rebuilding '${{ inputs.rebuild_ref }}' (${{ steps.build_info.outputs.head_sha }}).${{ inputs.rebuild_ref != 'main' && ' The digitalenvironments/hawki:latest tag was left untouched.' || '' }} Reason: ${{ inputs.reason }}"
           release-url: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          content: "||@everyone|| ⚠️ **HAWKI ${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Hotfix, ref: ${{ github.ref_name }})."
+          content: "||@everyone|| ⚠️ **HAWKI ${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Hotfix, ref: ${{ inputs.rebuild_ref }})."
