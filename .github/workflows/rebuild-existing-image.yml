@@ -1,4 +1,4 @@
-name: Rebuild Latest Image
+name: '[MANUAL] - Rebuild Existing Image'
 
 on:
   workflow_dispatch:
