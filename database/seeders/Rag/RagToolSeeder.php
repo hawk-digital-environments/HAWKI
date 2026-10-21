@@ -192,7 +192,6 @@ class RagToolSeeder extends Seeder
                 'mcp_name' => 'web-search-tool',
                 'description' => 'Run a web search via the configured provider (brave or tavily).',
                 'capability' => WellKnownCapabilities::WEB_SEARCH,
-                'access_rule' => 'web_search',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -213,7 +212,6 @@ class RagToolSeeder extends Seeder
                 'mcp_name' => 'query-search',
                 'description' => 'Search and retrieve specific information related to HAWK and internal knowledge base with a query.',
                 'capability' => WellKnownCapabilities::KNOWLEDGE_BASE,
-                'access_rule' => 'internal_search',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -249,7 +247,6 @@ class RagToolSeeder extends Seeder
                     'description' => $def['description'],
                     'capability' => $def['capability'],
                     'mapped_capability' => null,
-                    'access_rule' => $def['access_rule'],
                     'active' => true,
                     'added_by_file' => false,
                     'updated_at' => $now,

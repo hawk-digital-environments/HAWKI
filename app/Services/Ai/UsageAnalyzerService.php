@@ -51,15 +51,4 @@ class UsageAnalyzerService
 
     }
 
-    /**
-     * Aggregates the previous month's raw usage rows by user, room, type and model,
-     * then deletes those raw rows.
-     *
-     * Daily totals are persisted transactionally before raw rows older than three months are deleted.
-     */
-    public function summarizeAndCleanup()
-    {
-        app(\App\Services\Admin\UsageStatistics::class)->summarize();
-    }
-
 }

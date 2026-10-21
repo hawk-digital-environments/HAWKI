@@ -79,8 +79,6 @@ class AssistantPolicyTest extends TestCase
 
         // Content-asserting viewers must see the attached ai_tools through
         // the discovery scope.
-        $this->grantInternalToolAccess($users['owner']);
-        $this->grantInternalToolAccess($users['admin']);
 
         $this->actingAsUser($users['owner']);
         $ownerResp = $this->jsonApiRaw('get', $url)->assertOk();
@@ -147,7 +145,6 @@ class AssistantPolicyTest extends TestCase
         // Every stakeholder can see the tool, so the outcome is decided by
         // the ownership policy alone (403), not by tool discovery (404).
         foreach ($users as $user) {
-            $this->grantInternalToolAccess($user);
         }
 
         $this->actingAsUser($users[$role]);
@@ -194,7 +191,6 @@ class AssistantPolicyTest extends TestCase
         // With the sensitive include, the collection narrows to assistants the
         // owner is privileged for (their own), excluding the other public one,
         // and the included section surfaces the requested relationship type.
-        $this->grantInternalToolAccess($owner);
         $response = $this->jsonApiRaw('get', "/api/hawki/v1/assistants?include={$include}")->assertOk();
         $ids = collect($response->json('data'))->pluck('id');
         self::assertContains((string) $owned->id, $ids);

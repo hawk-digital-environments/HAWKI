@@ -6,7 +6,6 @@ namespace App\Services\Frontend\Connection\Values;
 
 
 use App\Services\Translation\Value\Locale;
-use App\Services\Users\Keychain\Value\KeychainState;
 
 /**
  * Snapshot of the current connection context, sent to the frontend via the JSON:API
@@ -21,8 +20,6 @@ use App\Services\Users\Keychain\Value\KeychainState;
  *   frontend sends back to complete the account-linking flow
  * - `migrationsToApply` — present only for native authenticated sessions; tells the
  *   frontend how many frontend migrations are pending so it can run them on startup
- * - `keychainState` — present only for native authenticated sessions; tells the frontend
- *   whether the user's keychain can be unlocked, migrated, or has to be created
  */
 readonly class Connection
 {
@@ -38,9 +35,7 @@ readonly class Connection
         /** Encrypted connect-request payload used to link an ext-app user to a HAWKI account. */
         public string|null        $extAppConnectRequest = null,
         /** Number of pending frontend migrations for the authenticated user. */
-        public int|null           $migrationsToApply = null,
-        /** State of the authenticated user's keychain; null for every other connection type. */
-        public KeychainState|null $keychainState = null
+        public int|null           $migrationsToApply = null
     )
     {
     }

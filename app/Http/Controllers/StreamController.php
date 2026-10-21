@@ -8,7 +8,6 @@ use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\AiService;
-use App\Services\Ai\Tools\Exceptions\ToolAccessException;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
@@ -279,13 +278,6 @@ class StreamController extends Controller
                 switch (true) {
                     case $chunk instanceof Error:
                         $this->logger->error('Error chunk received from agent response', ['chunk' => $chunk]);
-                        $code = $chunk->metadata['code'] ?? null;
-                        // Only a tool authorization failure ends the turn; ordinary provider errors are
-                        // reported in place so the rest of the stream (usage, completion) still arrives.
-                        if (in_array($code, ToolAccessException::ERROR_CODES, true)) {
-                            yield $formatData(content: $chunk->message, type: 'error', isDone: true, additionalData: ['code' => $code]);
-                            return;
-                        }
                         yield $formatData(content: $chunk->message, type: 'message', isDone: true);
                         break;
                     case $chunk instanceof Citation:
@@ -330,9 +322,6 @@ class StreamController extends Controller
                 additionalData: ['usage' => $agent->getUsage()->toArray()]
             );
 
-        } catch (ToolAccessException $e) {
-            yield $formatData(content: $e->getMessage(), type: 'error', isDone: true, additionalData: ['code' => $e->errorCode]);
-            return;
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [
                 'exception' => $e,
@@ -357,10 +346,6 @@ class StreamController extends Controller
     {
         try {
             $res = $agent->send();
-        } catch (ToolAccessException $e) {
-            // Not redundant: ToolAccessException is a RuntimeException, so the \Throwable arm below would
-            // otherwise swallow it into a 200 response and drop the 403/422 plus its error code.
-            throw $e;
         } catch (RequestException $e) {
             $this->logger->error('RequestException while sending request to agent', [
                 'exception' => $e,
@@ -444,7 +429,7 @@ class StreamController extends Controller
                     'slug' => $room->slug,
                     'isGenerating' => false,
                     'error' => 'Failed to generate response. Please try again later.',
-                    'code' => $e instanceof ToolAccessException ? $e->errorCode : null,
+                    'code' => null,
                     'model' => $validatedData['payload']['model']
                 ]
             ]));

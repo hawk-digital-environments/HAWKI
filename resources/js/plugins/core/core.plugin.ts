@@ -27,7 +27,6 @@ import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelt
 import NewChatButton from '$plugins/core/modules/chat/components/NewChatButton.svelte';
 import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
 import {AiHandleStore} from '$plugins/core/stores/AiHandleStore.svelte.js';
-import {AnnouncementStore} from '$plugins/core/stores/AnnouncementStore.svelte.js';
 import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
 import {SystemPromptStore} from '$plugins/core/stores/SystemPromptStore.svelte.js';
@@ -50,8 +49,6 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
 
     interface HawkiSyncEvents {
-        /** Opens the announcements dialog owned by `AppSidebar`. */
-        announcementsRequested: void;
         /** Opens the models dialog owned by `AppSidebar`. */
         modelsRequested: void;
     }
@@ -116,7 +113,6 @@ export default class CorePlugin implements HawkiCorePlugin {
 
     public stores({add}: StoreRegistrar): void | Promise<void> {
         add(new KeychainStore());
-        add(new AnnouncementStore());
         add(new AiHandleStore());
         add(new AiModelStore());
         add(new AiToolStore());

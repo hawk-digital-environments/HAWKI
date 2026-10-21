@@ -5,16 +5,14 @@ namespace App\Http\Controllers;
 
 use App\Services\Announcements\AnnouncementService;
 use App\Services\Auth\Contract\AuthServiceInterface;
+use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
+use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
+use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exception\AuthFailedException;
-use App\Services\Auth\Exception\RegistrationAlreadyCompletedException;
-use App\Services\Auth\LoginHandler;
-use App\Services\Auth\LogoutHandler;
-use App\Services\Auth\SpaAuthHandoff;
-use App\Services\Auth\Value\AuthCredentials;
-use App\Services\Auth\Value\LoginNextStep;
-use App\Services\Auth\Value\SpaAuthPage;
-use App\Http\Errors\CodedError;
+use App\Services\Auth\Value\AuthenticatedUserInfo;
+use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
 use App\Services\Users\Repositories\UserRepository;
+use Cookie;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,50 +29,115 @@ class AuthenticationController extends Controller
         protected AuthServiceInterface   $authService,
         protected LanguageController     $languageController,
         private readonly LoggerInterface $logger,
-        private readonly UserRepository  $userRepository,
-        private readonly LoginHandler    $loginHandler,
-        private readonly LogoutHandler   $logoutHandler,
-        private readonly SpaAuthHandoff  $spaAuthHandoff
+        private readonly UserRepository  $userRepository
     )
     {
     }
 
     public function handleLogin(Request $request): Response
     {
-        $credentialAttempt = $request->isMethod('POST') && $this->loginHandler->requiresCredentials();
+        /**
+         * Based on the actual AuthService implementation,
+         * we may need to set credentials before calling authenticate.
+         * This closure handles that logic.
+         * It will always return either AuthenticatedUserInfo or a Response.
+         * @return AuthenticatedUserInfo|Response
+         */
+        $callAuthenticate = function () use ($request) {
+            if ($this->authService instanceof AuthServiceWithCredentialsInterface) {
+                if (!$request->isMethod('POST')) {
+                    throw new AuthFailedException('Login must be performed via POST method.', 400);
+                }
+                try {
+                    $credentials = $request->validate([
+                        'account' => 'required|string',
+                        'password' => 'required|string',
+                    ]);
+
+                    $this->authService->useCredentials(
+                        filter_var($credentials['account'], FILTER_UNSAFE_RAW),
+                        $credentials['password']
+                    );
+
+                    return $this->authService->authenticate($request);
+                } catch (ValidationException $e) {
+                    throw new AuthFailedException('Username and password are required for login.', 400, $e);
+                } finally {
+                    $this->authService->forgetCredentials();
+                }
+            }
+
+            return $this->authService->authenticate($request);
+        };
+
+        $authHasForm = $this->authService instanceof AuthServiceWithCredentialsInterface;
+
+        /**
+         * A small helper to respond according to request method
+         * Handles both GET (redirect) and POST (JSON) requests
+         * This is required, because some authentication methods (e.g. Shibboleth, OIDC)
+         * initiate login via GET requests and expect a redirect response.
+         * @param string $url
+         * @return RedirectResponse|JsonResponse
+         */
+        $respond = static function (string $url) use ($authHasForm) {
+            if (!$authHasForm) {
+                return redirect($url);
+            }
+
+            return response()->json([
+                'success' => true,
+                'redirectUri' => $url,
+            ]);
+        };
+
         try {
-            $credentials = $this->credentialsFromRequest($request);
-            if ($credentials !== null) {
-                $this->spaAuthHandoff->discard($request);
-            }
-            $result = $this->loginHandler->handle($request, $credentials);
-            if ($result->isResponse()) {
-                return $result->response;
+            $authenticateResult = $callAuthenticate();
+
+            if ($authenticateResult instanceof Response) {
+                return $authenticateResult;
             }
 
-            if ($this->spaAuthHandoff->isPending($request)) {
-                return redirect($this->spaAuthHandoff->completeSuccess($request, $result->nextStep));
+            $this->logger->info('LOGIN: ' . $authenticateResult->username);
+
+            $user = $this->userRepository->findOneByUsername(
+                $authenticateResult->username,
+                ScopeOverrides::makeWithForcefullyDisabled('access')
+            );
+
+            if ($user) {
+                Auth::login($user);
+
+                if ($this->authService instanceof AuthServiceWithPostProcessingInterface) {
+                    $postProcessResponse = $this->authService->afterLoginWithUser($user, $request);
+                    if ($postProcessResponse !== null) {
+                        return $postProcessResponse;
+                    }
+                }
+
+                return $respond('/handshake');
             }
 
-            if ($this->spaAuthHandoff->isEnabled() && $result->nextStep === LoginNextStep::REGISTER) {
-                $this->spaAuthHandoff->markSpaRegistration($request);
+            if ($this->authService instanceof AuthServiceWithPostProcessingInterface) {
+                $postProcessResponse = $this->authService->afterLoginWithoutUser($authenticateResult, $request);
+                if ($postProcessResponse !== null) {
+                    return $postProcessResponse;
+                }
             }
 
-            return $this->legacyLoginResponse($result->nextStep, $credentials !== null);
+            $request->session()->put([
+                'registration_access' => true,
+                'authenticatedUserInfo' => json_encode($authenticateResult)
+            ]);
+
+            return $respond('/register');
         } catch (\Throwable $e) {
-            $error = $e instanceof AuthFailedException ? 'invalid_credentials' : 'provider_failed';
+            $error = $e instanceof AuthFailedException ? $e->getMessage() : 'An unexpected error occurred during authentication.';
 
             $this->logger->warning('Failed login attempt', ['exception' => $e]);
 
-            if ($this->spaAuthHandoff->isPending($request)) {
-                return redirect($this->spaAuthHandoff->completeFailure($request, $error));
-            }
-
-            $error = $e instanceof AuthFailedException
-                ? $e->getMessage()
-                : 'An unexpected error occurred during authentication.';
-
-            if ($credentialAttempt) {
+            if ($authHasForm) {
+                // Tell the form that the login failed...
                 return response()->json([
                     'success' => false,
                     'error' => $error,
@@ -82,44 +145,11 @@ class AuthenticationController extends Controller
                 ]);
             }
 
-            return redirect($this->spaAuthHandoff->entryUrlFor(SpaAuthPage::LOGIN))->withErrors(['login_error' => $error]);
+            // Redirect back to login with error message
+            return redirect('/login')->withErrors(['login_error' => $error]);
         }
     }
 
-    private function credentialsFromRequest(Request $request): ?AuthCredentials
-    {
-        if (!$this->loginHandler->requiresCredentials()) {
-            return null;
-        }
-        if (!$request->isMethod('POST')) {
-            if ($this->loginHandler->supportsRedirect()) {
-                return null;
-            }
-
-            throw new AuthFailedException('Login must be performed via POST method.', 400);
-        }
-
-        try {
-            $credentials = $request->validate([
-                'account' => ['required', 'string'],
-                'password' => ['required', 'string'],
-            ]);
-        } catch (ValidationException $exception) {
-            throw new AuthFailedException('Username and password are required for login.', 400, $exception);
-        }
-
-        return new AuthCredentials(filter_var($credentials['account'], FILTER_UNSAFE_RAW), $credentials['password']);
-    }
-
-    private function legacyLoginResponse(LoginNextStep $nextStep, bool $usedCredentials): RedirectResponse|JsonResponse
-    {
-        $url = $this->spaAuthHandoff->entryUrlFor($nextStep);
-        if (!$usedCredentials) {
-            return redirect($url);
-        }
-
-        return response()->json(['success' => true, 'redirectUri' => $url]);
-    }
 
     /// Initiate handshake process
     /// sends back the user keychain.
@@ -163,23 +193,25 @@ class AuthenticationController extends Controller
     /// Create backup for userkeychain on the DB
     public function completeRegistration(
         Request             $request,
+        UserRepository      $userRepository,
         AnnouncementService $announcementService,
         AuthManager         $auth
     )
     {
         try {
             if (!$request->getUserContext()->isRegisteringUser()) {
-                CodedError::abort('registration_not_in_progress', 403, 'No registration in progress');
+                abort(403, 'No registration in progress');
             }
 
             // Retrieve user info from session
             $userInfo = $request->getUserContext()->getRegisteringUser();
 
-            $user = $this->userRepository->completeLegacyRegistration(
-                $userInfo->username,
-                $userInfo->name,
-                $userInfo->email,
-                $userInfo->employeeType,
+            // Update or create the local user
+            $user = $userRepository->insert(
+                username: $userInfo->username,
+                name: $userInfo->name,
+                email: $userInfo->email,
+                employeeType: $userInfo->employeeType
             );
 
             try {
@@ -191,11 +223,8 @@ class AuthenticationController extends Controller
 
             // Log the user in
             $session = $request->session();
-            $session->forget([
-                'authenticatedUserInfo',
-                'registration_access',
-                SpaAuthHandoff::SESSION_REGISTRATION_UI_KEY,
-            ]);
+            $session->put('authenticatedUserInfo', null);
+            $session->put('registration_access', false);
             $auth->login($user);
 
             return response()->json([
@@ -204,19 +233,33 @@ class AuthenticationController extends Controller
                 'userData' => $user,
             ])->withHeaders(['X-HAWKI-CSRF-TOKEN' => $request->session()->token()]);
 
-        } catch (RegistrationAlreadyCompletedException) {
-            $request->session()->forget([
-                'authenticatedUserInfo',
-                'registration_access',
-                SpaAuthHandoff::SESSION_REGISTRATION_UI_KEY,
-            ]);
-            return response()->json(['success' => false, 'message' => 'Registration has already been completed.'], 409);
+        } catch (ValidationException $e) {
+            throw $e;
         }
     }
 
     public function logout(Request $request)
     {
-        return redirect($this->logoutHandler->handle($request) ?? $this->spaAuthHandoff->entryUrlFor(SpaAuthPage::LOGIN));
+        // First build the redirect response, so we still have all user- and session-data available.
+        $response = redirect('/login');
+        if ($this->authService instanceof AuthServiceWithLogoutRedirectInterface) {
+            $serviceResponse = $this->authService->getLogoutResponse($request);
+            if ($serviceResponse !== null) {
+                $response = $serviceResponse;
+            }
+        }
+
+        // Log out the user
+        Auth::logout();
+
+        // Invalidate the session (flushes + regenerates token)
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        // Clear PHPSESSID cookie (optional, Laravel doesn’t use PHPSESSID by default)
+        Cookie::queue(Cookie::forget('PHPSESSID'));
+
+        return $response;
     }
 
 }

@@ -13,7 +13,6 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import Button from '$lib/components/ui/button/Button.svelte';
     import Toaster from '$lib/components/ui/toast/Toaster.svelte';
-    import AnnouncementDialog from '$lib/app/components/announcements/AnnouncementDialog.svelte';
 
     interface Props {
         /** Page content, rendered in the layout's main column. */
@@ -36,9 +35,6 @@
             <p role="status">{__('ui.session.loggingOut')}</p>
         {/if}
     </main>
-{:else if meta?.chrome === 'none' || (!app.cryptoReady && meta?.access !== 'server-session')}
-    {@render children()}
-    <Toaster />
 {:else}
 <SidebarRoot>
     <a class="skip-link" href="#main-content">{__('ui.navigation.skipToContent')}</a>
@@ -48,7 +44,6 @@
     </SidebarContent>
 
     <Toaster />
-    {#if app.cryptoReady}<AnnouncementDialog />{/if}
 </SidebarRoot>
 {/if}
 

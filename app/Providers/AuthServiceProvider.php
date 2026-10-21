@@ -2,19 +2,14 @@
 
 namespace App\Providers;
 
-use App\Models\User;
-use App\Services\Admin\Permission;
-use App\Services\Admin\PermissionService;
 use App\Services\Auth\ChainedAuthService;
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\LdapService;
-use App\Services\Auth\LocalAuthService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -48,38 +43,16 @@ class AuthServiceProvider extends ServiceProvider
                 ));
             }
 
-            $services = [$app->make(LocalAuthService::class)];
-
+            // If the test authentication is enabled AND the selected auth service supports credentials,
+            // wrap the selected auth service with the test auth service in a chained auth service.
+            // This will first try to authenticate using the test auth service, and if it fails,
+            // it will fall back to the selected auth service.
             if ($usesTestAuth && $instance instanceof AuthServiceWithCredentialsInterface) {
-                $services[] = $app->make(TestAuthService::class);
+                $testAuth = $app->make(TestAuthService::class);
+                $instance = new ChainedAuthService($testAuth, $instance);
             }
 
-            if (!$instance instanceof LocalAuthService) {
-                $services[] = $instance;
-            }
-
-            return count($services) === 1 ? $services[0] : new ChainedAuthService(...$services);
-        });
-    }
-
-    public function boot(): void
-    {
-        // Replace Spatie's granting callback so account checks always run first.
-        // Unknown abilities and permission misses continue to resource policies.
-        Gate::before(static function (User $user, string $ability): ?bool {
-            $permissions = app(PermissionService::class);
-
-            if (!$permissions->isEligible($user)) {
-                return false;
-            }
-
-            // Abilities outside the catalogue never need the grant list.
-            if (!Permission::tryFrom($ability)) {
-                return null;
-            }
-
-            // Memoized, so the eligibility check above and this lookup share one resolution.
-            return \in_array($ability, $permissions->permissionsOf($user), true) ? true : null;
+            return $instance;
         });
     }
 }

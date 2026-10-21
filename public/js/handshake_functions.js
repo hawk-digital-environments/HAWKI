@@ -16,7 +16,7 @@ function switchSlide(targetIndex) {
         target.style.display = 'flex';
         const backBtn = document.querySelector('.slide-back-btn');
 
-        if (targetIndex > 1 && !document.querySelector('#automatic-passkey-status')) {
+        if (targetIndex > 1) {
             backBtn.style.display = 'flex';
             setTimeout(() => {
                 backBtn.style.opacity = '1';
@@ -35,11 +35,6 @@ function switchSlide(targetIndex) {
 
         previousSlide = target;
         currentSlideIndex = targetIndex;
-        if (targetIndex === 6 && document.querySelector('#automatic-passkey-status')) {
-            const heading = target.querySelector('h1');
-            heading.setAttribute('tabindex', '-1');
-            heading.focus();
-        }
     }, 300);
 }
 
@@ -49,38 +44,7 @@ function switchBackSlide() {
 }
 
 function modalClick(btn) {
-    if (window.getConfig().security.passkeyAutoGenerate) {
-        switchSlide(5);
-        void generateRegistrationPasskey();
-        return;
-    }
     switchSlide(4);
-}
-
-let generatingPasskey = false;
-let generatedPasskey;
-
-async function generateRegistrationPasskey() {
-    if (generatingPasskey) return;
-    generatingPasskey = true;
-    const status = document.querySelector('#automatic-passkey-status');
-    const error = document.querySelector('#automatic-passkey-error');
-    const retry = document.querySelector('#automatic-passkey-retry');
-    // TODO: Remove this adapter with the legacy registration page after SPA rollout.
-    status.textContent = __('legacy.registration.preparing');
-    error.textContent = '';
-    retry.hidden = true;
-    try {
-        generatedPasskey ??= window.generatePasskey();
-        await prepareRegistrationBackup(generatedPasskey);
-    } catch {
-        error.textContent = __('legacy.registration.failed');
-        retry.hidden = false;
-        retry.focus();
-    } finally {
-        status.textContent = '';
-        generatingPasskey = false;
-    }
 }
 
 
@@ -139,10 +103,6 @@ async function checkPasskey() {
         return;
     }
 
-    await prepareRegistrationBackup(enteredPasskey);
-}
-
-async function prepareRegistrationBackup(enteredPasskey) {
     // create backup hash
     backupHash = generatePasskeyBackupHash();
 
@@ -154,7 +114,7 @@ async function prepareRegistrationBackup(enteredPasskey) {
     //encrypt Passkey as plaintext
     const cryptoPasskey = await encryptWithSymKey(derivedKey, enteredPasskey, false);
     // upload backup to the server.
-    const dataToSend = {
+    dataToSend = {
         'username': userInfo.username,
         'cipherText': cryptoPasskey.ciphertext,
         'tag': cryptoPasskey.tag,

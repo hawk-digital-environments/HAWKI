@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Ai\ConfigFileSync\Syncers;
 
-use App\Services\Admin\DeletedRecords;
 use App\Services\Ai\ConfigFileSync\Syncers\ModelAndProviderSyncer;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Models\Repositories\AiModelDescriptionRepository;
@@ -36,7 +35,6 @@ class ModelAndProviderSyncerTest extends TestCase
             providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
             useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
             modelInfoFetcher: $this->createMock(ModelInfoFetcher::class),
-            deletedRecords: $this->createMock(DeletedRecords::class),
         );
     }
 
@@ -118,7 +116,6 @@ class ModelAndProviderSyncerTest extends TestCase
             providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
             useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
             modelInfoFetcher: $this->createMock(ModelInfoFetcher::class),
-            deletedRecords: $this->createMock(DeletedRecords::class),
         );
 
         static::assertSame($expected, $sut->exposeStripSuffix($input));
