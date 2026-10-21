@@ -7,7 +7,7 @@
   itself.
 
   `size="sm"` is a 24px tile for compact controls; `round` makes it a circle, for pill-shaped
-  hosts such as the `ModelPickerV2` trigger.
+  hosts such as the `ModelPicker` trigger.
 
   @example
   <ProviderSwatch {model} checked={model.model_id === current?.model_id}/>

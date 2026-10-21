@@ -25,7 +25,6 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import ComposerFocusWrap from '$plugins/core/modules/chat/components/composer/utils/ComposerFocusWrap.svelte';
     import ModePanel from '$plugins/core/modules/chat/components/composer/ModePanel.svelte';
     import ModelPicker from '$plugins/core/modules/chat/components/composer/ModelPicker.svelte';
-    import ModelPickerV2 from '$plugins/core/modules/chat/components/composer/ModelPickerV2.svelte';
     import SettingsMenu from '$plugins/core/modules/chat/components/composer/SettingsMenu.svelte';
     import type {ComponentProps} from 'svelte';
     import ComposerTextarea from '$plugins/core/modules/chat/components/composer/ComposerTextarea.svelte';
@@ -102,7 +101,6 @@ Rendered once per page for either an AI conversation or a group room chat (see
     const hasFiles = $derived(chatContext.attachments.list.length > 0);
 
     const aiHandleStore = useStore('ai-handle');
-    const experiments = useStore('experiments');
 
     // Model, settings and tools belong to HAWKI itself: an assistant brings its own model,
     // configuration and tools, so tagging one hides those controls. Nothing tagged (a 1:1 AI chat, or
@@ -225,11 +223,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                                      halves of the row should move at the same time —
                                                      the settings group on the right already does. -->
                                                 <div class="chat-composer-model" transition:growTransition={{mode: 'horizontal'}}>
-                                                    {#if experiments.isEnabled('modelPickerV2')}
-                                                        <ModelPickerV2/>
-                                                    {:else}
-                                                        <ModelPicker/>
-                                                    {/if}
+                                                    <ModelPicker/>
                                                 </div>
                                             {/if}
                                         </div>

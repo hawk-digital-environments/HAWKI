@@ -1,5 +1,5 @@
 <!--
-  @component The favourite toggle shown on a row in `AssistantMenu` / `ToolMenu` / `ModelPickerV2`.
+  @component The favourite toggle shown on a row in `AssistantMenu` / `ToolMenu` / `ModelPicker`.
 
   A small heart button (filled when set) that favourites the row's assistant/tool via the
   `composer-pins` store, lifting it into the menu's "Favorites" section. Rows whose

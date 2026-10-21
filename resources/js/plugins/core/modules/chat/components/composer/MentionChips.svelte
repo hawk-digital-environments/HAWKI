@@ -16,13 +16,13 @@
   reads as one continuous move rather than three.
 
   ## Usage
-  Rendered by `ChatComposer` in the top row's left group, after `ModelPicker`. That group is
+  Rendered by `ChatComposer` in the top row's left group, before `ModelPicker`. That group is
   only mounted while `guard.showsAiUiElements` is true — which in a room is exactly when the
   message carries a handle, i.e. whenever there is a chip to show:
   ```svelte
   <div class="chat-composer-left">
-      <ModelPicker/>
       <MentionChips/>
+      <ModelPicker/>
   </div>
   ```
 -->

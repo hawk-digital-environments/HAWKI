@@ -88,10 +88,6 @@
                 "emptyTitle": "Keine Experimente verfügbar",
                 "emptyHint": "Aktuell gibt es nichts auszuprobieren. Neue Experimente erscheinen hier.",
                 "flags": {
-                    "modelPickerV2": {
-                        "title": "Neue Modellauswahl",
-                        "description": "Eine Modellauswahl im Stil des Tool- und Assistenten-Menüs, mit Suche, Favoriten und Modelldetails."
-                    },
                     "statsForNerds": {
                         "title": "Statistiken für Nerds",
                         "description": "Zeigt Token-Anzahl, Tokens pro Sekunde und Zeitangaben unter jeder KI-Antwort."

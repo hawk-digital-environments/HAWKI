@@ -1,5 +1,5 @@
 <!--
-  @component Floating preview of a model's `ModelCard`, shown beside `ModelPickerV2`'s
+  @component Floating preview of a model's `ModelCard`, shown beside `ModelPicker`'s
   dropdown while the user moves through the model rows (pointer or arrow keys).
 
   The panel reveals sideways out of the menu edge with a cross-blur (transitions.dev

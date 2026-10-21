@@ -1,6 +1,6 @@
 /**
  * Scrolls a composer menu row into the menu's viewport without focusing it — shared by
- * `AssistantMenu` and `ModelPickerV2` so both open on their current choice the same way,
+ * `AssistantMenu` and `ModelPicker` so both open on their current choice the same way,
  * while focus stays in the menu's search field.
  *
  * Minimal scroll: stay at the top while the row is visible there; otherwise scroll just far

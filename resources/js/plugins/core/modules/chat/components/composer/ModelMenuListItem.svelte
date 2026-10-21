@@ -1,5 +1,5 @@
 <!--
-  @component A single model row inside `ModelPickerV2` — the model picker's counterpart to
+  @component A single model row inside `ModelPicker` — the model picker's counterpart to
   `ToolMenuListItem`/`AssistantMenuListItem`, built on a `DropdownMenuRadioItem` instead of a
   checkbox because exactly one model is selected at a time. Must be rendered inside the
   picker's `DropdownMenuRadioGroup`, whose value is the current model id.
@@ -47,7 +47,7 @@
         /** Shows the provider next to the label, for sections that mix providers. */
         showProvider?: boolean;
         /** Called with `model` when the user clicks the info button or presses ArrowRight.
-         *  `ModelPickerV2` uses this to open `ModelMenuDetail` for that model. */
+         *  `ModelPicker` uses this to open `ModelMenuDetail` for that model. */
         onOpenDetail?: (model: AiModel) => void;
     }
 

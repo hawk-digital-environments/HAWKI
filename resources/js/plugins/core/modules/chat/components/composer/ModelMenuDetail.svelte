@@ -1,6 +1,6 @@
 <!--
   @component Detail panel for a single model, shown in place of the model list inside
-  `ModelPickerV2`'s `DropdownMenuDetailView` when the user clicks a row's info icon — the
+  `ModelPicker`'s `DropdownMenuDetailView` when the user clicks a row's info icon — the
   model picker's counterpart to `ToolMenuDetail`/`AssistantMenuDetail`.
 
   A bar with the back button and a `MenuPinButton` (favourite), the model's `dense`
@@ -42,7 +42,7 @@
         model: AiModel;
         /** `true` when `model` is the currently selected model. */
         selected: boolean;
-        /** Picks `model`; `ModelPickerV2` sets it and closes the menu. */
+        /** Picks `model`; `ModelPicker` sets it and closes the menu. */
         onSelect: (model: AiModel) => void;
         /** Called when the user backs out of the detail view (Back button, Escape, or ArrowLeft). */
         onCloseDetail: () => void;

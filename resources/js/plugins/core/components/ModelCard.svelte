@@ -14,7 +14,7 @@
   so the same component works in the narrow picker column and on the page.
 
   ## Usage
-  Rendered `dense` in `ModelMenuDetail` (the detail panel of `ModelPickerV2`) and
+  Rendered `dense` in `ModelMenuDetail` (the detail panel of `ModelPicker`) and
   as the grid cards on the `/models` showcase page:
   ```svelte
   <ModelCard model={model}/>            borderless, for embedding
