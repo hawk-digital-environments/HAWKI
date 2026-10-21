@@ -51,32 +51,55 @@ class LiteLlmApiDataStore extends AbstractLiteLlmDataStore
     public function clearModelInformationCache(): void
     {
         $this->cache->forget(self::CATALOG_CACHE_KEY);
+        $this->clearMemoizedProviderLists();
     }
 
     /**
      * Loads the provider's model data from the shared cached catalog (see class docblock).
      *
-     * @return array<LiteLlmModelData>
+     * @return iterable<LiteLlmModelData>
      */
-    protected function getProviderModelInformationList(AiProviderProxy $provider): array
+    protected function getProviderModelInformationList(AiProviderProxy $provider): iterable
     {
         $providerName = $this->nameMapping->getProviderNameFromProxy($provider);
         $catalog = $this->getConfirmedCatalog();
 
         return $this->loadModelDataList(
             $provider,
-            [...$this->apiClient->normalizeCatalog($catalog, $providerName)]
+            $this->apiClient->normalizeCatalog($catalog, $providerName)
         );
+    }
+
+    /**
+     * @return array{builtAt: int}
+     */
+    protected function createMemoAnchor(): array
+    {
+        return ['builtAt' => $this->clock->now()->getTimestamp()];
+    }
+
+    /**
+     * Memoized lists expire with the revalidation window: within it, lookups would have
+     * served the Redis-cached catalog without upstream contact anyway, so serving the
+     * in-memory list is equivalent. During upstream outages this also keeps the memo
+     * damping retries instead of dying immediately.
+     */
+    protected function isMemoizedProviderListValid(array $anchor): bool
+    {
+        return $this->clock->now()->getTimestamp() - $anchor['builtAt'] < self::REVALIDATION_TTL_SECONDS;
     }
 
     /**
      * Returns the cached catalog, revalidating it against the upstream when the last
      * confirmation is older than {@see self::REVALIDATION_TTL_SECONDS}.
      *
+     * Revalidation is always a conditional GET via the stored ETag: an unchanged catalog
+     * is confirmed with a tiny 304 response, a changed one arrives as a fresh download.
+     *
      * A failed revalidation is not fatal: the cached catalog keeps being served as long as
      * it lies within {@see self::DATA_TTL_SECONDS} after the last successful confirmation,
      * so short upstream outages go unnoticed. Once the data is older than that, the
-     * download failure propagates so the caller can fall back to the static data files.
+     * failure propagates so the caller can fall back to the static data files.
      *
      * @return array<string, mixed> The confirmed catalog, keyed by model ID.
      */
@@ -97,15 +120,15 @@ class LiteLlmApiDataStore extends AbstractLiteLlmDataStore
             return $entry['catalog'];
         }
 
-        if ($confirmedAge > self::DATA_TTL_SECONDS) {
-            // Too old to be served without confirmation: fall through to a fresh download,
-            // which throws when the upstream is still unreachable
-            return $this->storeCatalog($this->apiClient->fetchRawCatalog(), $now);
-        }
-
         try {
             $fetch = $this->apiClient->fetchRawCatalog($entry['etag']);
         } catch (\Throwable $e) {
+            if ($confirmedAge > self::DATA_TTL_SECONDS) {
+                // Too old to be served without confirmation: propagate the failure so the
+                // caller can fall back to the static data files
+                throw $e;
+            }
+
             $this->logger->warning('Could not revalidate the cached LiteLLM catalog, serving cached data', [
                 'exception' => $e,
             ]);

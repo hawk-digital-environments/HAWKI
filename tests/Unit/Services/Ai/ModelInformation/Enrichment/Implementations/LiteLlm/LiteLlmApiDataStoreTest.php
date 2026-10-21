@@ -11,6 +11,8 @@ use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use App\Services\System\Time\CarbonClockInterface;
 use Carbon\CarbonImmutable;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\Http;
 use Laravel\Ai\Providers\Provider as Driver;
@@ -27,7 +29,7 @@ class LiteLlmApiDataStoreTest extends TestCase
     private CarbonImmutable $now;
     private CarbonClockInterface&MockObject $clock;
     private LoggerInterface&MockObject $logger;
-    private \Illuminate\Cache\Repository $cache;
+    private Repository $cache;
 
     /** @var array<int, mixed> Upcoming fake HTTP responses, served in order. */
     private array $httpResponses = [];
@@ -40,12 +42,15 @@ class LiteLlmApiDataStoreTest extends TestCase
     {
         parent::setUp();
 
-        $this->now = new CarbonImmutable('2026-10-20 12:00:00');
+        // Anchor the mocked clock at the real current time: the cache's TTL math uses the
+        // real system clock, so a fixed past date would make put() silently expire entries
+        // as soon as real time moved past it
+        $this->now = CarbonImmutable::now()->startOfMinute();
         $this->clock = $this->createMock(CarbonClockInterface::class);
         $this->clock->method('now')->willReturnCallback(fn(): CarbonImmutable => $this->now);
 
         $this->logger = $this->createMock(LoggerInterface::class);
-        $this->cache = new \Illuminate\Cache\Repository(new \Illuminate\Cache\ArrayStore());
+        $this->cache = new Repository(new ArrayStore());
 
         // Register the stub exactly once: every registered fake callback is invoked per
         // request, so re-faking per test would consume multiple queue items per request
@@ -58,11 +63,11 @@ class LiteLlmApiDataStoreTest extends TestCase
         $this->httpResponses = array_values($responses);
     }
 
-    private function makeSut(): LiteLlmApiDataStore
+    private function makeSut(Repository|null $cache = null): LiteLlmApiDataStore
     {
         return new LiteLlmApiDataStore(
             new LiteLlmApiClient(app(HttpFactory::class), $this->logger),
-            $this->cache,
+            $cache ?? $this->cache,
             $this->logger,
             new LiteLlmDriverNameProviderNameMapping(),
             $this->clock,
@@ -228,6 +233,49 @@ class LiteLlmApiDataStoreTest extends TestCase
     }
 
     // =========================================================================
+    // Overdue catalog (beyond the data TTL)
+    // =========================================================================
+
+    public function testItRevalidatesAnOverdueCatalogViaTheEtagInsteadOfADownload(): void
+    {
+        $this->queueResponses(
+            $this->catalogResponse($this->zaiCatalog()),
+            Http::response(null, 304),
+        );
+
+        $sut = $this->makeSut();
+        $sut->getModelInformation($this->makeProvider('zai'), 'zai/glm-5');
+
+        // More than the data TTL without a successful confirmation: the overdue entry is
+        // refreshed through the cheap conditional GET, not a full re-download
+        $this->advanceMinutes(24 * 60 + 1);
+        $model = $sut->getModelInformation($this->makeProvider('zai'), 'zai/glm-5');
+
+        static::assertSame('zai/glm-5', $model?->modelId);
+        Http::assertSentCount(2);
+        static::assertTrue(Http::recorded()->get(1)[0]->hasHeader('If-None-Match', self::ETAG_V1));
+    }
+
+    public function testItReplacesAnOverdueCatalogWhenUpstreamChanged(): void
+    {
+        $changedCatalog = [...$this->zaiCatalog(), 'zai/glm-6' => ['litellm_provider' => 'zai']];
+        $this->queueResponses(
+            $this->catalogResponse($this->zaiCatalog()),
+            $this->catalogResponse($changedCatalog, '"etag-v2"'),
+        );
+
+        $sut = $this->makeSut();
+        static::assertNull($sut->getModelInformation($this->makeProvider('zai'), 'zai/glm-6'));
+
+        $this->advanceMinutes(24 * 60 + 1);
+        $model = $sut->getModelInformation($this->makeProvider('zai'), 'zai/glm-6');
+
+        static::assertSame('zai/glm-6', $model?->modelId);
+        Http::assertSentCount(2);
+        static::assertTrue(Http::recorded()->get(1)[0]->hasHeader('If-None-Match', self::ETAG_V1));
+    }
+
+    // =========================================================================
     // Upstream outages
     // =========================================================================
 
@@ -304,6 +352,50 @@ class LiteLlmApiDataStoreTest extends TestCase
     }
 
     // =========================================================================
+    // In-memory memoization
+    // =========================================================================
+
+    public function testItServesRepeatedLookupsFromTheInMemoryMemo(): void
+    {
+        $this->queueResponses(
+            $this->catalogResponse($this->zaiCatalog()),
+        );
+
+        $cache = $this->countingCache();
+        $sut = $this->makeSut($cache);
+
+        static::assertSame('zai/glm-5', $sut->getModelInformation($this->makeProvider('zai'), 'zai/glm-5')?->modelId);
+        static::assertSame('glm-4.7', $sut->getModelInformation($this->makeProvider('zai'), 'glm-4.7')?->modelId);
+        static::assertSame('zai/glm-5', $sut->getModelInformation($this->makeProvider('zai'), 'zai/glm-5')?->modelId);
+
+        // One download and one cache read serve all lookups: the repeats hit the in-memory memo
+        static::assertSame(1, $cache->getCalls);
+        Http::assertSentCount(1);
+    }
+
+    public function testItRereadsTheMemoAfterItExpired(): void
+    {
+        $this->queueResponses(
+            $this->catalogResponse($this->zaiCatalog()),
+            Http::response(null, 304),
+        );
+
+        $cache = $this->countingCache();
+        $sut = $this->makeSut($cache);
+        $sut->getModelInformation($this->makeProvider('zai'), 'zai/glm-5');
+
+        // Beyond the memo TTL (which mirrors the revalidation window): full path again,
+        // re-reading the cache and revalidating with the stored ETag
+        $this->advanceMinutes(6);
+        $model = $sut->getModelInformation($this->makeProvider('zai'), 'glm-4.7');
+
+        static::assertSame('glm-4.7', $model?->modelId);
+        static::assertSame(2, $cache->getCalls);
+        Http::assertSentCount(2);
+        static::assertTrue(Http::recorded()->get(1)[0]->hasHeader('If-None-Match', self::ETAG_V1));
+    }
+
+    // =========================================================================
     // Cache clearing
     // =========================================================================
 
@@ -324,5 +416,24 @@ class LiteLlmApiDataStoreTest extends TestCase
 
         static::assertSame('zai/glm-6', $model?->modelId);
         Http::assertSentCount(2);
+    }
+
+    /**
+     * A cache repository that counts get() calls, so tests can assert the in-memory
+     * memo skips repeated cache reads.
+     *
+     * The concrete instance exposes a public `getCalls` counter.
+     */
+    private function countingCache(): Repository
+    {
+        return new class(new ArrayStore()) extends Repository {
+            public int $getCalls = 0;
+
+            public function get($key, mixed $default = null): mixed
+            {
+                $this->getCalls++;
+                return parent::get($key, $default);
+            }
+        };
     }
 }
