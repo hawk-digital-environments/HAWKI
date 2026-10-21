@@ -18,7 +18,7 @@
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
     import {untrack} from 'svelte';
-    import type {BorderBeamSize, BorderBeamTheme} from './types';
+    import type {BeamColors, BorderBeamSize, BorderBeamTheme} from './types';
     import {generateBeamCSS, sizePresets, sizeThemePresets} from './styles';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
@@ -49,6 +49,13 @@
         saturation?: number;
         /** Hue rotation range in degrees for the hue-shift animation. @default 30 */
         hueRange?: number;
+        /**
+         * Paint the beam from two explicit color stops instead of the authored brand blue,
+         * so instances can be color-coded (e.g. one pair per chat assistant). The palette's
+         * blobs are remapped onto the pair by where each sits along the beam's travel, so
+         * the glow sweeps from `from` to `to`. Omit to keep the brand palette.
+         */
+        colors?: BeamColors;
         /** Overall strength/opacity of the effect (0–1). Only affects the beam layers, not the children. @default 1 */
         strength?: number;
         /**
@@ -77,6 +84,7 @@
         brightness: brightnessProp,
         saturation,
         hueRange = 30,
+        colors,
         strength = 1,
         progress = null,
         class: className,
@@ -268,6 +276,7 @@
             brightness: finalBrightness,
             saturation: finalSaturation,
             hueRange: finalHueRange,
+            colors,
             theme: resolvedTheme,
             hairlineOpacity: themeConfig.hairlineOpacity,
             manualProgress

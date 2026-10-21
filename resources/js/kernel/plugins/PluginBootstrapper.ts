@@ -6,6 +6,7 @@ import type {ConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistr
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
+import type {HookRegistrar} from '$lib/kernel/hooks/hookRegistrar.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 import {getPluginRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 
@@ -26,6 +27,7 @@ import {getPluginRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
  *   contract).
  * - `runModules`, `runStores`, `runRoutes` — called by `ModuleExtension`,
  *   `StoreExtension`, and the routing extension respectively.
+ * - `runHooks` — called by `HookExtension`.
  * - `runBoot`, `runReady` — scheduled by `PluginExtension.ready()` against the
  *   `Bootstrapper`'s `preparation`/`finalization` stages.
  *
@@ -102,6 +104,13 @@ export class PluginBootstrapper {
     /** Calls `plugin.stores()` so each plugin can register its `DataStore`s on the given `StoreRegistrar`. */
     public runStores(registrar: StoreRegistrar) {
         return this.runForEach(plugin => plugin.stores?.(registrar, this.contextWithConfig));
+    }
+
+    /** Calls `plugin.hooks()` so each plugin can register its hook handlers, handing each plugin its own `HookRegistrar` (so registrations are attributed to the correct plugin for error reporting and ordering). Called by `HookExtension.init()`. */
+    public runHooks(
+        registrarFactory: (plugin: HawkiPluginWithMetadata) => HookRegistrar
+    ) {
+        return this.runForEach(plugin => plugin.hooks?.(registrarFactory(plugin), this.contextWithConfig));
     }
 
     /**

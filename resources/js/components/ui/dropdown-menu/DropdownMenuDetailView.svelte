@@ -128,10 +128,13 @@
         display: none;
     }
 
-    /* Stack both views in the same cell so the switch crossfades in place. */
+    /* Stack both views in the same cell so the switch crossfades in place. The panel that
+       holds this dropped its own padding so the sliding views could clip cleanly, so each
+       view pads its own rows. */
     .view {
         grid-column: 1;
         grid-row: 1;
         min-width: 0;
+        padding: var(--space-1, 0.25rem);
     }
 </style>
