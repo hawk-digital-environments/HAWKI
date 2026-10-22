@@ -64,6 +64,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
 ),
     array (
@@ -93,6 +99,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',
   'supported_endpoints' => 
@@ -184,6 +196,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
   'input_cost_per_token_batches' => 7.5E-7,
@@ -236,6 +254,7 @@ return [
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -252,6 +271,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
@@ -301,6 +326,7 @@ return [
   'supports_reasoning' => true,
   'supports_minimal_reasoning_effort' => false,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -317,6 +343,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
@@ -350,6 +382,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',
   'supported_endpoints' => 
   array (
@@ -377,6 +415,7 @@ return [
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -430,6 +469,7 @@ return [
   'supports_reasoning' => true,
   'supports_minimal_reasoning_effort' => false,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => false,
   'supports_url_context' => false,
@@ -511,6 +551,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',
   'supported_endpoints' => 
@@ -605,6 +651,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,

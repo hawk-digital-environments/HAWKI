@@ -272,6 +272,7 @@ return [
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => true,
   'supports_reasoning' => true,
+  'supports_sampling_params' => false,
   'supports_vision' => true,
 ),
     array (
@@ -292,6 +293,7 @@ return [
   'supports_function_calling' => true,
   'supports_parallel_function_calling' => true,
   'supports_reasoning' => true,
+  'supports_sampling_params' => false,
   'supports_vision' => true,
 ),
     array (

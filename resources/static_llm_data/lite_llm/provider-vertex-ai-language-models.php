@@ -58,6 +58,12 @@ return [
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 1500,
+    'period' => 'day',
+    'shared_group' => 'gemini-2-flash',
+  ),
   'google_maps_grounding_cost_per_query' => 0.025,
   'input_cost_per_audio_token_batches' => 5.0E-7,
   'input_cost_per_token_batches' => 1.5E-7,
@@ -181,6 +187,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
 ),
     array (
@@ -238,6 +250,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
 ),
     array (
@@ -293,6 +311,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
 ),
     array (
@@ -340,6 +364,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
 ),
@@ -445,6 +475,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
 ),
@@ -511,6 +547,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
   'input_cost_per_audio_token_batches' => 2.5E-7,
@@ -562,6 +604,7 @@ return [
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -574,6 +617,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
@@ -670,6 +719,12 @@ return [
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 1500,
+    'period' => 'day',
+    'shared_group' => 'gemini-2-flash',
+  ),
   'google_maps_grounding_cost_per_query' => 0.025,
   'input_cost_per_audio_token_batches' => 5.0E-8,
   'input_cost_per_token_batches' => 5.0E-8,
@@ -729,6 +784,12 @@ return [
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 1500,
+    'period' => 'day',
+    'shared_group' => 'gemini-2-flash',
+  ),
   'google_maps_grounding_cost_per_query' => 0.025,
   'supports_image_size' => false,
 ),
@@ -779,6 +840,12 @@ return [
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 1500,
+    'period' => 'day',
+    'shared_group' => 'gemini-2-flash',
   ),
   'google_maps_grounding_cost_per_query' => 0.025,
   'supports_image_size' => false,
@@ -937,6 +1004,12 @@ return [
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 10000,
+    'period' => 'day',
+    'shared_group' => 'gemini-2.5-pro',
+  ),
   'google_maps_grounding_cost_per_query' => 0.025,
   'input_cost_per_token_above_200k_tokens_priority' => 4.5E-6,
   'input_cost_per_token_batches' => 6.25E-7,
@@ -979,6 +1052,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',
   'supported_endpoints' => 
@@ -1067,6 +1146,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
@@ -1219,6 +1304,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',
   'supported_endpoints' => 
   array (
@@ -1345,6 +1436,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
   'input_cost_per_token_batches' => 7.5E-7,
@@ -1397,6 +1494,7 @@ return [
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -1413,6 +1511,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
@@ -1462,6 +1566,7 @@ return [
   'supports_reasoning' => true,
   'supports_minimal_reasoning_effort' => false,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -1478,6 +1583,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
@@ -1510,6 +1621,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',
   'supported_endpoints' => 
   array (
@@ -1538,6 +1655,7 @@ return [
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -1591,6 +1709,7 @@ return [
   'supports_reasoning' => true,
   'supports_minimal_reasoning_effort' => false,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => false,
   'supports_url_context' => false,
@@ -1913,6 +2032,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
 ),
@@ -1980,6 +2105,12 @@ return [
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
+  ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
   'input_cost_per_audio_token_batches' => 2.5E-7,
@@ -2032,6 +2163,7 @@ return [
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
+  'supports_sampling_params' => false,
   'supports_system_messages' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -2044,6 +2176,12 @@ return [
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
+  ),
+  'search_free_requests' => 
+  array (
+    'count' => 5000,
+    'period' => 'month',
+    'shared_group' => 'gemini-3',
   ),
   'web_search_billing_unit' => 'per_query',
   'google_maps_grounding_cost_per_query' => 0.014,
@@ -2071,12 +2209,10 @@ return [
   'provider' => 'vertex_ai-language-models',
   'cache_read_input_token_cost' => 1.5E-7,
   'cache_read_input_token_cost_batches' => 7.5E-8,
-  'cache_read_input_token_cost_flex' => 7.5E-8,
   'cache_read_input_token_cost_priority' => 2.7E-7,
   'input_cost_per_image' => 0.00168,
   'input_cost_per_token' => 1.5E-6,
   'input_cost_per_token_batches' => 7.5E-7,
-  'input_cost_per_token_flex' => 7.5E-7,
   'input_cost_per_token_priority' => 2.7E-6,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
@@ -2086,7 +2222,6 @@ return [
   'output_cost_per_image_token' => 3.0E-5,
   'output_cost_per_token' => 7.5E-6,
   'output_cost_per_token_batches' => 3.75E-6,
-  'output_cost_per_token_flex' => 3.75E-6,
   'output_cost_per_token_priority' => 1.35E-5,
   'search_context_cost_per_query' => 
   array (
@@ -2129,12 +2264,10 @@ return [
   'provider' => 'vertex_ai-language-models',
   'cache_read_input_token_cost' => 1.5E-7,
   'cache_read_input_token_cost_batches' => 7.5E-8,
-  'cache_read_input_token_cost_flex' => 7.5E-8,
   'cache_read_input_token_cost_priority' => 2.7E-7,
   'input_cost_per_image' => 0.00168,
   'input_cost_per_token' => 1.5E-6,
   'input_cost_per_token_batches' => 7.5E-7,
-  'input_cost_per_token_flex' => 7.5E-7,
   'input_cost_per_token_priority' => 2.7E-6,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
@@ -2144,7 +2277,6 @@ return [
   'output_cost_per_image_token' => 3.0E-5,
   'output_cost_per_token' => 7.5E-6,
   'output_cost_per_token_batches' => 3.75E-6,
-  'output_cost_per_token_flex' => 3.75E-6,
   'output_cost_per_token_priority' => 1.35E-5,
   'search_context_cost_per_query' => 
   array (

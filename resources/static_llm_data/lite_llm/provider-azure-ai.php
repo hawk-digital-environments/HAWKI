@@ -3178,4 +3178,36 @@ return [
   'supports_xhigh_reasoning_effort' => true,
   'thinking_always_on' => true,
 ),
+    array (
+  'id' => 'azure_ai/MAI-Code-1.1-Flash',
+  'provider' => 'azure_ai',
+  'cache_read_input_token_cost' => 2.0E-8,
+  'deprecation_date' => '2026-12-09',
+  'input_cost_per_token' => 2.0E-7,
+  'max_input_tokens' => 256000,
+  'max_output_tokens' => 64000,
+  'max_tokens' => 64000,
+  'mode' => 'chat',
+  'output_cost_per_token' => 1.2E-6,
+  'source' => 'https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20\'Foundry%20Models\'%20and%20armRegionName%20eq%20\'eastus\'%20and%20priceType%20eq%20\'Consumption\'',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/responses',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_tool_choice' => true,
+  'supports_vision' => true,
+),
 ];
