@@ -203,7 +203,7 @@ class AiServiceProvider extends ServiceProvider
             LiteLlmDriverNameProviderNameMapping::class,
             fn(LiteLlmDriverNameProviderNameMapping $mapping) => $mapping
                 ->declare(Lab::ElevenLabs->value, 'elevenlabs')
-                ->declare(Lab::Jina->value, 'jina-ai')
+                ->declare(Lab::Jina->value, 'jina_ai')
                 ->declare(Lab::VoyageAI->value, 'voyage')
         );
 

@@ -15,9 +15,12 @@ use App\Services\Ai\Models\ModelTypes\Values\WellKnownModelTypes;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use App\Utils\JobMetrics;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
 use Laravel\Ai\Providers\Provider as Driver;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Psr\Log\LoggerInterface;
 use Tests\TestCase;
 
 #[CoversClass(LiteLlmApiEnricher::class)]
@@ -29,10 +32,11 @@ class LiteLlmApiEnricherTest extends TestCase
 
     private function makeSut(
         LiteLlmApiDataStore    $apiDataStore,
-        StaticLiteLlmDataStore $staticDataStore
+        StaticLiteLlmDataStore $staticDataStore,
+        LoggerInterface|null   $logger = null
     ): LiteLlmApiEnricher
     {
-        return new LiteLlmApiEnricher($apiDataStore, $staticDataStore);
+        return new LiteLlmApiEnricher($apiDataStore, $staticDataStore, $logger ?? $this->createMock(LoggerInterface::class));
     }
 
     private function makeModel(string $modelId = 'gpt-4o', string|null $modelType = null): AiModel
@@ -184,6 +188,65 @@ class LiteLlmApiEnricherTest extends TestCase
         $staticStore->method('getModelInformation')->willReturn(null);
 
         $sut = $this->makeSut($apiStore, $staticStore);
+        $model = $this->makeModel();
+        $sut->enrichModelInfo($model, $this->makeProvider(), $this->makeJobMetrics());
+
+        Event::assertDispatched(LiteLlmEnrichmentSkippedEvent::class);
+    }
+
+    public function testItLogsDebugWithHttpStatusWhenFallingBackToStaticStore(): void
+    {
+        Event::fake();
+
+        $apiStore = $this->createMock(LiteLlmApiDataStore::class);
+        $apiStore->method('getModelInformation')->willThrowException(Http::failedRequest([], 404));
+
+        $staticStore = $this->createMock(StaticLiteLlmDataStore::class);
+        $staticStore->method('getModelInformation')->willReturn(
+            $this->makeLiteLlmModelData(['id' => 'gpt-4o', 'mode' => 'chat'])
+        );
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(static::once())
+            ->method('debug')
+            ->with(
+                'Live LiteLLM catalog unavailable, falling back to static data',
+                static::callback(function (array $context): bool {
+                    return ($context['http_status'] ?? null) === 404
+                        && ($context['model_id'] ?? null) === 'gpt-4o'
+                        && isset($context['exception'])
+                        && $context['exception'] instanceof RequestException;
+                }),
+            );
+
+        $sut = $this->makeSut($apiStore, $staticStore, $logger);
+        $model = $this->makeModel('gpt-4o', WellKnownModelTypes::CHAT);
+        $sut->enrichModelInfo($model, $this->makeProvider(), $this->makeJobMetrics());
+
+        Event::assertDispatched(LiteLlmEnrichmentCompletedEvent::class);
+    }
+
+    public function testItLogsDebugWithoutHttpStatusForConnectionFailures(): void
+    {
+        Event::fake();
+
+        $apiStore = $this->createMock(LiteLlmApiDataStore::class);
+        $apiStore->method('getModelInformation')->willThrowException(new \RuntimeException('connection refused'));
+
+        $staticStore = $this->createMock(StaticLiteLlmDataStore::class);
+        $staticStore->method('getModelInformation')->willReturn(null);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(static::once())
+            ->method('debug')
+            ->with(
+                'Live LiteLLM catalog unavailable, falling back to static data',
+                static::callback(fn(array $context): bool => array_key_exists('http_status', $context)
+                    && $context['http_status'] === null
+                    && isset($context['exception'])),
+            );
+
+        $sut = $this->makeSut($apiStore, $staticStore, $logger);
         $model = $this->makeModel();
         $sut->enrichModelInfo($model, $this->makeProvider(), $this->makeJobMetrics());
 

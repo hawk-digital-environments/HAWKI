@@ -16,13 +16,16 @@ use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\StaticLi
 use App\Services\Ai\Models\ModelTypes\Values\WellKnownModelTypes;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use App\Utils\JobMetrics;
+use Illuminate\Http\Client\RequestException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Enriches a model using metadata from the LiteLLM model catalog.
  *
  * First attempts to resolve metadata from the live {@see LiteLlmApiDataStore} (which
- * caches API responses for 24 hours). On API failure it falls back to the
- * {@see StaticLiteLlmDataStore} (pre-generated PHP files committed to the repository).
+ * downloads the catalog once, caches it, and keeps it fresh via ETag revalidation).
+ * On API failure it falls back to the {@see StaticLiteLlmDataStore} (pre-generated PHP
+ * files committed to the repository); the fallback is logged at debug level.
  *
  * Once data is found, the model type is inferred from the LiteLLM `mode` field and
  * enrichment is delegated to a type-specific applier — currently only chat models are
@@ -32,7 +35,8 @@ readonly class LiteLlmApiEnricher implements ModelInfoEnricherInterface
 {
     public function __construct(
         private LiteLlmApiDataStore    $apiDataStore,
-        private StaticLiteLlmDataStore $staticDataStore
+        private StaticLiteLlmDataStore $staticDataStore,
+        private LoggerInterface        $logger,
     )
     {
     }
@@ -60,7 +64,13 @@ readonly class LiteLlmApiEnricher implements ModelInfoEnricherInterface
         try {
             $liteLlmData = $this->apiDataStore->getModelInformation($provider, $modelInfo->model_id);
         } catch (\Throwable $e) {
-            // If the API call fails, fall back to static data store
+            // If the API call fails, fall back to the static data store
+            $this->logger->debug('Live LiteLLM catalog unavailable, falling back to static data', [
+                'model_id' => $modelInfo->model_id,
+                'provider_id' => $provider->provider_id,
+                'http_status' => $e instanceof RequestException ? $e->response->status() : null,
+                'exception' => $e,
+            ]);
             $liteLlmData = $this->staticDataStore->getModelInformation($provider, $modelInfo->model_id);
         }
 
