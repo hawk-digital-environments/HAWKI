@@ -51,7 +51,7 @@
 
     <div class="feedback-actions">
         <Button
-            size="md"
+            size="sm"
             iconLeft={SentIcon}
             variant="fill"
             onclick={onSubmit}

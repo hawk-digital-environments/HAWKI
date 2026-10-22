@@ -150,16 +150,6 @@ class AssistantRepository extends AbstractRepository
         return $assistant->ai_tools()->sync($toolIds);
     }
 
-    /**
-     * Copies the capability transfer strings from one assistant to another —
-     * used by the remix flow, gated the same way as {@see syncTools()}.
-     */
-    public function copyCapabilities(Assistant $target, Assistant $source): void
-    {
-        $target->capabilities = $source->capabilities;
-        $target->save();
-    }
-
     public function setReleaseStage(Assistant $assistant, AssistantReleaseStage $stage): bool
     {
         if ($assistant->release_stage === $stage) {
@@ -196,6 +186,26 @@ class AssistantRepository extends AbstractRepository
     public function findOneByHandle(string $handle): ?Assistant
     {
         return $this->getQuery()->where('handle', $handle)->first();
+    }
+
+    /**
+     * Which of the given handles already exist, in the order they were
+     * asked for. Deliberately not visibility-scoped: the callers ask about
+     * the handle namespace's global uniqueness, and the answer discloses
+     * existence only — the same disclosure a rejected create with a taken
+     * handle already makes.
+     *
+     * @param list<string> $handles
+     * @return list<string>
+     */
+    public function findExistingHandles(array $handles): array
+    {
+        $existing = $this->getQuery()
+            ->whereIn('handle', $handles)
+            ->pluck('handle')
+            ->all();
+
+        return array_values(array_intersect($handles, $existing));
     }
 
     /**

@@ -496,44 +496,6 @@ class AssistantShowTest extends TestCase
             ->assertJsonPath('data.attributes.is_favorite', false);
     }
 
-    public function testCapabilitiesVisibleOnlyToThePrivilegedTier(): void
-    {
-        $orgId = Organization::first()->id;
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'organization_id' => $orgId,
-            'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
-            'capabilities' => ['capability:web_search:native'],
-        ]);
-
-        $admin = User::factory()->create();
-        $admin->organizations()->attach($orgId, ['role' => 'admin']);
-        $member = User::factory()->create();
-        $member->organizations()->attach($orgId, ['role' => 'member']);
-        $outsider = User::factory()->create();
-
-        // The privileged tier (creator or org admin — same as the ai_tools
-        // include) sees the capability selection.
-        foreach (['owner' => $owner, 'admin' => $admin] as $viewer) {
-            $this->actingAsUser($viewer);
-            $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
-                ->assertOk()
-                ->assertJsonPath('data.attributes.capabilities', ['capability:web_search:native']);
-        }
-
-        // Everyone else who can view the assistant gets null instead, and the
-        // stored values are untouched.
-        foreach ([$member, $outsider] as $viewer) {
-            $this->actingAsUser($viewer);
-            $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
-                ->assertOk()
-                ->assertJsonPath('data.attributes.capabilities', null);
-        }
-
-        self::assertSame(['capability:web_search:native'], $assistant->fresh()->capabilities);
-    }
-
     public function testToolSelectionDoesNotSurfaceWithoutInclude(): void
     {
         $owner = User::factory()->create();

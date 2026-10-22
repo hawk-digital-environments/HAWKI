@@ -13,7 +13,11 @@
     import {useRouter} from "$lib/components/ui/routing/hooks/useRouter.svelte";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import {getAvatar} from "$plugins/assistants/api/resources/userAvatarClient";
-    const {goToRoute, p} = useRouter();
+    import {rememberDetailReturnPath} from "$plugins/assistants/modules/dashboard/contexts/detailReturn";
+    // The handle is kept because `path` is a live getter — the detail page's
+    // back button needs it read at click time.
+    const router = useRouter();
+    const {goToRoute, p} = router;
 
 
     const {__} = useTranslator();
@@ -71,10 +75,11 @@
 <!--@todo: Link truned to button because style didn't budge-->
 <button
     class="assistant-card"
-    onclick={()=>{goToRoute(
-       p('assistants.dashboard.details', { id: assistant.id })
-    )
-
+    onclick={()=>{
+        rememberDetailReturnPath(router.path);
+        goToRoute(
+           p('assistants.dashboard.details', { id: assistant.id })
+        )
     }}
 >
     <div class="cover">

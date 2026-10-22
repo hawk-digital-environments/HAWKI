@@ -2,6 +2,31 @@ import type { AssistantKey } from '$plugins/assistants/types/assistant';
 import type { AiModel } from '$plugins/core/schemas/resources/ai-models.schema.js';
 
 /**
+ * The handle candidates a derived handle may end up with: the name's slug
+ * plus its `-2`, `-3`, … suffixed variants, capped like the server caps
+ * handles (255 chars — the suffix must still fit, so long slugs truncate).
+ */
+export function handleCandidates(base: string, maxSuffix = 20): string[] {
+    const candidates = [base];
+
+    for (let suffix = 2; suffix <= maxSuffix; suffix++) {
+        candidates.push(`${base.slice(0, 255 - `-${suffix}`.length)}-${suffix}`);
+    }
+
+    return candidates;
+}
+
+/**
+ * The first candidate the server does not know — the handle to save — or
+ * null when every candidate is taken and the user must pick one.
+ */
+export function firstFreeHandle(candidates: readonly string[], existing: readonly string[]): string | null {
+    const taken = new Set(existing);
+
+    return candidates.find((candidate) => !taken.has(candidate)) ?? null;
+}
+
+/**
  * Fields that describe *which* assistant this is rather than *what the user
  * configured* — server-owned bookkeeping and back-references. They are skipped
  * by every change-diff, so restoring a draft or refetching a record never

@@ -23,10 +23,7 @@ use App\Models\User;
  * tool names it grants (the `name:` prefix of its transfer strings) — the
  * grant is the authoritative instance carrying the server-side settings.
  * Other attached tools, including others serving the same capability,
- * coexist with the grant; their usage is up to the model. Persisted
- * capability strings (`assistant.capabilities`) are NOT filtered — they
- * pass through verbatim, so a stale `capability:<key>:…` entry fails loudly
- * at tool resolution rather than being silently stripped.
+ * coexist with the grant; their usage is up to the model.
  */
 interface AgentTool
 {

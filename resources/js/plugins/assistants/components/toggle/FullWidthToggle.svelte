@@ -45,7 +45,9 @@
 </script>
 
 
-<div class="toggle-wrapper"
+<!-- A <label> around the switch's <button>: clicking anywhere on the row
+     activates the switch, and its text becomes the switch's accessible name. -->
+<label class="toggle-wrapper"
      class:withIcon={icon}
      class:isDisabled={disabled}
      class:switchRight={switchPosition === "right"}
@@ -68,7 +70,7 @@
     <div class="switch-wrapper">
         <Switch bind:checked {disabled} />
     </div>
-</div>
+</label>
 
 <style>
     .toggle-wrapper{
@@ -79,8 +81,13 @@
         border-radius: var(--corner-md);
         padding: var(--space-4);
         background: var(--color-surface-raised);
+        cursor: pointer;
+        /* Undo the base `label` typography; the row styles its own text. */
+        font-size: inherit;
+        font-weight: inherit;
     }
     .toggle-wrapper.isDisabled{
+        cursor: default;
         opacity: .75;
         background: var(--color-hover);
     }

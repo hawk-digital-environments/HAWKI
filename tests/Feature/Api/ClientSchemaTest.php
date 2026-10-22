@@ -271,7 +271,7 @@ class ClientSchemaTest extends TestCase
         self::assertTrue($attrs['max_tokens']['constraints']['integer']);
 
         self::assertSame(0, $attrs['temp']['constraints']['minimum']);
-        self::assertSame(1, $attrs['temp']['constraints']['maximum']);
+        self::assertSame(2, $attrs['temp']['constraints']['maximum']);
 
         self::assertSame(0, $attrs['top_p']['constraints']['minimum']);
         self::assertSame(1, $attrs['top_p']['constraints']['maximum']);
@@ -302,7 +302,7 @@ class ClientSchemaTest extends TestCase
 
         self::assertSame('number', $properties['temp']['type']);
         self::assertSame(0, $properties['temp']['minimum']);
-        self::assertSame(1, $properties['temp']['maximum']);
+        self::assertSame(2, $properties['temp']['maximum']);
 
         self::assertSame('boolean', $properties['allow_remix']['type']);
 

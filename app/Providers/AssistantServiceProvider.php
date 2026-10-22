@@ -8,9 +8,13 @@ use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantFeedback;
 use App\Services\Ai\Agents\AgentRegistry;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
+use App\Services\Ai\Extensions\HawkiExtensionsRegistry;
+use App\Services\Ai\SystemModels\SystemModelRegistry;
 use App\Services\Assistant\Agents\AssistantChatAgentFactory;
+use App\Services\Assistant\Config\AssistantConfig;
 use App\Services\Assistant\Observers\AssistantFeedbackObserver;
 use App\Services\Assistant\Observers\AssistantObserver;
+use App\Services\Assistant\Values\AssistantSystemModelTypes;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -32,6 +36,28 @@ class AssistantServiceProvider extends ServiceProvider
         $this->bootObservers();
 
         $this->declareAgentFactories();
+
+        $this->declareSystemModels();
+    }
+
+    /**
+     * Carries the builder guide's default model (owned by the Assistant
+     * slice's config, {@see AssistantConfig}) into the system-model
+     * registry the config syncer merges over its file-based configuration —
+     * the builder's wiring stays in the slice, the registry stays the Ai
+     * core's generic surface, and no provider mutates another domain's
+     * config.
+     */
+    private function declareSystemModels(): void
+    {
+        $this->app->extend(
+            SystemModelRegistry::class,
+            fn (SystemModelRegistry $registry): SystemModelRegistry => $registry->declare(
+                'assistant_guide',
+                AssistantSystemModelTypes::GUIDE,
+                $this->app->make(AssistantConfig::class)->builderGuideModel,
+            ),
+        );
     }
 
     private function bootObservers(): void
@@ -52,6 +78,17 @@ class AssistantServiceProvider extends ServiceProvider
             static fn (AgentRegistry $registry): AgentRegistry => $registry->declare(
                 AssistantChatAgentFactory::class,
                 before: ChatAgentFromLegacyRequestFactory::class,
+            ),
+        );
+
+        $this->app->extend(
+            HawkiExtensionsRegistry::class,
+            static fn (HawkiExtensionsRegistry $registry): HawkiExtensionsRegistry => $registry->declare(
+                'assistant_handle',
+                [
+                    'payload.hawkiExtensions' => ['nullable', 'string', 'max:255', 'exists:assistants,handle'],
+                    'payload.messages.*.hawkiExtensions' => ['nullable', 'string', 'max:255'],
+                ],
             ),
         );
     }

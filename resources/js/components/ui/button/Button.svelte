@@ -2,7 +2,7 @@
   @component General-purpose button primitive.
 
   Supports six `variant` styles — `fill`, `accent`, `stroke`, `ghost`, `iconGhost`,
-  `delete` — and three `size` options — `xs`, `sm`, `md`. Renders a native
+  `delete` — and two `size` options — `sm`, `md`. Renders a native
   `<button>` element and forwards all `HTMLButtonAttributes` via rest-props.
 
   If `iconLeft` and/or `iconRight` are given without `children`, the button
@@ -17,7 +17,7 @@
       onclick={() => mode.exit()}
       title="Cancel"
       variant="ghost"
-      size="xs"
+      size="sm"
   />
   ```
 -->
@@ -35,7 +35,6 @@
                 delete: 'btn--delete'
             },
             size: {
-                xs: 'btn--xs',
                 sm: 'btn--sm',
                 md: 'btn--md',
                 // This is an internal size used when an icon is provided without children.
@@ -261,26 +260,6 @@
 
     /* ── Sizes ─────────────────────────────────────────────────────────── */
 
-    .btn--xs {
-        --btn-icon-size: 14px;
-        width: fit-content;
-        height: 2rem;
-        column-gap: var(--space-1);
-        padding: 0 var(--space-3);
-        font-size: var(--font-size-xs);
-        border-radius: var(--corner-full);
-
-        /* Icons carry their own side bearing, so the icon side sits a notch
-           tighter than the text side to look even. */
-        &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-2_5);
-        }
-
-        &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-2_5);
-        }
-    }
-
     .btn--sm {
         --btn-icon-size: 16px;
         width: fit-content;
@@ -301,22 +280,22 @@
     }
 
     .btn--md {
-        --btn-icon-size: 18px;
+        --btn-icon-size: 16px;
         position: relative;
-        column-gap: var(--space-3);
+        column-gap: var(--space-2);
         height: 2.5rem;
-        min-width: 6rem;
-        padding: var(--space-2) calc(var(--space-4) + var(--space-1));
+        min-width: 5rem;
+        padding: var(--space-2) var(--space-4);
         overflow: hidden;
-        font-size: var(--font-size-md);
+        font-size: var(--font-size-sm);
         border-radius: var(--corner-full);
 
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-4);
+            padding-inline-start: var(--space-3);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-4);
+            padding-inline-end: var(--space-3);
         }
     }
 

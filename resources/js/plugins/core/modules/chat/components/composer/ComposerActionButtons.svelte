@@ -147,7 +147,7 @@
     <div transition:growTransition={{mode: 'horizontal'}}>
         <ButtonWithTooltip
             tooltip={__('chat.composer.actions.improveTooltip')}
-            size="xs"
+            size="sm"
             variant="ghost"
             iconRight={GoogleGeminiIcon}
             onclick={handleImprovement}
@@ -162,7 +162,7 @@
             iconRight={SquareIcon}
             tooltip={cancelTooltip}
             aria-label={__('chat.composer.actions.cancelLabel')}
-            size="xs"
+            size="sm"
             variant="stroke"
             onclick={cancelAction}
         >
@@ -188,7 +188,7 @@
             aria-keyshortcuts="Enter"
             variant="accent"
             iconRight={SendIcon}
-            size="xs"
+            size="sm"
             class="chat-send-btn"
             onkeydown={handleSendButtonKeyDown}
             onclick={handleSendClick}

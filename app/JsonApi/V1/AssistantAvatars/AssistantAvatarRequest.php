@@ -6,6 +6,7 @@ namespace App\JsonApi\V1\AssistantAvatars;
 
 use App\Models\Assistants\AssistantAvatar;
 use App\Rules\IconCss;
+use App\Services\Assistant\Values\AssistantFieldRules;
 use LaravelJsonApi\Laravel\Http\Requests\ResourceRequest;
 use LaravelJsonApi\Validation\Rule as JsonApiRule;
 
@@ -15,13 +16,13 @@ class AssistantAvatarRequest extends ResourceRequest
     {
         if ($this->isUpdating()) {
             return [
-                'name' => ['sometimes', 'string', 'max:5'],
+                'name' => ['sometimes', ...AssistantFieldRules::avatarEmoji()],
                 'icon_css' => ['sometimes', 'string', 'max:1000', new IconCss()],
             ];
         }
 
         return [
-            'name' => ['present', 'string', 'max:5'],
+            'name' => ['present', ...AssistantFieldRules::avatarEmoji()],
             'icon_css' => ['present', 'string', 'max:1000', new IconCss()],
             'assistant' => [
                 'required',

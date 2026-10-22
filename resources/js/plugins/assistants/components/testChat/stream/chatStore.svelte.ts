@@ -1,14 +1,32 @@
 import { getContext, setContext } from "svelte";
-import type { ChatConfigApi } from "./chatConfig.svelte.js";
+import type { ChatConfigApi, ChatVariant } from "./chatConfig.svelte.js";
 import type { Assistant } from "$plugins/assistants/types/assistant";
 import type { ChatMessage, MessagePart } from "../types";
 
 export type ChatStatus = "idle" | "streaming" | "error";
 
+/**
+ * Optional file-upload support of a chat. When present, the composer offers a
+ * paperclip button and files can be dropped on the chat; they upload right
+ * away and show up in the conversation, which reacts to them on its own.
+ */
+export type ChatUploadsApi = {
+    /** `accept` filter for the file picker. */
+    readonly accept: string | undefined;
+    /** Why uploading is currently not possible, or `null` when it is. */
+    readonly blockedHint: string | null;
+    /** `true` while files are uploading; no new ones are taken until they are done. */
+    readonly busy: boolean;
+    add: (files: File[]) => Promise<void>;
+};
+
 export type ChatStoreApi = {
     readonly messages: ChatMessage[];
     readonly status: ChatStatus;
     readonly error: string | null;
+    /** Whether the chat can take a message at all (e.g. the test chat needs a model). */
+    readonly ready: boolean;
+    readonly uploads?: ChatUploadsApi;
     clear: () => void;
     send: (text: string) => Promise<void>;
 };
@@ -79,7 +97,44 @@ function toApiMessages(assistant: Assistant, history: ChatMessage[]): ApiMessage
     return out;
 }
 
-export const provideChatStore = (config: ChatConfigApi): ChatStoreApi => {
+/**
+ * The `/req/streamAI` request body for one test-chat turn. Saved assistants
+ * (a non-null handle) stream through the assistant route: the payload
+ * carries `hawkiExtensions.assistant_handle`, and the backend composes the
+ * run from the assistant row (prompt module stack, ambient knowledge tool,
+ * attached tools), so tools come from composition, never the payload.
+ * Never-saved drafts keep the legacy raw-fields payload with the draft's
+ * attached tool names.
+ */
+export function buildStreamRequestBody(
+    assistant: Assistant,
+    apiMessages: ApiMessage[],
+    variant: ChatVariant,
+): Record<string, unknown> {
+    const viaAssistantRoute = variant === "test" && !!assistant.handle;
+
+    return {
+        broadcast: false,
+        threadIndex: 0,
+        slug: "",
+        payload: {
+            model: assistant.model,
+            stream: true,
+            messages: apiMessages,
+            ...(viaAssistantRoute
+                ? {hawkiExtensions: {assistant_handle: assistant.handle}}
+                : {tools: assistant.aiTools?.map((t) => t.name) ?? []}),
+            params: { temp: assistant.temp, top_p: assistant.topP },
+        },
+    };
+}
+
+/**
+ * The test chat against the assistant under test. Created without a context
+ * so an owner outside the `<Chatbox>` (the builder's test panel) can keep the
+ * conversation alive across remounts and hand it in via `provideChatStore`.
+ */
+export const createChatStore = (config: ChatConfigApi): ChatStoreApi => {
     let messages = $state<ChatMessage[]>([]);
     let status = $state<ChatStatus>("idle");
     let error = $state<string | null>(null);
@@ -127,18 +182,7 @@ export const provideChatStore = (config: ChatConfigApi): ChatStoreApi => {
                     "X-CSRF-TOKEN": getCsrfToken(),
                     "Accept": "application/json",
                 },
-                body: JSON.stringify({
-                    broadcast: false,
-                    threadIndex: 0,
-                    slug: "",
-                    payload: {
-                        model: assistant.model,
-                        stream: true,
-                        messages: apiMessages,
-                        tools: assistant.aiTools?.map((t) => t.name) ?? [],
-                        params: { temp: assistant.temp, top_p: assistant.topP },
-                    },
-                }),
+                body: JSON.stringify(buildStreamRequestBody(assistant, apiMessages, config.variant)),
                 signal: abortCtrl.signal,
             });
 
@@ -216,10 +260,19 @@ export const provideChatStore = (config: ChatConfigApi): ChatStoreApi => {
         get error(): string | null {
             return error;
         },
+        get ready(): boolean {
+            return config.hasModel;
+        },
         clear,
         send,
     };
 
+    return api;
+};
+
+/** Exposes `chat` (or a fresh test chat) to the `<Chatbox>` subtree. */
+export const provideChatStore = (config: ChatConfigApi, chat?: ChatStoreApi): ChatStoreApi => {
+    const api = chat ?? createChatStore(config);
     setContext(KEY, api);
     return api;
 };
