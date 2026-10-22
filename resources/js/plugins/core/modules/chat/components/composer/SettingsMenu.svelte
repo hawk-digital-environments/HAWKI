@@ -31,6 +31,7 @@
     import SettingsMenuReasoning from '$plugins/core/modules/chat/components/composer/SettingsMenuReasoning.svelte';
     import SettingsMenuSampling from '$plugins/core/modules/chat/components/composer/SettingsMenuSampling.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {mergeProps} from 'bits-ui';
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();
@@ -56,6 +57,19 @@
         const step = event.shiftKey ? -1 : 1;
         focusables[(current + step + focusables.length) % focusables.length].focus();
     }
+
+    // bits-ui focuses the first control on open, and that scripted focus paints its ring
+    // even when the menu was opened with the mouse. Keep the default for keyboard opens;
+    // on a pointer open park focus on the panel body instead, without a ring, so the
+    // first Tab (see `cycleFocusOnTab`) still lands on the first control.
+    let openedWithKeyboard = false;
+    let bodyEl = $state<HTMLElement | null>(null);
+
+    function focusBodyOnPointerOpen(event: Event) {
+        if (openedWithKeyboard) return;
+        event.preventDefault();
+        requestAnimationFrame(() => bodyEl?.focus({preventScroll: true, focusVisible: false} as FocusOptions));
+    }
 </script>
 
 <DropdownMenu
@@ -63,10 +77,7 @@
     side="top"
     align="end"
     disabled={composerContext.guard.disablesFeature('settings')}
-    contentProps={{
-        class: 'model-settings-content',
-        onCloseAutoFocus: (e) => e.preventDefault()
-    }}
+    contentProps={{class: 'model-settings-content', onOpenAutoFocus: focusBodyOnPointerOpen}}
 >
     {#snippet trigger({props})}
         <ButtonWithTooltip
@@ -74,12 +85,15 @@
             variant="ghost"
             iconLeft={Settings01Icon}
             highlight={settingsOpen}
-            {...props}/>
+            {...mergeProps(props, {
+                onpointerdown: () => (openedWithKeyboard = false),
+                onkeydown: () => (openedWithKeyboard = true)
+            })}/>
     {/snippet}
 
-    <!-- Keydown only redirects Tab between the child controls; the div itself is not interactive. -->
+    <!-- Keydown only redirects Tab between the child controls; the div is focusable only as a parking spot after a pointer open. -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="settings-body" onkeydown={cycleFocusOnTab}>
+    <div class="settings-body" bind:this={bodyEl} tabindex="-1" onkeydown={cycleFocusOnTab}>
         <SettingsMenuSystemPrompt/>
 
         <div class="settings-parameters">
@@ -100,6 +114,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-4, calc(0.25rem * 4));
+        outline: none;
     }
 
     .settings-parameters {
@@ -114,5 +129,9 @@
 
     :global(.dropdown-content--dropdown.model-settings-content) {
         width: calc(0.25rem * 64);
+        /* Grows to fit its sections; only the space above the composer caps it. Should
+           that ever run out, the panel still scrolls, just without a visible scrollbar. */
+        max-height: calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4));
+        scrollbar-width: none;
     }
 </style>

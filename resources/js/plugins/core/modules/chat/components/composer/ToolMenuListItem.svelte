@@ -4,8 +4,11 @@
   the same row shape the composer's `/` menu shows via `ToolRow`.
 
   The whole row toggles the tool (checkbox semantics, wired to `entry.onToggle`); a
-  separate info button on the right — tinted by status (available/warning/error) — opens
-  `ToolMenuDetail` for that tool instead, stopping propagation so it never also toggles.
+  separate info chevron on the right — revealed on the row being pointed at or focused, as in
+  `ModelMenuListItem` — opens `ToolMenuDetail` for that tool instead, stopping propagation so
+  it never also toggles. Like the model list, only exceptions get a status dot: a tool the
+  current model doesn't support (yellow) and one that is offline (red), whose row is also
+  faded as disabled.
 
   Registers itself with `ToolMenuFocusContext` under `entry.tool.name` so `ToolMenuGroupHeader`
   info triggers interspersed in the list can be reached via ArrowUp/ArrowDown/Tab (bits-ui's
@@ -46,10 +49,8 @@
 
     let rowEl = $state<HTMLDivElement | null>(null);
 
-    // Tints the info trigger to match the status surfaced in the detail view.
-    const status = $derived(
-        entry.disabled ? 'error' : !entry.available ? 'warning' : 'available'
-    );
+    // The list only surfaces exceptions; the detail view always shows the status.
+    const showStatus = $derived(entry.disabled || !entry.available);
 
     const infoTooltip = $derived.by(() => {
         if (entry.disabled) return __('chat.composer.toolMenu.infoOffline');
@@ -118,10 +119,15 @@
                 <span class="tool-item-label">{entry.tool.displayName}</span>
                 <span class="tool-item-description">{entry.tool.description}</span>
             </span>
+            {#if showStatus}
+                <StatusDotForTool
+                    tool={entry.tool}
+                    supported={entry.available}/>
+            {/if}
             <MenuPinButton kind="tool" id={entry.tool.name}/>
             <button
                 type="button"
-                class={['tool-item-info', `tool-item-info--${status}`]}
+                class="tool-item-info"
                 aria-label={infoTooltip}
                 tabindex={-1}
                 onpointerdown={(e) => e.stopPropagation()}
@@ -132,11 +138,6 @@
                     }
                 }}
                 onclick={openDetail}>
-                <StatusDotForTool
-                    tool={entry.tool}
-                    supported={entry.available}
-                    tooltipSuffix={__('chat.composer.toolMenu.clickForInfo')}
-                />
                 <ArrowRight01Icon size={16}/>
             </button>
 
@@ -145,6 +146,43 @@
 </DropdownMenuCheckboxItem>
 
 <style>
+    :global(.tool-menu-item) {
+        gap: var(--space-2, calc(0.25rem * 2));
+    }
+
+    /* The whole row toggles the tool, so signal it as clickable. */
+    :global(.dropdown-checkbox-item.tool-menu-item) {
+        cursor: pointer;
+        /* Matches the vertical inset, so the swatch sits evenly in the row's corner. */
+        padding-left: var(--space-1_5);
+    }
+
+    /* Concentric with the row's highlight: its corner radius minus the inset, so the gap
+       around the swatch stays even into the corner too. */
+    :global(.dropdown-checkbox-item.tool-menu-item .tool-icon-swatch) {
+        border-radius: calc(var(--corner-sm) - var(--space-1_5));
+    }
+
+    /* Two lines at the shared tight leading run a fraction past the 32px swatch and stretch
+       the row; a 16px line each keeps the text exactly swatch-tall, so the swatch's inset
+       above and below matches the one on the left. */
+    :global(.dropdown-checkbox-item.tool-menu-item :is(.tool-item-label, .tool-item-description)) {
+        line-height: calc(0.25rem * 4);
+    }
+
+    /* An offline tool fades as a whole row, as an offline model does in `ModelMenuListItem`,
+       rather than only greying its label. It still takes the pointer, so hovering reveals
+       its info chevron and the user can read why. The doubled class outranks the checkbox
+       item's own `opacity: 1`. */
+    :global(.dropdown-checkbox-item.tool-menu-item.tool-menu-item[data-disabled]) {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    :global(.dropdown-checkbox-item.tool-menu-item[data-disabled] .tool-item-label) {
+        color: var(--color-text);
+    }
+
     .tool-item-main {
         display: flex;
         align-items: center;
@@ -176,6 +214,28 @@
         font-size: var(--font-size-xs);
     }
 
+    /* The favourite only shows on the row the user is pointing at (a favourite row keeps its own
+       button visible, and so does an active one, so its options are at hand), so the list stays
+       quiet when nothing is being aimed at. */
+    :global(.dropdown-checkbox-item.tool-menu-item:hover .menu-pin-button),
+    :global(.dropdown-checkbox-item.tool-menu-item:is(:focus-visible, :has(:focus-visible)) .menu-pin-button),
+    :global(.dropdown-checkbox-item.tool-menu-item[data-state='checked'] .menu-pin-button) {
+        opacity: 1;
+    }
+
+    /* In the dropdown the info chevron stays out of sight until the row is pointed at or
+       focused, as in `ModelMenuListItem` — active rows keep it shown; the mobile sheet has no
+       hover, so it stays there. */
+    :global(.dropdown-content--dropdown .dropdown-checkbox-item.tool-menu-item .tool-item-info) {
+        opacity: 0;
+    }
+
+    /* Focus only counts when it came from the keyboard: a click leaves focus on the row, which
+       would otherwise keep its controls shown after the pointer has moved on. */
+    :global(.dropdown-content .dropdown-checkbox-item.tool-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .tool-item-info) {
+        opacity: 1;
+    }
+
     .tool-item-info {
         display: flex;
         flex-shrink: 0;
@@ -184,25 +244,14 @@
         padding: 6px 0;
         margin: 0;
         border: none;
-        background-color: rgba(255, 0, 0, 0.001%);
+        background: none;
         pointer-events: all;
         line-height: 0;
         color: var(--color-text-muted);
         cursor: pointer;
     }
 
-    /* The chevron takes the same semantic color as the dot beside it (`StatusDot` maps
-       online/unknown/offline to success/warning/error), so the pair reads as one signal
-       instead of a tinted dot next to a grey arrow. */
-    .tool-item-info--available {
-        color: var(--color-success, var(--color-text-muted));
-    }
-
-    .tool-item-info--warning {
-        color: var(--color-warning, var(--color-text-muted));
-    }
-
-    .tool-item-info--error {
-        color: var(--color-error, var(--color-text-muted));
+    .tool-item-info:hover {
+        color: var(--color-text);
     }
 </style>

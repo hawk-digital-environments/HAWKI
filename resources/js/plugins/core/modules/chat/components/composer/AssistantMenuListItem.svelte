@@ -4,8 +4,9 @@
   a checkbox (checked = the handle is currently present in the message); the visuals come
   from `AssistantRow`, shared wherever an assistant row is listed.
 
-  A separate info button on the right — or ArrowRight — opens `AssistantMenuDetail` for that
-  assistant instead of toggling it, stopping propagation so it never also tags.
+  A separate info chevron on the right — revealed on the row being pointed at or focused, as in
+  `ModelMenuListItem` — or ArrowRight opens `AssistantMenuDetail` for that assistant instead
+  of toggling it, stopping propagation so it never also tags.
 
   ## Usage
   Rendered by `AssistantMenu`, once per assistant from the `ai-handle` store:
@@ -21,7 +22,7 @@
 
     /** One assistant row, pre-wired with its appearance and toggle callback by `AssistantMenu`. */
     export interface AssistantMenuEntry {
-        /** The assistant (handle, label, grouping, pin state) this row represents. */
+        /** The assistant (handle, label, grouping, favourite state) this row represents. */
         assistant: AiAssistant;
         /** Icon shown at the start of the row. */
         emoji: string;
@@ -54,15 +55,16 @@
 
     const {entry, onOpenDetail}: Props = $props();
 
-    // A row is lifted into the "Pinned" section by a local composer pin or by its
-    // server-side flag; the pin button targets whichever mechanism owns the row's pin.
+    // A row is lifted into the "Favorites" section by a local composer pin (assistants
+    // without a server-side favourite, e.g. HAWKI) or by its server-side favourite; the
+    // favourite button targets whichever mechanism owns the row's state.
     const pinned = $derived(
-        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned
+        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.favorite
     );
 
     function togglePin() {
-        if (entry.assistant.onTogglePin) {
-            entry.assistant.onTogglePin(!pinned);
+        if (entry.assistant.onToggleFavorite) {
+            entry.assistant.onToggleFavorite(!pinned);
         } else {
             pinStore.toggle('assistant', entry.assistant.id);
         }
@@ -129,8 +131,49 @@
 </DropdownMenuCheckboxItem>
 
 <style>
-    /* Mirrors `.tool-item-info`: a chevron that only opens the detail view. Rendered at
-       full strength, with no hover state, so it reads as a plain affordance. */
+    /* The whole row toggles the mention, so signal it as clickable. */
+    :global(.dropdown-checkbox-item.assistant-menu-item) {
+        cursor: pointer;
+        /* Matches the vertical inset, so the swatch sits evenly in the row's corner. */
+        padding-left: var(--space-1_5);
+        gap: var(--space-2, calc(0.25rem * 2));
+    }
+
+    /* Concentric with the row's highlight: its corner radius minus the inset, so the gap
+       around the swatch stays even into the corner too. */
+    :global(.dropdown-checkbox-item.assistant-menu-item .assistant-row-emoji) {
+        border-radius: calc(var(--corner-sm) - var(--space-1_5));
+    }
+
+    /* Two lines at the shared tight leading run a fraction past the 32px swatch and stretch
+       the row; a 16px line each keeps the text exactly swatch-tall, so the swatch's inset
+       above and below matches the one on the left. */
+    :global(.dropdown-checkbox-item.assistant-menu-item :is(.assistant-row-label, .assistant-row-description)) {
+        line-height: calc(0.25rem * 4);
+    }
+
+    /* The favourite only shows on the row the user is pointing at; favourite rows keep their own
+       button visible, and so do tagged ones, so their options are at hand. Mirrors
+       `ToolMenuListItem`. */
+    :global(.dropdown-checkbox-item.assistant-menu-item:hover .menu-pin-button),
+    :global(.dropdown-checkbox-item.assistant-menu-item:is(:focus-visible, :has(:focus-visible)) .menu-pin-button),
+    :global(.dropdown-checkbox-item.assistant-menu-item[data-state='checked'] .menu-pin-button) {
+        opacity: 1;
+    }
+
+    /* In the dropdown the info chevron stays out of sight until the row is pointed at or
+       focused, as in `ModelMenuListItem` — tagged rows keep it shown; the mobile sheet has no
+       hover, so it stays there. */
+    :global(.dropdown-content--dropdown .dropdown-checkbox-item.assistant-menu-item .assistant-item-info) {
+        opacity: 0;
+    }
+
+    /* Focus only counts when it came from the keyboard: a click leaves focus on the row, which
+       would otherwise keep its controls shown after the pointer has moved on. */
+    :global(.dropdown-content .dropdown-checkbox-item.assistant-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .assistant-item-info) {
+        opacity: 1;
+    }
+
     .assistant-item-info {
         display: flex;
         flex-shrink: 0;
@@ -142,7 +185,11 @@
         background: none;
         pointer-events: all;
         line-height: 0;
-        color: var(--color-text);
+        color: var(--color-text-muted);
         cursor: pointer;
+    }
+
+    .assistant-item-info:hover {
+        color: var(--color-text);
     }
 </style>

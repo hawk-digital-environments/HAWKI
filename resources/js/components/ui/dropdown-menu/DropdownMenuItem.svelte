@@ -25,6 +25,7 @@
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
+    import {useMenuListRow} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
@@ -58,6 +59,11 @@
         ...restProps
     }: Props = $props();
 
+    // Inside a MenuList (every DropdownMenu provides one) the row is highlighted by the
+    // list's sliding "magnetic" hover instead of its own :hover background.
+    const listRow = useMenuListRow();
+    const magnetic = $derived(!!listRow && !disabled && variant !== 'destructive');
+
     const IconLeft = $derived.by(() => {
         if (variant === 'destructive' && !iconLeft) {
             return Delete02Icon;
@@ -72,10 +78,11 @@
 
 <DropdownMenuPrimitive.Item {disabled} {onSelect} {closeOnSelect}>
     {#snippet child({props})}
-        <div {...mergeProps({
+        <div {@attach magnetic ? listRow : null} {...mergeProps({
             class: [
                 `dropdown-item`,
-                variant === 'destructive' && 'variant--destructive'
+                variant === 'destructive' && 'variant--destructive',
+                magnetic && 'magnetic'
             ]
         }, restProps, props)}>
             {#if IconLeft}
@@ -110,12 +117,12 @@
         }
     }
 
-    .dropdown-item[data-highlighted] {
+    .dropdown-item:is([data-highlighted]:not(.magnetic), [data-highlighted]:focus-visible, :hover:not([data-disabled], .magnetic)) {
         background-color: var(--color-hover);
         color: var(--color-text);
     }
 
-    .dropdown-item.variant--destructive[data-highlighted] {
+    .dropdown-item.variant--destructive:is([data-highlighted], :hover:not([data-disabled])) {
         background-color: color-mix(in oklch, var(--color-error) 10%, transparent);
         color: var(--color-error);
     }

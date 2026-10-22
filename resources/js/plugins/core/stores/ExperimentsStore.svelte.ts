@@ -2,7 +2,7 @@ import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 
 /** Union of all known experiment ids. Extend when adding a new experiment. */
-export type ExperimentId = 'modelPickerV2' | 'statsForNerds';
+export type ExperimentId = 'statsForNerds';
 
 export interface ExperimentDefinition {
     id: ExperimentId;
@@ -14,11 +14,6 @@ export interface ExperimentDefinition {
 
 /** Registry of all available experiments, rendered by `ExperimentsSettings`. */
 const EXPERIMENTS: ExperimentDefinition[] = [
-    {
-        id: 'modelPickerV2',
-        titleKey: 'ui.settings.experiments.flags.modelPickerV2.title',
-        descriptionKey: 'ui.settings.experiments.flags.modelPickerV2.description'
-    },
     {
         id: 'statsForNerds',
         titleKey: 'ui.settings.experiments.flags.statsForNerds.title',
@@ -48,9 +43,9 @@ const STORAGE_KEY = 'hawkiExperiments';
  * import {useStore} from '$lib/app/hooks/useStore.svelte.js';
  * const experiments = useStore('experiments');
  * // Read (reactive — tracks inside $derived/templates)
- * const useNewPicker = $derived(experiments.isEnabled('modelPickerV2'));
+ * const showStats = $derived(experiments.isEnabled('statsForNerds'));
  * // Write
- * experiments.setEnabled('modelPickerV2', true);
+ * experiments.setEnabled('statsForNerds', true);
  */
 export class ExperimentsStore implements DataStore {
     public readonly name = 'experiments';

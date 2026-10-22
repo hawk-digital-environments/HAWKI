@@ -91,7 +91,7 @@ from the store's in-flight cache.
                         </div>
                     </div>
                 {:else}
-                    <ChatWelcome />
+                    <ChatWelcome {composer} />
                 {/if}
             </div>
 
@@ -119,13 +119,16 @@ from the store's in-flight cache.
 
     /* Empty chat: the scroll region shrinks to its content so the welcome
        block and the composer sit together in the middle of the panel.
-       The block is nudged above the true centre — the disclaimer adds
-       visual weight at the bottom, so geometric centring reads as low. */
+       The block is nudged above the true centre — the composer and the
+       disclaimer carry most of the visual weight at the bottom while the
+       icon on top is light, so geometric centring reads as low. Scaling
+       the offset with the viewport keeps it optically centred on tall
+       screens too. */
     .chat-body.empty {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding-bottom: var(--space-10);
+        padding-bottom: max(var(--space-10), 14dvh);
         overflow-y: auto;
     }
 
@@ -134,7 +137,7 @@ from the store's in-flight cache.
     .empty :global(.welcome) {
         height: auto;
         min-height: 0;
-        padding-bottom: var(--space-6);
+        padding-bottom: var(--space-10);
     }
 
     .empty :global(.composer-dock) { position: static; padding-bottom: 0; }

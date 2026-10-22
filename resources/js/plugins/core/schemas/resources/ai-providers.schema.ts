@@ -13,6 +13,8 @@ const AiProvidersSchema = z.object({
     /** The provider's stable identifier, distinct from any single model's `model_id`. */
     provider_id: z.string(),
     name: z.string(),
+    icon_url: z.string().nullish(),
+    icon_url_dark: z.string().nullish(),
     created_at: z.string(),
     updated_at: z.string()
 });

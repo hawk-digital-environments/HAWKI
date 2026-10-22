@@ -6,7 +6,7 @@
   and its name, a toggle (mirrors the checkbox in `ToolMenuListItem`, wired to the same
   `entry.onToggle`), a `StatusDotForTool` with its label spelled out, the tool's
   description, and — for multi-option capabilities — the `ToolMenuConfig` variant picker.
-  A `MenuPinButton` sits beside the toggle.
+  A `MenuPinButton` (the favourite toggle) sits beside the toggle.
 
   Owns its own keyboard handling (`onDetailKeydown`): because this panel lives inside a
   bits-ui dropdown menu whose roving-tabindex model doesn't fit a sub-panel, Escape/ArrowLeft

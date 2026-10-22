@@ -15,7 +15,10 @@
   ## Usage
   Rendered once by `ChatComposer.svelte` in the bottom-left control row, next to `FilePicker`
   and `ToolChips`. `open` is bound so the tool-chip overflow badge ("+N") can open the same
-  popover externally:
+  popover externally. Typing `/` in the message opens it in command mode (`command` set): the
+  textarea keeps focus, what is typed after the `/` filters the same tools in place of the
+  search field, and picking one toggles it and closes the menu — see
+  `utils/commandMenu.ts`:
   ```svelte
   let toolPickerOpen = $state(false);
   <ToolMenu bind:open={toolPickerOpen}/>
@@ -68,7 +71,7 @@
 
     /** Entries partitioned into the three sections `ToolMenuList` renders, in display order. */
     export interface ToolMenuGroupedEntries {
-        /** Entries the user pinned, lifted out of their normal section and shown first. */
+        /** Entries the user favourited, lifted out of their normal section and shown first. */
         pinned: ToolMenuEntry[];
         /** Capability entries (e.g. web search, image generation) shown first, ungrouped. */
         capabilities: ToolMenuEntry[];
@@ -77,21 +80,25 @@
         /** Tools backed by an MCP server, one `McpEntryGroup` per server, sorted by server label. */
         mcpTools: McpEntryGroup[];
     }
+
 </script>
 <script lang="ts">
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {createCommandMenu, createCommandKeeper, type MenuCommand} from '$plugins/core/modules/chat/components/composer/utils/commandMenu.js';
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
     import ToolMenuList from '$plugins/core/modules/chat/components/composer/ToolMenuList.svelte';
     import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
-    import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuEmpty from '$lib/components/ui/dropdown-menu/DropdownMenuEmpty.svelte';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import {setToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {chipPop} from '$lib/utils/transitions/chipPop';
     import ZshIcon from '$lib/components/ui/icons/iconset/ZshIcon.svelte';
+    import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
 
     const composerContext = useComposerContext();
     const focusContext = setToolMenuFocusContext();
@@ -103,11 +110,17 @@
     interface Props {
         /** Whether the tool picker is open. Supports bind:open. */
         open?: boolean;
+        /** Set while a typed `/query` drives the menu from the message textarea. */
+        command?: MenuCommand | null;
     }
 
     // Drives both the desktop dropdown and the mobile bottom sheet so the
     // picker can be opened externally (e.g. from the tool-chip overflow badge).
-    let {open = $bindable(false)}: Props = $props();
+    let {open = $bindable(false), command = null}: Props = $props();
+
+    // What the menu shows: the command, kept while the menu closes after it ended.
+    const keepCommand = createCommandKeeper();
+    const shownCommand = $derived(keepCommand(open, command));
 
     // When set, the picker shows the detail view for this tool instead of the list.
     let detailToolName = $state<string | null>(null);
@@ -131,6 +144,10 @@
                         } else {
                             composerContext.tools.disable(tool);
                         }
+                        // A typed command switches one tool, then hands back to the message.
+                        if (shownCommand) {
+                            open = false;
+                        }
                     },
                     onCapabilitySet({selection, settings}) {
                         if (!tool.is_capability || !tool.isAvailableFor(composerContext.model.current)) {
@@ -138,7 +155,7 @@
                         }
                         composerContext.tools.set(tool, selection, settings);
                     },
-                    disabled: tool.status === 'offline',
+                    disabled: toolAvailabilityFor(tool, composerContext.model.current) === 'offline',
                     // To avoid rebuilding the whole array, we only update the active/supported state in the filteredEntries derived store.
                     active: false,
                     available: false
@@ -154,10 +171,10 @@
         });
     });
 
-    // What the list panel shows: the entries matching the search field, by tool name,
-    // description or the label of the MCP server providing it.
+    // What the list panel shows: the entries matching the search field — or the typed
+    // command's query — by tool name, description or the label of the MCP server providing it.
     const searchedEntries = $derived.by(() => {
-        const needle = query.trim().toLowerCase();
+        const needle = (shownCommand ? shownCommand.query : query).trim().toLowerCase();
         if (!needle) {
             return filteredEntries;
         }
@@ -186,7 +203,7 @@
         const functionTools: ToolMenuEntry[] = [];
         const mcpTools: Record<string, ToolMenuEntry[]> = {};
 
-        // Pinned tools are shown once, in their own section — never also in the section
+        // Favourite tools are shown once, in their own section — never also in the section
         // they would otherwise belong to.
         const {pinned, rest} = pinStore.partition('tool', searchedEntries, entry => entry.tool.name);
 
@@ -241,6 +258,19 @@
         ...groupedEntries.functionTools,
         ...groupedEntries.mcpTools.flatMap(group => group.entries)
     ]);
+
+    $effect(() => {
+        if (!open) return;
+        if (filteredEntries.length === 0) {
+            open = false;
+            detailToolName = null;
+            requestAnimationFrame(() => composerContext.focusInput());
+        } else if (detailToolName && !detailEntry) {
+            detailToolName = null;
+            requestAnimationFrame(() => focusContext.focusFirst());
+        }
+    });
+
     function closeToolDetail() {
         const name = detailToolName;
         detailToolName = null;
@@ -265,6 +295,46 @@
         }
     });
 
+    // The highlight starts on the tool switched on most recently (`tools.active` keeps
+    // activation order), so the keyboard begins from the current state — the same way the `@`
+    // menu starts on the tagged assistant. Falls back to earlier ones the query filtered out.
+    function lastActiveRow(content: ParentNode): HTMLElement | null {
+        for (const tool of [...composerContext.tools.active].reverse()) {
+            const row = content.querySelector<HTMLElement>(
+                `[data-tool-name="${CSS.escape(tool.name)}"]:not([data-disabled])`
+            );
+            if (row) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    const commandMenu = createCommandMenu('.tool-menu-content', () => shownCommand, lastActiveRow);
+
+    /** Moves the command highlight; called by `ComposerTextarea` on ArrowUp/ArrowDown. */
+    export function move(delta: number): boolean {
+        return commandMenu.move(delta);
+    }
+
+    /** Toggles the highlighted row; called by `ComposerTextarea` on Enter/Tab. */
+    export function selectActive(): boolean {
+        return commandMenu.selectActive();
+    }
+
+    // In command mode the highlight starts on the last tool switched on, else the first row, and
+    // starts over whenever the typed query changes the rows. A frame later, so the filtered
+    // rows have rendered.
+    // Keyed on the query string, not the command object, so only real filtering resets it.
+    const commandQuery = $derived(shownCommand?.query ?? null);
+    $effect(() => {
+        if (!open || commandQuery === null) {
+            return;
+        }
+        const frame = requestAnimationFrame(() => commandMenu.reset());
+        return () => cancelAnimationFrame(frame);
+    });
+
     // Focus lands on the search field when the menu opens (`MenuSearchField` claims it),
     // so keyboard users start by filtering and arrow down into the rows from there.
 
@@ -276,12 +346,22 @@
 </script>
 
 {#if filteredEntries.length > 0}
-    <div transition:growTransition={{mode: 'horizontal'}}>
+    <div in:chipPop={{blur: 6}} out:chipPop={{direction: 'out', blur: 6}}>
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open
             layout="panel"
-            width="calc(0.25rem * 72)">
+            width="calc(0.25rem * 72)"
+            maxHeight="24rem"
+            magneticHover={false}
+            contentProps={{
+                class: 'tool-menu-content',
+                onOpenAutoFocus: commandMenu.onOpenAutoFocus,
+                onCloseAutoFocus: commandMenu.onCloseAutoFocus,
+                onInteractOutside: commandMenu.onInteractOutside,
+                onmousemove: commandMenu.onMouseMove,
+                ...commandMenu.anchorProps()
+            }}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"
@@ -290,7 +370,7 @@
                     highlight={props['data-state']}
                     {...props}/>
             {/snippet}
-            {#if !detailEntry}
+            {#if !detailEntry && !shownCommand}
                 <MenuSearchField
                     bind:value={query}
                     placeholder={__('chat.composer.toolMenu.searchPlaceholder')}/>
@@ -306,10 +386,18 @@
                 {#if orderedEntries.length === 0}
                     <DropdownMenuEmpty>{__('chat.composer.toolMenu.noResults')}</DropdownMenuEmpty>
                 {:else}
-                    <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+                    <!-- Inside the scrolling viewport, so the sliding hover scrolls with the rows. -->
+                    <MenuList class="dropdown-menu-list" bridgeSections>
+                        <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+                    </MenuList>
                 {/if}
             </DropdownMenuDetailView>
         </DropdownMenu>
     </div>
 {/if}
 
+<style>
+    :global(.tool-menu-item svg) {
+        flex-shrink: 0;
+    }
+</style>

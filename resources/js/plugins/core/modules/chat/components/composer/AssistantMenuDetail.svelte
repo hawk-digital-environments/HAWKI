@@ -3,7 +3,7 @@
   `AssistantMenu`'s `DropdownMenuDetailView` when the user clicks a row's info icon — the
   `@` menu's counterpart to `ToolMenuDetail`.
 
-  Shows the assistant's emoji swatch, display name and `@handle`, a `MenuPinButton` and a
+  Shows the assistant's emoji swatch, display name and `@handle`, a `MenuPinButton` (as a favourite toggle) and a
   toggle (the latter mirrors the checkbox in `AssistantMenuListItem`, wired to the same
   `entry.onToggle`), and the assistant's description in full.
 
@@ -49,15 +49,15 @@
 
     let {entry, onCloseDetail}: Props = $props();
 
-    // Same pin semantics as the list row: a local composer pin or the row's
-    // server-side flag (a favourite), with the toggle routed accordingly.
+    // Same favourite semantics as the list row: a local composer pin or the row's
+    // server-side favourite, with the toggle routed accordingly.
     const pinned = $derived(
-        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned
+        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.favorite
     );
 
     function togglePin() {
-        if (entry.assistant.onTogglePin) {
-            entry.assistant.onTogglePin(!pinned);
+        if (entry.assistant.onToggleFavorite) {
+            entry.assistant.onToggleFavorite(!pinned);
         } else {
             pinStore.toggle('assistant', entry.assistant.id);
         }
