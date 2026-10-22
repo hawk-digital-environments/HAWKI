@@ -10,11 +10,12 @@
 
 ### Bugfix
 
-[//]: # (- List of bugs that have been fixed in this version.)
+- Model enrichment (pricing, context windows, feature flags) stopped updating because LiteLLM discontinued their catalog API. Lookups always fell back to the static files. The catalog is now read from LiteLLM's GitHub file.
 
 ### Internals
 
-[//]: # (- Changes that are mostly relevant to maintainers and contributors, such as refactors, dependency updates, CI changes, etc.)
+- LiteLLM catalog: downloaded once into a shared cache and filtered per provider, kept fresh via ETag revalidation every 5 minutes. During upstream outages cached data is served for up to 24 h, then the static files take over.
+- The `static_llm_data` updater no longer deletes the old files when the catalog is unreachable.
 
 ### Deprecation
 

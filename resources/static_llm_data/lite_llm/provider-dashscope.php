@@ -7,75 +7,150 @@ declare(strict_types=1);
 
 return [
     array (
-  'id' => 'dashscope/qwen-coder',
-  'object' => 'model_catalog.entry',
+  'id' => 'dashscope/deepseek-v4-flash',
   'provider' => 'dashscope',
+  'cache_read_input_token_cost' => 4.0E-8,
+  'input_cost_per_token' => 2.0E-7,
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
   'mode' => 'chat',
+  'output_cost_per_token' => 4.0E-7,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/deepseek-v4-flash-0731',
+  'provider' => 'dashscope',
+  'cache_read_input_token_cost' => 4.0E-8,
+  'input_cost_per_token' => 2.0E-7,
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
+  'mode' => 'chat',
+  'output_cost_per_token' => 4.0E-7,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/deepseek-v4-pro',
+  'provider' => 'dashscope',
+  'cache_read_input_token_cost' => 2.0E-7,
+  'input_cost_per_token' => 2.4E-6,
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 393216,
+  'max_tokens' => 393216,
+  'mode' => 'chat',
+  'output_cost_per_token' => 4.8E-6,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/glm-5.1',
+  'provider' => 'dashscope',
+  'cache_read_input_token_cost' => 2.6E-7,
+  'input_cost_per_token' => 1.4E-6,
+  'max_input_tokens' => 202745,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'mode' => 'chat',
+  'output_cost_per_token' => 4.4E-6,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/glm-5.2',
+  'provider' => 'dashscope',
+  'cache_read_input_token_cost' => 2.8E-7,
+  'input_cost_per_token' => 1.4E-6,
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'mode' => 'chat',
+  'output_cost_per_token' => 4.4E-6,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'dashscope/kimi-k2.7-code',
+  'provider' => 'dashscope',
+  'cache_read_input_token_cost' => 1.9E-7,
+  'input_cost_per_token' => 9.5E-7,
+  'max_input_tokens' => 229376,
+  'max_output_tokens' => 16384,
+  'max_tokens' => 16384,
+  'mode' => 'chat',
+  'output_cost_per_token' => 4.0E-6,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+  'supports_vision' => true,
+),
+    array (
+  'id' => 'dashscope/qwen-coder',
+  'provider' => 'dashscope',
+  'input_cost_per_token' => 3.0E-7,
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
-  'input_cost_per_token' => 3.0E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 1.5E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-flash',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 5.0E-8,
       'output_cost_per_token' => 4.0E-7,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.5E-7,
       'output_cost_per_token' => 2.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -85,47 +160,32 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen-flash-2025-07-28',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 5.0E-8,
       'output_cost_per_token' => 4.0E-7,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.5E-7,
       'output_cost_per_token' => 2.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -135,184 +195,106 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen-max',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 1.6E-6,
   'max_input_tokens' => 30720,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
-  'input_cost_per_token' => 1.6E-6,
+  'mode' => 'chat',
   'output_cost_per_token' => 6.4E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-plus',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
-  'input_cost_per_token' => 4.0E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 1.2E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-plus-2025-01-25',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 129024,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
-  'input_cost_per_token' => 4.0E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 1.2E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-plus-2025-04-28',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
-  'input_cost_per_token' => 4.0E-7,
-  'output_cost_per_token' => 1.2E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
+  'mode' => 'chat',
   'output_cost_per_reasoning_token' => 4.0E-6,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'output_cost_per_token' => 1.2E-6,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-plus-2025-07-14',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
-  'input_cost_per_token' => 4.0E-7,
-  'output_cost_per_token' => 1.2E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
+  'mode' => 'chat',
   'output_cost_per_reasoning_token' => 4.0E-6,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'output_cost_per_token' => 1.2E-6,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-plus-2025-07-28',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -322,49 +304,34 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen-plus-2025-09-11',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -374,49 +341,34 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen-plus-latest',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -426,206 +378,127 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen-turbo',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 5.0E-8,
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
-  'input_cost_per_token' => 5.0E-8,
-  'output_cost_per_token' => 2.0E-7,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
+  'mode' => 'chat',
   'output_cost_per_reasoning_token' => 5.0E-7,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'output_cost_per_token' => 2.0E-7,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-turbo-2024-11-01',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 5.0E-8,
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
-  'input_cost_per_token' => 5.0E-8,
+  'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-turbo-2025-04-28',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 5.0E-8,
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
-  'input_cost_per_token' => 5.0E-8,
-  'output_cost_per_token' => 2.0E-7,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
+  'mode' => 'chat',
   'output_cost_per_reasoning_token' => 5.0E-7,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'output_cost_per_token' => 2.0E-7,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-turbo-latest',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 5.0E-8,
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
-  'input_cost_per_token' => 5.0E-8,
-  'output_cost_per_token' => 2.0E-7,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
+  'mode' => 'chat',
   'output_cost_per_reasoning_token' => 5.0E-7,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'output_cost_per_token' => 2.0E-7,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen3-30b-a3b',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 129024,
   'max_output_tokens' => 16384,
   'max_tokens' => 16384,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen3-coder-flash',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'cache_read_input_token_cost' => 8.0E-8,
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 1.5E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'cache_read_input_token_cost' => 1.2E-7,
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 2.5E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'cache_read_input_token_cost' => 2.0E-7,
       'input_cost_per_token' => 8.0E-7,
       'output_cost_per_token' => 4.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 =>
+    3 => 
     array (
       'cache_read_input_token_cost' => 4.0E-7,
       'input_cost_per_token' => 1.6E-6,
       'output_cost_per_token' => 9.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -635,67 +508,52 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3-coder-flash-2025-07-28',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 1.5E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 2.5E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 8.0E-7,
       'output_cost_per_token' => 4.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 =>
+    3 => 
     array (
       'input_cost_per_token' => 1.6E-6,
       'output_cost_per_token' => 9.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -705,71 +563,56 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3-coder-plus',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'cache_read_input_token_cost' => 1.0E-7,
       'input_cost_per_token' => 1.0E-6,
       'output_cost_per_token' => 5.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'cache_read_input_token_cost' => 1.8E-7,
       'input_cost_per_token' => 1.8E-6,
       'output_cost_per_token' => 9.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'cache_read_input_token_cost' => 3.0E-7,
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 =>
+    3 => 
     array (
       'cache_read_input_token_cost' => 6.0E-7,
       'input_cost_per_token' => 6.0E-6,
       'output_cost_per_token' => 6.0E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -779,67 +622,52 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3-coder-plus-2025-07-22',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 997952,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 1.0E-6,
       'output_cost_per_token' => 5.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 1.8E-6,
       'output_cost_per_token' => 9.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 =>
+    3 => 
     array (
       'input_cost_per_token' => 6.0E-6,
       'output_cost_per_token' => 6.0E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -849,57 +677,42 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3-max-preview',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 258048,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -909,57 +722,42 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3-max',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 258048,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -969,57 +767,42 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3-max-2026-01-23',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 258048,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -1029,219 +812,128 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3-next-80b-a3b-instruct',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => 1.5E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 1.2E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/model-pricing',
+  'supports_function_calling' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen3-next-80b-a3b-thinking',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => 1.5E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 1.2E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/model-pricing',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen3-vl-235b-a22b-instruct',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => 4.0E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 1.6E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => true,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/model-pricing',
+  'supports_function_calling' => true,
   'supports_tool_choice' => true,
+  'supports_vision' => true,
 ),
     array (
   'id' => 'dashscope/qwen3-vl-235b-a22b-thinking',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => 4.0E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 4.0E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => true,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/model-pricing',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
+  'supports_vision' => true,
 ),
     array (
   'id' => 'dashscope/qwen3-vl-32b-instruct',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 1.6E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => 1.6E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 6.4E-7,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => true,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/model-pricing',
+  'supports_function_calling' => true,
   'supports_tool_choice' => true,
+  'supports_vision' => true,
 ),
     array (
   'id' => 'dashscope/qwen3-vl-32b-thinking',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'input_cost_per_token' => 1.6E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => 1.6E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 2.87E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => true,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/model-pricing',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
+  'supports_vision' => true,
 ),
     array (
   'id' => 'dashscope/qwen3-vl-plus',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 260096,
   'max_output_tokens' => 32768,
   'max_tokens' => 32768,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => true,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'supports_vision' => true,
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 2.0E-7,
       'output_cost_per_token' => 1.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 2.4E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 =>
+    2 => 
     array (
       'input_cost_per_token' => 6.0E-7,
       'output_cost_per_token' => 4.8E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 128000.0,
         1 => 256000.0,
@@ -1251,47 +943,33 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3.5-plus',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 991808,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => true,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
+  'mode' => 'chat',
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'supports_vision' => true,
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_token' => 2.4E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 3.0E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -1301,76 +979,56 @@ return [
 ),
     array (
   'id' => 'dashscope/qwen3.7-max',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
+  'cache_creation_input_token_cost' => 3.125E-6,
+  'cache_read_input_token_cost' => 5.0E-7,
+  'explicit_cache_read_input_token_cost' => 2.5E-7,
+  'input_cost_per_token' => 2.5E-6,
   'max_input_tokens' => 991808,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => 2.5E-6,
+  'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
-  'cache_read_input_token_cost' => 5.0E-7,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
-  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen3.7-plus',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
-  'mode' => 'chat',
   'max_input_tokens' => 991808,
   'max_output_tokens' => 65536,
   'max_tokens' => 65536,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
+  'mode' => 'chat',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => true,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
   'supports_prompt_caching' => true,
   'supports_reasoning' => true,
   'supports_response_schema' => true,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
-  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' =>
+  'supports_vision' => true,
+  'tiered_pricing' => 
   array (
-    0 =>
+    0 => 
     array (
       'cache_read_input_token_cost' => 8.0E-8,
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_token' => 1.6E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 =>
+    1 => 
     array (
       'cache_read_input_token_cost' => 2.4E-7,
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 4.8E-6,
-      'range' =>
+      'range' => 
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -1379,90 +1037,458 @@ return [
   ),
 ),
     array (
-  'id' => 'dashscope/qwq-plus',
-  'object' => 'model_catalog.entry',
+  'id' => 'dashscope/qwen3.8-max',
   'provider' => 'dashscope',
+  'cache_read_input_token_cost' => 2.5E-7,
+  'input_cost_per_token' => 2.0E-6,
+  'max_input_tokens' => 991808,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
   'mode' => 'chat',
+  'output_cost_per_token' => 6.0E-6,
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+  'supports_vision' => true,
+),
+    array (
+  'id' => 'dashscope/qwen3.8-flash',
+  'provider' => 'dashscope',
+  'cache_creation_input_token_cost' => 2.0E-7,
+  'cache_read_input_token_cost' => 1.6E-8,
+  'input_cost_per_token' => 1.5E-7,
+  'max_input_tokens' => 991808,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'mode' => 'chat',
+  'output_cost_per_token' => 4.7E-7,
+  'source' => 'https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing',
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+  'supports_video_input' => true,
+  'supports_vision' => true,
+  'supports_web_search' => true,
+),
+    array (
+  'id' => 'dashscope/qwen3.8-omni-flash',
+  'provider' => 'dashscope',
+  'cache_read_input_token_cost' => 1.6E-8,
+  'input_cost_per_token' => 1.5E-7,
+  'max_input_tokens' => 991808,
+  'max_output_tokens' => 131072,
+  'max_tokens' => 131072,
+  'mode' => 'chat',
+  'output_cost_per_token' => 4.7E-7,
+  'source' => 'https://docs.modelstudio.console.alibabacloud.com/en/model-studio/model-pricing',
+  'supports_audio_input' => true,
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+  'supports_video_input' => true,
+  'supports_vision' => true,
+  'supports_web_search' => true,
+),
+    array (
+  'id' => 'dashscope/qwq-plus',
+  'provider' => 'dashscope',
+  'input_cost_per_token' => 8.0E-7,
   'max_input_tokens' => 98304,
   'max_output_tokens' => 8192,
   'max_tokens' => 8192,
-  'input_cost_per_token' => 8.0E-7,
+  'mode' => 'chat',
   'output_cost_per_token' => 2.4E-6,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_tool_choice' => true,
 ),
     array (
   'id' => 'dashscope/qwen-image-2.0',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
   'mode' => 'image_generation',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
   ),
 ),
     array (
   'id' => 'dashscope/qwen-image-2.0-pro',
-  'object' => 'model_catalog.entry',
   'provider' => 'dashscope',
   'mode' => 'image_generation',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
-  'supported_endpoints' =>
+  'supported_endpoints' => 
   array (
     0 => '/v1/images/generations',
+  ),
+),
+    array (
+  'id' => 'dashscope/qwen-image-3.0',
+  'provider' => 'dashscope',
+  'mode' => 'image_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/images/generations',
+  ),
+),
+    array (
+  'id' => 'dashscope/qwen-image-3.0-pro',
+  'provider' => 'dashscope',
+  'mode' => 'image_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/images/generations',
+  ),
+),
+    array (
+  'id' => 'dashscope/wan3.0-video',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan3-0-video',
+  'output_cost_per_second' => 0.165025,
+  'output_cost_per_second_480p' => 0.041256,
+  'output_cost_per_second_720p' => 0.082513,
+  'output_cost_per_second_1080p' => 0.165025,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+    3 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'first_frame',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'Wan 3.0 all-in-one video generation (text, first/last frame, multimodal reference, edit, extend). Billed duration is usage.duration, which adds input video seconds for the edit and extend modes. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/wan3.0-video-prime',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan3-0-video-prime',
+  'output_cost_per_second' => 0.254399,
+  'output_cost_per_second_480p' => 0.0636,
+  'output_cost_per_second_720p' => 0.127199,
+  'output_cost_per_second_1080p' => 0.254399,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+    3 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'first_frame',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'Wan 3.0 fast tier. Billed duration is usage.duration, which adds input video seconds for the edit and extend modes. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/happyhorse-1.1-t2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-1-t2v',
+  'output_cost_per_second' => 0.165026,
+  'output_cost_per_second_480p' => 0.0618845,
+  'output_cost_per_second_720p' => 0.123769,
+  'output_cost_per_second_1080p' => 0.165026,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'first_frame',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'HappyHorse 1.1 text-to-video. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/happyhorse-1.1-i2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-1-i2v',
+  'output_cost_per_second' => 0.165026,
+  'output_cost_per_second_480p' => 0.0618845,
+  'output_cost_per_second_720p' => 0.123769,
+  'output_cost_per_second_1080p' => 0.165026,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'first_frame',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'HappyHorse 1.1 image-to-video from a first frame. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/happyhorse-1.1-r2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-1-r2v',
+  'output_cost_per_second' => 0.165026,
+  'output_cost_per_second_480p' => 0.0618845,
+  'output_cost_per_second_720p' => 0.123769,
+  'output_cost_per_second_1080p' => 0.165026,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'reference_image',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'HappyHorse 1.1 reference-to-video, 1 to 9 reference images. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/happyhorse-1.0-t2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-0-t2v',
+  'output_cost_per_second' => 0.220034,
+  'output_cost_per_second_720p' => 0.123769,
+  'output_cost_per_second_1080p' => 0.220034,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'first_frame',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'HappyHorse 1.0 text-to-video. No 480P tier. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/happyhorse-1.0-i2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-0-i2v',
+  'output_cost_per_second' => 0.220034,
+  'output_cost_per_second_720p' => 0.123769,
+  'output_cost_per_second_1080p' => 0.220034,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'first_frame',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'HappyHorse 1.0 image-to-video from a first frame. No 480P tier. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/happyhorse-1.0-r2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/happyhorse-1-0-r2v',
+  'output_cost_per_second' => 0.220034,
+  'output_cost_per_second_720p' => 0.123769,
+  'output_cost_per_second_1080p' => 0.220034,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'reference_image',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'HappyHorse 1.0 reference-to-video. No 480P tier. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/wan2.7-t2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan2-7-t2v',
+  'output_cost_per_second' => 0.143353,
+  'output_cost_per_second_720p' => 0.086012,
+  'output_cost_per_second_1080p' => 0.143353,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'first_frame',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'Wan 2.7 text-to-video. No 480P tier. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/wan2.7-i2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan2-7-i2v',
+  'output_cost_per_second' => 0.143353,
+  'output_cost_per_second_720p' => 0.086012,
+  'output_cost_per_second_1080p' => 0.143353,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+    3 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'first_frame',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'Wan 2.7 image-to-video (first frame, first and last frame, continuation). No 480P tier. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
+  ),
+),
+    array (
+  'id' => 'dashscope/wan2.7-r2v',
+  'provider' => 'dashscope',
+  'mode' => 'video_generation',
+  'source' => 'https://www.alibabacloud.com/help/en/model-studio/wan2-7-r2v',
+  'output_cost_per_second' => 0.143353,
+  'output_cost_per_second_720p' => 0.086012,
+  'output_cost_per_second_1080p' => 0.143353,
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+    3 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'video',
+  ),
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/videos',
+  ),
+  'provider_specific_entry' => 
+  array (
+    'dashscope_video_reference_input' => 'reference_image',
+  ),
+  'metadata' => 
+  array (
+    'comment' => 'Wan 2.7 reference-to-video. No 480P tier. China (Beijing) list price per output second, USD, matching this prefix\'s default host. The base rate is the 1080P default tier.',
   ),
 ),
 ];
