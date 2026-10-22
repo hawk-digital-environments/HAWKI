@@ -40,7 +40,14 @@ class CancelPendingRagIngestionOnAssistantAttachmentDeletion
         }
 
         try {
-            Bus::findBatch($batchId)?->cancel();
+            $batch = Bus::findBatch($batchId);
+
+            if (null === $batch || $batch->cancelled()) {
+                return;
+            }
+
+            $batch->cancel();
+            $this->logger->info('Cancelled the queued RAG ingestion batch on attachment deletion', ['rag_batch_id' => $batchId]);
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'Cancelling the queued RAG ingestion failed; the job will still no-op on the deleted attachment',

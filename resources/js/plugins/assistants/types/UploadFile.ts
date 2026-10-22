@@ -38,6 +38,14 @@ export const UploadFileSchema = z.object({
     file: FileHandleSchema.optional(),
     /** Server-assigned id once the upload has been persisted. */
     uuid: z.string().optional(),
+    /**
+     * Stable client-side render key, assigned when the file is queued and
+     * kept for the row's whole life — unlike {@link uuid}, which appears
+     * mid-life and must never change the row's keyed identity (Svelte's
+     * keyed each would unmount/remount the row, doubling it during the
+     * swap). Survives the draft's persistence round-trip.
+     */
+    localKey: z.string().optional(),
     /** Upload progress, 0–100. */
     progress: z.number().optional(),
     /** Current upload lifecycle state, mirrored from HAWKI's status classes. */
@@ -49,8 +57,14 @@ export const UploadFileSchema = z.object({
      * when it never landed. `null` when RAG doesn't apply to this file.
      */
     ragStatus: z.string().nullable().optional(),
-    /** Server-side ingestion failure reason (`assistant_attachments.rag_error`). */
+    /** Server-side ingestion failure reason (`assistant_attachments.rag_error`); technical detail, never rendered. */
     ragError: z.string().nullable().optional(),
+    /**
+     * Translation key for the user-facing failure reason
+     * (`assistant_attachments.rag_user_error`, e.g. `rag.ingestion.file_error`)
+     * when the RAG pipeline failed or skipped the file; `null` otherwise.
+     */
+    ragUserError: z.string().nullable().optional(),
     /** Last user-facing error message for this file (upload failure, etc.). */
     error: z.string().optional(),
     /** Abort controller for cancelling an in-flight upload. */

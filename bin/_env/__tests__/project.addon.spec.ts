@@ -36,9 +36,34 @@ describe("Addons", () => {
             // Assert the exact mapping logic inside your addon.action()
             expect(
                 mockContext.docker.executeCommandInService,
-            ).toHaveBeenCalledWith("app", ["php", "artisan", "test"], {
+            ).toHaveBeenCalledWith("app", ["gosu", "www-data", "php", "artisan", "test"], {
                 interactive: true,
             });
+        });
+
+        it('should forward phpunit flags through a composer "--" separator', async () => {
+            // Simulates: ./env test php feature -- --filter MyTest — commander
+            // strips the "--", the addon must re-insert it so composer's
+            // run-script forwards the flags to phpunit instead of failing.
+            const argv = ["node", "index.ts", "test", "php", "feature", "--", "--filter", "MyTest"];
+
+            await program.parseAsync(argv);
+
+            expect(mockContext.composer.exec).toHaveBeenCalledWith([
+                "run",
+                "test:feature",
+                "--",
+                "--filter",
+                "MyTest",
+            ]);
+        });
+
+        it('should not add a composer separator when no arguments are forwarded', async () => {
+            const argv = ["node", "index.ts", "test", "php", "feature"];
+
+            await program.parseAsync(argv);
+
+            expect(mockContext.composer.exec).toHaveBeenCalledWith(["run", "test:feature"]);
         });
     });
 });

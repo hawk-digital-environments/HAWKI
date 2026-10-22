@@ -34,6 +34,16 @@ export class KnowledgeUploader {
     private readonly modelStore = useStore('ai-models');
     private readonly toolStore = useStore('ai-tools');
 
+    /** Prefixes the queue-time render keys (`localKey`) of freshly picked files. */
+    private readonly keyPrefix: string;
+
+    /** Numbers the queue-time render keys within this uploader instance. */
+    private nextKey = 0;
+
+    constructor(keyPrefix: string) {
+        this.keyPrefix = keyPrefix;
+    }
+
     /** Guards against duplicate in-flight delete requests (rapid trash-icon clicks). */
     private deleting = false;
 
@@ -118,7 +128,7 @@ export class KnowledgeUploader {
         onProgress?: (file: File, progress: number) => void,
     ): Promise<UploadFile[]> {
         const __ = this.translator.__;
-        if (this.disabled || this.uploadProgress !== undefined) return [];
+        if (this.disabled) return []; // uploads may stack — an in-flight batch never blocks new ones
 
         const incoming = Array.from(fileList);
         const accepted = incoming.filter((f) => this.isFileAccepted(f));
@@ -135,6 +145,7 @@ export class KnowledgeUploader {
             file,
             status: 'pending',
             progress: 0,
+            localKey: `${this.keyPrefix}-${this.nextKey++}`,
         }));
         this.builder.set('files', [...(this.builder.draft.files ?? []), ...queued]);
 
