@@ -63,6 +63,17 @@ readonly class AiModelIdentifier implements \Stringable
         return $this->providerId !== null;
     }
 
+    /**
+     * True when the given reference is an integer or a numeric string, i.e. a numeric primary
+     * key candidate rather than a model reference in identifier form.
+     *
+     * @phpstan-assert-if-true int|numeric-string $reference
+     */
+    public static function isNumericReference(string|int $reference): bool
+    {
+        return is_int($reference) || is_numeric($reference);
+    }
+
     public function toString(): string
     {
         return $this->isQualified()

@@ -76,4 +76,24 @@ class AiModelIdentifierTest extends TestCase
     {
         static::assertSame('gwdg/gemma-4-31b-it', $this->makeModel('gemma-4-31b-it', 'gwdg')->getIdentifier());
     }
+
+    // =========================================================================
+    // isNumericReference
+    // =========================================================================
+
+    public static function provideIsNumericReferenceData(): iterable
+    {
+        yield 'integer' => [42, true];
+        yield 'numeric string' => ['42', true];
+        yield 'zero string' => ['0', true];
+        yield 'qualified identifier' => ['gwdg/gemma-4-31b-it', false];
+        yield 'plain model id' => ['gemma-4-31b-it', false];
+        yield 'model id starting with a digit' => ['4o-mini', false];
+    }
+
+    #[DataProvider('provideIsNumericReferenceData')]
+    public function testItDetectsNumericReferences(string|int $reference, bool $expected): void
+    {
+        static::assertSame($expected, AiModelIdentifier::isNumericReference($reference));
+    }
 }

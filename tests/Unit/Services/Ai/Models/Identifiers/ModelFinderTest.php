@@ -188,17 +188,25 @@ class ModelFinderTest extends TestCase
         static::assertSame($model, $this->sut->findAllowingPlainModelId('google/gemma-3'));
     }
 
-    public function testItThrowsForAmbiguousPlainModelIdWhenAllowed(): void
+    public function testItThrowsForAmbiguousPlainModelIdWithCandidatesOrderedByCreation(): void
     {
-        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection([
-            $this->makeModel('gemma-4-31b-it', 'gwdg'),
-            $this->makeModel('gemma-4-31b-it', 'google'),
-        ]));
+        $gwdg = $this->makeModel('gemma-4-31b-it', 'gwdg', 36);
+        $google = $this->makeModel('gemma-4-31b-it', 'google', 18);
 
-        $this->expectException(AmbiguousModelIdException::class);
-        $this->expectExceptionMessage('gwdg/gemma-4-31b-it, google/gemma-4-31b-it');
+        // The creation order must not matter, the candidates are always ordered by creation
+        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection([$gwdg, $google]));
 
-        $this->sut->findAllowingPlainModelId('gemma-4-31b-it');
+        try {
+            $this->sut->findAllowingPlainModelId('gemma-4-31b-it');
+            static::fail(AmbiguousModelIdException::class . ' was not thrown');
+        } catch (AmbiguousModelIdException $e) {
+            static::assertSame(['google/gemma-4-31b-it', 'gwdg/gemma-4-31b-it'], $e->getCandidates());
+            static::assertSame('google/gemma-4-31b-it', $e->getFirstCandidate());
+            static::assertSame(
+                'The model ID "gemma-4-31b-it" is offered by multiple providers, use one of: google/gemma-4-31b-it, gwdg/gemma-4-31b-it.',
+                $e->getMessage()
+            );
+        }
     }
 
     // =========================================================================

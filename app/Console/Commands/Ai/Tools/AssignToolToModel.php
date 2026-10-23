@@ -6,6 +6,7 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Ai\AiTool;
 use App\Services\Ai\Models\Identifiers\Values\AiModelIdentifier;
+use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\Tools\Repositories\AiModelToolRepository;
 use Illuminate\Console\Command;
 
@@ -19,6 +20,11 @@ class AssignToolToModel extends Command
                             {--list      : Show current model-tool assignments}';
 
     protected $description = 'Manage which AI models are allowed to use which tools';
+
+    public function __construct(private readonly AiModelRepository $modelRepository)
+    {
+        parent::__construct();
+    }
 
     public function handle(AiModelToolRepository $assignments): int
     {
@@ -142,9 +148,7 @@ class AssignToolToModel extends Command
             // Non-interactive: find by `<provider_id>/<model_id>`, a plain model_id matches all providers offering it
             $identifier = AiModelIdentifier::fromString($modelSearch);
             $found = $identifier->isQualified()
-                ? AiModel::where('model_id', $identifier->modelId)
-                    ->whereHas('provider', fn($query) => $query->where('provider_id', $identifier->providerId))
-                    ->get()
+                ? $this->modelRepository->whereIdentifier(AiModel::query(), $identifier)->get()
                 : collect();
             if ($found->isEmpty()) {
                 $found = AiModel::where('model_id', $modelSearch)->get();

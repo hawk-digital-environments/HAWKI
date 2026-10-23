@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\SystemModels;
 
 use App\Models\Ai\SystemModel;
+use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\System\Container\ServiceLocatorTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use LaravelJsonApi\Eloquent\Fields\ID;
@@ -15,6 +17,7 @@ use LaravelJsonApi\Eloquent\Schema;
 
 class SystemModelSchema extends Schema
 {
+    use ServiceLocatorTrait;
     /**
      * The model the schema corresponds to.
      *
@@ -56,7 +59,7 @@ class SystemModelSchema extends Schema
         return [
             Where::make('usage_type'),
             Where::make('model_type'),
-            new SystemModelModelIdFilter(),
+            new SystemModelModelIdFilter($this->getService(AiModelRepository::class)),
         ];
     }
 

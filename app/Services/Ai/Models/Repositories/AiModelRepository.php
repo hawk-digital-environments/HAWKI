@@ -44,19 +44,35 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
      */
     public function findOne(mixed $id, ?ScopeOverrides $scopeOverrides = null): AiModel|null
     {
-        if (is_string($id) && !is_numeric($id)) {
-            $identifier = AiModelIdentifier::fromString($id);
-            if (!$identifier->isQualified()) {
-                return null;
-            }
-
-            return $this->getQuery($scopeOverrides)
-                ->where('model_id', $identifier->modelId)
-                ->whereHas('provider', fn(Builder $query) => $query->where('provider_id', $identifier->providerId))
+        if (is_string($id) && !AiModelIdentifier::isNumericReference($id)) {
+            return $this->whereIdentifier($this->getQuery($scopeOverrides), AiModelIdentifier::fromString($id))
                 ->first();
         }
 
         return $this->getQuery($scopeOverrides)->find($id);
+    }
+
+    /**
+     * Applies a provider-qualified identifier as a where-condition to the given query: the model
+     * with the identifier's `model_id` within the provider carrying the identifier's prefix.
+     *
+     * This is the single authoritative translation of an {@see AiModelIdentifier} into query
+     * conditions, used wherever a qualified identifier has to address database records
+     * (repository lookups, the system-models JSON:API filter, console commands).
+     * An unqualified identifier matches nothing.
+     *
+     * @param Builder<AiModel> $query
+     * @return Builder<AiModel>
+     */
+    public function whereIdentifier(Builder $query, AiModelIdentifier $identifier): Builder
+    {
+        if (!$identifier->isQualified()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query
+            ->where('model_id', $identifier->modelId)
+            ->whereHas('provider', fn(Builder $query) => $query->where('provider_id', $identifier->providerId));
     }
 
     /**
@@ -158,7 +174,7 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
         foreach ($modelIds as $modelId) {
             if ($modelId instanceof AiModel) {
                 $idFilter[] = $modelId->id;
-            } else if (is_numeric((string)$modelId)) {
+            } else if (AiModelIdentifier::isNumericReference($modelId)) {
                 $idFilter[] = (int)$modelId;
             } else {
                 $modelIdFilter[] = (string)$modelId;

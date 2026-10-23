@@ -45,7 +45,7 @@ readonly class ModelFinder
      */
     public function find(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel|null
     {
-        if (is_int($reference) || is_numeric($reference)) {
+        if (AiModelIdentifier::isNumericReference($reference)) {
             return $this->modelRepository->findOne((int)$reference, $scopeOverrides);
         }
 
@@ -89,17 +89,7 @@ readonly class ModelFinder
      */
     public function findAllowingPlainModelId(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel|null
     {
-        $model = $this->find($reference, $scopeOverrides);
-        if ($model || is_int($reference) || is_numeric($reference)) {
-            return $model;
-        }
-
-        $models = $this->findAllByPlainModelId($reference, $scopeOverrides);
-        if ($models->count() > 1) {
-            throw AmbiguousModelIdException::forModelId($reference, $models->map->getIdentifier()->all());
-        }
-
-        return $models->first();
+        return $this->findAllowingPlain($reference, $scopeOverrides, throwOnAmbiguity: true);
     }
 
     /**
@@ -110,14 +100,28 @@ readonly class ModelFinder
      */
     public function findAllowingPlainModelIdUsingFirstMatch(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel|null
     {
+        return $this->findAllowingPlain($reference, $scopeOverrides, throwOnAmbiguity: false);
+    }
+
+    /**
+     * Shared core of the plain-model-id lookups: a plain `model_id` resolves when exactly one model
+     * offers it, otherwise either {@see AmbiguousModelIdException} is thrown or the model that was
+     * created first is used, depending on $throwOnAmbiguity.
+     */
+    private function findAllowingPlain(string|int $reference, ?ScopeOverrides $scopeOverrides, bool $throwOnAmbiguity): AiModel|null
+    {
         $model = $this->find($reference, $scopeOverrides);
-        if ($model || is_int($reference) || is_numeric($reference)) {
+        if ($model || AiModelIdentifier::isNumericReference($reference)) {
             return $model;
         }
 
-        return $this->findAllByPlainModelId($reference, $scopeOverrides)
-            ->sortBy('id')
-            ->first();
+        // Sorted by creation, so the first candidate is also the deterministic winner of an ambiguous match
+        $models = $this->findAllByPlainModelId($reference, $scopeOverrides)->sortBy('id')->values();
+        if ($throwOnAmbiguity && $models->count() > 1) {
+            throw AmbiguousModelIdException::forModelId($reference, $models->map->getIdentifier()->all());
+        }
+
+        return $models->first();
     }
 
     /**

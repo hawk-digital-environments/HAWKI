@@ -107,17 +107,16 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         try {
             // The config is an external surface, so plain model ids keep working
             $model = $this->modelFinder->findAllowingPlainModelId($modelId, $scopeOverrides);
-        } catch (AmbiguousModelIdException) {
+        } catch (AmbiguousModelIdException $e) {
             // Keep existing configurations working: deterministically use the model that was created first
-            $candidates = $this->modelRepository->findAllByModelId($modelId, $scopeOverrides)->sortBy('id')->values();
-            $model = $candidates->first();
+            $model = $this->modelFinder->find($e->getFirstCandidate(), $scopeOverrides);
             $metrics->warning(sprintf(
                 "The model ID '%s' for type '%s' is offered by multiple providers (%s), '%s' is used. Please use the provider-qualified ID instead, e.g. '%s'.",
                 $modelId,
                 $key,
-                $candidates->map->getIdentifier()->implode(', '),
-                $model->getIdentifier(),
-                $model->getIdentifier()
+                implode(', ', $e->getCandidates()),
+                $e->getFirstCandidate(),
+                $e->getFirstCandidate()
             ));
         }
         if (!$model) {

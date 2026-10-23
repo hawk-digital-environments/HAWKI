@@ -108,6 +108,10 @@ class SystemModelSyncerTest extends TestCase
         $this->modelRepository->method('findAllByModelId')
             ->willReturn(new AiModelCollection([$googleModel, $gwdgModel]));
 
+        // The syncer resolves the ambiguity through the finder, which re-queries the first candidate
+        $this->providerRepository->method('findOneByProviderId')->willReturn($gwdgModel->provider);
+        $this->modelRepository->method('findOneByProvider')->willReturn($gwdgModel);
+
         $this->systemModelRepository->expects(static::once())->method('upsert')
             ->with(WellKnownSystemModelTypes::TITLE_GENERATION, WellKnownUsageTypes::MAIN_APP, $gwdgModel);
 
