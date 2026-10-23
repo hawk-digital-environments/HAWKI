@@ -11,9 +11,10 @@ This document describes the environment variables available for fine-grained con
 5. [Model Activation Variables](#model-activation-variables)
 6. [Tool Capability Variables](#tool-capability-variables)
 7. [Provider-Level Settings](#provider-level-settings)
-8. [Default and System Model Selection](#default-and-system-model-selection)
-9. [Best Practices](#best-practices)
-10. [Examples](#examples)
+8. [Request Timeouts](#request-timeouts)
+9. [Default and System Model Selection](#default-and-system-model-selection)
+10. [Best Practices](#best-practices)
+11. [Examples](#examples)
 
 ---
 
@@ -308,6 +309,39 @@ OPEN_WEB_UI_API_KEY=your-key
 ```
 
 Disabling a provider sets `active=false` for the provider record in the database after the next sync. All its models will also be treated as inactive at runtime.
+
+---
+
+## Request Timeouts
+
+These variables control how long HAWKI waits for an AI model to answer.
+
+```bash
+# Total time in seconds an AI request may take (default: 60)
+AI_REQUEST_TIMEOUT=60
+
+# Time in seconds without received data before a request is aborted (default: 120)
+AI_STALL_TIMEOUT=120
+```
+
+**`AI_REQUEST_TIMEOUT`** — Total time in seconds for an AI request. The default value is 60 seconds. Set the value to 0 for no limit. Use a higher value for models that need more time, for example reasoning models.
+
+**`AI_STALL_TIMEOUT`** — HAWKI aborts a request that receives less than one byte per second for this number of seconds. The default value is 120 seconds. This protects against model connections that hang without an answer. Set the value to 0 to turn this function off.
+
+Both values apply to all providers. Each provider can set its own values in its `adapter` settings. The provider values override the global values:
+
+```php
+// config/model_providers.php
+'providers' => [
+    'gwdg' => [
+        // ...
+        'adapter' => [
+            'request_timeout' => 300,
+            'stall_timeout' => 60,
+        ],
+    ],
+],
+```
 
 ---
 

@@ -59,6 +59,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    |   Request Timeouts
+    |--------------------------------------------------------------------------
+    |
+    |   request_timeout: Total time in seconds an AI request may take. The Laravel AI
+    |                     package defaults to 60 when this key is absent. Set 0 to
+    |                     remove the limit.
+    |   stall_timeout:   Abort an AI request that receives less than one byte per
+    |                     second for this many seconds. This protects against model
+    |                     connections that hang silently. Set 0 to disable.
+    |
+    |   Both values apply to all providers. Each provider can set its own values in
+    |   its adapter settings, they override the ones given here.
+    |
+    */
+    'request_timeout' => env('AI_REQUEST_TIMEOUT', 60),
+    'stall_timeout' => env('AI_STALL_TIMEOUT', 120),
+
+    /*
+    |--------------------------------------------------------------------------
     |   Model Providers
     |--------------------------------------------------------------------------
     |
