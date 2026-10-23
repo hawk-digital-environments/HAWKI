@@ -32,9 +32,11 @@ use Laravel\Ai\Providers\Provider as Driver;
  * }
  * ```
  *
- * When neither {@see $baseUrl} nor `api_url` is set, the driver is built with a null URL
- * and may fail at request time — subclasses that require an endpoint should override
- * {@see createDriver()} and call {@see assertNonEmptyApiUrl()} explicitly.
+ * When neither {@see $baseUrl} nor `api_url` is set, the driver is built with a null URL and the
+ * first request fails loudly with an InvalidArgumentException from the openai-compatible driver —
+ * unlike the OpenAI driver, which would silently fall back to `https://api.openai.com/v1` and
+ * send the provider's credentials to the real OpenAI API. Subclasses that require an endpoint
+ * should override {@see createDriver()} and call {@see assertNonEmptyApiUrl()} explicitly.
  */
 class OpenAiLikeAdapter extends AbstractProviderAdapter
 {
@@ -50,7 +52,12 @@ class OpenAiLikeAdapter extends AbstractProviderAdapter
     protected string|null $baseUrl = null;
 
     /**
-     * Creates an OpenAI driver pointed at the resolved base URL.
+     * Creates an OpenAI-compatible driver pointed at the resolved base URL.
+     *
+     * Uses the `openai-compatible` driver instead of the `openai` one so that the gateway reads
+     * the base URL from the configuration instead of silently falling back to the real OpenAI
+     * API, and so that the driver receives the stall-aware gateway registered in
+     * {@see \App\Providers\AiServiceProvider}.
      *
      * Prefers {@see $baseUrl} over the database `api_url` so that subclasses with a
      * fixed endpoint do not require the operator to configure a URL.
@@ -59,7 +66,7 @@ class OpenAiLikeAdapter extends AbstractProviderAdapter
     {
         $baseUri = $this->baseUrl ?? $provider->api_url;
         return $factory->make(
-            driverName: Lab::OpenAI,
+            driverName: Lab::OpenAICompatible,
             config: [
                 'key' => $provider->api_key,
                 'url' => $baseUri

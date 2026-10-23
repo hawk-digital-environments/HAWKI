@@ -67,6 +67,16 @@ return [
     |   To include other providers in this list please refer to the
     |   documentation of HAWKI
     |
+    |   Each provider can set an `adapter` array with driver settings, e.g.
+    |   per-provider timeouts:
+    |     'adapter' => [
+    |         'request_timeout' => 300,  // total limit for the complete answer of non-streaming requests; 0 = no limit, default 60
+    |         'stall_timeout'  => 120,   // abort a stream after this many seconds without received data; 0 = off (default)
+    |     ],
+    |
+    |   stall_timeout is supported by the openai-compatible and ollama drivers;
+    |   request_timeout applies to all drivers.
+    |
     */
     'providers' => [
         'openAi' => [
@@ -81,6 +91,10 @@ return [
             'api_key' => env('GWDG_API_KEY'),
             'api_url' => env('GWDG_API_URL'),
             'ping_url' => env('GWDG_PING_URL'),
+            'adapter' => [
+                'request_timeout' => env('GWDG_REQUEST_TIMEOUT', 0),
+                'stall_timeout' => env('GWDG_STALL_TIMEOUT', 120),
+            ],
             'models' => require __DIR__ . env('GWDG_MODEL_LIST_DIR', '/model_lists/gwdg_models.php'),
         ],
         'google' => [
