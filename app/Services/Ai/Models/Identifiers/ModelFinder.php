@@ -121,21 +121,6 @@ readonly class ModelFinder
     }
 
     /**
-     * Like {@see findAllowingPlainModelId()} but throws {@see ModelIdNotAvailableException} when no model matches.
-     *
-     * @throws AmbiguousModelIdException
-     * @throws ModelIdNotAvailableException
-     */
-    public function findAllowingPlainModelIdOrFail(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel
-    {
-        $model = $this->findAllowingPlainModelId($reference, $scopeOverrides);
-        if (!$model) {
-            throw ModelIdNotAvailableException::forModelId($reference);
-        }
-        return $model;
-    }
-
-    /**
      * Returns all models offering the given plain `model_id`. Model ids may contain the separator
      * themselves, so a qualified-looking reference is tried as a plain id as well.
      */

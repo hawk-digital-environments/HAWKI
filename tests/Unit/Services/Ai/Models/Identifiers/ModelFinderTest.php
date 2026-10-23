@@ -243,15 +243,6 @@ class ModelFinderTest extends TestCase
         static::assertNull($this->sut->findAllowingPlainModelIdUsingFirstMatch('unknown'));
     }
 
-    public function testItFindAllowingPlainModelIdOrFailThrowsForUnknownPlainModelId(): void
-    {
-        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection());
-
-        $this->expectException(ModelIdNotAvailableException::class);
-
-        $this->sut->findAllowingPlainModelIdOrFail('unknown');
-    }
-
     // =========================================================================
     // Numeric ids
     // =========================================================================
