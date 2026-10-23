@@ -19,7 +19,7 @@
 - `ai_models.model_id` is now unique per provider instead of globally; `system_models` references models via the new `ai_model_id` column, `system_models.model_id` was removed.
 - Inside HAWKI a model is only referenced by its provider-qualified identifier `<provider_id>/<model_id>` (or its numeric id). This includes the JSON:API `model_id` of `ai-models` and `system-models`, the `system-models` `model_id` filter, chat requests on `/req/streamAI`, and the `model` stored with messages and usage records.
 - A migration converts the stored model references (`ai_conv_msgs.model`, `messages.model`, `usage_records.model`) to the qualified identifier. References to models that no longer exist are left unchanged.
-- The external app API (`/api/ai-req`) still accepts a plain `model_id` as long as only one provider offers it; otherwise it answers with `400` and lists the qualified identifiers to use.
+- The external app API (`/api/ai-req`) still accepts a plain `model_id`; when several providers offer it, the model that was created first is used (as before). A model that does not exist is rejected with `400`.
 - New `ModelFinder` (`App\Services\Ai\Models\Identifiers\ModelFinder`) resolves model references, `AiModelIdentifier` builds and parses the qualified form.
 - Provider keys in `model_providers.php` must not contain `/`, the config sync reports an error for them.
 - The model lists (`config/model_lists/*.php`) keep their format; the config sync combines the provider key with the model ID.

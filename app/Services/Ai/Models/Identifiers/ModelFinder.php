@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ai\Models\Identifiers;
 
 
+use App\Collections\AiModelCollection;
 use App\Models\Ai\AiModel;
 use App\Services\Ai\Exceptions\AmbiguousModelIdException;
 use App\Services\Ai\Exceptions\ModelIdNotAvailableException;
@@ -93,13 +94,30 @@ readonly class ModelFinder
             return $model;
         }
 
-        // Model ids may contain the separator themselves, so a qualified-looking reference is tried as plain id as well
-        $models = $this->modelRepository->findAllByModelId($reference, $scopeOverrides);
+        $models = $this->findAllByPlainModelId($reference, $scopeOverrides);
         if ($models->count() > 1) {
             throw AmbiguousModelIdException::forModelId($reference, $models->map->getIdentifier()->all());
         }
 
         return $models->first();
+    }
+
+    /**
+     * Like {@see findAllowingPlainModelId()}, but an ambiguous plain `model_id` resolves to the model
+     * that was created first (the lowest primary key) instead of throwing. This keeps requests of
+     * external clients working like before model ids became unique per provider, when a plain id
+     * always matched exactly the one model offering it.
+     */
+    public function findAllowingPlainModelIdUsingFirstMatch(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel|null
+    {
+        $model = $this->find($reference, $scopeOverrides);
+        if ($model || is_int($reference) || is_numeric($reference)) {
+            return $model;
+        }
+
+        return $this->findAllByPlainModelId($reference, $scopeOverrides)
+            ->sortBy('id')
+            ->first();
     }
 
     /**
@@ -115,5 +133,14 @@ readonly class ModelFinder
             throw ModelIdNotAvailableException::forModelId($reference);
         }
         return $model;
+    }
+
+    /**
+     * Returns all models offering the given plain `model_id`. Model ids may contain the separator
+     * themselves, so a qualified-looking reference is tried as a plain id as well.
+     */
+    private function findAllByPlainModelId(string $reference, ?ScopeOverrides $scopeOverrides): AiModelCollection
+    {
+        return $this->modelRepository->findAllByModelId($reference, $scopeOverrides);
     }
 }

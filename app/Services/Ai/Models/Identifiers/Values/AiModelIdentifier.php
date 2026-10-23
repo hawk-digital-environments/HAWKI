@@ -21,7 +21,7 @@ use App\Models\Ai\AiModel;
  *
  * @api
  */
-final readonly class AiModelIdentifier implements \Stringable
+readonly class AiModelIdentifier implements \Stringable
 {
     public const string SEPARATOR = '/';
 
