@@ -19,6 +19,9 @@
 - The `laravel/ai` version constraint is now `^0.10.1` (was `>=0.10.1`), so dependency updates stay within semver-compatible releases instead of silently allowing a major jump. Lock file refreshed to `laravel/ai` v0.10.3.
 - LiteLLM catalog: downloaded once into a shared cache and filtered per provider, kept fresh via ETag revalidation every 5 minutes. During upstream outages cached data is served for up to 24 h, then the static files take over.
 - The `static_llm_data` updater no longer deletes the old files when the catalog is unreachable.
+- AI requests had a fixed timeout of 60 seconds. You can now set the time with `AI_REQUEST_TIMEOUT` (default: 60 seconds, `0` = no limit). HAWKI stops requests that get no data with `AI_STALL_TIMEOUT` (default: 120 seconds, `0` = off). Both settings can also be set per provider in the `adapter` settings.
+- `AbstractLaravelAgent` sets the request timeout through its `timeout()` method. `DriverFactory` injects `model_providers.request_timeout` and `model_providers.stall_timeout` into the driver configuration of every provider. The `adapter` settings of a provider can override both values.
+- The new `StallDetectionMiddleware` adds curl stall detection to the HTTP requests of agents. `AgentRequestScope` limits the middleware to agent requests.
 
 ### Deprecation
 
