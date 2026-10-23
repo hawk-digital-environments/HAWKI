@@ -35,7 +35,7 @@ readonly class TokenUsage implements \JsonSerializable
     public function toArray(): array
     {
         return [
-            'model' => $this->model->model_id,
+            'model' => $this->model->getIdentifier(),
             'prompt_tokens' => $this->promptTokens,
             'completion_tokens' => $this->completionTokens
         ];

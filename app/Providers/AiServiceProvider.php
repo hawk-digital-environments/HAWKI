@@ -20,6 +20,7 @@ use App\Services\Ai\ModelInformation\Enrichment\AiModelInfoEnrichmentPipeline;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\LiteLlmDriverNameProviderNameMapping;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlmApiEnricher;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\StaticDocumentationUrlEnricher;
+use App\Services\Ai\ModelInformation\Enrichment\Implementations\StaticGoogleEnricher;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\StaticGwdgEnricher;
 use App\Services\Ai\Models\Capabilities\AiModelCapabilityRegistry;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
@@ -215,6 +216,10 @@ class AiServiceProvider extends ServiceProvider
                 )
                 ->register(
                     $this->app->get(StaticGwdgEnricher::class),
+                    after: [LiteLlmApiEnricher::class]
+                )
+                ->register(
+                    $this->app->get(StaticGoogleEnricher::class),
                     after: [LiteLlmApiEnricher::class]
                 )
                 ->register(

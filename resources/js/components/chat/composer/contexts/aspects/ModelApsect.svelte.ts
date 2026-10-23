@@ -36,7 +36,7 @@ export class ModelAspect implements CheckpointingInterface<ModelAspectCheckpoint
     /**
      * Selects the active model. Accepts:
      * - An `AiModel` object
-     * - A `model_id` string (e.g. `'gpt-4o'`)
+     * - A provider-qualified `model_id` string (e.g. `'openAi/gpt-4o'`)
      * - A numeric string or number matching the model's integer `id` field
      * - `null` to fall back to the "default" system model
      *

@@ -64,7 +64,7 @@ Both functions are used throughout the legacy UI JavaScript (`public/js/`) and i
 | `window.userKeychain` | `KeychainStore` | The keychain store instance. Provides access to the user's encryption keys after passkey entry. |
 | `window.hawkiDependencyLoader` | `function` | The lazy dependency loader. Same as `dependencyLoader()` from `dependencies.js`. |
 | `window.getAiModels()` | `function` | Returns the current `aiModelStore.models` array. |
-| `window.getAiModel(id)` | `function` | Returns the model matching `id`, or `null`. Accepts numeric ID or `model_id` string. |
+| `window.getAiModel(id)` | `function` | Returns the model matching `id`, or `null`. Accepts numeric ID or provider-qualified `model_id` string (`<provider_id>/<model_id>`). |
 | `window.getSystemModel(modelType)` | `function` | Returns the model assigned to a system role (e.g. `'default'`), or `null`. |
 | `window.getSystemPrompt(promptType)` | `function` | Returns the `prompt` string for a well-known system prompt type, or `null`. |
 

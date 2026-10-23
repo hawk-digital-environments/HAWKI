@@ -229,8 +229,11 @@ class ModelStatusUpdaterTest extends TestCase
         $this->providerProxyResolver->method('resolve')
             ->willReturn($this->makeProxy($provider, $adapter));
 
-        $this->modelRepository->expects(static::once())->method('setAiModelStatusTo');
-        $this->modelRepository->expects(static::once())->method('setAiModelDemandTo');
+        // The provider must be passed, otherwise models with the same model_id of other providers are updated too
+        $this->modelRepository->expects(static::once())->method('setAiModelStatusTo')
+            ->with(static::anything(), $provider);
+        $this->modelRepository->expects(static::once())->method('setAiModelDemandTo')
+            ->with(static::anything(), $provider);
 
         $this->sut->run();
     }
