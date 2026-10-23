@@ -163,6 +163,8 @@ Defines global defaults, system models, and a list of providers:
     'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-5-nano'),
     'summarizer'      => env('SUMMARIZER_MODEL', 'gpt-5-nano'),
 ],
+// A model can be referenced by its plain model ID (e.g. 'gpt-5-nano') or, if several providers offer the
+// same model ID, by its provider-qualified ID '<provider_id>/<model_id>' (e.g. 'openAi/gpt-5-nano').
 
 'providers' => [
     'openAi' => [
@@ -326,7 +328,7 @@ ai_providers
 
 ai_models
 ├── id (PK)
-├── model_id    (unique string, e.g. "gpt-5.4")
+├── model_id    (string, unique per provider, e.g. "gpt-5.4"; referenced as "<provider_id>/<model_id>", e.g. "openAi/gpt-5.4")
 ├── label
 ├── active      (bool)
 ├── input       (json — ["text","image"])

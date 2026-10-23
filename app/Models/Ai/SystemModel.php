@@ -16,8 +16,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $model_type
  * @property string $usage_type
  * @property int|null $ai_model_id
- * @property string $model_id Plain model id of the linked model.
- *                            {@deprecated Kept for backwards compatibility, use {@see model()} or `ai_model_id`.}
  * @property-read AiModel|null $model
  */
 #[CollectedBy(SystemModelCollection::class)]
@@ -30,7 +28,6 @@ class SystemModel extends Model
         'model_type',
         'usage_type',
         'ai_model_id',
-        'model_id',
     ];
 
     protected static function registerScopes(ScopeRegistrar $registrar): void

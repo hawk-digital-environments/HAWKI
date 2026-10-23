@@ -7,6 +7,7 @@ use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\AiService;
+use App\Services\Ai\Exceptions\AmbiguousModelIdException;
 use App\Services\Ai\Models\Identifiers\ModelFinder;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
@@ -70,6 +71,19 @@ class StreamController extends Controller
                 'message' => 'Validation Error',
                 'errors' => $e->errors()
             ], 422);
+        }
+
+        // External apps may still send a plain model id, everything after this point only knows the qualified one
+        try {
+            $model = $this->modelFinder->findAllowingPlainModelId($validatedData['payload']['model']);
+        } catch (AmbiguousModelIdException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+        if ($model) {
+            $validatedData['payload']['model'] = $model->getIdentifier();
         }
 
         // Handle standard response
@@ -366,6 +380,8 @@ class StreamController extends Controller
     private function handleGroupChatRequest(array $validatedData, AiModel $model): void
     {
         $isUpdate = (bool)($validatedData['isUpdate'] ?? false);
+        // Store the qualified identifier, even if the request referenced the model by its numeric id
+        $validatedData['payload']['model'] = $model->getIdentifier();
 
         // @todo use a repository
         $room = Room::where('slug', $validatedData['slug'])->firstOrFail();

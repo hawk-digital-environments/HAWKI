@@ -105,9 +105,10 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
     {
         $scopeOverrides = $this->modelRepository->makeScopeOverrides();
         try {
-            $model = $this->modelFinder->find($modelId, $scopeOverrides);
+            // The config is an external surface, so plain model ids keep working
+            $model = $this->modelFinder->findAllowingPlainModelId($modelId, $scopeOverrides);
         } catch (AmbiguousModelIdException) {
-            // Keep plain ids working for existing configurations: deterministically use the model that was created first
+            // Keep existing configurations working: deterministically use the model that was created first
             $candidates = $this->modelRepository->findAllByModelId($modelId, $scopeOverrides)->sortBy('id')->values();
             $model = $candidates->first();
             $metrics->warning(sprintf(
@@ -144,7 +145,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
     {
         foreach ($this->systemModelRepository->findAllFiltered(scopeOverrides: $this->systemModelRepository->makeScopeOverrides()) as $systemModel) {
             if (!$systemModel->model) {
-                $metrics->error("System model with ID '{$systemModel->id}' is linked to a non-existing model with ID '{$systemModel->ai_model_id}' (model_id '{$systemModel->model_id}').");
+                $metrics->error("System model with ID '{$systemModel->id}' is linked to a non-existing model with ID '{$systemModel->ai_model_id}'.");
                 continue;
             }
             if (!$systemModel->model->active) {

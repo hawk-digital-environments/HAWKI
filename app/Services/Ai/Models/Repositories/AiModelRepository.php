@@ -7,7 +7,6 @@ namespace App\Services\Ai\Models\Repositories;
 use App\Collections\AiModelCollection;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
-use App\Services\Ai\Exceptions\AmbiguousModelIdException;
 use App\Services\Ai\Exceptions\ModelIdNotAvailableException;
 use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
@@ -36,36 +35,25 @@ use Illuminate\Database\Eloquent\Builder;
 class AiModelRepository extends AbstractRepositoryWithContextualScopes
 {
     /**
-     * Looks up a model by its numeric primary key, its provider-qualified identifier
-     * (`<provider_id>/<model_id>`) or its plain `model_id`.
+     * Looks up a model by its numeric primary key or its provider-qualified identifier
+     * (`<provider_id>/<model_id>`, see {@see AiModelIdentifier}).
      *
-     * A string $id that is numeric is treated as a primary key, not a model_id.
+     * A string $id that is numeric is treated as a primary key. A plain `model_id` never matches,
+     * because the same `model_id` may exist for several providers.
      * Returns null when no match is found.
-     *
-     * @deprecated for string ids since the same `model_id` may exist for several providers;
-     *             use {@see \App\Services\Ai\Models\Identifiers\ModelFinder} or {@see findOneByProvider()}.
-     *             Will only accept numeric ids in the next major release.
-     * @throws AmbiguousModelIdException if a plain `model_id` is offered by more than one provider.
      */
     public function findOne(mixed $id, ?ScopeOverrides $scopeOverrides = null): AiModel|null
     {
         if (is_string($id) && !is_numeric($id)) {
             $identifier = AiModelIdentifier::fromString($id);
-            if ($identifier->isQualified()) {
-                $model = $this->getQuery($scopeOverrides)
-                    ->where('model_id', $identifier->modelId)
-                    ->whereHas('provider', fn(Builder $query) => $query->where('provider_id', $identifier->providerId))
-                    ->first();
-                if ($model) {
-                    return $model;
-                }
+            if (!$identifier->isQualified()) {
+                return null;
             }
 
-            $models = $this->findAllByModelId($id, $scopeOverrides);
-            if ($models->count() > 1) {
-                throw AmbiguousModelIdException::forModelId($id, $models->map->getIdentifier()->all());
-            }
-            return $models->first();
+            return $this->getQuery($scopeOverrides)
+                ->where('model_id', $identifier->modelId)
+                ->whereHas('provider', fn(Builder $query) => $query->where('provider_id', $identifier->providerId))
+                ->first();
         }
 
         return $this->getQuery($scopeOverrides)->find($id);
@@ -73,8 +61,6 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
 
     /**
      * Like {@see findOne()} but throws {@see ModelIdNotAvailableException} when the model does not exist.
-     *
-     * @deprecated for string ids, see {@see findOne()}; use {@see findOneByProviderOrFail()} instead.
      */
     public function findOneOrFail(string|int $modelId, ?ScopeOverrides $scopeOverrides = null): AiModel
     {
@@ -111,8 +97,9 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Returns all models with the given `model_id` across all providers (with their provider loaded).
-     * More than one result means the plain `model_id` is ambiguous.
+     * Returns all models with the given plain `model_id` across all providers (with their provider loaded).
+     * More than one result means the plain `model_id` is ambiguous. Only meant for resolving plain ids
+     * from external surfaces, see {@see \App\Services\Ai\Models\Identifiers\ModelFinder::findAllowingPlainModelId()}.
      */
     public function findAllByModelId(string $modelId, ?ScopeOverrides $scopeOverrides = null): AiModelCollection
     {

@@ -118,48 +118,74 @@ class ModelFinderTest extends TestCase
         (new ModelFinder($providerRepository, $this->modelRepository))->find('gwdg/gemma-4-31b-it', new ScopeOverrides());
     }
 
-    public function testItTreatsUnknownProviderPrefixAsPlainModelId(): void
+    public function testItReturnsNullForUnknownProvider(): void
+    {
+        $this->givenProviders([]);
+        $this->modelRepository->expects(static::never())->method('findOneByProvider');
+        $this->modelRepository->expects(static::never())->method('findAllByModelId');
+
+        static::assertNull($this->sut->find('nope/gemma-4-31b-it'));
+    }
+
+    public function testItSplitsModelIdsContainingTheSeparatorAtTheFirstOne(): void
+    {
+        $openRouter = $this->makeProvider('openRouter');
+        $model = $this->makeModel('google/gemma-3', 'openRouter');
+        $this->givenProviders(['openRouter' => $openRouter]);
+
+        $this->modelRepository->expects(static::once())->method('findOneByProvider')
+            ->with($openRouter, 'google/gemma-3')
+            ->willReturn($model);
+
+        static::assertSame($model, $this->sut->find('openRouter/google/gemma-3'));
+    }
+
+    // =========================================================================
+    // Plain model ids
+    // =========================================================================
+
+    public function testItNeverResolvesPlainModelIds(): void
+    {
+        $this->providerRepository->expects(static::never())->method('findOneByProviderId');
+        $this->modelRepository->expects(static::never())->method('findAllByModelId');
+
+        static::assertNull($this->sut->find('gpt-5-nano'));
+    }
+
+    public function testItFindsUnambiguousPlainModelIdWhenAllowed(): void
+    {
+        $model = $this->makeModel('gpt-5-nano', 'openAi');
+
+        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection([$model]));
+
+        static::assertSame($model, $this->sut->findAllowingPlainModelId('gpt-5-nano'));
+    }
+
+    public function testItPrefersTheQualifiedMatchWhenPlainModelIdsAreAllowed(): void
+    {
+        $model = $this->makeModel('gemma-4-31b-it', 'gwdg');
+        $this->givenProviders(['gwdg' => $this->makeProvider('gwdg')]);
+
+        $this->modelRepository->method('findOneByProvider')->willReturn($model);
+        $this->modelRepository->expects(static::never())->method('findAllByModelId');
+
+        static::assertSame($model, $this->sut->findAllowingPlainModelId('gwdg/gemma-4-31b-it'));
+    }
+
+    public function testItTriesQualifiedLookingReferencesAsPlainModelIdWhenAllowed(): void
     {
         // e.g. an OpenRouter model id like "google/gemma-3" sent without provider prefix
         $model = $this->makeModel('google/gemma-3', 'openRouter');
         $this->givenProviders([]);
 
-        $this->modelRepository->expects(static::never())->method('findOneByProvider');
         $this->modelRepository->expects(static::once())->method('findAllByModelId')
             ->with('google/gemma-3')
             ->willReturn(new AiModelCollection([$model]));
 
-        static::assertSame($model, $this->sut->find('google/gemma-3'));
+        static::assertSame($model, $this->sut->findAllowingPlainModelId('google/gemma-3'));
     }
 
-    public function testItRetriesAsPlainModelIdWhenProviderHasNoSuchModel(): void
-    {
-        $model = $this->makeModel('google/gemma-3', 'openRouter');
-        $this->givenProviders(['google' => $this->makeProvider('google')]);
-
-        $this->modelRepository->method('findOneByProvider')->willReturn(null);
-        $this->modelRepository->expects(static::once())->method('findAllByModelId')
-            ->with('google/gemma-3')
-            ->willReturn(new AiModelCollection([$model]));
-
-        static::assertSame($model, $this->sut->find('google/gemma-3'));
-    }
-
-    // =========================================================================
-    // Plain model ids (backwards compatibility)
-    // =========================================================================
-
-    public function testItFindsUnambiguousPlainModelId(): void
-    {
-        $model = $this->makeModel('gpt-5-nano', 'openAi');
-
-        $this->providerRepository->expects(static::never())->method('findOneByProviderId');
-        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection([$model]));
-
-        static::assertSame($model, $this->sut->find('gpt-5-nano'));
-    }
-
-    public function testItThrowsForAmbiguousPlainModelId(): void
+    public function testItThrowsForAmbiguousPlainModelIdWhenAllowed(): void
     {
         $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection([
             $this->makeModel('gemma-4-31b-it', 'gwdg'),
@@ -169,14 +195,16 @@ class ModelFinderTest extends TestCase
         $this->expectException(AmbiguousModelIdException::class);
         $this->expectExceptionMessage('gwdg/gemma-4-31b-it, google/gemma-4-31b-it');
 
-        $this->sut->find('gemma-4-31b-it');
+        $this->sut->findAllowingPlainModelId('gemma-4-31b-it');
     }
 
-    public function testItReturnsNullForUnknownPlainModelId(): void
+    public function testItFindAllowingPlainModelIdOrFailThrowsForUnknownPlainModelId(): void
     {
         $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection());
 
-        static::assertNull($this->sut->find('unknown'));
+        $this->expectException(ModelIdNotAvailableException::class);
+
+        $this->sut->findAllowingPlainModelIdOrFail('unknown');
     }
 
     // =========================================================================
@@ -187,7 +215,7 @@ class ModelFinderTest extends TestCase
     {
         $model = $this->makeModel('gpt-5-nano', 'openAi');
 
-        $this->modelRepository->expects(static::once())->method('findOne')->with('42')->willReturn($model);
+        $this->modelRepository->expects(static::once())->method('findOne')->with(42)->willReturn($model);
         $this->modelRepository->expects(static::never())->method('findAllByModelId');
 
         static::assertSame($model, $this->sut->find('42'));
@@ -199,8 +227,8 @@ class ModelFinderTest extends TestCase
 
     public function testItFindOrFailThrowsWhenNothingMatches(): void
     {
-        $this->givenProviders([]);
-        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection());
+        $this->givenProviders(['gwdg' => $this->makeProvider('gwdg')]);
+        $this->modelRepository->method('findOneByProvider')->willReturn(null);
 
         $this->expectException(ModelIdNotAvailableException::class);
 

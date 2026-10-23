@@ -5,6 +5,7 @@ namespace App\Console\Commands\Ai\Tools;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Ai\AiTool;
+use App\Services\Ai\Models\Identifiers\Values\AiModelIdentifier;
 use App\Services\Ai\Tools\Repositories\AiModelToolRepository;
 use Illuminate\Console\Command;
 
@@ -12,7 +13,7 @@ class AssignToolToModel extends Command
 {
     protected $signature = 'ai:tools:assign
                             {--tool=     : Tool name (or partial match) to assign}
-                            {--model=    : Model ID to assign the tool to}
+                            {--model=    : Model to assign the tool to (`provider/model_id`, a plain model_id selects it for all providers)}
                             {--provider= : Provider ID to assign the tool to all eligible models}
                             {--detach    : Remove the tool assignment instead of adding it}
                             {--list      : Show current model-tool assignments}';
@@ -138,8 +139,16 @@ class AssignToolToModel extends Command
         $models = [];
 
         if ($modelSearch) {
-            // Non-interactive: find by model_id
-            $found = AiModel::where('model_id', $modelSearch)->get();
+            // Non-interactive: find by `<provider_id>/<model_id>`, a plain model_id matches all providers offering it
+            $identifier = AiModelIdentifier::fromString($modelSearch);
+            $found = $identifier->isQualified()
+                ? AiModel::where('model_id', $identifier->modelId)
+                    ->whereHas('provider', fn($query) => $query->where('provider_id', $identifier->providerId))
+                    ->get()
+                : collect();
+            if ($found->isEmpty()) {
+                $found = AiModel::where('model_id', $modelSearch)->get();
+            }
             if ($found->isEmpty()) {
                 $this->error("Model '{$modelSearch}' not found.");
                 return [$tool, []];
