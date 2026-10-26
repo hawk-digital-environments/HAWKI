@@ -103,6 +103,20 @@ function insertOrUpdateSvelteBody(
     }
 }
 
+/**
+ * Builds the author header of an AI message: "<username> (<provider> <model label>)".
+ * Models that are no longer available (removed or deactivated) are not returned by getAiModel(),
+ * so the stored "<provider_id>/<model_id>" reference is shown instead, marked as obsolete.
+ */
+function buildModelAuthorHtml(username, modelRef) {
+    const model = window.getAiModel(modelRef);
+    if (!model) {
+        return `<span>${username} </span><span class="message-author-model">(${modelRef}) ${__('Obsolete')}</span>`;
+    }
+    const label = model.provider?.name ? `${model.provider.name} ${model.label}` : model.label;
+    return `<span>${username} </span><span class="message-author-model">(${label})</span>`;
+}
+
 function addMessageToChatlog(messageObj, isFromServer = false, isStreaming = null) {
     isStreaming = isStreaming ?? !isFromServer;
     if (typeof messageObj.content === 'string') {
@@ -190,11 +204,7 @@ function addMessageToChatlog(messageObj, isFromServer = false, isStreaming = nul
 
     /// Set Author Name
     if (messageObj.model && messageObj.message_role === 'assistant') {
-        const model = window.getAiModel(messageObj.model);
-        messageElement.querySelector('.message-author').innerHTML =
-            model ?
-                `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>` :
-                `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+        messageElement.querySelector('.message-author').innerHTML = buildModelAuthorHtml(messageObj.author.username, messageObj.model);
 
         messageElement.dataset.model = messageObj.model;
         messageElement.dataset.author = messageObj.author.username;
@@ -343,11 +353,7 @@ function updateMessageElement(messageElement, messageObj, updateContent = false,
 
     if (messageElement.classList.contains('AI')) {
         const username = messageElement.dataset.author;
-        const model = window.getAiModel(messageObj.model);
-        messageElement.querySelector('.message-author').innerHTML =
-            model ?
-                `<span>${username} </span><span class="message-author-model">(${model.label})</span>` :
-                `<span>${username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+        messageElement.querySelector('.message-author').innerHTML = buildModelAuthorHtml(username, messageObj.model);
         messageElement.dataset.model = messageObj.model;
     }
 

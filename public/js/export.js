@@ -634,11 +634,7 @@ function generateMessageElements(messageObj) {
     const messageElement = messageClone.querySelector('.message');
 
     if (messageObj.model && messageObj.message_role === 'assistant') {
-        model = window.getAiModel(messageObj.model);
-        messageElement.querySelector('.message-author').innerHTML =
-            model ?
-                `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>` :
-                `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+        messageElement.querySelector('.message-author').innerHTML = buildModelAuthorHtml(messageObj.author.username, messageObj.model);
     } else {
         messageElement.querySelector('.message-author').innerText = messageObj.author.name;
     }
