@@ -7,6 +7,7 @@ use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\AiService;
+use App\Services\Ai\Exceptions\AmbiguousModelIdException;
 use App\Services\Ai\Models\Identifiers\ModelFinder;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
@@ -73,9 +74,19 @@ class StreamController extends Controller
         }
 
         // External apps may still send a plain model id, everything after this point only knows the
-        // qualified one. An ambiguous plain id resolves to the model that was created first, so
-        // external clients keep working like before model ids became unique per provider.
-        $model = $this->modelFinder->findAllowingPlainModelIdUsingFirstMatch($validatedData['payload']['model']);
+        // qualified one. A plain id offered by several providers is rejected: the client must use
+        // the provider-qualified format (or the numeric id).
+        try {
+            $model = $this->modelFinder->findAllowingPlainModelId($validatedData['payload']['model']);
+        } catch (AmbiguousModelIdException) {
+            return response()->json([
+                'success' => false,
+                'message' => sprintf(
+                    'Duplicate model_id "%s" found. Update the client to use the provider/model format.',
+                    $validatedData['payload']['model']
+                ),
+            ], 400);
+        }
         if (!$model) {
             return response()->json([
                 'success' => false,

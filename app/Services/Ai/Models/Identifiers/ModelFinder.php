@@ -89,35 +89,23 @@ readonly class ModelFinder
      */
     public function findAllowingPlainModelId(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel|null
     {
-        return $this->findAllowingPlain($reference, $scopeOverrides, throwOnAmbiguity: true);
-    }
-
-    /**
-     * Like {@see findAllowingPlainModelId()}, but an ambiguous plain `model_id` resolves to the model
-     * that was created first (the lowest primary key) instead of throwing. This keeps requests of
-     * external clients working like before model ids became unique per provider, when a plain id
-     * always matched exactly the one model offering it.
-     */
-    public function findAllowingPlainModelIdUsingFirstMatch(string|int $reference, ?ScopeOverrides $scopeOverrides = null): AiModel|null
-    {
-        return $this->findAllowingPlain($reference, $scopeOverrides, throwOnAmbiguity: false);
+        return $this->findAllowingPlain($reference, $scopeOverrides);
     }
 
     /**
      * Shared core of the plain-model-id lookups: a plain `model_id` resolves when exactly one model
-     * offers it, otherwise either {@see AmbiguousModelIdException} is thrown or the model that was
-     * created first is used, depending on $throwOnAmbiguity.
+     * offers it, otherwise {@see AmbiguousModelIdException} is thrown.
      */
-    private function findAllowingPlain(string|int $reference, ?ScopeOverrides $scopeOverrides, bool $throwOnAmbiguity): AiModel|null
+    private function findAllowingPlain(string|int $reference, ?ScopeOverrides $scopeOverrides): AiModel|null
     {
         $model = $this->find($reference, $scopeOverrides);
         if ($model || AiModelIdentifier::isNumericReference($reference)) {
             return $model;
         }
 
-        // Sorted by creation, so the first candidate is also the deterministic winner of an ambiguous match
+        // Sorted by creation, so the candidates in the exception are ordered deterministically
         $models = $this->findAllByPlainModelId($reference, $scopeOverrides)->sortBy('id')->values();
-        if ($throwOnAmbiguity && $models->count() > 1) {
+        if ($models->count() > 1) {
             throw AmbiguousModelIdException::forModelId($reference, $models->map->getIdentifier()->all());
         }
 

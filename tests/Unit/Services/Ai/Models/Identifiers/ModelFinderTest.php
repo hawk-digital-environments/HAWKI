@@ -210,48 +210,6 @@ class ModelFinderTest extends TestCase
     }
 
     // =========================================================================
-    // Plain model ids, first match
-    // =========================================================================
-
-    public function testItResolvesAmbiguousPlainModelIdToTheFirstCreatedModel(): void
-    {
-        $older = $this->makeModel('gemma-4-31b-it', 'gwdg', 3);
-        $newer = $this->makeModel('gemma-4-31b-it', 'google', 7);
-
-        // The creation order must not matter, the lower id wins either way
-        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection([$newer, $older]));
-
-        static::assertSame($older, $this->sut->findAllowingPlainModelIdUsingFirstMatch('gemma-4-31b-it'));
-    }
-
-    public function testItFindsUnambiguousPlainModelIdWhenFirstMatchIsRequested(): void
-    {
-        $model = $this->makeModel('gpt-5-nano', 'openAi');
-
-        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection([$model]));
-
-        static::assertSame($model, $this->sut->findAllowingPlainModelIdUsingFirstMatch('gpt-5-nano'));
-    }
-
-    public function testItPrefersTheQualifiedMatchWhenFirstMatchIsRequested(): void
-    {
-        $model = $this->makeModel('gemma-4-31b-it', 'gwdg');
-        $this->givenProviders(['gwdg' => $this->makeProvider('gwdg')]);
-
-        $this->modelRepository->method('findOneByProvider')->willReturn($model);
-        $this->modelRepository->expects(static::never())->method('findAllByModelId');
-
-        static::assertSame($model, $this->sut->findAllowingPlainModelIdUsingFirstMatch('gwdg/gemma-4-31b-it'));
-    }
-
-    public function testItReturnsNullForUnknownModelIdWhenFirstMatchIsRequested(): void
-    {
-        $this->modelRepository->method('findAllByModelId')->willReturn(new AiModelCollection());
-
-        static::assertNull($this->sut->findAllowingPlainModelIdUsingFirstMatch('unknown'));
-    }
-
-    // =========================================================================
     // Numeric ids
     // =========================================================================
 
