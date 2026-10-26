@@ -14,7 +14,7 @@ use App\Services\Ai\Agents\Utils\UserMessageAttachments;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Exceptions\ModelNotInPayloadException;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
-use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\Models\Identifiers\ModelFinder;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
@@ -29,7 +29,7 @@ use Psr\Log\LoggerInterface;
  * ```php
  * [
  *     'payload' => [
- *         'model'     => 'gpt-4o',           // required: model slug
+ *         'model'     => 'openAi/gpt-4o',    // required: `<provider_id>/<model_id>` or the numeric id
  *         'messages'  => [                    // required
  *             ['role' => 'system',    'content' => ['text' => '...']],  // system instructions
  *             ['role' => 'user',      'content' => ['text' => '...', 'attachments' => ['uuid1']]],
@@ -56,7 +56,7 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
 {
     public function __construct(
         private readonly FileStorageService $fileStorageService,
-        private readonly AiModelRepository  $modelRepository,
+        private readonly ModelFinder        $modelFinder,
         private readonly ChatToolResolver   $toolResolver,
         private readonly LoggerInterface    $logger
     )
@@ -102,7 +102,7 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
             throw new ModelNotInPayloadException($payload);
         }
 
-        return $this->modelRepository->findOneOrFail($modelId);
+        return $this->modelFinder->findOrFail($modelId);
     }
 
     /**

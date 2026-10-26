@@ -25,7 +25,7 @@ use App\Utils\JobMetrics;
  * catalog, so their metadata (description, flags, default parameters, token limits,
  * documentation URL) is maintained manually in the static DATA array, keyed by model ID.
  *
- * Only models whose `model_id` appears in DATA are affected; all others are returned
+ * Only models of a provider using the {@see GwdgAdapter} whose `model_id` appears in DATA are affected; all others are returned
  * unchanged. A model-specific documentation URL is only applied when the model still has
  * the provider-level default URL ({@see GwdgAdapter::DEFAULT_DOCUMENTATION_URL}).
  */
@@ -35,23 +35,9 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
     use ServiceLocatorTrait;
 
     private const array DATA = [
-        'apertus-70b-instruct-2509' => [
-            'max_tokens' => 65000,
-            'documentation_url' => 'https://huggingface.co/RedHatAI/Apertus-70B-Instruct-2509-FP8-dynamic',
-            'description' => 'Apertus is a fully open language model designed to push the boundaries of transparent and compliant AI. It supports over 1,800 languages and a context window size of up to 65,536 tokens, using only fully compliant and open training data. The model achieves comparable performance to closed-source models while respecting opt-out consent of data owners. It was pretrained on 15T tokens with a staged curriculum of web, code, and math data.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 0.8,
-                WellKnownModelParams::TOP_P => 0.9,
-            ],
-        ],
-        'deepseek-v4-flash' => [
+        'deepseek-v4-flash-0731' => [
             'max_tokens' => 1000000,
-            'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash',
+            'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731',
             'description' => 'DeepSeek V4 Flash is a strong Mixture-of-Experts (MoE) model with 284B parameters (13B activated) and a context window size of one million tokens. With a high reasoning effort, it achieves comparable reasoning performance to DeepSeek V4 Pro, but lacks the deep knowledge and most complex agentic capabilities of state-of-the-art models.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
@@ -62,19 +48,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
             'parameters' => [
                 WellKnownModelParams::TEMPERATURE => 1.0,
                 WellKnownModelParams::TOP_P => 1.0,
-            ],
-            'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING,
-            ],
-        ],
-        'devstral-2-123b-instruct-2512' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512',
-            'description' => 'Developed by mistralai, Devstral 2 is an agentic LLM designed for software engineering and coding tasks. It is capable of exploring codebases, working with multiple files, and powering software engineering agents.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
-                WellKnownModelFlags::FEATURE_STREAMING,
             ],
             'native_capabilities' => [
                 WellKnownCapabilities::TOOL_CALLING,
@@ -94,22 +67,23 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
-        'glm-4.7' => [
-            'max_tokens' => 200000,
-            'documentation_url' => 'https://huggingface.co/zai-org/GLM-4.7-FP8',
-            'description' => 'GLM-4.7 is a coding-focused model that delivers significant improvements over its predecessor in multilingual agentic coding and terminal-based tasks. It achieves strong performance on SWE-bench, SWE-bench Multilingual, and Terminal Bench 2.0. GLM-4.7 also excels at tool use, web browsing, and mathematical reasoning, with notable gains on benchmarks like HLE and τ²-Bench.',
+        'glm-5.3-flash' => [
+            'max_tokens' => 1000000,
+            'documentation_url' => 'https://huggingface.co/zai-org/GLM-5.3-Flash',
+            'description' => 'GLM 5.3 Flash is a multimodal model by Z.ai with a context window of one million tokens. It delivers great coding and agentic performance, with strong tool use for autonomous workflows.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::MULTI_MODAL,
                 WellKnownModelFlags::STRENGTH_CODE_GENERATION,
                 WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
-                WellKnownModelFlags::FEATURE_STREAMING
+                WellKnownModelFlags::FEATURE_STREAMING,
             ],
             'parameters' => [
                 WellKnownModelParams::TEMPERATURE => 1.0,
                 WellKnownModelParams::TOP_P => 0.95,
             ],
             'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING
+                WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
         'meta-llama-3.1-8b-instruct' => [
@@ -118,31 +92,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
             'description' => 'The standard model we recommend. It is the most lightweight with the fastest performance and good results across all benchmarks. It is sufficient for general conversations and assistance.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING,
-            ],
-        ],
-        'mistral-medium-3.5-128b' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/mistralai/Mistral-Medium-3.5-128B',
-            'description' => 'Mistral Medium 3.5 128B is a dense model with 128B parameters and a 256k context window, combining instruction-following, reasoning, and coding capabilities in a single model. Therefore, this model replaces its predecessors in Le Chat and the coding agent Vibe, and produces better results for a variety of tasks including instruct, reasoning, and coding, compared to previous models.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING,
-            ],
-        ],
-        'openai-gpt-oss-120b' => [
-            'max_tokens' => 128000,
-            'documentation_url' => 'https://huggingface.co/openai/gpt-oss-120b',
-            'description' => 'In August 2025, OpenAI released the gpt-oss model series, consisting of two open-weight LLMs that are optimized for faster inference with state-of-the-art performance across many domains, including reasoning and tool use. According to OpenAI, the gpt-oss-120b model achieves near-parity with OpenAI o4-mini on core reasoning benchmarks.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::FEATURE_REASONING,
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
             'native_capabilities' => [
@@ -193,24 +142,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
-        'qwen3.5-122b-a10b' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.5-122B-A10B-GPTQ-Int4',
-            'description' => 'Qwen 3.5 122B A10B is a powerful language model developed by Alibaba Cloud. With 122 billion parameters it delivers strong performance across reasoning, coding, and general tasks. The model supports vision capabilities for multimodal applications.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 0.6,
-                WellKnownModelParams::TOP_P => 0.95,
-            ],
-            'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING,
-            ],
-        ],
         'qwen3.5-397b-a17b' => [
             'max_tokens' => 256000,
             'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.5-397B-A17B-GPTQ-Int4',
@@ -229,10 +160,10 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
-        'qwen3.6-27b' => [
-            'max_tokens' => 262000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.6-27B-FP8',
-            'description' => 'Qwen3.6-27B-FP8 is an open-weight text foundation model with strong performance in coding, reasoning, and agentic workflows. It features a 27B-parameter dense architecture, a native 262K-token context window (extendable beyond 1M tokens), and advanced tool calling. The FP8 quantized version reduces memory usage and improves inference efficiency while maintaining performance close to the original model.',
+        'qwen3.8-27b' => [
+            'max_tokens' => 262144,
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.8-27B',
+            'description' => 'Qwen3.8-27B is an open-weight text foundation model with strong performance in coding, reasoning, and agentic workflows. It features a 27B-parameter dense architecture, a native 262K-token context window (extendable beyond 1M tokens), and advanced tool calling. The FP8 quantized version reduces memory usage and improves inference efficiency while maintaining performance close to the original model.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
@@ -270,10 +201,15 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
     /**
      * Looks up the model's ID in the static DATA table and applies any available metadata.
      *
-     * Returns the model unchanged when its ID is not in DATA.
+     * Returns the model unchanged when the provider is not a GWDG provider or its ID is not in DATA,
+     * so the same model ID served by another provider (e.g. Gemma on Google) is left untouched.
      */
     public function enrichModelInfo(AiModel $modelInfo, AiProviderProxy $provider, JobMetrics $jobMetrics): AiModel
     {
+        if (!$provider->adapter instanceof GwdgAdapter) {
+            return $modelInfo;
+        }
+
         $modelData = self::DATA[$modelInfo->model_id] ?? null;
         if ($modelData === null) {
             return $modelInfo;

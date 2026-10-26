@@ -7,6 +7,8 @@ use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\AiService;
+use App\Services\Ai\Exceptions\AmbiguousModelIdException;
+use App\Services\Ai\Models\Identifiers\ModelFinder;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
@@ -39,7 +41,8 @@ class StreamController extends Controller
         private readonly GroupMessageHandler  $groupMessageHandler,
         private readonly LoggerInterface      $logger,
         private readonly UserRepository       $userRepository,
-        private readonly CitationUrlCleaner   $citationCleaner
+        private readonly CitationUrlCleaner   $citationCleaner,
+        private readonly ModelFinder          $modelFinder
     )
     {
     }
@@ -69,6 +72,29 @@ class StreamController extends Controller
                 'errors' => $e->errors()
             ], 422);
         }
+
+        // External apps may still send a plain model id, everything after this point only knows the
+        // qualified one. A plain id offered by several providers is rejected: the client must use
+        // the provider-qualified format (or the numeric id).
+        try {
+            $model = $this->modelFinder->findAllowingPlainModelId($validatedData['payload']['model']);
+        } catch (AmbiguousModelIdException) {
+            return response()->json([
+                'success' => false,
+                'message' => sprintf(
+                    'Duplicate model_id "%s" found. Update the client to use the provider/model format.',
+                    $validatedData['payload']['model']
+                ),
+            ], 400);
+        }
+        if (!$model) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The requested model is not available.',
+            ], 400);
+        }
+
+        $validatedData['payload']['model'] = $model->getIdentifier();
 
         // Handle standard response
         $agent = $this->aiService->getAgent($validatedData);
@@ -130,7 +156,7 @@ class StreamController extends Controller
         if ($validatedData['broadcast']) {
             $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
             try {
-                $model = $this->aiService->getModels()->findOneOrFail($validatedData['payload']['model']);
+                $model = $this->modelFinder->findOrFail($validatedData['payload']['model']);
             } catch (\Throwable) {
                 return response()->json(['error' => 'The requested model is not available.'], 400);
             }
@@ -364,6 +390,8 @@ class StreamController extends Controller
     private function handleGroupChatRequest(array $validatedData, AiModel $model): void
     {
         $isUpdate = (bool)($validatedData['isUpdate'] ?? false);
+        // Store the qualified identifier, even if the request referenced the model by its numeric id
+        $validatedData['payload']['model'] = $model->getIdentifier();
 
         // @todo use a repository
         $room = Room::where('slug', $validatedData['slug'])->firstOrFail();

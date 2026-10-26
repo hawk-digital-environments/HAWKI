@@ -115,8 +115,8 @@ readonly class ModelStatusUpdater
                     $metrics->increment(self::METRIC_MODEL_COUNT);
                 }
 
-                $this->modelRepository->setAiModelStatusTo($statusCollection);
-                $this->modelRepository->setAiModelDemandTo($demandCollection);
+                $this->modelRepository->setAiModelStatusTo($statusCollection, $provider);
+                $this->modelRepository->setAiModelDemandTo($demandCollection, $provider);
 
                 ModelProviderStatusUpdatedEvent::dispatch($provider);
 

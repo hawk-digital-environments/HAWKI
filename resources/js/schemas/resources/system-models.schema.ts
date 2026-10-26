@@ -7,7 +7,8 @@ const SystemModelsSchema = z.object({
     id: z.string(),
     model_type: z.enum(WellKnownSystemModelTypes).or(z.string()),
     usage_type: z.string(),
-    model_id: z.string()
+    // Provider-qualified (`<provider_id>/<model_id>`), null when the linked model is not visible to the user
+    model_id: z.string().nullable()
 }).strict();
 
 export default SystemModelsSchema;

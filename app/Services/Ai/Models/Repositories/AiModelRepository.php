@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\Models\Repositories;
 
+use App\Collections\AiModelCollection;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\Exceptions\ModelIdNotAvailableException;
 use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
+use App\Services\Ai\Models\Identifiers\Values\AiModelIdentifier;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\Limits\AiModelLimitsInterface;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
@@ -20,6 +22,7 @@ use App\Services\Ai\Values\OnlineStatus;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 
 /**
@@ -32,18 +35,44 @@ use Carbon\Carbon;
 class AiModelRepository extends AbstractRepositoryWithContextualScopes
 {
     /**
-     * Looks up a model by its numeric primary key or by its string `model_id`.
+     * Looks up a model by its numeric primary key or its provider-qualified identifier
+     * (`<provider_id>/<model_id>`, see {@see AiModelIdentifier}).
      *
-     * A string $id that is numeric is treated as a primary key, not a model_id.
+     * A string $id that is numeric is treated as a primary key. A plain `model_id` never matches,
+     * because the same `model_id` may exist for several providers.
      * Returns null when no match is found.
      */
     public function findOne(mixed $id, ?ScopeOverrides $scopeOverrides = null): AiModel|null
     {
-        if (is_string($id) && !is_numeric($id)) {
-            return $this->getQuery($scopeOverrides)->where('model_id', $id)->first();
+        if (is_string($id) && !AiModelIdentifier::isNumericReference($id)) {
+            return $this->whereIdentifier($this->getQuery($scopeOverrides), AiModelIdentifier::fromString($id))
+                ->first();
         }
 
         return $this->getQuery($scopeOverrides)->find($id);
+    }
+
+    /**
+     * Applies a provider-qualified identifier as a where-condition to the given query: the model
+     * with the identifier's `model_id` within the provider carrying the identifier's prefix.
+     *
+     * This is the single authoritative translation of an {@see AiModelIdentifier} into query
+     * conditions, used wherever a qualified identifier has to address database records
+     * (repository lookups, the system-models JSON:API filter, console commands).
+     * An unqualified identifier matches nothing.
+     *
+     * @param Builder<AiModel> $query
+     * @return Builder<AiModel>
+     */
+    public function whereIdentifier(Builder $query, AiModelIdentifier $identifier): Builder
+    {
+        if (!$identifier->isQualified()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query
+            ->where('model_id', $identifier->modelId)
+            ->whereHas('provider', fn(Builder $query) => $query->where('provider_id', $identifier->providerId));
     }
 
     /**
@@ -59,12 +88,52 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
+     * Looks up a model by its `model_id` within the given provider. Returns null when no match is found.
+     */
+    public function findOneByProvider(AiProvider $provider, string $modelId, ?ScopeOverrides $scopeOverrides = null): AiModel|null
+    {
+        return $this->getQuery($scopeOverrides)
+            ->where('provider_id', $provider->id)
+            ->where('model_id', $modelId)
+            ->first();
+    }
+
+    /**
+     * Like {@see findOneByProvider()} but throws {@see ModelIdNotAvailableException} when the model does not exist.
+     */
+    public function findOneByProviderOrFail(AiProvider $provider, string $modelId, ?ScopeOverrides $scopeOverrides = null): AiModel
+    {
+        $model = $this->findOneByProvider($provider, $modelId, $scopeOverrides);
+        if (!$model) {
+            throw ModelIdNotAvailableException::forModelId(
+                (string)new AiModelIdentifier($provider->provider_id, $modelId)
+            );
+        }
+        return $model;
+    }
+
+    /**
+     * Returns all models with the given plain `model_id` across all providers (with their provider loaded).
+     * More than one result means the plain `model_id` is ambiguous. Only meant for resolving plain ids
+     * from external surfaces, see {@see \App\Services\Ai\Models\Identifiers\ModelFinder::findAllowingPlainModelId()}.
+     */
+    public function findAllByModelId(string $modelId, ?ScopeOverrides $scopeOverrides = null): AiModelCollection
+    {
+        return $this->getQuery($scopeOverrides)
+            ->with('provider')
+            ->where('model_id', $modelId)
+            ->get();
+    }
+
+    /**
      * Batch-updates the `status` column for all models in the collection's change-list.
      *
      * Only models whose status has changed are written; unchanged models are skipped.
      * Groups updates by status value to minimise the number of queries issued.
+     * Pass the $provider the collection was built for, otherwise models with the same
+     * `model_id` of other providers are updated as well.
      */
-    public function setAiModelStatusTo(AiModelOnlineStatusCollection $statusCollection): void
+    public function setAiModelStatusTo(AiModelOnlineStatusCollection $statusCollection, AiProvider|null $provider = null): void
     {
         $modelIdsByStatus = [];
         foreach ($statusCollection->getChangedList() as $modelId => $status) {
@@ -73,6 +142,7 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
         foreach ($modelIdsByStatus as $status => $modelIds) {
             $this->getQueryWithoutContextualScopes()
                 ->whereIn('model_id', $modelIds)
+                ->when($provider, fn(Builder $query) => $query->where('provider_id', $provider->id))
                 ->update(['status' => OnlineStatus::from($status)]);
         }
     }
@@ -104,7 +174,7 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
         foreach ($modelIds as $modelId) {
             if ($modelId instanceof AiModel) {
                 $idFilter[] = $modelId->id;
-            } else if (is_numeric((string)$modelId)) {
+            } else if (AiModelIdentifier::isNumericReference($modelId)) {
                 $idFilter[] = (int)$modelId;
             } else {
                 $modelIdFilter[] = (string)$modelId;
@@ -124,8 +194,9 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
      * Batch-updates the `demand` column for all models in the collection's change-list.
      *
      * Groups updates by demand value to minimise the number of queries issued.
+     * Pass the $provider the collection was built for, see {@see setAiModelStatusTo()}.
      */
-    public function setAiModelDemandTo(AiModelDemandCollection $demandCollection): void
+    public function setAiModelDemandTo(AiModelDemandCollection $demandCollection, AiProvider|null $provider = null): void
     {
         $modelIdsByDemand = [];
         foreach ($demandCollection->getChangedList() as $modelId => $demand) {
@@ -134,6 +205,7 @@ class AiModelRepository extends AbstractRepositoryWithContextualScopes
         foreach ($modelIdsByDemand as $demand => $modelIds) {
             $this->getQueryWithoutContextualScopes()
                 ->whereIn('model_id', $modelIds)
+                ->when($provider, fn(Builder $query) => $query->where('provider_id', $provider->id))
                 ->update(['demand' => $demand]);
         }
     }
