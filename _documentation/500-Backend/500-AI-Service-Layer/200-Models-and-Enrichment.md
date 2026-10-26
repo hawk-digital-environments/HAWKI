@@ -94,7 +94,7 @@ Each enricher receives a partially-populated `AiModel`, adds its data, and retur
 
 ### `LiteLlmApiEnricher`
 
-The primary enricher. It queries the [LiteLLM model catalog API](https://api.litellm.ai/model_catalog) to retrieve pricing, context window sizes, feature flags, and model mode (chat / image / etc.). Results are cached for 24 hours via `LiteLlmApiDataStore`.
+The primary enricher. It queries the [LiteLLM model catalog](https://raw.githubusercontent.com/BerriAI/litellm/refs/heads/main/model_prices_and_context_window.json) to retrieve pricing, context window sizes, feature flags, and model mode (chat / image / etc.). `LiteLlmApiDataStore` downloads the full catalog once and caches it under a single shared key, filtering the requested provider's records at read time. Every 5 minutes the cached catalog is revalidated with a conditional request (ETag), which upstream answers with a tiny `304 Not Modified` response while the catalog is unchanged. While the upstream is unreachable, the cached catalog keeps being served for up to 24 hours after the last successful confirmation; beyond that, lookups fall back to the static files.
 
 When the live API is unavailable, it falls back to `StaticLiteLlmDataStore`, which reads from pre-generated PHP files committed to the repository at `resources/static_llm_data/lite_llm/`. These static files cover 100+ providers and are refreshed locally via `dev:ai:update-lite-llm-static-data`.
 
