@@ -34,13 +34,26 @@ use Psr\Log\LoggerInterface;
  * the web-search tool of the same server included — are a no-op and their
  * raw results pass through untouched.
  *
+ * The listener also counts the knowledge tool's search calls through the
+ * run-scoped collector and flags the final permitted call: the threshold is
+ * the model's tool-round limit the AssistantKnowledge run listeners published
+ * from the model settings ({@see \App\Services\Ai\Models\Settings\Values\AiModelSettings::getMaxToolCallingRounds()}
+ * — 5 rounds, 3 streaming, per-model overridable); the final call gains a
+ * terminal notice telling the model to answer now — the terminal signal the
+ * budget otherwise lacks (Onyx's last-cycle forcing). Without a limit
+ * (0, unset) no notice is added.
+ *
  * Citations with a matching attachment point at HAWKI's storage proxy (the
  * same authorized URL the chat uses for uploads); documents without one are
  * still cited, by name only.
  */
 class CollectRagDocumentCitationsOnMcpToolCalled
 {
-    public function __construct(
+    /** The terminal notice appended to the final permitted call's result. */
+    private const FINAL_CALL_NOTICE
+        = 'You have used the last of your %d permitted %s calls. '
+        . 'No tool calls are left. '
+        . 'Answer the user now, with the evidence you have already retrieved.';    public function __construct(
         private readonly AssistantAttachmentRepository $attachments,
         private readonly RagCitationCollector $citations,
         private readonly RagConfig $config,
@@ -61,6 +74,15 @@ class CollectRagDocumentCitationsOnMcpToolCalled
         }
 
         $result = $result->withCiteIds($this->citations->citeIdFor(...));
+
+        $callNumber = $this->citations->recordSearchToolCall();
+        $toolRoundLimit = $this->citations->toolRoundLimit();
+
+        if ($toolRoundLimit > 0 && $callNumber === $toolRoundLimit) {
+            $result = $result->withTerminalNotice(
+                sprintf(self::FINAL_CALL_NOTICE, $toolRoundLimit, $this->config->queryToolName),
+            );
+        }
 
         if ($result->isRewritten()) {
             $event->setResult($result->toJson());
