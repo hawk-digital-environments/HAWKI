@@ -37,9 +37,4 @@ class TimeoutExposingAgent extends AbstractLaravelAgent
     {
         return $this->timeout();
     }
-
-    public function exposeStallSeconds(): int|null
-    {
-        return $this->getStallSeconds();
-    }
 }

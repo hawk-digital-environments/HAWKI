@@ -59,25 +59,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    |   Request Timeouts
-    |--------------------------------------------------------------------------
-    |
-    |   request_timeout: Total time in seconds an AI request may take. The Laravel AI
-    |                     package defaults to 60 when this key is absent. Set 0 to
-    |                     remove the limit.
-    |   stall_timeout:   Abort an AI request that receives less than one byte per
-    |                     second for this many seconds. This protects against model
-    |                     connections that hang silently. Set 0 to disable.
-    |
-    |   Both values apply to all providers. Each provider can set its own values in
-    |   its adapter settings, they override the ones given here.
-    |
-    */
-    'request_timeout' => env('AI_REQUEST_TIMEOUT', 60),
-    'stall_timeout' => env('AI_STALL_TIMEOUT', 120),
-
-    /*
-    |--------------------------------------------------------------------------
     |   Model Providers
     |--------------------------------------------------------------------------
     |
@@ -85,6 +66,16 @@ return [
     |   activate the providers.
     |   To include other providers in this list please refer to the
     |   documentation of HAWKI
+    |
+    |   Each provider can set an `adapter` array with driver settings, e.g.
+    |   per-provider timeouts:
+    |     'adapter' => [
+    |         'request_timeout' => 300,  // total seconds per AI request, 0 = no limit (default: 60)
+    |         'stall_timeout'  => 120,   // abort after this many seconds without data, 0 = off (default: off)
+    |     ],
+    |
+    |   stall_timeout is supported by the openai-compatible and ollama drivers;
+    |   request_timeout applies to all drivers.
     |
     */
     'providers' => [
@@ -100,6 +91,10 @@ return [
             'api_key' => env('GWDG_API_KEY'),
             'api_url' => env('GWDG_API_URL'),
             'ping_url' => env('GWDG_PING_URL'),
+            'adapter' => [
+                'request_timeout' => env('GWDG_REQUEST_TIMEOUT', 0),
+                'stall_timeout' => env('GWDG_STALL_TIMEOUT', 120),
+            ],
             'models' => require __DIR__ . env('GWDG_MODEL_LIST_DIR', '/model_lists/gwdg_models.php'),
         ],
         'google' => [

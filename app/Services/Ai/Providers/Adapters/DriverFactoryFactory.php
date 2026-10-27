@@ -7,7 +7,6 @@ namespace App\Services\Ai\Providers\Adapters;
 
 use App\Models\Ai\AiProvider;
 use App\Services\System\Container\ServiceLocator;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
 use Laravel\Ai\AiManager;
 
@@ -32,11 +31,7 @@ class DriverFactoryFactory
 {
     public function __construct(
         private AiManager      $manager,
-        private ServiceLocator $serviceLocator,
-        #[Config('model_providers.request_timeout', 60)]
-        private int            $requestTimeout,
-        #[Config('model_providers.stall_timeout', 120)]
-        private int            $stallTimeout,
+        private ServiceLocator $serviceLocator
     )
     {
     }
@@ -49,6 +44,6 @@ class DriverFactoryFactory
      */
     public function createFactoryForProvider(AiProvider $provider): DriverFactory
     {
-        return new DriverFactory($this->manager, $this->serviceLocator, $provider, $this->requestTimeout, $this->stallTimeout);
+        return new DriverFactory($this->manager, $this->serviceLocator, $provider);
     }
 }

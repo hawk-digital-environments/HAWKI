@@ -43,15 +43,14 @@ class AbstractLaravelAgentTimeoutTest extends TestCase
     }
 
     // =========================================================================
-    // timeout / getStallSeconds
+    // timeout
     // =========================================================================
 
     public function testItUsesTheTimeoutFromTheProviderDriverConfig(): void
     {
-        $sut = $this->makeAgentWithDriverConfig(['request_timeout' => 300, 'stall_timeout' => 45]);
+        $sut = $this->makeAgentWithDriverConfig(['request_timeout' => 300]);
 
         static::assertSame(300, $sut->exposeTimeout());
-        static::assertSame(45, $sut->exposeStallSeconds());
     }
 
     public function testItFallsBackToThePackageDefaultWithoutDriverConfig(): void
@@ -59,15 +58,12 @@ class AbstractLaravelAgentTimeoutTest extends TestCase
         $sut = $this->makeAgentWithDriverConfig([]);
 
         static::assertSame(60, $sut->exposeTimeout());
-        static::assertNull($sut->exposeStallSeconds());
     }
 
     public function testItLetsZeroDisableTheTimeout(): void
     {
-        $sut = $this->makeAgentWithDriverConfig(['request_timeout' => 0, 'stall_timeout' => 0]);
+        $sut = $this->makeAgentWithDriverConfig(['request_timeout' => 0]);
 
         static::assertSame(0, $sut->exposeTimeout());
-        // 0 stays 0 (disabled), it is not turned into null
-        static::assertSame(0, $sut->exposeStallSeconds());
     }
 }

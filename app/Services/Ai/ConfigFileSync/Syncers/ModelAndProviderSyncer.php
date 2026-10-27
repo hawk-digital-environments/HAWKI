@@ -85,14 +85,14 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         }
 
         $settings = ProviderSettings::fromArray([]);
-        if (is_array($config['config'] ?? null)) {
-            $settings->set(WellKnownProviderSettings::ADAPTER, $config['adapter'] ?? []);
-            if (is_array($config['config'][WellKnownProviderSettings::MODEL_PARAMETERS] ?? null)) {
-                $settings->set(
-                    WellKnownProviderSettings::MODEL_PARAMETERS,
-                    AiModelParameters::fromArray($config['config'][WellKnownProviderSettings::MODEL_PARAMETERS])
-                );
-            }
+        if (is_array($config['adapter'] ?? null)) {
+            $settings->set(WellKnownProviderSettings::ADAPTER, $config['adapter']);
+        }
+        if (is_array($config['config'][WellKnownProviderSettings::MODEL_PARAMETERS] ?? null)) {
+            $settings->set(
+                WellKnownProviderSettings::MODEL_PARAMETERS,
+                AiModelParameters::fromArray($config['config'][WellKnownProviderSettings::MODEL_PARAMETERS])
+            );
         }
 
         $provider = $this->providerRepository->upsert(

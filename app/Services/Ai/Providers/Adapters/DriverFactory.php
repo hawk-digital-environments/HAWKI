@@ -34,9 +34,7 @@ class DriverFactory
     public function __construct(
         private readonly AiManager      $manager,
         private readonly ServiceLocator $serviceLocator,
-        private readonly AiProvider     $provider,
-        private readonly int            $requestTimeout,
-        private readonly int            $stallTimeout,
+        private readonly AiProvider     $provider
     )
     {
     }
@@ -70,9 +68,7 @@ class DriverFactory
             [
                 'name' => 'hawki_' . $this->provider->provider_id,
                 'driver' => $driverName,
-                'store' => false,
-                'request_timeout' => $this->requestTimeout,
-                'stall_timeout' => $this->stallTimeout,
+                'store' => false
             ],
             $this->provider->settings->getAdapterSettings(),
             $config,

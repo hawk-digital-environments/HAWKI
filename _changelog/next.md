@@ -13,15 +13,19 @@
 - `php hawki init` and `php hawki run -build` no longer run an unattended `composer update` when outdated packages are detected. Setup and build now only perform a deterministic `composer install`; upgrading packages is a deliberate decision. Previously the silent update could jump packages across major versions (e.g. `laravel/ai` 0.10 → 1.3), breaking the app with errors that first surfaced in unrelated commands like `models sync`.
 - Self-service access token creation was unavailable in the profile view: it still checked the pre-2.5.0 `sanctum.*` config keys instead of the new `external_access.*` keys, so the AccessTokens panel never appeared even with `ALLOW_EXTERNAL_COMMUNICATION` and `ALLOW_USER_TOKEN_CREATION` enabled.
 - Model enrichment (pricing, context windows, feature flags) stopped updating because LiteLLM discontinued their catalog API. Lookups always fell back to the static files. The catalog is now read from LiteLLM's GitHub file.
+- Per-provider AI request timeouts via the `adapter` settings in `model_providers.php`: `request_timeout` (default 60 seconds, `0` = no limit) and `stall_timeout` (default off; aborts requests without incoming data). Supported drivers: `openai-compatible`, `ollama`. GWDG ships with the HAWKI 2.4 behaviour (`request_timeout=0`, `stall_timeout=120`, via `GWDG_REQUEST_TIMEOUT`/`GWDG_STALL_TIMEOUT`).
 
 ### Internals
 
 - The `laravel/ai` version constraint is now `^0.10.1` (was `>=0.10.1`), so dependency updates stay within semver-compatible releases instead of silently allowing a major jump. Lock file refreshed to `laravel/ai` v0.10.3.
 - LiteLLM catalog: downloaded once into a shared cache and filtered per provider, kept fresh via ETag revalidation every 5 minutes. During upstream outages cached data is served for up to 24 h, then the static files take over.
 - The `static_llm_data` updater no longer deletes the old files when the catalog is unreachable.
-- AI requests had a fixed timeout of 60 seconds. You can now set the time with `AI_REQUEST_TIMEOUT` (default: 60 seconds, `0` = no limit). HAWKI stops requests that get no data with `AI_STALL_TIMEOUT` (default: 120 seconds, `0` = off). Both settings can also be set per provider in the `adapter` settings.
-- `AbstractLaravelAgent` sets the request timeout through its `timeout()` method. `DriverFactory` injects `model_providers.request_timeout` and `model_providers.stall_timeout` into the driver configuration of every provider. The `adapter` settings of a provider can override both values.
-- The new `StallDetectionMiddleware` adds curl stall detection to the HTTP requests of agents. `AgentRequestScope` limits the middleware to agent requests.
+- `OpenAiLikeAdapter` creates the `openai-compatible` driver instead of the `openai` one.
+- "OpenAI-like" providers without an API URL now fail with a clear error instead of sending their API key to the real OpenAI API.h values.
+- `AbstractLaravelAgent` passes the timeout explicitly to the Laravel AI package: `send()` the request timeout, `sendStreaming()` the stall timeout (or no limit when stall detection is off). The new `AgentTimeouts` value object reads and validates both values. For streamed requests, Guzzle uses its PHP stream handler, where `timeout` is a per-read timeout and curl options are ignored.
+- Stall-aware gateways apply the stall timeout as curl low-speed options and stream read timeouts to every request, including lazily started streams (`openai-compatible` and `ollama` driver)
+- Provider `adapter` settings from `model_providers.php` are now synced into the database.
+
 
 ### Deprecation
 

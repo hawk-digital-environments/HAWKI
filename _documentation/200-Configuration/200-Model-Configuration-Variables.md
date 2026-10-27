@@ -314,21 +314,7 @@ Disabling a provider sets `active=false` for the provider record in the database
 
 ## Request Timeouts
 
-These variables control how long HAWKI waits for an AI model to answer.
-
-```bash
-# Total time in seconds an AI request may take (default: 60)
-AI_REQUEST_TIMEOUT=60
-
-# Time in seconds without received data before a request is aborted (default: 120)
-AI_STALL_TIMEOUT=120
-```
-
-**`AI_REQUEST_TIMEOUT`** — Total time in seconds for an AI request. The default value is 60 seconds. Set the value to 0 for no limit. Use a higher value for models that need more time, for example reasoning models.
-
-**`AI_STALL_TIMEOUT`** — HAWKI aborts a request that receives less than one byte per second for this number of seconds. The default value is 120 seconds. This protects against model connections that hang without an answer. Set the value to 0 to turn this function off.
-
-Both values apply to all providers. Each provider can set its own values in its `adapter` settings. The provider values override the global values:
+Timeouts are set per provider in the `adapter` settings of its entry in `config/model_providers.php`:
 
 ```php
 // config/model_providers.php
@@ -337,11 +323,26 @@ Both values apply to all providers. Each provider can set its own values in its 
         // ...
         'adapter' => [
             'request_timeout' => 300,
-            'stall_timeout' => 60,
+            'stall_timeout' => 120,
         ],
     ],
 ],
 ```
+
+**`request_timeout`** — Total time in seconds an AI request of this provider may take. The default is 60 seconds (the Laravel AI package default). Set a higher value for models that need more time, for example reasoning models, or `0` for no limit.
+
+**`stall_timeout`** — HAWKI aborts a request that receives no data for this number of seconds. This protects against model connections that hang without an answer, while still allowing reasoning models to think for a long time before they start streaming. Disabled by default; a typical value is 120 seconds. On streaming requests, a stream that goes silent — before or after it starts — is aborted after `stall_timeout`.
+
+Stall detection is supported by these drivers:
+
+| Driver | Providers |
+|---|---|
+| `openai-compatible` | GWDG, HuggingFace, all "OpenAI-like" providers |
+| `ollama` | Ollama |
+
+The following drivers accept the setting but ignore it: `openai`, `google` (Gemini), `anthropic`, `openai_azure`, `mistral`, `deepseek`, `open_router`. The `aws_bedrock` driver uses the AWS SDK and can never support it.
+
+Both keys are optional — a provider without `adapter` timeout settings uses the 60 seconds default and no stall detection. The GWDG provider entry ships with the HAWKI 2.4 behaviour by default: no total limit (`request_timeout = 0`) and a 120 seconds stall timeout, configurable via `GWDG_REQUEST_TIMEOUT` and `GWDG_STALL_TIMEOUT`.
 
 ---
 

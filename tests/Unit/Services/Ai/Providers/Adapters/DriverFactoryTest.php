@@ -47,32 +47,32 @@ class DriverFactoryTest extends TestCase
         $provider->provider_id = 'test';
         $provider->settings = ProviderSettings::fromArray(['adapter' => $adapterSettings]);
 
-        return new DriverFactory($this->manager, $this->serviceLocator, $provider, 60, 120);
+        return new DriverFactory($this->manager, $this->serviceLocator, $provider);
     }
 
     // =========================================================================
-    // Timeout defaults
+    // Adapter settings
     // =========================================================================
 
-    public function testItInjectsTheGlobalTimeoutDefaultsIntoTheDriverConfig(): void
+    public function testItForwardsTheProviderAdapterSettingsIntoTheDriverConfig(): void
+    {
+        $this->makeSut(['request_timeout' => 300, 'stall_timeout' => 60])->make('openAiCompatible', []);
+
+        static::assertSame(300, $this->capturedConfig['request_timeout']);
+        static::assertSame(60, $this->capturedConfig['stall_timeout']);
+    }
+
+    public function testItAddsNoTimeoutsWithoutAdapterSettings(): void
     {
         $this->makeSut()->make('openAiCompatible', []);
 
-        static::assertSame(60, $this->capturedConfig['request_timeout']);
-        static::assertSame(120, $this->capturedConfig['stall_timeout']);
+        static::assertArrayNotHasKey('request_timeout', $this->capturedConfig);
+        static::assertArrayNotHasKey('stall_timeout', $this->capturedConfig);
     }
 
-    public function testItLetsProviderAdapterSettingsOverrideTheTimeouts(): void
+    public function testItLetsTheAdapterConfigOverrideTheAdapterSettings(): void
     {
-        $this->makeSut(['request_timeout' => 300])->make('openAiCompatible', []);
-
-        static::assertSame(300, $this->capturedConfig['request_timeout']);
-        static::assertSame(120, $this->capturedConfig['stall_timeout']);
-    }
-
-    public function testItLetsTheAdapterConfigOverrideTheTimeouts(): void
-    {
-        $this->makeSut()->make('openAiCompatible', ['request_timeout' => 0]);
+        $this->makeSut(['request_timeout' => 300])->make('openAiCompatible', ['request_timeout' => 0]);
 
         static::assertSame(0, $this->capturedConfig['request_timeout']);
     }
