@@ -104,6 +104,38 @@ function insertOrUpdateSvelteBody(
 }
 
 /**
+ * Returns true when the model reference is no longer available (removed or deactivated),
+ * i.e. it is not returned by getAiModel().
+ */
+function isModelRemoved(modelRef) {
+    return window.getAiModel(modelRef) === null;
+}
+
+/**
+ * Returns the author-line suffix for a model reference: an empty string when the model is
+ * still available, or " <Obsolete>" when it has been removed — mirroring the chat header.
+ */
+function getRemovedModelSuffix(modelRef) {
+    return isModelRemoved(modelRef) ? ` ${__('Obsolete')}` : '';
+}
+
+/**
+ * Builds the author header of an AI message for exports: "<username> (<provider_id>/<model_id>)".
+ * Exports always show the stored provider-qualified reference instead of the current display
+ * label, so the record stays lossless; removed models are marked as obsolete.
+ */
+function buildModelAuthorRefHtml(username, modelRef) {
+    return `<span>${username} </span><span class="message-author-model">(${modelRef})${getRemovedModelSuffix(modelRef)}</span>`;
+}
+
+/**
+ * Plain-text variant of {@link buildModelAuthorRefHtml} for text-based exports.
+ */
+function buildModelAuthorText(username, modelRef) {
+    return `${username} (${modelRef})${getRemovedModelSuffix(modelRef)}`;
+}
+
+/**
  * Builds the author header of an AI message: "<username> (<provider> <model label>)".
  * Models that are no longer available (removed or deactivated) are not returned by getAiModel(),
  * so the stored "<provider_id>/<model_id>" reference is shown instead, marked as obsolete.
@@ -111,7 +143,8 @@ function insertOrUpdateSvelteBody(
 function buildModelAuthorHtml(username, modelRef) {
     const model = window.getAiModel(modelRef);
     if (!model) {
-        return `<span>${username} </span><span class="message-author-model">(${modelRef}) ${__('Obsolete')}</span>`;
+        // No label available: show the raw reference like the exports do.
+        return buildModelAuthorRefHtml(username, modelRef);
     }
     const label = model.provider?.name ? `${model.provider.name} ${model.label}` : model.label;
     return `<span>${username} </span><span class="message-author-model">(${label})</span>`;
