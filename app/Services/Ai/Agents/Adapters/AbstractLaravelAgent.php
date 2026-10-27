@@ -11,7 +11,7 @@ use App\Services\Ai\Agents\Events\AgentSendingEvent;
 use App\Services\Ai\Agents\Events\AgentStreamCompletedEvent;
 use App\Services\Ai\Agents\Events\AgentStreamInitiatedEvent;
 use App\Services\Ai\Agents\Exceptions\AgentStateException;
-use App\Services\Ai\LaravelAi\AgentRequestScope;
+use App\Services\Ai\Agents\Values\AgentTimeouts;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
 use App\Services\Ai\Values\TokenUsage;
 use Laravel\Ai\Contracts\Agent as LaravelAgentInterface;
@@ -62,29 +62,14 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
     }
 
     /**
-     * The total timeout in seconds for requests of this agent, replacing the Laravel AI package's
-     * hardcoded default of 60.
-     *
-     * The Laravel AI package calls this method while it resolves the prompt timeout, before its own
-     * fallback applies ({@see \Laravel\Ai\Promptable::getTimeout()}). The value comes from the
-     * provider's driver configuration: `model_providers.request_timeout` globally, overridable per
-     * provider via its adapter settings. A value of 0 removes the timeout entirely.
+     * The timeouts of this agent's provider, see {@see AgentTimeouts} for how they apply to
+     * non-streamed and streamed requests.
      */
-    protected function timeout(): int
+    protected function getTimeouts(): AgentTimeouts
     {
-        $timeout = $this->getContext()->provider->driver->additionalConfiguration()['request_timeout'] ?? null;
-        return $timeout === null ? 60 : (int)$timeout;
-    }
-
-    /**
-     * The stall timeout in seconds of this agent's provider, null when stall detection is disabled.
-     * Applied by {@see StallDetectionMiddleware} to the HTTP requests of the agent, see
-     * `model_providers.stall_timeout`.
-     */
-    protected function getStallSeconds(): int|null
-    {
-        $stall = $this->getContext()->provider->driver->additionalConfiguration()['stall_timeout'] ?? null;
-        return $stall === null ? null : (int)$stall;
+        return AgentTimeouts::fromDriverConfig(
+            $this->getContext()->provider->driver->additionalConfiguration()
+        );
     }
 
     /**
@@ -112,14 +97,12 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
     {
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
-        $response = AgentRequestScope::run(
-            fn() => $this->prompt(
-                prompt: $this->getPromptString(),
-                attachments: $this->getAttachments(),
-                provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
-                model: $this->getContext()->model->model_id
-            ),
-            $this->getStallSeconds()
+        $response = $this->prompt(
+            prompt: $this->getPromptString(),
+            attachments: $this->getAttachments(),
+            provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
+            model: $this->getContext()->model->model_id,
+            timeout: $this->getTimeouts()->forRequest()
         );
 
         $this->usage = $response->usage;
@@ -141,14 +124,12 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
     {
         AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
-        $response = AgentRequestScope::run(
-            fn() => $this->stream(
-                prompt: $this->getPromptString(),
-                attachments: $this->getAttachments(),
-                provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
-                model: $this->getContext()->model->model_id
-            ),
-            $this->getStallSeconds()
+        $response = $this->stream(
+            prompt: $this->getPromptString(),
+            attachments: $this->getAttachments(),
+            provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
+            model: $this->getContext()->model->model_id,
+            timeout: $this->getTimeouts()->forStream()
         );
 
         $response->then(function (AgentResponse $response) {

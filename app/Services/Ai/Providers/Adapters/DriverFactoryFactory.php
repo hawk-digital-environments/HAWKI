@@ -33,10 +33,10 @@ class DriverFactoryFactory
     public function __construct(
         private AiManager      $manager,
         private ServiceLocator $serviceLocator,
-        #[Config('model_providers.request_timeout', 60)]
-        private int            $requestTimeout,
-        #[Config('model_providers.stall_timeout', 120)]
-        private int            $stallTimeout,
+        #[Config('model_providers.request_timeout')]
+        private mixed          $requestTimeout = null,
+        #[Config('model_providers.stall_timeout')]
+        private mixed          $stallTimeout = null,
     )
     {
     }

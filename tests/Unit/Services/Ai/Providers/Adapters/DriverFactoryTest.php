@@ -70,6 +70,19 @@ class DriverFactoryTest extends TestCase
         static::assertSame(120, $this->capturedConfig['stall_timeout']);
     }
 
+    public function testItPassesRawConfigValuesThrough(): void
+    {
+        // Validation happens in AgentTimeouts, an invalid env value must not break the driver creation
+        $provider = new AiProvider();
+        $provider->provider_id = 'test';
+        $provider->settings = ProviderSettings::fromArray(['adapter' => []]);
+
+        (new DriverFactory($this->manager, $this->serviceLocator, $provider, '', null))->make('openAiCompatible', []);
+
+        static::assertSame('', $this->capturedConfig['request_timeout']);
+        static::assertNull($this->capturedConfig['stall_timeout']);
+    }
+
     public function testItLetsTheAdapterConfigOverrideTheTimeouts(): void
     {
         $this->makeSut()->make('openAiCompatible', ['request_timeout' => 0]);

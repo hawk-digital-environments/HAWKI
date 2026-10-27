@@ -16,7 +16,6 @@ use App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemPromptSyncer;
 use App\Services\Ai\Exceptions\InvalidProviderAdapterException;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
-use App\Services\Ai\LaravelAi\StallDetectionMiddleware;
 use App\Services\Ai\ModelInformation\Enrichment\AiModelInfoEnrichmentPipeline;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\LiteLlmDriverNameProviderNameMapping;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlmApiEnricher;
@@ -57,7 +56,6 @@ use App\Services\Config\Registries\PublicConfigRegistry;
 use App\Services\System\Container\ServiceLocator;
 use App\Services\System\UsageTypes\UsageContext;
 use App\Utils\Lists\LazySingletonList;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Ai\AiManager;
 use Laravel\Ai\Enums\Lab;
@@ -303,8 +301,5 @@ class AiServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Registered globally, but it only changes request options while an AI agent request runs
-        // (see AgentRequestScope), so no other outgoing HTTP request is affected.
-        Http::globalMiddleware($this->app->make(StallDetectionMiddleware::class));
     }
 }

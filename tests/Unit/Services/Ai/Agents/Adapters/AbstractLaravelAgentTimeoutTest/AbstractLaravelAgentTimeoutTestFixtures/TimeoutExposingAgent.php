@@ -5,13 +5,23 @@ namespace Tests\Unit\Services\Ai\Agents\Adapters\AbstractLaravelAgentTimeoutTest
 
 use App\Services\Ai\Agents\Adapters\AbstractLaravelAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use Laravel\Ai\Approvals\Decisions;
+use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\Data\Meta;
+use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\StreamableAgentResponse;
 use Stringable;
 
 /**
- * Minimal concrete agent that exposes the protected timeout resolution of {@see AbstractLaravelAgent}.
+ * Minimal concrete agent that records the timeout {@see AbstractLaravelAgent} passes to the
+ * Laravel AI package, instead of sending a real request.
  */
 class TimeoutExposingAgent extends AbstractLaravelAgent
 {
+    public int|null $promptTimeout = null;
+    public int|null $streamTimeout = null;
+
     public function __construct(
         private readonly AgentRequestContext $testContext
     )
@@ -33,13 +43,27 @@ class TimeoutExposingAgent extends AbstractLaravelAgent
         return 'test prompt';
     }
 
-    public function exposeTimeout(): int
+    public function prompt(
+        Decisions|string      $prompt,
+        array                 $attachments = [],
+        Lab|array|string|null $provider = null,
+        ?string               $model = null,
+        ?int                  $timeout = null
+    ): AgentResponse
     {
-        return $this->timeout();
+        $this->promptTimeout = $timeout;
+        return new AgentResponse('invocation', 'text', new Usage(), new Meta());
     }
 
-    public function exposeStallSeconds(): int|null
+    public function stream(
+        Decisions|string      $prompt,
+        array                 $attachments = [],
+        Lab|array|string|null $provider = null,
+        ?string               $model = null,
+        ?int                  $timeout = null
+    ): StreamableAgentResponse
     {
-        return $this->getStallSeconds();
+        $this->streamTimeout = $timeout;
+        return new StreamableAgentResponse('invocation', static fn() => yield from []);
     }
 }

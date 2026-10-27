@@ -21,7 +21,8 @@ use Laravel\Ai\Providers\Provider as Driver;
  * so that adapters do not need to know about config merging or container resolution.
  *
  * The assembled configuration for every driver follows this precedence (last wins):
- *  1. HAWKI defaults: `name`, `driver`, `store = false`.
+ *  1. HAWKI defaults: `name`, `driver`, `store = false` and the global `request_timeout` / `stall_timeout`
+ *     (raw config values, normalized by {@see \App\Services\Ai\Agents\Values\AgentTimeouts}).
  *  2. Provider-level adapter settings from {@see \App\Services\Ai\Providers\Values\ProviderSettings::getAdapterSettings()}.
  *  3. Adapter-supplied `$config` (e.g. `api_key`, `url`).
  *
@@ -35,8 +36,8 @@ class DriverFactory
         private readonly AiManager      $manager,
         private readonly ServiceLocator $serviceLocator,
         private readonly AiProvider     $provider,
-        private readonly int            $requestTimeout,
-        private readonly int            $stallTimeout,
+        private readonly mixed          $requestTimeout = null,
+        private readonly mixed          $stallTimeout = null,
     )
     {
     }

@@ -62,12 +62,12 @@ return [
     |   Request Timeouts
     |--------------------------------------------------------------------------
     |
-    |   request_timeout: Total time in seconds an AI request may take. The Laravel AI
-    |                     package defaults to 60 when this key is absent. Set 0 to
-    |                     remove the limit.
-    |   stall_timeout:   Abort an AI request that receives less than one byte per
-    |                     second for this many seconds. This protects against model
-    |                     connections that hang silently. Set 0 to disable.
+    |   request_timeout: Total time in seconds a non-streamed AI request may take
+    |                     (e.g. title generation, summaries). Set 0 to remove the limit.
+    |   stall_timeout:   Abort a streamed AI request (the chat) that receives no data for
+    |                     this many seconds. A stream that keeps sending data is never
+    |                     cut off. Use a higher value for reasoning models that think
+    |                     silently before they answer. Set 0 to disable.
     |
     |   Both values apply to all providers. Each provider can set its own values in
     |   its adapter settings, they override the ones given here.

@@ -317,16 +317,20 @@ Disabling a provider sets `active=false` for the provider record in the database
 These variables control how long HAWKI waits for an AI model to answer.
 
 ```bash
-# Total time in seconds an AI request may take (default: 60)
+# Total time in seconds a non-streamed AI request may take (default: 60)
 AI_REQUEST_TIMEOUT=60
 
-# Time in seconds without received data before a request is aborted (default: 120)
+# Time in seconds a streamed AI request may receive no data before it is aborted (default: 120)
 AI_STALL_TIMEOUT=120
 ```
 
-**`AI_REQUEST_TIMEOUT`** — Total time in seconds for an AI request. The default value is 60 seconds. Set the value to 0 for no limit. Use a higher value for models that need more time, for example reasoning models.
+**`AI_REQUEST_TIMEOUT`** — Total time in seconds for a non-streamed AI request, for example the generation of chat titles or summaries. The default value is 60 seconds. Set the value to 0 for no limit.
 
-**`AI_STALL_TIMEOUT`** — HAWKI aborts a request that receives less than one byte per second for this number of seconds. The default value is 120 seconds. This protects against model connections that hang without an answer. Set the value to 0 to turn this function off.
+**`AI_STALL_TIMEOUT`** — Applies to streamed AI requests, for example the answers in the chat. HAWKI aborts a stream that receives no data for this number of seconds. A stream that keeps sending data is never cut off, no matter how long the answer takes. The default value is 120 seconds. Use a higher value for reasoning models that think for a long time before they send the first text. Set the value to 0 to turn this function off.
+
+> **Note:** The stall timeout requires the PHP setting `allow_url_fopen` (enabled by default). When it is disabled, streams are handled by cURL and `AI_STALL_TIMEOUT` limits the total duration of a stream instead.
+
+Invalid values, for example an empty variable, fall back to the default values.
 
 Both values apply to all providers. Each provider can set its own values in its `adapter` settings. The provider values override the global values:
 
