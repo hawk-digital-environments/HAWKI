@@ -18,9 +18,9 @@ use Laravel\Ai\Providers\Provider;
  * - curl handler: a transfer is aborted when it receives less than one byte per second for the
  *   configured number of seconds (curl's CURLOPT_LOW_SPEED_LIMIT / CURLOPT_LOW_SPEED_TIME).
  * - stream handler: a read is aborted when it receives no data for the configured number of
- *   seconds (Guzzle's `read_timeout`). The wait for the response headers is bounded by the
- *   stream step timeout, which {@see streamStepTimeout()} caps by the stall timeout — the total
- *   duration of a healthy stream stays unlimited.
+ *   seconds (Guzzle's `read_timeout`). The prompt timeout of streamed requests carries the same
+ *   limit as a per-read idle timeout, see
+ *   {@see \App\Services\Ai\Agents\Values\AgentTimeouts::forStream()}.
  *
  * This protects against model connections that hang silently, e.g. a reasoning model that never
  * starts to stream. The stall timeout is read from the provider's driver configuration when the
@@ -52,26 +52,5 @@ trait AppliesStallDetection
             ],
             'read_timeout' => $stallSeconds,
         ]);
-    }
-
-    /**
-     * The timeout to pass to a streaming step: capped by the provider's stall timeout when one
-     * is configured.
-     *
-     * On Guzzle's stream handler, which serves all streaming requests of the Laravel AI package,
-     * the `timeout` option bounds only the connect and response-header phase — the total duration
-     * of the stream is not capped, body reads are bounded by `read_timeout` instead. Capping the
-     * header wait by the stall timeout therefore aborts a streaming request whose response never
-     * starts after the stall timeout, without limiting how long a healthy stream may run.
-     */
-    protected function streamStepTimeout(Provider $provider, ?int $timeout): ?int
-    {
-        $stallSeconds = (int)($provider->additionalConfiguration()['stall_timeout'] ?? 0);
-
-        if ($stallSeconds > 0 && ($timeout === null || $timeout === 0 || $timeout > $stallSeconds)) {
-            return $stallSeconds;
-        }
-
-        return $timeout;
     }
 }

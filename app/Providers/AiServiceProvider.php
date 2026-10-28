@@ -303,7 +303,7 @@ class AiServiceProvider extends ServiceProvider
                 // openai-compatible drivers use the stall-aware gateway, which applies the
                 // provider's `stall_timeout` to the HTTP requests of the gateway.
                 // TODO: Remove stall detection from the package's stock driver creators in 
-                // a future Laravel AI version on additionalConfiguration is supported.
+                // a future Laravel AI version if additionalConfiguration is supported.
                 $manager->extend('openai-compatible', function ($app, array $config) {
                     $events = $app->make(Dispatcher::class);
 

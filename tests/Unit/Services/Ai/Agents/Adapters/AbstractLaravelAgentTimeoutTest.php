@@ -7,6 +7,7 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Adapters\AbstractLaravelAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use App\Services\Ai\Agents\Values\AgentTimeouts;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
@@ -43,27 +44,31 @@ class AbstractLaravelAgentTimeoutTest extends TestCase
     }
 
     // =========================================================================
-    // timeout
+    // getTimeouts
     // =========================================================================
 
-    public function testItUsesTheTimeoutFromTheProviderDriverConfig(): void
+    public function testItUsesTheTimeoutsFromTheProviderDriverConfig(): void
     {
-        $sut = $this->makeAgentWithDriverConfig(['request_timeout' => 300]);
+        $sut = $this->makeAgentWithDriverConfig(['request_timeout' => 300, 'stall_timeout' => 45]);
 
-        static::assertSame(300, $sut->exposeTimeout());
+        static::assertSame(300, $sut->exposeTimeouts()->forRequest());
+        static::assertSame(45, $sut->exposeTimeouts()->forStream());
     }
 
-    public function testItFallsBackToThePackageDefaultWithoutDriverConfig(): void
+    public function testItFallsBackToTheDefaultsWithoutDriverConfig(): void
     {
         $sut = $this->makeAgentWithDriverConfig([]);
 
-        static::assertSame(60, $sut->exposeTimeout());
+        static::assertSame(60, $sut->exposeTimeouts()->forRequest());
+        // stall detection is disabled: streams get no idle limit
+        static::assertSame(AgentTimeouts::DISABLED_STALL_READ_TIMEOUT, $sut->exposeTimeouts()->forStream());
     }
 
-    public function testItLetsZeroDisableTheTimeout(): void
+    public function testItLetsZeroRemoveTheRequestLimitAndDisableStall(): void
     {
-        $sut = $this->makeAgentWithDriverConfig(['request_timeout' => 0]);
+        $sut = $this->makeAgentWithDriverConfig(['request_timeout' => 0, 'stall_timeout' => 0]);
 
-        static::assertSame(0, $sut->exposeTimeout());
+        static::assertSame(0, $sut->exposeTimeouts()->forRequest());
+        static::assertSame(AgentTimeouts::DISABLED_STALL_READ_TIMEOUT, $sut->exposeTimeouts()->forStream());
     }
 }

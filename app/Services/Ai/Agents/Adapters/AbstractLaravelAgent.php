@@ -11,6 +11,7 @@ use App\Services\Ai\Agents\Events\AgentSendingEvent;
 use App\Services\Ai\Agents\Events\AgentStreamCompletedEvent;
 use App\Services\Ai\Agents\Events\AgentStreamInitiatedEvent;
 use App\Services\Ai\Agents\Exceptions\AgentStateException;
+use App\Services\Ai\Agents\Values\AgentTimeouts;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
 use App\Services\Ai\Values\TokenUsage;
 use Laravel\Ai\Contracts\Agent as LaravelAgentInterface;
@@ -61,18 +62,14 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
     }
 
     /**
-     * The total timeout in seconds for requests of this agent.
-     *
-     * The Laravel AI package calls this method while it resolves the prompt timeout, before its own
-     * fallback applies ({@see \Laravel\Ai\Promptable::getTimeout()}). The value comes from the
-     * provider's driver configuration: providers opt in via the `request_timeout` key in the
-     * `adapter` settings of their `model_providers.providers` entry. A value of 0 removes the
-     * timeout entirely; without the setting the package default of 60 applies.
+     * The timeouts of this agent's provider, see {@see AgentTimeouts} for how they apply to
+     * non-streamed and streamed requests.
      */
-    protected function timeout(): int
+    protected function getTimeouts(): AgentTimeouts
     {
-        $timeout = $this->getContext()->provider->driver->additionalConfiguration()['request_timeout'] ?? null;
-        return $timeout === null ? 60 : (int)$timeout;
+        return AgentTimeouts::fromDriverConfig(
+            $this->getContext()->provider->driver->additionalConfiguration()
+        );
     }
 
     /**
@@ -104,7 +101,8 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
             prompt: $this->getPromptString(),
             attachments: $this->getAttachments(),
             provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
-            model: $this->getContext()->model->model_id
+            model: $this->getContext()->model->model_id,
+            timeout: $this->getTimeouts()->forRequest()
         );
 
         $this->usage = $response->usage;
@@ -130,7 +128,8 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
             prompt: $this->getPromptString(),
             attachments: $this->getAttachments(),
             provider: (string)ProviderDriverPortal::fromProviderProxy($this->getContext()->provider),
-            model: $this->getContext()->model->model_id
+            model: $this->getContext()->model->model_id,
+            timeout: $this->getTimeouts()->forStream()
         );
 
         $response->then(function (AgentResponse $response) {

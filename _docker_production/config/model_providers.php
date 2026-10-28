@@ -70,8 +70,8 @@ return [
     |   Each provider can set an `adapter` array with driver settings, e.g.
     |   per-provider timeouts:
     |     'adapter' => [
-    |         'request_timeout' => 300,  // total seconds per AI request, 0 = no limit (default: 60)
-    |         'stall_timeout'  => 120,   // abort after this many seconds without data, 0 = off (default: off)
+    |         'request_timeout' => 300,  // total limit for the complete answer of non-streaming requests; 0 = no limit, default 60
+    |         'stall_timeout'  => 120,   // abort a stream after this many seconds without received data; 0 = off (default)
     |     ],
     |
     |   stall_timeout is supported by the openai-compatible and ollama drivers;

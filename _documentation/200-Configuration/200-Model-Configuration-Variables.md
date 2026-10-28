@@ -329,9 +329,15 @@ Timeouts are set per provider in the `adapter` settings of its entry in `config/
 ],
 ```
 
-**`request_timeout`** — Total time in seconds an AI request of this provider may take. The default is 60 seconds (the Laravel AI package default). Set a higher value for models that need more time, for example reasoning models, or `0` for no limit.
+**`request_timeout`** — Time budget in seconds for **non-streaming requests**; default 60, `0` removes the limit. It is a hard limit for the *complete* answer — a model that has not fully replied within `request_timeout` seconds is aborted. Streaming requests are not governed by it at all: a stream may run as long as it keeps sending data, matching HAWKI 2.4.
 
-**`stall_timeout`** — HAWKI aborts a request that receives no data for this number of seconds. This protects against model connections that hang without an answer, while still allowing reasoning models to think for a long time before they start streaming. Disabled by default; a typical value is 120 seconds. On streaming requests, a stream that goes silent — before or after it starts — is aborted after `stall_timeout`.
+**`stall_timeout`** — HAWKI aborts a **streaming request** that receives **no data** for this number of seconds, whether the silence occurs before the model starts answering or in the middle of a stream. This protects against connections that hang silently while still allowing reasoning models to think for a long time: raise the value for models that stay silent longer than the limit before their first output. Receiving any data resets the timer, so an actively streaming answer — or a provider that sends keep-alive bytes while thinking — is never aborted by it. Disabled by default; with stall detection disabled, streams have no idle limit (this also removes the previous behaviour where a silent stream was aborted after 60 seconds). A typical value is 120 seconds. This requires PHP's `allow_url_fopen` setting (on by default); without it, streams are served through curl — they keep no total limit and stall detection uses curl's low-speed abort instead.
+
+In short:
+
+- Model thinks in silence for minutes before answering → raise `stall_timeout`
+- "The answer must be complete within N seconds" (non-streaming only) → `request_timeout`
+- Protection against hanging connections → `stall_timeout`
 
 Stall detection is supported by these drivers:
 

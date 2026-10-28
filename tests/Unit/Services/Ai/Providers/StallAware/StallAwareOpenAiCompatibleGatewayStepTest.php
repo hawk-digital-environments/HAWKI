@@ -130,51 +130,9 @@ class StallAwareOpenAiCompatibleGatewayStepTest extends TestCase
         // The stream handler ignores curl options, so the read timeout must ride along for
         // streamed requests — see AppliesStallDetection.
         static::assertSame(120, $sut->capturedOptions[0]['read_timeout']);
-        // On the stream handler the `timeout` option bounds only the connect and header
-        // phase, so the stream step caps it by the stall timeout: a stream whose response
-        // never starts is aborted after the stall timeout too.
-        static::assertSame(120, $sut->capturedOptions[0]['timeout']);
-    }
-
-    public function testItDoesNotCapTheStreamStepTimeoutWithoutAStallTimeout(): void
-    {
-        Http::fake([
-            'api.example.com/*' => Http::response(
-                "data: [DONE]\n\n",
-                200,
-                ['Content-Type' => 'text/event-stream']
-            ),
-        ]);
-
-        $provider = new OpenAiCompatibleProvider(
-            [
-                'name' => 'test',
-                'driver' => 'openai-compatible',
-                'key' => 'test-key',
-                'url' => 'https://api.example.com/v1',
-            ],
-            $this->app->make(Dispatcher::class)
-        );
-
-        $sut = $this->makeSut();
-
-        $stream = $sut->generateStreamStep(
-            'test-invocation',
-            $provider,
-            'test-model',
-            null,
-            [new UserMessage('hello')],
-            [],
-            null,
-            null,
-            0,
-            new StepContext()
-        );
-
-        static::assertSame([], $sut->capturedOptions);
-
-        iterator_to_array($stream);
-
+        // The prompt timeout is passed through unchanged: AbstractLaravelAgent::sendStreaming()
+        // passes the stall timeout (or no limit when stall detection is off) via
+        // AgentTimeouts::forStream(), which acts as the per-read idle timeout on the stream handler.
         static::assertSame(0, $sut->capturedOptions[0]['timeout']);
     }
 }

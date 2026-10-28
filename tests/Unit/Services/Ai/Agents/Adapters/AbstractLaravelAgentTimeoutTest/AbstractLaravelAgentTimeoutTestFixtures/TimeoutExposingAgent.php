@@ -5,6 +5,7 @@ namespace Tests\Unit\Services\Ai\Agents\Adapters\AbstractLaravelAgentTimeoutTest
 
 use App\Services\Ai\Agents\Adapters\AbstractLaravelAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use App\Services\Ai\Agents\Values\AgentTimeouts;
 use Stringable;
 
 /**
@@ -33,8 +34,8 @@ class TimeoutExposingAgent extends AbstractLaravelAgent
         return 'test prompt';
     }
 
-    public function exposeTimeout(): int
+    public function exposeTimeouts(): AgentTimeouts
     {
-        return $this->timeout();
+        return $this->getTimeouts();
     }
 }
