@@ -20,6 +20,7 @@
 - MCP tools failed because processes were decoupled using `autoSse=true` (the default). New default is `autoSse=false`. 
 - Large chat messages fail to encrypt with a `RangeError: too many arguments provided for a function call`: the client-side encryption encoded the ciphertext with one `String.fromCharCode.apply()` over every byte, which exceeds the browser's argument limit at roughly 100k bytes. Base64 conversion now runs in 32k chunks, in both the new kernel encryption and the legacy bundle.
 - Multiple Mermaid diagram previews failed to render at the same time: generated diagrams could receive duplicate render IDs, causing the renderer to silently draw only one and skip the rest. Fixed upstream in `markstream` 2.0.15.
+- `php hawki init` and `php hawki run -build` no longer run an unattended `composer update` when outdated packages are detected. Setup and build now only perform a deterministic `composer install`; upgrading packages is a deliberate decision. Previously the silent update could jump packages across major versions (e.g. `laravel/ai` 0.10 → 1.3), breaking the app with errors that first surfaced in unrelated commands like `models sync`.
 - Model enrichment (pricing, context windows, feature flags) stopped updating because LiteLLM discontinued their catalog API. Lookups always fell back to the static files. The catalog is now read from LiteLLM's GitHub file.
 
 ### Internals
