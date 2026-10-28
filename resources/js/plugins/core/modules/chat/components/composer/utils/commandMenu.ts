@@ -16,8 +16,9 @@ import type {CaretRect} from '$plugins/core/modules/chat/components/composer/uti
 export interface MenuCommand {
     /** The text typed after the trigger; filters the menu instead of its search field. */
     query: string;
-    /** Viewport position of the trigger character, which the menu opens at. */
-    anchor: CaretRect;
+    /** Viewport position the menu opens at: the trigger character, or — with a `width` —
+     *  a whole box (the composer card below `md`), whose width the menu then takes. */
+    anchor: CaretRect & { width?: number };
 }
 
 /** What `ComposerTextarea` calls on the menu its command opened. */
@@ -89,7 +90,8 @@ export function createCommandMenu(
     return {
         /** Content props that open the menu at the trigger rather than its button: above
          *  the line (the composer sits at the bottom of the screen), flipping below when
-         *  there is no room. Empty outside command mode. */
+         *  there is no room. Empty outside command mode. In command mode the menu is always
+         *  a popover, never the mobile sheet — see `sheet` on `DropdownMenu`. */
         anchorProps() {
             const anchor = getCommand()?.anchor;
             if (!anchor) {
@@ -97,10 +99,13 @@ export function createCommandMenu(
             }
             return {
                 customAnchor: {
-                    getBoundingClientRect: () => new DOMRect(anchor.left, anchor.top, 0, anchor.height)
+                    getBoundingClientRect: () => new DOMRect(anchor.left, anchor.top, anchor.width ?? 0, anchor.height)
                 },
                 side: 'top' as const,
-                align: 'start' as const
+                align: 'start' as const,
+                // The box already sits inside the viewport, so its width replaces the
+                // dropdown's viewport cap, which is narrower than the composer on a phone.
+                ...(anchor.width ? {style: `--dropdown-width: ${anchor.width}px; max-width: ${anchor.width}px;`} : {})
             };
         },
 

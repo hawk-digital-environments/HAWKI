@@ -4,7 +4,9 @@
   low-level `Root`/`Trigger`/`Portal`/`Content` primitives behind a single
   component. Below the `--bp-md-and-smaller` breakpoint the content panel
   automatically renders as a `BottomSheet` instead of a floating popover —
-  item components don't need to know which one is active.
+  item components don't need to know which one is active. `sheet={false}` keeps the
+  popover at every size, e.g. for a menu driven from a text field while the on-screen
+  keyboard is up.
 
   Compose it with the other family members as `children`:
   `DropdownMenuItem`, `DropdownMenuGroup`, `DropdownMenuLabel`,
@@ -94,6 +96,12 @@
          * @defaultValue true
          */
         magneticHover?: boolean;
+        /**
+         * Below `md`, render the content as a `BottomSheet`. Turn off to keep the floating
+         * popover there too — its rows still get touch-sized targets.
+         * @defaultValue true
+         */
+        sheet?: boolean;
     }
 
     let {
@@ -109,7 +117,8 @@
         layout = 'list',
         width,
         maxHeight,
-        magneticHover = true
+        magneticHover = true,
+        sheet = true
     }: Props = $props();
 
     let triggerEl = $state<HTMLElement | null>(null);
@@ -249,6 +258,19 @@
     {/if}
 {/snippet}
 
+{#snippet popover()}
+    <DropdownMenuPrimitive.Portal>
+        <DropdownMenuPrimitive.Content bind:ref={contentEl} {...mergeProps(fullContentProps, {class: 'dropdown-content--dropdown'}) as any}>
+            {#if title}
+                <div class="dropdown-title">
+                    <SnippetOrString value={title}/>
+                </div>
+            {/if}
+            {@render items()}
+        </DropdownMenuPrimitive.Content>
+    </DropdownMenuPrimitive.Portal>
+{/snippet}
+
 <DropdownMenuPrimitive.Root bind:open {onOpenChange}>
     {#if trigger}
         <DropdownMenuPrimitive.Trigger disabled={disabled}>
@@ -263,29 +285,24 @@
             {/snippet}
         </DropdownMenuPrimitive.Trigger>
     {/if}
-    <Breakpoint>
-        {#snippet bpSmallerThanMd()}
-            <BottomSheet bind:open={open} title={title} contentProps={{onOpenAutoFocus: preventAutoFocus}}>
-                <DropdownMenuPrimitive.ContentStatic
-                    bind:ref={sheetContentEl}
-                    {...mergeProps(fullContentProps, {class: 'dropdown-content--sheet', onOpenAutoFocus: focusSheetPanel}) as any}>
-                    {@render items()}
-                </DropdownMenuPrimitive.ContentStatic>
-            </BottomSheet>
-        {/snippet}
-        {#snippet children()}
-            <DropdownMenuPrimitive.Portal>
-                <DropdownMenuPrimitive.Content bind:ref={contentEl} {...mergeProps(fullContentProps, {class: 'dropdown-content--dropdown'}) as any}>
-                    {#if title}
-                        <div class="dropdown-title">
-                            <SnippetOrString value={title}/>
-                        </div>
-                    {/if}
-                    {@render items()}
-                </DropdownMenuPrimitive.Content>
-            </DropdownMenuPrimitive.Portal>
-        {/snippet}
-    </Breakpoint>
+    {#if sheet}
+        <Breakpoint>
+            {#snippet bpSmallerThanMd()}
+                <BottomSheet bind:open={open} title={title} contentProps={{onOpenAutoFocus: preventAutoFocus}}>
+                    <DropdownMenuPrimitive.ContentStatic
+                        bind:ref={sheetContentEl}
+                        {...mergeProps(fullContentProps, {class: 'dropdown-content--sheet', onOpenAutoFocus: focusSheetPanel}) as any}>
+                        {@render items()}
+                    </DropdownMenuPrimitive.ContentStatic>
+                </BottomSheet>
+            {/snippet}
+            {#snippet children()}
+                {@render popover()}
+            {/snippet}
+        </Breakpoint>
+    {:else}
+        {@render popover()}
+    {/if}
 </DropdownMenuPrimitive.Root>
 
 <style>
@@ -380,9 +397,10 @@
 
     /* Below `md` the menu is a BottomSheet, so every row gets a touch-sized
        target (≥ 44px, like SingleSelect's sheet). Submenu panels are included:
-       DropdownMenuSub floats them over the sheet at this size. */
+       DropdownMenuSub floats them over the sheet at this size — and so is a
+       popover kept with `sheet={false}`. */
     @media (--bp-smaller-than-md) {
-        :global(.dropdown-content:is(.dropdown-content--sheet, .dropdown-sub-content)) {
+        :global(.dropdown-content:is(.dropdown-content--sheet, .dropdown-content--dropdown, .dropdown-sub-content)) {
             :global(:is(.dropdown-item, .dropdown-checkbox-item, .dropdown-radio-item, .dropdown-sub-trigger)) {
                 min-height: 2.75rem;
             }

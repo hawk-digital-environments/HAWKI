@@ -350,6 +350,7 @@
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open
+            sheet={!shownCommand}
             layout="panel"
             width="calc(0.25rem * 72)"
             maxHeight="24rem"

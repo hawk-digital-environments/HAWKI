@@ -19,8 +19,8 @@
   name, and ArrowUp/ArrowDown/Enter/Tab/Escape drive it — the textarea keeps focus
   throughout. Picking a row drops the typed `@query`/`/query` again: an assistant
   becomes a handle on the message, a tool is toggled in `composerContext.tools`.
-  Below the `md` breakpoint, where the menus are bottom sheets, a trigger opens the menu
-  the same way its button does instead.
+  Below the `md` breakpoint the menu opens above the whole composer card and spans its width
+  instead of sitting at the trigger, so it stays readable over the on-screen keyboard.
 
   Reads/writes `ComposerContext` directly — there is no props-based way to
   set the message text; bind to `composerContext.message` from a parent if
@@ -191,16 +191,22 @@
     );
     const menu = $derived(mention?.trigger === '@' ? assistantMenu : mention?.trigger === '/' ? toolMenu : null);
 
-    // Below `md` the menus are bottom sheets, and a sheet over the on-screen keyboard can't
-    // be driven from the textarea — so there a trigger opens the menu just like its button
-    // (search field, focus inside, focus back to the button on close). Only the typed
-    // trigger's pick-or-dismiss handling below still applies.
+    // Below `md` a menu at the trigger would be squeezed between the caret and the screen
+    // edge, so it opens above the whole composer card and takes its width instead — above
+    // the card rather than the textarea, so it doesn't cover the card's top row. The textarea
+    // keeps focus either way, so the on-screen keyboard stays up while the query filters.
     const breakpoint = useBreakpoint();
-    const commandMode = $derived(!breakpoint.is('bpSmallerThanMd'));
+    const compact = $derived(breakpoint.is('bpSmallerThanMd'));
+
+    function composerAnchor(textarea: HTMLTextAreaElement) {
+        const box = textarea.closest('.chat-composer-card') ?? textarea;
+        const {left, top, width} = box.getBoundingClientRect();
+        return {left, top, width, height: 0};
+    }
 
     // What the menus filter by.
     $effect(() => {
-        command = mention && commandMode
+        command = mention
             ? {trigger: mention.trigger, query: mention.query, anchor: mention.anchor}
             : null;
     });
@@ -241,10 +247,9 @@
                 consumeMention();
             } else {
                 dismissMention();
-                // Unless the user clicked somewhere else that took focus, or the menu was a
-                // sheet, which hands focus back to its button.
+                // Unless the user clicked somewhere else that took focus.
                 const focused = document.activeElement;
-                if (commandMode && (!focused || focused === document.body || focused.closest('.dropdown-content'))) {
+                if (!focused || focused === document.body || focused.closest('.dropdown-content')) {
                     ref?.focus();
                 }
             }
@@ -295,7 +300,8 @@
             hideMention();
             // Anchored to the trigger character rather than the moving caret, so the menu
             // stays put while typing.
-            mention = {...next, snapshot: commandSnapshot(), anchor: getTextareaCaretRect(textarea, next.start)};
+            const anchor = compact ? composerAnchor(textarea) : getTextareaCaretRect(textarea, next.start);
+            mention = {...next, snapshot: commandSnapshot(), anchor};
             menuSeenOpen = false;
             setMenuOpen(next.trigger, true);
         } else if (mention && mention.query !== next.query) {
@@ -314,7 +320,6 @@
         }
 
         const {start, query} = mention;
-        const refocus = commandMode;
         const end = start + 1 + query.length;
         setBody(textarea.value.slice(0, start) + textarea.value.slice(end));
         mention = null;
@@ -325,9 +330,7 @@
         // caret where the mention was on the next frame.
         requestAnimationFrame(() => {
             awaitingFlush = false;
-            if (refocus) {
-                textarea.focus();
-            }
+            textarea.focus();
             textarea.setSelectionRange(start, start);
         });
     }
@@ -361,7 +364,7 @@
 
     /** Menu-first key handling; returns true when the key was consumed by the menu. */
     function handleMentionKeyDown(e: KeyboardEvent): boolean {
-        if (!mention || !menuOpen || !commandMode) {
+        if (!mention || !menuOpen) {
             return false;
         }
 
