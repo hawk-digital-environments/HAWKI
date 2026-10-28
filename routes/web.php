@@ -150,6 +150,8 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
                     ->name('web.roomEditMember');
                 Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'kickMember'])
                     ->name('web.roomRemoveMember');
+                Route::post('/req/inv/store-invitations/{slug}', [InvitationController::class, 'storeInvitations'])
+                    ->name('web.roomInviteMember');
             });
             Route::delete('/req/room/attachment/delete', [RoomController::class, 'deleteAttachment']);
 
@@ -161,8 +163,6 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
             // Invitation Handling
 
             // Route::post('/req/room/requestPublicKeys', [InvitationController::class, 'onRequestPublicKeys']);
-            Route::post('/req/inv/store-invitations/{slug}', [InvitationController::class, 'storeInvitations'])
-                ->name('web.roomInviteMember');
             Route::post('/req/inv/sendExternInvitation', [InvitationController::class, 'sendExternInvitationEmail']);
             Route::post('/req/inv/roomInvitationAccept', [InvitationController::class, 'onAcceptInvitation'])
                 ->name('web.roomInvitationAccept');

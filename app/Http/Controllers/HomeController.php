@@ -37,6 +37,7 @@ class HomeController extends Controller
                 $member = $room->members()->where('user_id', $user->id)->first();
 
                 $raw = $room->toArray();
+                $raw['role'] = $member?->role;
                 $raw['hasUnreadMessages'] = false;
                 foreach ($room->messages as $message) {
                     if (!$message->isReadBy($member)) {

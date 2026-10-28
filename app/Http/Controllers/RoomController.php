@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
+use App\Models\Member;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\Chat\Message\MessageContentValidator;
@@ -18,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class RoomController extends Controller
 {
@@ -95,8 +97,8 @@ class RoomController extends Controller
     public function addMember(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            'username' => 'string',
-            'role' => 'string'
+            'username' => 'required|string',
+            'role' => ['required', 'string', Rule::in([Member::ROLE_ADMIN, Member::ROLE_EDITOR, Member::ROLE_VIEWER])],
         ]);
         $members = $this->roomService->add($slug, $validatedData);
         return response()->json($members);

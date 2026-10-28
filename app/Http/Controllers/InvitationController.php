@@ -4,15 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Jobs\SendEmailJob;
 use App\Models\Invitation;
+use App\Models\Member;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\Rule;
 
 class InvitationController extends Controller
 {
+    private const INVITABLE_ROLES = [Member::ROLE_ADMIN, Member::ROLE_EDITOR, Member::ROLE_VIEWER];
 
     /// Send the email with the signed URL to external invitee
     public function sendExternInvitationEmail(Request $request)
@@ -24,6 +27,9 @@ class InvitationController extends Controller
             'hash' => 'required|string|size:32',
             'slug' => 'required|string',
         ]);
+
+        // Only room admins may send invitations
+        $this->ensureRoomAdmin($validatedData['slug']);
 
         // Find the user based on username
         $user = User::where('username', $validatedData['username'])->first();
@@ -62,10 +68,29 @@ class InvitationController extends Controller
     /// store invitation on the database
     public function storeInvitations(Request $request, $slug)
     {
-        $roomId = Room::where('slug', $slug)->firstOrFail()->id;
-        $invitations = $request->input('invitations');
+        // Defense in depth: the route is already guarded by the roomAdmin middleware
+        $room = $this->ensureRoomAdmin($slug);
+        $roomId = $room->id;
+
+        $validated = $request->validate([
+            'invitations' => 'required|array|min:1',
+            'invitations.*.username' => 'required|string|max:255',
+            'invitations.*.role' => ['required', 'string', Rule::in(self::INVITABLE_ROLES)],
+            'invitations.*.iv' => 'required|string',
+            'invitations.*.tag' => 'required|string',
+            'invitations.*.encryptedRoomKey' => 'required|string',
+            'invitations.*.email' => 'sometimes|nullable|array',
+        ]);
+        $invitations = $validated['invitations'];
 
         foreach ($invitations as $inv) {
+            // Users that are already active members must not be invited again;
+            // role changes go through the admin-only addMember endpoint.
+            $invitee = User::where('username', $inv['username'])->first();
+            if ($invitee && $room->isMember($invitee->id)) {
+                continue;
+            }
+
             // Create a sub-request for sending the email if email data is present
             // This allows us to reuse the sendExternInvitationEmail method while avoiding
             // sending two requests from the client side.
@@ -208,8 +233,22 @@ class InvitationController extends Controller
             return response()->json(['error' => 'Unauthorized to accept this invitation'], 403);
         }
 
-        // Add the user to the room (assuming you have a pivot table for room members)
         $room = $invitation->room;
+
+        // Never use an invitation to change the role of an existing member;
+        // role changes are restricted to the admin-only addMember endpoint.
+        // Rejecting here also keeps the client from overwriting its valid room key
+        // with the one contained in the invitation.
+        if ($room->isMember($user->id)) {
+            $invitation->delete();
+            return response()->json(['error' => 'Already a member of this room'], 409);
+        }
+
+        if (!in_array($invitation->role, self::INVITABLE_ROLES, true)) {
+            $invitation->delete();
+            return response()->json(['error' => 'Invalid invitation'], 422);
+        }
+
         $room->addMember($user->id, $invitation->role);
 
 
@@ -218,9 +257,22 @@ class InvitationController extends Controller
 
         return response()->json([
             'success' => true,
-            'room' => $room,
+            'room' => [...$room->toArray(), 'role' => $invitation->role],
         ]);
 
     }
 
+    /// Resolves the room by slug and aborts unless the current user is an admin of it
+    private function ensureRoomAdmin(string $slug): Room
+    {
+        // RoomAccessScope restricts the lookup to rooms the user is a member of
+        $room = Room::where('slug', $slug)->firstOrFail();
+        $member = $room->members()->where('user_id', Auth::id())->first();
+
+        if (!$member || !$member->hasRole(Member::ROLE_ADMIN)) {
+            abort(403, 'Forbidden');
+        }
+
+        return $room;
+    }
 }
