@@ -59,7 +59,7 @@ class OpenAiLikeAdapter extends AbstractProviderAdapter
     {
         $baseUri = $this->baseUrl ?? $provider->api_url;
         return $factory->make(
-            driverName: Lab::OpenAI,
+            driverName: Lab::OpenAICompatible,
             config: [
                 'key' => $provider->api_key,
                 'url' => $baseUri

@@ -1,14 +1,13 @@
+import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 import type {
     AiRequestOptions,
     AiStreamPacket,
     AiStreamRequest,
     AiStreamResult
 } from '$lib/kernel/ai/types.js';
-import {aiStreamPacketTypes} from '$lib/kernel/ai/types.js';
+import {AiStreamPacketSchema} from '$lib/kernel/ai/streamPacket.schema.js';
 import {ApiTransportError} from '$lib/kernel/api/errors.js';
 import type {ApiTransport} from '$lib/kernel/api/transport.js';
-
-const packetTypes = new Set<string>(aiStreamPacketTypes);
 
 export interface AiApiOptions {
     endpoint?: string;
@@ -72,7 +71,7 @@ export class AiApi {
         let streamedText = '';
         let completionText = '';
         let completed = false;
-        const citations: unknown[] = [];
+        const citations: UrlCitation[] = [];
 
         for await (const packet of this.stream(request, options)) {
             if (packet.type === 'error') {
@@ -80,7 +79,7 @@ export class AiApi {
             }
             if (packet.type === 'message') {
                 streamedText += aiPacketText(packet.content);
-            } else if (packet.type === 'citation' && packet.content !== undefined) {
+            } else if (packet.type === 'citation' && packet.content) {
                 citations.push(packet.content);
             } else if (packet.type === 'completion') {
                 completionText = aiPacketText(packet.content);
@@ -168,10 +167,11 @@ export class AiApi {
             throw new AiApiError('The AI stream returned malformed JSON.', undefined, undefined, {cause: error});
         }
 
-        if (!packet || typeof packet !== 'object' || !packetTypes.has(String((packet as Record<string, unknown>).type))) {
-            throw new AiApiError('The AI stream returned an invalid packet.');
+        const result = AiStreamPacketSchema.safeParse(packet);
+        if (!result.success) {
+            throw new AiApiError('The AI stream returned an invalid packet.', undefined, packet, {cause: result.error});
         }
-        return packet as AiStreamPacket;
+        return result.data;
     }
 }
 
