@@ -15,6 +15,7 @@
 - Self-service access token creation was unavailable in the profile view: it still checked the pre-2.5.0 `sanctum.*` config keys instead of the new `external_access.*` keys, so the AccessTokens panel never appeared even with `ALLOW_EXTERNAL_COMMUNICATION` and `ALLOW_USER_TOKEN_CREATION` enabled.
 - **Security:** Fixed a privilege escalation in group chat invitations. Any room member (including viewers) could create an invitation for themselves with the `admin` role and accept it to become a room admin, or overwrite other users' pending invitations. Sending invitations is now restricted to room admins, invitation roles are validated, and accepting an invitation no longer changes the role of an existing member. Thanks to [Artur Chlebicki](https://github.com/Artur12555) for responsibly reporting this issue!
 - The room controls are now fully restricted for room admins.
+- Removing or leaving a room now deletes the member's pending invitations for that room, and leaving a room no longer fails halfway.
 - Model enrichment (pricing, context windows, feature flags) stopped updating because LiteLLM discontinued their catalog API. Lookups always fell back to the static files. The catalog is now read from LiteLLM's GitHub file.
 
 ### Internals

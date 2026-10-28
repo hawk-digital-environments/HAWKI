@@ -166,13 +166,19 @@ class Room extends Model
             try {
                 // Attempt to delete the member from the room based on user ID
                 $member = $this->members()->where('user_id', $userId)->firstOrFail();
+                // Resolve the user before revoking: afterwards the access scopes may hide the user/room
+                $user = $member->user;
                 $member->revokeMembership();
+                // Drop pending invitations, so a removed member can't rejoin by accepting an old invitation
+                Invitation::where('room_id', $this->id)
+                    ->where('username', $user->username)
+                    ->delete();
                 // Please don't do it like this. Don't torture your model with injecting
                 // random repositories. There should be a service, but the service itself is cumbersome.
                 // Will be removed in a future refactor.
                 /** @var UserKeychainRepository $repo */
                 $repo = app(UserKeychainRepository::class);
-                $repo->removeRoomKey($member->user, $member->room);
+                $repo->removeRoomKey($user, $this);
 
                 $this->triggerOrDeferMemberEvent(fn() => MemberRemovedFromRoomEvent::dispatch($member));
 
