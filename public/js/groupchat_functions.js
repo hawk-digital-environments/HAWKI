@@ -1135,8 +1135,6 @@ async function searchUser(searchBar) {
                     // Check if the user's username is already in the ignoreList
                     const isAlreadyAdded = ignoreList.some(invitedUsername => invitedUsername === user.username);
                     if (isAlreadyAdded) {
-                        const index = data.users.indexOf(user);
-                        data.users.splice(index, 1);
                         return;
                     }
 
@@ -1524,6 +1522,8 @@ async function removeMemberFromRoom(username) {
         const data = await response.json();
 
         if (data.success) {
+            // Keep the local member list in sync, so the user can be found again when adding members
+            activeRoom.members = activeRoom.members.filter(member => member.username !== username);
             return true;
         }
         console.error(data.message);
@@ -1549,6 +1549,8 @@ async function changeMemberRole(username, role) {
         });
 
         if (response.ok) {
+            const member = activeRoom.members.find(member => member.username === username);
+            if (member) member.role = role;
             return true;
         }
         console.error(`Failed to change role! status: ${response.status}`);
