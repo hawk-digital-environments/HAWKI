@@ -43,7 +43,7 @@
 
                 <h3 class="label-header top-gap-3">{{ __("PersonalData") }}</h3>
                 <div class="">
-                    @if(config('sanctum.allow_user_token') && config('sanctum.allow_external_communication'))
+                    @if(config('external_access.allow_user_token') && config('external_access.enabled'))
                         <button class="btn-md-txt" onclick="toggleAccessTokensPanel(true)">{{ __("AccessTokens") }}</button>
                     @else
                         <p class="gray-text zero-v-margin">{{ __("AccessTokens") }}</p>
@@ -57,7 +57,7 @@
         </div>
     </div>
 
-    @if(config('sanctum.allow_user_token') && config('sanctum.allow_external_communication'))
+    @if(config('external_access.allow_user_token') && config('external_access.enabled'))
         @include('partials.home.modals.access-tokens-modal')
     @endif
     @include('partials.home.modals.image-selection-modal')
