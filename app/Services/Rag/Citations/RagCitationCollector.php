@@ -11,6 +11,15 @@ namespace App\Services\Rag\Citations;
  * citations into `Citation` stream events, synchronous runs merge them into
  * the response meta.
  *
+ * The same per-run state also tracks the knowledge tool's usage for the
+ * terminal last-call signal: the AssistantKnowledge run listeners publish
+ * the model's tool-round limit
+ * ({@see \App\Services\Ai\Models\Settings\Values\AiModelSettings::getMaxToolCallingRounds()}
+ * — non-streaming on AgentSendingEvent, streaming override on
+ * AgentStreamInitiatedEvent) via {@see setToolRoundLimit()}, the MCP
+ * tool-call listener counts the knowledge tool's search calls and flags the
+ * final permitted one — everything resets together on {@see drain()}.
+ *
  * Registered as a scoped container binding: one instance per request shared
  * between writer and reader.
  */
@@ -23,6 +32,10 @@ class RagCitationCollector
     private array $citeIdsByReference = [];
 
     private int $nextCiteId = 1;
+
+    private int $searchToolCalls = 0;
+
+    private int $toolRoundLimit = 0;
 
     /**
      * Records one document citation, keyed (and de-duplicated) by its
@@ -53,9 +66,35 @@ class RagCitationCollector
     }
 
     /**
+     * Counts one knowledge-tool search call and returns its 1-based number
+     * within the run — the caller detects the final permitted call with it.
+     */
+    public function recordSearchToolCall(): int
+    {
+        return ++$this->searchToolCalls;
+    }
+
+    /**
+     * Publishes the run's tool-round limit, resolved by the agent adapter
+     * from the model's settings (streaming and non-streaming differ); the
+     * citation listener reads it via {@see toolRoundLimit()} to signal the
+     * final permitted knowledge-tool call. 0 (or unset) disables the signal.
+     */
+    public function setToolRoundLimit(int $limit): void
+    {
+        $this->toolRoundLimit = $limit;
+    }
+
+    public function toolRoundLimit(): int
+    {
+        return $this->toolRoundLimit;
+    }
+
+    /**
      * Returns all collected citations and resets the collector — draining
      * is one-shot, so retries and repeated reads start clean (cite id
-     * assignment resets with them).
+     * assignment, the search-call count and the tool-round limit reset
+     * with them).
      *
      * @return list<RagDocumentCitation>
      */
@@ -66,6 +105,8 @@ class RagCitationCollector
         $this->citationsByReference = [];
         $this->citeIdsByReference = [];
         $this->nextCiteId = 1;
+        $this->searchToolCalls = 0;
+        $this->toolRoundLimit = 0;
 
         return $citations;
     }

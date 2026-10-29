@@ -87,6 +87,22 @@ final class RagSearchToolResult
     }
 
     /**
+     * Appends one human-readable notice as an additional `content` text
+     * entry — the terminal last-call signal the citation listener adds to
+     * the final permitted knowledge-tool call of a run. The search payload
+     * itself stays data-only (no instruction keys), keeping the result
+     * contract of the cite-id rewrite.
+     */
+    public function withTerminalNotice(string $notice): self
+    {
+        $data = $this->data;
+        $data['content'] = is_array($data['content'] ?? null) ? $data['content'] : [];
+        $data['content'][] = ['type' => 'text', 'text' => $notice];
+
+        return new self($data, true);
+    }
+
+    /**
      * @return list<RagDocumentReference>
      */
     public function documentReferences(): array

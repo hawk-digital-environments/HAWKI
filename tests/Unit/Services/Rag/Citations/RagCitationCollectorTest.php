@@ -36,6 +36,31 @@ class RagCitationCollectorTest extends TestCase
         static::assertSame('D1', $collector->citeIdFor('attachments:uuid-2'));
     }
 
+    public function testSearchToolCallCountingResetsWithDrain(): void
+    {
+        $collector = new RagCitationCollector();
+
+        static::assertSame(1, $collector->recordSearchToolCall());
+        static::assertSame(2, $collector->recordSearchToolCall());
+
+        $collector->drain();
+
+        static::assertSame(1, $collector->recordSearchToolCall());
+    }
+
+    public function testToolRoundLimitRoundTripsAndResetsWithDrain(): void
+    {
+        $collector = new RagCitationCollector();
+
+        static::assertSame(0, $collector->toolRoundLimit());
+
+        $collector->setToolRoundLimit(5);
+        static::assertSame(5, $collector->toolRoundLimit());
+
+        $collector->drain();
+        static::assertSame(0, $collector->toolRoundLimit());
+    }
+
     public function testCitationsCarryTheirCiteId(): void
     {
         $collector = new RagCitationCollector();

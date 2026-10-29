@@ -16,6 +16,7 @@ use App\Services\AssistantKnowledge\Listeners\CollectRagDocumentCitationsOnMcpTo
 use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Ai\Values\OnlineStatus;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 #[CoversClass(CollectRagDocumentCitationsOnMcpToolCalled::class)]
@@ -174,6 +175,85 @@ class CollectRagDocumentCitationsOnMcpToolCalledTest extends TestCase
 
         static::assertCount(1, $citations);
         static::assertSame('D1', $citations[0]->citeId);
+    }
+
+    #[DataProvider('finalCallLimitProvider')]
+    public function testFinalPermittedCallGainsTheTerminalNotice(int $limit): void
+    {
+        $listener = $this->listener();
+        $this->collector()->setToolRoundLimit($limit);
+
+        $events = [];
+        for ($call = 1; $call <= $limit; $call++) {
+            $events[$call] = $this->event($this->tool('hawki-rag'), $this->textResult([
+                'documents' => [
+                    ['kind' => 'attachments', 'document_id' => 'uuid-' . $call, 'name' => 'Doc' . $call . '.pdf'],
+                ],
+            ]));
+            $listener->handle($events[$call]);
+        }
+
+        for ($call = 1; $call < $limit; $call++) {
+            $decoded = json_decode($events[$call]->getResult(), true, JSON_THROW_ON_ERROR);
+            static::assertCount(1, $decoded['content']);
+        }
+
+        $final = json_decode($events[$limit]->getResult(), true, JSON_THROW_ON_ERROR);
+        static::assertCount(2, $final['content']);
+        static::assertSame('text', $final['content'][1]['type']);
+        static::assertStringContainsString('No tool calls are left', $final['content'][1]['text']);
+        static::assertStringContainsString($limit . ' permitted hawki-rag-query-search calls', $final['content'][1]['text']);
+
+        // The search payload itself stays data-only — no instruction keys.
+        $payload = json_decode($final['content'][0]['text'], true, JSON_THROW_ON_ERROR);
+        static::assertArrayNotHasKey('instructions', $payload);
+    }
+
+    /** @return list<array{int}> */
+    public static function finalCallLimitProvider(): array
+    {
+        return [[5], [3]];
+    }
+
+    public function testNoTerminalNoticeWithoutAPublishedLimit(): void
+    {
+        $listener = $this->listener();
+
+        $event = $this->event($this->tool('hawki-rag'), $this->textResult([
+            'documents' => [
+                ['kind' => 'attachments', 'document_id' => 'uuid-1', 'name' => 'Doc.pdf'],
+            ],
+        ]));
+        $listener->handle($event);
+
+        $decoded = json_decode($event->getResult(), true, JSON_THROW_ON_ERROR);
+        static::assertCount(1, $decoded['content']);
+    }
+
+    public function testDrainingResetsTheFinalCallCounting(): void
+    {
+        $listener = $this->listener();
+        $this->collector()->setToolRoundLimit(5);
+
+        for ($call = 1; $call <= 5; $call++) {
+            $listener->handle($this->event($this->tool('hawki-rag'), $this->textResult([
+                'documents' => [
+                    ['kind' => 'attachments', 'document_id' => 'uuid-' . $call, 'name' => 'Doc' . $call . '.pdf'],
+                ],
+            ])));
+        }
+
+        $this->collector()->drain();
+
+        $fresh = $this->event($this->tool('hawki-rag'), $this->textResult([
+            'documents' => [
+                ['kind' => 'attachments', 'document_id' => 'uuid-x', 'name' => 'X.pdf'],
+            ],
+        ]));
+        $listener->handle($fresh);
+
+        $decoded = json_decode($fresh->getResult(), true, JSON_THROW_ON_ERROR);
+        static::assertCount(1, $decoded['content']);
     }
 
     public function testLeavesResultsWithoutDocumentsListUntouched(): void
