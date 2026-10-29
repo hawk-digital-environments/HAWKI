@@ -383,6 +383,8 @@ Handles reach the message through three routes, all with the same outcome — th
 
 Removal happens through a chip's remove button or by unchecking the row in the assistant menu.
 
+**Recognition rules.** Only handles of *registered* assistants — the `ai-handle` store's entries — are recognized as mentions. Any other `@token` stays plain message text, typed or pasted: an unknown `@nonexistingAssistant`, or the human `@mentions` inside pasted chat logs, never becomes a chip and is sent verbatim. A recognized handle must also be a whole token delimited by whitespace or the start/end of the text — `@test:` (log quoting), `(@test)` and `user@test` do not match. Two further carve-outs: text pasted beyond 1000 characters is attached as a `.txt` file instead of being inserted, bypassing mention processing entirely; and while a typed token at the end of the input could still grow into a longer handle (`@test` while `@test2` exists), it stays text until terminated, so typing the longer handle is not cut short. Known limitation: whitespace-delimited occurrences of *known* handles inside pasted text are still consumed as live mentions — all of them are stripped from the text and the last one becomes the addressed assistant.
+
 `handlesInMessage` lists each handle **once**, however often it occurs in the message text. `MentionChips` keys its rendered chips by handle, so a duplicate entry would crash the keyed `each` (`each_key_duplicate`) — the dedupe is what keeps a hand-typed or pasted double mention (`"@test hello @test"`) renderable. After a successful send, `clear()` deliberately keeps the handle so the user keeps talking to the same assistant without re-tagging.
 
 ---

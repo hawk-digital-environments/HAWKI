@@ -161,6 +161,20 @@ export class AiHandleStore implements DataStore {
         }
     }
 
+    /**
+     * Whether another known handle strictly extends `handle` — e.g. `@test` while
+     * `@test2` is also taggable. A token that sits at the very end of the text and
+     * passes this check may still be growing into that longer handle, so the
+     * composer keeps it as plain text until it is terminated by the character
+     * that follows (see `ComposerTextarea`): typing `@test2` must not be cut
+     * short at `@test`.
+     */
+    public handleCanGrow(handle: string): boolean {
+        return this.assistants.some(assistant =>
+            assistant.handle.length > handle.length && assistant.handle.startsWith(handle)
+        );
+    }
+
     public async loadData(app: HawkiApp): Promise<void> {
         this._app = app;
         this._hawkiHandle = app.config.get().ai?.handle ?? '@hawki';

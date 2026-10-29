@@ -194,11 +194,12 @@ export class ComposerContext {
         /** Improves a draft through the configured AI transport. */
         public readonly improveMessage: (message: string, systemPrompt: string) => Promise<string>,
         /**
-         * Extracts agent handles from a text. Backed by the `ai-handle` store; injected
-         * so the context stays independent from the store layer.
-         * @example getHandlesInText('@hawki hi there') yields '@hawki'
+         * Locates agent handles in a text, yielding each with its `[start, end)` span
+         * into the text. Backed by the `ai-handle` store; injected so the context
+         * stays independent from the store layer.
+         * @example getHandleMatchesInText('@hawki hi there') yields {handle: '@hawki', start: 0, end: 6}
          */
-        private readonly getHandlesInText: (text: string) => Generator<string>,
+        private readonly getHandleMatchesInText: (text: string) => Generator<{handle: string; start: number; end: number}>,
         /**
          * Reads the taggable assistant entries (also backed by the `ai-handle`
          * store) so derived state can react to which participant is addressed.
@@ -258,13 +259,23 @@ export class ComposerContext {
     public message = $state('');
 
     /** The message text with all `@handle` tokens stripped and whitespace normalised.
-     *  Used by `GuardSlice.canSend` to check whether there is actual content to send. */
+     *  Used by `GuardSlice.canSend` to check whether there is actual content to send.
+     *  Every whole-token occurrence is removed, however often the same assistant is
+     *  mentioned — but a known handle that merely prefixes a longer unknown token
+     *  (`@test` inside `@testing`) leaves that token alone. */
     public readonly messageWithoutHandles = $derived.by(() => {
-        let text = this.message;
-        for (const handle of this.handlesInMessage) {
-            text = text.replace(handle, '').trim();
+        let text = '';
+        let cursor = 0;
+        for (const match of this.getHandleMatchesInText(this.message)) {
+            text += this.message.slice(cursor, match.start);
+            cursor = match.end;
+            // Swallow the separator the handle brought with it, so removing "@hawki " from
+            // "@hawki hi" leaves "hi" rather than " hi".
+            if (this.message[cursor] === ' ') {
+                cursor += 1;
+            }
         }
-        return text.trim();
+        return (text + this.message.slice(cursor)).trim();
     });
 
     /** All agent `@handle` tokens found in the current message (e.g. `['@hawki']`).
@@ -272,7 +283,13 @@ export class ComposerContext {
      *  Only one assistant can be addressed at a time (see {@link addHandleToMessage}), so
      *  this normally holds at most one entry — it stays a list because a hand-typed message
      *  can still contain several. Each handle is listed once, however often it occurs. */
-    public readonly handlesInMessage = $derived.by(() => [...new Set(this.getHandlesInText(this.message))]);
+    public readonly handlesInMessage = $derived.by(() => {
+        const handles = new Set<string>();
+        for (const match of this.getHandleMatchesInText(this.message)) {
+            handles.add(match.handle);
+        }
+        return [...handles];
+    });
 
     /** `true` when at least one `@hawki` is present in the message. */
     public readonly containsAiHandle = $derived.by(() => this.handlesInMessage.length > 0);
@@ -604,7 +621,7 @@ export function createComposerContext(
         initialSystemPrompt,
         onSetSystemPrompt,
         options.onImproveMessage ?? ((message, systemPrompt) => oldUiBridge.triggerImproveMessage(message, systemPrompt)),
-        (message) => aiHandleStore.getHandlesIn(message),
+        (message) => aiHandleStore.getHandleMatchesIn(message),
         () => aiHandleStore.assistants
     );
 
