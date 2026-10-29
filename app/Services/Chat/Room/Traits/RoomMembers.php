@@ -20,7 +20,7 @@ trait RoomMembers
     public function add(string $slug, array $data): array
     {
         try {
-            $room = Room::where('slug', $slug)->firstOrFail();
+            $room = $this->roomRepository->findOneBySlugOrFail($slug);
             if (!$room->isMember(Auth::id())) {
                 throw new AuthorizationException();
             }
@@ -38,7 +38,7 @@ trait RoomMembers
     public function leave($slug): bool
     {
         /** @var Room $room */
-        $room = Room::where('slug', $slug)->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
         $user = Auth::user();
         /** @var Member $member */
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
@@ -52,7 +52,7 @@ trait RoomMembers
     {
 
         /** @var Room $room */
-        $room = Room::where('slug', $slug)->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
         /** @var User $user */
         $user = User::where('username', $username)->firstOrFail();
         /** @var Member $member */
@@ -67,8 +67,14 @@ trait RoomMembers
 
     public function removeMember(Member $member, Room $room): bool
     {
+        // Resolve the user before removing: afterwards the access scopes may hide the removed user
+        $user = $member->user;
+
         // Remove the member from the room
-        $room->removeMember($member->user_id);
+        if ($room->removeMember($member->user_id)) {
+            // Drop pending invitations, so a removed member can't rejoin by accepting an old invitation
+            $this->invitationRepository->deleteAllForUserInRoom($room, $user);
+        }
         return true;
     }
 

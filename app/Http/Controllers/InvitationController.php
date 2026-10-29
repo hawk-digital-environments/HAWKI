@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\SendEmailJob;
-use App\Models\Invitation;
 use App\Models\Member;
 use App\Models\Room;
-use App\Models\User;
+use App\Services\Chat\Room\Repositories\InvitationRepository;
+use App\Services\Chat\Room\Repositories\RoomRepository;
+use App\Services\Users\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -16,6 +17,14 @@ use Illuminate\Validation\Rule;
 class InvitationController extends Controller
 {
     private const INVITABLE_ROLES = [Member::ROLE_ADMIN, Member::ROLE_EDITOR, Member::ROLE_VIEWER];
+
+    public function __construct(
+        private readonly RoomRepository       $roomRepository,
+        private readonly InvitationRepository $invitationRepository,
+        private readonly UserRepository       $userRepository
+    )
+    {
+    }
 
     /// Send the email with the signed URL to external invitee
     public function sendExternInvitationEmail(Request $request)
@@ -32,7 +41,7 @@ class InvitationController extends Controller
         $this->ensureRoomAdmin($validatedData['slug']);
 
         // Find the user based on username
-        $user = User::where('username', $validatedData['username'])->first();
+        $user = $this->userRepository->findOneByUsername($validatedData['username']);
 
         // Check if the user exists
         if (!$user) {
@@ -70,7 +79,6 @@ class InvitationController extends Controller
     {
         // Defense in depth: the route is already guarded by the roomAdmin middleware
         $room = $this->ensureRoomAdmin($slug);
-        $roomId = $room->id;
 
         $validated = $request->validate([
             'invitations' => 'required|array|min:1',
@@ -86,7 +94,7 @@ class InvitationController extends Controller
         foreach ($invitations as $inv) {
             // Users that are already active members must not be invited again;
             // role changes go through the admin-only addMember endpoint.
-            $invitee = User::where('username', $inv['username'])->first();
+            $invitee = $this->userRepository->findOneByUsername($inv['username']);
             if ($invitee && $room->isMember($invitee->id)) {
                 continue;
             }
@@ -107,30 +115,15 @@ class InvitationController extends Controller
                 }
             }
 
-            // Check if an invitation already exists for this user in this room
-            $existingInvitation = Invitation::where('room_id', $roomId)
-                ->where('username', $inv['username'])
-                ->first();
-
-            if ($existingInvitation) {
-                // Update the existing invitation
-                $existingInvitation->update([
-                    'role' => $inv['role'],
-                    'iv' => $inv['iv'],
-                    'tag' => $inv['tag'],
-                    'invitation' => $inv['encryptedRoomKey']
-                ]);
-            } else {
-                // Create a new invitation
-                Invitation::create([
-                    'room_id' => $roomId,
-                    'username' => $inv['username'],  // Use array notation
-                    'role' => $inv['role'],
-                    'iv' => $inv['iv'],
-                    'tag' => $inv['tag'],
-                    'invitation' => $inv['encryptedRoomKey']
-                ]);
-            }
+            // Create the invitation, or update it if one already exists for this user in this room
+            $this->invitationRepository->createOrUpdate(
+                room: $room,
+                username: $inv['username'],
+                role: $inv['role'],
+                iv: $inv['iv'],
+                tag: $inv['tag'],
+                encryptedRoomKey: $inv['encryptedRoomKey']
+            );
         }
     }
 
@@ -162,7 +155,7 @@ class InvitationController extends Controller
         $user = Auth::user();
 
         // Retrieve all invitations with related room details
-        $invitations = $user->invitations()->get();
+        $invitations = $this->invitationRepository->findAllForUser($user);
 
         // Map the invitations to the desired format
         $formattedInvitations = $invitations->map(function ($invitation) {
@@ -192,10 +185,7 @@ class InvitationController extends Controller
         $user = Auth::user();
 
         // Retrieve the invitation where the room's slug matches and the invitation belongs to the authenticated user
-        $invitation = $user->invitations()
-            ->whereRelation('room', 'slug', $slug)
-            ->with('room') // Eager load the room
-            ->first();
+        $invitation = $this->invitationRepository->findOneForUserByRoomSlug($user, $slug);
 
         // Check if the invitation exists
         if (!$invitation) {
@@ -226,7 +216,10 @@ class InvitationController extends Controller
 
         $user = Auth::user();
 
-        $invitation = Invitation::findOrFail($request->input('invitation_id'));
+        $invitation = $this->invitationRepository->findOne($validated['invitation_id']);
+        if (!$invitation) {
+            abort(404);
+        }
 
         // Verify that the invitation is meant for the authenticated user
         if ($invitation->username !== $user->username) {
@@ -266,10 +259,9 @@ class InvitationController extends Controller
     private function ensureRoomAdmin(string $slug): Room
     {
         // RoomAccessScope restricts the lookup to rooms the user is a member of
-        $room = Room::where('slug', $slug)->firstOrFail();
-        $member = $room->members()->where('user_id', Auth::id())->first();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
 
-        if (!$member || !$member->hasRole(Member::ROLE_ADMIN)) {
+        if (!$this->roomRepository->isMemberWithRole($room, Auth::user(), Member::ROLE_ADMIN)) {
             abort(403, 'Forbidden');
         }
 

@@ -169,10 +169,6 @@ class Room extends Model
                 // Resolve the user before revoking: afterwards the access scopes may hide the user/room
                 $user = $member->user;
                 $member->revokeMembership();
-                // Drop pending invitations, so a removed member can't rejoin by accepting an old invitation
-                Invitation::where('room_id', $this->id)
-                    ->where('username', $user->username)
-                    ->delete();
                 // Please don't do it like this. Don't torture your model with injecting
                 // random repositories. There should be a service, but the service itself is cumbersome.
                 // Will be removed in a future refactor.
