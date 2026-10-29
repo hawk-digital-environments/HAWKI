@@ -58,21 +58,28 @@
     }
 
     /** One MCP server's tools, grouped for display under a shared `ToolMenuGroupHeader`. */
-    interface McpEntryGroup {
+    export interface McpEntryGroup {
         /** The MCP server's id, used as the group's React/Svelte key and header id. */
         id: string;
         /** The MCP server's display label (`server.server_label`). */
         label: string;
         /** The MCP server's description, shown via an `InfoPopover` next to the label; `null` if none. */
         description: string | null;
-        /** This server's tools, alphabetically sorted by display name. */
+        /** This server's currently visible, unpinned tools, alphabetically sorted by display name. */
         entries: ToolMenuEntry[];
+        /** Every picker-eligible tool from this server. Used by the group toggle even when
+         *  search or favourites move an individual tool out of this section. */
+        toggleEntries: ToolMenuEntry[];
+        /** Enables or disables all tools represented by `toggleEntries`. */
+        onToggle: (active: boolean) => void;
     }
 
     /** Entries partitioned into the three sections `ToolMenuList` renders, in display order. */
     export interface ToolMenuGroupedEntries {
         /** Entries the user favourited, lifted out of their normal section and shown first. */
         pinned: ToolMenuEntry[];
+        /** MCP server groups favourited as a whole, lifted into the Favorites section. */
+        pinnedMcpTools: McpEntryGroup[];
         /** Capability entries (e.g. web search, image generation) shown first, ungrouped. */
         capabilities: ToolMenuEntry[];
         /** Plain HAWKI function tools (not backed by an MCP server), shown under one shared header. */
@@ -156,7 +163,7 @@
                         composerContext.tools.set(tool, selection, settings);
                     },
                     disabled: toolAvailabilityFor(tool, composerContext.model.current) === 'offline',
-                    // To avoid rebuilding the whole array, we only update the active/supported state in the filteredEntries derived store.
+                    // Live active/supported values are added by `filteredEntries` below.
                     active: false,
                     available: false
                 };
@@ -165,24 +172,31 @@
     });
     const filteredEntries = $derived.by(() => {
         return allEntries.map(entry => {
-            entry.active = composerContext.tools.isActive(entry.tool);
-            entry.available = entry.tool.isAvailableFor(composerContext.model.current);
-            return entry;
+            // Return a fresh object when live state changes. Child rows are keyed by tool name,
+            // so mutating the existing plain object leaves their `entry` prop referentially
+            // unchanged and can make a group look selected while its expanded children retain
+            // stale unchecked swatches.
+            return {
+                ...entry,
+                active: composerContext.tools.isActive(entry.tool),
+                available: entry.tool.isAvailableFor(composerContext.model.current)
+            };
         });
     });
+
+    const listQuery = $derived((shownCommand ? shownCommand.query : query).trim().toLowerCase());
 
     // What the list panel shows: the entries matching the search field — or the typed
     // command's query — by tool name, description or the label of the MCP server providing it.
     const searchedEntries = $derived.by(() => {
-        const needle = (shownCommand ? shownCommand.query : query).trim().toLowerCase();
-        if (!needle) {
+        if (!listQuery) {
             return filteredEntries;
         }
         return filteredEntries.filter(entry => [
             entry.tool.displayName,
             entry.tool.description,
             entry.tool.server?.server_label
-        ].some(text => text?.toLowerCase().includes(needle)));
+        ].some(text => text?.toLowerCase().includes(listQuery)));
     });
 
     // The live entry shown in the detail view, kept in sync with filteredEntries
@@ -202,6 +216,15 @@
         const capabilities: ToolMenuEntry[] = [];
         const functionTools: ToolMenuEntry[] = [];
         const mcpTools: Record<string, ToolMenuEntry[]> = {};
+        const allMcpTools: Record<string, ToolMenuEntry[]> = {};
+
+        // Keep the group toggle tied to the complete MCP, not just the rows left in this
+        // section after search and favourites have been applied.
+        for (const entry of filteredEntries) {
+            if (!entry.tool.server) continue;
+            const serverId = entry.tool.server.id + '';
+            (allMcpTools[serverId] ??= []).push(entry);
+        }
 
         // Favourite tools are shown once, in their own section — never also in the section
         // they would otherwise belong to.
@@ -231,22 +254,42 @@
             ) {
                 const serverName = entries[0].tool.server!.server_label;
                 const serverDescription = entries[0].tool.server!.description || null;
+                const toggleEntries = allMcpTools[serverId] ?? entries;
                 return {
                     id: serverId,
                     label: serverName,
                     description: serverDescription,
-                    entries: sortEntriesAlphabetically(entries)
+                    entries: sortEntriesAlphabetically(entries),
+                    toggleEntries,
+                    onToggle(active: boolean) {
+                        for (const entry of toggleEntries) {
+                            // An offline tool cannot be newly enabled, matching its individual
+                            // row. Disabling still includes it so a stale active tool can always
+                            // be cleared with the group action.
+                            if (active && entry.disabled) continue;
+                            if (active) {
+                                composerContext.tools.enable(entry.tool);
+                            } else {
+                                composerContext.tools.disable(entry.tool);
+                            }
+                        }
+                        if (shownCommand) {
+                            open = false;
+                        }
+                    }
                 };
-            }).sort(
-                (a, b) => a.label.localeCompare(b.label)
-            )
+            }).sort((a, b) => a.label.localeCompare(b.label))
         ;
+
+        const {pinned: pinnedMcpTools, rest: remainingMcpTools} =
+            pinStore.partition('mcp', mcpToolsSorted, group => group.id);
 
         return {
             pinned,
+            pinnedMcpTools,
             capabilities: sortEntriesAlphabetically(capabilities),
             functionTools: sortEntriesAlphabetically(functionTools),
-            mcpTools: mcpToolsSorted
+            mcpTools: remainingMcpTools
         };
     });
 
@@ -254,6 +297,7 @@
     // from a picker with nothing in it.
     const orderedEntries = $derived([
         ...groupedEntries.pinned,
+        ...groupedEntries.pinnedMcpTools.flatMap(group => group.entries),
         ...groupedEntries.capabilities,
         ...groupedEntries.functionTools,
         ...groupedEntries.mcpTools.flatMap(group => group.entries)
@@ -303,7 +347,7 @@
             const row = content.querySelector<HTMLElement>(
                 `[data-tool-name="${CSS.escape(tool.name)}"]:not([data-disabled])`
             );
-            if (row) {
+            if (row && !row.closest('[inert]')) {
                 return row;
             }
         }
@@ -388,8 +432,11 @@
                     <DropdownMenuEmpty>{__('chat.composer.toolMenu.noResults')}</DropdownMenuEmpty>
                 {:else}
                     <!-- Inside the scrolling viewport, so the sliding hover scrolls with the rows. -->
-                    <MenuList class="dropdown-menu-list" bridgeSections>
-                        <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+                    <MenuList class="dropdown-menu-list tool-menu-list" bridgeSections>
+                        <ToolMenuList
+                            entries={groupedEntries}
+                            onOpenDetail={openToolDetail}
+                            expandMcpGroups={!!listQuery}/>
                     </MenuList>
                 {/if}
             </DropdownMenuDetailView>

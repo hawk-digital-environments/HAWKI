@@ -23,9 +23,10 @@
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
-    import {useMenuListRow} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
+    import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
+    import type {Attachment} from 'svelte/attachments';
     import Tick02Icon from '../icons/iconset/Tick02Icon.svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
@@ -34,6 +35,10 @@
         checked?: boolean;
         /** Called when the checked state changes. */
         onCheckedChange?: (checked: boolean) => void;
+        /** Whether the checkbox represents a partially selected group. */
+        indeterminate?: boolean;
+        /** Called when the indeterminate state changes. */
+        onIndeterminateChange?: (indeterminate: boolean) => void;
         /** When true, the item cannot be interacted with. */
         disabled?: boolean;
         /** Item label content. Receives the current checked state, e.g. `{#snippet children(checked)}`. */
@@ -51,11 +56,15 @@
         indicator?: 'check' | 'none';
         /** Which end of the row the check sits at. @defaultValue 'end' */
         indicatorSide?: 'start' | 'end';
+        /** Inset the enclosing MenuList's sliding highlights for a nested row. */
+        inset?: boolean;
     }
 
     let {
         checked = $bindable(false),
         onCheckedChange,
+        indeterminate = $bindable(false),
+        onIndeterminateChange,
         disabled = false,
         children,
         class: className,
@@ -65,17 +74,40 @@
         iconRight: IconRight,
         indicator = 'check',
         indicatorSide = 'end',
+        inset = false,
         ...restProps
     }: Props = $props();
 
     // Inside a MenuList (every DropdownMenu provides one) the row is highlighted by the
     // list's sliding "magnetic" hover instead of its own :hover background.
-    const listRow = useMenuListRow();
-    const magnetic = $derived(!!listRow && !disabled);
+    const list = useMenuList();
+    let listIndex = $state(-1);
+    const listRow: Attachment<HTMLDivElement> = (element) => {
+        if (!list) return;
+        const index = list.register(element);
+        listIndex = index;
+        return () => {
+            list.unregister(index);
+            listIndex = -1;
+        };
+    };
+    const magnetic = $derived(!!list && !disabled);
+
+    $effect(() => {
+        if (list && listIndex >= 0) {
+            list.setState(listIndex, {active: false, inset});
+        }
+    });
 </script>
 
-<DropdownMenuPrimitive.CheckboxItem bind:checked {onCheckedChange} {disabled} {closeOnSelect}>
-    {#snippet child({props, checked: isChecked})}
+<DropdownMenuPrimitive.CheckboxItem
+    bind:checked
+    {onCheckedChange}
+    bind:indeterminate
+    {onIndeterminateChange}
+    {disabled}
+    {closeOnSelect}>
+    {#snippet child({props, checked: isChecked, indeterminate: isIndeterminate})}
         <div
             bind:this={ref}
             {@attach magnetic ? listRow : null}
@@ -89,7 +121,9 @@
             }, restProps, props)}>
             {#if indicator !== 'none'}
                 <span class="dropdown-item-indicator">
-                    {#if isChecked}
+                    {#if isIndeterminate}
+                        <span class="dropdown-item-indicator-mixed" aria-hidden="true"></span>
+                    {:else if isChecked}
                         <Tick02Icon size={12} aria-hidden="true"/>
                     {/if}
                 </span>
@@ -183,6 +217,13 @@
         align-items: center;
         justify-content: center;
         color: var(--color-text);
+    }
+
+    .dropdown-item-indicator-mixed {
+        width: calc(0.25rem * 2);
+        height: 1.5px;
+        border-radius: 999px;
+        background-color: currentColor;
     }
 
     .dropdown-item--indicator-end > .dropdown-item-indicator {

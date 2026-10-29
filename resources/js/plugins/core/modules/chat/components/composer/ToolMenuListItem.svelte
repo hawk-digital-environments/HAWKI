@@ -42,9 +42,11 @@
         /** Called with `entry` when the user clicks the info button or presses ArrowRight.
          *  `ToolMenu` uses this to open `ToolMenuDetail` for that tool. */
         onOpenDetail?: (entry: ToolMenuEntry) => void;
+        /** Marks a child of a grouped MCP so the menu's hover surface follows its inset. */
+        inset?: boolean;
     }
 
-    const {entry, onOpenDetail}: Props = $props();
+    const {entry, onOpenDetail, inset = false}: Props = $props();
     const focusContext = useToolMenuFocusContext();
 
     let rowEl = $state<HTMLDivElement | null>(null);
@@ -104,6 +106,7 @@
 <DropdownMenuCheckboxItem
     bind:ref={rowEl}
     checked={entry.active}
+    {inset}
     indicator="none"
     closeOnSelect={false}
     onCheckedChange={entry.onToggle}

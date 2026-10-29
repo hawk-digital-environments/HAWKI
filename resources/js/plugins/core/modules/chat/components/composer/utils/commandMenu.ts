@@ -70,7 +70,8 @@ export function createCommandMenu(
     }
 
     function rows(): HTMLElement[] {
-        return Array.from(content()?.querySelectorAll<HTMLElement>(ROW_SELECTOR) ?? []);
+        return Array.from(content()?.querySelectorAll<HTMLElement>(ROW_SELECTOR) ?? [])
+            .filter(row => !row.closest('[inert]'));
     }
 
     function activeRow(): HTMLElement | null {
@@ -140,7 +141,7 @@ export function createCommandMenu(
                 return;
             }
             const row = event.target.closest<HTMLElement>(ROW_SELECTOR);
-            if (row) {
+            if (row && !row.closest('[inert]')) {
                 highlight(row);
             }
         },
