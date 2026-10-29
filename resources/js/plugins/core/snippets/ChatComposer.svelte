@@ -92,18 +92,19 @@ Rendered once per page for either an AI conversation or a group room chat (see
 
     const aiHandleStore = useStore('ai-handle');
 
-    // Model and settings belong to HAWKI itself: an assistant brings its own model and
-    // configuration, so tagging one hides both controls. Nothing tagged (a 1:1 AI chat, or
-    // regen in a room) still counts as addressing HAWKI.
+    // Model and settings belong to the AI itself — the configured mention handle: an
+    // assistant brings its own model and configuration, so tagging one hides both
+    // controls. Nothing tagged (a 1:1 AI chat, or regen in a room) still counts as
+    // addressing the AI.
     const isAssistant = $derived(
         chatContext.handlesInMessage.some(handle => handle !== aiHandleStore.hawkiHandle)
     );
-    const showHawkiControls = $derived(chatContext.guard.showsAiUiElements && !isAssistant);
+    const showAiMentionHandleControls = $derived(chatContext.guard.showsAiUiElements && !isAssistant);
 
     // Whether the top row has anything in it at all. In a room it does not until the message
     // addresses someone: no tags, and no model/settings controls either. An AI conversation
     // always shows the controls, so the row is open there from the start.
-    const hasTopRowContent = $derived(showHawkiControls || chatContext.handlesInMessage.length > 0);
+    const hasTopRowContent = $derived(showAiMentionHandleControls || chatContext.handlesInMessage.length > 0);
 
     async function handleSend() {
         const status = chatContext.send();
@@ -209,11 +210,12 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                         <!-- Left: model controls. In a room the picker only appears
                                              once the message actually addresses the AI — until then
                                              there is no model to choose. Tagging HAWKI keeps the
-                                             picker, sitting right next to the chip; a study assistant
-                                             brings its own model, so only its chip remains. -->
+                                             picker: the controls are its visual, it never gets a
+                                             chip; a study assistant brings its own model, so only
+                                             its chip remains. -->
                                         <div class="chat-composer-left">
                                             <MentionChips/>
-                                            {#if showHawkiControls}
+                                            {#if showAiMentionHandleControls}
                                                 <!-- Collapsed rather than dropped: tagging a study
                                                      assistant swaps the picker for that chip, and both
                                                      halves of the row should move at the same time —
@@ -228,7 +230,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                             {/if}
                                         </div>
 
-                                        {#if showHawkiControls}
+                                        {#if showAiMentionHandleControls}
                                             <!-- Right: settings -->
                                             <div class="chat-composer-right" transition:growTransition>
                                                 <SettingsMenu/>

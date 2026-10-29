@@ -7,7 +7,9 @@
   textarea just doesn't show the handle tokens, `ComposerTextarea` keeps them out of the
   text it displays. This component only resolves handles to assistants; each `MentionChip`
   owns its own reveal-then-pill animation, and removing one strips that handle from the
-  message.
+  message. The AI itself (the configured mention handle, e.g. `@hawki`) is deliberately
+  chip-less — addressing it is what makes the model/settings controls appear, so a chip
+  next to them would say the same thing twice.
 
   What this component owns is the *row* half of the motion: a tag unrolls its width on the
   way in and collapses it on the way out, so the model picker sitting next to it glides
@@ -39,19 +41,24 @@
     const aiHandleStore = useStore('ai-handle');
 
     // One chip per handle in the message, resolved back to the assistant it belongs to so
-    // the chip can show that assistant's icon, name and color.
+    // the chip can show that assistant's icon, name and color. The AI itself (the
+    // configured mention handle) never gets one: addressing it is signaled by the
+    // model/settings controls appearing (see `ChatComposer`'s showAiMentionHandleControls),
+    // and its checked row in the assistant menu is where it gets untagged.
     const chips = $derived.by(() => {
-        return composerContext.handlesInMessage.map(handle => {
-            const assistant = aiHandleStore.assistants.find(candidate => candidate.handle === handle);
-            const appearance = assistant?.appearance
-                ?? defaultAssistantAppearance(assistant ? assistant.label : handle.slice(1));
-            return {
-                handle,
-                emoji: appearance.icon,
-                colors: appearance.colors,
-                label: assistant ? assistant.label : handle
-            };
-        });
+        return composerContext.handlesInMessage
+            .filter(handle => handle !== aiHandleStore.hawkiHandle)
+            .map(handle => {
+                const assistant = aiHandleStore.assistants.find(candidate => candidate.handle === handle);
+                const appearance = assistant?.appearance
+                    ?? defaultAssistantAppearance(assistant ? assistant.label : handle.slice(1));
+                return {
+                    handle,
+                    emoji: appearance.icon,
+                    colors: appearance.colors,
+                    label: assistant ? assistant.label : handle
+                };
+            });
     });
 
     // The box is open before the handle has finished spelling itself out, so the reveal is

@@ -72,11 +72,23 @@
     // `messageWithoutHandles`, which trims: trimming would swallow a space the moment the
     // user typed it and bounce the caret.
 
-    /** The message minus its handle tokens (and the single space that follows each). */
+    /** A handle match whose token sits at the very end of `text` may still be growing
+     *  into a longer handle (`@test` → `@test2`), so it counts as plain text until a
+     *  terminating character follows and settles which handle was meant. */
+    function isGrowingMatch(match: {handle: string; end: number}, text: string): boolean {
+        return match.end === text.length && aiHandleStore.handleCanGrow(match.handle);
+    }
+
+    /** The message minus its handle tokens (and the single space that follows each).
+     *  A token that is still growing at the end of the message stays visible — the
+     *  user may be typing a longer handle it is a prefix of (see {@link isGrowingMatch}). */
     function stripHandles(message: string): string {
         let text = '';
         let cursor = 0;
         for (const match of aiHandleStore.getHandleMatchesIn(message)) {
+            if (isGrowingMatch(match, message)) {
+                continue;
+            }
             text += message.slice(cursor, match.start);
             cursor = match.end;
             // Swallow the separator the handle brought with it, so removing "@hawki " from
@@ -99,7 +111,45 @@
     const body = $derived(stripHandles(composerContext.message));
 
     function setBody(value: string) {
-        composerContext.message = composeMessage(composerContext.handlesInMessage, value);
+        // A handle typed out in full is a mention just like one picked from the popup: it
+        // becomes the message's one assistant handle (replacing any other) instead of being
+        // appended as a second, possibly duplicate, handle. A token that may still be
+        // growing into a longer handle is left as text for now (see {@link isGrowingMatch}),
+        // so typing `@test2` is not cut short at `@test`.
+        const typed = lastSettledHandle(value);
+        if (!typed) {
+            composerContext.message = composeMessage(composerContext.handlesInMessage, value);
+            return;
+        }
+        composerContext.message = composeMessage([typed.handle], stripHandles(value));
+        mention = null;
+        caret = null;
+        if (ref) {
+            placeCaretAfterFlush(ref, stripHandles(value.slice(0, typed.start)).length);
+        }
+    }
+
+    /** The last match in `value` that already counts as a handle — skipping tokens that
+     *  may still grow at the end of `value` — or null when none qualifies. */
+    function lastSettledHandle(value: string): {handle: string; start: number; end: number} | null {
+        const matches = [...aiHandleStore.getHandleMatchesIn(value)];
+        for (let i = matches.length - 1; i >= 0; i--) {
+            if (!isGrowingMatch(matches[i], value)) {
+                return matches[i];
+            }
+        }
+        return null;
+    }
+
+    /** The value lands on the element only after the binding flushes, so the caret is put
+     *  back on the next frame; until then, events must not re-detect a stale mention. */
+    function placeCaretAfterFlush(textarea: HTMLTextAreaElement, offset: number) {
+        awaitingFlush = true;
+        requestAnimationFrame(() => {
+            awaitingFlush = false;
+            textarea.focus();
+            textarea.setSelectionRange(offset, offset);
+        });
     }
 
     const textareaPlaceholder = $derived.by(() => {
@@ -260,31 +310,18 @@
         mention = null;
         caret = null;
         dismissedStart = null;
-        awaitingFlush = true;
-
-        // The value lands on the element only after the binding flushes, so restore the
-        // caret where the mention was on the next frame.
-        requestAnimationFrame(() => {
-            awaitingFlush = false;
-            textarea.focus();
-            textarea.setSelectionRange(start, start);
-        });
+        placeCaretAfterFlush(textarea, start);
         return start;
     }
 
     /** Turns the typed `@query` into a chip: the query is dropped from the text and the
-     *  assistant's handle is added to the message — or removed again if it was already
-     *  tagged, so picking the checked row untags it, the same way `/` toggles a tool. */
+     *  assistant becomes the message's handle — the same outcome as typing the handle out
+     *  in full (see {@link setBody}), so re-picking a tagged assistant keeps it tagged. */
     function insertMention(assistant: AiAssistant) {
-        const wasTagged = composerContext.handlesInMessage.includes(assistant.handle);
         if (consumeMention() === null) {
             return;
         }
-        if (wasTagged) {
-            composerContext.removeHandleFromMessage(assistant.handle);
-        } else {
-            composerContext.addHandleToMessage(assistant.handle);
-        }
+        composerContext.addHandleToMessage(assistant.handle);
     }
 
     /** Turns the typed `/query` into a tool switch: the query is dropped from the text and
