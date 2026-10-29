@@ -124,18 +124,29 @@ export class OldUiMessageHistory {
             return message;
         }
 
-        if (message.content?.text.startsWith('{')) {
-            const parsed = JSON.parse(message.content.text);
-            return {
-                ...message,
-                content: {
-                    ...message.content,
-                    ...parsed
-                }
-            };
+        if (!message.content.text.trim().startsWith('{')) {
+            return message;
         }
 
-        return message;
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(message.content.text);
+        } catch {
+            // Plain text that just starts with "{"
+            return message;
+        }
+
+        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return message;
+        }
+
+        return {
+            ...message,
+            content: {
+                ...message.content,
+                ...parsed
+            }
+        };
     }
 }
 
