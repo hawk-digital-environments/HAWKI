@@ -337,7 +337,7 @@ Components and modes never need to know what each slice saves — the coordinato
 | `type` | `'aiConv' \| 'room'` | Readonly. Set at construction. Affects `guard.showsAiUiElements`. |
 | `message` | `string` ($state) | The text currently in the input. Bind directly or set imperatively. |
 | `messageWithoutHandles` | `string` (derived) | `message` with all `@handle` tokens stripped and whitespace normalised. Used by `guard.canSend` to detect actual content. |
-| `handlesInMessage` | `string[]` (derived) | All `@handle` tokens found in `message` (e.g. `['@hawki']`). |
+| `handlesInMessage` | `string[]` (derived) | All *unique* `@handle` tokens found in `message` — each handle is listed once, however often it occurs (e.g. `['@hawki']`). See *Mentioning Assistants* below. |
 | `containsAiHandle` | `boolean` (derived) | `true` when `handlesInMessage` is non-empty. |
 | `sendStatus` | `SendMessageStatus \| null` (derived) | The active send operation, or `null` when idle. Cleared automatically once the response body resolves. |
 | `systemPrompt` | `string` (getter/setter) | The system prompt for this session. Setting it propagates to `OldUiBridge` (suppressed when the bridge itself is loading a prompt). |
@@ -352,7 +352,9 @@ Components and modes never need to know what each slice saves — the coordinato
 
 **`reset(withCheckpoint?)`** — full reset back to initial state: empties `message`, clears `attachments`, resets parameters, clears tools, restores `systemPrompt` to the initial value, and nulls `sendStatus`. When `withCheckpoint` is `true`, also calls `checkpointer.restoreCheckpoint()` which exits any active mode.
 
-**`addHandleToMessage(handle)`** — prepends `handle` to `message` if it is not already present, then calls `focusInput()`.
+**`addHandleToMessage(handle)`** — makes `handle` the message's one assistant handle, *replacing* any handle already present (see *Mentioning Assistants* below), then calls `focusInput()`.
+
+**`removeHandleFromMessage(handle)`** — removes every occurrence of `handle` from `message`, leaving the rest of the text untouched, then calls `focusInput()`. The counterpart of `addHandleToMessage`.
 
 **`focusInput()`** — imperatively requests focus on the textarea. Called by modes after pre-filling the message so the cursor lands in the input.
 
@@ -363,6 +365,25 @@ onMount(() => {
     return context.onFocusInput(() => textarea.focus());
 });
 ```
+
+---
+
+## Mentioning Assistants
+
+The default system configuration has a single ai assistant as configured by `AI_MENTION_HANDLE`.
+
+The composer allows to add ai assistants from other plugins which comes with some contract boundaries. 
+A message addresses **at most one assistant at a time**. The `@handle` token lives in `ComposerContext.message` — the message text is the single source of truth. The textarea never displays the token (`ComposerTextarea` strips handles for display and re-attaches them on every edit); `MentionChips` renders one chip per addressed assistant in the composer's top row instead.
+
+Handles reach the message through three routes, all with the same outcome — the handle becomes the message's *one* assistant handle, replacing any handle already present:
+
+1. **The caret popup** — typing `@` at a word boundary opens `AssistantMentionPopup` at the caret; further typing filters the taggable assistants by name, ArrowUp/ArrowDown + Enter/Tab pick one. Re-picking the row of an assistant that is already tagged keeps it tagged.
+2. **The assistant menu** — the `@`-button dropdown (`AssistantMenu`). Its rows behave as checkboxes: unchecking a row removes the handle.
+3. **Typing the handle out in full** — the moment a typed `@token` matches a known handle, it is applied just like a popup pick.
+
+Removal happens through a chip's remove button or by unchecking the row in the assistant menu.
+
+`handlesInMessage` lists each handle **once**, however often it occurs in the message text. `MentionChips` keys its rendered chips by handle, so a duplicate entry would crash the keyed `each` (`each_key_duplicate`) — the dedupe is what keeps a hand-typed or pasted double mention (`"@test hello @test"`) renderable. After a successful send, `clear()` deliberately keeps the handle so the user keeps talking to the same assistant without re-tagging.
 
 ---
 
