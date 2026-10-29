@@ -48,6 +48,7 @@
             "requestFailed": "The AI request failed.",
             "welcomeTitle": "How can I help?",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
+            "starterPrompts": "Suggested opening messages",
             "disclaimer": "AI can make mistakes. Check important information."
         },
         "actions": {
@@ -115,6 +116,8 @@
         "composer": {
             "textareaLabel": "Message to HAWKI",
             "textareaLabelRoom": "Group message",
+            "textareaHint": "Enter sends the message, Shift+Enter inserts a line break.",
+            "textareaHintEscape": "Escape leaves the current mode.",
             "textareaPlaceholder": "Enter your message here…",
             "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
             "attachFileTooltip": "Attach file",
@@ -191,6 +194,11 @@
                 "backButton": "Tools",
                 "deactivateTool": "Deactivate tool",
                 "activateTool": "Activate tool",
+                "deactivateGroup": "Deactivate all :count tools from :label",
+                "activateGroup": "Activate all :count tools from :label",
+                "expandGroup": "Show :count tools from :label",
+                "collapseGroup": "Hide :count tools from :label",
+                "groupToolCount": ":count tools",
                 "showGroupDescription": ":label — show description",
                 "capabilitiesLabel": "Capabilities",
                 "hawkiToolsLabel": "HAWKI Tools",
@@ -225,6 +233,7 @@
                     "hawkiDescription": "The general HAWKI assistant for this room"
                 },
                 "searchPlaceholder": "Search assistants",
+                "openStore": "Open assistant store",
                 "noResults": "No matching assistants"
             },
             "mentionChips": {
@@ -234,19 +243,13 @@
                 "switchModel": "Switch current model",
                 "placeholder": "Select model",
                 "searchPlaceholder": "Search models…",
-                "allTab": "All",
                 "otherProvider": "Other",
-                "providerTab": "Show :provider models",
                 "noResults": "No models found.",
-                "favorites": "Favorites",
-                "addFavorite": "Add :model to favorites",
-                "removeFavorite": "Remove :model from favorites",
-                "listAriaLabel": "Available models",
                 "backButton": "Models",
                 "infoDefault": "Show more information about the model",
-                "statusLabel": "Availability",
-                "demandLabel": "Load",
-                "identifierLabel": "Model ID"
+                "switchModelCurrent": "Switch model, current: :model",
+                "useModel": "Use model",
+                "currentModel": "Current model"
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
@@ -312,10 +315,10 @@
                 "responseError": "An error occurred while processing the response.",
                 "sendError": "An error occurred while sending the message."
             },
-            "pin": {
-                "pinnedLabel": "Pinned",
-                "pin": "Pin to the top of this menu",
-                "unpin": "Remove from pinned"
+            "favorite": {
+                "label": "Favorites",
+                "add": "Add to favorites",
+                "remove": "Remove from favorites"
             }
         }
     }

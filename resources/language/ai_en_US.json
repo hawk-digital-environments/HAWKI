@@ -18,6 +18,26 @@
                     "strengthReasoning": "Logical Reasoning",
                     "strengthReasoningTooltip": "This model excels at logical reasoning, e.g. for problem solving, drawing conclusions, or analytical tasks"
                 }
+            },
+            "card": {
+                "contextWindow": "Context",
+                "contextShort": ":count context",
+                "maxOutput": "Max. output",
+                "price": "Cost",
+                "intelligence": "Intelligence",
+                "outOfFive": ":value out of 5",
+                "capabilities": "Capabilities",
+                "documentation": "Documentation",
+                "capability": {
+                    "vision": "Vision",
+                    "audio": "Audio",
+                    "video": "Video",
+                    "imageGeneration": "Image generation",
+                    "webSearch": "Web search",
+                    "codeExecution": "Code execution",
+                    "fileUpload": "File upload",
+                    "reasoning": "Extended thinking"
+                }
             }
         },
         "error": {

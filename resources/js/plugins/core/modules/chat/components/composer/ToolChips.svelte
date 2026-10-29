@@ -27,10 +27,14 @@
     import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {chipPop} from '$lib/utils/transitions/chipPop';
-    import {flip} from 'svelte/animate';
-    import {backOut} from 'svelte/easing';
+    import {textPopIn} from '$lib/utils/transitions/textPopIn';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {tick} from 'svelte';
+    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import {mergeProps} from 'bits-ui';
+    import {toolAvailabilityFor, toolCategoryOf} from '$plugins/core/stores/aiToolStoreData.js';
+    import {getRootTool} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 
     const {__} = useTranslator();
 
@@ -56,8 +60,28 @@
     const tools = $derived(composerContext.tools.active);
     const hiddenCount = $derived(Math.max(0, tools.length - visibleCount));
 
+    // Set while a measurement is deferred until the row's grow/shrink transition ends.
+    let measurePending = false;
+
     function measure() {
-        if (!rowEl || !measureEl) return;
+        if (!rowEl || !measureEl || !rowEl.isConnected) return;
+
+        // The row animates its own width when it appears and disappears. Measuring mid-way
+        // reads a few pixels, hides the chip, and pulls it straight back, catching it at 0px
+        // so its pop has nothing to grow to. Measure the settled width instead.
+        // Only running ones: Svelte leaves finished transitions attached, and waiting on
+        // those would resolve at once and re-enter here forever.
+        const running = rowEl.getAnimations().filter(animation => animation.playState === 'running');
+        if (running.length > 0) {
+            if (!measurePending) {
+                measurePending = true;
+                void Promise.allSettled(running.map(animation => animation.finished)).then(() => {
+                    measurePending = false;
+                    measure();
+                });
+            }
+            return;
+        }
 
         const available = rowEl.clientWidth;
         const chips = Array.from(measureEl.querySelectorAll<HTMLElement>('[data-chip]'));
@@ -111,21 +135,91 @@
     });
 
     const visibleTools = $derived(tools.slice(0, visibleCount));
+
+    function chipButtons(): HTMLElement[] {
+        return rowEl ? Array.from(rowEl.querySelectorAll<HTMLElement>('[data-tool-chip]')) : [];
+    }
+
+    /**
+     * Removes a tool and lands focus somewhere sensible (mirrors `FileChips`): the
+     * chip that slid into the removed slot, otherwise the preceding one, otherwise
+     * the textarea once no chips are left. Without this, focus falls back to
+     * `<body>` and keyboard users have to tab in from the top of the page again.
+     */
+    async function removeAndMoveFocus(tool: typeof tools[number], index: number) {
+        composerContext.tools.disable(tool);
+        // tick() flushes the re-render; the extra frame lets layout settle before
+        // we pick the chip to focus by index.
+        await tick();
+        await new Promise(requestAnimationFrame);
+
+        // The row itself may still be mid out-transition, so check the state, not the DOM.
+        if (composerContext.tools.active.length === 0) {
+            composerContext.focusInput();
+            return;
+        }
+
+        const chips = chipButtons();
+        if (chips.length === 0) {
+            composerContext.focusInput();
+            return;
+        }
+        chips[Math.min(index, chips.length - 1)].focus();
+    }
+
+    // Enter/Space is handled here rather than through the click handler so keyboard
+    // removal can move focus onward while a mouse click returns to the textarea.
+    // preventDefault stops the browser from firing a synthetic click afterwards.
+    function onChipKeydown(event: KeyboardEvent, tool: typeof tools[number], index: number) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            void removeAndMoveFocus(tool, index);
+        }
+    }
+
+    function onChipClick(tool: typeof tools[number]) {
+        composerContext.tools.disable(tool);
+        composerContext.focusInput();
+    }
 </script>
 
-{#snippet chip(tool: typeof tools[number], measuring = false)}
-    {@const incompatible = !tool.isAvailableFor(composerContext.model.current)}
+{#snippet chip(tool: typeof tools[number], index: number, measuring = false)}
+    {@const availability = toolAvailabilityFor(tool, composerContext.model.current)}
+    {@const incompatible = availability !== 'available'}
+    {@const availabilityLabel = availability === 'offline' ? __('chat.composer.statusDot.tool.offlineLabel') : availability === 'model-incompatible' ? __('chat.composer.statusDot.tool.notSupportedTooltip', {model: composerContext.model.current?.label ?? ''}) : ''}
+    <!-- The chip shows only the bare tool name; the selection addendum ("(auto)",
+         "(native)", …) and any availability reason live in a tooltip instead, so the
+         name isn't truncated behind them. -->
+    {@const label = getRootTool(tool).displayName}
+    {@const fullName = label !== tool.displayName ? tool.displayName : ''}
+    {@const tooltip = fullName && availabilityLabel ? `${fullName}: ${availabilityLabel}` : fullName || availabilityLabel}
+    {#if tooltip && !measuring}
+        <Tooltip {tooltip}>
+            {#snippet children(a)}
+                {@render chipButton(tool, index, measuring, incompatible, label, availabilityLabel, a.props)}
+            {/snippet}
+        </Tooltip>
+    {:else}
+        {@render chipButton(tool, index, measuring, incompatible, label, availabilityLabel)}
+    {/if}
+{/snippet}
+
+{#snippet chipButton(tool: typeof tools[number], index: number, measuring: boolean, incompatible: boolean, label: string, availabilityLabel: string, tooltipProps: Record<string, unknown> = {})}
     <button
-        class="tool-chip"
-        class:incompatible
-        title={tool.displayName}
-        tabindex={measuring ? -1 : 0}
-        aria-hidden={measuring}
-        onclick={() => composerContext.tools.disable(tool)}
-        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName})}
+        {...mergeProps(tooltipProps, {
+            class: ['tool-chip', incompatible && 'incompatible'],
+            title: label !== tool.displayName || availabilityLabel ? undefined : tool.displayName,
+            tabindex: measuring ? -1 : 0,
+            'aria-hidden': measuring,
+            'data-tool-chip': measuring ? undefined : '',
+            'data-tool-category': toolCategoryOf(tool),
+            onclick: () => onChipClick(tool),
+            onkeydown: (event: KeyboardEvent) => onChipKeydown(event, tool, index),
+            'aria-label': __('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName}) + (availabilityLabel ? `, ${availabilityLabel}` : '')
+        })}
     >
         <ToolIcon tool={tool} size={16}/>
-        <span class="tool-chip-label">{tool.displayName}</span>
+        <span class="tool-chip-label">{label}</span>
         <span class="tool-chip-remove" aria-hidden="true"><Cancel01Icon size={16}/></span>
     </button>
 {/snippet}
@@ -133,16 +227,21 @@
 {#if tools.length > 0}
     <!-- Visible row -->
     <div class="tool-chips" bind:this={rowEl} transition:growTransition={{mode: 'horizontal'}}>
-        {#each visibleTools as tool (tool)}
+        <!-- Keyed by name, not object: `tools.enable()` reconciles and rebuilds every
+             wrapper, so identity keys would replay every chip's out/in on each toggle. -->
+        {#each visibleTools as tool, i (tool.name)}
             <!-- Wrapper carries the motion so the snippet stays shared with the
-                 offscreen measurement row, which must never animate. -->
+                 offscreen measurement row, which must never animate. The intro is
+                 `|global` so the first chip pops in with the row instead of just being
+                 revealed by it. No `animate:flip`: Svelte pins an outroing animated item
+                 with `position: absolute`, so a removed chip would float over the neighbours
+                 sliding into its place. chipPop's width unroll moves them instead. -->
             <span
                 class="tool-chip-slot"
-                in:chipPop
+                in:chipPop|global
                 out:chipPop={{direction: 'out'}}
-                animate:flip={{duration: 260, easing: backOut}}
             >
-                {@render chip(tool)}
+                {@render chip(tool, i)}
             </span>
         {/each}
         {#if hiddenCount > 0}
@@ -152,7 +251,7 @@
                 aria-label={__('chat.composer.toolChips.showMore', {count: String(hiddenCount)})}
                 onclick={() => onShowMore?.()}
             >
-                +{hiddenCount}
+                <span use:textPopIn={`+${hiddenCount}`}></span>
             </button>
         {/if}
     </div>
@@ -160,8 +259,8 @@
     <!-- Offscreen measurement row: renders every chip plus the badge so we
          can compute how many fit before deciding what to show above. -->
     <div class="tool-chips tool-chips-measure" bind:this={measureEl} aria-hidden="true">
-        {#each tools as tool (tool)}
-            <span data-chip>{@render chip(tool, true)}</span>
+        {#each tools as tool, i (tool.name)}
+            <span data-chip>{@render chip(tool, i, true)}</span>
         {/each}
         <span data-badge class="tool-chip tool-chip-badge">+{tools.length}</span>
     </div>
@@ -196,6 +295,20 @@
         transform-origin: left center;
     }
 
+    /* The cap lives on the wrappers, not on the chip: a chip's percentage max-width
+       can't resolve against a shrink-to-fit wrapper, so the wrapper kept the width of
+       the full label and left a gap after the truncated pill. Here 100% resolves against the row, and the chip fills the
+       capped wrapper and ellipsizes. */
+    .tool-chip-slot,
+    [data-chip] {
+        max-width: min(16rem, 100%);
+    }
+
+    .tool-chip-slot > .tool-chip,
+    [data-chip] > .tool-chip {
+        max-width: 100%;
+    }
+
     .tool-chip {
         display: inline-flex;
         align-items: center;
@@ -203,17 +316,16 @@
         gap: var(--space-1);
         /* Same source as the picker and the assistant tags above; already this value. */
         height: var(--chat-composer-control-height, 2rem);
-        max-width: min(16rem, 100%);
         flex-shrink: 0;
         border-radius: var(--corner-full);
-        /* Neutral and light: the chip is a container for the tool's own icon swatch,
-           which already carries the color. Tinting the pill too made the row shout. */
+        /* Neutral fallback; the section tint below normally takes over. */
         background-color: color-mix(in oklab, var(--color-text) 8%, var(--color-surface-raised));
         color: var(--color-text);
         padding-inline: var(--space-2);
         border: none;
         cursor: pointer;
         font-size: var(--font-size-xxs);
+        transition: background-color var(--duration-fast, 150ms);
     }
 
     .tool-chip-label {
@@ -221,6 +333,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    /* Circle at the chip height; a rare 3-digit count still grows into a pill. */
+    .tool-chip-badge {
+        min-width: var(--chat-composer-control-height, 2rem);
+        padding-inline: var(--space-1);
+        font-variant-numeric: tabular-nums;
+        font-weight: var(--font-weight-medium, 500);
     }
 
     /* Held back so it stays subordinate to the tool name, coming forward when the
@@ -244,14 +364,43 @@
         }
     }
 
-    .tool-chip-badge {
-        font-variant-numeric: tabular-nums;
-        font-weight: var(--font-weight-medium, 500);
+    /* Same section ink as the tool's swatch in the picker, so a chip keeps the color
+       of the row it was picked from. */
+    .tool-chip[data-tool-category='capability'] {
+        --chip-ink: var(--color-tool-category-capability);
     }
 
+    .tool-chip[data-tool-category='function'] {
+        --chip-ink: var(--color-tool-category-function);
+    }
+
+    .tool-chip[data-tool-category='mcp'] {
+        --chip-ink: var(--color-tool-category-mcp);
+    }
+
+    .tool-chip[data-tool-category] {
+        background-color: color-mix(in oklab, var(--chip-ink) 12%, var(--color-surface-raised));
+        color: var(--chip-ink);
+    }
+
+    .tool-chip[data-tool-category]:hover {
+        background-color: color-mix(in oklab, var(--chip-ink) 20%, var(--color-surface-raised));
+    }
+
+    /* The glyph follows the chip's ink, not its own capability color. */
+    .tool-chip :global(.tool-icon) {
+        color: inherit;
+    }
+
+    /* Overrides the section ink (declared later, same specificity), so the tint and
+       its hover state both stay red. */
     .tool-chip.incompatible {
-        background-color: color-mix(in oklab, var(--color-error) 12%, var(--color-surface-raised));
-        color: var(--color-error);
+        --chip-ink: var(--color-error);
+        background-color: color-mix(in oklab, var(--chip-ink) 12%, var(--color-surface-raised));
+        color: var(--chip-ink);
     }
 
+    .tool-chip.incompatible:hover {
+        background-color: color-mix(in oklab, var(--chip-ink) 20%, var(--color-surface-raised));
+    }
 </style>

@@ -18,6 +18,26 @@
                     "strengthReasoning": "Logisches Denken",
                     "strengthReasoningTooltip": "Dieses Modell ist besonders gut im logischen Denken, z.B. für Problemlösungen, Schlussfolgerungen oder analytische Aufgaben"
                 }
+            },
+            "card": {
+                "contextWindow": "Kontext",
+                "contextShort": ":count Kontext",
+                "maxOutput": "Max. Ausgabe",
+                "price": "Kosten",
+                "intelligence": "Intelligenz",
+                "outOfFive": ":value von 5",
+                "capabilities": "Fähigkeiten",
+                "documentation": "Dokumentation",
+                "capability": {
+                    "vision": "Vision",
+                    "audio": "Audio",
+                    "video": "Video",
+                    "imageGeneration": "Bildgenerierung",
+                    "webSearch": "Websuche",
+                    "codeExecution": "Code-Ausführung",
+                    "fileUpload": "Datei-Upload",
+                    "reasoning": "Erweitertes Denken"
+                }
             }
         },
         "error": {

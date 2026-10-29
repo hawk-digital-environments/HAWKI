@@ -15,7 +15,10 @@
   ## Usage
   Rendered once by `ChatComposer.svelte` in the bottom-left control row, next to `FilePicker`
   and `ToolChips`. `open` is bound so the tool-chip overflow badge ("+N") can open the same
-  popover externally:
+  popover externally. Typing `/` in the message opens it in command mode (`command` set): the
+  textarea keeps focus, what is typed after the `/` filters the same tools in place of the
+  search field, and picking one toggles it and closes the menu — see
+  `utils/commandMenu.ts`:
   ```svelte
   let toolPickerOpen = $state(false);
   <ToolMenu bind:open={toolPickerOpen}/>
@@ -55,21 +58,28 @@
     }
 
     /** One MCP server's tools, grouped for display under a shared `ToolMenuGroupHeader`. */
-    interface McpEntryGroup {
+    export interface McpEntryGroup {
         /** The MCP server's id, used as the group's React/Svelte key and header id. */
         id: string;
         /** The MCP server's display label (`server.server_label`). */
         label: string;
         /** The MCP server's description, shown via an `InfoPopover` next to the label; `null` if none. */
         description: string | null;
-        /** This server's tools, alphabetically sorted by display name. */
+        /** This server's currently visible, unpinned tools, alphabetically sorted by display name. */
         entries: ToolMenuEntry[];
+        /** Every picker-eligible tool from this server. Used by the group toggle even when
+         *  search or favourites move an individual tool out of this section. */
+        toggleEntries: ToolMenuEntry[];
+        /** Enables or disables all tools represented by `toggleEntries`. */
+        onToggle: (active: boolean) => void;
     }
 
     /** Entries partitioned into the three sections `ToolMenuList` renders, in display order. */
     export interface ToolMenuGroupedEntries {
-        /** Entries the user pinned, lifted out of their normal section and shown first. */
+        /** Entries the user favourited, lifted out of their normal section and shown first. */
         pinned: ToolMenuEntry[];
+        /** MCP server groups favourited as a whole, lifted into the Favorites section. */
+        pinnedMcpTools: McpEntryGroup[];
         /** Capability entries (e.g. web search, image generation) shown first, ungrouped. */
         capabilities: ToolMenuEntry[];
         /** Plain HAWKI function tools (not backed by an MCP server), shown under one shared header. */
@@ -77,21 +87,25 @@
         /** Tools backed by an MCP server, one `McpEntryGroup` per server, sorted by server label. */
         mcpTools: McpEntryGroup[];
     }
+
 </script>
 <script lang="ts">
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {createCommandMenu, createCommandKeeper, type MenuCommand} from '$plugins/core/modules/chat/components/composer/utils/commandMenu.js';
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
     import ToolMenuList from '$plugins/core/modules/chat/components/composer/ToolMenuList.svelte';
     import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
-    import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuEmpty from '$lib/components/ui/dropdown-menu/DropdownMenuEmpty.svelte';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import {setToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {chipPop} from '$lib/utils/transitions/chipPop';
     import ZshIcon from '$lib/components/ui/icons/iconset/ZshIcon.svelte';
+    import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
 
     const composerContext = useComposerContext();
     const focusContext = setToolMenuFocusContext();
@@ -103,11 +117,17 @@
     interface Props {
         /** Whether the tool picker is open. Supports bind:open. */
         open?: boolean;
+        /** Set while a typed `/query` drives the menu from the message textarea. */
+        command?: MenuCommand | null;
     }
 
     // Drives both the desktop dropdown and the mobile bottom sheet so the
     // picker can be opened externally (e.g. from the tool-chip overflow badge).
-    let {open = $bindable(false)}: Props = $props();
+    let {open = $bindable(false), command = null}: Props = $props();
+
+    // What the menu shows: the command, kept while the menu closes after it ended.
+    const keepCommand = createCommandKeeper();
+    const shownCommand = $derived(keepCommand(open, command));
 
     // When set, the picker shows the detail view for this tool instead of the list.
     let detailToolName = $state<string | null>(null);
@@ -131,6 +151,10 @@
                         } else {
                             composerContext.tools.disable(tool);
                         }
+                        // A typed command switches one tool, then hands back to the message.
+                        if (shownCommand) {
+                            open = false;
+                        }
                     },
                     onCapabilitySet({selection, settings}) {
                         if (!tool.is_capability || !tool.isAvailableFor(composerContext.model.current)) {
@@ -138,8 +162,8 @@
                         }
                         composerContext.tools.set(tool, selection, settings);
                     },
-                    disabled: tool.status === 'offline',
-                    // To avoid rebuilding the whole array, we only update the active/supported state in the filteredEntries derived store.
+                    disabled: toolAvailabilityFor(tool, composerContext.model.current) === 'offline',
+                    // Live active/supported values are added by `filteredEntries` below.
                     active: false,
                     available: false
                 };
@@ -148,24 +172,31 @@
     });
     const filteredEntries = $derived.by(() => {
         return allEntries.map(entry => {
-            entry.active = composerContext.tools.isActive(entry.tool);
-            entry.available = entry.tool.isAvailableFor(composerContext.model.current);
-            return entry;
+            // Return a fresh object when live state changes. Child rows are keyed by tool name,
+            // so mutating the existing plain object leaves their `entry` prop referentially
+            // unchanged and can make a group look selected while its expanded children retain
+            // stale unchecked swatches.
+            return {
+                ...entry,
+                active: composerContext.tools.isActive(entry.tool),
+                available: entry.tool.isAvailableFor(composerContext.model.current)
+            };
         });
     });
 
-    // What the list panel shows: the entries matching the search field, by tool name,
-    // description or the label of the MCP server providing it.
+    const listQuery = $derived((shownCommand ? shownCommand.query : query).trim().toLowerCase());
+
+    // What the list panel shows: the entries matching the search field — or the typed
+    // command's query — by tool name, description or the label of the MCP server providing it.
     const searchedEntries = $derived.by(() => {
-        const needle = query.trim().toLowerCase();
-        if (!needle) {
+        if (!listQuery) {
             return filteredEntries;
         }
         return filteredEntries.filter(entry => [
             entry.tool.displayName,
             entry.tool.description,
             entry.tool.server?.server_label
-        ].some(text => text?.toLowerCase().includes(needle)));
+        ].some(text => text?.toLowerCase().includes(listQuery)));
     });
 
     // The live entry shown in the detail view, kept in sync with filteredEntries
@@ -185,8 +216,17 @@
         const capabilities: ToolMenuEntry[] = [];
         const functionTools: ToolMenuEntry[] = [];
         const mcpTools: Record<string, ToolMenuEntry[]> = {};
+        const allMcpTools: Record<string, ToolMenuEntry[]> = {};
 
-        // Pinned tools are shown once, in their own section — never also in the section
+        // Keep the group toggle tied to the complete MCP, not just the rows left in this
+        // section after search and favourites have been applied.
+        for (const entry of filteredEntries) {
+            if (!entry.tool.server) continue;
+            const serverId = entry.tool.server.id + '';
+            (allMcpTools[serverId] ??= []).push(entry);
+        }
+
+        // Favourite tools are shown once, in their own section — never also in the section
         // they would otherwise belong to.
         const {pinned, rest} = pinStore.partition('tool', searchedEntries, entry => entry.tool.name);
 
@@ -214,22 +254,42 @@
             ) {
                 const serverName = entries[0].tool.server!.server_label;
                 const serverDescription = entries[0].tool.server!.description || null;
+                const toggleEntries = allMcpTools[serverId] ?? entries;
                 return {
                     id: serverId,
                     label: serverName,
                     description: serverDescription,
-                    entries: sortEntriesAlphabetically(entries)
+                    entries: sortEntriesAlphabetically(entries),
+                    toggleEntries,
+                    onToggle(active: boolean) {
+                        for (const entry of toggleEntries) {
+                            // An offline tool cannot be newly enabled, matching its individual
+                            // row. Disabling still includes it so a stale active tool can always
+                            // be cleared with the group action.
+                            if (active && entry.disabled) continue;
+                            if (active) {
+                                composerContext.tools.enable(entry.tool);
+                            } else {
+                                composerContext.tools.disable(entry.tool);
+                            }
+                        }
+                        if (shownCommand) {
+                            open = false;
+                        }
+                    }
                 };
-            }).sort(
-                (a, b) => a.label.localeCompare(b.label)
-            )
+            }).sort((a, b) => a.label.localeCompare(b.label))
         ;
+
+        const {pinned: pinnedMcpTools, rest: remainingMcpTools} =
+            pinStore.partition('mcp', mcpToolsSorted, group => group.id);
 
         return {
             pinned,
+            pinnedMcpTools,
             capabilities: sortEntriesAlphabetically(capabilities),
             functionTools: sortEntriesAlphabetically(functionTools),
-            mcpTools: mcpToolsSorted
+            mcpTools: remainingMcpTools
         };
     });
 
@@ -237,10 +297,24 @@
     // from a picker with nothing in it.
     const orderedEntries = $derived([
         ...groupedEntries.pinned,
+        ...groupedEntries.pinnedMcpTools.flatMap(group => group.entries),
         ...groupedEntries.capabilities,
         ...groupedEntries.functionTools,
         ...groupedEntries.mcpTools.flatMap(group => group.entries)
     ]);
+
+    $effect(() => {
+        if (!open) return;
+        if (filteredEntries.length === 0) {
+            open = false;
+            detailToolName = null;
+            requestAnimationFrame(() => composerContext.focusInput());
+        } else if (detailToolName && !detailEntry) {
+            detailToolName = null;
+            requestAnimationFrame(() => focusContext.focusFirst());
+        }
+    });
+
     function closeToolDetail() {
         const name = detailToolName;
         detailToolName = null;
@@ -265,6 +339,46 @@
         }
     });
 
+    // The highlight starts on the tool switched on most recently (`tools.active` keeps
+    // activation order), so the keyboard begins from the current state — the same way the `@`
+    // menu starts on the tagged assistant. Falls back to earlier ones the query filtered out.
+    function lastActiveRow(content: ParentNode): HTMLElement | null {
+        for (const tool of [...composerContext.tools.active].reverse()) {
+            const row = content.querySelector<HTMLElement>(
+                `[data-tool-name="${CSS.escape(tool.name)}"]:not([data-disabled])`
+            );
+            if (row && !row.closest('[inert]')) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    const commandMenu = createCommandMenu('.tool-menu-content', () => shownCommand, lastActiveRow);
+
+    /** Moves the command highlight; called by `ComposerTextarea` on ArrowUp/ArrowDown. */
+    export function move(delta: number): boolean {
+        return commandMenu.move(delta);
+    }
+
+    /** Toggles the highlighted row; called by `ComposerTextarea` on Enter/Tab. */
+    export function selectActive(): boolean {
+        return commandMenu.selectActive();
+    }
+
+    // In command mode the highlight starts on the last tool switched on, else the first row, and
+    // starts over whenever the typed query changes the rows. A frame later, so the filtered
+    // rows have rendered.
+    // Keyed on the query string, not the command object, so only real filtering resets it.
+    const commandQuery = $derived(shownCommand?.query ?? null);
+    $effect(() => {
+        if (!open || commandQuery === null) {
+            return;
+        }
+        const frame = requestAnimationFrame(() => commandMenu.reset());
+        return () => cancelAnimationFrame(frame);
+    });
+
     // Focus lands on the search field when the menu opens (`MenuSearchField` claims it),
     // so keyboard users start by filtering and arrow down into the rows from there.
 
@@ -276,12 +390,23 @@
 </script>
 
 {#if filteredEntries.length > 0}
-    <div transition:growTransition={{mode: 'horizontal'}}>
+    <div in:chipPop={{blur: 6}} out:chipPop={{direction: 'out', blur: 6}}>
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open
+            sheet={!shownCommand}
             layout="panel"
-            width="calc(0.25rem * 72)">
+            width="calc(0.25rem * 72)"
+            maxHeight="24rem"
+            magneticHover={false}
+            contentProps={{
+                class: 'tool-menu-content',
+                onOpenAutoFocus: commandMenu.onOpenAutoFocus,
+                onCloseAutoFocus: commandMenu.onCloseAutoFocus,
+                onInteractOutside: commandMenu.onInteractOutside,
+                onmousemove: commandMenu.onMouseMove,
+                ...commandMenu.anchorProps()
+            }}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"
@@ -290,7 +415,7 @@
                     highlight={props['data-state']}
                     {...props}/>
             {/snippet}
-            {#if !detailEntry}
+            {#if !detailEntry && !shownCommand}
                 <MenuSearchField
                     bind:value={query}
                     placeholder={__('chat.composer.toolMenu.searchPlaceholder')}/>
@@ -306,10 +431,21 @@
                 {#if orderedEntries.length === 0}
                     <DropdownMenuEmpty>{__('chat.composer.toolMenu.noResults')}</DropdownMenuEmpty>
                 {:else}
-                    <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+                    <!-- Inside the scrolling viewport, so the sliding hover scrolls with the rows. -->
+                    <MenuList class="dropdown-menu-list tool-menu-list" bridgeSections>
+                        <ToolMenuList
+                            entries={groupedEntries}
+                            onOpenDetail={openToolDetail}
+                            expandMcpGroups={!!listQuery}/>
+                    </MenuList>
                 {/if}
             </DropdownMenuDetailView>
         </DropdownMenu>
     </div>
 {/if}
 
+<style>
+    :global(.tool-menu-item svg) {
+        flex-shrink: 0;
+    }
+</style>

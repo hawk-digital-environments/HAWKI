@@ -30,7 +30,7 @@
 -->
 <script lang="ts">
 
-    import {type Snippet} from 'svelte';
+    import {type Snippet, tick, untrack} from 'svelte';
     import {Spring} from 'svelte/motion';
     import {fly} from 'svelte/transition';
     import type {HTMLAttributes} from 'svelte/elements';
@@ -60,19 +60,98 @@
     const viewportHeight = new Spring(0, {stiffness: 0.15, damping: 0.85});
 
     // Each view reports its natural height; the spring follows the active one.
-    const targetHeight = $derived(open ? detailHeight : defaultHeight);
+    const naturalHeight = $derived(open ? detailHeight : defaultHeight);
+
+    let viewport = $state<HTMLDivElement | null>(null);
+
+    /**
+     * The most height the viewport can take inside a panel capped with `max-height`
+     * (e.g. the composer menus): the panel's cap minus its padding, borders and the
+     * viewport's siblings (like a search field). Infinity when the panel is uncapped.
+     */
+    function availableHeight(): number {
+        const panel = viewport?.parentElement;
+        if (!viewport || !panel) return Infinity;
+        const style = getComputedStyle(panel);
+        const cap = parseFloat(style.maxHeight);
+        if (!Number.isFinite(cap)) return Infinity;
+        const chrome = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+            .reduce((sum, key) => sum + (parseFloat(style[key as keyof CSSStyleDeclaration] as string) || 0), 0);
+        const siblings = Array.from(panel.children)
+            .filter((child) => child !== viewport)
+            .reduce((sum, child) => sum + (child as HTMLElement).offsetHeight, 0);
+        return Math.max(0, cap - chrome - siblings);
+    }
+
+    // The cap behind `availableHeight()` isn't final when the menu opens: bits-ui sets the
+    // available-height variable only once it has positioned the panel, so the first
+    // measurement can see the 24rem fallback. Re-measure whenever the panel resizes
+    // (a tighter cap, a search field coming or going) so the clamp tracks the real space.
+    let available = $state(Infinity);
+    $effect(() => {
+        const panel = viewport?.parentElement;
+        if (!panel) return;
+        const measure = () => (available = availableHeight());
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(panel);
+        return () => observer.disconnect();
+    });
 
     // Snap to the natural height on first measurement so the popover doesn't
     // visibly grow from 0 on open; only spring on later list<->detail switches.
+    // The target is clamped to the space the panel actually has: springing toward
+    // a long list's full height would spend most of the motion past the cap,
+    // leaving only a few frames of visible movement — an abrupt jump.
     let initialized = $state(false);
+    // The cap of the previous run; untracked bookkeeping, not state.
+    let lastCap = Infinity;
     $effect(() => {
-        if (targetHeight <= 0) return;
+        if (naturalHeight <= 0) return;
+        const cap = Math.min(available, availableHeight());
+        const targetHeight = Math.min(naturalHeight, cap);
+        const previousCap = lastCap;
+        lastCap = cap;
         if (!initialized) {
             viewportHeight.set(targetHeight, {instant: true});
             initialized = true;
-        } else {
-            viewportHeight.target = targetHeight;
+            return;
         }
+        // Full before and full after: the panel stays at its maximum, so there is nothing to
+        // animate. The cap itself may still have grown — siblings like a search field leave
+        // with the switch — and springing into that space would shrink the panel for a frame
+        // and grow it back.
+        if (untrack(() => viewportHeight.current) >= previousCap - 1 && naturalHeight >= cap) {
+            void viewportHeight.set(cap, {instant: true});
+            return;
+        }
+        // Past the cap the panel already clips the viewport, so pulling the spring's
+        // value down to it is invisible — but it keeps the next switch from starting at
+        // a height nobody can see, which reads as a stall followed by a lurch.
+        if (untrack(() => viewportHeight.current) > cap) {
+            void viewportHeight.set(cap, {instant: true});
+        }
+        viewportHeight.target = targetHeight;
+    });
+
+    // Both views scroll in the one viewport, so its offset would carry over: a detail view
+    // taller than the panel opened from a row far down the list would start scrolled to
+    // its bottom. Start the detail at its top, and hand the list its offset back on return.
+    let listScrollTop = 0;
+    let wasOpen = untrack(() => open);
+    $effect.pre(() => {
+        if (open === wasOpen || !viewport) {
+            wasOpen = open;
+            return;
+        }
+        wasOpen = open;
+        if (open) {
+            listScrollTop = viewport.scrollTop;
+        }
+        const target = open ? 0 : listScrollTop;
+        void tick().then(() => {
+            if (viewport) viewport.scrollTop = target;
+        });
     });
 
 </script>
@@ -82,6 +161,7 @@
   on the list<->detail switch, not when the menu itself opens or closes.
 -->
 <div
+    bind:this={viewport}
     style:height={`${viewportHeight.current}px`}
     {...mergeProps(
         {class: 'viewport'},

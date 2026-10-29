@@ -6,18 +6,17 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
 }
 
-/** What the composer menus can pin: assistants (by id), tools (by name) and models (by
- *  `model_id`). */
-export type ComposerPinKind = 'assistant' | 'tool' | 'model';
+/** What the composer menus can pin: assistants (by id), tools (by name), and MCP
+ *  groups (by server id). Model favourites live in the `model-favorites` store. */
+export type ComposerPinKind = 'assistant' | 'tool' | 'mcp';
 
 const STORAGE_KEY = 'hawki.composer.pins';
 
 /**
- * Reactive store for the assistants, tools and models a user has pinned in the composer
- * menus.
+ * Reactive store for assistants, tools, and MCP groups pinned in composer menus.
  *
  * Pins are a per-browser display preference, not chat state: they only reorder
- * `AssistantMenu`/`ToolMenu`/`ModelPicker`, lifting pinned rows into a "Pinned" section at
+ * `AssistantMenu`/`ToolMenu`, lifting pinned rows into a "Favorites" section at
  * the top of the list. They are therefore kept in `localStorage` rather than on the server,
  * and a missing/corrupt entry simply means "nothing pinned".
  *
@@ -86,7 +85,7 @@ export class ComposerPinStore implements DataStore {
 }
 
 function emptyPins(): Record<ComposerPinKind, string[]> {
-    return {assistant: [], tool: [], model: []};
+    return {assistant: [], tool: [], mcp: []};
 }
 
 function readPins(): Record<ComposerPinKind, string[]> {
@@ -102,7 +101,7 @@ function readPins(): Record<ComposerPinKind, string[]> {
         return {
             assistant: toIdList(parsed.assistant),
             tool: toIdList(parsed.tool),
-            model: toIdList(parsed.model)
+            mcp: toIdList(parsed.mcp)
         };
     } catch {
         // A user-editable storage key is never trusted: unreadable pins are simply no pins.

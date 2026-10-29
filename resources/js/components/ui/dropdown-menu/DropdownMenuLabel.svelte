@@ -105,6 +105,10 @@
         display: flex;
         align-items: center;
         gap: var(--space-1, 0.25rem);
+        /* Stack above a MenuList's sliding highlight (like the rows), so the
+           highlight glides behind the label instead of painting over it. */
+        position: relative;
+        z-index: 1;
         padding-inline: var(--space-2, calc(0.25rem * 2));
         padding-block: var(--space-1_5);
         font-size: var(--font-size-xxs);
