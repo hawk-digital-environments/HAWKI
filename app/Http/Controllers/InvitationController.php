@@ -93,7 +93,7 @@ class InvitationController extends Controller
 
         foreach ($invitations as $inv) {
             // Users that are already active members must not be invited again;
-            // role changes go through the admin-only addMember endpoint.
+            // role changes go through the admin-only changeMemberRole endpoint.
             $invitee = $this->userRepository->findOneByUsername($inv['username']);
             if ($invitee && $room->isMember($invitee->id)) {
                 continue;
@@ -229,7 +229,7 @@ class InvitationController extends Controller
         $room = $invitation->room;
 
         // Never use an invitation to change the role of an existing member;
-        // role changes are restricted to the admin-only addMember endpoint.
+        // role changes are restricted to the admin-only changeMemberRole endpoint.
         // Rejecting here also keeps the client from overwriting its valid room key
         // with the one contained in the invitation.
         if ($room->isMember($user->id)) {

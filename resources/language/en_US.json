@@ -113,6 +113,7 @@
     "MemberRoleEdit": "Change role",
     "MemberRoleConfirm": "Confirm role",
     "MemberRoleChangeFailed": "The role could not be changed.",
+    "RoomLeaveLastAdmin": "You are the last admin of this room. Make another member an admin first, or delete the room.",
     "Members": "Members",
     "MistakeWarning": "HAWKI may make mistakes. Check important information.",
     "Models": "Models",

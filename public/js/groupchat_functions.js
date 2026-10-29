@@ -1458,6 +1458,13 @@ async function leaveRoom(mustConfirm) {
                 'Accept': 'application/json'
             }
         });
+
+        // The last admin of a room can't leave it, they can only delete it
+        if (response.status === 403) {
+            await modalError(__('RoomLeaveLastAdmin'));
+            return;
+        }
+
         const data = await response.json();
 
         if (data.success) {
@@ -1534,7 +1541,7 @@ async function removeMemberFromRoom(username) {
 }
 
 async function changeMemberRole(username, role) {
-    const url = `/req/room/addMember/${activeRoom.slug}`;
+    const url = `/req/room/changeMemberRole/${activeRoom.slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {

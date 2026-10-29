@@ -146,7 +146,7 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
                     ->name('web.roomAvatarUpload');
                 Route::delete('/req/room/removeRoom/{slug}', [RoomController::class, 'delete'])
                     ->name('web.roomRemove');
-                Route::post('/req/room/addMember/{slug}', [RoomController::class, 'addMember'])
+                Route::post('/req/room/changeMemberRole/{slug}', [RoomController::class, 'changeMemberRole'])
                     ->name('web.roomEditMember');
                 Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'kickMember'])
                     ->name('web.roomRemoveMember');

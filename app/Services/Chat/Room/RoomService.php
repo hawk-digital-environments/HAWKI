@@ -8,6 +8,7 @@ use App\Services\Chat\Room\Repositories\RoomRepository;
 use App\Services\Chat\Room\Traits\RoomFunctions;
 use App\Services\Chat\Room\Traits\RoomMembers;
 use App\Services\Chat\Room\Traits\RoomMessages;
+use App\Services\Users\Repositories\UserRepository;
 
 class RoomService{
 
@@ -18,7 +19,8 @@ class RoomService{
     public function __construct(
         protected GroupMessageHandler $messageHandler,
         protected InvitationRepository $invitationRepository,
-        protected RoomRepository $roomRepository
+        protected RoomRepository $roomRepository,
+        protected UserRepository $userRepository
     ) {
     }
 }

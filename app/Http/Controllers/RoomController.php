@@ -94,14 +94,14 @@ class RoomController extends Controller
 
 
     // SECTION: MEMBER
-    public function addMember(Request $request, $slug): JsonResponse
+    public function changeMemberRole(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
             'username' => 'required|string',
             'role' => ['required', 'string', Rule::in([Member::ROLE_ADMIN, Member::ROLE_EDITOR, Member::ROLE_VIEWER])],
         ]);
-        $members = $this->roomService->add($slug, $validatedData);
-        return response()->json($members);
+        $this->roomService->changeRole($slug, $validatedData['username'], $validatedData['role']);
+        return response()->json(['success' => true]);
     }
 
 

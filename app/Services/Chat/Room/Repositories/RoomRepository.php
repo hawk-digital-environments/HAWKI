@@ -67,7 +67,19 @@ class RoomRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
+     * Counts the active members of the given room that have the given role.
+     * @param Room $room The room to count the members of.
+     * @param string $role The role to count, see the ROLE_* constants on {@see \App\Models\Member}.
+     * @return int
+     */
+    public function countMembersWithRole(Room $room, string $role): int
+    {
+        return $room->members()->where('role', $role)->count();
+    }
+
+    /**
      * Checks if the given user is an active member of the given room with one of the given roles.
+     * Note: with the default scopes, only rooms the current user is a member of are considered.
      * @param Room $room The room to check.
      * @param User $user The user to check.
      * @param string ...$roles The accepted roles, see the ROLE_* constants on {@see \App\Models\Member}.

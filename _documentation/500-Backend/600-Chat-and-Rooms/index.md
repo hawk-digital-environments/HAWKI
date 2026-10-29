@@ -101,7 +101,14 @@ Do not query `Room` or `Invitation` with Eloquent statics (`Room::where(...)`, `
 
 ### Auto-Deletion
 
-When `removeMember()` is called and the resulting member count drops to exactly 1 (the AI assistant is always member 1), the room calls `deleteRoom()` on itself. If the last removed member was an admin and no other admins remain, the room also deletes immediately. This cleanup logic currently lives directly in the `Room` model — it is a known tech-debt item.
+When `removeMember()` is called and the resulting member count drops to exactly 1 (the AI assistant is always member 1), the room calls `deleteRoom()` on itself. If the last removed member was an admin and no other admins remain, the room also deletes immediately; since `RoomService::leave()` refuses to let the last admin leave, this only happens when an admin's account is deleted. The remaining members are counted without the access scope, because the removed user can no longer see the room. This cleanup logic currently lives directly in the `Room` model — it is a known tech-debt item.
+
+### Membership rules
+
+- New members can only join through invitations, because they need the encrypted room key. There is no endpoint to add a member directly.
+- Admins change the role of existing members via `POST /req/room/changeMemberRole/{slug}` (admin-only). Nobody can change their own role, and the role of HAWKI (the AI member, user 1) can't be changed.
+- HAWKI is added to every room on creation and can't be removed.
+- The last admin of a room can't leave it, they can only delete the room. Admins can't kick themselves; they have to leave instead.
 
 ## The `Member` Model
 
@@ -144,7 +151,7 @@ Without this pattern, `MemberAddedToRoomEvent` would fire for the AI agent befor
 
 When a room admin invites a user who does not yet have a room key, a new `Invitation` record is created. The invitation stores the encrypted room key material for the invitee — the server never sees the plaintext key.
 
-Only room admins can create invitations or send invitation emails: the store route is guarded by the `roomAdmin` middleware, and the controller checks the admin role again. Invitations for users who are already active members are skipped, and accepting an invitation never changes the role of an existing member; role changes go through the admin-only `addMember` route. When a member is removed from a room (kick, leave or account deletion), their pending invitations for that room are deleted.
+Only room admins can create invitations or send invitation emails: the store route is guarded by the `roomAdmin` middleware, and the controller checks the admin role again. Invitations for users who are already active members are skipped, and accepting an invitation never changes the role of an existing member; role changes go through the admin-only `changeMemberRole` route. When a member is removed from a room (kick, leave or account deletion), their pending invitations for that room are deleted.
 
 `App\Models\Invitation` fields:
 
