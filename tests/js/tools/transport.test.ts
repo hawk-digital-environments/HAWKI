@@ -134,6 +134,76 @@ test('regeneration uses the validated historical tool/settings snapshot', async 
     assert.deepEqual(f.writes.at(-1).metadata.tools, f.streams[0].tools);
 });
 
+/** The HAWKI base row of the `aiAssistants` hook: no `chatBinding`, so no plugin claims it. */
+const hawkiParticipant: any = {id: 'hawki', handle: '@hawki', label: 'HAWKI', description: ''};
+
+test('regeneration addressed to a claimed participant runs the hook-resolved run, not the snapshot', async () => {
+    const f = fixture();
+    const identity = {name: 'Tutor', icon: 'T', tint: 'hsl(0 0% 0%)', handle: 'tutor'};
+    // Stand-in for the assistants plugin's `chatSend` handler.
+    f.app.hooks.apply = (_name: string, value: any, ctx: any) => ctx.regenParticipant?.chatBinding === 'tutor' ? {
+        ...value,
+        assistantHandle: 'tutor',
+        assistant: identity,
+        author: {username: 'tutor', name: 'Tutor', avatar_url: ''},
+        model: model.model_id,
+        tools: [],
+        params: {temp: 0.3, top_p: 0.8, max_tokens: 1024}
+    } : value;
+    const participant: any = {id: 'assistant:tutor', handle: '@tutor', label: 'Tutor', description: '', chatBinding: 'tutor'};
+
+    await f.transport.regenerateMessage('chat-1', {message_id: '2', model: model.model_id, metadata: {tools: ['capability:web_search:search'], params: {temperature: 0.9}}} as any, {participant, model: null});
+
+    assert.equal(f.streams.length, 1);
+    assert.equal(f.streams[0].assistantHandle, 'tutor');
+    assert.deepEqual(f.streams[0].tools, []);
+    assert.deepEqual(f.streams[0].params, {temp: 0.3, top_p: 0.8, max_tokens: 1024});
+    const write = f.writes.at(-1);
+    assert.deepEqual(write.metadata.assistant, identity);
+    assert.deepEqual(write.metadata.tools, []);
+    assert.deepEqual(write.metadata.params, {temp: 0.3, top_p: 0.8, max_tokens: 1024});
+    assert.equal(write.model, model.model_id);
+});
+
+test('regeneration with an unclaimed participant stays the plain snapshot rerun', async () => {
+    const f = fixture();
+    await f.transport.regenerateMessage('chat-1', {message_id: '2', model: model.model_id, metadata: {tools: ['capability:web_search:search:{"limit":3}'], params: {temperature: 0.2}}} as any, {participant: hawkiParticipant, model: null});
+    assert.equal(f.streams.length, 1);
+    assert.equal(f.streams[0].assistantHandle, null);
+    assert.deepEqual(f.streams[0].tools, ['capability:web_search:search:{"limit":3}']);
+    assert.deepEqual(f.streams[0].params, {temperature: 0.2});
+    assert.equal('assistant' in f.writes.at(-1).metadata, false);
+});
+
+test('a plain rerun of an assistant-authored reply replaces, not keeps, its author identity', async () => {
+    const f = fixture();
+    await f.transport.regenerateMessage('chat-1', {message_id: '2', model: model.model_id, assistant: {name: 'Tutor', icon: 'T', handle: 'tutor'}, metadata: {tools: []}} as any, {participant: hawkiParticipant, model: null});
+    assert.equal(f.writes.length, 1);
+    assert.equal('assistant' in f.writes[0].metadata, false);
+    assert.equal(f.writes[0].model, model.model_id);
+});
+
+test('a thread run sends only the last twenty thread messages to the model', async () => {
+    const f = fixture();
+    const thread = [
+        {message_id: '2.000', message_role: 'user', content: {text: 'trunk question', attachments: []}},
+        ...Array.from({length: 23}, (_, index) => ({
+            message_id: `2.${String(index + 1).padStart(3, '0')}`,
+            message_role: index % 2 === 0 ? 'user' : 'assistant',
+            content: {text: `reply ${index + 1}`, attachments: []}
+        }))
+    ];
+    f.store.messagesFor = () => thread as any;
+    await f.transport.regenerateMessage('chat-1', {message_id: '2.023', model: model.model_id, metadata: {tools: []}} as any, null);
+    const messages = f.streams[0].messages;
+    // System prompt + the capped history: trunk + replies 1..22 are 23 messages, the last 20 of which are replies 3..22.
+    assert.equal(messages.length, 21);
+    assert.equal(messages[0].role, 'system');
+    assert.equal(messages[1].content.text, 'reply 3');
+    assert.equal(messages.at(-1).content.text, 'reply 22');
+    assert.equal(messages.some((entry: any) => entry.content?.text === 'trunk question'), false);
+});
+
 for (const [code, key] of [['TOOL_ACCESS_DENIED', 'chat.tools.accessDenied'], ['TOOL_UNAVAILABLE', 'chat.tools.unavailable'], ['TOOL_OFFLINE', 'chat.tools.requiredOffline']] as const) {
     test(`stream ${code} is translated and never retried`, async () => {
         const f = fixture();

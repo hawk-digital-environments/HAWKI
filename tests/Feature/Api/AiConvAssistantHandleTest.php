@@ -315,6 +315,146 @@ class AiConvAssistantHandleTest extends TestCase
     }
 
     /**
+     * Thread replies ride the legacy `W.DDD` id scheme: the AI answer to a
+     * thread reply gets the thread's next decimal id while keeping its
+     * assistant identity, so the thread stays grouped and attributed after a
+     * reload.
+     */
+    public function testThreadAiRepliesGetThreadMessageIdsAndRoundTripTheAssistantIdentity(): void
+    {
+        $user = User::factory()->create();
+        $conversation = AiConv::query()->create([
+            'conv_name' => 'Tutoring session',
+            'slug' => 'tutoring-session',
+            'user_id' => $user->id,
+            'system_prompt' => null,
+            'assistant_handle' => 'math-tutor',
+        ]);
+
+        // Trunk turn, then the user's thread reply.
+        $this->actingAs($user)->postJson(
+            "/api/hawki/v1/ai-convs/{$conversation->slug}/actions/messages",
+            $this->messageBody(0),
+            $this->jsonApiHeaders(),
+        )->assertCreated()->assertJsonPath('data.attributes.message_id', '1.000');
+
+        $this->actingAs($user)->postJson(
+            "/api/hawki/v1/ai-convs/{$conversation->slug}/actions/messages",
+            $this->messageBody(1),
+            $this->jsonApiHeaders(),
+        )->assertCreated()->assertJsonPath('data.attributes.message_id', '1.001');
+
+        $identity = ['name' => 'Math Tutor', 'icon' => '📚', 'tint' => 'hsl(200 60% 40%)', 'handle' => 'math-tutor'];
+
+        $this->actingAs($user)->postJson(
+            "/api/hawki/v1/ai-convs/{$conversation->slug}/actions/messages",
+            $this->messageBody(1, true, $identity),
+            $this->jsonApiHeaders(),
+        )
+            ->assertCreated()
+            ->assertJsonPath('data.attributes.message_id', '1.002')
+            ->assertJsonPath('data.attributes.metadata.assistant', $identity);
+
+        $this->actingAs($user)
+            ->getJson(
+                "/api/hawki/v1/ai-convs/{$conversation->slug}?include=messages",
+                $this->jsonApiHeaders(),
+            )
+            ->assertOk()
+            ->assertJsonPath('included.2.attributes.message_id', '1.002')
+            ->assertJsonPath('included.2.attributes.metadata.assistant', $identity);
+    }
+
+    /**
+     * A regenerated thread answer is updated in place: switching the model and
+     * the answering assistant replaces both on the stored message — the write
+     * path the regenerate menu's picks rely on.
+     */
+    public function testUpdatingAThreadAiReplySwitchesTheModelAndReplacesTheAssistantIdentity(): void
+    {
+        $user = User::factory()->create();
+        $conversation = AiConv::query()->create([
+            'conv_name' => 'Tutoring session',
+            'slug' => 'tutoring-session',
+            'user_id' => $user->id,
+            'system_prompt' => null,
+            'assistant_handle' => 'math-tutor',
+        ]);
+
+        $this->actingAs($user)->postJson(
+            "/api/hawki/v1/ai-convs/{$conversation->slug}/actions/messages",
+            $this->messageBody(0),
+            $this->jsonApiHeaders(),
+        )->assertCreated();
+
+        $identity = ['name' => 'Math Tutor', 'icon' => '📚', 'handle' => 'math-tutor'];
+        $this->actingAs($user)->postJson(
+            "/api/hawki/v1/ai-convs/{$conversation->slug}/actions/messages",
+            $this->messageBody(1, true, $identity),
+            $this->jsonApiHeaders(),
+        )->assertCreated()->assertJsonPath('data.attributes.message_id', '1.001');
+
+        $replacedIdentity = ['name' => 'Latin Tutor', 'icon' => '🏛️', 'handle' => 'latin-tutor'];
+
+        $this->actingAs($user)
+            ->patchJson(
+                "/api/hawki/v1/ai-convs/{$conversation->slug}/actions/messages/1.001",
+                [
+                    'content' => [
+                        'text' => [
+                            'ciphertext' => 're-encrypted',
+                            'iv' => 'iv-2',
+                            'tag' => 'tag-2',
+                        ],
+                        'attachments' => [],
+                    ],
+                    'metadata' => [
+                        'tools' => [],
+                        'params' => null,
+                        'assistant' => $replacedIdentity,
+                    ],
+                    'model' => 'switched-thread-model',
+                    'completion' => true,
+                ],
+                $this->jsonApiHeaders(),
+            )
+            ->assertOk()
+            ->assertJsonPath('data.attributes.message_id', '1.001')
+            ->assertJsonPath('data.attributes.model', 'switched-thread-model')
+            ->assertJsonPath('data.attributes.metadata.assistant', $replacedIdentity);
+
+        $stored = \App\Models\AiConvMsg::query()->where('message_id', '1.001')->sole();
+        self::assertSame('switched-thread-model', $stored->model);
+        self::assertSame($replacedIdentity, $stored->metadata['assistant']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function messageBody(int $threadId, bool $isAi = false, ?array $assistantIdentity = null): array
+    {
+        return [
+            'isAi' => $isAi,
+            'threadId' => $threadId,
+            'content' => [
+                'text' => [
+                    'ciphertext' => 'encrypted',
+                    'iv' => 'iv',
+                    'tag' => 'tag',
+                ],
+                'attachments' => [],
+            ],
+            'metadata' => [
+                'tools' => [],
+                'params' => null,
+                ...($assistantIdentity !== null ? ['assistant' => $assistantIdentity] : []),
+            ],
+            'model' => $isAi ? 'assistant-model' : null,
+            'completion' => true,
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     private function jsonApiHeaders(): array

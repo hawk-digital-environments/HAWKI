@@ -22,7 +22,7 @@ import BuilderBackButton from '$plugins/assistants/components/BuilderBackButton.
 import { DashboardModule } from '$plugins/assistants/modules/dashboard/DashboardModule';
 import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
 import { assistantHandlesStore } from '$plugins/assistants/stores/AssistantHandlesStore.svelte';
-import { assistantChatSend, assistantChatWelcome } from '$plugins/assistants/hooks/assistantChatHooks';
+import { assistantChatSend, assistantChatWelcome, assistantRegenerateGroups } from '$plugins/assistants/hooks/assistantChatHooks';
 import AssistantsSchema from '$plugins/assistants/api/schemas/resources/assistants.schema';
 import AssistantAvatarsSchema from '$plugins/assistants/api/schemas/resources/assistant-avatars.schema';
 import AssistantFeedbackSchema from '$plugins/assistants/api/schemas/resources/assistant-feedback.schema';
@@ -114,6 +114,7 @@ export default class AssistantsPlugin implements HawkiPlugin {
         // hooks/assistantChatHooks.ts.
         registrar.add('chatSend', assistantChatSend, { order: 10 });
         registrar.add('chatWelcome', assistantChatWelcome, { order: 10 });
+        registrar.add('chatRegenerateGroups', assistantRegenerateGroups, { order: 10 });
 
         registrar.add('assistantMenuEntries', (menu, ctx) => [
             ...menu,
