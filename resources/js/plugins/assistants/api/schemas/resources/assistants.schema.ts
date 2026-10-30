@@ -263,7 +263,7 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
     starterPrompts: wire.assistant_user_prompts?.map(prompt => prompt.text) ?? [],
 
     model: wire.model ?? '',
-    maxTokens: wire.max_tokens ?? 2048,
+    maxTokens: wire.max_tokens ?? 0,
     temp: wire.temp ?? 0,
     topP: wire.top_p ?? 0,
 
@@ -363,7 +363,7 @@ export function createEmptyAssistant(): Assistant {
 
         model: '',
         allowModelSelect: false,
-        maxTokens: 2048,
+        maxTokens: 0,
         temp: 0,
         topP: 0,
         allowRemix: false,

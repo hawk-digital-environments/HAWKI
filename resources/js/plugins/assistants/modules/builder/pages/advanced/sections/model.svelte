@@ -12,7 +12,6 @@
     import Alert from "$lib/components/ui/alert/Alert.svelte";
     import Alert01Icon from "$lib/components/ui/icons/iconset/Alert01Icon.svelte";
     import SlidersHorizontalIcon from "$lib/components/ui/icons/iconset/SlidersHorizontalIcon.svelte";
-    import {getMaxOutputTokensLimit} from "$plugins/assistants/modules/builder/contexts/builderUtils.js";
     import {useStore} from "$lib/app/hooks/useStore.svelte.js";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte.js";
 
@@ -29,18 +28,6 @@
     const {__} = useTranslator();
     const builder = useBuilderContext();
     const modelStore = useStore('ai-models');
-
-    // The maxTokens slider is bounded by the selected model's own output limit
-    // (`limits.max_output_tokens`, e.g. 128000); without a model or a declared
-    // limit it falls back to the previous fixed range. `getOneById` also
-    // resolves legacy drafts that still store the model's numeric row id.
-    const maxOutputTokens = $derived.by(() => {
-        const model = modelStore.getOneById(builder.draft.model);
-        return model ? getMaxOutputTokensLimit(model) : null;
-    });
-    const maxTokensMax = $derived(maxOutputTokens ?? 4096);
-    // Keep the range valid even for a model with a limit below the default min.
-    const maxTokensMin = $derived(Math.min(100, maxTokensMax));
 
     // Same restriction as the composer: a model without the sampling flag
     // ignores temperature / Top P, so presets hide and the sliders disable.
@@ -131,16 +118,6 @@
                         description={__('assistants.builder.model.input_top_p_description')}
                         hint={__('assistants.builder.model.input_top_p_hint')}
                         assistantValueKey="topP"
-                />
-                <BuilderInput
-                        type="slider"
-                        label={__('assistants.builder.model.input_max_tokens')}
-                        min={maxTokensMin}
-                        max={maxTokensMax}
-                        isInteger={true}
-                        description={__('assistants.builder.model.input_max_tokens_description')}
-                        hint={__('assistants.builder.model.input_max_tokens_hint')}
-                        assistantValueKey="maxTokens"
                 />
             </div>
         </ToolGroupCard>

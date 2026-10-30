@@ -108,10 +108,12 @@ export function assistantChatSend(send: ChatSendDescriptor, ctx: ChatSendContext
         model: assistant.allowModelSelect ? send.model : assistant.model,
         // The assistant defines the toolset of its runs — possibly empty.
         tools: toolNames,
+        // maxTokens 0 means "nothing set": the key is omitted so the run falls
+        // back to the backend default instead of sending a zero cap.
         params: {
             temp: assistant.temp,
             top_p: assistant.topP,
-            max_tokens: assistant.maxTokens
+            ...(assistant.maxTokens > 0 && {max_tokens: assistant.maxTokens})
         }
     };
 }

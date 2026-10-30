@@ -28,4 +28,4 @@ The new Svelte frontend (`resources/js/`) is a clean rewrite. It must stay decou
 
 ## Code style
 
-**Never run `php-cs-fixer` / `composer php-cs-fixer` unless explicitly asked.** It reformats hundreds of unrelated files in this repo; only the user should trigger it. For verification, use `composer test:stan` (PHPStan) instead.
+**Never run `php-cs-fixer` / `composer php-cs-fixer` or any php style commands unless explicitly asked.** It reformats hundreds of unrelated files in this repo; only the user should trigger it. For verification, use `composer test:stan` (PHPStan) instead.
