@@ -12,6 +12,7 @@ use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactor
 use App\Services\Ai\AiService;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\Models\Settings\Values\AiModelSettings;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
@@ -142,6 +143,97 @@ class ChatAgentAssistantPayloadTransformationTest extends TestCase
         static::assertSame('@' . self::INVENTORE_HANDLE . ' hello you', $messages[6]->content);
     }
 
+    public function testAPlainThreadRunWithASwitchedModelRunsOnTheSwitchedModel(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $gateway = new CapturingTextGateway(['Fake thread reply.']);
+        $this->mockProviderInfrastructure($gateway);
+
+        $agent = $this->app->get(AiService::class)->getAgent($this->threadPayload('switched-thread-model'));
+        $agent->send();
+
+        static::assertCount(1, $gateway->capturedSteps);
+        $step = $gateway->capturedSteps[0];
+
+        // The model is per run: a thread reply may switch it freely.
+        static::assertSame('switched-thread-model', $step['model']);
+        // Plain run: the frontend's own system prompt stays.
+        static::assertStringContainsString('HAWK Hildesheim', $step['instructions']);
+
+        $messages = $step['messages'];
+        static::assertCount(3, $messages);
+
+        // The trunk user turn and the first thread reply are two consecutive user
+        // roles — merged into one turn behind a visible boundary.
+        static::assertInstanceOf(UserMessage::class, $messages[0]);
+        static::assertStringContainsString('[[MESSAGE BOUNDARY]]', $messages[0]->content);
+        static::assertStringContainsString('explain recursion', $messages[0]->content);
+        static::assertStringContainsString('with an example', $messages[0]->content);
+
+        // Plain run: attribution blocks survive and @handle tokens are not stripped.
+        static::assertSame('assistant', $messages[1]->role->value);
+        static::assertStringContainsString('[HKI_META_ANSWER_SOURCE]', $messages[1]->content);
+        static::assertStringContainsString('Recursion example: a function that calls itself.', $messages[1]->content);
+
+        static::assertSame('@' . self::INVENTORE_HANDLE . ' and now in Python', $messages[2]->content);
+    }
+
+    public function testAnAssistantThreadReplyRunsOnTheAssistantsOwnModelWhenSelectionIsNotAllowed(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $this->createAssistant($user, self::INVENTORE_HANDLE, 'You are the inventore assistant. Always calculate precisely.', 'assistant-own-model');
+
+        $gateway = new CapturingTextGateway(['Fake assistant thread reply.']);
+        $this->mockProviderInfrastructure($gateway);
+
+        $agent = $this->app->get(AiService::class)->getAgent($this->threadPayload('switched-thread-model', self::INVENTORE_HANDLE));
+        $agent->send();
+
+        static::assertCount(1, $gateway->capturedSteps);
+        $step = $gateway->capturedSteps[0];
+
+        // The client's switched model is ignored: the assistant fixes its own.
+        static::assertSame('assistant-own-model', $step['model']);
+        static::assertStringContainsString('You are the inventore assistant.', $step['instructions']);
+        static::assertStringNotContainsString('HAWK Hildesheim', $step['instructions']);
+
+        $messages = $step['messages'];
+        static::assertCount(3, $messages);
+
+        // Handle stripped from the merged trunk+thread user turn …
+        static::assertStringContainsString('explain recursion', $messages[0]->content);
+        static::assertStringContainsString('with an example', $messages[0]->content);
+        static::assertStringNotContainsString('@' . self::INVENTORE_HANDLE, $messages[0]->content);
+
+        // … and the assistant's own earlier thread answer needs no attribution block.
+        static::assertSame('Recursion example: a function that calls itself.', $messages[1]->content);
+
+        static::assertSame('and now in Python', $messages[2]->content);
+    }
+
+    public function testAnAssistantThreadReplyRunsOnTheSwitchedModelWhenSelectionIsAllowed(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $this->createAssistant($user, self::INVENTORE_HANDLE, 'You are the inventore assistant. Always calculate precisely.', 'assistant-own-model', true);
+
+        $gateway = new CapturingTextGateway(['Fake assistant thread reply.']);
+        $this->mockProviderInfrastructure($gateway);
+
+        $agent = $this->app->get(AiService::class)->getAgent($this->threadPayload('switched-thread-model', self::INVENTORE_HANDLE));
+        $agent->send();
+
+        static::assertCount(1, $gateway->capturedSteps);
+        $step = $gateway->capturedSteps[0];
+
+        // Model selection allowed: the switched model wins, the assistant's logic still applies.
+        static::assertSame('switched-thread-model', $step['model']);
+        static::assertStringContainsString('You are the inventore assistant.', $step['instructions']);
+    }
+
     // =========================================================================
     // Payload / fixtures
     // =========================================================================
@@ -180,15 +272,53 @@ class ChatAgentAssistantPayloadTransformationTest extends TestCase
         ];
     }
 
-    private function createAssistant(User $creator, string $handle, string $systemPrompt, string $model): Assistant
+    /**
+     * Reduced copy of a real frontend thread-reply payload: the trunk user turn
+     * (`7.000`) plus the thread's messages (`7.001`…), thread-filtered by the
+     * client — the trunk's own assistant answer is never part of thread history,
+     * and the history opens with two consecutive user turns that the backend
+     * merges. `threadIndex` rides along unused on the private-chat path.
+     */
+    private function threadPayload(string $model, string|null $assistantHandle = null): array
     {
+        return [
+            'broadcast' => false,
+            'threadIndex' => 7,
+            'slug' => '',
+            'isUpdate' => false,
+            'messageId' => null,
+            'payload' => [
+                'model' => $model,
+                'broadcast' => false,
+                'stream' => true,
+                'messages' => [
+                    ['role' => 'system', 'content' => ['text' => 'You are an intelligent and supportive AI assistance system for all university members of HAWK Hildesheim/Holzminden/Göttingen.']],
+                    ['role' => 'user', 'content' => ['text' => '@' . self::INVENTORE_HANDLE . ' explain recursion']],
+                    ['role' => 'user', 'content' => ['text' => '@' . self::INVENTORE_HANDLE . ' with an example']],
+                    ['role' => 'assistant', 'content' => ['text' => 'Recursion example: a function that calls itself.'], 'hawkiExtensions' => ['assistant_handle' => self::INVENTORE_HANDLE]],
+                    ['role' => 'user', 'content' => ['text' => '@' . self::INVENTORE_HANDLE . ' and now in Python']],
+                ],
+                'tools' => [],
+                'params' => ['temp' => 0.2, 'top_p' => 0.9],
+                ...($assistantHandle !== null ? ['hawkiExtensions' => ['assistant_handle' => $assistantHandle]] : []),
+            ],
+        ];
+    }
+
+    private function createAssistant(
+        User $creator,
+        string $handle,
+        string $systemPrompt,
+        string $model,
+        bool $allowModelSelect = false,
+    ): Assistant {
         return Assistant::factory()->create([
             'creator_id' => $creator->id,
             'release_stage' => 'private',
             'handle' => $handle,
             'model' => $model,
             'system_prompt' => $systemPrompt,
-            'allow_model_select' => false,
+            'allow_model_select' => $allowModelSelect,
             'max_tokens' => 0,
         ]);
     }
@@ -231,23 +361,24 @@ class ChatAgentAssistantPayloadTransformationTest extends TestCase
             $mock->shouldReceive('resolveForModel')->andReturn($proxy);
         });
 
-        $model = $this->makeModel();
-        $this->mock(AiModelRepository::class, static function ($mock) use ($model): void {
-            $mock->shouldReceive('findOneOrFail')->andReturn($model);
-        });
+        $this->mock(AiModelRepository::class, fn ($mock) => $mock->shouldReceive('findOneOrFail')
+            ->andReturnUsing(fn (string $modelId): AiModel => $this->makeModel($modelId)));
     }
 
-    private function makeModel(): AiModel
+    private function makeModel(string $modelId = 'inventore-model'): AiModel
     {
         $flags = $this->createMock(AiModelFlags::class);
         $flags->method('hasFeatureSamplingParameters')->willReturn(true);
 
         $model = $this->createMock(AiModel::class);
         // AiModel exposes cast properties via Eloquent's magic __get → getAttribute.
+        // `settings` must be a real AiModelSettings: the knowledge-call listener
+        // reads the tool round limit off it while the agent sends.
         $model->method('__get')->willReturnCallback(
             static fn (string $key): mixed => match ($key) {
                 'flags' => $flags,
-                'model_id' => 'inventore-model',
+                'model_id' => $modelId,
+                'settings' => AiModelSettings::fromArray(['tool_calling' => true]),
                 default => null,
             }
         );

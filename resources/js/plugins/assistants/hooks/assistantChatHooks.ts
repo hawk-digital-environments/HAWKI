@@ -1,4 +1,5 @@
 import type {ChatSendContext, ChatSendDescriptor} from '$plugins/core/modules/chat/hooks/chatSendHooks.js';
+import type {ChatRegenerateGroup, ChatRegenerateGroupsContext} from '$plugins/core/modules/chat/hooks/chatRegenerateHooks.js';
 import type {ChatWelcomeContext, ChatWelcomeSection} from '$plugins/core/modules/chat/hooks/chatWelcomeHooks.js';
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 import type {Assistant} from '$plugins/assistants/types/assistant';
@@ -7,14 +8,16 @@ import {assistantHandlesStore} from '$plugins/assistants/stores/AssistantHandles
 
 /**
  * Chat integration of the assistants plugin, registered as handlers for the
- * chat module's `chatSend` and `chatWelcome` hooks (see `assistants.plugin.ts`).
+ * chat module's `chatSend`, `chatRegenerateGroups` and `chatWelcome` hooks
+ * (see `assistants.plugin.ts`).
  *
- * When the composer addresses one of the user's assistants via its `@handle`,
+ * When a run is addressed to one of the user's assistants — via its `@handle`
+ * in the composer message, or the participant a regenerate menu pick named —
  * the send is pinned to that assistant:
  *
  * - the conversation binding (`ai_convs.assistant_handle`) follows the
- *   addressed handle, so switching assistants mid-chat rebinds and removing
- *   the handle turns the conversation into a plain HAWKI chat,
+ *   addressed handle on sends, so switching assistants mid-chat rebinds and
+ *   removing the handle turns the conversation into a plain HAWKI chat,
  * - model/tools/params of the run (and the persisted message metadata) come
  *   from the assistant (the model only stays user-selected when the
  *   assistant allows it),
@@ -23,13 +26,13 @@ import {assistantHandlesStore} from '$plugins/assistants/stores/AssistantHandles
  *   prompts (there the conversation binding still acts as a display
  *   fallback while the composer is still seeding).
  *
- * A regen keeps the run pinned to the assistant that authored the original
- * answer (read from the message's persisted identity) even after the
- * composer switched or cleared its handle.
+ * A regenerate claims the picked participant through its `chatBinding` and
+ * re-runs the reply with the same pinning as a send. HAWKI carries no
+ * binding — unclaimed, the run stays the plain, user-configured rerun.
  *
- * The backend independently assembles the run from the `@handle` inside the
- * message text (see `AssistantChatAgentFactory`), so the rewritten values
- * are display/persistence metadata plus the payload the server enforces
+ * The backend independently assembles the run from the handle (see
+ * `AssistantChatAgentFactory`), so the rewritten values are
+ * display/persistence metadata plus the payload the server enforces
  * anyway.
  */
 
@@ -61,10 +64,10 @@ function addressedByComposer(composer: ComposerContext | null): AddressableAssis
 
 /**
  * The assistant a send is pinned to: the composer's live `@handle` choice,
- * else the original author of the message a regen overwrites, else none.
- * The conversation binding deliberately does not feed back here — the
- * transport rebases it on this result, so consulting it would resurrect a
- * removed assistant.
+ * else the participant a regenerate menu pick addressed, else none. The
+ * conversation binding deliberately does not feed back here — the transport
+ * rebases it on this result, so consulting it would resurrect a removed
+ * assistant.
  */
 function resolveSendAssistant(ctx: ChatSendContext): AddressableAssistant | null {
     const addressed = addressedByComposer(ctx.composer);
@@ -72,9 +75,11 @@ function resolveSendAssistant(ctx: ChatSendContext): AddressableAssistant | null
         return addressed;
     }
 
-    const regenHandle = ctx.regenMessage?.assistant?.handle;
-    if (regenHandle !== undefined) {
-        return addressableAssistants().get(regenHandle) ?? null;
+    // A regenerate is claimed through the picked participant's `chatBinding`; a row
+    // without one (HAWKI, or a deleted assistant) stays a plain rerun.
+    const pickedHandle = ctx.regenParticipant?.chatBinding;
+    if (pickedHandle !== undefined) {
+        return addressableAssistants().get(pickedHandle) ?? null;
     }
 
     return null;
@@ -114,6 +119,24 @@ export function assistantChatSend(send: ChatSendDescriptor, ctx: ChatSendContext
             max_tokens: assistant.maxTokens
         }
     };
+}
+
+/** Handler for the `chatRegenerateGroups` hook: the plugin's "Assistants" group in the
+ *  regenerate menu, ahead of the model providers. Same rows the `aiAssistants` hook feeds
+ *  the composer's `@` menu (`menuAssistants` lazily loads the store). */
+export function assistantRegenerateGroups(
+    groups: ChatRegenerateGroup[],
+    ctx: ChatRegenerateGroupsContext
+): ChatRegenerateGroup[] {
+    return [
+        {
+            id: 'assistants',
+            label: ctx.translate('chat.composer.assistantMenu.assistantsLabel'),
+            entries: assistantHandlesStore.menuAssistants(ctx.translate)
+                .map(assistant => ({id: assistant.id, participant: assistant}))
+        },
+        ...groups
+    ];
 }
 
 /** Handler for the `chatWelcome` hook. */

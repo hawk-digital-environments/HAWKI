@@ -235,7 +235,7 @@
 {#if hawkiEntry || otherEntries.length > 0}
     <div transition:growTransition={{mode: 'horizontal'}}>
         <DropdownMenu
-            disabled={composerContext.guard.disablesFeature('input', false)}
+            disabled={composerContext.guard.disablesFeature('input', false) || composerContext.guard.disablesFeature('assistants')}
             bind:open
             contentProps={{class: 'assistant-menu-content'}}>
             {#snippet trigger({props})}

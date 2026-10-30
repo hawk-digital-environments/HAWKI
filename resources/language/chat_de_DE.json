@@ -79,7 +79,8 @@
             "replyCountOne": "1 Antwort",
             "replyCount": ":count Antworten",
             "reply": "Im Thread antworten",
-            "writing": "Du schreibst in diesem Thread"
+            "writing": "Du schreibst in diesem Thread",
+            "historyCap": "Nur die letzten :count Nachrichten dieses Threads werden an die KI gesendet. Ältere Antworten werden verworfen."
         },
         "nameMenu": {
             "emptyNameError": "Der Chatname darf nicht leer sein",
