@@ -3,7 +3,6 @@
 
 namespace App\Services\Chat\Room\Traits;
 
-use App\Models\ExtApp;
 use App\Models\Member;
 use App\Models\Room;
 use App\Models\User;
@@ -107,17 +106,8 @@ trait RoomMembers
 
     public function searchUser(string $query): array
     {
-        // Search in the database for users matching the query and is not removed
-        $users = User::where('isRemoved', false)
-            ->withoutGlobalScopes()
-            ->where(function ($queryBuilder) use ($query) {
-                $queryBuilder->where('name', 'like', "%{$query}%")
-                    ->orWhere('username', 'like', "%{$query}%")
-                    ->orWhere('email', 'like', "%{$query}%");
-            })
-            ->where('users.employeetype', '!=', ExtApp::EMPLOYEE_TYPE_APP)
-            ->take(5)
-            ->get();
+        // Search in the database for human users matching the query
+        $users = $this->userRepository->searchRoomInviteMembers($query);
 
         // REF-> SEARCH_FILTER
         return $users->map(function ($user) {

@@ -1105,7 +1105,7 @@ async function searchUser(searchBar) {
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    'query': encodeURIComponent(query)
+                    'query': query
                 })
 
             });
