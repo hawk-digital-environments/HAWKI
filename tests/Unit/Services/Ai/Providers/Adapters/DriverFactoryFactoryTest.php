@@ -21,7 +21,7 @@ class DriverFactoryFactoryTest extends TestCase
     {
         $sut = new DriverFactoryFactory(
             $this->createMock(AiManager::class),
-            $this->createMock(ServiceLocator::class),
+            $this->createMock(ServiceLocator::class)
         );
 
         static::assertInstanceOf(DriverFactoryFactory::class, $sut);
@@ -35,7 +35,7 @@ class DriverFactoryFactoryTest extends TestCase
     {
         $sut = new DriverFactoryFactory(
             $this->createMock(AiManager::class),
-            $this->createMock(ServiceLocator::class),
+            $this->createMock(ServiceLocator::class)
         );
 
         $provider = new \App\Models\Ai\AiProvider();
@@ -49,7 +49,7 @@ class DriverFactoryFactoryTest extends TestCase
     {
         $sut = new DriverFactoryFactory(
             $this->createMock(AiManager::class),
-            $this->createMock(ServiceLocator::class),
+            $this->createMock(ServiceLocator::class)
         );
 
         $providerA = new \App\Models\Ai\AiProvider();

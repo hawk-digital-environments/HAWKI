@@ -47,6 +47,8 @@ use App\Services\Ai\Providers\Adapters\Implementations\OpenRouterAdapter;
 use App\Services\Ai\Providers\Adapters\ProviderAdapterRegistry;
 use App\Services\Ai\Providers\Adapters\WellKnownAdapterKeys;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
+use App\Services\Ai\Providers\StallAware\StallAwareOllamaGateway;
+use App\Services\Ai\Providers\StallAware\StallAwareOpenAiCompatibleGateway;
 use App\Services\Ai\Tools\AbstractTool;
 use App\Services\Ai\Tools\Contracts\ToolInterface;
 use App\Services\Ai\Tools\LaravelAi\LaravelToolResolver;
@@ -56,9 +58,12 @@ use App\Services\Config\Registries\PublicConfigRegistry;
 use App\Services\System\Container\ServiceLocator;
 use App\Services\System\UsageTypes\UsageContext;
 use App\Utils\Lists\LazySingletonList;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Ai\AiManager;
 use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Providers\OllamaProvider;
+use Laravel\Ai\Providers\OpenAiCompatibleProvider;
 
 class AiServiceProvider extends ServiceProvider
 {
@@ -293,7 +298,28 @@ class AiServiceProvider extends ServiceProvider
         $this->app->extend(
             AiManager::class,
             function (AiManager $manager) {
-                return ExtendedAiManager::createDecoratedOf($manager);
+                $manager = ExtendedAiManager::createDecoratedOf($manager);
+
+                // openai-compatible drivers use the stall-aware gateway, which applies the
+                // provider's `stall_timeout` to the HTTP requests of the gateway.
+                // TODO: Remove stall detection from the package's stock driver creators in 
+                // a future Laravel AI version if additionalConfiguration is supported.
+                $manager->extend('openai-compatible', function ($app, array $config) {
+                    $events = $app->make(Dispatcher::class);
+
+                    return (new OpenAiCompatibleProvider($config, $events))
+                        ->useTextGateway(new StallAwareOpenAiCompatibleGateway($events));
+                });
+
+                // ollama drivers use the same stall-aware gateway, see above
+                $manager->extend('ollama', function ($app, array $config) {
+                    $events = $app->make(Dispatcher::class);
+
+                    return (new OllamaProvider($config, $events))
+                        ->useTextGateway(new StallAwareOllamaGateway($events));
+                });
+
+                return $manager;
             }
         );
 

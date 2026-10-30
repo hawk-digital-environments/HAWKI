@@ -11,9 +11,10 @@ This document describes the environment variables available for fine-grained con
 5. [Model Activation Variables](#model-activation-variables)
 6. [Tool Capability Variables](#tool-capability-variables)
 7. [Provider-Level Settings](#provider-level-settings)
-8. [Default and System Model Selection](#default-and-system-model-selection)
-9. [Best Practices](#best-practices)
-10. [Examples](#examples)
+8. [Request Timeouts](#request-timeouts)
+9. [Default and System Model Selection](#default-and-system-model-selection)
+10. [Best Practices](#best-practices)
+11. [Examples](#examples)
 
 ---
 
@@ -308,6 +309,46 @@ OPEN_WEB_UI_API_KEY=your-key
 ```
 
 Disabling a provider sets `active=false` for the provider record in the database after the next sync. All its models will also be treated as inactive at runtime.
+
+---
+
+## Request Timeouts
+
+Timeouts are set per provider in the `adapter` settings of its entry in `config/model_providers.php`:
+
+```php
+// config/model_providers.php
+'providers' => [
+    'gwdg' => [
+        // ...
+        'adapter' => [
+            'request_timeout' => 300,
+            'stall_timeout' => 120,
+        ],
+    ],
+],
+```
+
+**`request_timeout`** — Time budget in seconds for **non-streaming requests**; default 60, `0` removes the limit. It is a hard limit for the *complete* answer — a model that has not fully replied within `request_timeout` seconds is aborted. Streaming requests are not governed by it at all: a stream may run as long as it keeps sending data, matching HAWKI 2.4.
+
+**`stall_timeout`** — HAWKI aborts a **streaming request** that receives **no data** for this number of seconds, whether the silence occurs before the model starts answering or in the middle of a stream. This protects against connections that hang silently while still allowing reasoning models to think for a long time: raise the value for models that stay silent longer than the limit before their first output. Receiving any data resets the timer, so an actively streaming answer — or a provider that sends keep-alive bytes while thinking — is never aborted by it. Disabled by default; with stall detection disabled, streams have no idle limit (this also removes the previous behaviour where a silent stream was aborted after 60 seconds). A typical value is 120 seconds. This requires PHP's `allow_url_fopen` setting (on by default); without it, streams are served through curl — they keep no total limit and stall detection uses curl's low-speed abort instead.
+
+In short:
+
+- Model thinks in silence for minutes before answering → raise `stall_timeout`
+- "The answer must be complete within N seconds" (non-streaming only) → `request_timeout`
+- Protection against hanging connections → `stall_timeout`
+
+Stall detection is supported by these drivers:
+
+| Driver | Providers |
+|---|---|
+| `openai-compatible` | GWDG, HuggingFace, all "OpenAI-like" providers |
+| `ollama` | Ollama |
+
+The following drivers accept the setting but ignore it: `openai`, `google` (Gemini), `anthropic`, `openai_azure`, `mistral`, `deepseek`, `open_router`. The `aws_bedrock` driver uses the AWS SDK and can never support it.
+
+Both keys are optional — a provider without `adapter` timeout settings uses the 60 seconds default and no stall detection. The GWDG provider entry ships with the HAWKI 2.4 behaviour by default: no total limit (`request_timeout = 0`) and a 120 seconds stall timeout, configurable via `GWDG_REQUEST_TIMEOUT` and `GWDG_STALL_TIMEOUT`.
 
 ---
 
