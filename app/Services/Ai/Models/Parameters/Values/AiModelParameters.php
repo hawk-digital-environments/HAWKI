@@ -17,9 +17,11 @@ use Illuminate\Support\Traits\Macroable;
  * provider config → **model defaults** → per-request overrides (resolved by {@see \App\Services\Ai\Agents\Values\AgentRequestContext}).
  *
  * Well-known inference parameters (`temperature`, `top_p`, `max_tokens`, `max_thinking_tokens`) have
- * dedicated typed accessors with built-in fallback defaults (0.95, 1.0, 4096, 2048 respectively).
- * Any other key stored in the JSON object is treated as a provider-specific extra parameter and is
- * returned by {@see toAdditionalArray()} for forwarding to the provider adapter.
+ * dedicated typed accessors; `temperature`/`top_p`/`max_thinking_tokens` carry built-in fallback
+ * defaults (0.95, 1.0, 2048 respectively) while `max_tokens` stays `null` when unset, so the
+ * provider applies its own maximum. Any other key stored in the JSON object is treated as a
+ * provider-specific extra parameter and is returned by {@see toAdditionalArray()} for forwarding
+ * to the provider adapter.
  *
  * Example:
  * ```php
@@ -83,13 +85,14 @@ final class AiModelParameters implements CastableInstanceInterface, \JsonSeriali
     }
 
     /**
-     * Returns the configured maximum output token limit, or `$default` when none is set.
-     * Falls back to `4096` when neither a stored value nor `$default` is provided.
-     * Caps the number of tokens the model may generate in a single response.
+     * Returns the configured maximum output token limit, `$default` when provided, or `null`
+     * when neither exists — "no cap", letting the provider apply its own maximum.
      */
-    public function getMaxTokens(int|null $default = null): int
+    public function getMaxTokens(int|null $default = null): int|null
     {
-        return (int)$this->get(WellKnownModelParams::MAX_TOKENS, $default ?? 4096);
+        $value = $this->get(WellKnownModelParams::MAX_TOKENS, $default);
+
+        return $value === null ? null : (int)$value;
     }
 
     /** Sets the max-tokens limit and returns the current instance for fluent chaining. */
@@ -200,7 +203,8 @@ final class AiModelParameters implements CastableInstanceInterface, \JsonSeriali
     /** Serializes all stored parameters to JSON (persisted in the database). */
     public function jsonSerialize(): array
     {
-        // Ensure to contain the "default values" for the well-known parameters even when they are not explicitly set.
+        // Include the well-known parameters even when unset — except max_tokens,
+        // whose null ("no limit") must survive the round-trip.
         return array_merge([
             WellKnownModelParams::TEMPERATURE => $this->getTemperature(),
             WellKnownModelParams::TOP_P => $this->getTopP(),

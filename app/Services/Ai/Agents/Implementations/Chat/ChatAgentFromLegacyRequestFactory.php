@@ -83,7 +83,8 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
     /**
      * Maps the legacy `params` keys (`temp`, `top_p`, `max_tokens`, `max_thinking_tokens`) to
      * an {@see AiModelParameters} instance. Only keys that are present in the payload are set;
-     * absent keys fall back to the model's stored defaults downstream.
+     * absent keys fall back to the model's stored defaults downstream. A `max_tokens` value of
+     * `0` counts as absent — it is the clients' "no limit / model maximum" sentinel.
      */
     private function getModelParametersFromPayload(LegacyChatRequestPayload $payload): AiModelParameters
     {
@@ -97,7 +98,7 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
         if (isset($params['top_p'])) {
             $modelParameters->setTopP((float)$params['top_p']);
         }
-        if (isset($params['max_tokens'])) {
+        if (isset($params['max_tokens']) && (int)$params['max_tokens'] > 0) {
             $modelParameters->setMaxTokens((int)$params['max_tokens']);
         }
         if (isset($params['max_thinking_tokens'])) {

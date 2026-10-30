@@ -5,7 +5,9 @@
   pointer while hovering, previewing the stepped value under the cursor before
   the user commits to it by dragging/clicking.
 
-  Not bindable — pass `value` down and react to changes via `onValueChange`.
+  Not bindable — pass `value` down and react to changes via `onValueChange`
+  (every intermediate position) and `onValueCommit` (pointer/keyboard release,
+  the point to persist the value).
 
   Always pass `aria-label` (or `aria-labelledby`): it is applied to the thumb,
   which carries `role="slider"`, together with an `aria-valuetext`.
@@ -34,8 +36,10 @@
         max?: number;
         /** Step between selectable values. */
         step?: number;
-        /** Called when the user changes the value. */
+        /** Called for every intermediate value while the user drags. */
         onValueChange?: (value: number) => void;
+        /** Called once when the user releases the slider (pointer or keyboard). */
+        onValueCommit?: (value: number) => void;
         /** Whether the slider is disabled. */
         disabled?: boolean;
     }>;
@@ -46,6 +50,7 @@
         max = 1,
         step = 0.01,
         onValueChange,
+        onValueCommit,
         disabled = false,
         'aria-label': ariaLabel,
         'aria-labelledby': ariaLabelledby,
@@ -70,7 +75,9 @@
         pointerX = Math.min(width, Math.max(0, event.clientX - left));
         const fraction = width === 0 ? 0 : pointerX / width;
         const raw = min + fraction * (max - min);
-        hoverValue = Math.min(max, Math.max(min, Math.round(raw / step) * step));
+        // Snap to the same min-anchored grid the slider uses for its values.
+        const gridOffset = Math.round((raw - min) / step) * step;
+        hoverValue = Math.min(max, Math.max(min, min + gridOffset));
     }
 </script>
 
@@ -82,6 +89,7 @@
     {step}
     {disabled}
     {onValueChange}
+    {onValueCommit}
     {...mergeProps({
         class: 'slider-root',
         onpointerenter: () => (hovering = true),

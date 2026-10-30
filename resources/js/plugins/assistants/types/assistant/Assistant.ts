@@ -80,6 +80,7 @@ export const AssistantSchema = z.object({
     /** Provider-side model identifier the assistant runs on, e.g. `gpt-4o`. */
     model: z.string(),
 
+    /** Maximum tokens per answer; 0 = no limit (the model's own maximum applies). */
     maxTokens: z.number(),
     temp: z.number(),
     topP: z.number(),

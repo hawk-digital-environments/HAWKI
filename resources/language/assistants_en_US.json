@@ -290,8 +290,11 @@
                 "input_top_p_description": "Limits the probability mass the model samples from.",
                 "input_top_p_hint": "Lower values make sampling more focused, higher values more open.",
                 "input_max_tokens": "Max. output length",
-                "input_max_tokens_description": "Maximum number of tokens per answer.",
-                "input_max_tokens_hint": "Higher values allow longer answers but take more time.",
+                "input_max_tokens_description": "Maximum number of tokens per answer — applies when the limit is enabled.",
+                "input_max_tokens_hint": "By default the model's maximum output length is used. Higher values allow longer answers but take more time.",
+                "input_max_tokens_limit": "Limit answer length",
+                "input_max_tokens_limit_description": "When off, the model may use its maximum output length.",
+                "input_max_tokens_auto": "Auto (model max)",
                 "advanced_title": "Advanced settings",
                 "advanced_description": "Temperature, Top_P and max. output length",
                 "conflict": {

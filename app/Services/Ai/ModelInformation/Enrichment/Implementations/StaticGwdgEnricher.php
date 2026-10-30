@@ -247,7 +247,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
             ],
         ],
         'qwen3.6-35b-a3b' => [
-            'max_tokens' => 262000,
+            'max_tokens' => 262144,
             'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8',
             'description' => 'Qwen 3.6 35B A3B is an MoE model with 35 billion total parameters and 3 billion activated parameters for efficient inference. Built on direct feedback from the community, Qwen 3.6 prioritizes stability, real-world utility, including for coding and agentic tasks.',
             'flags' => [
@@ -289,7 +289,11 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
 
         $this->enrichParameters($modelInfo, $modelData['parameters'] ?? null);
 
-        $this->enrichChatLimits($modelInfo, maxInputTokens: $modelData['max_tokens']);
+        $this->enrichChatLimits(
+            $modelInfo,
+            maxInputTokens: $modelData['max_tokens'],
+            maxOutputTokens: $modelData['max_tokens']
+        );
 
         $this->enrichNativeCapabilities($modelInfo, $modelData['native_capabilities'] ?? null);
 

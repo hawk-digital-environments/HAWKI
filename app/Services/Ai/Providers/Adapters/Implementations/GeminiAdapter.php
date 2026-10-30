@@ -78,9 +78,9 @@ class GeminiAdapter extends AbstractProviderAdapter
      * Injects Gemini-specific generation config and safety settings for text-generating agents.
      *
      * The thinking budget is capped at half the total max-token allowance so that the model
-     * cannot spend all its token budget on internal reasoning at the expense of the final answer.
-     * Safety filtering is relaxed to "block only high" for dangerous content because HAWKI's
-     * own content policy sits above the model layer.
+     * cannot spend all its token budget on internal reasoning at the expense of the final answer
+     * (skipped when no limit is configured). Safety filtering is relaxed to "block only high"
+     * for dangerous content because HAWKI's own content policy sits above the model layer.
      *
      * Only applies when $agent is a {@see AbstractTextGeneratingAgent}; returns an empty array
      * for other agent types (e.g. image-generation agents).
@@ -90,7 +90,9 @@ class GeminiAdapter extends AbstractProviderAdapter
         if ($agent instanceof AbstractTextGeneratingAgent) {
             $maxTokens = $context->modelParameters->getMaxTokens();
             $maxThinkingTokens = $context->modelParameters->getMaxThinkingTokens();
-            $maxThinkingTokensLimited = min($maxThinkingTokens, $maxTokens / 2);
+            $maxThinkingTokensLimited = $maxTokens === null
+                ? $maxThinkingTokens
+                : min($maxThinkingTokens, intdiv($maxTokens, 2));
 
             return [
                 'generationConfig' => [

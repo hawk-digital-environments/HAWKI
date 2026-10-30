@@ -37,7 +37,8 @@ use Stringable;
  *
  * Sampling parameters (`maxTokens`, `temperature`, `topP`) are only forwarded to the provider
  * when the resolved model declares support for sampling parameters via its flags; otherwise
- * `null` is returned so the provider can apply its own defaults.
+ * `null` is returned so the provider can apply its own defaults. `maxTokens` is also `null`
+ * when no explicit limit is configured, for the same reason.
  *
  * Example (typical factory usage):
  * ```php
@@ -111,8 +112,8 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
     }
 
     /**
-     * Returns the maximum output token limit, or null when the model does not support
-     * sampling parameters (letting the provider apply its own default).
+     * Returns the maximum output token limit, or null when none is configured or the model
+     * does not support sampling parameters — the provider then applies its own maximum.
      */
     public function maxTokens(): int|null
     {

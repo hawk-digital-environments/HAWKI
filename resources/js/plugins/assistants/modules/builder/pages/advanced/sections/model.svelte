@@ -7,6 +7,7 @@
     import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import ToolSelector from "$plugins/assistants/modules/builder/components/aiToolComponents/ToolSelector.svelte";
     import ToolGroupCard from "$plugins/assistants/modules/builder/components/aiToolComponents/ToolGroupCard.svelte";
+    import FullWidthToggle from "$plugins/assistants/components/toggle/FullWidthToggle.svelte";
     import Tabs, {type TabItem} from "$lib/components/ui/tabs/Tabs.svelte";
     import {samplingPresets} from "$plugins/core/modules/chat/components/composer/samplingPresets.js";
     import Alert from "$lib/components/ui/alert/Alert.svelte";
@@ -39,8 +40,23 @@
         return model ? getMaxOutputTokensLimit(model) : null;
     });
     const maxTokensMax = $derived(maxOutputTokens ?? 4096);
-    // Keep the range valid even for a model with a limit below the default min.
-    const maxTokensMin = $derived(Math.min(100, maxTokensMax));
+    // Huge ranges (DeepSeek's 1M) need a coarse grid: a step of 1 makes dragging
+    // unusable. A "nice" 1/2/5×10^k step keeps ~250 positions; small ranges
+    // keep single-token steps.
+    const maxTokensStep = $derived.by(() => {
+        const range = maxTokensMax - Math.min(100, maxTokensMax);
+        if (range <= 500) return 1;
+        const raw = range / 250;
+        const magnitude = 10 ** Math.floor(Math.log10(raw));
+        return [1, 2, 5, 10].map(m => m * magnitude).find(s => s >= raw) ?? 10 * magnitude;
+    });
+    // The slider grid counts up from min, so the exact model maximum is only
+    // selectable when (max - min) is divisible by the step. Anchor the grid at
+    // the max instead: raise the floor to the last grid point below ~100.
+    const maxTokensMin = $derived.by(() => {
+        if (maxTokensMax <= 100) return maxTokensMax;
+        return maxTokensMax - Math.floor((maxTokensMax - 100) / maxTokensStep) * maxTokensStep;
+    });
 
     // Same restriction as the composer: a model without the sampling flag
     // ignores temperature / Top P, so presets hide and the sliders disable.
@@ -62,6 +78,14 @@
         if (!preset) return;
         builder.set('temp', preset.temp);
         builder.set('topP', preset.topP);
+    }
+
+    // Enabling starts the slider at the model's maximum — the run's default — so
+    // lower positions are deliberate reductions; disabling clears back to 0.
+    const maxTokensLimitEnabled = $derived(builder.draft.maxTokens > 0);
+
+    function toggleMaxTokensLimit(enabled: boolean): void {
+        builder.set('maxTokens', enabled ? maxTokensMax : 0);
     }
 </script>
 
@@ -137,10 +161,20 @@
                         label={__('assistants.builder.model.input_max_tokens')}
                         min={maxTokensMin}
                         max={maxTokensMax}
+                        step={maxTokensStep}
                         isInteger={true}
+                        autoMaxLabel={__('assistants.builder.model.input_max_tokens_auto')}
                         description={__('assistants.builder.model.input_max_tokens_description')}
                         hint={__('assistants.builder.model.input_max_tokens_hint')}
                         assistantValueKey="maxTokens"
+                />
+
+                <FullWidthToggle
+                        label={__('assistants.builder.model.input_max_tokens_limit')}
+                        description={__('assistants.builder.model.input_max_tokens_limit_description')}
+                        defaultValue={maxTokensLimitEnabled}
+                        borderless={true}
+                        onchange={toggleMaxTokensLimit}
                 />
             </div>
         </ToolGroupCard>

@@ -41,6 +41,8 @@
         isInteger?: boolean;
         /** Slider step; defaults to 1 for integer sliders. */
         step?: number;
+        /** Slider: value 0 renders greyed out at max, showing this label instead ("automatic"). */
+        autoMaxLabel?: string;
         assistantValueKey: keyof Assistant;
         // style vars
         render?: 'block' | 'inline';
@@ -62,6 +64,7 @@
         max,
         isInteger = false,
         step,
+        autoMaxLabel,
         render = 'block',
         addItemLabel
 
@@ -111,6 +114,29 @@
 
     // Slider works with a plain number; fall back to the lower bound.
     let numberValue = $derived(typeof currentValue === 'number' ? currentValue : (min ?? 0));
+
+    // The "automatic" sentinel (0 with an autoMaxLabel): slider greyed out at max.
+    let isAutoMax = $derived(type === 'slider' && autoMaxLabel !== undefined && numberValue <= 0);
+    let sliderDisabled = $derived(disabled || isAutoMax);
+    let sliderValue = $derived(isAutoMax ? (max ?? 0) : numberValue);
+
+    // While dragging, the thumb follows a local echo so the draft is only written
+    // on commit (release) — not on every pixel move.
+    let sliderEcho: number | null = $state(null);
+
+    function handleSliderChange(value: number): void {
+        sliderEcho = value;
+    }
+
+    function handleSliderCommit(value: number): void {
+        sliderEcho = null;
+        update(value);
+    }
+
+    // Integers (token counts) read better with locale separators; floats stay raw.
+    function displaySliderValue(value: number): string {
+        return isInteger ? value.toLocaleString() : String(value);
+    }
 
     // Category holds a value object ({ id, text }); the three setting fields hold
     // primitive values whose human label comes from the matching server setting.
@@ -236,7 +262,9 @@
                 <InfoPopover {label} info={hint}/>
             {/if}
             {#if type === 'slider'}
-                <span class="slider-value">{numberValue}</span>
+                <span class="slider-value">
+                    {#if isAutoMax}{autoMaxLabel}{:else}{displaySliderValue(sliderEcho ?? numberValue)}{/if}
+                </span>
             {/if}
         </div>
     {/if}
@@ -259,7 +287,7 @@
     <div class="input-container"
          class:renderBlock={render === 'block'}
          class:renderInline={render === 'inline'}
-         class:sliderDisabled={type === 'slider' && disabled}
+         class:sliderDisabled={type === 'slider' && sliderDisabled}
     >
         {@render fieldHeader()}
 
@@ -268,12 +296,13 @@
                 <p class="field-note">{description}</p>
             {/if}
             <Slider
-                value={numberValue}
+                value={sliderEcho ?? sliderValue}
                 min={min}
                 max={max}
                 step={step ?? (isInteger ? 1 : undefined)}
-                {disabled}
-                onValueChange={update}
+                disabled={sliderDisabled}
+                onValueChange={handleSliderChange}
+                onValueCommit={handleSliderCommit}
             />
         {:else}
             <!-- Blue reveal when the AI guide fills this field. -->

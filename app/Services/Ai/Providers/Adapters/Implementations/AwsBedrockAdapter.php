@@ -114,7 +114,7 @@ class AwsBedrockAdapter extends AbstractProviderAdapter
 
         $config = AnthropicThinkingConfig::from(
             requestedBudgetTokens: $context->modelParameters->getMaxThinkingTokens(),
-            maxTokens: $agent->maxTokens() ?? $context->modelParameters->getMaxTokens(),
+            maxTokens: $agent->maxTokens() ?? $context->modelParameters->getMaxTokens() ?? 64_000,
             temperature: $agent->temperature(),
             topP: $agent->topP(),
         );

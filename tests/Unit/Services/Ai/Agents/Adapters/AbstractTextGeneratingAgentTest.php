@@ -302,6 +302,16 @@ class AbstractTextGeneratingAgentTest extends TestCase
         static::assertSame(512, $sut->maxTokens());
     }
 
+    public function testItMaxTokensReturnsNullWhenNoLimitConfigured(): void
+    {
+        // No explicit max_tokens anywhere: null omits the field, the provider max applies.
+        $params = new AiModelParameters(['temperature' => 0.7]);
+        $context = $this->makeContext(hasSamplingParams: true, params: $params);
+        $sut = $this->makeAgentWithPrompt($context);
+
+        static::assertNull($sut->maxTokens());
+    }
+
     public function testItTemperatureReturnsValueFromParametersWhenSamplingEnabled(): void
     {
         $params = new AiModelParameters(['temperature' => 0.42]);

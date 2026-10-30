@@ -125,10 +125,11 @@ class ModelParametersTest extends TestCase
         static::assertSame(512, $sut->getMaxTokens(512));
     }
 
-    public function testItGetsMaxTokensBuiltInDefaultWhenAbsent(): void
+    public function testItGetsMaxTokensNullWhenAbsent(): void
     {
         $sut = AiModelParameters::fromArray([]);
-        static::assertSame(4096, $sut->getMaxTokens());
+        // No built-in fallback: "unset" must reach the provider as "no cap".
+        static::assertNull($sut->getMaxTokens());
     }
 
     public function testItSetsMaxTokens(): void
@@ -372,7 +373,8 @@ class ModelParametersTest extends TestCase
         $serialized = $sut->jsonSerialize();
         static::assertSame(0.7, $serialized['temperature']);
         static::assertSame(0.9, $serialized['top_p']);
-        static::assertSame(4096, $serialized['max_tokens']);
+        // max_tokens stays null when unset — "no limit" is a meaningful state.
+        static::assertNull($serialized['max_tokens']);
         static::assertSame(2048, $serialized['max_thinking_tokens']);
         static::assertSame('value', $serialized['extra']);
     }

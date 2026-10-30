@@ -290,8 +290,11 @@
                 "input_top_p_description": "Begrenzt die Wahrscheinlichkeitsmasse, aus der das Modell sampelt.",
                 "input_top_p_hint": "Niedrigere Werte machen das Sampling fokussierter, höhere Werte offener.",
                 "input_max_tokens": "Max. Ausgabelänge",
-                "input_max_tokens_description": "Maximale Tokenanzahl pro Antwort.",
-                "input_max_tokens_hint": "Höhere Werte ermöglichen längere Antworten, kosten aber mehr Zeit.",
+                "input_max_tokens_description": "Maximale Tokenanzahl pro Antwort – gilt, wenn die Begrenzung aktiviert ist.",
+                "input_max_tokens_hint": "Standardmäßig wird die maximale Ausgabelänge des Modells genutzt. Höhere Werte ermöglichen längere Antworten, kosten aber mehr Zeit.",
+                "input_max_tokens_limit": "Antwortlänge begrenzen",
+                "input_max_tokens_limit_description": "Aus: Das Modell darf seine maximale Ausgabelänge nutzen.",
+                "input_max_tokens_auto": "Auto (Modellmaximum)",
                 "advanced_title": "Erweiterte Einstellungen",
                 "advanced_description": "Temperature, Top_P und max. Ausgabelänge",
                 "conflict": {
