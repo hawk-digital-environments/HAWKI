@@ -583,6 +583,8 @@ async function createNewRoom() {
 
 
 async function onSuccessfulRoomCreation(roomData) {
+    // The creator always becomes the admin of the new room
+    roomData.role = 'admin';
 
     const inputs = document.querySelector('.inputs-list');
     const description = inputs.querySelector('#room-description-input').value;
@@ -865,7 +867,8 @@ function createRoomItem(roomData) {
     snippet.setProps({
         slug: roomData.slug,
         name: roomData.room_name,
-        context: 'room'
+        context: 'room',
+        role: roomData.role
     });
     snippet.setAttribute('data-room-slug', roomData.slug);
 
@@ -908,6 +911,8 @@ async function loadRoom(btn = null, slug = null) {
         lastActive.classList.remove('active');
     }
     btn.classList.add('active');
+    // Keep the sidebar role in sync, in case it changed since the page was loaded
+    btn.setProps({role: roomData.role});
 
     switchDyMainContent('chat');
     history.replaceState(null, '', `/groupchat/${slug}`);
@@ -1100,7 +1105,7 @@ async function searchUser(searchBar) {
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    'query': encodeURIComponent(query)
+                    'query': query
                 })
 
             });
@@ -1130,8 +1135,6 @@ async function searchUser(searchBar) {
                     // Check if the user's username is already in the ignoreList
                     const isAlreadyAdded = ignoreList.some(invitedUsername => invitedUsername === user.username);
                     if (isAlreadyAdded) {
-                        const index = data.users.indexOf(user);
-                        data.users.splice(index, 1);
                         return;
                     }
 
@@ -1455,6 +1458,13 @@ async function leaveRoom(mustConfirm) {
                 'Accept': 'application/json'
             }
         });
+
+        // The last admin of a room can't leave it, they can only delete it
+        if (response.status === 403) {
+            await modalError(__('RoomLeaveLastAdmin'));
+            return;
+        }
+
         const data = await response.json();
 
         if (data.success) {
@@ -1519,6 +1529,8 @@ async function removeMemberFromRoom(username) {
         const data = await response.json();
 
         if (data.success) {
+            // Keep the local member list in sync, so the user can be found again when adding members
+            activeRoom.members = activeRoom.members.filter(member => member.username !== username);
             return true;
         }
         console.error(data.message);
@@ -1526,6 +1538,35 @@ async function removeMemberFromRoom(username) {
         console.error('Failed to remove user!');
     }
 
+}
+
+async function changeMemberRole(username, role) {
+    const url = `/req/room/changeMemberRole/${activeRoom.slug}`;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({'username': username, 'role': role})
+        });
+
+        if (response.ok) {
+            const member = activeRoom.members.find(member => member.username === username);
+            if (member) member.role = role;
+            return true;
+        }
+        console.error(`Failed to change role! status: ${response.status}`);
+    } catch (error) {
+        console.error('Failed to change role!', error);
+    }
+
+    await modalError(__('MemberRoleChangeFailed'));
+    return false;
 }
 
 //#endregion
