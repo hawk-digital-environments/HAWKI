@@ -238,8 +238,8 @@
         height: 2rem;
         place-items: center;
         border-radius: var(--corner-full);
-        background: var(--color-active-surface);
-        color: var(--color-active-text);
+        background: var(--color-accent-100);
+        color: var(--color-accent-text);
     }
 
     .message-column { min-width: 0; }

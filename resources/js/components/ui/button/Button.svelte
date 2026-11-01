@@ -210,7 +210,7 @@
     }
 
     :global(html.darkMode) .btn--accent:not(:disabled) {
-        --btn-color: var(--color-active-text);
+        --btn-color: var(--color-accent-text);
     }
 
     .btn--fill,

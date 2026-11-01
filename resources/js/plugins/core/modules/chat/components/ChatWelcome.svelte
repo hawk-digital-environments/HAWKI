@@ -38,8 +38,8 @@ on the page element.
         margin-bottom: var(--space-4);
         place-items: center;
         border-radius: var(--corner-lg);
-        background: var(--color-active-surface);
-        color: var(--color-active-text);
+        background: var(--color-accent-100);
+        color: var(--color-accent-text);
     }
 
     h1 { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }

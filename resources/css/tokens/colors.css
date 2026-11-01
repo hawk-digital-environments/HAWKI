@@ -39,12 +39,9 @@
         --color-accent-fill-hover: var(--color-accent-600);
 
         /* Active-selection surface + ink, shared by nav rows, the profile item,
-           the neutral avatar, and single-select menus. */
-        /* Translucent mix of accent-200 that lands on accent-100 over the app
-           background, so layering a second copy for hover-on-active deepens the
-           row on its own — same mechanism as dark mode. */
-        --color-active-surface: color-mix(in oklab, var(--color-accent-200) 40%, transparent);
-        --color-active-text: var(--color-accent-text);
+           and single-select menus. */
+        --color-active-surface: var(--color-hover);
+        --color-active-text: var(--color-nav-text);
 
         /* Brand gradient for primary calls to action. Runs along the accent
            ramp so it stays the same hue family as every other accent surface,
@@ -87,8 +84,8 @@
         --color-message-me: oklch(94% 0 0);
         --color-message-ai: oklch(100% 0 0);
 
-        /* Muted light blue used as the shared hover across sidebar, composer, etc. */
-        --color-hover: oklch(97% 0.018 265);
+        /* Neutral fill (#EFEFEF) used as the shared hover across sidebar, composer, etc. */
+        --color-hover: oklch(95.2% 0 0);
         /* Lighter-than-surface neutral fill. Used as a resting background for
            controls so the standard --color-hover reads as a darker hover. */
         --color-surface-light: oklch(97% 0 0);
@@ -98,6 +95,8 @@
         --color-text-muted: oklch(56% 0 0);
         --color-text-invert: oklch(97% 0 0);
         --color-text-disabled: oklch(75% 0 0);
+        --color-nav-text: oklch(15.9% 0 0); /* #0D0D0D */
+        --color-nav-text-hover: var(--color-nav-text);
         --color-disabled-bg: oklch(93% 0 0);
 
         --color-link: oklch(0% 0 0); /* --link-color (#000) */
@@ -115,7 +114,7 @@
 
         /* Active/hover rows track the blue button accent fill, slightly translucent. */
         --color-active-surface: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
-        --color-active-text: var(--color-accent-text);
+        --color-active-text: var(--color-text);
 
         /* Match the sidebar's active-surface blue for the shared light-blue fill
            (filled buttons, tags, selected cards, radio switches) so it reads as
@@ -166,6 +165,8 @@
         --color-text-muted: oklch(86% 0 0);
         --color-text-invert: oklch(24% 0 0);
         --color-text-disabled: oklch(45% 0 0);
+        --color-nav-text: color-mix(in oklab, var(--color-text) 60%, var(--color-text-muted));
+        --color-nav-text-hover: var(--color-text);
         --color-disabled-bg: oklch(25% 0 0);
 
         --color-link: oklch(100% 0 0);

@@ -181,11 +181,7 @@
         padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
         border: none;
         background: transparent;
-        /* Rows recede at rest and come forward on hover — the same treatment as
-           the section switcher's chevron and the header actions, but held part
-           way to the full text color: a list of chat titles is content, not
-           chrome, so it stays comfortably readable while unselected. */
-        color: color-mix(in oklab, var(--color-text) 60%, var(--color-text-muted));
+        color: var(--color-nav-text);
         font-size: var(--font-size-xs);
         cursor: pointer;
         border-radius: var(--corner-sm);
@@ -195,7 +191,7 @@
 
     /* Hover/active surfaces are provided by the sliding highlights in List. */
     .sidebar-item:hover {
-        color: var(--color-text);
+        color: var(--color-nav-text-hover);
     }
 
     .sidebar-item.active {

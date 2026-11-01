@@ -1,6 +1,6 @@
 <!--
-  @component Prominent action row for the sidebar, carrying the brand gradient
-  (e.g. "New chat"). Follows the nav row metrics of SidebarItem: in the
+  @component Prominent action row for the sidebar, in the accent tint the avatar
+  uses (e.g. "New chat"). Follows the nav row metrics of SidebarItem: in the
   collapsed rail it shrinks to an icon-only square and shows its label as a
   tooltip anchored to the icon instead.
 -->
@@ -64,24 +64,19 @@
         flex-shrink: 0;
         border: 0;
         border-radius: var(--corner-sm);
-        background: linear-gradient(
-            135deg,
-            var(--gradient-brand-1),
-            var(--gradient-brand-2) 55%,
-            var(--gradient-brand-3)
-        );
-        color: var(--color-on-accent-fill);
+        background: var(--color-accent-100);
+        color: var(--color-accent-text);
         font: inherit;
         font-size: var(--font-size-xs);
         text-align: left;
         white-space: nowrap;
         cursor: pointer;
-        transition: filter var(--duration-fast);
+        transition: background var(--duration-fast);
     }
 
-    /* The ramp deepens on hover rather than being washed out by a flat overlay. */
+    /* Leans toward the text color, so it deepens on light and lifts on dark. */
     .sidebar-button:hover {
-        filter: brightness(0.92) saturate(1.08);
+        background: color-mix(in oklab, var(--color-accent-100) 85%, var(--color-accent-text));
     }
 
     .sidebar-button:focus-visible {

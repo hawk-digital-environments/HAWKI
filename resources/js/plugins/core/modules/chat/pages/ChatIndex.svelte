@@ -163,7 +163,7 @@ from the store's in-flight cache.
         width: 1rem;
         height: 1rem;
         border: 2px solid var(--color-border);
-        border-top-color: var(--color-active-text);
+        border-top-color: var(--color-accent-text);
         border-radius: var(--corner-full);
         animation: spin 0.8s linear infinite;
     }

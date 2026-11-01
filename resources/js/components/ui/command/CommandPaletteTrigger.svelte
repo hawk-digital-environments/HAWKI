@@ -23,7 +23,7 @@
     import type {HTMLButtonAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
+    import ArrowDown01Icon from '$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
 
     interface Props extends HTMLButtonAttributes {
@@ -67,10 +67,8 @@
                 {/if}
             </span>
             <span class="label">{label}</span>
-            <!-- Double chevron: the trigger opens a list you pick from rather
-                 than a menu that drops down, so it points both ways. -->
             <span class="indicator" aria-hidden="true">
-                <UnfoldMoreIcon size={16} strokeWidth={2} />
+                <ArrowDown01Icon size={16} strokeWidth={2} />
             </span>
         </button>
     {/snippet}
@@ -85,18 +83,14 @@
         /* The shared row height, so the trigger sits in the same rhythm as the
            rows below it. */
         min-height: var(--nav-row-h);
-        /* Left padding lands the icon on the shared rail column. The stroke is
-           an outline inset by its full width, so it sits just inside the box
-           edge and takes no layout space and the full padding applies. Deliberately
+        /* Left padding lands the icon on the shared rail column. Deliberately
            unchanged in the rail: the icon keeps the exact same offset from the
            panel edge in both states, so it never drifts sideways while the
            column animates. */
         padding: 0 var(--space-2) 0 var(--nav-item-pad-x);
         border: none;
-        outline: var(--divider);
-        outline-offset: calc(var(--divider-width) * -1);
         background: transparent;
-        color: var(--color-text);
+        color: var(--color-nav-text);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
         text-align: left;
@@ -104,21 +98,17 @@
         border-radius: var(--corner-sm);
         transition:
             background var(--duration-fast),
-            outline-color var(--duration-fast),
             color var(--duration-fast);
     }
 
-    /* Hover swaps the outline for the neutral wash — one emphasis at a time. */
     .section-trigger:hover {
-        outline-color: transparent;
         background: var(--color-hover);
     }
 
     /* Open: the trigger takes the same wash *and* text colour the sidebar gives
        its active row, so an open palette reads as "you are here" in the nav's
-       own language. The outline drops out — the fill is the emphasis. */
+       own language. */
     .section-trigger[data-state='open'] {
-        outline-color: transparent;
         background: var(--color-active-surface);
         color: var(--color-active-text);
     }
@@ -133,8 +123,6 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        color: var(--nav-icon-color);
-        transition: color var(--duration-fast);
     }
 
     .label {
@@ -161,8 +149,6 @@
             opacity 160ms ease 100ms;
     }
 
-    .section-trigger[data-state='open'] .icon-wrap,
-    .section-trigger:hover .icon-wrap,
     .section-trigger[data-state='open'] .indicator,
     .section-trigger:hover .indicator {
         color: inherit;
