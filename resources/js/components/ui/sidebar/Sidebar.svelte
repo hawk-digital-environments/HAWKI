@@ -73,7 +73,6 @@
             /* Off-canvas drawer: above the page content it slides over. */
             --app-sidebar-z: 20;
             z-index: var(--app-sidebar-z);
-            background: var(--color-surface-raised);
             transform: translateX(-100%);
             visibility: hidden;
             transition:

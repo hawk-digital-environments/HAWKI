@@ -78,7 +78,7 @@
         --color-info: oklch(55% 0.14 230);
 
         /* ── Neutral surfaces ───────────────────────────────────────────── */
-        --color-bg: oklch(100% 0 0);
+        --color-bg: oklch(99.1% 0 0); /* #FCFCFC */
         --color-bg-secondary: oklch(96% 0.01 265); /* --background-secondary (#F4F6FB) */
         --color-surface: oklch(94% 0 0);
         --color-surface-raised: oklch(100% 0 0);
@@ -148,7 +148,7 @@
             var(--gradient-brand-hover-3)
         );
 
-        --color-bg: oklch(18% 0 0);
+        --color-bg: oklch(16% 0 0);
         --color-bg-secondary: oklch(0.213 0 0);
         --color-surface: oklch(24% 0 0);
         --color-surface-raised: oklch(19% 0 0);

@@ -111,9 +111,7 @@
             height: var(--content-fade-h, calc(var(--space-2_5) + 7rem));
             z-index: 5;
             pointer-events: none;
-            /* Solid equivalent of the content background (--panel-bg over
-               --color-bg). */
-            --fade-color: color-mix(in oklch, var(--color-surface-raised) 60%, var(--color-bg));
+            --fade-color: var(--panel-bg);
             /* Eased fade. What reads as "not smooth" in an alpha ramp is a
                sudden change in slope, not the ramp itself: a solid band meeting
                a linear ramp creases where they join, and a linear ramp reaching

@@ -77,7 +77,7 @@
         );
         --nav-track: var(--nav-w);
         --aside-track: 0rem;
-        --panel-bg: color-mix(in oklch, var(--color-surface-raised) 60%, transparent);
+        --panel-bg: var(--color-bg);
 
         background: var(--color-bg);
     }
