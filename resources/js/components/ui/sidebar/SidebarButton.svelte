@@ -68,6 +68,7 @@
         color: var(--color-accent-text);
         font: inherit;
         font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
         text-align: left;
         white-space: nowrap;
         cursor: pointer;
