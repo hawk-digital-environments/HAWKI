@@ -111,7 +111,8 @@
 
 <style>
     :global(.profile-menu-content.dropdown-content--dropdown) {
-        width: min(15rem, calc(100vw - 2 * var(--space-4)));
+        /* Spans its row; in the rail, where the row is an icon square, 15rem holds. */
+        width: min(max(15rem, var(--bits-floating-anchor-width)), calc(100vw - 2 * var(--space-4)));
     }
 
     .profile-summary {

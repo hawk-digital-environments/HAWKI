@@ -63,7 +63,9 @@
         >
             <span class="icon-wrap" bind:this={iconEl}>
                 {#if Icon}
-                    <Icon size={18} strokeWidth={2} aria-hidden="true" />
+                    <!-- Beside the title its stroke renders at about the label's ~1.75px
+                         stem (2.35 × 18/24); in the rail it joins the other icons. -->
+                    <Icon size={18} strokeWidth={collapsed ? 2 : 2.35} aria-hidden="true" />
                 {/if}
             </span>
             <span class="label">{label}</span>
@@ -89,13 +91,17 @@
         /* Left padding lands the icon on the shared rail column. Deliberately
            unchanged in the rail: the icon keeps the exact same offset from the
            panel edge in both states, so it never drifts sideways while the
-           column animates. */
-        padding: 0 var(--space-2) 0 var(--nav-item-pad-x);
+           column animates. It reads as --space-2_5 with the glyph's own inset,
+           so the right side and the gaps are set to match. */
+        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
         border: none;
         background: transparent;
         color: var(--color-nav-text);
-        font-size: var(--font-size-xs);
+        /* PageHeaderBar's title treatment, a step smaller. */
+        font-size: var(--font-size-base);
+        line-height: var(--line-height-tight);
         font-weight: var(--font-weight-medium);
+        letter-spacing: -0.01em;
         text-align: left;
         cursor: pointer;
         border-radius: var(--corner-sm);
@@ -126,6 +132,8 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        /* Cancels the ~1px of empty space inside the glyph's box. */
+        margin-right: -1px;
         transition: color var(--duration-fast);
     }
 
@@ -146,6 +154,9 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        /* Cancels the empty space inside the chevron's box: its ink, stroke
+           included, starts 5 units into the 24-unit box, drawn at 16px. */
+        margin-inline: -3.33px;
         color: var(--nav-icon-color);
         transition:
             color var(--duration-fast),
@@ -182,10 +193,6 @@
     }
 
     @media (--bp-md-and-smaller) {
-        .section-trigger {
-            font-size: var(--font-size-sm);
-        }
-
         .icon-wrap :global(svg) {
             width: var(--space-5);
             height: var(--space-5);

@@ -217,7 +217,6 @@
         z-index: var(--layer-overlay);
         display: flex;
         flex-direction: column;
-        min-width: 15rem;
         /* Concentric with the rows, like every menu around sm rows. */
         border-radius: var(--corner-md);
         border: var(--border);
@@ -292,14 +291,6 @@
         to {
             opacity: 0;
             scale: 0.97;
-        }
-    }
-
-    @media (--bp-md-and-smaller) {
-        /* The sidebar is a full-width drawer here, so the palette spans its
-           trigger edge to edge — one connected control with the button above. */
-        :global(.command-palette) {
-            width: var(--bits-floating-anchor-width);
         }
     }
 </style>

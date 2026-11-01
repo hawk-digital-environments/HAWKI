@@ -112,11 +112,10 @@
         --color-accent-fill: oklch(25.9% 0.103 272.4);
         --color-accent-fill-hover: oklch(31.2% 0.128 272.4);
 
-        /* Active/hover rows track the blue button accent fill, slightly translucent. */
-        --color-active-surface: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
+        --color-active-surface: var(--color-hover);
         --color-active-text: var(--color-text);
 
-        /* Match the sidebar's active-surface blue for the shared light-blue fill
+        /* Track the blue button accent fill for the shared light-blue fill
            (filled buttons, tags, selected cards, radio switches) so it reads as
            an accent on dark chrome instead of a bright light-blue patch. */
         --color-accent-100: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
@@ -158,7 +157,7 @@
         --color-message-me: oklch(24% 0 0);
         --color-message-ai: oklch(20% 0 0);
 
-        --color-hover: color-mix(in oklab, var(--color-accent-fill) 70%, transparent);
+        --color-hover: oklch(21.8% 0 0); /* #1A1A1A */
         --color-border: oklch(31% 0 0);
         --color-border-strong: oklch(74% 0 0);
         --color-text: oklch(93% 0 0);

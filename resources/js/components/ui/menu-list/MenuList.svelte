@@ -279,8 +279,7 @@
             left 200ms var(--easing-spring);
     }
 
-    /* Hovering the active row deepens its highlight in dark mode, where the
-       active surface is translucent. It is opaque in light mode, so no change. */
+    /* The active surface is opaque, so hovering the active row leaves it as is. */
     .hover-bg.on-active {
         background: var(--color-active-surface);
     }
