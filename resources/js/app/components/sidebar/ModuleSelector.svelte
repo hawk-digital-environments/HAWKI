@@ -51,9 +51,13 @@
     }
 
     const currentModuleItem = $derived(findModuleItem(current));
+
+    // In the rail the menu flies out beside the icon, with alignOffset cancelling
+    // the palette's padding and border so its first row lines up with the icon.
+    const contentProps = $derived(sidebar.navOpen ? undefined : {side: 'right' as const, alignOffset: -5});
 </script>
 
-<CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule} shortcut={false}>
+<CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule} shortcut={false} {contentProps}>
     {#snippet trigger({ props })}
         <CommandPaletteTrigger
             label={currentModuleItem?.label ?? current ?? ''}
