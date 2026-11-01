@@ -274,6 +274,8 @@
         height: var(--nav-icon-size);
         margin-right: calc((var(--wrap-media-size) - var(--nav-icon-size)) / 2);
         flex-shrink: 0;
+        color: var(--nav-icon-color);
+        transition: color var(--duration-fast);
     }
 
     .label {
@@ -291,7 +293,7 @@
     .caret {
         display: inline-flex;
         flex-shrink: 0;
-        color: inherit;
+        color: var(--nav-icon-color);
         transition:
             transform 120ms var(--easing-spring),
             color var(--duration-fast),
@@ -302,14 +304,15 @@
         transform: rotate(90deg);
     }
 
-    /* A trailing visual recedes at rest and comes forward on hover or while the
-       row is active — same treatment as the section switcher's chevron. */
-    .caret.trailing {
-        color: var(--color-text-muted);
-    }
-
-    .sidebar-item:hover .caret.trailing,
-    .sidebar-item.active .caret.trailing {
+    /* Icons recede at rest and come forward on hover or while the row is active
+       — same treatment as the section switcher's chevron. Drill rows sit on the
+       brand gradient, so their icons always take the row's color. */
+    .sidebar-item:hover .icon-wrap,
+    .sidebar-item.active .icon-wrap,
+    .sidebar-item.drill .icon-wrap,
+    .sidebar-item:hover .caret,
+    .sidebar-item.active .caret,
+    .sidebar-item.drill .caret {
         color: inherit;
     }
 

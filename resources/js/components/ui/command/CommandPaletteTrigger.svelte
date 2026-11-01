@@ -133,6 +133,8 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        color: var(--nav-icon-color);
+        transition: color var(--duration-fast);
     }
 
     .label {
@@ -153,12 +155,14 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        color: var(--color-text-muted);
+        color: var(--nav-icon-color);
         transition:
             color var(--duration-fast),
             opacity 160ms ease 100ms;
     }
 
+    .section-trigger[data-state='open'] .icon-wrap,
+    .section-trigger:hover .icon-wrap,
     .section-trigger[data-state='open'] .indicator,
     .section-trigger:hover .indicator {
         color: inherit;

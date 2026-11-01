@@ -214,7 +214,7 @@
         background: transparent;
         /* Recedes at rest and comes forward on hover, same as the section
            switcher's chevron. */
-        color: var(--color-text-muted);
+        color: var(--nav-icon-color);
         cursor: pointer;
         border-radius: var(--corner-sm);
         transition:

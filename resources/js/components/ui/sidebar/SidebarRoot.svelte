@@ -72,6 +72,7 @@
         --rail-w: calc(var(--nav-row-h) + 2 * var(--space-2) + var(--divider-width));
         --aside-w: 20rem;
         --nav-icon-size: 18px;
+        --nav-icon-color: oklch(65% 0 0); /* #8F8F8F */
         --nav-item-pad-x: calc(
             (var(--rail-w) - 2 * var(--space-2) - var(--divider-width) - var(--nav-icon-size)) / 2
         );

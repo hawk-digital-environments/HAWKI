@@ -174,6 +174,7 @@
         /* No plate behind the glyph — the row underneath already carries the
            hover / active surface. */
         background: transparent;
+        --btn-color: var(--nav-icon-color);
     }
 
     /* The glyph sits directly on the selected row's surface, so it takes the
