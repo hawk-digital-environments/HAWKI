@@ -7,7 +7,7 @@
 @layer tokens {
     :root {
         --corner-xs:   8px;
-        --corner-sm:   12px;    /* --border-radius-tight */
+        --corner-sm:   10px;    /* --border-radius-tight */
         --corner-md:   16px;    /* --border-radius-normal */
         --corner-lg:   24px;    /* --border-radius-large */
         --corner-full: 9999px;
