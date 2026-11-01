@@ -1,8 +1,9 @@
 <!--
   @component Sidebar header row: a brand/logo slot, an optional search action and
   the collapse toggle. In the rail there is only room for one icon per
-  line, so the logo fades out, the toggle rides the panel edge inward and the
-  search action glides down onto the icon column beneath it.
+  line, so a logo link fades out, the toggle rides the panel edge inward and the
+  search action glides down onto the icon column beneath it. A non-link brand
+  is a control that has to stay reachable, so it glides down below search.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
@@ -14,7 +15,8 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
-        /** Brand/logo content, shown only while the nav is open. */
+        /** Brand/logo content. Hidden in the rail when it is a link (`brandHref`);
+            otherwise it moves below the other actions, onto the icon column. */
         children?: Snippet;
         /** Turns the brand box itself into a link to this target. */
         brandHref?: string;
@@ -51,7 +53,7 @@
         {#if brandHref}
             <a class="brand" href={brandHref} onclick={onBrandClick} inert={!open}>{@render children()}</a>
         {:else}
-            <div class="brand" inert={!open}>{@render children()}</div>
+            <div class="brand">{@render children()}</div>
         {/if}
     {/if}
     {#if onSearch}
@@ -114,10 +116,13 @@
         /* Named because the absolutely-positioned brand has to inset itself by
            the same amounts — see below. */
         --header-pad-top: var(--space-1);
-        /* Tighter than the sidebar's group gap: the brand row reads as the
-           panel's cap rather than as another group, so it sits closer to the
-           switcher below it. */
-        --header-pad-bottom: var(--space-2);
+        /* A step beyond the sidebar's group gap: a switcher in the brand slot
+           changes what the whole list below shows, so it gets clear separation
+           from that list. */
+        --header-pad-bottom: var(--space-4);
+        /* Height of each line that stacks under the toggle in the rail. */
+        --search-line: 0px;
+        --brand-line: 0px;
         /* Horizontal room the actions occupy, for the brand's max-width. The
            actions are `--nav-row-h` squares: at rail width a row is square, so
            matching the row height gives them the same hit area, hover surface
@@ -147,13 +152,18 @@
 
     .sidebar-header:has(.search) {
         --actions-w: calc(2 * var(--nav-row-h) + var(--space-1));
+        --search-line: calc(var(--nav-row-h) + var(--space-1));
     }
 
-    /* In the rail the search action drops onto a second line, so the row has to
-       reserve that line's height itself — it is absolutely positioned and would
-       otherwise overlap the first nav item. */
-    .sidebar-header:has(.search):not(.open) {
-        --header-pad-bottom: calc(var(--space-2) + var(--nav-row-h) + var(--space-1));
+    .sidebar-header:has(div.brand) {
+        --brand-line: calc(var(--nav-row-h) + var(--space-1));
+    }
+
+    /* In the rail the search action and a non-link brand drop onto lines of their
+       own, so the row has to reserve those lines' height itself — they are
+       absolutely positioned and would otherwise overlap the first nav item. */
+    .sidebar-header:not(.open) {
+        --header-pad-bottom: calc(var(--space-4) + var(--search-line) + var(--brand-line));
     }
 
     /* The brand is positioned out of the flex line on purpose. In the flow it
@@ -175,31 +185,44 @@
         align-items: center;
         /* Stop short of the actions so a long logo never runs under them. */
         max-width: calc(100% - var(--actions-w) - var(--space-2));
-        overflow: hidden;
-        /* Shrink-wrap the logo so the hover surface hugs it instead of spanning
-           the whole free width of the row, and pad it exactly as the header
-           actions pad their icon — the toggle is a `--nav-row-h` square
-           around a `--nav-icon-size` glyph — so both hover surfaces have the
-           same inset and the same height. */
+        /* Shrink-wrap the content so a hover surface hugs it instead of spanning
+           the whole free width of the row. */
         width: fit-content;
         color: inherit;
         text-decoration: none;
-        padding: 0 calc((var(--nav-row-h) - var(--nav-icon-size)) / 2);
         border-radius: var(--corner-sm);
         transition:
             opacity 160ms ease 100ms,
-            background var(--duration-fast);
+            background var(--duration-fast),
+            transform 280ms var(--easing-spring);
+    }
+
+    /* A brand link is padded exactly as the header actions pad their icon — the
+       toggle is a `--nav-row-h` square around a `--nav-icon-size` glyph — so both
+       hover surfaces have the same inset and the same height. A non-link brand
+       holds a control that brings its own padding and hover. */
+    a.brand {
+        overflow: hidden;
+        padding: 0 calc((var(--nav-row-h) - var(--nav-icon-size)) / 2);
     }
 
     /* Same hover surface the header actions use, so the brand reads as part of
        the same row. Suppressed in the rail, where the brand is faded out. */
-    .sidebar-header.open .brand:hover {
+    .sidebar-header.open a.brand:hover {
         background: var(--color-hover);
     }
 
-    .sidebar-header:not(.open) .brand {
+    .sidebar-header:not(.open) a.brand {
         opacity: 0;
         transition: opacity 100ms ease;
+    }
+
+    /* Moves below the actions with the same spring as search. It already sits on
+       the icon column, so it only travels down; the panel's width clamps it to
+       the row's square. */
+    .sidebar-header:not(.open) div.brand {
+        max-width: 100%;
+        transform: translateY(calc(var(--search-line) + var(--brand-line)));
     }
 
     .header-action {

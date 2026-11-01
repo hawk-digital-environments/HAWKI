@@ -79,7 +79,10 @@
         display: flex;
         align-items: center;
         gap: var(--space-2_5);
-        width: 100%;
+        /* Hugs its content; a long label ellipsizes once the container runs out. */
+        width: fit-content;
+        min-width: 0;
+        max-width: 100%;
         /* The shared row height, so the trigger sits in the same rhythm as the
            rows below it. */
         min-height: var(--nav-row-h);
@@ -123,10 +126,10 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        transition: color var(--duration-fast);
     }
 
     .label {
-        flex: 1;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -161,6 +164,21 @@
         opacity: 0;
         pointer-events: none;
         transition: opacity 100ms ease;
+    }
+
+    /* With no label to match, the icon joins the rail's other icons: receded at
+       rest, forward on hover (same as the header actions), and open styling
+       otherwise. */
+    .section-trigger.collapsed .icon-wrap {
+        color: var(--nav-icon-color);
+    }
+
+    .section-trigger.collapsed:hover .icon-wrap {
+        color: var(--color-text);
+    }
+
+    .section-trigger.collapsed[data-state='open'] .icon-wrap {
+        color: inherit;
     }
 
     @media (--bp-md-and-smaller) {
