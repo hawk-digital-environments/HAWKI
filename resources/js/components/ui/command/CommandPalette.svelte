@@ -218,8 +218,8 @@
         display: flex;
         flex-direction: column;
         min-width: 15rem;
-        /* Concentric with the rows: item radius + the container's own padding. */
-        border-radius: calc(var(--corner-sm) + var(--space-1));
+        /* Concentric with the rows, like every menu around sm rows. */
+        border-radius: var(--corner-md);
         border: var(--border);
         background-color: var(--color-surface-raised);
         box-shadow: var(--elevation-2);
