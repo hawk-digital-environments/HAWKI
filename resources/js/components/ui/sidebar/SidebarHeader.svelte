@@ -61,6 +61,7 @@
     /* The panel's own padding sets the outer inset, so only the gap to the first
        row below is added here, the same size as that padding. */
     .sidebar-header {
+        position: relative;
         flex-shrink: 0;
         display: flex;
         align-items: center;

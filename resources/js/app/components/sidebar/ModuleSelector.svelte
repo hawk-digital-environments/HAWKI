@@ -51,8 +51,6 @@
     const currentModuleItem = $derived(findModuleItem(current));
 </script>
 
-<!-- Hugs its rows, but stays inside the sidebar's padding like the profile menu: at most
-     one row wide, and held 16px (--space-4, the padding) off the window's edge. -->
 <CommandPalette
     items={moduleItems}
     bind:open
@@ -60,12 +58,7 @@
     label={translate('ui.navigation.spaces')}
     onSelect={selectModule}
     shortcut={false}
-    contentProps={{
-        align: 'end',
-        sideOffset: 8,
-        collisionPadding: 16,
-        style: 'max-width: min(calc(var(--nav-w) - 2 * var(--space-4) - var(--divider-width)), calc(100vw - 2 * var(--space-4)))'
-    }}
+    contained
 >
     {#snippet trigger({ props })}
         <CommandPaletteTrigger

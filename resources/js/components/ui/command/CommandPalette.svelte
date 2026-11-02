@@ -11,7 +11,7 @@
 
   It is a Popover rather than a centred modal so it can double as an in-place
   dropdown: the trigger keeps its `data-state` while open, so callers can style
-  it as one connected control. On small screens it opens as a BottomSheet instead.
+  it as one connected control. On small screens it opens as a BottomSheet instead, unless contained.
 -->
 <script lang="ts">
     import {
@@ -47,6 +47,8 @@
          * advertise the shortcut without repeating the platform check.
          */
         trigger: Snippet<[{props: Record<string, any>; open: boolean; shortcutKeys: string[]}]>;
+        /** Keep the menu within its positioned parent, including on mobile. */
+        contained?: boolean;
         /** Props forwarded to the floating content (side/align/offset/class). */
         contentProps?: PopoverContentProps;
     }
@@ -59,6 +61,7 @@
         label,
         shortcut = true,
         trigger,
+        contained = false,
         contentProps
     }: Props = $props();
 
@@ -66,7 +69,7 @@
     const paletteLabel = $derived(label ?? __('ui.commandPalette.label'));
 
     const breakpoint = useBreakpoint();
-    const asSheet = $derived(breakpoint.is('bpMdAndSmaller'));
+    const asSheet = $derived(!contained && breakpoint.is('bpMdAndSmaller'));
 
     /** Rows bucketed under their heading, in first-seen order. */
     const groups = $derived.by((): CommandGroupDefinition[] => {
@@ -232,11 +235,20 @@
             {/snippet}
         </PopoverPrimitive.Trigger>
 
-        <PopoverPrimitive.Portal>
-            <PopoverPrimitive.Content {...fullContentProps as PopoverContentProps}>
+        {#if contained}
+            <PopoverPrimitive.ContentStatic
+                class="command-palette command-palette--contained"
+                onOpenAutoFocus={focusRoot}
+            >
                 {@render results()}
-            </PopoverPrimitive.Content>
-        </PopoverPrimitive.Portal>
+            </PopoverPrimitive.ContentStatic>
+        {:else}
+            <PopoverPrimitive.Portal>
+                <PopoverPrimitive.Content {...fullContentProps as PopoverContentProps}>
+                    {@render results()}
+                </PopoverPrimitive.Content>
+            </PopoverPrimitive.Portal>
+        {/if}
     </PopoverPrimitive.Root>
 {/if}
 
@@ -282,6 +294,21 @@
 
         &[data-state='closed'] {
             animation: command-out 100ms var(--easing-default, ease);
+        }
+    }
+
+    :global(.command-palette--contained) {
+        position: absolute;
+        top: calc(100% - var(--space-4));
+        inset-inline: 0;
+        margin-top: var(--space-2);
+        transform-origin: top right;
+        max-height: calc(100dvh - 8rem);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :global(.command-palette--contained) {
+            animation: none !important;
         }
     }
 
