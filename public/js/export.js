@@ -209,11 +209,7 @@ async function exportAsPDF() {
         // Calculate the height required for the full message
         const metadataHeight = lineHeight * 3; // Header (Message #, Author, Role, etc.)
 
-        if (isValidJson(msg.content)) {
-            msg.content = JSON.parse(msg.content).text;
-        } else {
-            msg.content = msg.content;
-        }
+        msg.content = deconstContent(msg.content).messageText;
 
         const wrappedContent = doc.splitTextToSize(msg.content, maxWidth); // Split text into lines
         const contentHeight = wrappedContent.length * lineHeight;
@@ -562,11 +558,7 @@ async function preparePrintPage() {
 
         for (const msg of messages) {
             const decryptedContent = await decryptWithSymKey(key, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-            if (isValidJson(decryptedContent)) {
-                msg.content.text = JSON.parse(decryptedContent).text;
-            } else {
-                msg.content.text = decryptedContent;
-            }
+            msg.content.text = deconstContent(decryptedContent).messageText;
         }
 
     } else {
@@ -582,14 +574,8 @@ async function preparePrintPage() {
         let msgKey = key.roomKey;
         for (const msg of messages) {
             msgKey = msg.message_role === 'assistant' ? key.aiKey : key.roomKey;
-            let decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-            if (decryptedContent.startsWith('{') || decryptedContent.startsWith('"')) {
-                decryptedContent = JSON.parse(decryptedContent);
-                if (decryptedContent.text) {
-                    decryptedContent = decryptedContent.text;
-                }
-            }
-            msg.content.text = decryptedContent;
+            const decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
+            msg.content.text = deconstContent(decryptedContent).messageText;
         }
     }
 
