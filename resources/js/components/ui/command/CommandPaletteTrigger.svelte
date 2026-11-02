@@ -91,8 +91,7 @@
         /* Left padding lands the icon on the shared rail column. Deliberately
            unchanged in the rail: the icon keeps the exact same offset from the
            panel edge in both states, so it never drifts sideways while the
-           column animates. It reads as --space-2_5 with the glyph's own inset,
-           so the right side and the gaps are set to match. */
+           column animates. */
         padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
         border: none;
         background: transparent;
@@ -132,8 +131,6 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        /* Cancels the ~1px of empty space inside the glyph's box. */
-        margin-right: -1px;
         transition: color var(--duration-fast);
     }
 
@@ -154,9 +151,6 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        /* Cancels the empty space inside the chevron's box: its ink, stroke
-           included, starts 5 units into the 24-unit box, drawn at 16px. */
-        margin-inline: -3.33px;
         color: var(--nav-icon-color);
         transition:
             color var(--duration-fast),
