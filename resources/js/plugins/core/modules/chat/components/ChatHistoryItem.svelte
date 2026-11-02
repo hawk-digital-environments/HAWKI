@@ -156,7 +156,6 @@
         /* Hidden at rest — the list stays quiet until a row is pointed at. */
         opacity: 0;
         pointer-events: none;
-        transition: opacity var(--duration-fast);
     }
 
     .history-row:hover .actions,
@@ -174,7 +173,8 @@
         /* No plate behind the glyph — the row underneath already carries the
            hover / active surface. */
         background: transparent;
-        --btn-color: var(--nav-icon-color);
+        /* Only shows on a pointed-at row, so it takes that row's label color. */
+        color: var(--color-nav-text-hover);
     }
 
     /* The glyph sits directly on the selected row's surface, so it takes the
