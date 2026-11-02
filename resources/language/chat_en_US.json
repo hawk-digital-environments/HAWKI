@@ -79,7 +79,8 @@
             "replyCountOne": "1 reply",
             "replyCount": ":count replies",
             "reply": "Reply in thread",
-            "writing": "You are writing in this thread"
+            "writing": "You are writing in this thread",
+            "historyCap": "Only the last :count messages of this thread are sent to the AI. Older replies are dropped."
         },
         "nameMenu": {
             "emptyNameError": "The chat name must not be empty",

@@ -82,7 +82,7 @@
             label={chip.label}
             emoji={chip.emoji}
             colors={chip.colors}
-            disabled={composerContext.sendStatus?.sending}
+            disabled={composerContext.guard.disablesFeature('assistants')}
             onRemove={() => composerContext.removeHandleFromMessage(chip.handle)}/>
     </span>
 {/each}
