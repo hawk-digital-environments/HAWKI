@@ -63,9 +63,7 @@
         >
             <span class="icon-wrap" bind:this={iconEl}>
                 {#if Icon}
-                    <!-- Beside the title its stroke renders at about the label's ~1.75px
-                         stem (2.35 × 18/24); in the rail it joins the other icons. -->
-                    <Icon size={18} strokeWidth={collapsed ? 2 : 2.35} aria-hidden="true" />
+                    <Icon size={18} strokeWidth={2} aria-hidden="true" />
                 {/if}
             </span>
             <span class="label">{label}</span>
