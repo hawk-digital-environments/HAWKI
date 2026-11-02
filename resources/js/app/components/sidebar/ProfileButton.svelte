@@ -36,7 +36,7 @@
     // settings glyph follow the same step so the footer row stays proportional.
     const breakpoint = useBreakpoint();
     const compact = $derived(breakpoint.is('bpMdAndSmaller'));
-    const triggerAvatarSize = $derived(compact ? 24 : 22);
+    const triggerAvatarSize = $derived(compact ? 26 : 24);
     const triggerIconSize = $derived(compact ? 18 : 16);
     const userinfo = $derived(connection.hasUserInfo ? connection.userinfo : null);
     const userName = $derived(userinfo?.name || __('ui.profile.fallbackName'));
