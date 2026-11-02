@@ -237,11 +237,15 @@
         align-items: center;
         justify-content: space-between;
         padding-left: var(--history-text-inset);
+        /* Takes back the empty space the filter button's taller box leaves above the
+           title, so the gap under the search measures to the text, like the one over it. */
+        margin-top: calc((var(--font-size-xs) * var(--line-height-normal) - var(--nav-row-h) + 2px) / 2);
     }
 
     .history-title {
         margin: 0;
         font-size: var(--font-size-xs);
+        line-height: var(--line-height-normal);
         font-weight: var(--font-weight-normal);
         color: var(--color-nav-icon);
     }
