@@ -214,12 +214,15 @@
         /* The title and rows are text-only, so they start where the search glyph
            visibly does: its ring begins 2/24 into the 18px icon box. */
         --history-text-inset: calc(var(--nav-item-pad-x) + 1.5px);
+        /* The title reads at the same size as the search and the rows. */
+        --history-title-size: var(--nav-font-size);
     }
 
     /* The search icon is 20px here and pulled out by 1px (AppSidebar). */
     @media (--bp-md-and-smaller) {
         .chat-sidebar {
             --history-text-inset: calc(var(--nav-item-pad-x) + 0.67px);
+            --history-title-size: var(--font-size-sm);
         }
     }
 
@@ -239,12 +242,12 @@
         padding-left: var(--history-text-inset);
         /* Takes back the empty space the filter button's taller box leaves above the
            title, so the gap under the search measures to the text, like the one over it. */
-        margin-top: calc((var(--font-size-xs) * var(--line-height-normal) - var(--nav-row-h) + 2px) / 2);
+        margin-top: calc((var(--history-title-size) * var(--line-height-normal) - var(--nav-row-h) + 2px) / 2);
     }
 
     .history-title {
         margin: 0;
-        font-size: var(--font-size-xs);
+        font-size: var(--history-title-size);
         line-height: var(--line-height-normal);
         font-weight: var(--font-weight-normal);
         color: var(--color-nav-icon);
