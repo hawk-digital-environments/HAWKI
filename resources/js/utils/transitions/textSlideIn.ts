@@ -2,7 +2,8 @@
  * Svelte action that slides a label over to its next value horizontally: the old text leaves
  * to the left and fades, the new text comes in from the right out of a soft blur. The
  * element's width eases from the old text to the new one, so a pill around the label resizes
- * smoothly instead of jumping.
+ * smoothly instead of jumping. While it runs the text fades out at the box's edges instead of
+ * being cut off by them.
  *
  * Follows the "page side-by-side" and "card resize" patterns from transitions.dev (250ms, 8px
  * on a smooth ease-out, 300ms resize). The action owns the element's text: render the node
@@ -23,6 +24,24 @@ const RESIZE_MS = 300;
 const DISTANCE_PX = 8;
 const BLUR_PX = 2;
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const MASK_PX = 8;
+const MASK = `linear-gradient(to right, transparent, black ${MASK_PX}px, black calc(100% - ${MASK_PX}px), transparent)`;
+
+/**
+ * Applied only while animating. The padding pushes the box, and with it the mask's fades, out
+ * past the text and the negative margin takes that back out of the layout, so text at rest is
+ * never faded and nothing jumps when the mask comes off.
+ */
+const RUNNING_STYLE: Record<string, string> = {
+    position: 'relative',
+    // An ellipsis would replace the whole incoming block while the box is still narrow.
+    'text-overflow': 'clip',
+    'box-sizing': 'content-box',
+    'margin-inline': `-${MASK_PX}px`,
+    'padding-inline': `${MASK_PX}px`,
+    'mask-image': MASK,
+    '-webkit-mask-image': MASK,
+};
 
 export function textSlideIn(node: HTMLElement, text: string) {
     let shown = text;
@@ -33,8 +52,7 @@ export function textSlideIn(node: HTMLElement, text: string) {
         running.forEach(animation => animation.cancel());
         running = [];
         node.textContent = shown;
-        node.style.removeProperty('position');
-        node.style.removeProperty('text-overflow');
+        Object.keys(RUNNING_STYLE).forEach(property => node.style.removeProperty(property));
     }
 
     function update(next: string): void {
@@ -43,7 +61,7 @@ export function textSlideIn(node: HTMLElement, text: string) {
             return;
         }
         // Measured before settling, so an interrupted resize continues from where it is.
-        const fromWidth = node.getBoundingClientRect().width;
+        const fromWidth = node.getBoundingClientRect().width - (running.length ? 2 * MASK_PX : 0);
         shown = next;
         settle();
 
@@ -57,12 +75,10 @@ export function textSlideIn(node: HTMLElement, text: string) {
         incoming.style.cssText = 'display: inline-block; white-space: pre;';
         incoming.textContent = next;
         const outgoing = document.createElement('span');
-        outgoing.style.cssText = 'position: absolute; top: 0; left: 0; white-space: pre;';
+        outgoing.style.cssText = `position: absolute; top: 0; left: ${MASK_PX}px; white-space: pre;`;
         outgoing.textContent = prev;
         node.replaceChildren(incoming, outgoing);
-        node.style.position = 'relative';
-        // An ellipsis would replace the whole incoming block while the box is still narrow.
-        node.style.textOverflow = 'clip';
+        Object.entries(RUNNING_STYLE).forEach(([property, value]) => node.style.setProperty(property, value));
 
         running = [
             incoming.animate([
