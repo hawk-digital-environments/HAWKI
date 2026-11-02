@@ -163,9 +163,7 @@
         min-height: 0;
         flex: 1;
         flex-direction: column;
-        /* A step beyond the groups inside the list: it separates the chats from
-           what is pinned below them. */
-        gap: var(--space-6);
+        gap: var(--nav-group-gap);
     }
 
     .history {
