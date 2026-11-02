@@ -12,9 +12,11 @@
         icon: IconComponent;
         /** Text label. */
         label: string;
+        /** Keyboard shortcut hint, shown at the row's end on hover or focus. */
+        shortcut?: string;
     }
 
-    const {icon: Icon, label, class: className, ...rest}: Props = $props();
+    const {icon: Icon, label, shortcut, class: className, ...rest}: Props = $props();
 </script>
 
 <button
@@ -25,6 +27,9 @@
         <Icon size={18} strokeWidth={2} aria-hidden="true" />
     </span>
     <span class="label">{label}</span>
+    {#if shortcut}
+        <span class="shortcut" aria-hidden="true">{shortcut}</span>
+    {/if}
 </button>
 
 <style>
@@ -77,6 +82,21 @@
     .label {
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .shortcut {
+        flex-shrink: 0;
+        margin-left: auto;
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-normal);
+        letter-spacing: 0.03em;
+        opacity: 0;
+        transition: opacity var(--duration-fast);
+    }
+
+    .sidebar-button:hover .shortcut,
+    .sidebar-button:focus-visible .shortcut {
+        opacity: 1;
     }
 
     /* Bumped up a notch for easier tapping on small screens, like SidebarItem. The

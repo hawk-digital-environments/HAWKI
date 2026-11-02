@@ -7,6 +7,8 @@
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import ChatHistoryItem from '$plugins/core/modules/chat/components/ChatHistoryItem.svelte';
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
+    import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
+    import {isApple} from '$lib/utils/platform.js';
     import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -191,10 +193,16 @@
         <SidebarButton
             icon={BubbleChatAddIcon}
             label={__('chat.sidebar.newChat')}
+            shortcut={isApple ? '⇧⌘O' : 'Ctrl Shift O'}
             onclick={newChat}
         />
     </div>
 </div>
+
+<!-- The button shows its own hint, so the hotkey renders no keycap. -->
+<Kbd key="o" ctrl shift onPress={newChat}>
+    {#snippet children()}{/snippet}
+</Kbd>
 
 <style>
     .chat-sidebar {

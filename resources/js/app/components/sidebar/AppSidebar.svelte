@@ -160,6 +160,7 @@
     .search-shortcut {
         flex-shrink: 0;
         font-size: var(--font-size-xs);
+        letter-spacing: 0.03em;
         opacity: 0;
         transition: opacity var(--duration-fast);
     }
