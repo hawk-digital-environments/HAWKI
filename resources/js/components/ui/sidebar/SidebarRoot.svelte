@@ -55,7 +55,7 @@
         --nav-row-h: 2.25rem;
         --nav-group-gap: var(--space-4);
         /* At the root so menus portalled out of the sidebar can size against it. */
-        --nav-w: 22rem;
+        --nav-w: 20rem;
     }
 
     .sidebar-layout {
