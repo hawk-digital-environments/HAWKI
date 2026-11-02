@@ -429,7 +429,7 @@
     /* ── Results, status, errors ──────────────────────────────────────── */
 
     :global(.search-bar .command-list) {
-        padding: var(--space-1);
+        padding: 0 var(--space-1) var(--space-1);
     }
 
     :global(.search-bar .command-list .command-group),
@@ -445,6 +445,11 @@
         line-height: var(--line-height-normal);
         letter-spacing: normal;
         text-transform: none;
+    }
+
+    /* The field's own height already spaces it from the first heading. */
+    :global(.search-bar .command-list .command-group:first-of-type .command-group-heading) {
+        padding-top: 0;
     }
 
     :global(.search-bar .command-list .command-item) {

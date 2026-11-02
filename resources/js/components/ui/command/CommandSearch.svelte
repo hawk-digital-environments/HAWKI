@@ -296,7 +296,6 @@
         gap: var(--space-2_5);
         height: var(--space-12);
         padding-inline: var(--space-4);
-        border-bottom: var(--border);
     }
 
     :global(.command-search-input) {
