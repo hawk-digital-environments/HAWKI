@@ -26,7 +26,6 @@
       onCompositionChange={handleComposition}
       describedBy={hintId}
       iconLeft={Search01Icon}
-      hint={escKeycap}
   />
   ```
 -->
@@ -36,10 +35,11 @@
 
 <script lang="ts">
     import {Command as CommandPrimitive} from 'bits-ui';
-    import {untrack, type Snippet} from 'svelte';
+    import {untrack} from 'svelte';
     import CommandResults from './CommandResults.svelte';
     import type {CommandGroupDefinition} from './CommandResults.svelte';
     import {CommandSelection, isNavigationKey} from './commandSelection.svelte.js';
+    import {createProximityHover} from '$lib/utils/proximityHover.svelte.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     interface Props {
@@ -73,8 +73,6 @@
         iconLeft?: IconComponent;
         /** An optional icon at the field's end edge. */
         iconRight?: IconComponent;
-        /** Trailing non-icon content, e.g. an Escape keycap. */
-        hint?: Snippet;
         /** Class of the command root element. */
         class?: string;
     }
@@ -95,7 +93,6 @@
         resultsLabel,
         iconLeft,
         iconRight,
-        hint,
         class: className = ''
     }: Props = $props();
 
@@ -109,14 +106,76 @@
 
     let composing = false;
 
+    const hover = createProximityHover();
+    let viewport = $state<HTMLElement | null>(null);
+    let rows: HTMLElement[] = [];
+    let keyboardMoved = false;
+
+    const highlight = $derived(hover.selectedRect);
+
     // Each changed input — the typed query, or a new resetKey such as the
     // scope — starts the highlight from scratch; a stale highlight would
     // point into a list the user has not seen.
     $effect(() => {
         void value;
         void resetKey;
-        untrack(() => selection.reset());
+        untrack(() => {
+            selection.reset();
+            keyboardMoved = false;
+            viewport?.closest('.command-list')?.scrollTo({top: 0});
+        });
     });
+
+    // One fill glides to the highlighted row, whichever gesture moved it: it
+    // sits on the proximity hover's selected rect, and the hover's nearest row
+    // moves the selection below. Queried rather than registered, as the rows
+    // belong to CommandResults. Values hold a NUL, which a CSS selector can't
+    // match, so rows are compared.
+    $effect(() => {
+        const current = selection.value;
+        void groups;
+        hover.setContainer(viewport);
+        rows = Array.from(viewport?.querySelectorAll<HTMLElement>('.command-item:not([data-disabled])') ?? []);
+        hover.setItems(rows);
+        const index = rows.findIndex(candidate => candidate.dataset.value === current);
+        hover.setSelected(index === -1 ? null : index);
+        if (index !== -1 && keyboardMoved) {
+            keyboardMoved = false;
+            centerRow(rows[index]);
+        }
+    });
+
+    // New rows renumber the hover's items, so its nearest row is stale until the
+    // pointer really moves again.
+    $effect(() => {
+        void groups;
+        hover.handlers.onmouseleave();
+    });
+
+    // The pointer's nearest row becomes the highlighted one. Leaving the list
+    // clears the nearest row only, so the highlight stays as Enter's target.
+    $effect(() => {
+        const index = hover.activeIndex;
+        const row = index === null ? undefined : rows[index];
+        const rowValue = row?.dataset.value;
+        if (rowValue === undefined) return;
+        untrack(() => {
+            selection.notePointer(rowValue);
+            onIntent();
+        });
+    });
+
+    /** Keeps a row reached by keyboard mid-list, as far as the list's ends allow. */
+    function centerRow(row: HTMLElement) {
+        const list = viewport?.closest<HTMLElement>('.command-list');
+        if (!list || !viewport) return;
+        const top = row.offsetTop + viewport.offsetTop - list.offsetTop;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        list.scrollTo({
+            top: top + row.offsetHeight / 2 - list.clientHeight / 2,
+            behavior: reduceMotion ? 'auto' : 'smooth'
+        });
+    }
 
     // Rows changed: drop a selection whose row vanished, re-assert one that
     // survived over the command's first-row bookkeeping.
@@ -130,7 +189,13 @@
             return;
         }
         selection.noteKeyboard();
-        if (isNavigationKey(event)) onIntent();
+        if (isNavigationKey(event)) {
+            keyboardMoved = true;
+            // The keyboard takes over; the next real pointer motion takes it
+            // back, even onto the same row.
+            hover.handlers.onmouseleave();
+            onIntent();
+        }
         // Enter re-selects the current row and delivers it: the transaction
         // spans from the keypress to the row's onSelect.
         if (event.key === 'Enter') selection.beginTransaction();
@@ -146,12 +211,12 @@
         onCompositionChange?.(false);
     }
 
-    function handleRowPointerMove(rowValue: string, event: PointerEvent) {
+    function handlePointerMove(event: MouseEvent) {
         // Stationary pointers are not intent: rows landing under a resting
         // cursor must not steal the highlight.
         if (!event.movementX && !event.movementY) return;
-        selection.notePointer(rowValue);
-        onIntent();
+        keyboardMoved = false;
+        hover.handlers.onmousemove(event);
     }
 
     function handleRowPointerDown() {
@@ -179,7 +244,7 @@
     <div class="command-search-field">
         {#if IconLeft}
             <span class="command-search-icon" aria-hidden="true">
-                <IconLeft size={18} strokeWidth={2} />
+                <IconLeft size={16} />
             </span>
         {/if}
         <CommandPrimitive.Input
@@ -193,12 +258,9 @@
             onkeydown={event => {if (composing || event.isComposing) event.stopPropagation();}}
             bind:value
         />
-        {#if hint}
-            <span class="command-search-hint">{@render hint()}</span>
-        {/if}
         {#if IconRight}
             <span class="command-search-icon" aria-hidden="true">
-                <IconRight size={18} strokeWidth={2} />
+                <IconRight size={16} />
             </span>
         {/if}
     </div>
@@ -206,9 +268,20 @@
         {groups}
         onSelect={handleSelect}
         aria-label={resultsLabel}
-        onRowPointerMove={handleRowPointerMove}
         onRowPointerDown={handleRowPointerDown}
-    />
+        onmousemove={handlePointerMove}
+        onmouseenter={hover.handlers.onmouseenter}
+        onmouseleave={hover.handlers.onmouseleave}
+        bind:viewport
+    >
+        {#if highlight}
+            <span
+                class="command-search-highlight"
+                style:height="{highlight.height}px"
+                style:transform="translateY({highlight.top}px)"
+            ></span>
+        {/if}
+    </CommandResults>
 </CommandPrimitive.Root>
 
 <style>
@@ -219,8 +292,10 @@
     :global(.command-search-field) {
         display: flex;
         align-items: center;
+        flex-shrink: 0;
         gap: var(--space-2_5);
-        padding: var(--space-3) var(--space-4);
+        height: var(--space-12);
+        padding-inline: var(--space-4);
         border-bottom: var(--border);
     }
 
@@ -228,11 +303,12 @@
         flex: 1;
         min-width: 0;
         border: none;
-        outline-offset: var(--space-1);
+        outline: none;
         background: transparent;
         color: var(--color-text);
         font: inherit;
         font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-normal);
         line-height: var(--line-height-normal);
     }
 
@@ -244,10 +320,37 @@
         display: inline-flex;
         flex-shrink: 0;
         color: var(--color-text-muted);
+        transition: color var(--duration-extra-fast) var(--easing-out);
     }
 
-    :global(.command-search-hint) {
-        display: inline-flex;
-        flex-shrink: 0;
+    :global(.command-search-icon path) {
+        stroke-width: 1.5;
+    }
+
+    /* The field wakes its icon while it holds focus. */
+    :global(.command-search-field:focus-within .command-search-icon) {
+        color: var(--color-text);
+    }
+
+    :global(.command-search-field:focus-within .command-search-icon path) {
+        stroke-width: 2;
+    }
+
+    /* Paints below the rows, which sit at --command-item-z. */
+    :global(.command-search-highlight) {
+        position: absolute;
+        top: 0;
+        inset-inline: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: var(--color-hover);
+        border-radius: var(--corner-sm);
+        transition: transform var(--duration-extra-fast) var(--easing-spring);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :global(.command-search-highlight) {
+            transition: none;
+        }
     }
 </style>

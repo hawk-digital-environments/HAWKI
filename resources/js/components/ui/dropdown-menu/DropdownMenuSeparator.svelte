@@ -31,10 +31,16 @@
 </DropdownMenuPrimitive.Separator>
 
 <style>
+    /* Runs edge to edge: the negative margin cancels the menu's own padding. */
     .dropdown-separator {
-        margin-inline: var(--space-2, calc(0.25rem * 2));
+        margin-inline: calc(-1 * var(--space-1, 0.25rem));
         margin-block: var(--space-1, 0.25rem);
         height: 1px;
         background-color: var(--color-border);
+    }
+
+    /* The sheet's content has no padding to cancel. */
+    :global(.dropdown-content--sheet) .dropdown-separator {
+        margin-inline: 0;
     }
 </style>

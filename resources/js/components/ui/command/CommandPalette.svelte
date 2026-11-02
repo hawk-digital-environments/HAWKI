@@ -24,6 +24,7 @@
     import CommandResults, {type CommandGroupDefinition} from './CommandResults.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import {createProximityHover} from '$lib/utils/proximityHover.svelte.js';
     import {isApple} from '$lib/utils/platform.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -106,36 +107,27 @@
     // :hover. Command doesn't move its selection on hover, so this is tracked
     // here from the rows' measured positions.
 
+    const hover = createProximityHover();
     let viewportEl = $state<HTMLElement | null>(null);
-    let hoverRect = $state<{top: number; height: number} | null>(null);
+
+    const hoverRect = $derived(hover.activeIndex !== null ? hover.itemRects[hover.activeIndex] : null);
+
+    $effect(() => {
+        hover.setContainer(viewportEl);
+    });
 
     $effect(() => {
         if (!open) {
             armed = false;
-            hoverRect = null;
+            hover.handlers.onmouseleave();
         }
     });
 
-    function trackPointer(event: PointerEvent) {
-        const viewport = viewportEl;
-        if (!viewport) return;
-        // Measured per move rather than registered up front, so the rows can
+    function trackPointer(event: MouseEvent) {
+        // Queried per move rather than registered up front, so the rows can
         // change without any bookkeeping here.
-        const rows = viewport.querySelectorAll<HTMLElement>('.command-item:not([data-disabled])');
-        const base = viewport.getBoundingClientRect();
-        let best: {top: number; height: number} | null = null;
-        let bestDist = Infinity;
-        for (const row of rows) {
-            const r = row.getBoundingClientRect();
-            const center = r.top + r.height / 2;
-            const inside = event.clientY >= r.top && event.clientY <= r.bottom;
-            const dist = inside ? 0 : Math.abs(event.clientY - center);
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = {top: r.top - base.top + viewport.scrollTop, height: r.height};
-            }
-        }
-        hoverRect = best;
+        hover.setItems(Array.from(viewportEl?.querySelectorAll<HTMLElement>('.command-item:not([data-disabled])') ?? []));
+        hover.handlers.onmousemove(event);
     }
 
     function armOnArrow(event: KeyboardEvent) {
@@ -143,7 +135,7 @@
         armed = true;
         // Keyboard takes over; a stale pointer highlight would leave two rows
         // looking live at once.
-        hoverRect = null;
+        hover.handlers.onmouseleave();
     }
 
     function handleKeydown(event: KeyboardEvent) {
@@ -204,8 +196,8 @@
             {current}
             onSelect={choose}
             bind:viewport={viewportEl}
-            onpointermove={trackPointer}
-            onpointerleave={() => (hoverRect = null)}
+            onmousemove={trackPointer}
+            onmouseleave={hover.handlers.onmouseleave}
         >
             {#if hoverRect && !asSheet}
                 <span

@@ -100,8 +100,6 @@
         "search": {
             "title": "Search",
             "placeholder": "Search…",
-            "closeHint": "Press Escape to close",
-            "closeKey": "Esc",
             "resultsLabel": "Search results",
             "keyboardHint": "Use the arrow keys to choose a result and Enter to open it.",
             "conversations": "Conversations",
@@ -125,7 +123,6 @@
             "unavailable": "No longer available",
             "errorInGroup": "“:group” could not be searched.",
             "retry": "Retry",
-            "recents": "Recently used",
             "retryLabel": "Search “:group” again",
             "noResults": "Nothing matches “:query”.",
             "empty": "Nothing to search yet."

@@ -61,8 +61,6 @@
         children?: Snippet;
         /** Rendered instead of the groups when there are none. */
         empty?: Snippet;
-        /** Real pointer motion onto an enabled row; the host decides what intent means. */
-        onRowPointerMove?: (value: string, event: PointerEvent) => void;
         /** A pointer press on an enabled row. */
         onRowPointerDown?: (value: string) => void;
         /** The viewport element. Supports bind:viewport. */
@@ -75,7 +73,6 @@
         current,
         children,
         empty,
-        onRowPointerMove,
         onRowPointerDown,
         viewport = $bindable(null),
         ...restProps
@@ -104,7 +101,6 @@
                             keywords={item.keywords}
                             disabled={item.disabled}
                             onSelect={() => onSelect(item.value)}
-                            onpointermove={event => {if (!item.disabled) onRowPointerMove?.(item.value, event);}}
                             onpointerdown={() => {if (!item.disabled) onRowPointerDown?.(item.value);}}
                         >
                             <span class="item-icon" aria-hidden="true">
@@ -180,7 +176,7 @@
     :global(.command-list .command-group-heading) {
         padding: var(--space-2) var(--space-2_5) var(--space-1);
         font-size: var(--font-size-xxs);
-        font-weight: var(--font-weight-medium, 500);
+        font-weight: var(--font-weight-medium);
         letter-spacing: 0.05em;
         text-transform: uppercase;
         color: var(--color-text-muted);

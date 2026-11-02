@@ -13,8 +13,6 @@
     import {createProximityHover} from '$lib/utils/proximityHover.svelte.js';
 
     const ROW_SELECTOR = '[role^="menuitem"]:not([data-disabled])';
-    /** Keeps the highlight on while the pointer crosses the gap around a separator. */
-    const GAP_SLACK = 4;
 
     const hover = createProximityHover();
     let panel = $state<HTMLElement | null>(null);
@@ -24,17 +22,8 @@
     // no bookkeeping.
     function syncRows() {
         if (!panel) return;
-        const next = Array.from(panel.querySelectorAll<HTMLElement>(ROW_SELECTOR));
-        next.forEach((row, index) => hover.registerItem(index, row));
-        for (let index = next.length; index < rows.length; index++) hover.registerItem(index, null);
-        rows = next;
-    }
-
-    function nearRow(event: MouseEvent) {
-        return rows.some(row => {
-            const r = row.getBoundingClientRect();
-            return event.clientY >= r.top - GAP_SLACK && event.clientY <= r.bottom + GAP_SLACK;
-        });
+        rows = Array.from(panel.querySelectorAll<HTMLElement>(ROW_SELECTOR));
+        hover.setItems(rows);
     }
 
     const attachAnchor: Attachment<HTMLElement> = (anchor) => {
@@ -50,7 +39,8 @@
         };
         const onmousemove = (event: MouseEvent) => {
             syncRows();
-            if (nearRow(event)) hover.handlers.onmousemove(event);
+            // The slack keeps the highlight on across the gap around a separator.
+            if (hover.isNearItem(event)) hover.handlers.onmousemove(event);
             else clear();
         };
 

@@ -6,7 +6,6 @@ import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
 import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
 import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
 import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
-import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
 
 /** A settings section the account dialog can open. */
 export type SettingsSection = 'general' | 'profile' | 'experiments';
@@ -54,11 +53,6 @@ export class SettingsModule implements HawkiModule {
                         icon: theme.isDark ? SunIcon : MoonIcon,
                         keywords: [__('ui.settings.general.themeLabel'), __('ui.settings.general.themeLight'), __('ui.settings.general.themeDark')],
                         onSelect: () => {theme.theme = theme.isDark ? 'light' : 'dark';}
-                    },
-                    {
-                        id: 'logout', entityKey: 'action/core:settings/logout',
-                        title: __('ui.profile.logout'), icon: Logout02Icon,
-                        onSelect: () => {void app.logout();}
                     }
                 ];
             }

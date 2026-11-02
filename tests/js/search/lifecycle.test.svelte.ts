@@ -18,14 +18,12 @@ async function fixture(declare: (registrar: ModuleSearchRegistrar) => void) {
     const module = {name: 'test', plugin: {name: 'core', isCorePlugin: true}, title: () => 'Test', search: declare} as HawkiModuleWithPlugin;
     registry.registerModule('core:test', module);
     const callbacks = new Map<string, () => void>();
-    const storage = new Map<string, string>();
     const app = {
         modules: {searchRegistry: registry, get: () => module},
         translator: {translate: (key: string) => key},
         localization: {locale: {lang: 'en_US'}},
         get connectionOrNull() {return connection;},
-        events: {async: {on: (name: string, callback: () => void) => {callbacks.set(name, callback); return () => callbacks.delete(name);}}},
-        localStorage: {getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value)}
+        events: {async: {on: (name: string, callback: () => void) => {callbacks.set(name, callback); return () => callbacks.delete(name);}}}
     } as unknown as HawkiApp;
     const search = new SearchExtension({worker: {createWorker: () => new FakeSearchWorker() as unknown as Worker}});
     const bootstrapper = new Bootstrapper();

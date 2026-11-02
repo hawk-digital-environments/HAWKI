@@ -202,7 +202,7 @@ export class SharedSearchIndex {
         return result.sort(byProviderThenEntry);
     }
 
-    /** Documents whose entity the given key identifies, newest provider first. Used to resolve recents. */
+    /** Documents whose entity the given key identifies, newest provider first. */
     public documentsForEntity(entityKey: string, scope: ResolvedSearchScope): IndexedDocument[] {
         const result: IndexedDocument[] = [];
         for (const document of this.documents.values()) {

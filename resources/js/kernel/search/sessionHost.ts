@@ -10,7 +10,6 @@ export interface SearchSessionHost {
     readonly app: HawkiApp;
     readonly registry: SearchRegistry;
     readonly index: SharedSearchIndex;
-    readonly identity: string | null;
     readonly providers: readonly {definition: SearchProviderDefinition; signal: AbortSignal}[];
     readonly errors: readonly SearchProviderError[];
     /**

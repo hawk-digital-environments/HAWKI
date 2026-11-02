@@ -16,9 +16,10 @@ interface Options {
  * row an independent background.
  *
  * Call `setContainer()` with the positioning parent, register rows with stable
- * numeric ids, and forward the three `handlers` to the container. Re-run
- * `measureItems()` after layout changes that do not originate from pointer
- * movement (for example a sidebar resize).
+ * numeric ids (or hand over a list that changes as a whole with `setItems()`),
+ * and forward the three `handlers` to the container. Re-run `measureItems()`
+ * after layout changes that do not originate from pointer movement (for example
+ * a sidebar resize).
  */
 export function createProximityHover(options: Options = {}) {
     const { axis = 'y' } = options;
@@ -30,9 +31,21 @@ export function createProximityHover(options: Options = {}) {
     let selectedIndex = $state<number | null>(null);
     let rafId: number | null = null;
 
+    /**
+     * How much a transform on the way up (a popup's opening scale) currently
+     * magnifies the container. Anything within `offsetWidth`'s rounding is no
+     * transform at all, and must not skew long distances by that rounding.
+     */
+    function scaleOf(el: HTMLElement, width: number) {
+        return el.offsetWidth === 0 || Math.abs(width - el.offsetWidth) <= 0.5
+            ? 1
+            : width / el.offsetWidth;
+    }
+
     function measureItems() {
         if (!container) return;
         const containerRect = container.getBoundingClientRect();
+        const scale = scaleOf(container, containerRect.width);
         // Relative to the container's *content* origin rather than its visible
         // box — that is what an absolutely positioned highlight is placed
         // against, so a scrolled container keeps its highlights on the items
@@ -43,10 +56,10 @@ export function createProximityHover(options: Options = {}) {
             if (!el) continue;
             const r = el.getBoundingClientRect();
             next[idx] = {
-                top: r.top - containerRect.top + scrollTop,
-                left: r.left - containerRect.left + scrollLeft,
-                width: r.width,
-                height: r.height,
+                top: (r.top - containerRect.top) / scale + scrollTop,
+                left: (r.left - containerRect.left) / scale + scrollLeft,
+                width: r.width / scale,
+                height: r.height / scale,
             };
         }
         rects = next;
@@ -78,9 +91,10 @@ export function createProximityHover(options: Options = {}) {
         rafId = requestAnimationFrame(() => {
             rafId = null;
             const containerRect = container!.getBoundingClientRect();
+            const scale = scaleOf(container!, containerRect.width);
             // Same frame of reference as the measured rects (see measureItems).
-            const cx = event.clientX - containerRect.left + container!.scrollLeft;
-            const cy = event.clientY - containerRect.top + container!.scrollTop;
+            const cx = (event.clientX - containerRect.left) / scale + container!.scrollLeft;
+            const cy = (event.clientY - containerRect.top) / scale + container!.scrollTop;
             measureItems();
             activeIndex = findClosest(cx, cy);
         });
@@ -106,6 +120,27 @@ export function createProximityHover(options: Options = {}) {
         },
         setContainer(el: HTMLElement | null) { container = el; },
         registerItem(idx: number, el: HTMLElement | null) { items.set(idx, el); },
+        /** Replace every registered item; each one's id is its position in `elements`. */
+        setItems(elements: readonly HTMLElement[]) {
+            items.clear();
+            elements.forEach((el, idx) => items.set(idx, el));
+        },
+        /**
+         * Whether the pointer is over an item, or within `slack` px of one on
+         * the main axis — the slack keeps the gaps between items "on-item".
+         */
+        isNearItem(event: MouseEvent, slack = 4) {
+            for (const el of items.values()) {
+                if (!el) continue;
+                const r = el.getBoundingClientRect();
+                if (axis === 'y' ? r.height === 0 : r.width === 0) continue;
+                const [cursor, start, end] = axis === 'y'
+                    ? [event.clientY, r.top, r.bottom]
+                    : [event.clientX, r.left, r.right];
+                if (cursor >= start - slack && cursor <= end + slack) return true;
+            }
+            return false;
+        },
         /** Mark which item is selected and re-measure so its highlight tracks it. */
         setSelected(idx: number | null) {
             selectedIndex = idx;

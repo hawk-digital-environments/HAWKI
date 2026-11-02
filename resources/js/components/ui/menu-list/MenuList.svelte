@@ -37,19 +37,14 @@
     // exact index values never need to stay contiguous.
     let nextIndex = 0;
     let itemStates = $state<Record<number, MenuListItemState>>({});
-    // The registered row elements, kept alongside the hover's own map so the
-    // container can hit-test rows without reaching for a class selector.
-    const itemElements = new Map<number, HTMLElement>();
 
     provideMenuList({
         register(el) {
             const index = nextIndex++;
-            itemElements.set(index, el);
             hover.registerItem(index, el);
             return index;
         },
         unregister(index) {
-            itemElements.delete(index);
             hover.registerItem(index, null);
             delete itemStates[index];
         },
@@ -140,28 +135,13 @@
         return target instanceof Element && !!target.closest('[data-list-no-hover]');
     }
 
-    /** Half the row gap — the slack that keeps the gaps between rows "on-row". */
-    const GAP_SLACK = 4;
-
-    /** Whether the pointer is over a row, or in a gap directly between two. */
-    function nearRow(event: MouseEvent) {
-        for (const row of itemElements.values()) {
-            const r = row.getBoundingClientRect();
-            if (r.height === 0) continue;
-            if (event.clientY >= r.top - GAP_SLACK && event.clientY <= r.bottom + GAP_SLACK) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     function handleMousemove(event: MouseEvent) {
         // The highlight belongs to a row the pointer is actually on, so it
         // disappears in the empty space around the list instead of reaching for
         // the nearest row. The narrow gaps *between* rows still count as "on a
         // row" — otherwise the highlight would blink off every time the pointer
         // crossed one.
-        if (!nearRow(event) || isExcluded(event)) {
+        if (!hover.isNearItem(event) || isExcluded(event)) {
             hover.handlers.onmouseleave();
             return;
         }
