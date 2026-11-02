@@ -75,9 +75,14 @@
         transition: background var(--duration-fast);
     }
 
-    /* Leans toward the text color, so it deepens on light and lifts on dark. */
+    /* Leans toward the text color, so it deepens the light tint. */
     .sidebar-button:hover {
         background: color-mix(in oklab, var(--color-accent-100) 85%, var(--color-accent-text));
+    }
+
+    /* The same hover as the accent button, which the send button uses. */
+    :global(html.darkMode) .sidebar-button:hover {
+        background: var(--color-accent-fill-hover);
     }
 
     .sidebar-button:focus-visible {
