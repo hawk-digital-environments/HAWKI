@@ -78,7 +78,7 @@
     .section-trigger {
         display: flex;
         align-items: center;
-        gap: var(--space-2_5);
+        gap: var(--space-2);
         /* Hugs its content; a long label ellipsizes once the container runs out. */
         width: fit-content;
         min-width: 0;
