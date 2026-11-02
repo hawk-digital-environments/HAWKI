@@ -33,7 +33,7 @@
     }
 
     .mark {
-        height: 1rem;
+        height: 1.0625rem;
         width: auto;
         color: var(--color-accent-text, #2f2abf);
     }
@@ -41,7 +41,7 @@
     /* Bumped up a notch on small screens, in step with the sidebar's rows. */
     @media (--bp-md-and-smaller) {
         .mark {
-            height: 1.125rem;
+            height: 1.1875rem;
         }
     }
 </style>
