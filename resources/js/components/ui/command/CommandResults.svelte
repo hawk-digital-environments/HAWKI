@@ -17,6 +17,8 @@
         keywords?: string[];
         /** Non-selectable row. */
         disabled?: boolean;
+        /** Keyboard shortcut hint at the row's end. */
+        shortcut?: string;
     }
 
     /** Rows bucketed under one heading. */
@@ -117,6 +119,9 @@
                                 </span>
                             {:else}
                                 <span class="item-label">{item.label}</span>
+                            {/if}
+                            {#if item.shortcut}
+                                <span class="item-shortcut" aria-hidden="true">{item.shortcut}</span>
                             {/if}
                             {#if current !== undefined}
                                 <!-- The check keeps its slot at all times so labels
@@ -251,6 +256,28 @@
 
     :global(.command-list .command-item[data-selected] .item-description) {
         color: inherit;
+    }
+
+    /* Takes the row's own tint. Keeps its slot while hidden so labels never shift. */
+    :global(.command-list .item-shortcut) {
+        flex-shrink: 0;
+        color: inherit;
+        font-size: var(--font-size-xs);
+        letter-spacing: 0.03em;
+        opacity: 0;
+        transition: opacity var(--duration-fast);
+    }
+
+    :global(.command-list .command-item:not([data-disabled]):hover .item-shortcut),
+    :global(.command-root.armed .command-item[data-selected] .item-shortcut) {
+        opacity: 1;
+    }
+
+    /* Every row shows its hint while the shortcut modifier is held; rows that
+       aren't hovered have no tint of their own to inherit. */
+    :global(.shortcuts-held .command-list .item-shortcut) {
+        color: var(--color-accent-text);
+        opacity: 1;
     }
 
     :global(.command-list .item-check) {

@@ -29,9 +29,12 @@
         label: string;
         /** Icon of that entry, shown before the label. */
         icon?: IconComponent;
+        /** Shortcut of that entry; replaces the chevron while `.shortcuts-held`
+         *  is set on an ancestor. */
+        shortcut?: string;
     }
 
-    let {label, icon: Icon, class: className, ...rest}: Props = $props();
+    let {label, icon: Icon, shortcut, class: className, ...rest}: Props = $props();
 </script>
 
 <button
@@ -45,7 +48,12 @@
     </span>
     <span class="label">{label}</span>
     <span class="indicator" aria-hidden="true">
-        <ArrowDown01Icon size={16} strokeWidth={2} />
+        <span class="chevron">
+            <ArrowDown01Icon size={16} strokeWidth={2} />
+        </span>
+        {#if shortcut}
+            <span class="shortcut">{shortcut}</span>
+        {/if}
     </span>
 </button>
 
@@ -106,11 +114,35 @@
         white-space: nowrap;
     }
 
+    /* The chevron and shortcut share one cell sized to the wider of the two, so
+       the trigger keeps its width when they swap. */
     .indicator {
-        display: inline-flex;
+        display: inline-grid;
         align-items: center;
-        justify-content: center;
+        justify-items: end;
         flex-shrink: 0;
+    }
+
+    .chevron {
+        display: inline-flex;
+        grid-area: 1 / 1;
+    }
+
+    .shortcut {
+        grid-area: 1 / 1;
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-normal);
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+        visibility: hidden;
+    }
+
+    :global(.shortcuts-held) .shortcut {
+        visibility: visible;
+    }
+
+    :global(.shortcuts-held) .indicator:has(.shortcut) .chevron {
+        visibility: hidden;
     }
 
     /* Bumped up a notch for easier tapping on small screens, like the sidebar's

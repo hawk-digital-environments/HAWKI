@@ -56,14 +56,12 @@
     }
 
     /* Leans toward the text color, so it deepens the light tint. */
-    .sidebar-button:hover,
-    :global(.shortcuts-held) .sidebar-button:has(.shortcut) {
+    .sidebar-button:hover {
         background: color-mix(in oklab, var(--color-accent-100) 85%, var(--color-accent-text));
     }
 
     /* The same hover as the accent button, which the send button uses. */
-    :global(html.darkMode) .sidebar-button:hover,
-    :global(html.darkMode .shortcuts-held) .sidebar-button:has(.shortcut) {
+    :global(html.darkMode) .sidebar-button:hover {
         background: var(--color-accent-fill-hover);
     }
 

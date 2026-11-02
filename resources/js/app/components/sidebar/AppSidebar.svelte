@@ -81,7 +81,9 @@
     <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
         <HawkLogo label={__('ui.navigation.newChat')} />
         {#snippet actions()}
-            <ModuleSelector bind:open={spacesOpen} />
+            <div class="spaces" class:shortcuts-held={shortcutsHeld}>
+                <ModuleSelector bind:open={spacesOpen} />
+            </div>
         {/snippet}
     </SidebarHeader>
     <div class="sidebar-content" class:spaces-open={spacesOpen} class:shortcuts-held={shortcutsHeld}>
@@ -153,9 +155,12 @@
         transition: outline-color var(--duration-fast);
     }
 
+    .spaces {
+        display: contents;
+    }
+
     .search:hover,
-    .search:focus-visible,
-    .shortcuts-held .search {
+    .search:focus-visible {
         outline-color: var(--color-border);
     }
 
