@@ -8,13 +8,16 @@ on the page element.
 <script lang="ts">
     import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
 
     const {__} = useTranslator();
+    const connection = useConnection();
+    const userName = $derived(connection.hasUserInfo ? connection.userinfo.name : '');
 </script>
 
 <div class="welcome">
     <span class="welcome-icon" aria-hidden="true"><BubbleChatAddIcon size={28} /></span>
-    <h1>{__('chat.page.welcomeTitle')}</h1>
+    <h1>{userName ? __('chat.page.welcomeTitle', {name: userName}) : __('chat.page.welcomeTitleAnonymous')}</h1>
     <p>{__('chat.page.welcomeDescription')}</p>
 </div>
 
@@ -38,8 +41,8 @@ on the page element.
         margin-bottom: var(--space-4);
         place-items: center;
         border-radius: var(--corner-lg);
-        background: var(--color-accent-100);
-        color: var(--color-accent-text);
+        background: var(--color-surface);
+        color: var(--color-text);
     }
 
     h1 { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }

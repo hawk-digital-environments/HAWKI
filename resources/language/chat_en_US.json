@@ -46,7 +46,8 @@
             "noImprovementModel": "No model is available to improve the message.",
             "noConversationOpen": "No conversation is open.",
             "requestFailed": "The AI request failed.",
-            "welcomeTitle": "How can I help?",
+            "welcomeTitle": "Ask away, :name",
+            "welcomeTitleAnonymous": "Ask away",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
             "disclaimer": "AI can make mistakes. Check important information."
         },
