@@ -39,6 +39,12 @@
     let searchOpen = $state(false);
     let settingsOpen = $state(false);
     let settingsSection = $state<SettingsSection | null>(null);
+    // Holding Cmd (Ctrl off Apple) points out what has a shortcut in the sidebar.
+    let shortcutsHeld = $state(false);
+
+    function trackShortcutModifier(event: KeyboardEvent) {
+        shortcutsHeld = isApple ? event.metaKey : event.ctrlKey;
+    }
 
     function startNewChat(event: MouseEvent) {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
@@ -63,6 +69,13 @@
     onMount(() => app.events.sync.on('settingsRequested', section => openSettings(section)));
 </script>
 
+<!-- Blur clears it: a keyup in another window never reaches this one. -->
+<svelte:window
+    onkeydown={trackShortcutModifier}
+    onkeyup={trackShortcutModifier}
+    onblur={() => (shortcutsHeld = false)}
+/>
+
 <Sidebar label={__('ui.navigation.label')}>
     <MobileNavCollapse />
     <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
@@ -71,7 +84,7 @@
             <ModuleSelector bind:open={spacesOpen} />
         {/snippet}
     </SidebarHeader>
-    <div class="sidebar-content" class:spaces-open={spacesOpen}>
+    <div class="sidebar-content" class:spaces-open={spacesOpen} class:shortcuts-held={shortcutsHeld}>
         <button type="button" class="search" aria-label={__('ui.navigation.search')} onclick={openSearch}>
             <Search01Icon size={18} strokeWidth={2} aria-hidden="true" />
             <span class="search-placeholder">{__('ui.search.placeholder')}</span>
@@ -141,7 +154,8 @@
     }
 
     .search:hover,
-    .search:focus-visible {
+    .search:focus-visible,
+    .shortcuts-held .search {
         outline-color: var(--color-border);
     }
 
@@ -166,7 +180,8 @@
     }
 
     .search:hover .search-shortcut,
-    .search:focus-visible .search-shortcut {
+    .search:focus-visible .search-shortcut,
+    .shortcuts-held .search-shortcut {
         opacity: 1;
     }
 
