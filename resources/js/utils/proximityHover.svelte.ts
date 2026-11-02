@@ -6,8 +6,7 @@ export interface ItemRect {
 }
 
 interface Options {
-    /** Layout direction of the items; a function when it changes at runtime. */
-    axis?: 'x' | 'y' | (() => 'x' | 'y');
+    axis?: 'x' | 'y';
 }
 
 /**
@@ -22,7 +21,7 @@ interface Options {
  * movement (for example a sidebar resize).
  */
 export function createProximityHover(options: Options = {}) {
-    const { axis: axisOption = 'y' } = options;
+    const { axis = 'y' } = options;
 
     let container: HTMLElement | null = null;
     const items = new Map<number, HTMLElement | null>();
@@ -54,7 +53,6 @@ export function createProximityHover(options: Options = {}) {
     }
 
     function findClosest(cx: number, cy: number): number | null {
-        const axis = typeof axisOption === 'function' ? axisOption() : axisOption;
         let best: number | null = null;
         let bestDist = Infinity;
         for (const [idx, rect] of Object.entries(rects)) {

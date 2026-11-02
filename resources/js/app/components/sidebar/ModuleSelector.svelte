@@ -5,14 +5,12 @@
 <script lang="ts">
     import CommandPalette, {type CommandItemDefinition} from '$lib/components/ui/command/CommandPalette.svelte';
     import CommandPaletteTrigger from '$lib/components/ui/command/CommandPaletteTrigger.svelte';
-    import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
-    const sidebar = useSidebar();
     const app = useApp();
     const router = useRouter();
 
@@ -51,20 +49,28 @@
     }
 
     const currentModuleItem = $derived(findModuleItem(current));
-
-    // In the rail the menu opens where the rail's tooltips do: centred beside the
-    // icon, 24px from it. The anchor here is the row, 9px wider than the icon per side.
-    const contentProps = $derived(
-        sidebar.navOpen ? undefined : {side: 'right' as const, align: 'center' as const, sideOffset: 15}
-    );
 </script>
 
-<CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule} shortcut={false} {contentProps}>
+<!-- Hugs its rows, but stays inside the sidebar's padding like the profile menu: at most
+     one row wide, and held 16px (--space-4, the padding) off the window's edge. -->
+<CommandPalette
+    items={moduleItems}
+    bind:open
+    {current}
+    label={translate('ui.navigation.spaces')}
+    onSelect={selectModule}
+    shortcut={false}
+    contentProps={{
+        align: 'end',
+        sideOffset: 8,
+        collisionPadding: 16,
+        style: 'max-width: min(calc(var(--nav-w) - 2 * var(--space-4) - var(--divider-width)), calc(100vw - 2 * var(--space-4)))'
+    }}
+>
     {#snippet trigger({ props })}
         <CommandPaletteTrigger
             label={currentModuleItem?.label ?? current ?? ''}
             icon={currentModuleItem?.icon}
-            collapsed={!sidebar.navOpen}
             {...props}
         />
     {/snippet}

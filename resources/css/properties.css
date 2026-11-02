@@ -42,10 +42,3 @@
     inherits: true;
     initial-value: 0px;
 }
-
-/* Extra inner padding of the open sidebar's rows. Animates with the column. */
-@property --nav-pad-extra {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 0px;
-}

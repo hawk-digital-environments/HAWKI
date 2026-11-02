@@ -72,9 +72,8 @@
     let reflowing = $state(false);
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // The active highlight should glide when the *selection itself* moves (e.g.
-    // child → parent as a rail collapses) even though that coincides with a
-    // reflow. Track index changes so the snap-guard applies only to spurious
+    // The active highlight should glide when the *selection itself* moves even
+    // though that coincides with a reflow. Track index changes so the snap-guard applies only to spurious
     // re-measures of the same row, never to a genuine selection move mid-flight.
     let previousActiveIndex: number | null | undefined;
     let selectionMoved = $state(false);

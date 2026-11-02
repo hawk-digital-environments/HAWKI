@@ -1,6 +1,6 @@
 <!--
   @component Left navigation panel. Occupies the grid's `nav` area on desktop
-  and collapses to an icon rail when closed; on mobile it becomes an off-canvas
+  and slides away completely when closed; on mobile it becomes an off-canvas
   overlay driven by the shared sidebar context.
 -->
 <script lang="ts">
@@ -48,18 +48,24 @@
         grid-area: nav;
         overflow: hidden;
         background: var(--panel-bg);
+        /* Out of the tab order once the track has finished closing. */
+        visibility: hidden;
+        transition: visibility 0s linear 280ms;
     }
 
+    .app-sidebar.open {
+        visibility: visible;
+        transition-delay: 0s;
+    }
+
+    /* Keeps its full width while the track closes, so the panel is clipped rather
+       than its rows being squeezed. */
     .inner {
         display: flex;
         flex-direction: column;
-        width: var(--nav-track);
+        width: var(--nav-w);
         height: 100%;
-        /* A little more breathing room at the bottom edge than on the sides, so
-           the footer row doesn't sit on the edge. At the top the header brings
-           its own inset, so the padding here is trimmed by that inset to leave
-           a group gap above the header. */
-        padding: calc(var(--nav-group-gap) - var(--space-1)) var(--space-2) var(--nav-group-gap);
+        padding: var(--space-4);
         border-right: var(--divider);
     }
 

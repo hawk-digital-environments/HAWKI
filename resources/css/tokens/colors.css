@@ -28,6 +28,7 @@
         --color-focus-ring: var(--color-accent-500);
         --color-on-interactive: oklch(100% 0 0);
         --color-accent-text: var(--color-accent-500);
+        --color-logo: var(--color-accent-text);
         /* Label color for text sat on the accent fill (typeFilled hover/active).
            Unlike --color-on-interactive, this does not flip in dark mode: the
            accent-500/600 hover backgrounds stay dark in both themes. */
@@ -95,6 +96,7 @@
         --color-text-muted: oklch(56% 0 0);
         --color-text-invert: oklch(97% 0 0);
         --color-text-disabled: oklch(75% 0 0);
+        --color-nav-icon: oklch(65% 0 0); /* #8F8F8F, in both themes */
         --color-nav-text: oklch(15.9% 0 0); /* #0D0D0D */
         --color-nav-text-hover: var(--color-nav-text);
         --color-disabled-bg: oklch(93% 0 0);
@@ -109,6 +111,7 @@
         --color-interactive-active: oklch(72% 0 0);
         --color-focus-ring: var(--color-accent-dark-300);
         --color-accent-text: oklch(80% 0.11 240);
+        --color-logo: var(--color-nav-text);
         --color-accent-fill: oklch(25.9% 0.103 272.4);
         --color-accent-fill-hover: oklch(31.2% 0.128 272.4);
 

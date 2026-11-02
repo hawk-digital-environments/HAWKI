@@ -11,7 +11,7 @@
 
   It is a Popover rather than a centred modal so it can double as an in-place
   dropdown: the trigger keeps its `data-state` while open, so callers can style
-  it as one connected control.
+  it as one connected control. On small screens it opens as a BottomSheet instead.
 -->
 <script lang="ts">
     import {
@@ -22,6 +22,8 @@
     } from 'bits-ui';
     import type {Snippet} from 'svelte';
     import CommandResults, {type CommandGroupDefinition} from './CommandResults.svelte';
+    import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import {isApple} from '$lib/utils/platform.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -62,6 +64,9 @@
 
     const {__} = useTranslator();
     const paletteLabel = $derived(label ?? __('ui.commandPalette.label'));
+
+    const breakpoint = useBreakpoint();
+    const asSheet = $derived(breakpoint.is('bpMdAndSmaller'));
 
     /** Rows bucketed under their heading, in first-seen order. */
     const groups = $derived.by((): CommandGroupDefinition[] => {
@@ -151,6 +156,13 @@
         onSelect?.(value);
     }
 
+    // Land on the command root rather than the content wrapper, so arrow keys
+    // drive the list the moment the palette opens.
+    function focusRoot(event: Event) {
+        event.preventDefault();
+        rootEl?.focus();
+    }
+
     const fullContentProps = $derived(
         mergeProps(
             {
@@ -158,59 +170,88 @@
                 align: 'start' as const,
                 sideOffset: 6,
                 class: 'command-palette',
-                // Land on the command root rather than the content wrapper, so
-                // arrow keys drive the list the moment the palette opens.
-                onOpenAutoFocus: (event: Event) => {
-                    event.preventDefault();
-                    rootEl?.focus();
-                }
+                onOpenAutoFocus: focusRoot
             },
             contentProps
         )
     );
+
+    // The sheet has no bits-ui trigger, so the same props are built by hand.
+    const sheetTriggerProps = $derived({
+        'aria-haspopup': 'dialog',
+        'aria-expanded': open,
+        'data-state': open ? 'open' : 'closed',
+        onclick: () => (open = true)
+    });
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<PopoverPrimitive.Root bind:open>
-    <PopoverPrimitive.Trigger>
-        {#snippet child({props})}
-            {@render trigger({props, open, shortcutKeys})}
-        {/snippet}
-    </PopoverPrimitive.Trigger>
+{#snippet results()}
+    <CommandPrimitive.Root
+        label={paletteLabel}
+        loop
+        shouldFilter={false}
+        bind:ref={rootEl}
+        class={armed ? 'command-root armed' : 'command-root'}
+        onkeydown={armOnArrow}
+    >
+        <CommandResults
+            {groups}
+            {current}
+            onSelect={choose}
+            bind:viewport={viewportEl}
+            onpointermove={trackPointer}
+            onpointerleave={() => (hoverRect = null)}
+        >
+            {#if hoverRect && !asSheet}
+                <span
+                    class="command-hover-bg"
+                    style:top="{hoverRect.top}px"
+                    style:height="{hoverRect.height}px"
+                ></span>
+            {/if}
+        </CommandResults>
+    </CommandPrimitive.Root>
+{/snippet}
 
-    <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content {...fullContentProps as PopoverContentProps}>
-            <CommandPrimitive.Root
-                label={paletteLabel}
-                loop
-                shouldFilter={false}
-                bind:ref={rootEl}
-                class={armed ? 'command-root armed' : 'command-root'}
-                onkeydown={armOnArrow}
-            >
-                <CommandResults
-                    {groups}
-                    {current}
-                    onSelect={choose}
-                    bind:viewport={viewportEl}
-                    onpointermove={trackPointer}
-                    onpointerleave={() => (hoverRect = null)}
-                >
-                    {#if hoverRect}
-                        <span
-                            class="command-hover-bg"
-                            style:top="{hoverRect.top}px"
-                            style:height="{hoverRect.height}px"
-                        ></span>
-                    {/if}
-                </CommandResults>
-            </CommandPrimitive.Root>
-        </PopoverPrimitive.Content>
-    </PopoverPrimitive.Portal>
-</PopoverPrimitive.Root>
+{#if asSheet}
+    {@render trigger({props: sheetTriggerProps, open, shortcutKeys})}
+    <BottomSheet
+        bind:open
+        title={paletteLabel}
+        contentProps={{class: 'command-sheet', onOpenAutoFocus: focusRoot}}
+    >
+        {@render results()}
+    </BottomSheet>
+{:else}
+    <PopoverPrimitive.Root bind:open>
+        <PopoverPrimitive.Trigger>
+            {#snippet child({props})}
+                {@render trigger({props, open, shortcutKeys})}
+            {/snippet}
+        </PopoverPrimitive.Trigger>
+
+        <PopoverPrimitive.Portal>
+            <PopoverPrimitive.Content {...fullContentProps as PopoverContentProps}>
+                {@render results()}
+            </PopoverPrimitive.Content>
+        </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
+{/if}
 
 <style>
+    /* Touch-sized rows, like the other menus' sheets, with the same padding on
+       both sides. The check drops its own padding so it doesn't add to the right. */
+    :global(.command-sheet .command-list .command-item) {
+        min-height: 2.75rem;
+        padding-inline: var(--space-3);
+    }
+
+    :global(.command-sheet .command-list .item-check) {
+        padding-inline: 0;
+    }
+
     /* The content is portalled out of this subtree, so everything below is
        addressed globally under the palette's own class. */
     :global(.command-palette) {
@@ -221,7 +262,7 @@
         border-radius: var(--corner-md);
         border: var(--border);
         background-color: var(--color-surface-raised);
-        box-shadow: var(--elevation-2);
+        box-shadow: var(--elevation-1);
         padding: var(--space-1);
         overflow: hidden;
 

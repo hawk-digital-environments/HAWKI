@@ -1,65 +1,40 @@
 <!--
   @component Prominent action row for the sidebar, in the accent tint the avatar
-  uses (e.g. "New chat"). Follows the nav row metrics of SidebarItem: in the
-  collapsed rail it shrinks to an icon-only square and shows its label as a
-  tooltip anchored to the icon instead.
+  uses (e.g. "New chat"). Follows the nav row metrics of SidebarItem.
 -->
 <script lang="ts">
     import type {HTMLButtonAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
-    import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
 
     interface Props extends HTMLButtonAttributes {
         /** Hugeicons icon shown before the label. */
         icon: IconComponent;
-        /** Text label; doubles as the rail tooltip and accessible name. */
+        /** Text label. */
         label: string;
     }
 
     const {icon: Icon, label, class: className, ...rest}: Props = $props();
-
-    const sidebar = useSidebar();
-    const collapsed = $derived(!sidebar.navOpen);
-
-    // The rail row still spans the full panel width, so a tooltip anchored to
-    // the button would open a row's width away from the icon it describes.
-    // Anchor it to the icon instead.
-    let iconEl = $state<HTMLElement | null>(null);
 </script>
 
-<Tooltip
-    tooltip={label}
-    side="right"
-    sideOffset={24}
-    delayDuration={300}
-    customAnchor={iconEl}
-    disabled={!collapsed}
+<button
+    type="button"
+    {...mergeProps(rest, {class: ['sidebar-button', className]})}
 >
-    {#snippet children({props})}
-        <button
-            type="button"
-            aria-label={label}
-            {...mergeProps(props, rest, {class: ['sidebar-button', className]})}
-            class:collapsed
-        >
-            <span class="icon-wrap" bind:this={iconEl}>
-                <Icon size={18} strokeWidth={2} aria-hidden="true" />
-            </span>
-            <span class="label">{label}</span>
-        </button>
-    {/snippet}
-</Tooltip>
+    <span class="icon-wrap">
+        <Icon size={18} strokeWidth={2} aria-hidden="true" />
+    </span>
+    <span class="label">{label}</span>
+</button>
 
 <style>
     .sidebar-button {
         display: flex;
         align-items: center;
-        gap: var(--space-2_5);
+        gap: var(--space-2);
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 calc(var(--space-2_5) + var(--nav-pad-extra)) 0 var(--nav-item-pad-x);
+        padding: 0 var(--space-3) 0 var(--nav-item-pad-x);
         overflow: hidden;
         flex-shrink: 0;
         border: 0;
@@ -102,18 +77,22 @@
     .label {
         overflow: hidden;
         text-overflow: ellipsis;
-        /* Out fast, in late — the text is gone well before the rail is narrow
-           enough to squeeze it, and only returns once there is room again. */
-        transition: opacity 160ms ease 100ms;
     }
 
-    /* Icon-only rail. The padding is deliberately unchanged: the icon keeps
-       the exact same offset from the panel edge in both states, so it never
-       drifts sideways while the column animates. The label fades out and is
-       clipped by the panel instead of being pulled from the flow. */
-    .sidebar-button.collapsed .label {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 100ms ease;
+    /* Bumped up a notch for easier tapping on small screens, like SidebarItem. The
+       grown glyph spills out of its pinned column, so the margin returns the spill. */
+    @media (--bp-md-and-smaller) {
+        .sidebar-button {
+            font-size: var(--font-size-sm);
+        }
+
+        .icon-wrap {
+            margin-right: calc((var(--space-5) - var(--nav-icon-size)) / 2);
+        }
+
+        .icon-wrap :global(svg) {
+            width: var(--space-5);
+            height: var(--space-5);
+        }
     }
 </style>

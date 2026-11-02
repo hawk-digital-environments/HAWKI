@@ -5,7 +5,7 @@
 @layer tokens {
     :root {
         /* Exposed on its own so layouts can subtract a border's width when they
-           need to align content across one (e.g. the sidebar's icon rail). */
+           need to align content across one. */
         --divider-width: 1px;
 
         --border: var(--divider-width) solid var(--color-border);

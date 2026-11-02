@@ -1,7 +1,7 @@
 <!--
   @component Shared page header bar: the semantic <header> for a page's fixed
-  top bar — a space-between flex row with the standard 3.75rem height, spacing
-  and mobile nav-trigger reserve, over the blurred fading backdrop that
+  top bar — a space-between flex row sized to the nav toggle, with spacing and a
+  reserve for that toggle, over the blurred fading backdrop that
   dissolves content scrolling underneath. Claims the Page shell's header row
   via grid-area (auto-placed in grids without that named area).
 
@@ -63,11 +63,13 @@
            auto-place the bar instead. */
         grid-area: header;
         display: flex;
-        min-height: 3.75rem;
+        /* 2 × toggle inset + toggle height, so the row centres on the nav toggle. */
+        min-height: calc(2 * var(--space-4) + var(--nav-row-h));
         align-items: center;
         justify-content: space-between;
         gap: var(--space-3);
-        padding: var(--space-2) var(--space-5);
+        /* The left side reserves room beside the floating nav toggle. */
+        padding: var(--space-2) var(--space-5) var(--space-2) calc(var(--space-4) + var(--nav-row-h) + var(--space-2));
     }
 
     /* Soft fade instead of a hard divider: the blurred panel backdrop is drawn
@@ -108,9 +110,7 @@
         display: none;
     }
 
-    /* Single-line title. Its tight 1.5rem line centers inside the fixed
-       3.75rem bar row exactly on the mobile nav toggle's centre
-       (3.75rem = 2 × toggle inset + toggle height). */
+    /* Single-line title. */
     .page-title {
         margin: 0;
         min-width: 0;
@@ -124,8 +124,6 @@
     @media (--bp-md-and-smaller) {
         .page-header-bar {
             padding-right: var(--space-3);
-            /* Reserves room beside the floating nav toggle. */
-            padding-left: calc(var(--space-3) + 2.75rem);
         }
 
         .page-title {

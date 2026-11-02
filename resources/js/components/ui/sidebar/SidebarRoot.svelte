@@ -54,6 +54,8 @@
     :global(:root) {
         --nav-row-h: 2.25rem;
         --nav-group-gap: var(--space-4);
+        /* At the root so menus portalled out of the sidebar can size against it. */
+        --nav-w: 22rem;
     }
 
     .sidebar-layout {
@@ -66,20 +68,12 @@
         grid-template-areas: 'nav main aside';
         transition:
             --nav-track 280ms var(--easing-spring),
-            --nav-pad-extra 280ms var(--easing-spring),
             --aside-track 280ms var(--easing-spring);
 
-        --nav-w: 20rem;
-        --rail-w: calc(var(--nav-row-h) + 2 * var(--space-2) + var(--divider-width));
         --aside-w: 20rem;
         --nav-icon-size: 18px;
-        --nav-icon-color: oklch(65% 0 0); /* #8F8F8F */
-        /* The first term centres the icon in the rail, where the extra is zero. */
-        --nav-pad-extra: var(--space-0_5);
-        --nav-item-pad-x: calc(
-            (var(--rail-w) - 2 * var(--space-2) - var(--divider-width) - var(--nav-icon-size)) / 2 +
-                var(--nav-pad-extra)
-        );
+        --nav-icon-color: var(--color-nav-icon);
+        --nav-item-pad-x: calc((var(--nav-row-h) - var(--nav-icon-size)) / 2 + var(--space-0_5));
         --nav-track: var(--nav-w);
         --aside-track: 0rem;
         --panel-bg: var(--color-bg);
@@ -96,8 +90,7 @@
     }
 
     .sidebar-layout:not(.nav-open) {
-        --nav-track: var(--rail-w);
-        --nav-pad-extra: 0px;
+        --nav-track: 0px;
     }
 
     @media (--bp-lg-and-smaller) {

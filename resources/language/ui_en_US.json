@@ -5,9 +5,8 @@
             "skipToContent": "Skip to main content",
             "open": "Open navigation",
             "close": "Close navigation",
-            "collapse": "Collapse sidebar",
-            "expand": "Expand sidebar",
             "search": "Search",
+            "spaces": "Spaces",
             "newChat": "New chat",
             "label": "Navigation"
         },

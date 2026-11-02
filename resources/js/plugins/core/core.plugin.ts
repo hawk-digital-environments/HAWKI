@@ -57,9 +57,15 @@ export default class CorePlugin implements HawkiCorePlugin {
         registrar.addFromModules(import.meta.glob('$lib/plugins/core/migrations/**/*.ts', {eager: false}));
     }
 
-    public modules({add}: ModuleRegistrar): void | Promise<void> {
+    public async modules({add}: ModuleRegistrar): Promise<void> {
         add(new ChatModule());
         add(new SettingsModule());
+
+        // A dynamic import, so the fixtures stay out of production bundles.
+        if (import.meta.env.DEV) {
+            const {mockSpaces} = await import('$plugins/core/modules/devSpaces/mockSpaces.js');
+            mockSpaces().forEach(add);
+        }
     }
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {

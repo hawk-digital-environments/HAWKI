@@ -7,7 +7,7 @@
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import ChatHistoryItem from '$plugins/core/modules/chat/components/ChatHistoryItem.svelte';
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
-    import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
+    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -26,7 +26,6 @@
     const sidebar = useSidebar();
     const {__} = useTranslator();
     const toast = useToastContext();
-    const expanded = $derived(sidebar.navOpen);
 
     // The history grouped by age (today / yesterday / …), empty buckets
     // dropped. The store list is already newest-first, so pushing in order
@@ -100,60 +99,58 @@
 </script>
 
 <div {...restProps} class={["chat-sidebar", className]}>
-    {#if expanded}
-        <div
-            class="history"
-            class:fade-top={fadeTop}
-            class:fade-bottom={fadeBottom}
-            bind:this={historyEl}
-            onscroll={updateFades}
-            aria-label={__('chat.sidebar.history')}
-        >
-            {#if store.listLoading && store.conversations.length === 0}
-                <p class="hint">{__('chat.sidebar.loading')}</p>
-            {:else if store.conversations.length === 0}
-                <p class="hint">{__('chat.sidebar.empty')}</p>
-            {:else}
-                <SidebarItems>
-                    {#each groups as group (group.bucket)}
-                        <!-- Non-interactive age divider; opts out of the list's
-                             proximity hover so the highlight does not reach for
-                             a neighbouring row while the pointer rests here. -->
-                        <h3 class="group-label" data-list-no-hover>
-                            {__(`chat.sidebar.groups.${group.bucket}`)}
-                        </h3>
-                        {#each group.conversations as conversation (conversation.slug)}
-                            {@const generating = store.isGenerating(conversation.slug)}
-                            <!-- History rows are label-only: with every row carrying
-                                 the same message icon it added no information. The
-                                 leading slot is used solely to mark a conversation
-                                 that is still generating. -->
-                            {#snippet generatingIndicator()}
-                                <span class="generation-indicator" aria-hidden="true"></span>
-                            {/snippet}
-                            <ChatHistoryItem
-                                media={generating ? generatingIndicator : undefined}
-                                name={conversation.name}
-                                active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
-                                rowLabel={generating
-                                    ? `${conversation.name}, ${__('chat.sidebar.generating')}`
-                                    : conversation.name}
-                                onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
-                                onRename={name => renameConversation(conversation.slug, name)}
-                                onDelete={() => removeConversation(conversation.slug)}
-                            />
-                        {/each}
+    <div
+        class="history"
+        class:fade-top={fadeTop}
+        class:fade-bottom={fadeBottom}
+        bind:this={historyEl}
+        onscroll={updateFades}
+        aria-label={__('chat.sidebar.history')}
+    >
+        {#if store.listLoading && store.conversations.length === 0}
+            <p class="hint">{__('chat.sidebar.loading')}</p>
+        {:else if store.conversations.length === 0}
+            <p class="hint">{__('chat.sidebar.empty')}</p>
+        {:else}
+            <SidebarItems>
+                {#each groups as group (group.bucket)}
+                    <!-- Non-interactive age divider; opts out of the list's
+                         proximity hover so the highlight does not reach for
+                         a neighbouring row while the pointer rests here. -->
+                    <h3 class="group-label" data-list-no-hover>
+                        {__(`chat.sidebar.groups.${group.bucket}`)}
+                    </h3>
+                    {#each group.conversations as conversation (conversation.slug)}
+                        {@const generating = store.isGenerating(conversation.slug)}
+                        <!-- History rows are label-only: with every row carrying
+                             the same message icon it added no information. The
+                             leading slot is used solely to mark a conversation
+                             that is still generating. -->
+                        {#snippet generatingIndicator()}
+                            <span class="generation-indicator" aria-hidden="true"></span>
+                        {/snippet}
+                        <ChatHistoryItem
+                            media={generating ? generatingIndicator : undefined}
+                            name={conversation.name}
+                            active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
+                            rowLabel={generating
+                                ? `${conversation.name}, ${__('chat.sidebar.generating')}`
+                                : conversation.name}
+                            onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
+                            onRename={name => renameConversation(conversation.slug, name)}
+                            onDelete={() => removeConversation(conversation.slug)}
+                        />
                     {/each}
-                </SidebarItems>
-            {/if}
-        </div>
-    {/if}
+                {/each}
+            </SidebarItems>
+        {/if}
+    </div>
 
     <!-- Pinned to the bottom of the column, directly above the profile
          footer; the history scroller above it takes the free space. -->
     <div class="new-chat">
         <SidebarButton
-            icon={Add01Icon}
+            icon={BubbleChatAddIcon}
             label={__('chat.sidebar.newChat')}
             onclick={newChat}
         />
@@ -166,7 +163,9 @@
         min-height: 0;
         flex: 1;
         flex-direction: column;
-        gap: var(--nav-group-gap);
+        /* A step beyond the groups inside the list: it separates the chats from
+           what is pinned below them. */
+        gap: var(--space-6);
     }
 
     .history {
@@ -204,12 +203,6 @@
         display: none;
     }
 
-    /* Keeps the button on the bottom edge even in the collapsed rail, where
-       the history above it is not rendered at all. */
-    .new-chat {
-        margin-top: auto;
-    }
-
     .group-label {
         margin: 0;
         /* Matches the horizontal rhythm of the rows (SidebarItem) so the label
@@ -217,10 +210,8 @@
            the top margin tops that gap up to the group gap above it. */
         padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
         margin-top: calc(var(--nav-group-gap) - var(--space-1));
-        font-size: var(--font-size-xxs);
-        font-weight: var(--font-weight-medium, 500);
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-normal);
         color: var(--color-text-muted);
     }
 
