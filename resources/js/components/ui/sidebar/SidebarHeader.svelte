@@ -81,15 +81,15 @@
         color: inherit;
         text-decoration: none;
         border-radius: var(--corner-sm);
-        transition: background var(--duration-fast);
     }
 
     .brand :global(.mark) {
         color: var(--color-logo);
+        transition: filter var(--duration-fast);
     }
 
-    a.brand:hover {
-        background: var(--color-hover);
+    a.brand:hover :global(.mark) {
+        filter: brightness(1.25);
     }
 
     .actions {
