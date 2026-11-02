@@ -72,6 +72,7 @@
 
         --aside-w: 20rem;
         --nav-icon-size: 18px;
+        --nav-font-size: 0.875rem;
         --nav-icon-color: var(--color-nav-icon);
         --nav-item-pad-x: calc((var(--nav-row-h) - var(--nav-icon-size)) / 2 + var(--space-0_5));
         --nav-track: var(--nav-w);

@@ -158,7 +158,7 @@
         border: none;
         background: transparent;
         color: var(--color-nav-text);
-        font-size: var(--font-size-xs);
+        font-size: var(--nav-font-size);
         cursor: pointer;
         border-radius: var(--corner-sm);
         text-align: left;

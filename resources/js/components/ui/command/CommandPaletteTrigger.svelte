@@ -66,7 +66,7 @@
         /* The same colors as the sidebar's action button (SidebarButton). */
         background: var(--color-accent-100);
         color: var(--color-accent-text);
-        font-size: var(--font-size-xs);
+        font-size: var(--nav-font-size);
         font-weight: var(--font-weight-medium);
         text-align: left;
         cursor: pointer;

@@ -42,7 +42,7 @@
         background: var(--color-accent-100);
         color: var(--color-accent-text);
         font: inherit;
-        font-size: var(--font-size-xs);
+        font-size: var(--nav-font-size);
         font-weight: var(--font-weight-medium);
         text-align: left;
         white-space: nowrap;

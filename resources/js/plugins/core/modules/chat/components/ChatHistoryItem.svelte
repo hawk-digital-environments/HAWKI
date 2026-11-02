@@ -202,7 +202,7 @@
         background: var(--color-surface-raised);
         color: var(--color-text);
         font: inherit;
-        font-size: var(--font-size-xs);
+        font-size: var(--nav-font-size);
     }
 
     .rename-input:focus,
