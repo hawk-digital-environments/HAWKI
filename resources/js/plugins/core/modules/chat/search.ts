@@ -1,5 +1,5 @@
+import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
-import ChatAddIcon from '$lib/components/ui/icons/iconset/ChatAddIcon.svelte';
 import type {StaticSource} from '$lib/kernel/search/types.js';
 import type {ChatSummary} from '$plugins/core/modules/chat/types.js';
 
@@ -14,7 +14,7 @@ export const chatActionSource: StaticSource = {
         id: 'new',
         entityKey: 'action/core:chat/new',
         title: app.translator.translate('chat.sidebar.newChat'),
-        icon: ChatAddIcon,
+        icon: BubbleChatAddIcon,
         onSelect: () => {
             app.stores.get('chat').startNew();
             void app.router.goToRoute('chat.index');
