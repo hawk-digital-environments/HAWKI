@@ -55,6 +55,7 @@
     bind:open={deleteOpen}
     title={__('chat.nameMenu.deleteConfirmTitle', {name})}
     description={__('chat.nameMenu.deleteConfirmDescription')}
+    okLabel={__('chat.nameMenu.deleteConfirmLabel')}
     onConfirm={onDelete}
 />
 

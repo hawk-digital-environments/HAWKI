@@ -79,6 +79,7 @@
             "deleteConfirmDescription": "Bist du sicher, dass du diesen Chat löschen möchtest? Dieser Vorgang kann nicht rückgängig gemacht werden.",
             "leaveConfirmTitle": "Raum :name verlassen",
             "deleteConfirmTitle": "Chat :name löschen",
+            "deleteConfirmLabel": "Löschen",
             "newNameAriaLabel": "Neuer Chatname",
             "actionsTooltip": "Chat Aktionen",
             "rename": "Umbenennen",
