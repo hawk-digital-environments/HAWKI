@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Ai\ConfigFileSync\Syncers;
 
+use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Syncers\ModelAndProviderSyncer;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
 use App\Services\Ai\Models\Repositories\AiModelDescriptionRepository;
@@ -10,6 +11,7 @@ use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\Models\Repositories\AiModelUsageRuleRepository;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
 use App\Services\Ai\Providers\Repositories\AiProviderRepository;
+use App\Services\Ai\Providers\Values\ProviderSettings;
 use App\Utils\JobMetrics;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -133,5 +135,65 @@ class ModelAndProviderSyncerTest extends TestCase
         $sut->sync($metrics);
 
         static::assertTrue($metrics->hasErrors());
+    }
+
+    // =========================================================================
+    // sync — adapter settings from the config file
+    // =========================================================================
+
+    public function testItSyncsTheAdapterSettingsOfAProviderEntry(): void
+    {
+        $capturedSettings = null;
+
+        $providerRepository = $this->createMock(AiProviderRepository::class);
+        $providerRepository->method('upsert')
+            ->willReturnCallback(
+                function (
+                    string            $providerId,
+                    string            $adapterKey,
+                    string            $name,
+                    bool              $active,
+                    ?string           $apiUrl,
+                    ?string           $modelStatusUrl,
+                    ?string           $apiKey,
+                    ?ProviderSettings $settings,
+                ) use (&$capturedSettings): AiProvider {
+                    $capturedSettings = $settings;
+
+                    $provider = new AiProvider();
+                    $provider->provider_id = $providerId;
+
+                    return $provider;
+                }
+            );
+
+        $sut = new ModelAndProviderSyncer(
+            providers: [
+                'gwdg' => [
+                    'active' => true,
+                    'api_key' => 'key',
+                    'api_url' => 'https://chat-ai.academiccloud.de/v1',
+                    'adapter' => [
+                        'request_timeout' => 300,
+                        'stall_timeout' => 60,
+                    ],
+                    'models' => [],
+                ],
+            ],
+            modelRepository: $this->createMock(AiModelRepository::class),
+            modelDescriptionRepository: $this->createMock(AiModelDescriptionRepository::class),
+            providerRepository: $providerRepository,
+            providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
+            useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
+            modelInfoFetcher: $this->createMock(ModelInfoFetcher::class),
+        );
+
+        $sut->sync(new JobMetrics('test', new NullLogger()));
+
+        static::assertInstanceOf(ProviderSettings::class, $capturedSettings);
+        static::assertSame(
+            ['request_timeout' => 300, 'stall_timeout' => 60],
+            $capturedSettings->getAdapterSettings()
+        );
     }
 }

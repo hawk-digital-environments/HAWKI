@@ -18,6 +18,7 @@
 - The `check:storage` artisan command now respects the configured `S3_ENDPOINT` and path-style addressing instead of always probing `amazonaws.com`.
 - Tool-call progress never reached the UI during streaming because the stream handler matched the tool-call *data* class instead of the stream *event*. Tool calls are now reported for every provider as `tool_call`/`tool_result` packets.
 - MCP tools failed because processes were decoupled using `autoSse=true` (the default). New default is `autoSse=false`. 
+- Per-provider AI request timeouts via the `adapter` settings in `model_providers.php`: `request_timeout` (default 60 seconds, `0` = no limit) limits the complete answer of non-streaming requests. `stall_timeout` (default off) aborts a stream that receives no data for this many seconds, before or mid-stream — like HAWKI 2.4, streams are never cut off while they receive data, and silent streams are no longer aborted after 60 seconds. Supported drivers for stall detection: `openai-compatible`, `ollama`. GWDG ships with the HAWKI 2.4 behaviour (`request_timeout=0`, `stall_timeout=120`, via `GWDG_REQUEST_TIMEOUT`/`GWDG_STALL_TIMEOUT`).
 
 ### Internals
 
@@ -27,6 +28,7 @@
 - **Storage: driver-agnostic file persistence** (`app/Services/Storage/AbstractFileStorage.php`): `persistTemporaryFile` previously moved the whole temp *directory*, which only works on local disks (via `rename()`); s3-style drivers treat directories as key prefixes and silently ignore such moves. It now copies each file individually (`allFiles()` + `copy()` + one `deleteDirectory()`), which Laravel's contract guarantees for every driver — a server-side `CopyObject` on s3, a native copy on local disks.
 - **Storage: hardened s3 disk config** (`config/filesystems.php`): `throw => true` turns failed Flysystem operations into logged exceptions instead of unchecked `false` returns (the reason the original bug stayed invisible); `retain_visibility => false` skips the `GetObjectAcl` pre-check before each `copy()`, which ACL-less s3 servers (garage, Cloudflare R2) reject.
 - **Storage: `check:storage` now honors custom s3 endpoints** (`app/Console/Commands/CheckStorageConnection.php`) by forwarding the disk's `endpoint`/`use_path_style_endpoint` to its `S3Client` instead of always probing `amazonaws.com`.
+- `AbstractLaravelAgent` passes the timeout explicitly to the Laravel AI package: `send()` the request timeout, `sendStreaming()` the stall timeout (or no limit when stall detection is off). The new `AgentTimeouts` value object reads and validates both values. For streamed requests, Guzzle uses its PHP stream handler, where `timeout` is a per-read timeout and curl options are ignored.
 
 ### Deprecation
 
