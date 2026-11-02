@@ -81,7 +81,7 @@
         border: none;
         border-radius: var(--corner-sm);
         background: transparent;
-        color: var(--nav-icon-color);
+        color: var(--color-nav-icon);
         cursor: pointer;
         transition: color var(--duration-fast);
     }

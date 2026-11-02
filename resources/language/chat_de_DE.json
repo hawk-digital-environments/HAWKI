@@ -9,12 +9,14 @@
             "loading": "Chats werden geladen…",
             "generating": "Antwort wird generiert",
             "empty": "Deine Unterhaltungen erscheinen hier.",
-            "groups": {
+            "title": "Zuletzt verwendet",
+            "filter": {
+                "label": "Chats filtern",
+                "clear": "Filter entfernen",
                 "today": "Heute",
-                "yesterday": "Gestern",
-                "last7Days": "Letzte 7 Tage",
-                "last30Days": "Letzte 30 Tage",
-                "older": "Älter"
+                "last7Days": "Letzte Woche",
+                "last30Days": "Letzter Monat",
+                "empty": "Keine Chats in diesem Zeitraum."
             }
         },
         "page": {

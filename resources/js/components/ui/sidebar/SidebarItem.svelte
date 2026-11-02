@@ -235,7 +235,7 @@
         height: var(--nav-icon-size);
         margin-right: calc((var(--wrap-media-size) - var(--nav-icon-size)) / 2);
         flex-shrink: 0;
-        color: var(--nav-icon-color);
+        color: var(--color-nav-icon);
         transition: color var(--duration-fast);
     }
 
@@ -251,7 +251,7 @@
     .caret {
         display: inline-flex;
         flex-shrink: 0;
-        color: var(--nav-icon-color);
+        color: var(--color-nav-icon);
         transition:
             transform 120ms var(--easing-spring),
             color var(--duration-fast);

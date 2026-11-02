@@ -177,6 +177,13 @@
         color: var(--color-nav-text-hover);
     }
 
+    /* Always showing on mobile, so it recedes like the sidebar's other icons. */
+    @media (--bp-md-and-smaller) {
+        .actions :global(button) {
+            color: var(--color-nav-icon);
+        }
+    }
+
     /* The glyph sits directly on the selected row's surface, so it takes the
        same text color as the row's label rather than the neutral ghost color. */
     .history-row.active .actions :global(button) {

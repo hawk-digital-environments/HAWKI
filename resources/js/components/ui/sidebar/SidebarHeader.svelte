@@ -109,7 +109,7 @@
         background: transparent;
         /* Recedes at rest and comes forward on hover, same as the switcher's
            chevron. */
-        color: var(--nav-icon-color);
+        color: var(--color-nav-icon);
         cursor: pointer;
         border-radius: var(--corner-sm);
         transition:

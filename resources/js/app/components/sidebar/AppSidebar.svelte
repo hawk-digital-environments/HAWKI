@@ -133,7 +133,7 @@
         outline-offset: calc(var(--divider-width) * -1);
         border-radius: var(--corner-sm);
         background: transparent;
-        color: var(--nav-icon-color);
+        color: var(--color-nav-icon);
         font-size: var(--nav-font-size);
         text-align: left;
         cursor: text;
@@ -153,14 +153,12 @@
         flex: 1;
         min-width: 0;
         overflow: hidden;
-        color: var(--color-text-muted);
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
     .search-shortcut {
         flex-shrink: 0;
-        color: var(--color-text-muted);
         font-size: var(--font-size-xs);
         opacity: 0;
         transition: opacity var(--duration-fast);
