@@ -66,7 +66,6 @@
 
 <DropdownMenu
     bind:open={menuOpen}
-    title={__('ui.profile.menuTitle')}
     side="top"
     align="start"
     sideOffset={8}

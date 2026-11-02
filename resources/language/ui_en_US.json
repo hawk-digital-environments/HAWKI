@@ -34,7 +34,6 @@
         },
         "profile": {
             "fallbackName": "Profile",
-            "menuTitle": "Account menu",
             "lightMode": "Light mode",
             "darkMode": "Dark mode",
             "settings": "Settings",
