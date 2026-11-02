@@ -151,7 +151,8 @@
         --color-surface: oklch(24% 0 0);
         --color-surface-raised: oklch(19% 0 0);
         --color-surface-invert: oklch(20% 0 0);
-        --color-surface-light: oklch(32% 0 0);
+        /* A small step above the page, below --color-hover, as in light mode. */
+        --color-surface-light: oklch(20% 0 0);
         --color-surface-light-raised: oklch(27% 0 0);
         --color-highlight: oklch(26% 0 0);
         --color-message-me: oklch(24% 0 0);
