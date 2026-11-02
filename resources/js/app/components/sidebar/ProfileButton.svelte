@@ -127,6 +127,11 @@
         flex: 1;
         flex-direction: column;
         gap: var(--space-0_5);
+        /* A length, so the smaller email line keeps the same height as the name. */
+        line-height: calc(var(--font-size-xs) * var(--line-height-tight));
+        /* The smaller email leaves more room under its baseline than the name has
+           above its capitals, so the centred block reads high. Nudges it down 0.5px. */
+        margin-top: 1px;
     }
 
     .profile-summary__text strong,
