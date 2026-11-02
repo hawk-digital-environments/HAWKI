@@ -112,6 +112,24 @@
     // Slider works with a plain number; fall back to the lower bound.
     let numberValue = $derived(typeof currentValue === 'number' ? currentValue : (min ?? 0));
 
+    // While dragging, the thumb follows a local echo so the draft is only written
+    // on commit (release) — not on every pixel move.
+    let sliderEcho: number | null = $state(null);
+
+    function handleSliderChange(value: number): void {
+        sliderEcho = value;
+    }
+
+    function handleSliderCommit(value: number): void {
+        sliderEcho = null;
+        update(value);
+    }
+
+    // Integers (token counts) read better with locale separators; floats stay raw.
+    function displaySliderValue(value: number): string {
+        return isInteger ? value.toLocaleString() : String(value);
+    }
+
     // Category holds a value object ({ id, text }); the three setting fields hold
     // primitive values whose human label comes from the matching server setting.
     let selectedCategory = $derived(
@@ -236,7 +254,7 @@
                 <InfoPopover {label} info={hint}/>
             {/if}
             {#if type === 'slider'}
-                <span class="slider-value">{numberValue}</span>
+                <span class="slider-value">{displaySliderValue(sliderEcho ?? numberValue)}</span>
             {/if}
         </div>
     {/if}
@@ -268,12 +286,13 @@
                 <p class="field-note">{description}</p>
             {/if}
             <Slider
-                value={numberValue}
+                value={sliderEcho ?? numberValue}
                 min={min}
                 max={max}
                 step={step ?? (isInteger ? 1 : undefined)}
                 {disabled}
-                onValueChange={update}
+                onValueChange={handleSliderChange}
+                onValueCommit={handleSliderCommit}
             />
         {:else}
             <!-- Blue reveal when the AI guide fills this field. -->

@@ -19,6 +19,17 @@ Every assistant-driven exchange — private chat, group chat, and the OpenAI-com
 
 Because all surfaces derive from the same composition, a tool granted in the background is present in private chat, group chat, and the external API alike — there is no per-surface tool wiring.
 
+## Sampling parameters and max tokens
+
+The `params` part carries the assistant's `temp`, `top_p`, and `max_tokens`. The first two pass through as configured; `max_tokens` has assistant-specific semantics:
+
+- The `assistants.max_tokens` column stores an explicit output cap, where **`0` means "nothing set"** — the database default, and the state of every assistant created since the builder's max-tokens slider was removed.
+- **Chat path** — the assistants plugin omits the `max_tokens` key entirely when the value is `0` (sending a literal zero would cap the response at zero tokens), so the run falls back to the backend default.
+- **OpenAI responses path** — `AssistantRunComposer` drops a `0` via `array_filter`, with the same effect.
+- **Values `> 0`** are sent as-is and additionally inject the `ANSWER_LENGTH` prompt module (`AssistantPromptTemplate`), which states the budget as a hard ceiling in the system prompt.
+
+How an unset or explicit value is resolved per provider is documented in [Provider Settings](../500-AI-Service-Layer/350-Provider-Settings.md).
+
 ## Tool transfer strings
 
 The run's tool set is an ordered list of transfer strings from three sources:
