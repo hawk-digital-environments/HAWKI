@@ -52,9 +52,11 @@
 
     const currentModuleItem = $derived(findModuleItem(current));
 
-    // In the rail the menu flies out beside the icon, with alignOffset cancelling
-    // the palette's padding and border so its first row lines up with the icon.
-    const contentProps = $derived(sidebar.navOpen ? undefined : {side: 'right' as const, alignOffset: -5});
+    // In the rail the menu opens where the rail's tooltips do: centred beside the
+    // icon, 24px from it. The anchor here is the row, 9px wider than the icon per side.
+    const contentProps = $derived(
+        sidebar.navOpen ? undefined : {side: 'right' as const, align: 'center' as const, sideOffset: 15}
+    );
 </script>
 
 <CommandPalette items={moduleItems} bind:open {current} onSelect={selectModule} shortcut={false} {contentProps}>

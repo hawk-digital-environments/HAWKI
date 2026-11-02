@@ -125,7 +125,7 @@
     {#if onSearch}
         <Tooltip
             tooltip={__('ui.navigation.search')}
-            side="right"
+            side={open ? 'bottom' : 'right'}
             sideOffset={open ? 12 : 24}
             delayDuration={300}
             customAnchor={searchIconEl}
@@ -147,7 +147,7 @@
     {/if}
     <Tooltip
         tooltip={open ? __('ui.navigation.collapse') : __('ui.navigation.expand')}
-        side="right"
+        side={open ? 'bottom' : 'right'}
         sideOffset={open ? 12 : 24}
         delayDuration={300}
         customAnchor={collapseIconEl}
