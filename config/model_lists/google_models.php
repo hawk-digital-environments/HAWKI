@@ -158,7 +158,6 @@ return [
             "image"
         ],
         "output" => [
-
             "text"
         ],
         'tools' => [

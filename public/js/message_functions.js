@@ -996,17 +996,59 @@ function createStatusElement(status, messageElement) {
         if (status.key === 'reasoning' || status.key === 'reasoning_delta') {
             statusText = __('Reasoning_Msg');
 
-            if (status.key === 'reasoning_delta' && typeof status.value === 'string' && status.value.length > 50) {
-                if (!reasoningElement) {
-                    reasoningElement = document.createElement('div');
-                    reasoningElement.dataset.id = 'reasoning-block';
-                    reasoningElement.classList.add('think');
-                    reasoningElement.innerHTML = `<div class="content-container" data-id="reasoning-block-text" style="flex-direction: column"></div>`;
-                    messageElement.querySelector('.message-text').appendChild(reasoningElement);
-                } else {
-                    reasoningElement.style.display = '';
+            if (status.key === 'reasoning_delta' && typeof status.value === 'string' && status.value.length > 0) {
+                // Deltas are fragments of one continuous reasoning text: accumulate before rendering
+                const reasoningText = (messageElement.dataset.reasoningText || '') + status.value;
+                messageElement.dataset.reasoningText = reasoningText;
+
+                // The block only appears once there is something substantial to show
+                if (reasoningText.length > 50) {
+                    if (!reasoningElement) {
+                        reasoningElement = document.createElement('div');
+                        reasoningElement.dataset.id = 'reasoning-block';
+                        reasoningElement.classList.add('think');
+                        reasoningElement.innerHTML = `<div class="content-container" data-id="reasoning-block-text" style="flex-direction: column"></div>`;
+                        messageElement.querySelector('.message-text').appendChild(reasoningElement);
+
+                        // Mounted once with the text so far; later deltas update it in place
+                        // via `messageUpdate` — re-creating it per delta would flash and reset the scroll position
+                        const snippet = document.createElement('svelte-snippet');
+                        snippet.setAttribute('type', 'MessageBody');
+                        snippet.setAttribute('props', JSON.stringify({message: reasoningText, isStreaming: true}));
+                        reasoningElement.querySelector('[data-id="reasoning-block-text"]').appendChild(snippet);
+
+                        // Keeps the newest text in view. The markdown renders asynchronously
+                        // (markstream), so the container is pinned to its bottom every frame
+                        // instead of scrolling once per delta. Pinning cannot disable the follow
+                        // (it ends at the bottom), only the user scrolling up can — scrolling
+                        // back down re-enables it. The loop stops when the block leaves the DOM.
+                        const scrollContainer = reasoningElement.querySelector('[data-id="reasoning-block-text"]');
+                        scrollContainer.dataset.following = '1';
+                        const followLatest = () => {
+                            if (!scrollContainer.isConnected || scrollContainer.dataset.following === '') {
+                                scrollContainer.dataset.followLoopRunning = '';
+                                return;
+                            }
+                            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                            requestAnimationFrame(followLatest);
+                        };
+                        scrollContainer.addEventListener('scroll', () => {
+                            const following = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 40;
+                            scrollContainer.dataset.following = following ? '1' : '';
+                            if (following && scrollContainer.dataset.followLoopRunning !== '1') {
+                                scrollContainer.dataset.followLoopRunning = '1';
+                                requestAnimationFrame(followLatest);
+                            }
+                        }, {passive: true});
+                        scrollContainer.dataset.followLoopRunning = '1';
+                        requestAnimationFrame(followLatest);
+                    } else {
+                        reasoningElement.style.display = '';
+
+                        reasoningElement.querySelector('svelte-snippet')
+                            .dispatchEvent(new CustomEvent('messageUpdate', {detail: reasoningText}));
+                    }
                 }
-                reasoningElement.querySelector('[data-id="reasoning-block-text"]').innerHTML = getMarkdownRendererHtml(status.value);
             }
         } else {
             statusText = __('Started_Msg');
