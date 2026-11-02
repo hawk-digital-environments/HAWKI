@@ -29,7 +29,7 @@
         };
     }));
 
-    let open = $state(false);
+    let {open = $bindable(false)}: {open?: boolean} = $props();
 
     const current = $derived.by(() => {
         const module = modules.find(candidate =>

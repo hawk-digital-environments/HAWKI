@@ -35,6 +35,7 @@
     const ModuleSidebar = $derived(activeModule?.sidebar?.(app.localization.locale) ?? null);
 
     const chatPath = router.getPath('chat.index');
+    let spacesOpen = $state(false);
     let searchOpen = $state(false);
     let settingsOpen = $state(false);
     let settingsSection = $state<SettingsSection | null>(null);
@@ -67,28 +68,53 @@
     <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
         <HawkLogo label={__('ui.navigation.newChat')} />
         {#snippet actions()}
-            <ModuleSelector />
+            <ModuleSelector bind:open={spacesOpen} />
         {/snippet}
     </SidebarHeader>
-    <button type="button" class="search" aria-label={__('ui.navigation.search')} onclick={openSearch}>
-        <Search01Icon size={18} strokeWidth={2} aria-hidden="true" />
-        <span class="search-placeholder">{__('ui.search.placeholder')}</span>
-        <span class="search-shortcut" aria-hidden="true">{isApple ? '⌘K' : 'Ctrl K'}</span>
-    </button>
-    <div class="module-sidebar">
-        {#if ModuleSidebar}
-            <ModuleSidebar />
-        {/if}
+    <div class="sidebar-content" class:spaces-open={spacesOpen}>
+        <button type="button" class="search" aria-label={__('ui.navigation.search')} onclick={openSearch}>
+            <Search01Icon size={18} strokeWidth={2} aria-hidden="true" />
+            <span class="search-placeholder">{__('ui.search.placeholder')}</span>
+            <span class="search-shortcut" aria-hidden="true">{isApple ? '⌘K' : 'Ctrl K'}</span>
+        </button>
+        <div class="module-sidebar">
+            {#if ModuleSidebar}
+                <ModuleSidebar />
+            {/if}
+        </div>
+        <SidebarFooter>
+            <ProfileButton onOpenSettings={() => openSettings()}/>
+        </SidebarFooter>
     </div>
-    <SidebarFooter>
-        <ProfileButton onOpenSettings={() => openSettings()}/>
-    </SidebarFooter>
 </Sidebar>
 
 <SearchDialog bind:open={searchOpen} />
 <SettingsDialog bind:open={settingsOpen} section={settingsSection}/>
 
 <style>
+    .sidebar-content {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        flex-direction: column;
+        opacity: 1;
+        filter: blur(0);
+        transition:
+            opacity var(--duration-fast) var(--easing-default, ease),
+            filter var(--duration-fast) var(--easing-default, ease);
+    }
+
+    .sidebar-content.spaces-open {
+        opacity: 0.25;
+        filter: blur(var(--blur-small, 2px));
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .sidebar-content {
+            transition: none;
+        }
+    }
+
     /* Rests like a row and turns into a field on hover or focus. It opens the search
        dialog rather than taking input, since the results need more room. The stroke
        is an inset outline, so it takes no layout space and the icon stays on the

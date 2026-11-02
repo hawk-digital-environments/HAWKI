@@ -298,12 +298,25 @@
     }
 
     :global(.command-palette--contained) {
+        --color-hover: color-mix(in oklab, var(--color-accent-100) 60%, transparent);
+        --color-active-surface: var(--color-accent-100);
+        --color-active-text: var(--color-accent-text);
         position: absolute;
         top: calc(100% - var(--space-4));
         inset-inline: 0;
         margin-top: var(--space-2);
         transform-origin: top right;
         max-height: calc(100dvh - 8rem);
+    }
+
+    :global(.command-palette--contained .command-item:not([data-disabled]):hover),
+    :global(.command-palette--contained .command-root.armed .command-item[data-selected]) {
+        color: var(--color-accent-text);
+    }
+
+    :global(.command-palette--contained .command-item:not([data-disabled]):hover .item-icon),
+    :global(.command-palette--contained .command-root.armed .command-item[data-selected] .item-icon) {
+        color: inherit;
     }
 
     @media (prefers-reduced-motion: reduce) {
