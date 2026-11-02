@@ -32,7 +32,7 @@
 
 <style>
     .dropdown-separator {
-        margin-inline: calc(-1 * var(--space-1, 0.25rem));
+        margin-inline: var(--space-2, calc(0.25rem * 2));
         margin-block: var(--space-1, 0.25rem);
         height: 1px;
         background-color: var(--color-border);
