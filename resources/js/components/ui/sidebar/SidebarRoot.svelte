@@ -68,7 +68,7 @@
             --nav-track 280ms var(--easing-spring),
             --aside-track 280ms var(--easing-spring);
 
-        --nav-w: 18rem;
+        --nav-w: 20rem;
         --rail-w: calc(var(--nav-row-h) + 2 * var(--space-2) + var(--divider-width));
         --aside-w: 20rem;
         --nav-icon-size: 18px;
