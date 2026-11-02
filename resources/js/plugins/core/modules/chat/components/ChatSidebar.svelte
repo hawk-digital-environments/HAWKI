@@ -203,6 +203,16 @@
         flex: 1;
         flex-direction: column;
         gap: var(--nav-group-gap);
+        /* The title and rows are text-only, so they start where the search glyph
+           visibly does: its ring begins 2/24 into the 18px icon box. */
+        --history-text-inset: calc(var(--nav-item-pad-x) + 1.5px);
+    }
+
+    /* The search icon is 20px here and pulled out by 1px (AppSidebar). */
+    @media (--bp-md-and-smaller) {
+        .chat-sidebar {
+            --history-text-inset: calc(var(--nav-item-pad-x) + 0.67px);
+        }
     }
 
     .history-section {
@@ -218,8 +228,7 @@
         flex-shrink: 0;
         align-items: center;
         justify-content: space-between;
-        /* Matches the rows (SidebarItem) so the title aligns with the row text. */
-        padding-left: var(--nav-item-pad-x);
+        padding-left: var(--history-text-inset);
     }
 
     .history-title {

@@ -138,6 +138,7 @@
     /* The label has to stop before the trigger, otherwise a long chat name
        runs underneath it. */
     .history-row :global(.sidebar-item) {
+        padding-left: var(--history-text-inset);
         padding-right: calc(var(--nav-row-h) - var(--action-gap));
     }
 
@@ -203,7 +204,7 @@
     .rename-input {
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
+        padding: 0 var(--space-2_5) 0 var(--history-text-inset);
         border: 1px solid var(--color-focus-ring);
         border-radius: var(--corner-sm);
         background: var(--color-surface-raised);
