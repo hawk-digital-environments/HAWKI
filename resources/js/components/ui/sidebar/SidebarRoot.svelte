@@ -53,7 +53,7 @@
 
     :global(:root) {
         --nav-row-h: 2.25rem;
-        --nav-group-gap: var(--space-3);
+        --nav-group-gap: var(--space-4);
     }
 
     .sidebar-layout {

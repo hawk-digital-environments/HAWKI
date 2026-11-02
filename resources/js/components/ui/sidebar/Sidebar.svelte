@@ -59,7 +59,7 @@
            the footer row doesn't sit on the edge. At the top the header brings
            its own inset, so the padding here is trimmed by that inset to leave
            a group gap above the header. */
-        padding: calc(var(--nav-group-gap) - var(--space-1)) var(--space-2) var(--space-3);
+        padding: calc(var(--nav-group-gap) - var(--space-1)) var(--space-2) var(--nav-group-gap);
         border-right: var(--divider);
     }
 

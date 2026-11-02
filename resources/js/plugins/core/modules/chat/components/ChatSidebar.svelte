@@ -213,10 +213,10 @@
     .group-label {
         margin: 0;
         /* Matches the horizontal rhythm of the rows (SidebarItem) so the label
-           aligns with the row text; the top margin separates it from the
-           previous group without touching the list's own row gap. */
-        padding: 0 var(--space-2_5) var(--space-1) var(--nav-item-pad-x);
-        margin-top: var(--space-3);
+           aligns with the row text. The list's row gap ties it to the rows below;
+           the top margin tops that gap up to the group gap above it. */
+        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
+        margin-top: calc(var(--nav-group-gap) - var(--space-1));
         font-size: var(--font-size-xxs);
         font-weight: var(--font-weight-medium, 500);
         letter-spacing: 0.05em;

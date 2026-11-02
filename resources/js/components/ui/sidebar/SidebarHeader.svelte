@@ -185,7 +185,7 @@
         /* A step beyond the sidebar's group gap: a switcher in the brand slot
            changes what the whole list below shows, so it gets clear separation
            from that list. */
-        --header-pad-bottom: var(--space-4);
+        --header-pad-bottom: var(--space-5);
         /* Height of each line that stacks under the toggle in the rail. */
         --search-line: 0px;
         --brand-line: 0px;
@@ -229,7 +229,7 @@
        own, so the row has to reserve those lines' height itself — they are
        absolutely positioned and would otherwise overlap the first nav item. */
     .sidebar-header:not(.open) {
-        --header-pad-bottom: calc(var(--space-4) + var(--search-line) + var(--brand-line));
+        --header-pad-bottom: calc(var(--space-5) + var(--search-line) + var(--brand-line));
     }
 
     /* The brand is positioned out of the flex line on purpose. In the flow it
