@@ -106,12 +106,15 @@ function insertOrUpdateSvelteBody(
 function addMessageToChatlog(messageObj, isFromServer = false, isStreaming = null) {
     isStreaming = isStreaming ?? !isFromServer;
     if (typeof messageObj.content === 'string') {
-        const content = unwrapJsonText(messageObj.content);
-        messageObj.content = typeof content === 'object'
-            ? content
-            : {text: content, attachments: []};
+        if (isValidJson(messageObj.content)) {
+            messageObj.content = JSON.parse(messageObj.content);
+        } else {
+            messageObj.content = {text: messageObj.content, attachments: []};
+        }
     }
-    messageObj.content.text = unwrapJsonText(messageObj.content.text);
+    if (typeof messageObj.content.text === 'string' && isValidJson(messageObj.content.text)) {
+        messageObj.content.text = JSON.parse(messageObj.content.text);
+    }
 
     const {messageText} = deconstContent(messageObj.content.text);
 
@@ -511,33 +514,6 @@ function deconstContent(inputContent) {
     }
 
     return createResult('');
-}
-
-
-/**
- * Unwraps legacy JSON-encoded message content: a JSON object (e.g. {"text": "..."}) or a JSON string ("...").
- * Everything else is returned unchanged, so plain text that happens to be valid JSON
- * (e.g. "123", "true", "null" or "[1, 2]") is kept as text instead of being turned into a number, boolean or array.
- * @param {*} value
- * @returns {*} the parsed object or string, or the original value
- */
-function unwrapJsonText(value) {
-    if (typeof value !== 'string') {
-        return value;
-    }
-    const trimmed = value.trim();
-    if (!trimmed.startsWith('{') && !trimmed.startsWith('"')) {
-        return value;
-    }
-    try {
-        const parsed = JSON.parse(trimmed);
-        if (typeof parsed === 'string' || (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))) {
-            return parsed;
-        }
-    } catch (e) {
-        // Not valid JSON, e.g. a message that just starts with "{"
-    }
-    return value;
 }
 
 

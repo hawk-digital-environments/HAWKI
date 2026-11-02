@@ -209,8 +209,11 @@ async function exportAsPDF() {
         // Calculate the height required for the full message
         const metadataHeight = lineHeight * 3; // Header (Message #, Author, Role, etc.)
 
-        const content = unwrapJsonText(msg.content);
-        msg.content = typeof content === 'object' ? content.text : content;
+        if (isValidJson(msg.content)) {
+            msg.content = JSON.parse(msg.content).text;
+        } else {
+            msg.content = msg.content;
+        }
 
         const wrappedContent = doc.splitTextToSize(msg.content, maxWidth); // Split text into lines
         const contentHeight = wrappedContent.length * lineHeight;
@@ -559,8 +562,11 @@ async function preparePrintPage() {
 
         for (const msg of messages) {
             const decryptedContent = await decryptWithSymKey(key, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-            const content = unwrapJsonText(decryptedContent);
-            msg.content.text = typeof content === 'object' ? content.text : content;
+            if (isValidJson(decryptedContent)) {
+                msg.content.text = JSON.parse(decryptedContent).text;
+            } else {
+                msg.content.text = decryptedContent;
+            }
         }
 
     } else {
@@ -577,9 +583,11 @@ async function preparePrintPage() {
         for (const msg of messages) {
             msgKey = msg.message_role === 'assistant' ? key.aiKey : key.roomKey;
             let decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-            decryptedContent = unwrapJsonText(decryptedContent);
-            if (typeof decryptedContent === 'object' && decryptedContent.text) {
-                decryptedContent = decryptedContent.text;
+            if (decryptedContent.startsWith('{') || decryptedContent.startsWith('"')) {
+                decryptedContent = JSON.parse(decryptedContent);
+                if (decryptedContent.text) {
+                    decryptedContent = decryptedContent.text;
+                }
             }
             msg.content.text = decryptedContent;
         }
