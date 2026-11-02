@@ -241,6 +241,16 @@
 {/if}
 
 <style>
+    /* Match the switcher trigger's spacing between the icon, label and indicator. */
+    :global(.command-palette .command-list .command-item),
+    :global(.command-sheet .command-list .command-item) {
+        gap: var(--space-2);
+    }
+
+    :global(.command-palette .command-list .item-check) {
+        padding-inline: 0;
+    }
+
     /* Touch-sized rows, like the other menus' sheets, with the same padding on
        both sides. The check drops its own padding so it doesn't add to the right. */
     :global(.command-sheet .command-list .command-item) {
