@@ -2,8 +2,8 @@ import type {HawkiModule} from '$lib/kernel/modules/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
 import BookOpenIcon from '$lib/components/ui/icons/iconset/BookOpenIcon.svelte';
+import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
 import CodeIcon from '$lib/components/ui/icons/iconset/CodeIcon.svelte';
-import Folder01Icon from '$lib/components/ui/icons/iconset/Folder01Icon.svelte';
 import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
 
 const loadPage = async () => import('./MockSpacePage.svelte');
@@ -33,10 +33,9 @@ class MockSpaceModule implements HawkiModule {
     }
 }
 
-/** The last one exercises the switcher's ellipsis and the menu's maximum width. */
 export const mockSpaces = (): HawkiModule[] => [
     new MockSpaceModule('mock-research', 'Research', BookOpenIcon),
     new MockSpaceModule('mock-writing', 'Writing', PencilEdit01Icon),
     new MockSpaceModule('mock-code', 'Code', CodeIcon),
-    new MockSpaceModule('mock-long-name', 'A space with a very long name for testing', Folder01Icon)
+    new MockSpaceModule('mock-assistants', 'Assistants', BotIcon)
 ];
