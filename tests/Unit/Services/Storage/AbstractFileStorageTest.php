@@ -17,12 +17,15 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\MockClock;
+use Tests\Concerns\FilesystemMockingTrait;
 use Tests\TestCase;
 use Tests\Unit\Services\Storage\AbstractFileStorageTestFixtures\ConcreteFileStorageStub;
 
 #[CoversClass(AbstractFileStorage::class)]
 class AbstractFileStorageTest extends TestCase
 {
+    use FilesystemMockingTrait;
+
     private const UUID = 'abcd1234-e29b-41d4-a716-446655440000';
 
     private ConcreteFileStorageStub $sut;
@@ -222,6 +225,105 @@ class AbstractFileStorageTest extends TestCase
     }
 
     // =========================================================================
+    // persistTemporaryFile
+    // =========================================================================
+
+    /**
+     * Regression test: persisting must never rely on moving the temp DIRECTORY, because
+     * drivers like s3 have no real directories and a "directory" move silently loses
+     * data there. Instead every file (including nested extract files) must be copied
+     * individually into the persistent folder.
+     */
+    public function testItPersistsTemporaryFileByCopyingEachFileInsteadOfMovingTheDirectory(): void
+    {
+        $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, self::UUID);
+        $tempFolder = 'temp/private/a/b/c/d/' . self::UUID;
+        $persistentFolder = 'private/a/b/c/d/' . self::UUID;
+
+        $tempFiles = [
+            $tempFolder . '/.meta.json',
+            $tempFolder . '/' . self::UUID . '.pdf',
+            $tempFolder . '/output/000-extract.md',
+        ];
+
+        $copied = [];
+        $filesystem = $this->mockFilesystem();
+        $filesystem->expects(static::once())->method('allFiles')->with($tempFolder)->willReturn($tempFiles);
+        $filesystem->expects(static::never())->method('move');
+        $filesystem->expects(static::exactly(3))->method('copy')->willReturnCallback(
+            static function (string $from, string $to) use (&$copied): bool {
+                $copied[$from] = $to;
+
+                return true;
+            }
+        );
+
+        $filesystem->expects(static::once())->method('deleteDirectory')->with($tempFolder);
+
+        $sut = new ConcreteFileStorageStub($this->makeContext(filesystem: $filesystem));
+
+        static::assertTrue($sut->persistTemporaryFile($identifier));
+
+        static::assertSame(
+            [
+                $tempFolder . '/.meta.json' => $persistentFolder . '/.meta.json',
+                $tempFolder . '/' . self::UUID . '.pdf' => $persistentFolder . '/' . self::UUID . '.pdf',
+                $tempFolder . '/output/000-extract.md' => $persistentFolder . '/output/000-extract.md',
+            ],
+            $copied
+        );
+    }
+
+    public function testItPersistsTemporaryFileSucceedsWhenTheTempFolderIsEmpty(): void
+    {
+        $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, self::UUID);
+        $tempFolder = 'temp/private/a/b/c/d/' . self::UUID;
+
+        $filesystem = $this->mockFilesystem();
+        $filesystem->expects(static::once())->method('allFiles')->with($tempFolder)->willReturn([]);
+        $filesystem->expects(static::never())->method('copy');
+        $filesystem->expects(static::never())->method('deleteDirectory');
+        $filesystem->expects(static::never())->method('move');
+
+        $sut = new ConcreteFileStorageStub($this->makeContext(filesystem: $filesystem));
+
+        static::assertTrue($sut->persistTemporaryFile($identifier));
+    }
+
+    public function testItPersistsTemporaryFileReturnsFalseWhenAFileCanNotBeCopied(): void
+    {
+        $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, self::UUID);
+        $tempFolder = 'temp/private/a/b/c/d/' . self::UUID;
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(static::once())->method('error');
+
+        $filesystem = $this->mockFilesystem();
+        $filesystem->method('allFiles')->willReturn([$tempFolder . '/' . self::UUID . '.pdf']);
+        $filesystem->method('copy')->willReturn(false);
+        $filesystem->expects(static::never())->method('deleteDirectory');
+
+        $sut = new ConcreteFileStorageStub($this->makeContext(logger: $logger, filesystem: $filesystem));
+
+        static::assertFalse($sut->persistTemporaryFile($identifier));
+    }
+
+    public function testItPersistsTemporaryFileReturnsFalseWhenTheFilesystemThrows(): void
+    {
+        $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, self::UUID);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(static::once())->method('error');
+
+        $filesystem = $this->mockFilesystem();
+        $filesystem->method('allFiles')->willThrowException(new \RuntimeException('disk offline'));
+
+        $sut = new ConcreteFileStorageStub($this->makeContext(logger: $logger, filesystem: $filesystem));
+
+        static::assertFalse($sut->persistTemporaryFile($identifier));
+    }
+
+    // =========================================================================
     // Helper
     // =========================================================================
 
@@ -229,13 +331,14 @@ class AbstractFileStorageTest extends TestCase
         array $allowedMimeTypes = [],
         int $maxFileSize = 10_000_000,
         LoggerInterface|null $logger = null,
+        Filesystem|null $filesystem = null,
     ): StorageServiceContext
     {
         return new StorageServiceContext(
             allowedMimeTypes: $allowedMimeTypes,
             maxFileSize: $maxFileSize,
             logger: $logger ?? $this->createStub(LoggerInterface::class),
-            filesystem: $this->createStub(Filesystem::class),
+            filesystem: $filesystem ?? $this->stubFilesystem(),
             urlGenerator: new UrlGenerator('web.storage.proxy'),
             contentExtractor: $this->createStub(ContentExtractor::class),
             attachmentRepository: $this->createStub(AttachmentRepository::class),

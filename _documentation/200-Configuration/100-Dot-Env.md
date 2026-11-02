@@ -129,13 +129,11 @@ Both tools are pre-installed in the official HAWKI Docker image. For bare-metal 
 
 ## Filesystem Storage
 
-Uploaded media files are typically stored on disk and served from an asset web server. However, to simplify the setup the uploaded files will be served by PHP by default, though this is not optimal for performance. Alternatively, Amazon S3, Nextcloud, or SFTP can be used.
-
-> **NOTE:** If you want to serve media files with your web server, choose "public" for FILESYSTEM_DISK. In this case make the server serve the files from the "storage/app/public" directory. The HTTP address must be your APP_URL followed by "/storage".
+Uploaded media files are stored on a configurable storage disk and are always served through the HAWKI storage proxy, which checks access rights before streaming the content. The storage disks for attachments and avatars are selected independently; local disk, Amazon S3, Nextcloud, or SFTP can be used.
 
 | Variable                  | Default Value      | Description                                                        |
 |---------------------------|--------------------|--------------------------------------------------------------------|
-| FILESYSTEM_DISK           | local              | Primary storage type: "local", "public", "s3", "nextcloud", "sftp" |
+| FILESYSTEM_DISK           | local              | Framework fallback disk — unused by HAWKI code; storage is resolved via STORAGE_DISK / AVATAR_STORAGE. Resolving it logs a runtime warning. Keep "local". |
 | STORAGE_DISK              | local_file_storage | Storage disk for file attachments                                  |
 | AVATAR_STORAGE            | public             | Storage disk for user avatars                                      |
 | REMOVE_FILES_AFTER_MONTHS | 6                  | Automatic file cleanup after X months                              |
@@ -183,7 +181,7 @@ If you are using our Docker image: Use the `MAX_UPLOAD_SIZE` variable in the Doc
 
 | Variable                  | Default Value | Description                                                                                                                                                                     |
 |---------------------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| MAX_FILE_SIZE             | 20971520      | The maximum file size for an uploaded file (e.g., attachment) in bytes. The default is 20 MB (20 * 1024 * 1024 bytes).                                                          |
+| MAX_FILE_SIZE             | 10485760      | The maximum file size for an uploaded file (e.g., attachment) in bytes. The default is 10 MB (10 * 1024 * 1024 bytes). The effective limit is additionally capped by the PHP `upload_max_filesize` / `post_max_size` settings (see `MAX_UPLOAD_SIZE` above for the Docker image). |
 | MAX_AVATAR_FILE_SIZE      | 2097152       | The maximum file size for an avatar in bytes. The default is 2 MB (2 * 1024 * 1024 bytes).                                                                                      |
 | ALLOWED_FILE_MIME_TYPES   |               | A comma-separated list of allowed MIME types for uploaded files (e.g., "image/jpeg,image/png,application/pdf"). If empty, the defaults are defined in the file storage service. |
 | ALLOWED_AVATAR_MIME_TYPES |               | A comma-separated list of allowed MIME types for uploaded avatars (e.g., "image/jpeg,image/png"). If empty, the defaults are defined in the avatar storage service.             |
