@@ -227,7 +227,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
 
         $this->enrichChatLimits($modelInfo, maxInputTokens: $modelData['max_tokens']);
 
-        $this->enrichNativeCapabilities($modelInfo, $modelData['native_capabilities'] ?? null);
+        $this->enrichNativeCapabilities($modelInfo, $modelData['native_capabilities']);
 
         if ($modelInfo->documentation_url === GwdgAdapter::DEFAULT_DOCUMENTATION_URL) {
             $modelInfo->documentation_url = $modelData['documentation_url'];
