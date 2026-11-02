@@ -23,6 +23,9 @@
     import {mergeProps} from 'bits-ui';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import ArrowDown01Icon from '$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte';
+    import {iconSwap} from '$lib/utils/transitions/iconSwap.js';
+    import {textPopIn} from '$lib/utils/transitions/textPopIn.js';
+    import {textSlideIn} from '$lib/utils/transitions/textSlideIn.js';
 
     interface Props extends HTMLButtonAttributes {
         /** Text of the entry the trigger currently stands for. */
@@ -42,17 +45,21 @@
     {...mergeProps(rest, {class: ['section-trigger', className]})}
 >
     <span class="icon-wrap">
-        {#if Icon}
-            <Icon size={18} strokeWidth={2} aria-hidden="true" />
-        {/if}
+        {#key Icon}
+            {#if Icon}
+                <span class="icon" transition:iconSwap>
+                    <Icon size={18} strokeWidth={2} aria-hidden="true" />
+                </span>
+            {/if}
+        {/key}
     </span>
-    <span class="label">{label}</span>
+    <span class="label" use:textSlideIn={label}></span>
     <span class="indicator" aria-hidden="true">
         <span class="chevron">
             <ArrowDown01Icon size={16} strokeWidth={2} />
         </span>
         {#if shortcut}
-            <span class="shortcut">{shortcut}</span>
+            <span class="shortcut" use:textPopIn={shortcut}></span>
         {/if}
     </span>
 </button>
@@ -100,11 +107,17 @@
         outline-offset: 1px;
     }
 
+    /* Old and new icon overlap in one cell while they swap. */
     .icon-wrap {
-        display: inline-flex;
+        display: inline-grid;
         align-items: center;
-        justify-content: center;
+        justify-items: center;
         flex-shrink: 0;
+    }
+
+    .icon {
+        display: inline-flex;
+        grid-area: 1 / 1;
     }
 
     .label {
