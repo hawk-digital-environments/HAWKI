@@ -19,6 +19,8 @@
 - Tool-call progress never reached the UI during streaming because the stream handler matched the tool-call *data* class instead of the stream *event*. Tool calls are now reported for every provider as `tool_call`/`tool_result` packets.
 - MCP tools failed because processes were decoupled using `autoSse=true` (the default). New default is `autoSse=false`. 
 - Per-provider AI request timeouts via the `adapter` settings in `model_providers.php`: `request_timeout` (default 60 seconds, `0` = no limit) limits the complete answer of non-streaming requests. `stall_timeout` (default off) aborts a stream that receives no data for this many seconds, before or mid-stream — like HAWKI 2.4, streams are never cut off while they receive data, and silent streams are no longer aborted after 60 seconds. Supported drivers for stall detection: `openai-compatible`, `ollama`. GWDG ships with the HAWKI 2.4 behaviour (`request_timeout=0`, `stall_timeout=120`, via `GWDG_REQUEST_TIMEOUT`/`GWDG_STALL_TIMEOUT`).
+- Large chat messages fail to encrypt with a `RangeError: too many arguments provided for a function call`: the client-side encryption encoded the ciphertext with one `String.fromCharCode.apply()` over every byte, which exceeds the browser's argument limit at roughly 100k bytes. Base64 conversion now runs in 32k chunks, in both the encryption utils and the legacy bundle.
+- Multiple Mermaid diagram previews failed to render at the same time: generated diagrams could receive duplicate render IDs, causing the renderer to silently draw only one and skip the rest. Fixed upstream in `markstream` 2.0.15.
 
 ### Internals
 
