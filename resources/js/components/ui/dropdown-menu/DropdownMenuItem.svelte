@@ -110,6 +110,12 @@
         }
     }
 
+    /* Text-only menus get a little more room on the left. Decided per menu rather
+       than per row, so rows stay aligned in a menu that mixes in an icon. */
+    :global(.dropdown-content:not(:has(.dropdown-item svg))) .dropdown-item {
+        padding-inline-start: var(--space-2_5);
+    }
+
     .dropdown-item[data-highlighted] {
         background-color: var(--color-hover);
         color: var(--color-text);
