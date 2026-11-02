@@ -48,8 +48,8 @@
             "noImprovementModel": "Es ist kein Modell verfügbar, um die Nachricht zu verbessern.",
             "noConversationOpen": "Es ist keine Unterhaltung geöffnet.",
             "requestFailed": "Die KI-Anfrage ist fehlgeschlagen.",
-            "welcomeTitle": "Frag los, :name",
-            "welcomeTitleAnonymous": "Frag los",
+            "welcomeTitle": "Frag los, :name.",
+            "welcomeTitleAnonymous": "Frag los.",
             "welcomeDescription": "Starte eine private, verschlüsselte Unterhaltung mit HAWKI.",
             "disclaimer": "KI kann Fehler machen. Prüfe wichtige Informationen."
         },
