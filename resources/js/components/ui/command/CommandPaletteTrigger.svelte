@@ -159,10 +159,17 @@
     }
 
     /* Bumped up a notch for easier tapping on small screens, like the sidebar's
-       rows. */
+       rows. The grown glyph spills out of its pinned column, so the margin returns
+       the spill. */
     @media (--bp-md-and-smaller) {
         .section-trigger {
             font-size: var(--font-size-sm);
+        }
+
+        .icon-wrap {
+            width: var(--nav-icon-size);
+            margin-right: calc((var(--space-5) - var(--nav-icon-size)) / 2);
+            justify-content: center;
         }
 
         .icon-wrap :global(svg) {
