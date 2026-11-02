@@ -139,7 +139,7 @@ async function exportPdf(
         'padding: 48px',
         'box-sizing: border-box',
         'background: white',
-        'color: black',
+        'color: #313131',
         'font: 14px/1.5 Arial, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'
     ].join(';');
     const existingOverlays = new Set(document.querySelectorAll('.html2pdf__overlay'));
