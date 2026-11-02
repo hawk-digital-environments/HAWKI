@@ -59,7 +59,7 @@
         gap: var(--space-2_5);
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
+        padding: 0 calc(var(--space-2_5) + var(--nav-pad-extra)) 0 var(--nav-item-pad-x);
         overflow: hidden;
         flex-shrink: 0;
         border: 0;

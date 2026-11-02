@@ -66,6 +66,7 @@
         grid-template-areas: 'nav main aside';
         transition:
             --nav-track 280ms var(--easing-spring),
+            --nav-pad-extra 280ms var(--easing-spring),
             --aside-track 280ms var(--easing-spring);
 
         --nav-w: 20rem;
@@ -73,8 +74,11 @@
         --aside-w: 20rem;
         --nav-icon-size: 18px;
         --nav-icon-color: oklch(65% 0 0); /* #8F8F8F */
+        /* The first term centres the icon in the rail, where the extra is zero. */
+        --nav-pad-extra: var(--space-0_5);
         --nav-item-pad-x: calc(
-            (var(--rail-w) - 2 * var(--space-2) - var(--divider-width) - var(--nav-icon-size)) / 2
+            (var(--rail-w) - 2 * var(--space-2) - var(--divider-width) - var(--nav-icon-size)) / 2 +
+                var(--nav-pad-extra)
         );
         --nav-track: var(--nav-w);
         --aside-track: 0rem;
@@ -93,6 +97,7 @@
 
     .sidebar-layout:not(.nav-open) {
         --nav-track: var(--rail-w);
+        --nav-pad-extra: 0px;
     }
 
     @media (--bp-lg-and-smaller) {
