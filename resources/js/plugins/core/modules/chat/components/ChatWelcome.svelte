@@ -41,7 +41,7 @@ on the page element.
         margin-bottom: var(--space-4);
         place-items: center;
         border-radius: var(--corner-lg);
-        background: var(--color-surface);
+        background: var(--color-surface-light);
         color: var(--color-text);
     }
 
