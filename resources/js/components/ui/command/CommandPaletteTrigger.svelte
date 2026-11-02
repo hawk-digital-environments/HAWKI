@@ -109,10 +109,6 @@
             color var(--duration-fast);
     }
 
-    .section-trigger:hover {
-        background: var(--color-hover);
-    }
-
     /* Open: the trigger takes the same wash *and* text colour the sidebar gives
        its active row, so an open palette reads as "you are here" in the nav's
        own language. */

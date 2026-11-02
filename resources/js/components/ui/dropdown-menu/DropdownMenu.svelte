@@ -48,6 +48,7 @@
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
+    import DropdownMenuHoverHighlight from '$lib/components/ui/dropdown-menu/DropdownMenuHoverHighlight.svelte';
 
     interface Props {
         /** Whether the dropdown is open. Supports bind:open. */
@@ -161,6 +162,9 @@
         {#snippet children()}
             <DropdownMenuPrimitive.Portal>
                 <DropdownMenuPrimitive.Content {...mergeProps(fullContentProps, {class: 'dropdown-content--dropdown'}) as any}>
+                    {#if layout === 'list'}
+                        <DropdownMenuHoverHighlight/>
+                    {/if}
                     {#if title}
                         <div class="dropdown-title">
                             <SnippetOrString value={title}/>
@@ -177,6 +181,7 @@
     :global(.dropdown-content.dropdown-content--dropdown) {
         --dropdown-bg: var(--color-surface-raised);
 
+        position: relative;
         /* Above sticky/faded chrome like the chat header overlay. bits-ui copies
            this z-index onto the floating wrapper it positions the panel with. */
         z-index: var(--layer-overlay);

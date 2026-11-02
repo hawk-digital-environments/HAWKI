@@ -30,6 +30,7 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import DropdownMenuHoverHighlight from '$lib/components/ui/dropdown-menu/DropdownMenuHoverHighlight.svelte';
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Whether the submenu is open. Supports bind:open. */
@@ -91,6 +92,7 @@
     </DropdownMenuPrimitive.SubTrigger>
     <DropdownMenuPrimitive.Portal>
         <DropdownMenuPrimitive.SubContent {...fullContentProps as any}>
+            <DropdownMenuHoverHighlight/>
             {@render children?.()}
         </DropdownMenuPrimitive.SubContent>
     </DropdownMenuPrimitive.Portal>

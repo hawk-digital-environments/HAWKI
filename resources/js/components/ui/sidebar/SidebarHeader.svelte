@@ -7,8 +7,10 @@
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
+    import type {Attachment} from 'svelte/attachments';
     import type {HTMLAttributes} from 'svelte/elements';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
+    import {createProximityHover} from '$lib/utils/proximityHover.svelte.js';
     import PanelLeftIcon from '$lib/components/ui/icons/iconset/PanelLeftIcon.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
@@ -46,9 +48,73 @@
             setTimeout(() => document.getElementById('mobile-navigation-trigger')?.focus());
         }
     }
+
+    // ── Magnetic hover ───────────────────────────────────────────────────
+    // One highlight glides between the brand and the actions: along the row while
+    // the nav is open, down the stack in the rail.
+
+    /** Keeps the highlight on while the pointer crosses the gap between two items. */
+    const GAP_SLACK = 4;
+
+    const hover = createProximityHover({axis: () => (open ? 'x' : 'y')});
+    const hoverRect = $derived(hover.activeIndex !== null ? hover.itemRects[hover.activeIndex] : null);
+
+    const attachHover: Attachment<HTMLElement> = (header) => {
+        hover.setContainer(header);
+        let items: HTMLElement[] = [];
+
+        function syncItems() {
+            items = Array.from(header.querySelectorAll<HTMLElement>('.brand:not([inert]), .header-action'));
+            items.forEach((item, index) => hover.registerItem(index, item));
+        }
+
+        function nearItem(event: MouseEvent) {
+            return items.some(item => {
+                const r = item.getBoundingClientRect();
+                return event.clientX >= r.left - GAP_SLACK && event.clientX <= r.right + GAP_SLACK
+                    && event.clientY >= r.top - GAP_SLACK && event.clientY <= r.bottom + GAP_SLACK;
+            });
+        }
+
+        const onmouseenter = () => {
+            syncItems();
+            hover.handlers.onmouseenter();
+        };
+        const onmousemove = (event: MouseEvent) => {
+            syncItems();
+            if (nearItem(event)) hover.handlers.onmousemove(event);
+            else hover.handlers.onmouseleave();
+        };
+
+        header.addEventListener('mouseenter', onmouseenter);
+        header.addEventListener('mousemove', onmousemove);
+        header.addEventListener('mouseleave', hover.handlers.onmouseleave);
+        return () => {
+            header.removeEventListener('mouseenter', onmouseenter);
+            header.removeEventListener('mousemove', onmousemove);
+            header.removeEventListener('mouseleave', hover.handlers.onmouseleave);
+            hover.setContainer(null);
+        };
+    };
+
+    // The items move when the nav collapses, leaving the measured rect behind.
+    // The next pointer move brings the highlight back on the item's new position.
+    $effect(() => {
+        void open;
+        hover.handlers.onmouseleave();
+    });
 </script>
 
-<div {...restProps} class={["sidebar-header", className]} class:open>
+<div {...restProps} class={["sidebar-header", className]} class:open {@attach attachHover}>
+    {#if hoverRect}
+        <span
+            class="hover-bg"
+            style:top="{hoverRect.top}px"
+            style:left="{hoverRect.left}px"
+            style:width="{hoverRect.width}px"
+            style:height="{hoverRect.height}px"
+        ></span>
+    {/if}
     {#if children}
         {#if brandHref}
             <a class="brand" href={brandHref} onclick={onBrandClick} inert={!open}>{@render children()}</a>
@@ -193,7 +259,6 @@
         border-radius: var(--corner-sm);
         transition:
             opacity 160ms ease 100ms,
-            background var(--duration-fast),
             transform 280ms var(--easing-spring);
     }
 
@@ -206,10 +271,18 @@
         padding: 0 calc((var(--nav-row-h) - var(--nav-icon-size)) / 2);
     }
 
-    /* Same hover surface the header actions use, so the brand reads as part of
-       the same row. Suppressed in the rail, where the brand is faded out. */
-    .sidebar-header.open a.brand:hover {
+    /* Magnetic highlight behind the brand and the actions, all positioned and
+       later in the row. Same travel as the sidebar's list highlight. */
+    .hover-bg {
+        position: absolute;
+        pointer-events: none;
         background: var(--color-hover);
+        border-radius: var(--corner-sm);
+        transition:
+            top 200ms var(--easing-spring),
+            left 200ms var(--easing-spring),
+            width 200ms var(--easing-spring),
+            height 200ms var(--easing-spring);
     }
 
     .sidebar-header:not(.open) a.brand {
@@ -226,6 +299,7 @@
     }
 
     .header-action {
+        position: relative;
         flex-shrink: 0;
         display: inline-flex;
         align-items: center;
@@ -242,7 +316,6 @@
         border-radius: var(--corner-sm);
         transition:
             color var(--duration-fast),
-            background var(--duration-fast),
             transform 280ms var(--easing-spring);
     }
 
@@ -285,7 +358,6 @@
 
     .header-action:hover {
         color: var(--color-text);
-        background: var(--color-hover);
     }
 
     /* Bump the chrome up a notch for easier tapping on small screens. The box
