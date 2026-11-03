@@ -1,5 +1,5 @@
 import type {Attachment} from 'svelte/attachments';
-import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
+import {createStableContext} from '$lib/utils/stableContext.js';
 
 export interface MenuListItemState {
     active: boolean;
@@ -12,7 +12,7 @@ export interface MenuListContextValue {
     setState: (index: number, state: MenuListItemState) => void;
 }
 
-const [getMenuListContext, setMenuListContext] = createHmrSafeContext<MenuListContextValue>('hawki.menu-list');
+const [getMenuListContext, setMenuListContext] = createStableContext<MenuListContextValue>('hawki.menu-list');
 
 export function provideMenuList(context: MenuListContextValue): void {
     setMenuListContext(context);
