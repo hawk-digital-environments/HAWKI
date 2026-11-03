@@ -3,8 +3,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Ai\ConfigFileSync\Syncers;
 
+use App\Models\Ai\AiModel;
+use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Syncers\ModelAndProviderSyncer;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
+use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
+use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 use App\Services\Ai\Models\Repositories\AiModelDescriptionRepository;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\Models\Repositories\AiModelUsageRuleRepository;
@@ -133,5 +137,144 @@ class ModelAndProviderSyncerTest extends TestCase
         $sut->sync($metrics);
 
         static::assertTrue($metrics->hasErrors());
+    }
+
+    // =========================================================================
+    // sync — identifier constraints
+    // =========================================================================
+
+    public function testItRecordsErrorForProviderIdContainingTheIdentifierSeparator(): void
+    {
+        $providerRepository = $this->createMock(AiProviderRepository::class);
+        $providerRepository->expects(static::never())->method('upsert');
+
+        $sut = new ModelAndProviderSyncer(
+            providers: ['my/provider' => ['active' => true, 'adapter_key' => 'openai', 'models' => []]],
+            modelRepository: $this->createMock(AiModelRepository::class),
+            modelDescriptionRepository: $this->createMock(AiModelDescriptionRepository::class),
+            providerRepository: $providerRepository,
+            providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
+            useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
+            modelInfoFetcher: $this->createMock(ModelInfoFetcher::class),
+        );
+        $metrics = new JobMetrics('test', new NullLogger());
+
+        $sut->sync($metrics);
+
+        static::assertTrue($metrics->hasErrors());
+    }
+
+    public function testItSyncsAModelIdOnlyOncePerProvider(): void
+    {
+        $providerRepository = $this->createMock(AiProviderRepository::class);
+        $providerRepository->method('upsert')->willReturn(new AiProvider(['provider_id' => 'gwdg']));
+        $modelRepository = $this->createMock(AiModelRepository::class);
+        $modelRepository->expects(static::once())->method('upsert')->willReturn(new AiModel());
+
+        $sut = new ModelAndProviderSyncer(
+            providers: ['gwdg' => ['active' => true, 'adapter_key' => 'openai', 'models' => [
+                ['id' => 'gemma-4-31b-it'],
+                ['id' => 'gemma-4-31b-it'],
+            ]]],
+            modelRepository: $modelRepository,
+            modelDescriptionRepository: $this->createMock(AiModelDescriptionRepository::class),
+            providerRepository: $providerRepository,
+            providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
+            useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
+            modelInfoFetcher: $this->createMock(ModelInfoFetcher::class),
+        );
+        $metrics = new JobMetrics('test', new NullLogger());
+
+        $sut->sync($metrics);
+
+        static::assertTrue($metrics->hasErrors());
+    }
+
+    // =========================================================================
+    // sync — native capabilities config flag
+    // =========================================================================
+
+    private function makeSyncerCapturingModelUpsert(array $modelConfig, ModelInfoFetcher $modelInfoFetcher, array|null &$capturedUpsert): ModelAndProviderSyncer
+    {
+        $providerRepository = $this->createMock(AiProviderRepository::class);
+        $providerRepository->method('upsert')->willReturn(new AiProvider(['provider_id' => 'gwdg']));
+
+        $modelRepository = $this->createMock(AiModelRepository::class);
+        $modelRepository->method('upsert')->willReturnCallback(function (...$args) use (&$capturedUpsert) {
+            $capturedUpsert = $args;
+            return new AiModel();
+        });
+
+        return new ExposedModelAndProviderSyncer(
+            providers: ['gwdg' => ['active' => true, 'adapter_key' => 'openai', 'models' => [$modelConfig]]],
+            modelRepository: $modelRepository,
+            modelDescriptionRepository: $this->createMock(AiModelDescriptionRepository::class),
+            providerRepository: $providerRepository,
+            providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
+            useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
+            modelInfoFetcher: $modelInfoFetcher,
+        );
+    }
+
+    private function makeFetchedModelWithNativeCapabilities(): AiModel
+    {
+        $fetched = new AiModel(['model_id' => 'gemma-4-31b-it']);
+        $fetched->native_capabilities = NativeAiModelCapabilities::fromArray([WellKnownCapabilities::WEB_SEARCH]);
+
+        return $fetched;
+    }
+
+    public function testItStripsFetchedNativeCapabilitiesWhenTheConfigDeniesThem(): void
+    {
+        $modelInfoFetcher = $this->createMock(ModelInfoFetcher::class);
+        $modelInfoFetcher->method('fetchSingle')->willReturn($this->makeFetchedModelWithNativeCapabilities());
+
+        $capturedUpsert = null;
+        $sut = $this->makeSyncerCapturingModelUpsert(
+            ['id' => 'gemma-4-31b-it', 'tools' => ['tool_calling' => true, 'native_capabilities' => false]],
+            $modelInfoFetcher,
+            $capturedUpsert
+        );
+
+        $sut->sync(new JobMetrics('test', new NullLogger()));
+
+        static::assertNotNull($capturedUpsert);
+        static::assertSame([], $capturedUpsert[12]->toArray());
+    }
+
+    public function testItKeepsFetchedNativeCapabilitiesWhenTheConfigAllowsThem(): void
+    {
+        $modelInfoFetcher = $this->createMock(ModelInfoFetcher::class);
+        $modelInfoFetcher->method('fetchSingle')->willReturn($this->makeFetchedModelWithNativeCapabilities());
+
+        $capturedUpsert = null;
+        $sut = $this->makeSyncerCapturingModelUpsert(
+            ['id' => 'gemma-4-31b-it', 'tools' => ['tool_calling' => true, 'native_capabilities' => true]],
+            $modelInfoFetcher,
+            $capturedUpsert
+        );
+
+        $sut->sync(new JobMetrics('test', new NullLogger()));
+
+        static::assertNotNull($capturedUpsert);
+        static::assertTrue($capturedUpsert[12]->hasWebSearch());
+    }
+
+    public function testItStripsFetchedNativeCapabilitiesWhenToolCallingIsOff(): void
+    {
+        $modelInfoFetcher = $this->createMock(ModelInfoFetcher::class);
+        $modelInfoFetcher->method('fetchSingle')->willReturn($this->makeFetchedModelWithNativeCapabilities());
+
+        $capturedUpsert = null;
+        $sut = $this->makeSyncerCapturingModelUpsert(
+            ['id' => 'gemma-4-31b-it', 'tools' => ['tool_calling' => false, 'native_capabilities' => true]],
+            $modelInfoFetcher,
+            $capturedUpsert
+        );
+
+        $sut->sync(new JobMetrics('test', new NullLogger()));
+
+        static::assertNotNull($capturedUpsert);
+        static::assertSame([], $capturedUpsert[12]->toArray());
     }
 }

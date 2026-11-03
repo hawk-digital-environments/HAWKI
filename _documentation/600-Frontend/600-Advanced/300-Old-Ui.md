@@ -74,7 +74,7 @@ Both functions are used throughout the legacy UI JavaScript (`public/js/`) and i
 | `window.buildStorageFileUrl(id)` | `function` | Builds the proxied URL for a stored file. |
 | `window.getFileIconSvg(ext)` | `function` | Returns an inline SVG file-type icon for an extension. |
 | `window.getAiModels()` | `function` | Returns the current `ai-models` store's `models` array. |
-| `window.getAiModel(id)` | `function` | Returns the model matching `id`, or `null`. Accepts numeric ID or `model_id` string. |
+| `window.getAiModel(id)` | `function` | Returns the model matching `id`, or `null`. Accepts numeric ID or provider-qualified `model_id` string (`<provider_id>/<model_id>`). |
 | `window.getSystemModel(modelType)` | `function` | Returns the model assigned to a system role (e.g. `'default'`), or `null`. |
 | `window.getSystemPrompt(promptType)` | `function` | Returns the `prompt` string for a well-known system prompt type, or `null`. |
 

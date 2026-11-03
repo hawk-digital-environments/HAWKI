@@ -6,6 +6,8 @@ namespace App\Services\Ai\ConfigFileSync\Syncers;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
+use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
+use App\Services\Ai\Models\Identifiers\Values\AiModelIdentifier;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\ModelTypes\Values\WellKnownModelTypes;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
@@ -73,8 +75,27 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         }
     }
 
+    /**
+     * Creates the empty settings object each synced model starts from. Overridden by tests to
+     * inject the setting registry declarations the settings object validates its keys against.
+     */
+    protected function makeModelSettings(): AiModelSettings
+    {
+        return AiModelSettings::fromArray([]);
+    }
+
     private function syncProvider(string $providerId, array $config, JobMetrics $metrics): void
     {
+        if (str_contains($providerId, AiModelIdentifier::SEPARATOR)) {
+            $metrics->error(sprintf(
+                'The provider ID "%s" must not contain "%s", because it is used as prefix of the model identifiers ("<provider_id>%s<model_id>").',
+                $providerId,
+                AiModelIdentifier::SEPARATOR,
+                AiModelIdentifier::SEPARATOR
+            ));
+            return;
+        }
+
         $adapterKey = $config['adapter_key'] ?? self::BUILT_IN_PROVIDER_ID_TO_ADAPTER_KEY_MAP[$providerId] ?? null;
         if (empty($adapterKey)) {
             $metrics->error(sprintf(
@@ -110,6 +131,15 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
 
         $syncedModelIds = [];
         foreach ($config['models'] ?? [] as $modelConfig) {
+            if (in_array($modelConfig['id'] ?? null, $syncedModelIds, true)) {
+                $metrics->error(sprintf(
+                    'The model ID "%s" is configured more than once for provider "%s", only the first entry is used.',
+                    $modelConfig['id'],
+                    $providerId
+                ));
+                continue;
+            }
+
             $modelId = $this->syncModel($provider, $modelConfig, $metrics);
             if (!empty($modelId)) {
                 $syncedModelIds[] = $modelId;
@@ -128,7 +158,7 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             return null;
         }
 
-        $settings = AiModelSettings::fromArray([]);
+        $settings = $this->makeModelSettings();
         if (!empty($config['max_tool_calling_rounds'])) {
             $settings->setMaxToolCallingRounds((int)$config['max_tool_calling_rounds'], streaming: false);
         }
@@ -155,6 +185,13 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         }
 
         $modelInfo = $this->modelInfoFetcher->fetchSingle($this->providerProxyResolver->resolve($provider), $modelId);
+
+        // The config flag `tools.native_capabilities` is the authority for config-synced models: when it
+        // denies native capabilities (explicitly, or implicitly via `tool_calling` being off), capabilities
+        // fetched from the provider are dropped so HAWKI's own tool implementations are used instead.
+        if ($modelInfo !== null && !$settings->canUseNativeCapabilities() && !empty($modelInfo->native_capabilities->toArray())) {
+            $modelInfo->native_capabilities = NativeAiModelCapabilities::fromArray([]);
+        }
 
         $model = $this->modelRepository->upsert(
             modelType: $modelInfo->model_type ?? WellKnownModelTypes::CHAT,
