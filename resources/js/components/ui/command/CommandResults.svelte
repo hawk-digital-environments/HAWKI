@@ -116,15 +116,13 @@
                             {:else}
                                 <span class="item-label">{item.label}</span>
                             {/if}
-                            {#if item.shortcut}
-                                <span class="item-shortcut" aria-hidden="true">{item.shortcut}</span>
-                            {/if}
-                            {#if current !== undefined}
-                                <!-- The check keeps its slot at all times so labels
-                                     never shift as the selection moves between rows. -->
-                                <span class="item-check" class:on={current === item.value} aria-hidden="true">
+                            <!-- The current row's check takes the place of its shortcut hint. -->
+                            {#if current === item.value}
+                                <span class="item-check" aria-hidden="true">
                                     <TickIcon size={15} strokeWidth={2.5} />
                                 </span>
+                            {:else if item.shortcut}
+                                <span class="item-shortcut" aria-hidden="true">{item.shortcut}</span>
                             {/if}
                         </CommandPrimitive.Item>
                     {/each}
@@ -269,10 +267,8 @@
         opacity: 1;
     }
 
-    /* Every row shows its hint while the shortcut modifier is held; rows that
-       aren't hovered have no tint of their own to inherit. */
+    /* Every row shows its hint while the shortcut modifier is held. */
     :global(.shortcuts-held .command-list .item-shortcut) {
-        color: var(--color-accent-text);
         opacity: 1;
     }
 
@@ -281,27 +277,17 @@
         flex-shrink: 0;
         padding-inline: var(--space-1);
         color: var(--color-active-text);
-        opacity: 0;
-        transform: scale(0.7);
-        transition:
-            opacity 140ms var(--easing-default),
-            transform 200ms var(--easing-spring);
-    }
-
-    :global(.command-list .item-check.on) {
-        opacity: 1;
-        transform: scale(1);
     }
 
     /* The current row wears the sidebar's active highlight — same surface and
        ink as the nav's sliding highlight — whether or not it is also the row
        the keyboard/pointer is on. */
-    :global(.command-list .command-item:has(.item-check.on)) {
+    :global(.command-list .command-item:has(.item-check)) {
         background-color: var(--color-active-surface);
         color: var(--color-active-text);
     }
 
-    :global(.command-list .command-item:has(.item-check.on) .item-icon) {
+    :global(.command-list .command-item:has(.item-check) .item-icon) {
         color: inherit;
     }
 

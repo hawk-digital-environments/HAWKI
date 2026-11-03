@@ -301,13 +301,17 @@
         max-height: calc(100dvh - 8rem);
     }
 
+    /* Unselected rows are all in the gray of the sidebar's own row icons. */
+    :global(.command-palette--contained .command-list .command-item:not(:has(.item-check))) {
+        color: var(--color-nav-icon);
+    }
+
     :global(.command-palette--contained .command-item:not([data-disabled]):hover),
     :global(.command-palette--contained .command-root.armed .command-item[data-selected]) {
         color: var(--color-accent-text);
     }
 
-    :global(.command-palette--contained .command-item:not([data-disabled]):hover .item-icon),
-    :global(.command-palette--contained .command-root.armed .command-item[data-selected] .item-icon) {
+    :global(.command-palette--contained .command-list .item-icon) {
         color: inherit;
     }
 
