@@ -2,7 +2,7 @@
   @component General-purpose button primitive.
 
   Supports seven `variant` styles — `fill`, `accent`, `surface`, `stroke`, `ghost`,
-  `iconGhost`, `delete` — and three `size` options — `xs`, `sm`, `md`. Renders a native
+  `iconGhost`, `delete` (destructive) — and three `size` options — `xs`, `sm`, `md`. Renders a native
   `<button>` element and forwards all `HTMLButtonAttributes` via rest-props.
 
   If `iconLeft` and/or `iconRight` are given without `children`, the button
@@ -203,21 +203,13 @@
 
     /* ── Variants ──────────────────────────────────────────────────────── */
 
-    .btn--accent:not(:disabled) {
-        --btn-bg: var(--color-accent-fill);
-        --btn-color: var(--color-on-interactive);
-        --btn-bg-hover: var(--color-accent-fill-hover);
-    }
-
-    :global(html.darkMode) .btn--accent:not(:disabled) {
-        --btn-color: var(--color-accent-text);
-    }
-
+    /* The light accent tint of the sidebar's action row ("New chat"); the hover leans
+       toward the text color, so it deepens the tint. */
     .btn--fill,
     .btn--accent {
-        --btn-bg: var(--color-interactive);
-        --btn-bg-hover: var(--color-interactive-hover);
-        --btn-color: var(--color-on-interactive);
+        --btn-bg: var(--color-accent-100);
+        --btn-bg-hover: color-mix(in oklab, var(--color-accent-100) 85%, var(--color-accent-text));
+        --btn-color: var(--color-accent-text);
 
         background: var(--btn-bg);
         color: var(--btn-color);
@@ -233,6 +225,10 @@
             --btn-bg: var(--color-disabled-bg);
             --btn-color: var(--color-text-disabled);
         }
+    }
+
+    :global(html.darkMode) :is(.btn--fill, .btn--accent) {
+        --btn-bg-hover: var(--color-accent-fill-hover);
     }
 
     /* A neutral filled pill that sits a step lighter than the surface it is on, so the
@@ -311,17 +307,33 @@
         --btn-color: var(--color-text);
     }
 
+    /* The destructive counterpart of the accent tint: the same light fill and deepening
+       hover, in the error hue. Mixed against transparent so it tints any surface. */
     .btn--delete {
-        --btn-bg: var(--color-error);
-        --btn-color: var(--color-text-invert);
+        --btn-bg: color-mix(in oklab, var(--color-error) 12%, transparent);
+        --btn-bg-hover: color-mix(in oklab, var(--color-error) 22%, transparent);
+        --btn-color: var(--color-error);
 
         background: var(--btn-bg);
         color: var(--btn-color);
         border-color: transparent;
 
         &:not(:disabled):hover {
-            --btn-bg: color-mix(in oklch, var(--color-error) 85%, black);
+            --btn-bg: var(--btn-bg-hover);
         }
+
+        &:disabled {
+            opacity: 1;
+            --btn-bg: var(--color-disabled-bg);
+            --btn-color: var(--color-text-disabled);
+        }
+    }
+
+    /* The error red is too dark to read on dark chrome, so the label lifts toward white. */
+    :global(html.darkMode) .btn--delete:not(:disabled) {
+        --btn-bg: color-mix(in oklab, var(--color-error) 25%, transparent);
+        --btn-bg-hover: color-mix(in oklab, var(--color-error) 35%, transparent);
+        --btn-color: color-mix(in oklab, var(--color-error) 60%, white);
     }
 
     /* ── Sizes ─────────────────────────────────────────────────────────── */
