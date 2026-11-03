@@ -69,7 +69,7 @@ Tracks the currently selected AI model and exposes derived capability flags the 
 | `allowsToolCalling` | `boolean` (derived) | Shorthand for `model.settings.tool_calling`. Use to show/hide the tool menu. |
 | `hasVision` | `boolean` (derived) | `true` when the model accepts file uploads **and** lists `'image'` as a supported input type. |
 
-**`set(model)`** — selects a new model. Accepts an `AiModel` object, a `model_id` string, a numeric model `id`, or `null` (falls back to the "default" system model). On switch, sampling parameters reset to the new model's defaults unless the user had already modified them (`modelParameters.isModified`).
+**`set(model)`** — selects a new model. Accepts an `AiModel` object, a provider-qualified `model_id` string (`<provider_id>/<model_id>`), a numeric model `id`, or `null` (falls back to the "default" system model). On switch, sampling parameters reset to the new model's defaults unless the user had already modified them (`modelParameters.isModified`).
 
 ### ModelParameterAspect
 
