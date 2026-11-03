@@ -89,7 +89,12 @@
     }
 
     a.brand:hover :global(.mark) {
-        filter: brightness(1.25);
+        filter: brightness(1.6);
+    }
+
+    /* The dark-mode logo is already near white, so hover can only go darker. */
+    :global(html.darkMode) a.brand:hover :global(.mark) {
+        filter: brightness(0.7);
     }
 
     .actions {
