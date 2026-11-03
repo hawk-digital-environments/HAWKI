@@ -120,6 +120,10 @@
        around the swatch stays even into the corner too. */
     :global(.dropdown-radio-item.model-menu-item .provider-swatch) {
         border-radius: calc(var(--corner-sm) - var(--space-1_5));
+        /* Between the compact and the default tile: the row holds one line, so the full
+           swatch would only pad it out, while the compact one reads cramped here. */
+        width: calc(var(--space-1) * 7);
+        height: calc(var(--space-1) * 7);
     }
 
     /* Disabled rows still take the pointer (bits-ui ignores their selection), so hovering
