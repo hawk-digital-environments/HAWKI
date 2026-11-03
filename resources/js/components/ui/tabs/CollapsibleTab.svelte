@@ -98,9 +98,11 @@
 </Tooltip>
 
 <style>
-    /* Padded like the sidebar's rows, so the first icon sits on their column. The
-       label clip carries its own gap, so a collapsed tab is just the icon. */
+    /* The icon sits centred in a row-high square, so a collapsed tab is square; the
+       label clip carries its own gap, so it adds nothing until it opens. */
     .tab {
+        --tab-icon-size: var(--nav-icon-size);
+
         position: relative;
         /* Above the highlights, which paint at 0. */
         z-index: 1;
@@ -108,7 +110,7 @@
         display: flex;
         align-items: center;
         height: var(--nav-row-h);
-        padding: 0 var(--nav-item-pad-x);
+        padding: 0 calc((var(--nav-row-h) - var(--tab-icon-size)) / 2);
         border: none;
         border-radius: var(--corner-sm);
         background: transparent;
@@ -136,7 +138,7 @@
     .icon-cell {
         display: inline-grid;
         place-items: center;
-        width: var(--nav-icon-size);
+        width: var(--tab-icon-size);
         flex-shrink: 0;
     }
 
@@ -185,15 +187,11 @@
     }
 
     /* Bumped up a notch for easier tapping on small screens, like the sidebar's
-       rows. The grown glyph spills out of its pinned column, so the margin returns
-       the spill. */
+       rows; the padding follows the bigger icon, so the tab stays square. */
     @media (--bp-md-and-smaller) {
         .tab {
+            --tab-icon-size: var(--space-5);
             font-size: var(--font-size-sm);
-        }
-
-        .icon-cell {
-            margin-inline: calc((var(--space-5) - var(--nav-icon-size)) / 2);
         }
 
         .glyph :global(svg) {
