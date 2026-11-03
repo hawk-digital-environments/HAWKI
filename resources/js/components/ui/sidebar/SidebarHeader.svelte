@@ -1,6 +1,6 @@
 <!--
   @component Sidebar header row: a brand/logo slot on the left, optional actions
-  (e.g. a switcher) pushed to the right. On desktop the nav's toggle lives outside
+  (e.g. a search button) pushed to the right. On desktop the nav's toggle lives outside
   it, in `SidebarContent`; only the mobile drawer, which covers that toggle, gets a
   close button of its own here.
 -->
@@ -8,6 +8,7 @@
     import type {Snippet} from 'svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
+    import SidebarIconButton from '$lib/components/ui/sidebar/SidebarIconButton.svelte';
     import PanelLeftIcon from '$lib/components/ui/icons/iconset/PanelLeftIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -44,17 +45,16 @@
     {#if actions}
         <div class="actions">{@render actions()}</div>
     {/if}
-    <button
-        type="button"
-        id="app-navigation-toggle"
-        class="toggle"
-        aria-label={__('ui.navigation.close')}
-        aria-expanded={sidebar.navOpen}
-        aria-controls="app-navigation"
-        onclick={closeNavigation}
-    >
-        <PanelLeftIcon size={18} strokeWidth={2} aria-hidden="true" />
-    </button>
+    <div class="toggle">
+        <SidebarIconButton
+            id="app-navigation-toggle"
+            icon={PanelLeftIcon}
+            label={__('ui.navigation.close')}
+            aria-expanded={sidebar.navOpen}
+            aria-controls="app-navigation"
+            onclick={closeNavigation}
+        />
+    </div>
 </div>
 
 <style>
@@ -102,42 +102,15 @@
         min-width: 0;
     }
 
+    /* The mobile drawer covers the toggle outside the nav, so only there does it get
+       one of its own. */
     .toggle {
-        flex-shrink: 0;
         display: none;
-        align-items: center;
-        justify-content: center;
-        width: var(--nav-row-h);
-        height: var(--nav-row-h);
-        padding: 0;
-        border: none;
-        background: transparent;
-        /* Recedes at rest and comes forward on hover, same as the switcher's
-           chevron. */
-        color: var(--color-nav-icon);
-        cursor: pointer;
-        border-radius: var(--corner-sm);
-        transition:
-            color var(--duration-fast),
-            background var(--duration-fast);
     }
 
-    .toggle:hover {
-        color: var(--color-text);
-        background: var(--color-hover);
-    }
-
-    /* The mobile drawer covers the toggle outside the nav. Its icon is bumped up a
-       notch for easier tapping; the box needs no override, as `--nav-row-h` grows
-       on mobile and takes it along. */
     @media (--bp-md-and-smaller) {
         .toggle {
-            display: inline-flex;
-        }
-
-        .toggle :global(svg) {
-            width: var(--space-5);
-            height: var(--space-5);
+            display: flex;
         }
     }
 </style>

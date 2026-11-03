@@ -1,3 +1,8 @@
+import {untrack} from 'svelte';
+import {Spring} from 'svelte/motion';
+import {springs} from '$lib/utils/springs.js';
+import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
+
 export interface ItemRect {
     top: number;
     left: number;
@@ -7,7 +12,16 @@ export interface ItemRect {
 
 interface Options {
     axis?: 'x' | 'y';
+    /**
+     * Where the hover highlight comes from when the pointer arrives on an item.
+     * `'item'` (default) shows it right on that item; `'selection'` slides it out
+     * of the selected item, and back into it when the pointer leaves, so the two
+     * highlights read as one surface.
+     */
+    hoverFrom?: 'item' | 'selection';
 }
+
+const EMPTY_RECT: ItemRect = {top: 0, left: 0, width: 0, height: 0};
 
 /**
  * Tracks the registered item nearest to the pointer and measures every item
@@ -19,10 +33,16 @@ interface Options {
  * numeric ids (or hand over a list that changes as a whole with `setItems()`),
  * and forward the three `handlers` to the container. Re-run `measureItems()`
  * after layout changes that do not originate from pointer movement (for example
- * a sidebar resize).
+ * a sidebar resize), or `snapToItems()` when the highlights should jump there
+ * instead of gliding.
+ *
+ * `selectionHighlight` and `hoverHighlight` are the two highlights already in
+ * motion, on springs: render straight from them and add no position transitions
+ * of your own.
  */
 export function createProximityHover(options: Options = {}) {
-    const { axis = 'y' } = options;
+    const { axis = 'y', hoverFrom = 'item' } = options;
+    const reducedMotion = useReducedMotion();
 
     let container: HTMLElement | null = null;
     const items = new Map<number, HTMLElement | null>();
@@ -30,6 +50,54 @@ export function createProximityHover(options: Options = {}) {
     let activeIndex = $state<number | null>(null);
     let selectedIndex = $state<number | null>(null);
     let rafId: number | null = null;
+
+    // The selection is the bigger move, so it takes the slower tier.
+    const selectionSpring = new Spring<ItemRect>(EMPTY_RECT, springs.moderate);
+    const hoverSpring = new Spring<ItemRect>(EMPTY_RECT, springs.fast);
+    let selectionPlaced = false;
+    let hoverPlaced = $state(false);
+    // Whether the pointer was on an item other than the selected one at the last sync.
+    let hoverShown = false;
+
+    /**
+     * Points both springs at the current rects. Runs from pointer handlers and from
+     * consumers' effects alike, so it reads untracked: it must never make an effect
+     * depend on the rects it is about to replace.
+     */
+    function syncHighlights(snap = false) {
+        untrack(() => {
+            const instant = snap || reducedMotion.current;
+            const selected = selectedIndex !== null ? rects[selectedIndex] ?? null : null;
+            if (selected) {
+                // The first placement lands in place rather than flying in from the corner.
+                selectionSpring.set(selected, {instant: instant || !selectionPlaced});
+                selectionPlaced = true;
+            } else {
+                selectionPlaced = false;
+            }
+
+            const hovered = activeIndex !== null && activeIndex !== selectedIndex
+                ? rects[activeIndex] ?? null
+                : null;
+            if (hovered) {
+                if (!hoverShown) {
+                    // Arriving, so it starts fresh instead of from wherever it last faded out.
+                    hoverSpring.set(hoverFrom === 'selection' && selected ? selected : hovered, {instant: true});
+                }
+                hoverSpring.stiffness = springs.fast.stiffness;
+                hoverSpring.damping = springs.fast.damping;
+                hoverSpring.set(hovered, {instant});
+                hoverPlaced = true;
+            } else if (activeIndex === null && hoverShown && hoverFrom === 'selection' && selected) {
+                // Leaving: it sinks back into the selection while it fades, at the
+                // selection's own pace.
+                hoverSpring.stiffness = springs.moderate.stiffness;
+                hoverSpring.damping = springs.moderate.damping;
+                hoverSpring.set(selected, {instant});
+            }
+            hoverShown = hovered !== null;
+        });
+    }
 
     /**
      * How much a transform on the way up (a popup's opening scale) currently
@@ -63,6 +131,7 @@ export function createProximityHover(options: Options = {}) {
             };
         }
         rects = next;
+        syncHighlights();
     }
 
     function findClosest(cx: number, cy: number): number | null {
@@ -97,6 +166,7 @@ export function createProximityHover(options: Options = {}) {
             const cy = (event.clientY - containerRect.top) / scale + container!.scrollTop;
             measureItems();
             activeIndex = findClosest(cx, cy);
+            syncHighlights();
         });
     }
 
@@ -107,6 +177,7 @@ export function createProximityHover(options: Options = {}) {
     function onmouseleave() {
         if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
         activeIndex = null;
+        syncHighlights();
     }
 
     return {
@@ -117,6 +188,22 @@ export function createProximityHover(options: Options = {}) {
         /** Rect of the selected item, or null when nothing is selected. */
         get selectedRect() {
             return selectedIndex !== null ? rects[selectedIndex] ?? null : null;
+        },
+        /** The selection highlight's rect in motion, or null while nothing is selected. */
+        get selectionHighlight(): ItemRect | null {
+            return selectedIndex !== null && rects[selectedIndex] ? selectionSpring.current : null;
+        },
+        /**
+         * The hover highlight's rect in motion, or null before the first hover. It
+         * stays set once the pointer leaves, so the highlight can fade out where it
+         * lands; `hoverVisible` says whether to show it.
+         */
+        get hoverHighlight(): ItemRect | null {
+            return hoverPlaced ? hoverSpring.current : null;
+        },
+        /** Whether the pointer is on an item other than the selected one. */
+        get hoverVisible() {
+            return activeIndex !== null && activeIndex !== selectedIndex;
         },
         setContainer(el: HTMLElement | null) { container = el; },
         registerItem(idx: number, el: HTMLElement | null) { items.set(idx, el); },
@@ -147,6 +234,11 @@ export function createProximityHover(options: Options = {}) {
             measureItems();
         },
         measureItems,
+        /** Re-measure and put both highlights straight on their items, e.g. after a resize. */
+        snapToItems() {
+            measureItems();
+            syncHighlights(true);
+        },
         handlers: { onmousemove, onmouseenter, onmouseleave },
     };
 }

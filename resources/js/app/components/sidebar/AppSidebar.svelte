@@ -9,8 +9,9 @@
     import SidebarHeader from '$lib/components/ui/sidebar/SidebarHeader.svelte';
     import SidebarFooter from '$lib/components/ui/sidebar/SidebarFooter.svelte';
     import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
+    import SidebarIconButton from '$lib/components/ui/sidebar/SidebarIconButton.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
-    import ModuleSelector from '$lib/app/components/sidebar/ModuleSelector.svelte';
+    import SpaceTabs from '$lib/app/components/sidebar/SpaceTabs.svelte';
     import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
     import MobileNavCollapse from '$lib/app/components/sidebar/MobileNavCollapse.svelte';
     import SearchDialog from '$lib/app/components/search/SearchDialog.svelte';
@@ -35,7 +36,6 @@
     const ModuleSidebar = $derived(activeModule?.sidebar?.(app.localization.locale) ?? null);
 
     const chatPath = router.getPath('chat.index');
-    let spacesOpen = $state(false);
     let searchOpen = $state(false);
     let settingsOpen = $state(false);
     let settingsSection = $state<SettingsSection | null>(null);
@@ -76,22 +76,29 @@
     onblur={() => (shortcutsHeld = false)}
 />
 
-<Sidebar label={__('ui.navigation.label')}>
+<Sidebar label={__('ui.navigation.label')} class={shortcutsHeld ? 'shortcuts-held' : undefined}>
     <MobileNavCollapse />
     <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
         <HawkLogo label={__('ui.navigation.newChat')} />
         {#snippet actions()}
-            <div class="spaces" class:shortcuts-held={shortcutsHeld}>
-                <ModuleSelector bind:open={spacesOpen} />
-            </div>
+            <SidebarIconButton
+                icon={Search01Icon}
+                label={__('ui.navigation.search')}
+                shortcut="K"
+                aria-keyshortcuts={isApple ? 'Meta+K' : 'Control+K'}
+                onclick={openSearch}
+            >
+                {#snippet tooltip()}
+                    {__('ui.navigation.search')}
+                    <span class="tooltip-shortcut">{isApple ? '⌘K' : 'Ctrl K'}</span>
+                {/snippet}
+            </SidebarIconButton>
         {/snippet}
     </SidebarHeader>
-    <div class="sidebar-content" class:spaces-open={spacesOpen} class:shortcuts-held={shortcutsHeld}>
-        <button type="button" class="search" aria-label={__('ui.navigation.search')} onclick={openSearch}>
-            <Search01Icon size={18} strokeWidth={2} aria-hidden="true" />
-            <span class="search-placeholder">{__('ui.search.placeholder')}</span>
-            <span class="search-shortcut" aria-hidden="true">{isApple ? '⌘K' : 'Ctrl K'}</span>
-        </button>
+    <div class="sidebar-content">
+        <div class="spaces">
+            <SpaceTabs />
+        </div>
         <div class="module-sidebar">
             {#if ModuleSidebar}
                 <ModuleSidebar />
@@ -112,96 +119,17 @@
         flex: 1;
         min-height: 0;
         flex-direction: column;
-        opacity: 1;
-        filter: blur(0);
-        transition:
-            opacity var(--duration-fast) var(--easing-default, ease),
-            filter var(--duration-fast) var(--easing-default, ease);
     }
 
-    .sidebar-content.spaces-open {
-        opacity: 0.25;
-        filter: blur(var(--blur-small, 2px));
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .sidebar-content {
-            transition: none;
-        }
-    }
-
-    /* Rests like a row and turns into a field on hover or focus. It opens the search
-       dialog rather than taking input, since the results need more room. The stroke
-       is an inset outline, so it takes no layout space and the icon stays on the
-       rows' column. */
-    .search {
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        width: 100%;
-        min-height: var(--nav-row-h);
-        /* The panel's padding, matching the header's gap above the search. */
-        margin-bottom: var(--space-4);
-        padding: 0 var(--space-3) 0 var(--nav-item-pad-x);
-        border: none;
-        outline: var(--divider-width) solid transparent;
-        outline-offset: calc(var(--divider-width) * -1);
-        border-radius: var(--corner-sm);
-        background: transparent;
-        color: var(--color-nav-icon);
-        font-size: var(--nav-font-size);
-        text-align: left;
-        cursor: text;
-        transition: outline-color var(--duration-fast);
-    }
-
+    /* The panel's padding, matching the header's gap above the tabs. */
     .spaces {
-        display: contents;
-    }
-
-    .search:hover,
-    .search:focus-visible {
-        outline-color: var(--color-border);
-    }
-
-    .search :global(svg) {
         flex-shrink: 0;
+        margin-bottom: var(--space-4);
     }
 
-    .search-placeholder {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .search-shortcut {
-        flex-shrink: 0;
-        font-size: var(--font-size-xs);
-        letter-spacing: 0.03em;
-        opacity: 0;
-        transition: opacity var(--duration-fast);
-    }
-
-    .search:hover .search-shortcut,
-    .search:focus-visible .search-shortcut,
-    .shortcuts-held .search-shortcut {
-        opacity: 1;
-    }
-
-    /* Bumped up a notch on small screens, like the sidebar's rows. */
-    @media (--bp-md-and-smaller) {
-        .search {
-            font-size: var(--font-size-sm);
-        }
-
-        .search :global(svg) {
-            width: var(--space-5);
-            height: var(--space-5);
-            margin-inline: -1px;
-        }
+    .tooltip-shortcut {
+        margin-left: var(--space-1);
+        color: var(--color-text-muted);
     }
 
     .module-sidebar {
