@@ -112,6 +112,8 @@
         display: inline-grid;
         align-items: center;
         justify-items: center;
+        justify-content: center;
+        width: var(--nav-icon-size);
         flex-shrink: 0;
     }
 
@@ -167,9 +169,7 @@
         }
 
         .icon-wrap {
-            width: var(--nav-icon-size);
             margin-right: calc((var(--space-5) - var(--nav-icon-size)) / 2);
-            justify-content: center;
         }
 
         .icon-wrap :global(svg) {
