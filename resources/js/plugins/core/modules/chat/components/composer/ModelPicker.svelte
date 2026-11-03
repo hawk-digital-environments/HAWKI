@@ -44,7 +44,7 @@
     import ModelMenuDetail from '$plugins/core/modules/chat/components/composer/ModelMenuDetail.svelte';
     import ModelMenuPreview from '$plugins/core/modules/chat/components/composer/ModelMenuPreview.svelte';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
-    import {revealMenuRow} from '$plugins/core/modules/chat/components/composer/utils/revealMenuRow.js';
+    import {usePickerMenuBehaviours} from '$plugins/core/modules/chat/components/composer/utils/pickerMenuBehaviours.svelte.js';
     import {textPopIn} from '$lib/utils/transitions/textPopIn.js';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -237,71 +237,23 @@
             : null;
     }
 
-    // The list opens scrolled minimally to the current model, while focus stays in the search
-    // field like in the assistant and tool pickers; ArrowDown then lands on that row. Two
-    // frames, so the list has laid out after `MenuSearchField` mounts.
-    $effect(() => {
-        if (!open) {
-            return;
-        }
-        let frame = requestAnimationFrame(() => {
-            frame = requestAnimationFrame(() => {
-                const row = currentRow(document.querySelector('.model-menu-content') ?? document);
-                if (!row) {
-                    return;
-                }
-                revealMenuRow(row, '.model-menu-content');
-            });
-        });
-        return () => cancelAnimationFrame(frame);
-    });
-
-    // Keyboard handling ahead of bits-ui's own (capture phase):
-    // - Typing while a row has focus goes to the search field instead of bits-ui's
-    //   typeahead, so the list still filters as you type.
-    // - Arrowing out of the search field lands on the current model rather than the first
-    //   row; falls through when that row is filtered out.
-    function onContentKeydownCapture(event: KeyboardEvent): void {
-        const content = event.currentTarget as HTMLElement;
-        const inSearch = event.target instanceof HTMLInputElement;
-        if (!inSearch && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && event.key !== ' ') {
-            const search = content.querySelector<HTMLInputElement>('.menu-search input');
-            if (search) {
-                // Focus moves before the key's default action, so the character lands in the field.
-                event.stopPropagation();
-                search.focus();
-            }
-            return;
-        }
-        if (event.key !== 'ArrowDown' || !inSearch) {
-            return;
-        }
-        const row = currentRow(content);
-        if (!row) {
-            return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        row.focus();
-    }
-
-    $effect(() => {
-        if (!open) {
+    // The shared picker-menu machinery: reset + detail keep-open on close,
+    // reveal-the-current-row on open, and the search-field keyboard redirect.
+    // The list opens scrolled minimally to the current model, while focus
+    // stays in the search field like in the assistant and tool pickers.
+    const menu = usePickerMenuBehaviours({
+        isOpen: () => open,
+        onClose: () => {
             query = '';
             clearTimeout(previewHideTimer);
             previewModelId = null;
-        }
-    });
-
-    // When closing the menu, the detail view is kept for a short delay to avoid flickering
-    // mid-close; matches the tool and assistant pickers.
-    $effect(() => {
-        if (!open && detailModelId) {
-            const t = setTimeout(() => {
-                detailModelId = null;
-            }, 200);
-            return () => clearTimeout(t);
-        }
+        },
+        hasDetail: () => detailModelId !== null,
+        clearDetail: () => {
+            detailModelId = null;
+        },
+        initialRow: currentRow,
+        contentSelector: '.model-menu-content'
     });
 </script>
 
@@ -331,7 +283,7 @@
         magneticHover={false}
         contentProps={{
             class: ['model-menu-content', variant === 'field' && 'model-menu-content--field'],
-            onkeydowncapture: onContentKeydownCapture,
+            onkeydowncapture: menu.onContentKeydownCapture,
             onpointerover: onContentPointerOver,
             onpointerleave: onContentPointerLeave,
             onfocusin: onContentFocusIn,

@@ -103,6 +103,7 @@
     import {chipPop} from '$lib/utils/transitions/chipPop';
     import ZshIcon from '$lib/components/ui/icons/iconset/ZshIcon.svelte';
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
+    import {usePickerMenuBehaviours} from '$plugins/core/modules/chat/components/composer/utils/pickerMenuBehaviours.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
@@ -329,16 +330,6 @@
         detailToolName = entry.tool.name;
     }
 
-    // When closing the detail view, we keep it open for a short delay to avoid flickering.
-    $effect(() => {
-        if (!open && detailToolName) {
-            const t = setTimeout(() => {
-                detailToolName = null;
-            }, 200);
-            return () => clearTimeout(t);
-        }
-    });
-
     // The highlight starts on the tool switched on most recently (`tools.active` keeps
     // activation order), so the keyboard begins from the current state — the same way the `@`
     // menu starts on the tagged assistant. Falls back to earlier ones the query filtered out.
@@ -366,26 +357,22 @@
         return commandMenu.selectActive();
     }
 
-    // In command mode the highlight starts on the last tool switched on, else the first row, and
-    // starts over whenever the typed query changes the rows. A frame later, so the filtered
-    // rows have rendered.
-    // Keyed on the query string, not the command object, so only real filtering resets it.
-    const commandQuery = $derived(shownCommand?.query ?? null);
-    $effect(() => {
-        if (!open || commandQuery === null) {
-            return;
-        }
-        const frame = requestAnimationFrame(() => commandMenu.reset());
-        return () => cancelAnimationFrame(frame);
-    });
-
-    // Focus lands on the search field when the menu opens (`MenuSearchField` claims it),
-    // so keyboard users start by filtering and arrow down into the rows from there.
-
-    $effect(() => {
-        if (!open) {
+    // The shared picker-menu machinery: reset + detail keep-open on close, and
+    // the command highlight resetting whenever the typed query changes the
+    // rows. No reveal on open — focus lands on the search field
+    // (`MenuSearchField` claims it), so keyboard users start by filtering and
+    // arrow down into the rows from there.
+    usePickerMenuBehaviours({
+        isOpen: () => open,
+        onClose: () => {
             query = '';
-        }
+        },
+        hasDetail: () => detailToolName !== null,
+        clearDetail: () => {
+            detailToolName = null;
+        },
+        commandQuery: () => shownCommand?.query ?? null,
+        resetCommandHighlight: () => commandMenu.reset()
     });
 </script>
 

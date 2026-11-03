@@ -49,7 +49,7 @@
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {revealMenuRow} from '$plugins/core/modules/chat/components/composer/utils/revealMenuRow.js';
+    import {usePickerMenuBehaviours} from '$plugins/core/modules/chat/components/composer/utils/pickerMenuBehaviours.svelte.js';
     import {createCommandMenu, createCommandKeeper, type MenuCommand} from '$plugins/core/modules/chat/components/composer/utils/commandMenu.js';
 
     const composerContext = useComposerContext();
@@ -255,74 +255,24 @@
         return commandMenu.selectActive();
     }
 
-    // In command mode the highlight starts on the tagged assistant, else the first row, and
-    // starts over whenever the typed query changes the rows. A frame later, so the content
-    // has mounted and the filtered rows have rendered.
-    // Keyed on the query string, not the command object, so only real filtering resets it.
-    const commandQuery = $derived(shownCommand?.query ?? null);
-    $effect(() => {
-        if (!open || commandQuery === null) {
-            return;
-        }
-        const frame = requestAnimationFrame(() => commandMenu.reset());
-        return () => cancelAnimationFrame(frame);
-    });
-
-    // The list opens scrolled minimally to the tagged assistant, while focus stays in the
-    // search field; ArrowDown then lands on that row. Matches the model picker. Two frames, so
-    // the list has laid out after `MenuSearchField` mounts. Not in command mode, where the
-    // command highlight takes over.
-    $effect(() => {
-        if (!open || untrack(() => shownCommand)) {
-            return;
-        }
-        let frame = requestAnimationFrame(() => {
-            frame = requestAnimationFrame(() => {
-                const row = activeRow(document.querySelector('.assistant-menu-content') ?? document);
-                if (!row) {
-                    return;
-                }
-                revealMenuRow(row, '.assistant-menu-content');
-            });
-        });
-        return () => cancelAnimationFrame(frame);
-    });
-
-    // Keyboard handling ahead of bits-ui's own (capture phase):
-    // - Typing while a row has focus goes to the search field instead of bits-ui's
-    //   typeahead, so the list still filters as you type.
-    // - Arrowing out of the search field lands on the tagged assistant rather than the first
-    //   row; falls through when that row is filtered out.
-    function onContentKeydownCapture(event: KeyboardEvent) {
-        const content = event.currentTarget as HTMLElement;
-        const inSearch = event.target instanceof HTMLInputElement;
-        if (!inSearch && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && event.key !== ' ') {
-            const search = content.querySelector<HTMLInputElement>('.menu-search input');
-            if (search) {
-                // Focus moves before the key's default action, so the character lands in the field.
-                event.stopPropagation();
-                search.focus();
-            }
-            return;
-        }
-        if (event.key !== 'ArrowDown' || !inSearch) {
-            return;
-        }
-        const row = activeRow(content);
-        if (!row) {
-            return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        row.focus();
-    }
-
-    // When closing the menu, the detail view is kept for a short delay to avoid flickering
-    // mid-close; matches the tool picker.
-    $effect(() => {
-        if (!open) {
+    // The shared picker-menu machinery: reset + detail keep-open on close,
+    // reveal-the-tagged-assistant on open (skipped in command mode, where the
+    // command highlight takes over), the search-field keyboard redirect, and
+    // the command highlight resetting whenever the typed query changes the rows.
+    const menu = usePickerMenuBehaviours({
+        isOpen: () => open,
+        onClose: () => {
             query = '';
-        }
+        },
+        hasDetail: () => detailAssistantId !== null,
+        clearDetail: () => {
+            detailAssistantId = null;
+        },
+        initialRow: activeRow,
+        contentSelector: '.assistant-menu-content',
+        skipReveal: () => shownCommand !== null,
+        commandQuery: () => shownCommand?.query ?? null,
+        resetCommandHighlight: () => commandMenu.reset()
     });
 
     // Snapshot the search decision per menu session: reading `entries`
@@ -331,15 +281,6 @@
     $effect(() => {
         if (open) {
             searchEnabled = untrack(() => entries.length) > 1;
-        }
-    });
-
-    $effect(() => {
-        if (!open && detailAssistantId) {
-            const t = setTimeout(() => {
-                detailAssistantId = null;
-            }, 200);
-            return () => clearTimeout(t);
         }
     });
 </script>
@@ -356,7 +297,7 @@
             magneticHover={false}
             contentProps={{
                 class: 'assistant-menu-content',
-                onkeydowncapture: onContentKeydownCapture,
+                onkeydowncapture: menu.onContentKeydownCapture,
                 onOpenAutoFocus: commandMenu.onOpenAutoFocus,
                 onCloseAutoFocus: commandMenu.onCloseAutoFocus,
                 onInteractOutside: commandMenu.onInteractOutside,
