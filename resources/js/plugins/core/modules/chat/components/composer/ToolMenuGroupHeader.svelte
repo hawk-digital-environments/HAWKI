@@ -184,7 +184,8 @@
                     {#if isChecked}
                         <span class="tool-menu-group-state"><Tick02Icon size={16}/></span>
                     {:else if indeterminate}
-                        <span class="tool-menu-group-state"><span class="tool-menu-group-state-mixed"></span></span>
+                        <!-- The ui checkbox item's mixed-state dash, reused inside the swatch. -->
+                        <span class="tool-menu-group-state"><span class="dropdown-item-indicator-mixed" aria-hidden="true"></span></span>
                     {/if}
                 </span>
                 <span class="tool-menu-group-text">
@@ -295,13 +296,6 @@
         border-radius: inherit;
         background-color: inherit;
         color: var(--color-tool-category-mcp);
-    }
-
-    .tool-menu-group-state-mixed {
-        width: calc(0.25rem * 2);
-        height: 1.5px;
-        border-radius: 999px;
-        background-color: currentColor;
     }
 
     .tool-menu-group-text {

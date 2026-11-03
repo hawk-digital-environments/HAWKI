@@ -219,10 +219,13 @@
         color: var(--color-text);
     }
 
-    .dropdown-item-indicator-mixed {
-        width: calc(0.25rem * 2);
+    /* Global like the other `dropdown-*` classes (see `DropdownMenu.svelte`):
+       feature components whose rows draw their own indicator — e.g. the tool
+       menu's MCP group swatch — reuse the same mixed-state dash. */
+    :global(.dropdown-item-indicator-mixed) {
+        width: calc(var(--space-1) * 2);
         height: 1.5px;
-        border-radius: 999px;
+        border-radius: var(--corner-full);
         background-color: currentColor;
     }
 
