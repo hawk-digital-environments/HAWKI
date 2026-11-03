@@ -35,7 +35,7 @@
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
     import ToolMenuConfig from '$plugins/core/modules/chat/components/composer/ToolMenuConfig.svelte';
-    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import DropdownMenuBackButton from '$lib/components/ui/dropdown-menu/DropdownMenuBackButton.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -122,19 +122,10 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="tool-detail" bind:this={detailEl} onkeydown={onDetailKeydown}>
     <div class="tool-detail-top">
-        <button
-            type="button"
-            class="tool-detail-back"
-            bind:this={backEl}
-            onpointerdowncapture={(e) => e.stopPropagation()}
-            onclick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onCloseDetail?.();
-                    }}>
-            <ArrowLeft01Icon size={16}/>
-            <span>{__('chat.composer.toolMenu.backButton')}</span>
-        </button>
+        <DropdownMenuBackButton
+            bind:ref={backEl}
+            label={__('chat.composer.toolMenu.backButton')}
+            onBack={onCloseDetail}/>
 
         <div class="tool-detail-status">
             <StatusDotForTool tool={entry.tool} supported={entry.available} showLabel/>
@@ -192,31 +183,6 @@
         justify-content: space-between;
         gap: var(--space-2, calc(0.25rem * 2));
         margin-bottom: var(--space-1, 0.25rem);
-    }
-
-    .tool-detail-back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1, 0.25rem);
-        padding: var(--space-1, 0.25rem) var(--space-2_5) var(--space-1, 0.25rem) var(--space-2, calc(0.25rem * 2));
-        border: none;
-        border-radius: var(--corner-sm);
-        background: none;
-        color: var(--color-text-muted, var(--color-text));
-        font-size: var(--font-size-xs);
-        cursor: pointer;
-        transition: background-color var(--duration-fast);
-    }
-
-    /* The chevron's ink is only the middle third of its 16px box: pull the empty
-       sides in, so the gap to the label and the inset before it read as set. */
-    .tool-detail-back :global(svg) {
-        margin-inline: calc(var(--space-1) * -1);
-    }
-
-    .tool-detail-back:hover {
-        background-color: var(--color-hover);
-        color: var(--color-text);
     }
 
     .tool-detail-header {

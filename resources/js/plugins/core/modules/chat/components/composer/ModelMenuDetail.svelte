@@ -28,7 +28,7 @@
     import {onMount} from 'svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import ModelCard from '$plugins/core/components/ModelCard.svelte';
-    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import DropdownMenuBackButton from '$lib/components/ui/dropdown-menu/DropdownMenuBackButton.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -112,19 +112,10 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="model-detail" bind:this={detailEl} onkeydown={onDetailKeydown}>
     <div class="model-detail-bar">
-        <button
-            type="button"
-            class="model-detail-back"
-            bind:this={backEl}
-            onpointerdowncapture={(e) => e.stopPropagation()}
-            onclick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onCloseDetail();
-            }}>
-            <ArrowLeft01Icon size={16}/>
-            <span>{__('chat.composer.modelPicker.backButton')}</span>
-        </button>
+        <DropdownMenuBackButton
+            bind:ref={backEl}
+            label={__('chat.composer.modelPicker.backButton')}
+            onBack={onCloseDetail}/>
         <MenuPinButton
             variant="detail"
             pinned={modelFavorites.has(model.model_id)}
@@ -159,25 +150,6 @@
         align-items: center;
         justify-content: space-between;
         gap: var(--space-2, calc(0.25rem * 2));
-    }
-
-    .model-detail-back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1, 0.25rem);
-        padding: var(--space-1, 0.25rem) var(--space-2, calc(0.25rem * 2));
-        border: none;
-        border-radius: var(--corner-sm);
-        background: none;
-        color: var(--color-text-muted, var(--color-text));
-        font-size: var(--font-size-xs);
-        cursor: pointer;
-        transition: background-color var(--duration-fast);
-    }
-
-    .model-detail-back:hover {
-        background-color: var(--color-hover);
-        color: var(--color-text);
     }
 
     .model-detail-body {
