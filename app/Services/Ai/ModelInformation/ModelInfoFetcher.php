@@ -37,9 +37,17 @@ use Psr\Log\LoggerInterface;
  *
  * The optional {@see JobMetrics} reference parameter carries structured log output
  * across multi-step operations. When omitted, one is created automatically.
+ *
+ * Successfully fetched provider model lists are memoized per provider for the lifetime
+ * of this instance, so repeated {@see self::fetchSingle()} calls (e.g. one per configured
+ * model during a config sync) trigger only a single adapter `getModels()` request per
+ * provider. Failed fetches are never memoized and keep retrying on every call.
  */
 class ModelInfoFetcher
 {
+    /** @var array<string, Collection<int, AiModel>> Provider model lists already fetched successfully, by provider. */
+    private array $memoizedProviderModelLists = [];
+
     public function __construct(
         private readonly LoggerInterface               $logger,
         private readonly AiModelInfoEnrichmentPipeline $enrichmentPipeline
@@ -127,17 +135,42 @@ class ModelInfoFetcher
      * Retrieves the raw model list from the provider adapter.
      *
      * Returns null on adapter failure so callers can proceed with an empty collection
-     * rather than aborting the entire sync run.
+     * rather than aborting the entire sync run. Successful results are memoized per
+     * provider ({@see self::getProviderListMemoKey()}); failures are not, so every
+     * call retries the adapter.
      */
     private function fetchProviderModelList(AiProviderProxy $provider, JobMetrics $metrics): Collection|null
     {
+        $memoKey = $this->getProviderListMemoKey($provider);
+        if (isset($this->memoizedProviderModelLists[$memoKey])) {
+            return $this->memoizedProviderModelLists[$memoKey];
+        }
+
         try {
             $metrics->info('Fetching model list from provider ' . $provider->name);
-            return $provider->adapter->getModels($provider);
+            $models = $provider->adapter->getModels($provider);
         } catch (\Throwable $e) {
             $metrics->error('Error fetching model list from provider ' . $provider->name . ': ' . $e->getMessage(), ['exception' => $e]);
             return null;
         }
+
+        return $this->memoizedProviderModelLists[$memoKey] = $models;
+    }
+
+    /**
+     * Builds the memo key identifying a provider's model list.
+     *
+     * Falls back to the underlying Eloquent model instance for providers that have not
+     * been persisted yet (e.g. in tests), where no stable provider ID exists.
+     */
+    private function getProviderListMemoKey(AiProviderProxy $provider): string
+    {
+        $providerId = $provider->provider_id;
+        if (!empty($providerId)) {
+            return (string)$providerId;
+        }
+
+        return 'obj:' . spl_object_id($provider->getRealProvider());
     }
 
     /**

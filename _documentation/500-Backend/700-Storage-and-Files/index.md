@@ -4,9 +4,74 @@ sidebar_position: 1
 
 # Storage & Files
 
-HAWKI's file storage layer is built around one security property: **no direct storage URLs are ever exposed to clients**. Every file a user can download travels through a PHP controller that checks access rights and streams the content. There is no public S3 bucket URL, no publicly-accessible `storage/` path for chat attachments.
+HAWKI's file storage layer is divided into three subsections, which are configured separately:
 
-This article covers the storage architecture, the proxy controller, the `StoredFileIdentifier` format, the two-step upload flow, and configuration. The file conversion pipeline (for extracting text from documents) is covered in [100-File-Converter](100-File-Converter.md).
+1. File storage (data repo for attachments)
+2. Avatar storage
+3. Laravel framework has a "default" as fallback, which issues a warning in HAWKI when used unexpected.
+
+Architecturally the storage system has one hard rule: **the application only ever links proxy URLs** — every download travels through a PHP controller that checks access rights and streams the content. Attachment files are never stored on a directly served path. Avatar files are technically reachable via the `/storage/` symlink on their default `public` disk, which is acceptable since avatars are world-readable by design.
+
+Around that rule, dealing with the filesystem involves five responsibilities, each with its own configuration:
+
+- **Uploading** — two storage services accept uploads, each with its own size limit and MIME allowlist (`FileStorageService`, `AvatarStorageService` — configured in `filesystems.upload_limits`)
+- **Placement** — each storage role writes to its own swappable disk, from local disk to the target (configured in `filesystems.file_storage` / `filesystems.avatar_storage`)
+- **Serving** — the storage proxy enforces per-category access rules and streams the bytes (route `web.storage.proxy`, rules in `StorageProxyController`)
+- **Extracting** — the file-converter pipeline turns documents into text extracts the AI can read (configured in `file_converter`)
+- **Cleaning up** — garbage collection removes abandoned temp uploads and expired attachments (configured in `filesystems.garbage_collections`)
+
+## Overview
+
+All file handling in HAWKI follows one architecture: uploads go through a **storage service**, files live on a **configurable storage disk**, and downloads are only ever served through the **storage proxy**. All storage types share this mechanism — what differs is their **scope** and their configuration:
+
+| Storage type | Stored content | Access scope | Own configuration |
+|---|---|---|---|
+| Attachments (`FileStorageService`) | Files attached to messages (`GROUP` / `PRIVATE` categories) | Strictly access-controlled — room members or owner only | `MAX_FILE_SIZE`, `ALLOWED_FILE_MIME_TYPES`, `MAX_ATTACHMENT_FILES`, disk via `STORAGE_DISK` |
+| Avatars (`AvatarStorageService`) | User profile and room avatars (`PROFILE_AVATAR` / `ROOM_AVATAR` categories) | Public — world-readable, served via proxy (directly reachable on the default `public` disk) | `MAX_AVATAR_FILE_SIZE`, `ALLOWED_AVATAR_MIME_TYPES`, disk via `AVATAR_STORAGE` |
+
+- **Two services** do the work: `FileStorageService` (chat attachments, with text extraction so AI models can read documents) and `AvatarStorageService` (avatars, no extraction). Both extend `AbstractFileStorage`.
+- **Uploads are two-phase**: a file is first staged under `temp/`, and only moved to its permanent location when the message referencing it is actually sent. Abandoned uploads are removed by garbage collection.
+- **Reads are proxied**: every download request hits `StorageProxyController`, which checks access rights by file category and streams the bytes.
+- The **storage backend is swappable** (local disk, S3, Nextcloud WebDAV, SFTP) without touching application code.
+
+The diagram below shows the three paths a file can take — attachment uploads and avatar uploads each go through their dedicated service, while every download is served through the storage proxy; both services share the same abstract base and write to the configured storage disk:
+
+```mermaid
+flowchart LR
+    Client[Frontend]
+
+    subgraph Backend
+        Proxy["StorageProxyController<br>GET /proxy/storage/{identifier}"]
+        FSS["FileStorageService<br>attachments + extraction"]
+        ASS["AvatarStorageService<br>avatars"]
+        AFS[AbstractFileStorage]
+    end
+
+    Disk[("Storage disk<br>local_file_storage | s3 | nextcloud | sftp")]
+
+    Client -- "upload (temp) / message send" --> FSS
+    Client -- "avatar upload" --> ASS
+    Client -- "download" --> Proxy
+    Proxy --> FSS
+    Proxy --> ASS
+    FSS --> AFS
+    ASS --> AFS
+    AFS --> Disk
+```
+
+### Storage disk roles
+
+`config/filesystems.php` defines three independent disk roles. Each is resolved once at boot in `StorageServiceProvider` and bound to its service:
+
+| Role | Config key | Env var | Default disk |
+|---|---|---|---|
+| File storage (data repo for attachments) | `filesystems.file_storage` | `STORAGE_DISK` | `local_file_storage` |
+| Avatar storage | `filesystems.avatar_storage` | `AVATAR_STORAGE` | `public` |
+| Laravel framework default | `filesystems.default` | `FILESYSTEM_DISK` | `local` |
+
+The framework default disk is kept only as a fallback: no HAWKI code resolves it, and code that does (a bare `Storage::put(...)` or `disk()` without a name) logs a runtime warning via `DefaultDiskWarningFilesystemManager` instead of silently writing to the fallback disk.
+
+The rest of this article covers the proxy controller, the `StoredFileIdentifier` format, the two-step upload flow, and configuration. The file conversion pipeline (for extracting text from documents) is covered in [100-File-Converter](100-File-Converter.md).
 
 ## The Storage Proxy
 
@@ -150,17 +215,17 @@ If the user abandons the message without sending, the `filestorage:cleanup` arti
 
 ## Upload Constraints and Frontend Validation
 
-Two configuration values from the `hawki-core` config block (delivered via the connection bootstrap) feed the frontend's pre-upload validation in `AttachmentAspect.add()`:
+The upload constraints are delivered to the frontend through the public-config block of the connection bootstrap and feed the pre-upload validation in `AttachmentAspect.add()`. They are derived at runtime from the storage services (`FileStorageConfig` / `AvatarStorageConfig`), so the frontend always reflects exactly the limits the backend enforces — the two layers cannot diverge:
 
-| Config key | Default | Description |
-|---|---|---|
-| `storage_files.allowed_mimes` | (from `config/filesystems.php`) | MIME types the frontend checks before staging an upload |
-| `storage_files.max_file_size` | 20971520 (20 MB) | Maximum file size in bytes |
-
-The frontend validates against these values before uploading. The backend enforces the same constraints during `store()`. Both layers must agree — if you change the backend allowlist, also update the config that the frontend reads, or the frontend will allow files that the backend rejects.
+| Public-config key | Description |
+|---|---|
+| `storage_files.maxFileSize` | Maximum attachment file size in bytes |
+| `storage_files.allowedMimeTypes` | MIME types the frontend accepts for attachments |
+| `storage_files.allowedExtensions` | File extensions derived from the allowed MIME types |
+| `storage_avatars.*` | Same keys for avatar uploads (2 MB default, image types only) |
 
 :::caution
-The default `max_file_size` is **20 MB** (20971520 bytes). Older documentation may incorrectly state 10 MB. The correct value is in `config/filesystems.php` (key `MAX_ATTACHMENT_SIZE`, env `MAX_ATTACHMENT_SIZE`, default `20971520`).
+The backend default for `maxFileSize` is **10 MB** (10485760 bytes), configured via `MAX_FILE_SIZE` in `config/filesystems.php` (`filesystems.upload_limits.max_file_size`). The effective limit is additionally capped by the PHP `upload_max_filesize` and `post_max_size` settings — whichever is smallest wins. The `.env.example` suggests raising it to 20 MB (`20971520`).
 :::
 
 Additional constraint: `MAX_ATTACHMENT_FILES` controls the maximum number of attachments per message (default `0` = unlimited).
@@ -176,7 +241,7 @@ Accepted MIME types are the union of:
 - All plain-text and source-code types known to `PlainTextLanguageType`
 - Any type the active `FileConverterInterface` implementation accepts (e.g. PDF, Word documents)
 
-An admin-configured MIME allowlist (`storage_files.allowed_mimes`) can further restrict which types are accepted at runtime.
+An admin-configured MIME allowlist (`ALLOWED_FILE_MIME_TYPES` env var, surfaced to the frontend as `storage_files.allowedMimeTypes`) can further restrict which types are accepted at runtime.
 
 ### `AvatarStorageService`
 
@@ -213,7 +278,7 @@ The storage disk is configured per service in `config/filesystems.php` and selec
 | Nextcloud WebDAV (`nextcloud`) | On-premise deployments using Nextcloud |
 | SFTP (`sftp`) | Any SFTP-accessible server |
 
-The `check:storage {--filesystem=}` artisan command smoke-tests a backend (write / read / delete) without requiring a full upload.
+The `check:storage` artisan command smoke-tests the storage the app actually uses: by default it resolves the three storage roles (framework default, file storage, avatar storage) and round-trips each of their disks (connectivity, write, read, delete), printing a PASS/FAIL table — roles that share a disk are checked once and grouped in one row. `--filesystem=s3,nextcloud` explicitly tests other configured disks instead, e.g. to verify a backend before switching a role to it. Disks with incomplete configuration are reported as failures with a hint about the missing environment variables, and the command exits non-zero when any disk fails, so it can be used as a health check.
 
 ## Garbage Collection
 

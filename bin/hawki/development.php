@@ -41,17 +41,10 @@ function runDev() {
 function runBuild() {
     echo BOLD . "Building project..." . RESET . PHP_EOL;
 
-    // Run composer install
+    // Run composer install (deterministic: installs exactly what composer.lock pins;
+    // updating packages is a deliberate `composer update` run, never part of a build)
     echo YELLOW . "Running composer install..." . RESET . PHP_EOL;
     passthru('composer install');
-
-    // Check if we need to update composer
-    echo YELLOW . "Checking for composer updates..." . RESET . PHP_EOL;
-    exec('composer outdated --direct', $outdatedOutput);
-    if (!empty($outdatedOutput) && count($outdatedOutput) > 1) { // First line is header
-        echo "Outdated packages found. Running composer update..." . PHP_EOL;
-        passthru('composer update');
-    }
 
     // Run npm build
     echo YELLOW . "Running npm run build..." . RESET . PHP_EOL;

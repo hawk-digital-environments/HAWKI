@@ -11,7 +11,17 @@
 
 ### Bugfix
 
-[//]: # (- List of bugs that have been fixed in this version.)
+- `php hawki init` and `php hawki run -build` no longer run an unattended `composer update` when outdated packages are detected. Setup and build now only perform a deterministic `composer install`; upgrading packages is a deliberate decision. Previously the silent update could jump packages across major versions (e.g. `laravel/ai` 0.10 → 1.3), breaking the app with errors that first surfaced in unrelated commands like `models sync`.
+- Self-service access token creation was unavailable in the profile view: it still checked the pre-2.5.0 `sanctum.*` config keys instead of the new `external_access.*` keys, so the AccessTokens panel never appeared even with `ALLOW_EXTERNAL_COMMUNICATION` and `ALLOW_USER_TOKEN_CREATION` enabled.
+- Model enrichment (pricing, context windows, feature flags) stopped updating because LiteLLM discontinued their catalog API. Lookups always fell back to the static files. The catalog is now read from LiteLLM's GitHub file.
+- Fixed attachments never reaching the AI conversation when `STORAGE_DISK` uses an s3-compatible server (e.g. garage, MinIO): uploaded files were never persisted from the temp area because whole "directory" moves are silently ignored by s3 drivers, so the attachment was never linked to the message. Each file is now copied individually instead.
+- The `s3` disk in `config/filesystems.php` now fails loudly on storage errors and works on s3 servers without ACL support (see Internals section for details).
+- The `check:storage` artisan command now respects the configured `S3_ENDPOINT` and path-style addressing instead of always probing `amazonaws.com`.
+- Tool-call progress never reached the UI during streaming because the stream handler matched the tool-call *data* class instead of the stream *event*. Tool calls are now reported for every provider as `tool_call`/`tool_result` packets.
+- MCP tools failed because processes were decoupled using `autoSse=true` (the default). New default is `autoSse=false`. 
+- Per-provider AI request timeouts via the `adapter` settings in `model_providers.php`: `request_timeout` (default 60 seconds, `0` = no limit) limits the complete answer of non-streaming requests. `stall_timeout` (default off) aborts a stream that receives no data for this many seconds, before or mid-stream — like HAWKI 2.4, streams are never cut off while they receive data, and silent streams are no longer aborted after 60 seconds. Supported drivers for stall detection: `openai-compatible`, `ollama`. GWDG ships with the HAWKI 2.4 behaviour (`request_timeout=0`, `stall_timeout=120`, via `GWDG_REQUEST_TIMEOUT`/`GWDG_STALL_TIMEOUT`).
+- Large chat messages fail to encrypt with a `RangeError: too many arguments provided for a function call`: the client-side encryption encoded the ciphertext with one `String.fromCharCode.apply()` over every byte, which exceeds the browser's argument limit at roughly 100k bytes. Base64 conversion now runs in 32k chunks, in both the encryption utils and the legacy bundle.
+- Multiple Mermaid diagram previews failed to render at the same time: generated diagrams could receive duplicate render IDs, causing the renderer to silently draw only one and skip the rest. Fixed upstream in `markstream` 2.0.15.
 
 ### Internals
 
@@ -26,6 +36,13 @@
 - System models in `model_providers.php` (`system_models`, `default_models`, and the `*_MODEL` env variables) keep their format and also accept `<provider_id>/<model_id>`. If a plain model ID is offered by multiple providers, the config sync uses the model that was created first and logs a warning recommending the qualified ID (e.g. `openAi/gpt-5-nano`).
 - `ai:tools:assign --model` and `usage:top-users --model` accept the qualified identifier; a plain model ID matches the model of every provider offering it.
 - Breaking for custom code: `AiModelRepository::findOne()` / `findOneOrFail()` and `ModelFinder::find()` no longer resolve a plain `model_id`, pass `<provider_id>/<model_id>` or use `AiModelRepository::findOneByProvider()`. `SystemModel::$model_id` was removed, use `ai_model_id` / `SystemModel::model()`.
+- The `laravel/ai` version constraint is now `^0.10.1` (was `>=0.10.1`), so dependency updates stay within semver-compatible releases instead of silently allowing a major jump. Lock file refreshed to `laravel/ai` v0.10.3.
+- LiteLLM catalog: downloaded once into a shared cache and filtered per provider, kept fresh via ETag revalidation every 5 minutes. During upstream outages cached data is served for up to 24 h, then the static files take over.
+- The `static_llm_data` updater no longer deletes the old files when the catalog is unreachable.
+- **Storage: driver-agnostic file persistence** (`app/Services/Storage/AbstractFileStorage.php`): `persistTemporaryFile` previously moved the whole temp *directory*, which only works on local disks (via `rename()`); s3-style drivers treat directories as key prefixes and silently ignore such moves. It now copies each file individually (`allFiles()` + `copy()` + one `deleteDirectory()`), which Laravel's contract guarantees for every driver — a server-side `CopyObject` on s3, a native copy on local disks.
+- **Storage: hardened s3 disk config** (`config/filesystems.php`): `throw => true` turns failed Flysystem operations into logged exceptions instead of unchecked `false` returns (the reason the original bug stayed invisible); `retain_visibility => false` skips the `GetObjectAcl` pre-check before each `copy()`, which ACL-less s3 servers (garage, Cloudflare R2) reject.
+- **Storage: `check:storage` now honors custom s3 endpoints** (`app/Console/Commands/CheckStorageConnection.php`) by forwarding the disk's `endpoint`/`use_path_style_endpoint` to its `S3Client` instead of always probing `amazonaws.com`.
+- `AbstractLaravelAgent` passes the timeout explicitly to the Laravel AI package: `send()` the request timeout, `sendStreaming()` the stall timeout (or no limit when stall detection is off). The new `AgentTimeouts` value object reads and validates both values. For streamed requests, Guzzle uses its PHP stream handler, where `timeout` is a per-read timeout and curl options are ignored.
 
 ### Deprecation
 
