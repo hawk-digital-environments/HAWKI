@@ -533,8 +533,8 @@ React component named `Watcher`; the maths and the comments are kept as-is.
        wall never rescales it.
 
        Bencho's tokens, mapped onto this project's:
-         --fill-slab → --color-surface-light  (the tile the welcome icon sat on)
-         --fill-on   → --color-text           (the ink on that tile)
+         --fill-slab → --color-accent-100   (the accent button's fill)
+         --fill-on   → --color-accent-text  (the accent button's label)
          --font-ui   → --font-family-base
          the bubble's white label and caret → --color-on-accent-fill
        --bg, --card and --ink were only read by Bencho's own page rules
@@ -556,9 +556,9 @@ React component named `Watcher`; the maths and the comments are kept as-is.
     /* the ball is the Fill's own slab and the eyes its ink: white
        with dark eyes on a light fill, near-black with light eyes on
        a dark one */
-    .eyt-body { fill: var(--color-surface-light); }
+    .eyt-body { fill: var(--color-accent-100); }
 
-    .eyt-eye { fill: var(--color-text); }
+    .eyt-eye { fill: var(--color-accent-text); }
 
     /* a press gives a little under the finger and springs back out */
     .eyt-ball[data-poke] {
