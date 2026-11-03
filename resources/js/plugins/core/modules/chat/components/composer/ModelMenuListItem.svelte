@@ -30,7 +30,7 @@
     import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
     import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
-    import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
+    import MenuRowInfoButton from '$plugins/core/modules/chat/components/composer/MenuRowInfoButton.svelte';
     import ProviderSwatch from '$plugins/core/modules/chat/components/composer/utils/ProviderSwatch.svelte';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -105,21 +105,7 @@
         <MenuPinButton
             pinned={modelFavorites.has(model.model_id)}
             onToggle={() => modelFavorites.toggle(model.model_id)}/>
-        <button
-            type="button"
-            class="model-item-info"
-            aria-label={__('chat.composer.modelPicker.infoDefault')}
-            tabindex={-1}
-            onpointerdown={(e) => e.stopPropagation()}
-            onpointerup={(e) => e.stopPropagation()}
-            onkeydown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.stopPropagation();
-                }
-            }}
-            onclick={openDetail}>
-            <ArrowRight01Icon size={16}/>
-        </button>
+        <MenuRowInfoButton label={__('chat.composer.modelPicker.infoDefault')} onOpen={openDetail} style="padding: 0"/>
     </span>
 </DropdownMenuRadioItem>
 
@@ -150,18 +136,17 @@
         padding-block: 0;
     }
 
-    /* In the dropdown the controls stay out of sight until the row is pointed at or focused —
-       favourites included, since those already sit under their own section label. The current
-       model keeps them shown, so its options are at hand without hunting for them. */
-    :global(.dropdown-content--dropdown .dropdown-radio-item.model-menu-item .menu-pin-button),
-    :global(.dropdown-content--dropdown .dropdown-radio-item.model-menu-item .model-item-info) {
+    /* In the dropdown the favourite stays out of sight even on favourited rows — those
+       already sit under their own section label. The current model keeps it shown, so
+       its options are at hand without hunting for them; the info chevron's reveal is
+       `MenuRowInfoButton`'s own. */
+    :global(.dropdown-content--dropdown .dropdown-radio-item.model-menu-item .menu-pin-button) {
         opacity: 0;
     }
 
     /* Focus only counts when it came from the keyboard: a click leaves focus on the row, which
        would otherwise keep its controls shown after the pointer has moved on. */
-    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .menu-pin-button),
-    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .model-item-info) {
+    :global(.dropdown-content .dropdown-radio-item.model-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .menu-pin-button) {
         opacity: 1;
     }
 
@@ -198,24 +183,5 @@
         flex-shrink: 0;
         align-items: center;
         gap: var(--space-2);
-    }
-
-    .model-item-info {
-        display: flex;
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        margin: 0;
-        border: none;
-        background: none;
-        pointer-events: all;
-        line-height: 0;
-        color: var(--color-text-muted);
-        cursor: pointer;
-    }
-
-    .model-item-info:hover {
-        color: var(--color-text);
     }
 </style>

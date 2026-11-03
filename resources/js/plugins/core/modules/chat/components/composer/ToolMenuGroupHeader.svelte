@@ -208,7 +208,7 @@
                         {entries.length}
                     </span>
                     <span class="t-icon t-icon-favorite">
-                        <MenuPinButton pinned={groupPinned} onToggle={toggleGroupPin}/>
+                        <MenuPinButton pinned={groupPinned} onToggle={toggleGroupPin} variant="group"/>
                     </span>
                 </span>
                 <button
@@ -355,12 +355,6 @@
         filter: blur(0);
         transform: scale(1);
         pointer-events: auto;
-    }
-
-    :global(.tool-menu-group-action .menu-pin-button) {
-        margin: 0;
-        padding: 2px;
-        opacity: 1;
     }
 
     .tool-menu-group-count {

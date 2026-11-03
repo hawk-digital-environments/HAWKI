@@ -30,8 +30,8 @@
     import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
     import {useToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
     import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
-    import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
+    import MenuRowInfoButton from '$plugins/core/modules/chat/components/composer/MenuRowInfoButton.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
@@ -128,21 +128,7 @@
                     supported={entry.available}/>
             {/if}
             <MenuPinButton kind="tool" id={entry.tool.name}/>
-            <button
-                type="button"
-                class="tool-item-info"
-                aria-label={infoTooltip}
-                tabindex={-1}
-                onpointerdown={(e) => e.stopPropagation()}
-                onpointerup={(e) => e.stopPropagation()}
-                onkeydown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                        event.stopPropagation();
-                    }
-                }}
-                onclick={openDetail}>
-                <ArrowRight01Icon size={16}/>
-            </button>
+            <MenuRowInfoButton label={infoTooltip} onOpen={openDetail}/>
 
         </span>
     {/snippet}
@@ -220,41 +206,7 @@
     /* The favourite only shows on the row the user is pointing at (a favourite row keeps its own
        button visible, and so does an active one, so its options are at hand), so the list stays
        quiet when nothing is being aimed at. */
-    :global(.dropdown-checkbox-item.tool-menu-item:hover .menu-pin-button),
-    :global(.dropdown-checkbox-item.tool-menu-item:is(:focus-visible, :has(:focus-visible)) .menu-pin-button),
-    :global(.dropdown-checkbox-item.tool-menu-item[data-state='checked'] .menu-pin-button) {
-        opacity: 1;
-    }
-
-    /* In the dropdown the info chevron stays out of sight until the row is pointed at or
-       focused, as in `ModelMenuListItem` — active rows keep it shown; the mobile sheet has no
-       hover, so it stays there. */
-    :global(.dropdown-content--dropdown .dropdown-checkbox-item.tool-menu-item .tool-item-info) {
-        opacity: 0;
-    }
-
-    /* Focus only counts when it came from the keyboard: a click leaves focus on the row, which
-       would otherwise keep its controls shown after the pointer has moved on. */
-    :global(.dropdown-content .dropdown-checkbox-item.tool-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .tool-item-info) {
-        opacity: 1;
-    }
-
-    .tool-item-info {
-        display: flex;
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        padding: 6px 0;
-        margin: 0;
-        border: none;
-        background: none;
-        pointer-events: all;
-        line-height: 0;
-        color: var(--color-text-muted);
-        cursor: pointer;
-    }
-
-    .tool-item-info:hover {
-        color: var(--color-text);
-    }
+    /* In the dropdown the favourite only shows on the row being pointed at or focused
+       (the row reports that through `--dropdown-item-action-opacity`); a checked or
+       pinned row keeps it visible so its state is always readable. */
 </style>

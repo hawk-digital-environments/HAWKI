@@ -134,7 +134,8 @@
     }
 
     .dropdown-radio-item:hover,
-    .dropdown-radio-item:is(:focus-visible, :has(:focus-visible)) {
+    .dropdown-radio-item:is(:focus-visible, :has(:focus-visible)),
+    .dropdown-radio-item[data-state='checked'] {
         --dropdown-item-action-opacity: 1;
     }
 

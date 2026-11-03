@@ -37,8 +37,8 @@
 <script lang="ts">
     import DropdownMenuCheckboxItem from '$lib/components/ui/dropdown-menu/DropdownMenuCheckboxItem.svelte';
     import AssistantRow from '$plugins/core/modules/chat/components/composer/AssistantRow.svelte';
-    import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
+    import MenuRowInfoButton from '$plugins/core/modules/chat/components/composer/MenuRowInfoButton.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -112,21 +112,7 @@
             {pinned}
             onToggle={togglePin}/>
 
-        <button
-            type="button"
-            class="assistant-item-info"
-            aria-label={__('chat.composer.assistantMenu.infoDefault')}
-            tabindex={-1}
-            onpointerdown={(e) => e.stopPropagation()}
-            onpointerup={(e) => e.stopPropagation()}
-            onkeydown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.stopPropagation();
-                }
-            }}
-            onclick={openDetail}>
-            <ArrowRight01Icon size={16}/>
-        </button>
+        <MenuRowInfoButton label={__('chat.composer.assistantMenu.infoDefault')} onOpen={openDetail}/>
     {/snippet}
 </DropdownMenuCheckboxItem>
 
@@ -152,44 +138,8 @@
         line-height: calc(0.25rem * 4);
     }
 
-    /* The favourite only shows on the row the user is pointing at; favourite rows keep their own
-       button visible, and so do tagged ones, so their options are at hand. Mirrors
-       `ToolMenuListItem`. */
-    :global(.dropdown-checkbox-item.assistant-menu-item:hover .menu-pin-button),
-    :global(.dropdown-checkbox-item.assistant-menu-item:is(:focus-visible, :has(:focus-visible)) .menu-pin-button),
-    :global(.dropdown-checkbox-item.assistant-menu-item[data-state='checked'] .menu-pin-button) {
-        opacity: 1;
-    }
-
-    /* In the dropdown the info chevron stays out of sight until the row is pointed at or
-       focused, as in `ModelMenuListItem` — tagged rows keep it shown; the mobile sheet has no
-       hover, so it stays there. */
-    :global(.dropdown-content--dropdown .dropdown-checkbox-item.assistant-menu-item .assistant-item-info) {
-        opacity: 0;
-    }
-
-    /* Focus only counts when it came from the keyboard: a click leaves focus on the row, which
-       would otherwise keep its controls shown after the pointer has moved on. */
-    :global(.dropdown-content .dropdown-checkbox-item.assistant-menu-item:is(:hover, :focus-visible, :has(:focus-visible), [data-state='checked']) .assistant-item-info) {
-        opacity: 1;
-    }
-
-    .assistant-item-info {
-        display: flex;
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        padding: 6px 0;
-        margin: 0;
-        border: none;
-        background: none;
-        pointer-events: all;
-        line-height: 0;
-        color: var(--color-text-muted);
-        cursor: pointer;
-    }
-
-    .assistant-item-info:hover {
-        color: var(--color-text);
-    }
+    /* The favourite and the info chevron only show on the row being pointed at or
+       focused — through `--dropdown-item-action-opacity` and `MenuRowInfoButton`'s
+       own reveal rules; tagged/pinned rows keep theirs visible, so their options
+       are at hand. */
 </style>

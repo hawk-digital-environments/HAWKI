@@ -44,8 +44,9 @@
          *  `pinned` and `onToggle` are both passed. */
         id?: string;
         /** `row` (default) is the compact icon shown on menu rows; `detail` is the
-         *  labelled, always-visible variant for a detail panel's header. */
-        variant?: 'row' | 'detail';
+         *  labelled, always-visible variant for a detail panel's header; `group` is
+         *  the always-visible, tighter one in an MCP group header's control swap. */
+        variant?: 'row' | 'detail' | 'group';
         /** Overrides the pin state read from the `composer-pins` store — for rows whose
          *  favourite lives on the server (a hook-provided assistant flagged `favorite`). */
         pinned?: boolean;
@@ -79,6 +80,7 @@
     class="menu-pin-button"
     class:menu-pin-button--pinned={pinned}
     class:menu-pin-button--detail={variant === 'detail'}
+    class:menu-pin-button--group={variant === 'group'}
     aria-pressed={pinned}
     aria-label={label}
     title={label}
@@ -136,6 +138,15 @@
     .menu-pin-button--detail {
         padding: var(--space-1, 0.25rem);
         margin: 0;
+        opacity: 1;
+    }
+
+    /* In an MCP group header the button sits in the count/pin icon swap, where the row's
+       hover reveal never applies (the swap itself is the affordance) and the tighter
+       padding matches the count pill beside it. */
+    .menu-pin-button--group {
+        margin: 0;
+        padding: var(--space-0_5, 2px);
         opacity: 1;
     }
 </style>
