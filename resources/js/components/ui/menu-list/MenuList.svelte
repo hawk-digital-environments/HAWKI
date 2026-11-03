@@ -151,6 +151,7 @@
     /** Whether the pointer is over a row, or in a gap directly between two. */
     function nearRow(event: MouseEvent) {
         for (const row of itemElements.values()) {
+            if (row.closest('[inert]')) continue;
             const r = row.getBoundingClientRect();
             if (r.height === 0) continue;
             if (event.clientY >= r.top - GAP_SLACK && event.clientY <= r.bottom + GAP_SLACK) {
@@ -165,6 +166,7 @@
         let top = Infinity;
         let bottom = -Infinity;
         for (const row of itemElements.values()) {
+            if (row.closest('[inert]')) continue;
             const r = row.getBoundingClientRect();
             if (r.height === 0) continue;
             top = Math.min(top, r.top);
