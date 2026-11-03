@@ -11,7 +11,6 @@
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
     import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
-    import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
     import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
@@ -96,7 +95,7 @@
     </div>
 
     <DropdownMenuSeparator/>
-    <DropdownMenuItem iconLeft={Settings05Icon} onclick={openSettings}>
+    <DropdownMenuItem iconLeft={Settings03Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
     <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>

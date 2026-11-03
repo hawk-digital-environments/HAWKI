@@ -12,7 +12,7 @@
     </Txt>
 
   Usage — rich content via a snippet, custom icon and side:
-    <InfoPopover popoverSide="right" icon={Settings01Icon}>
+    <InfoPopover popoverSide="right" icon={Settings03Icon}>
         {#snippet info()}
             <strong>Top P</strong> controls nucleus sampling.
         {/snippet}

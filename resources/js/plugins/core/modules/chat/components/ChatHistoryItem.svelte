@@ -18,7 +18,7 @@
     import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
     import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
     import PinOffIcon from '$lib/components/ui/icons/iconset/PinOffIcon.svelte';
-    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import Edit03Icon from '$lib/components/ui/icons/iconset/Edit03Icon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -115,7 +115,7 @@
                 <DropdownMenuItem iconLeft={pinned ? PinOffIcon : PinIcon} onclick={onTogglePin}>
                     {__(pinned ? 'chat.nameMenu.unpin' : 'chat.nameMenu.pin')}
                 </DropdownMenuItem>
-                <DropdownMenuItem iconLeft={PencilEdit01Icon} onclick={() => renaming = true}>
+                <DropdownMenuItem iconLeft={Edit03Icon} onclick={() => renaming = true}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
                 <DropdownMenuItem iconLeft={Delete02Icon} variant="destructive" onclick={() => deleteOpen = true}>
