@@ -27,7 +27,7 @@ export type WellKnownAiModelParameter = typeof wellKnownAiModelParameters[number
 export const wellKnownAiModelIoMethods = ['text', 'image', 'audio', 'video', 'code'] as const;
 export type WellKnownAiModelIoMethod = typeof wellKnownAiModelIoMethods[number];
 
-export const wellKnownAiModelSettings = ['max_tool_calling_rounds_streaming', 'max_tool_calling_rounds', 'file_upload', 'tool_calling', 'native_capabilities'] as const;
+export const wellKnownAiModelSettings = ['max_tool_calling_rounds', 'file_upload', 'tool_calling', 'native_capabilities'] as const;
 export type WellKnownAiModelSetting = typeof wellKnownAiModelSettings[number];
 
 const BaseAiModelSchema = z.object({
