@@ -176,6 +176,12 @@
         padding-bottom: var(--space-2, calc(0.25rem * 2));
     }
 
+    /* Ending on the variant rows, the panel's own padding already frames them like
+       the sides; the extra bottom room is only for a panel that ends in text. */
+    .tool-detail:has(> :global(.radio-row-group:last-child)) {
+        padding-bottom: 0;
+    }
+
     .tool-detail-back {
         display: inline-flex;
         align-items: center;

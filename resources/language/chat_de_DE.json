@@ -274,7 +274,7 @@
             },
             "toolMenuConfig": {
                 "variantLabel": "Variante",
-                "autoLabel": "automatisch",
+                "autoLabel": "Automatisch",
                 "autoInfo": "Das Modell wählt automatisch die beste Variante für die Aufgabe aus. (Natives Tool bevorzugt, ansonsten die erste verfügbare Alternative)",
                 "nativeLabel": "Natives Tool",
                 "nativeInfo": "Dieses Tool wird vom Model-Anbieter direkt zur Verfügung gestellt."
