@@ -1,7 +1,8 @@
 <!--
   @component Chat module's sidebar section: "new chat" action plus the
-  scrollable conversation history with rename/delete per row. The list edges
-  fade only where more content exists in that direction.
+  scrollable conversation history, pinned chats above the recent ones, with
+  pin/rename/delete per row. The list edges fade only where more content exists
+  in that direction.
 -->
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
@@ -23,6 +24,7 @@
     import ListFilterIcon from '$lib/components/ui/icons/iconset/ListFilterIcon.svelte';
     import FilterMailRemoveIcon from '$lib/components/ui/icons/iconset/FilterMailRemoveIcon.svelte';
     import {HISTORY_BUCKETS, historyBucket, type HistoryBucket} from '$lib/utils/date.js';
+    import type {ChatSummary} from '$plugins/core/modules/chat/types.js';
     import type {HTMLAttributes} from 'svelte/elements';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {}
@@ -42,14 +44,20 @@
 
     const FilterIcon = $derived(range ? FilterMailRemoveIcon : ListFilterIcon);
 
-    // The history limited to the selected range. Ranges are cumulative ("last
-    // 7 days" includes today), so a conversation matches when its bucket is no
-    // older than the selected one. A conversation without any timestamp cannot
-    // be placed and only shows while no range is selected.
+    // Pinned chats in pin order. A pin can outlive its conversation (deleted on
+    // another device), so a slug without a conversation is skipped.
+    const pinned = $derived(store.pinnedSlugs.flatMap(slug => store.conversations.find(item => item.slug === slug) ?? []));
+    const unpinned = $derived(store.conversations.filter(conversation => !store.isPinned(conversation.slug)));
+
+    // The unpinned history limited to the selected range; the range does not
+    // touch the pinned section. Ranges are cumulative ("last 7 days" includes
+    // today), so a conversation matches when its bucket is no older than the
+    // selected one. A conversation without any timestamp cannot be placed and
+    // only shows while no range is selected.
     const conversations = $derived.by(() => {
-        if (!range) return store.conversations;
+        if (!range) return unpinned;
         const oldest = HISTORY_BUCKETS.indexOf(range);
-        return store.conversations.filter(conversation => {
+        return unpinned.filter(conversation => {
             const bucket = historyBucket(conversation.updated_at ?? conversation.created_at ?? NaN);
             return HISTORY_BUCKETS.indexOf(bucket) <= oldest;
         });
@@ -75,6 +83,7 @@
         // An empty range swaps the list for a hint, so the observed children
         // change with the filtered count.
         void conversations.length;
+        void pinned.length;
         // Re-measure when the list itself changes, not just on scroll.
         const observer = new ResizeObserver(updateFades);
         observer.observe(el);
@@ -111,42 +120,37 @@
     }
 </script>
 
+{#snippet historyRow(conversation: ChatSummary)}
+    {@const generating = store.isGenerating(conversation.slug)}
+    <!-- History rows are label-only: with every row carrying
+         the same message icon it added no information. The
+         leading slot is used solely to mark a conversation
+         that is still generating. -->
+    {#snippet generatingIndicator()}
+        <span class="generation-indicator" aria-hidden="true"></span>
+    {/snippet}
+    <ChatHistoryItem
+        media={generating ? generatingIndicator : undefined}
+        name={conversation.name}
+        active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
+        pinned={store.isPinned(conversation.slug)}
+        rowLabel={generating
+            ? `${conversation.name}, ${__('chat.sidebar.generating')}`
+            : conversation.name}
+        onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
+        onTogglePin={() => store.togglePin(conversation.slug)}
+        onRename={name => renameConversation(conversation.slug, name)}
+        onDelete={() => removeConversation(conversation.slug)}
+    />
+{/snippet}
+
 <div {...restProps} class={["chat-sidebar", className]}>
     <div class="history-section">
-        {#if store.conversations.length > 0}
-            <div class="history-header">
-                <h3 class="history-title">{__(range ? `chat.sidebar.filter.${range}` : 'chat.sidebar.title')}</h3>
-                <!-- While a range is selected the menu stays shut and the same
-                     button clears the range instead. The menu disables its
-                     trigger for that, which must not reach the native button. -->
-                <DropdownMenu bind:open={filterOpen} align="end" disabled={!!range}>
-                    {#snippet trigger({props})}
-                        {@const label = __(range ? 'chat.sidebar.filter.clear' : 'chat.sidebar.filter.label')}
-                        <Tooltip tooltip={label} side="right">
-                            {#snippet children({props: tooltipProps})}
-                                <button
-                                    {...mergeProps(props, tooltipProps, {disabled: false, onclick: () => range = null})}
-                                    class="filter-trigger"
-                                    class:open={filterOpen}
-                                    class:filtered={!!range}
-                                    type="button"
-                                    aria-label={label}
-                                >
-                                    <FilterIcon strokeWidth={2} aria-hidden="true"/>
-                                </button>
-                            {/snippet}
-                        </Tooltip>
-                    {/snippet}
-                    {#each RANGES as option (option)}
-                        <DropdownMenuItem onclick={() => range = option}>
-                            {__(`chat.sidebar.filter.${option}`)}
-                        </DropdownMenuItem>
-                    {/each}
-                </DropdownMenu>
-            </div>
-        {/if}
+        <!-- Pinned and recent chats share one scroller, so neither section can
+             squeeze the other out of a short sidebar. -->
         <div
             class="history"
+            class:titled={store.conversations.length > 0}
             class:fade-top={fadeTop}
             class:fade-bottom={fadeBottom}
             bind:this={historyEl}
@@ -157,32 +161,63 @@
                 <p class="hint">{__('chat.sidebar.loading')}</p>
             {:else if store.conversations.length === 0}
                 <p class="hint">{__('chat.sidebar.empty')}</p>
-            {:else if conversations.length === 0}
-                <p class="hint">{__('chat.sidebar.filter.empty')}</p>
             {:else}
-                <SidebarItems>
-                    {#each conversations as conversation (conversation.slug)}
-                        {@const generating = store.isGenerating(conversation.slug)}
-                        <!-- History rows are label-only: with every row carrying
-                             the same message icon it added no information. The
-                             leading slot is used solely to mark a conversation
-                             that is still generating. -->
-                        {#snippet generatingIndicator()}
-                            <span class="generation-indicator" aria-hidden="true"></span>
-                        {/snippet}
-                        <ChatHistoryItem
-                            media={generating ? generatingIndicator : undefined}
-                            name={conversation.name}
-                            active={router.isActive('chat.conversation', {params: {slug: conversation.slug}})}
-                            rowLabel={generating
-                                ? `${conversation.name}, ${__('chat.sidebar.generating')}`
-                                : conversation.name}
-                            onOpen={() => router.goToRoute('chat.conversation', {slug: conversation.slug})}
-                            onRename={name => renameConversation(conversation.slug, name)}
-                            onDelete={() => removeConversation(conversation.slug)}
-                        />
-                    {/each}
-                </SidebarItems>
+                {#if pinned.length > 0}
+                    <div class="history-group">
+                        <div class="history-header">
+                            <h3 class="history-title">{__('chat.sidebar.pinned')}</h3>
+                        </div>
+                        <SidebarItems>
+                            {#each pinned as conversation (conversation.slug)}
+                                {@render historyRow(conversation)}
+                            {/each}
+                        </SidebarItems>
+                    </div>
+                {/if}
+                <!-- With every chat pinned there is nothing left to title or filter. -->
+                {#if unpinned.length > 0}
+                    <div class="history-group">
+                        <div class="history-header">
+                            <h3 class="history-title">{__(range ? `chat.sidebar.filter.${range}` : 'chat.sidebar.title')}</h3>
+                            <!-- While a range is selected the menu stays shut and the same
+                                 button clears the range instead. The menu disables its
+                                 trigger for that, which must not reach the native button. -->
+                            <DropdownMenu bind:open={filterOpen} align="end" disabled={!!range}>
+                                {#snippet trigger({props})}
+                                    {@const label = __(range ? 'chat.sidebar.filter.clear' : 'chat.sidebar.filter.label')}
+                                    <Tooltip tooltip={label} side="right">
+                                        {#snippet children({props: tooltipProps})}
+                                            <button
+                                                {...mergeProps(props, tooltipProps, {disabled: false, onclick: () => range = null})}
+                                                class="filter-trigger"
+                                                class:open={filterOpen}
+                                                class:filtered={!!range}
+                                                type="button"
+                                                aria-label={label}
+                                            >
+                                                <FilterIcon strokeWidth={2} aria-hidden="true"/>
+                                            </button>
+                                        {/snippet}
+                                    </Tooltip>
+                                {/snippet}
+                                {#each RANGES as option (option)}
+                                    <DropdownMenuItem onclick={() => range = option}>
+                                        {__(`chat.sidebar.filter.${option}`)}
+                                    </DropdownMenuItem>
+                                {/each}
+                            </DropdownMenu>
+                        </div>
+                        {#if conversations.length === 0}
+                            <p class="hint">{__('chat.sidebar.filter.empty')}</p>
+                        {:else}
+                            <SidebarItems>
+                                {#each conversations as conversation (conversation.slug)}
+                                    {@render historyRow(conversation)}
+                                {/each}
+                            </SidebarItems>
+                        {/if}
+                    </div>
+                {/if}
             {/if}
         </div>
     </div>
@@ -231,7 +266,16 @@
         min-height: 0;
         flex: 1;
         flex-direction: column;
+    }
+
+    .history-group {
+        display: flex;
+        flex-direction: column;
         gap: var(--space-1);
+    }
+
+    .history-group + .history-group {
+        margin-top: var(--nav-group-gap);
     }
 
     .history-header {
@@ -239,10 +283,9 @@
         flex-shrink: 0;
         align-items: center;
         justify-content: space-between;
+        /* Fits the filter button, so a section without one has the same height. */
+        min-height: calc(var(--nav-row-h) - 2px);
         padding-left: var(--history-text-inset);
-        /* Takes back the empty space the filter button's taller box leaves above the
-           title, so the gap under the search measures to the text, like the one over it. */
-        margin-top: calc((var(--history-title-size) * var(--line-height-normal) - var(--nav-row-h) + 2px) / 2);
     }
 
     .history-title {
@@ -334,6 +377,13 @@
         );
         mask-image: var(--history-fade);
         -webkit-mask-image: var(--history-fade);
+    }
+
+    /* Takes back the empty space the filter button's taller box leaves above the
+       title, so the gap under the search measures to the text, like the one over it.
+       On the scroller rather than the header, which it would otherwise clip. */
+    .history.titled {
+        margin-top: calc((var(--history-title-size) * var(--line-height-normal) - var(--nav-row-h) + 2px) / 2);
     }
 
     .history.fade-top {

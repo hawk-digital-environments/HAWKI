@@ -1,12 +1,12 @@
 <!--
   @component One row of the chat sidebar's history list: the conversation row
-  itself plus an actions menu (rename / delete) that only appears while the row
-  is hovered, focused, or its menu is open.
+  itself plus an actions menu (pin / rename / delete) that only appears while the
+  row is hovered, focused, or its menu is open.
 
   Renaming happens inline — the row is swapped for a text field that commits on
   Enter / blur and cancels on Escape; deleting goes through a `ConfirmDialog`.
-  Both actions are reported through `onRename` / `onDelete`, so the page owns
-  the store calls and error handling.
+  The actions are reported through `onTogglePin` / `onRename` / `onDelete`, so
+  the page owns the store calls and error handling.
 -->
 <script lang="ts">
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
@@ -16,6 +16,8 @@
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
+    import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
+    import PinOffIcon from '$lib/components/ui/icons/iconset/PinOffIcon.svelte';
     import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -25,16 +27,18 @@
     interface Props extends HTMLAttributes<HTMLDivElement> {
         name: string;
         active?: boolean;
+        pinned?: boolean;
         /** Leading visual, e.g. the "still generating" indicator. */
         media?: Snippet;
         /** Accessible name of the row, defaults to the conversation name. */
         rowLabel?: string;
         onOpen: () => void;
+        onTogglePin: () => void;
         onRename: (name: string) => void | Promise<void>;
         onDelete: () => void | Promise<void>;
     }
 
-    const {name, active = false, media, rowLabel, onOpen, onRename, onDelete, class: className, ...restProps}: Props = $props();
+    const {name, active = false, pinned = false, media, rowLabel, onOpen, onTogglePin, onRename, onDelete, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const toast = useToastContext();
 
@@ -108,6 +112,9 @@
                         tooltipSide="right"
                     />
                 {/snippet}
+                <DropdownMenuItem iconLeft={pinned ? PinOffIcon : PinIcon} onclick={onTogglePin}>
+                    {__(pinned ? 'chat.nameMenu.unpin' : 'chat.nameMenu.pin')}
+                </DropdownMenuItem>
                 <DropdownMenuItem iconLeft={PencilEdit01Icon} onclick={() => renaming = true}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>

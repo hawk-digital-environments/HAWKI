@@ -10,6 +10,7 @@
             "generating": "Generating response",
             "empty": "Your conversations will appear here.",
             "title": "Recents",
+            "pinned": "Pinned",
             "filter": {
                 "label": "Filter chats",
                 "clear": "Remove filter",
@@ -82,6 +83,8 @@
             "deleteConfirmLabel": "Delete",
             "newNameAriaLabel": "New chat name",
             "actionsTooltip": "Chat actions",
+            "pin": "Pin",
+            "unpin": "Unpin",
             "rename": "Rename",
             "manageRoom": "Manage room",
             "markAsRead": "Mark as read"

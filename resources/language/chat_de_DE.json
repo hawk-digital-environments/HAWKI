@@ -10,6 +10,7 @@
             "generating": "Antwort wird generiert",
             "empty": "Deine Unterhaltungen erscheinen hier.",
             "title": "Zuletzt verwendet",
+            "pinned": "Angeheftet",
             "filter": {
                 "label": "Chats filtern",
                 "clear": "Filter entfernen",
@@ -82,6 +83,8 @@
             "deleteConfirmLabel": "Löschen",
             "newNameAriaLabel": "Neuer Chatname",
             "actionsTooltip": "Chat Aktionen",
+            "pin": "Anheften",
+            "unpin": "Nicht mehr anheften",
             "rename": "Umbenennen",
             "manageRoom": "Raum verwalten",
             "markAsRead": "Als gelesen markieren"
