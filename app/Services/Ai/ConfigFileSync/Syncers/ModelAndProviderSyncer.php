@@ -6,6 +6,7 @@ namespace App\Services\Ai\ConfigFileSync\Syncers;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use App\Services\Ai\ModelInformation\ModelInfoFetcher;
+use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Identifiers\Values\AiModelIdentifier;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\ModelTypes\Values\WellKnownModelTypes;
@@ -72,6 +73,15 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         foreach ($this->providers as $providerId => $rawConfig) {
             $this->syncProvider($providerId, $rawConfig, $metrics);
         }
+    }
+
+    /**
+     * Creates the empty settings object each synced model starts from. Overridden by tests to
+     * inject the setting registry declarations the settings object validates its keys against.
+     */
+    protected function makeModelSettings(): AiModelSettings
+    {
+        return AiModelSettings::fromArray([]);
     }
 
     private function syncProvider(string $providerId, array $config, JobMetrics $metrics): void
@@ -148,7 +158,7 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             return null;
         }
 
-        $settings = AiModelSettings::fromArray([]);
+        $settings = $this->makeModelSettings();
         if (!empty($config['max_tool_calling_rounds'])) {
             $settings->setMaxToolCallingRounds((int)$config['max_tool_calling_rounds'], streaming: false);
         }
@@ -175,6 +185,13 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         }
 
         $modelInfo = $this->modelInfoFetcher->fetchSingle($this->providerProxyResolver->resolve($provider), $modelId);
+
+        // The config flag `tools.native_capabilities` is the authority for config-synced models: when it
+        // denies native capabilities (explicitly, or implicitly via `tool_calling` being off), capabilities
+        // fetched from the provider are dropped so HAWKI's own tool implementations are used instead.
+        if ($modelInfo !== null && !$settings->canUseNativeCapabilities() && !empty($modelInfo->native_capabilities->toArray())) {
+            $modelInfo->native_capabilities = NativeAiModelCapabilities::fromArray([]);
+        }
 
         $model = $this->modelRepository->upsert(
             modelType: $modelInfo->model_type ?? WellKnownModelTypes::CHAT,

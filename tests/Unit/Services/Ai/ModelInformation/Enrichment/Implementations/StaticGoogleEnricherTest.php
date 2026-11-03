@@ -60,11 +60,32 @@ class StaticGoogleEnricherTest extends TestCase
         static::assertTrue($model->flags->has(WellKnownModelFlags::FEATURE_REASONING));
     }
 
-    public function testItLeavesUnknownModelsUntouched(): void
+    public function testItAttachesGroundingCapabilitiesToGeminiModels(): void
     {
         $model = $this->enrich('gemini-3.8-flash', $this->createMock(GeminiAdapter::class));
 
+        static::assertTrue($model->native_capabilities->hasWebSearch());
+        static::assertTrue($model->native_capabilities->hasWebFetch());
+    }
+
+    public function testItAttachesNoNativeCapabilitiesToGemma(): void
+    {
+        $model = $this->enrich(
+            'gemma-4-31b-it',
+            $this->createMock(GeminiAdapter::class),
+            [WellKnownModelFlags::FEATURE_REASONING]
+        );
+
+        static::assertFalse($model->native_capabilities?->hasWebSearch() ?? false);
+        static::assertFalse($model->native_capabilities?->hasWebFetch() ?? false);
+    }
+
+    public function testItLeavesUnknownModelsUntouched(): void
+    {
+        $model = $this->enrich('gemini-9-pro-preview', $this->createMock(GeminiAdapter::class));
+
         static::assertFalse($model->flags->has(GeminiAdapter::FLAG_NO_THINKING_BUDGET));
+        static::assertSame([], $model->native_capabilities->toArray());
     }
 
     public function testItIgnoresModelsOfOtherProviders(): void

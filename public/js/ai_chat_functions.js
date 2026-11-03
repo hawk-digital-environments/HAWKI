@@ -233,6 +233,8 @@ async function buildRequestObjectForAiConv(
                         messageBodyElement.setProps({message: '', isStreaming: true});
                     }
 
+                    // Resets the reasoning buffer of a previous run on regeneration
+                    delete messageElement.dataset.reasoningText;
                     messageTextEl = messageElement.querySelector('.message-text');
                     if (!messageTextEl) {
                         console.error('Message text element not found!');

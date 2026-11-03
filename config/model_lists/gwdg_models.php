@@ -15,6 +15,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
             // GWDG recommended values: temp=1.0, top_p=1.0
@@ -37,6 +38,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_GEMMA_4_31B_INSTRUCT_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
             // GWDG lists no specific recommendation; API defaults apply unless overridden via env
@@ -59,6 +61,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_GLM_5_3_FLASH_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_GLM_5_3_FLASH_TOOLS_NATIVE_CAPABILITIES', true),
             'vision' => env('MODELS_GWDG_GLM_5_3_FLASH_TOOLS_VISION', true),
         ],
         'default_params' => [
@@ -81,6 +84,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
             // No official sampling recommendations from Meta; API defaults temp=1.0 and top_p=1.0 used
@@ -102,6 +106,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
             // GWDG recommended values: temp=0.6, top_p=0.95
@@ -123,6 +128,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN3_CODER_NEXT_FP8_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_QWEN3_CODER_NEXT_FP8_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
             // GWDG lists no specific recommendation; API defaults apply unless overridden via env
@@ -146,6 +152,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_NATIVE_CAPABILITIES', true),
             'vision' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_VISION', true),
         ],
         'default_params' => [
@@ -170,6 +177,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN35_397B_A17B_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_QWEN35_397B_A17B_TOOLS_NATIVE_CAPABILITIES', true),
             'vision' => env('MODELS_GWDG_QWEN35_397B_A17B_TOOLS_VISION', true),
         ],
         'default_params' => [
@@ -193,6 +201,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN38_27B_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_QWEN38_27B_TOOLS_NATIVE_CAPABILITIES', true),
             'vision' => env('MODELS_GWDG_QWEN38_27B_TOOLS_VISION', true),
         ],
         'default_params' => [
@@ -216,6 +225,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN36_35B_A3B_TOOLS_FILE_UPLOAD', true),
+            'native_capabilities' => env('MODELS_GWDG_QWEN36_35B_A3B_TOOLS_NATIVE_CAPABILITIES', true),
             'vision' => env('MODELS_GWDG_QWEN36_35B_A3B_TOOLS_VISION', true),
         ],
         'default_params' => [
