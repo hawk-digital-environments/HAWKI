@@ -496,6 +496,7 @@ function setDateSpan(activeThread, msgDate, formatDay = true) {
 
 
 function deconstContent(inputContent) {
+    inputContent = String(inputContent);
     function createResult(messageText, groundingMetadata = '', citations = []) {
         return {
             messageText,
