@@ -1,13 +1,13 @@
 <!--
-@component Centered empty-state hero shown while a chat has no messages yet.
-Rendered by the new-chat page (`ChatIndex.svelte`) and by an opened
-conversation without messages (`ChatConversation.svelte`). Reserves space for
-the floating composer via the inherited `--composer-dock-height` property set
-on the page element.
+  @component Centered empty-state hero shown while a chat has no messages yet.
+  Rendered by the new-chat page (`ChatIndex.svelte`) and by an opened
+  conversation without messages (`ChatConversation.svelte`). Reserves space for
+  the floating composer via the inherited `--composer-dock-height` property set
+  on the page element.
 
-Applies the `chatWelcome` hook: plugins may replace the default hero with a
-section describing the currently addressed participant — e.g. the assistants
-plugin shows the addressed assistant's name, greeting and starter prompts.
+  Applies the `chatWelcome` hook: plugins may replace the default hero with a
+  section describing the currently addressed participant — e.g. the assistants
+  plugin shows the addressed assistant's name, greeting and starter prompts.
 -->
 <script lang="ts">
     import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';

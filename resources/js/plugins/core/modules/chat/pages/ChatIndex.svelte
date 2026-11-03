@@ -96,7 +96,8 @@
     }
 
     /* Mobile: the floating nav toggle overlays the content top, so the
-       message list reserves room to clear it. */
+       message list reserves room to clear it. `--nav-row-h` is scoped by
+       `SidebarRoot`, which this page renders inside. */
     @media (--bp-md-and-smaller) {
         .messages { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
     }

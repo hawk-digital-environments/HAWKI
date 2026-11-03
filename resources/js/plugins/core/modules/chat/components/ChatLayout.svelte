@@ -148,7 +148,8 @@
     /* Mobile: the floating nav toggle overlays the content top, so the
        empty-state welcome reserves room to clear it (toggle inset +
        height + gap) while still letting content scroll up under the
-       SidebarContent fade overlay. */
+       SidebarContent fade overlay. `--nav-row-h` is scoped by
+       `SidebarRoot`, which the layout renders inside. */
     @media (--bp-md-and-smaller) {
         .empty :global(.welcome) { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
     }
