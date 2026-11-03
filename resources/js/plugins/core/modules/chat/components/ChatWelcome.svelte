@@ -6,7 +6,7 @@ the floating composer via the inherited `--composer-dock-height` property set
 on the page element.
 -->
 <script lang="ts">
-    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
+    import EyeTracker from '$lib/components/ui/eye-tracker/EyeTracker.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
 
@@ -16,7 +16,7 @@ on the page element.
 </script>
 
 <div class="welcome">
-    <span class="welcome-icon" aria-hidden="true"><BubbleChatAddIcon size={28} /></span>
+    <span class="welcome-icon"><EyeTracker size={64} eyeScale={1.2} within=".welcome" /></span>
     <h1>{userName ? __('chat.page.welcomeTitle', {name: userName}) : __('chat.page.welcomeTitleAnonymous')}</h1>
     <p>{__('chat.page.welcomeDescription')}</p>
 </div>
@@ -35,15 +35,12 @@ on the page element.
     }
 
     .welcome-icon {
-        display: grid;
-        width: 3.25rem;
-        height: 3.25rem;
         margin-bottom: var(--space-4);
-        place-items: center;
-        border-radius: var(--corner-lg);
-        background: var(--color-surface-light);
-        color: var(--color-text);
     }
+
+    /* the tracker's 200px frame is sized for a wall of knobs; here it
+       hugs the ball */
+    .welcome-icon :global(.eyt) { width: auto; height: auto; }
 
     h1 { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
     p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }

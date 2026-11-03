@@ -1,6 +1,19 @@
 {
     "ui": {
         "loading": "Wird geladen…",
+        "eyeTracker": {
+            "ariaLabel": "Ein Ball mit zwei Augen, der dem Mauszeiger folgt",
+            "lines": {
+                "1": "Hey, ich seh dich.",
+                "2": "Boop.",
+                "3": "Das kitzelt.",
+                "4": "Hallo!",
+                "5": "Hör auf, mich anzustupsen.",
+                "6": "Ich hab dich im Blick.",
+                "7": "Schon wieder? Okay.",
+                "8": "Du hast mich gefunden."
+            }
+        },
         "navigation": {
             "skipToContent": "Zum Hauptinhalt springen",
             "open": "Navigation öffnen",

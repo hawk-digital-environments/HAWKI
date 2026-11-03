@@ -1,6 +1,19 @@
 {
     "ui": {
         "loading": "Loading…",
+        "eyeTracker": {
+            "ariaLabel": "A ball with two eyes that follows the cursor",
+            "lines": {
+                "1": "Hey, I see you.",
+                "2": "Boop.",
+                "3": "That tickles.",
+                "4": "Hi there!",
+                "5": "Stop poking me.",
+                "6": "I'm watching you.",
+                "7": "Again? Okay.",
+                "8": "You found me."
+            }
+        },
         "navigation": {
             "skipToContent": "Skip to main content",
             "open": "Open navigation",
