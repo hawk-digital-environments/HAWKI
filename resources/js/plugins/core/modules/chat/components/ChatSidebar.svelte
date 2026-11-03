@@ -1,8 +1,9 @@
 <!--
   @component Chat module's sidebar section: "new chat" action plus the
   scrollable conversation history, pinned chats above the recent ones, with
-  pin/rename/delete per row. The list edges fade only where more content exists
-  in that direction.
+  pin/rename/delete per row. Both sections collapse from their title, and the
+  choice is remembered in localStorage. The list edges fade only where more
+  content exists in that direction.
 -->
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
@@ -15,12 +16,15 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
-    import { fade } from 'svelte/transition';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import { fade, slide } from 'svelte/transition';
+    import {cubicOut} from 'svelte/easing';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {mergeProps} from 'bits-ui';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
+    import ChevronRightIcon from '$lib/components/ui/icons/iconset/ChevronRightIcon.svelte';
     import ListFilterIcon from '$lib/components/ui/icons/iconset/ListFilterIcon.svelte';
     import FilterMailRemoveIcon from '$lib/components/ui/icons/iconset/FilterMailRemoveIcon.svelte';
     import {HISTORY_BUCKETS, historyBucket, type HistoryBucket} from '$lib/utils/date.js';
@@ -31,6 +35,11 @@
 
     const {class: className, ...restProps}: Props = $props();
 
+    type HistorySection = 'pinned' | 'recent';
+
+    const COLLAPSED_STORAGE_KEY = 'hawki.chat.sidebar.collapsed';
+
+    const app = useApp();
     const store = useStore('chat');
     const router = useRouter();
     const sidebar = useSidebar();
@@ -43,6 +52,22 @@
     let filterOpen = $state(false);
 
     const FilterIcon = $derived(range ? FilterMailRemoveIcon : ListFilterIcon);
+
+    let collapsed = $state<Record<HistorySection, boolean>>({
+        pinned: app.localStorage.getItem(`${COLLAPSED_STORAGE_KEY}.pinned`) === '1',
+        recent: app.localStorage.getItem(`${COLLAPSED_STORAGE_KEY}.recent`) === '1'
+    });
+
+    function setCollapsed(section: HistorySection, value: boolean) {
+        collapsed[section] = value;
+        app.localStorage.setItem(`${COLLAPSED_STORAGE_KEY}.${section}`, value ? '1' : '0');
+    }
+
+    // Picking a range has to show its result, so it opens a collapsed section.
+    function selectRange(option: (typeof RANGES)[number]) {
+        range = option;
+        setCollapsed('recent', false);
+    }
 
     // Pinned chats in pin order. A pin can outlive its conversation (deleted on
     // another device), so a slug without a conversation is skipped.
@@ -120,6 +145,23 @@
     }
 </script>
 
+{#snippet sectionTitle(section: HistorySection, title: string)}
+    <h3 class="history-title">
+        <button
+            class="section-toggle"
+            type="button"
+            aria-expanded={!collapsed[section]}
+            aria-controls="chat-history-{section}"
+            onclick={() => setCollapsed(section, !collapsed[section])}
+        >
+            {title}
+            <span class="section-chevron" class:open={!collapsed[section]} aria-hidden="true">
+                <ChevronRightIcon size={14} strokeWidth={2}/>
+            </span>
+        </button>
+    </h3>
+{/snippet}
+
 {#snippet historyRow(conversation: ChatSummary)}
     {@const generating = store.isGenerating(conversation.slug)}
     <!-- History rows are label-only: with every row carrying
@@ -165,20 +207,24 @@
                 {#if pinned.length > 0}
                     <div class="history-group">
                         <div class="history-header">
-                            <h3 class="history-title">{__('chat.sidebar.pinned')}</h3>
+                            {@render sectionTitle('pinned', __('chat.sidebar.pinned'))}
                         </div>
-                        <SidebarItems>
-                            {#each pinned as conversation (conversation.slug)}
-                                {@render historyRow(conversation)}
-                            {/each}
-                        </SidebarItems>
+                        {#if !collapsed.pinned}
+                            <div class="history-body" id="chat-history-pinned" transition:slide={{duration: 120, easing: cubicOut}}>
+                                <SidebarItems>
+                                    {#each pinned as conversation (conversation.slug)}
+                                        {@render historyRow(conversation)}
+                                    {/each}
+                                </SidebarItems>
+                            </div>
+                        {/if}
                     </div>
                 {/if}
                 <!-- With every chat pinned there is nothing left to title or filter. -->
                 {#if unpinned.length > 0}
                     <div class="history-group">
                         <div class="history-header">
-                            <h3 class="history-title">{__(range ? `chat.sidebar.filter.${range}` : 'chat.sidebar.title')}</h3>
+                            {@render sectionTitle('recent', __(range ? `chat.sidebar.filter.${range}` : 'chat.sidebar.title'))}
                             <!-- While a range is selected the menu stays shut and the same
                                  button clears the range instead. The menu disables its
                                  trigger for that, which must not reach the native button. -->
@@ -201,20 +247,24 @@
                                     </Tooltip>
                                 {/snippet}
                                 {#each RANGES as option (option)}
-                                    <DropdownMenuItem onclick={() => range = option}>
+                                    <DropdownMenuItem onclick={() => selectRange(option)}>
                                         {__(`chat.sidebar.filter.${option}`)}
                                     </DropdownMenuItem>
                                 {/each}
                             </DropdownMenu>
                         </div>
-                        {#if conversations.length === 0}
-                            <p class="hint">{__('chat.sidebar.filter.empty')}</p>
-                        {:else}
-                            <SidebarItems>
-                                {#each conversations as conversation (conversation.slug)}
-                                    {@render historyRow(conversation)}
-                                {/each}
-                            </SidebarItems>
+                        {#if !collapsed.recent}
+                            <div class="history-body" id="chat-history-recent" transition:slide={{duration: 120, easing: cubicOut}}>
+                                {#if conversations.length === 0}
+                                    <p class="hint">{__('chat.sidebar.filter.empty')}</p>
+                                {:else}
+                                    <SidebarItems>
+                                        {#each conversations as conversation (conversation.slug)}
+                                            {@render historyRow(conversation)}
+                                        {/each}
+                                    </SidebarItems>
+                                {/if}
+                            </div>
                         {/if}
                     </div>
                 {/if}
@@ -271,7 +321,11 @@
     .history-group {
         display: flex;
         flex-direction: column;
-        gap: var(--space-1);
+    }
+
+    /* Padding rather than a gap on the group, so the slide takes it along. */
+    .history-body {
+        padding-top: var(--space-1);
     }
 
     .history-group + .history-group {
@@ -294,6 +348,34 @@
         line-height: var(--line-height-normal);
         font-weight: var(--font-weight-normal);
         color: var(--color-nav-icon);
+    }
+
+    /* Hugs the text, so the chevron sits right next to the title. */
+    .section-toggle {
+        display: inline-flex;
+        padding: 0;
+        align-items: center;
+        gap: var(--space-1);
+        border: none;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        transition: color var(--duration-fast);
+    }
+
+    .section-toggle:hover {
+        color: var(--color-text);
+    }
+
+    .section-chevron {
+        display: inline-flex;
+        flex-shrink: 0;
+        transition: transform 120ms var(--easing-spring);
+    }
+
+    .section-chevron.open {
+        transform: rotate(90deg);
     }
 
     /* Same colour and hover as the sidebar toggle (SidebarHeader); the icon takes
