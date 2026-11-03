@@ -134,16 +134,15 @@
 {/each}
 
 <style>
-    :global(:root) {
+    /* Accordion motion lives on the list root so every nested group header —
+       including the globally-styled chevrons rendered by `ToolMenuGroupHeader` —
+       inherits it without leaking a `:root` side effect. */
+    :global(.tool-menu-list) {
+        --list-inset: var(--space-2);
         --acc-expand: 250ms;
         --acc-collapse: 250ms;
         --acc-chevron: 250ms;
-        --acc-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    /* Keep the shared sliding highlight aligned with the nested MCP rows. */
-    :global(.tool-menu-list) {
-        --list-inset: var(--space-2);
+        --acc-ease: var(--easing-spring);
     }
 
     /* grid-template-rows 0fr → 1fr gives a clean height animation

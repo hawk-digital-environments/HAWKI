@@ -17,6 +17,7 @@
  * <h1 in:textRise={{index: 1}} out:textRise={{direction: 'out'}}>…</h1>
  */
 import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
+import {SPRING_CONTROL_POINTS} from '$lib/utils/transitions/easings.js';
 
 export interface TextRiseParams {
     direction?: 'in' | 'out';
@@ -29,11 +30,12 @@ const STAGGER_MS = 40;
 const DISTANCE_PX = 12;
 const BLUR_PX = 3;
 
-/** cubic-bezier(0.22, 1, 0.36, 1) — the same curve as `--easing-spring`. */
+/** Solves `--easing-spring` (see `easings.ts`) for the transition's easing callback. */
 function smoothOut(t: number): number {
     // Solve the bezier's x for t with a few Newton steps, then return y.
-    const cx = 3 * 0.22, bx = 3 * (0.36 - 0.22) - cx, ax = 1 - cx - bx;
-    const cy = 3 * 1, by = 3 * (1 - 1) - cy, ay = 1 - cy - by;
+    const [x1, y1, x2, y2] = SPRING_CONTROL_POINTS;
+    const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+    const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
     let u = t;
     for (let i = 0; i < 6; i++) {
         const x = ((ax * u + bx) * u + cx) * u - t;

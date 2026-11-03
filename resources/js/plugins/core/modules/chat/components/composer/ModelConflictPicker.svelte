@@ -165,7 +165,7 @@
         /* Breathing room below the textarea's last line. */
         margin-top: var(--space-2, calc(0.25rem * 2));
         padding-bottom: var(--space-2, calc(0.25rem * 2));
-        animation: composer-section-slide-up var(--duration-fast, 300ms) var(--easing-spring) both;
+        animation: composer-section-slide-up var(--duration-fast) var(--easing-spring) both;
     }
 
     .conflict-container {
@@ -264,7 +264,7 @@
         padding: calc(0.25rem * 2.5);
         text-align: left;
         cursor: pointer;
-        transition: background-color var(--duration-fast, 150ms) var(--easing-default);
+        transition: background-color var(--duration-fast) var(--easing-default);
 
         /* A faint text-colored wash rather than --color-hover, whose blue (light) and
            accent fill (dark) would be the only colored surface in this neutral panel. */

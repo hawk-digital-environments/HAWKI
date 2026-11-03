@@ -139,7 +139,7 @@
         line-height: var(--line-height-normal);
         cursor: pointer;
         text-align: left;
-        transition: background-color var(--duration-fast, 150ms), color var(--duration-fast, 150ms);
+        transition: background-color var(--duration-fast), color var(--duration-fast);
     }
 
     .advanced-toggle:hover,
@@ -149,7 +149,7 @@
     }
 
     :global(.advanced-toggle-chevron) {
-        transition: rotate var(--duration-fast, 150ms) var(--easing-default);
+        transition: rotate var(--duration-fast) var(--easing-default);
     }
 
     :global(.advanced-toggle-chevron.is-open) {

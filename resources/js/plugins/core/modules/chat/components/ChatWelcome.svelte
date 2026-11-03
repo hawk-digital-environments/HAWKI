@@ -18,6 +18,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     import type {ChatWelcomeSection} from '$plugins/core/modules/chat/hooks/chatWelcomeHooks.js';
     import {textRise} from '$lib/utils/transitions/textRise.js';
     import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
+    import {EASING_SPRING} from '$lib/utils/transitions/easings.js';
     import {tick} from 'svelte';
 
     interface Props {
@@ -86,7 +87,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
             if (Math.abs(from - to) < 1 || duration === 0) return;
             resize = stage.animate(
                 [{height: `${from}px`}, {height: `${to}px`}],
-                {duration, easing: 'cubic-bezier(0.22, 1, 0.36, 1)'}
+                {duration, easing: EASING_SPRING}
             );
         });
     });
@@ -155,6 +156,11 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     }
 
     .welcome {
+        /* The hero's icon circle and glyph are a matched pair of bespoke sizes —
+           no global token fits, so they live here as component-local tokens. */
+        --welcome-icon-size: 3.25rem;
+        --welcome-glyph-size: 1.6rem;
+
         grid-area: 1 / 1;
         display: flex;
         height: 100%;
@@ -169,8 +175,8 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
 
     .welcome-icon {
         display: grid;
-        width: 3.25rem;
-        height: 3.25rem;
+        width: var(--welcome-icon-size);
+        height: var(--welcome-icon-size);
         margin-bottom: var(--space-5);
         place-items: center;
         border-radius: var(--corner-full);
@@ -185,7 +191,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     }
 
     .welcome-glyph {
-        font-size: 1.6rem;
+        font-size: var(--welcome-glyph-size);
         line-height: 1;
     }
 
@@ -213,7 +219,7 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
         color: var(--color-text);
         font-size: var(--font-size-sm);
         cursor: pointer;
-        transition: border-color 120ms ease, background-color 120ms ease;
+        transition: border-color var(--duration-extra-fast) var(--easing-default), background-color var(--duration-extra-fast) var(--easing-default);
     }
 
     .starter-prompt:hover { border-color: var(--color-interactive); }

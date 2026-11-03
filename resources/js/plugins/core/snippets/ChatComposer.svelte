@@ -305,7 +305,7 @@
         overflow: hidden;
         cursor: text;
         transform-origin: bottom;
-        transition: border-color var(--duration-fast, 150ms) var(--easing-default);
+        transition: border-color var(--duration-fast) var(--easing-default);
     }
 
     :global(.chat-composer-card--error) {
@@ -387,7 +387,7 @@
     .chat-section-shell {
         display: grid;
         grid-template-rows: 0fr;
-        transition: grid-template-rows var(--duration-fast, 300ms) var(--easing-spring);
+        transition: grid-template-rows var(--duration-fast) var(--easing-spring);
     }
 
     .chat-section-shell--open {
@@ -407,7 +407,7 @@
         gap: calc(0.25rem * 1.5);
         padding-inline: var(--space-2, calc(0.25rem * 2));
         padding-bottom: calc(0.25rem * 1.5);
-        animation: composer-section-slide-up var(--duration-fast, 300ms) var(--easing-spring) both;
+        animation: composer-section-slide-up var(--duration-fast) var(--easing-spring) both;
     }
 
     /* ── Bottom row ───────────────────────────────────────────────────── */

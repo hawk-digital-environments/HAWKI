@@ -327,6 +327,7 @@
         {disabled}
         bind:open
         align="start"
+        width="calc(var(--space-1) * 80)"
         magneticHover={false}
         contentProps={{
             class: ['model-menu-content', variant === 'field' && 'model-menu-content--field'],
@@ -425,7 +426,7 @@
         /* The provider tile sits close to the rounded start, the chevron gets more room. */
         padding-inline: var(--space-1) var(--space-2_5);
         white-space: nowrap;
-        transition: background-color var(--duration-fast, 150ms) var(--easing-default);
+        transition: background-color var(--duration-fast) var(--easing-default);
 
         &:not([disabled]) {
             cursor: pointer;
@@ -451,7 +452,7 @@
     .model-picker-trigger :global(.model-picker-trigger-chevron) {
         flex-shrink: 0;
         color: var(--color-text-muted);
-        transition: rotate var(--duration-fast, 150ms) var(--easing-default);
+        transition: rotate var(--duration-fast) var(--easing-default);
     }
 
     .model-picker-trigger[data-state='open'] :global(.model-picker-trigger-chevron) {
@@ -500,12 +501,11 @@
     /* ── Menu ─────────────────────────────────────────────────────────── */
 
     /*
-      Match the tool and assistant pickers: one fixed width, and scrolling inside the
-      animated detail-view viewport so the dropdown chrome stays anchored while the
-      panels slide.
+      Match the tool and assistant pickers: one fixed width (the `width` prop
+      above), and scrolling inside the animated detail-view viewport so the
+      dropdown chrome stays anchored while the panels slide.
     */
     :global(.dropdown-content.dropdown-content--dropdown.model-menu-content) {
-        width: calc(0.25rem * 80);
         max-height: min(28rem, calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4)));
         max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
         display: flex;
@@ -523,7 +523,7 @@
 
     /* Next to a form field the menu spans the field instead. */
     :global(.dropdown-content.dropdown-content--dropdown.model-menu-content.model-menu-content--field) {
-        width: var(--bits-dropdown-menu-anchor-width, calc(0.25rem * 80));
+        width: var(--bits-dropdown-menu-anchor-width, calc(var(--space-1) * 80));
     }
 
     /* Section headers read like the menu's section labels (`DropdownMenuLabel`), with a
@@ -539,7 +539,7 @@
 
     :global(.dropdown-item.model-picker-group .model-picker-group-chevron) {
         flex-shrink: 0;
-        transition: rotate var(--duration-fast, 150ms) var(--easing-default);
+        transition: rotate var(--duration-fast) var(--easing-default);
     }
 
     :global(.dropdown-item.model-picker-group .model-picker-group-chevron--open) {

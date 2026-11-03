@@ -497,7 +497,7 @@
 
         :global(svg) {
             flex-shrink: 0;
-            transition: translate var(--duration-fast, 150ms) var(--easing-default);
+            transition: translate var(--duration-fast) var(--easing-default);
         }
 
         &:hover :global(svg) {

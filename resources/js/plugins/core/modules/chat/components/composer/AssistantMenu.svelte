@@ -351,7 +351,7 @@
             bind:open
             sheet={!shownCommand}
             layout="panel"
-            width="calc(0.25rem * 76)"
+            width="calc(var(--space-1) * 76)"
             maxHeight="24rem"
             magneticHover={false}
             contentProps={{

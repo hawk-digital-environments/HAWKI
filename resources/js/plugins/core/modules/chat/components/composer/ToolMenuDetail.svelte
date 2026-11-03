@@ -189,7 +189,7 @@
         color: var(--color-text-muted, var(--color-text));
         font-size: var(--font-size-xs);
         cursor: pointer;
-        transition: background-color var(--duration-fast, 150ms);
+        transition: background-color var(--duration-fast);
     }
 
     .tool-detail-back:hover {

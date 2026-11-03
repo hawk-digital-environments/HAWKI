@@ -331,7 +331,7 @@
     }
 
     .tool-menu-group-action {
-        --icon-swap-dur: var(--duration-fast, 250ms);
+        --icon-swap-dur: var(--duration-fast);
         --icon-swap-blur: 2px;
         --icon-swap-start-scale: 0.25;
         --icon-swap-ease: ease-in-out;
@@ -397,7 +397,7 @@
         height: var(--space-5);
         align-items: center;
         justify-content: center;
-        border-radius: 999px;
+        border-radius: var(--corner-full);
         padding-inline: var(--space-1_5);
         background-color: color-mix(in oklch, var(--color-text) 8%, transparent);
         color: var(--color-text-muted);

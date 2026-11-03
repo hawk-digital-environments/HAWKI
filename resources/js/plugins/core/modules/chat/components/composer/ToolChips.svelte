@@ -325,7 +325,7 @@
         border: none;
         cursor: pointer;
         font-size: var(--font-size-xxs);
-        transition: background-color var(--duration-fast, 150ms);
+        transition: background-color var(--duration-fast);
     }
 
     .tool-chip-label {
@@ -350,7 +350,7 @@
         display: inline-flex;
         line-height: 0;
         opacity: 0.55;
-        transition: opacity var(--duration-fast, 150ms);
+        transition: opacity var(--duration-fast);
     }
 
     .tool-chip:hover .tool-chip-remove,

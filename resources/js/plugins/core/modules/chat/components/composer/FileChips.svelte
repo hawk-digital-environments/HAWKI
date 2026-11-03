@@ -222,7 +222,7 @@
         padding-inline-start: var(--space-1);
         padding-inline-end: var(--space-2);
         font-size: var(--font-size-xxs);
-        animation: file-chip-slide-up var(--duration-medium, 500ms) var(--easing-spring) both;
+        animation: file-chip-slide-up var(--duration-medium) var(--easing-spring) both;
         animation-delay: var(--file-chip-delay, 0ms);
     }
 

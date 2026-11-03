@@ -145,7 +145,7 @@
     }
 
     .chat-drop-label {
-        animation: composer-section-slide-up var(--duration-fast, 300ms) var(--easing-spring) both;
+        animation: composer-section-slide-up var(--duration-fast) var(--easing-spring) both;
         animation-delay: 80ms;
     }
 

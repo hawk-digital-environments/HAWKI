@@ -161,7 +161,7 @@
             transparent
         );
         opacity: 0;
-        transition: background-color var(--duration-fast, 150ms);
+        transition: background-color var(--duration-fast);
     }
 
     /* Deepening the chip's own tint on hover, rather than swapping in the neutral hover
@@ -236,7 +236,7 @@
         */
         color: color-mix(in oklab, var(--mention-chip-lead) 55%, transparent);
         line-height: 0;
-        transition: color var(--duration-fast, 150ms);
+        transition: color var(--duration-fast);
     }
 
     /* Hovering anywhere on the chip lights the X — the X is the only part that

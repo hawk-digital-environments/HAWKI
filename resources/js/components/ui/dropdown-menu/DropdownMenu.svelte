@@ -401,8 +401,10 @@
        popover kept with `sheet={false}`. */
     @media (--bp-smaller-than-md) {
         :global(.dropdown-content:is(.dropdown-content--sheet, .dropdown-content--dropdown, .dropdown-sub-content)) {
+            --dropdown-touch-target: 2.75rem;
+
             :global(:is(.dropdown-item, .dropdown-checkbox-item, .dropdown-radio-item, .dropdown-sub-trigger)) {
-                min-height: 2.75rem;
+                min-height: var(--dropdown-touch-target);
             }
         }
     }

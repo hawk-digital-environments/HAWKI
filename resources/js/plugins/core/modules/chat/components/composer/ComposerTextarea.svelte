@@ -409,11 +409,14 @@
         forceInlinePaste = e.shiftKey && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v';
     }
 
+    /** Height cap of the textarea's auto-grow, in px — measured DOM value, so no token. */
+    const MAX_AUTOSIZE_PX = 250;
+
     let oldMessage = composerContext.message;
     $effect(() => {
         if (ref && composerContext.message !== oldMessage) {
             ref.style.height = 'auto';
-            ref.style.height = Math.min(ref.scrollHeight, 250) + 'px';
+            ref.style.height = Math.min(ref.scrollHeight, MAX_AUTOSIZE_PX) + 'px';
         }
     });
 
@@ -492,7 +495,7 @@
         background: transparent;
         border: none;
         outline: none;
-        padding-block: calc(var(--space-1) * 1);
+        padding-block: var(--space-1);
         line-height: 1.25rem;
         box-shadow: none;
 
