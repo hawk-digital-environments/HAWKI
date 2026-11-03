@@ -51,6 +51,12 @@ use Stringable;
  */
 abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implements Conversational, HasTools, HasProviderOptions, HasMiddleware
 {
+    /**
+     * Step budget used when the model's `max_tool_calling_rounds` is 0 ("off"):
+     * unlimited model generations, bounded only by the per-tool call ceilings.
+     */
+    final public const int UNLIMITED_STEPS = PHP_INT_MAX;
+
     public function __construct(
         protected AgentRequestContext $context,
         protected string              $instructions,
@@ -144,6 +150,29 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
             return $this->context->modelParameters->getTopP();
         }
         return null;
+    }
+
+    /**
+     * Step budget for the SDK's tool-calling loop: always the model's
+     * `max_tool_calling_rounds` setting (5 by default).
+     *
+     * A setting of 0 means "off": unlimited model generations, bounded only by the
+     * per-tool call ceilings enforced separately by each tool's own `setMaxRuns()`.
+     * Note that with the limit off, provider mechanisms that keep stepping without
+     * tool calls (e.g. Anthropic's `pause_turn` continuation) are also unbounded —
+     * that is what "off" means; the operator owns it.
+     *
+     * Never returns null: the SDK's own heuristic (`round(1.5 x tool count)`, see
+     * {@see \Laravel\Ai\Gateway\TextGenerationLoop::resolveMaxSteps()}) is deliberately
+     * unreachable for HAWKI agents so there is exactly one source of the step budget.
+     *
+     * Resolved by {@see \Laravel\Ai\Gateway\TextGenerationOptions::forAgent()}.
+     */
+    public function maxSteps(): int
+    {
+        $rounds = $this->context->model->settings->getMaxToolCallingRounds();
+
+        return $rounds > 0 ? $rounds : self::UNLIMITED_STEPS;
     }
 
     /**

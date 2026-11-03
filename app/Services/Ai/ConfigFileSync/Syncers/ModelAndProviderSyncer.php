@@ -160,10 +160,7 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
 
         $settings = $this->makeModelSettings();
         if (!empty($config['max_tool_calling_rounds'])) {
-            $settings->setMaxToolCallingRounds((int)$config['max_tool_calling_rounds'], streaming: false);
-        }
-        if (!empty($config['max_tool_calling_rounds_streaming'])) {
-            $settings->setMaxToolCallingRounds((int)$config['max_tool_calling_rounds_streaming'], streaming: true);
+            $settings->setMaxToolCallingRounds((int)$config['max_tool_calling_rounds']);
         }
 
         $parameters = AiModelParameters::fromArray([]);

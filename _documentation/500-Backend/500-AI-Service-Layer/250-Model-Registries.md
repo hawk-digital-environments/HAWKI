@@ -16,8 +16,7 @@ At runtime, `AiModelSettings` (the value object on `AiModel`) reads the declared
 
 | Key | Type | Meaning |
 |---|---|---|
-| `max_tool_calling_rounds` | `int` | Maximum non-streaming tool-call rounds before giving up (prevents infinite loops) |
-| `max_tool_calling_rounds_streaming` | `int` | Same limit for streaming calls |
+| `max_tool_calling_rounds` | `int` | Tool-calling limit: the loop step budget, and the default per-tool call ceiling for tools without their own limit. `0` disables the limit entirely (unlimited; see *AI Tools and MCP → Tool-Calling Budgets*) |
 | `file_upload` | `bool` | Whether file uploads are allowed for this model |
 | `tool_calling` | `bool` | Whether the model is allowed to call tools at all |
 | `native_capabilities` | `bool` | Whether provider-native tools (e.g. OpenAI web search) are allowed |

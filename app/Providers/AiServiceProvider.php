@@ -97,7 +97,6 @@ class AiServiceProvider extends ServiceProvider
             AiModelSettingRegistry::class,
             fn(AiModelSettingRegistry $registry) => $registry
                 ->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, 5)
-                ->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING, 3)
                 ->declare(WellKnownModelSettings::FILE_UPLOAD, false)
                 ->declare(WellKnownModelSettings::TOOL_CALLING, false)
                 ->declare(WellKnownModelSettings::NATIVE_CAPABILITIES, true)
