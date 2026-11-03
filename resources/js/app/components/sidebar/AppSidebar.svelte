@@ -141,7 +141,7 @@
         gap: var(--space-2);
         width: 100%;
         min-height: var(--nav-row-h);
-        margin-bottom: var(--nav-group-gap);
+        margin-bottom: var(--space-6);
         padding: 0 var(--space-3) 0 var(--nav-item-pad-x);
         border: none;
         outline: var(--divider-width) solid transparent;

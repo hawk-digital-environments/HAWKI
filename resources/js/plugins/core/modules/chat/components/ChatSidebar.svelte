@@ -380,7 +380,7 @@
     }
 
     /* Takes back the empty space the filter button's taller box leaves above the
-       title, so the gap under the search measures to the text, like the one over it.
+       title, so the gap under the search measures to the text.
        On the scroller rather than the header, which it would otherwise clip. */
     .history.titled {
         margin-top: calc((var(--history-title-size) * var(--line-height-normal) - var(--nav-row-h) + 2px) / 2);
