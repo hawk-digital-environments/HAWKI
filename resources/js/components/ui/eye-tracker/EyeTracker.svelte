@@ -4,6 +4,8 @@ Ported from Bencho's "Eye tracker" (MIT, bencho.dev/licence), originally a
 React component named `Watcher`; the maths and the comments are kept as-is.
 -->
 <script module lang="ts">
+    import dewSfx from './dew.mp3?url';
+
     /* ══ Eye tracker ═══════════════════════════════════════════
        A ball with two eyes that watches your cursor, wherever it is
        on the page.
@@ -97,6 +99,17 @@ React component named `Watcher`; the maths and the comments are kept as-is.
     const TINTS = ['#3b5bff', '#179c52', '#e0307f'];
     const KEY_MS = 38;
     const HOLD_MS = 1500;
+
+    /* a soft click under the finger with every poke; one element,
+       made on the first press so a page that never pokes never
+       loads it, and rewound so quick presses each get their own */
+    let sfx: HTMLAudioElement | null = null;
+    const click = () => {
+        sfx ??= new Audio(dewSfx);
+        sfx.currentTime = 0;
+        /* a blocked or failed play is not worth a word */
+        sfx.play().catch(() => {});
+    };
 
     /* ── the body, in three shapes ──────────────────────────────
        The eyes are worked out on a sphere whatever the body is, so
@@ -225,6 +238,7 @@ React component named `Watcher`; the maths and the comments are kept as-is.
     $effect(() => () => { turn++; });
     const poke = async () => {
         if (idle) return;
+        click();
         const mine = ++turn;
         const pool = Array.from({length: LINE_COUNT}, (_, i) => i).filter((i) => i !== lastLine);
         const i = pool[Math.floor(Math.random() * pool.length)];
