@@ -30,7 +30,7 @@
     import {textPopIn} from '$lib/utils/transitions/textPopIn';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {tick} from 'svelte';
+    import {removeChipAndMoveFocus, isChipRemoveKey} from '$plugins/core/modules/chat/components/composer/utils/chipFocus.js';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {mergeProps} from 'bits-ui';
     import {toolAvailabilityFor, toolCategoryOf} from '$plugins/core/stores/aiToolStoreData.js';
@@ -141,38 +141,24 @@
     }
 
     /**
-     * Removes a tool and lands focus somewhere sensible (mirrors `FileChips`): the
-     * chip that slid into the removed slot, otherwise the preceding one, otherwise
-     * the textarea once no chips are left. Without this, focus falls back to
-     * `<body>` and keyboard users have to tab in from the top of the page again.
+     * Removes a tool and lands focus somewhere sensible — the shared chip-row
+     * behaviour, see `chipFocus.ts`.
      */
-    async function removeAndMoveFocus(tool: typeof tools[number], index: number) {
-        composerContext.tools.disable(tool);
-        // tick() flushes the re-render; the extra frame lets layout settle before
-        // we pick the chip to focus by index.
-        await tick();
-        await new Promise(requestAnimationFrame);
-
-        // The row itself may still be mid out-transition, so check the state, not the DOM.
-        if (composerContext.tools.active.length === 0) {
-            composerContext.focusInput();
-            return;
-        }
-
-        const chips = chipButtons();
-        if (chips.length === 0) {
-            composerContext.focusInput();
-            return;
-        }
-        chips[Math.min(index, chips.length - 1)].focus();
+    function removeAndMoveFocus(tool: typeof tools[number], index: number) {
+        void removeChipAndMoveFocus({
+            remove: () => composerContext.tools.disable(tool),
+            // The row may still be mid out-transition, so read the state, not the DOM.
+            hasRemaining: () => composerContext.tools.active.length > 0,
+            chipButtons,
+            focusChip: (i, chips) => chips[i].focus(),
+            focusFallback: () => composerContext.focusInput(),
+            index
+        });
     }
 
-    // Enter/Space is handled here rather than through the click handler so keyboard
-    // removal can move focus onward while a mouse click returns to the textarea.
-    // preventDefault stops the browser from firing a synthetic click afterwards.
+    // Keyboard removal moves focus onward; a mouse click returns to the textarea.
     function onChipKeydown(event: KeyboardEvent, tool: typeof tools[number], index: number) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
+        if (isChipRemoveKey(event)) {
             void removeAndMoveFocus(tool, index);
         }
     }

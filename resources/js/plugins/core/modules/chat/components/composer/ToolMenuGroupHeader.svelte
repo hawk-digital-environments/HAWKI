@@ -30,6 +30,7 @@
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import McpServerIcon from '$lib/components/ui/icons/iconset/McpServerIcon.svelte';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
+    import MenuSwatch from '$plugins/core/modules/chat/components/composer/utils/MenuSwatch.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
 
@@ -176,18 +177,24 @@
         class="tool-menu-group-label tool-menu-group-toggle">
         {#snippet children(isChecked)}
             <span class="tool-menu-group-main">
-                <span
+                <!-- The shared swatch box (see `MenuSwatch`) in the MCP section's gray
+                     ink; the overlay shows the toggle's tick or its mixed-state dash. -->
+                <MenuSwatch
                     class="tool-menu-group-swatch"
-                    class:tool-menu-group-swatch--active={isChecked || indeterminate}
-                    aria-hidden="true">
+                    ink="var(--color-tool-category-mcp)"
+                    neutral
+                    shape="inset"
+                    checked={isChecked || indeterminate}>
                     <McpServerIcon size={16}/>
-                    {#if isChecked}
-                        <span class="tool-menu-group-state"><Tick02Icon size={16}/></span>
-                    {:else if indeterminate}
-                        <!-- The ui checkbox item's mixed-state dash, reused inside the swatch. -->
-                        <span class="tool-menu-group-state"><span class="dropdown-item-indicator-mixed" aria-hidden="true"></span></span>
-                    {/if}
-                </span>
+                    {#snippet state()}
+                        {#if isChecked}
+                            <Tick02Icon size={16}/>
+                        {:else}
+                            <!-- The ui checkbox item's mixed-state dash, reused inside the swatch. -->
+                            <span class="dropdown-item-indicator-mixed"></span>
+                        {/if}
+                    {/snippet}
+                </MenuSwatch>
                 <span class="tool-menu-group-text">
                     <span class="tool-menu-group-label-text">{label}</span>
                     <span class="tool-menu-group-description">
@@ -267,35 +274,6 @@
         flex: 1;
         align-items: center;
         gap: var(--space-2);
-    }
-
-    .tool-menu-group-swatch {
-        position: relative;
-        display: inline-flex;
-        width: calc(0.25rem * 8);
-        height: calc(0.25rem * 8);
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        border-radius: calc(var(--corner-sm) - var(--space-1_5));
-        background-color: color-mix(in oklab, var(--color-tool-category-mcp) 10%, transparent);
-        color: var(--color-tool-category-mcp);
-        line-height: 0;
-    }
-
-    .tool-menu-group-swatch--active {
-        background-color: color-mix(in oklab, var(--color-tool-category-mcp) 20%, var(--color-surface-raised));
-    }
-
-    .tool-menu-group-state {
-        position: absolute;
-        display: inline-flex;
-        inset: 0;
-        align-items: center;
-        justify-content: center;
-        border-radius: inherit;
-        background-color: inherit;
-        color: var(--color-tool-category-mcp);
     }
 
     .tool-menu-group-text {
