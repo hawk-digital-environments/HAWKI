@@ -121,7 +121,10 @@ export function createProximityHover(options: Options = {}) {
         const {scrollTop, scrollLeft} = container;
         const next: Record<number, ItemRect> = {};
         for (const [idx, el] of items) {
-            if (!el) continue;
+            // Items inside an `inert` subtree (e.g. a collapsed accordion panel)
+            // keep their box while clipped out of view, so they would otherwise
+            // still attract the highlight.
+            if (!el || el.closest('[inert]')) continue;
             const r = el.getBoundingClientRect();
             next[idx] = {
                 top: (r.top - containerRect.top) / scale + scrollTop,
@@ -180,6 +183,18 @@ export function createProximityHover(options: Options = {}) {
         syncHighlights();
     }
 
+    /** Live main-axis spans of the visible items; inert (collapsed) items don't count. */
+    function hitSpans(): [number, number][] {
+        const spans: [number, number][] = [];
+        for (const el of items.values()) {
+            if (!el || el.closest('[inert]')) continue;
+            const r = el.getBoundingClientRect();
+            if (axis === 'y' ? r.height === 0 : r.width === 0) continue;
+            spans.push(axis === 'y' ? [r.top, r.bottom] : [r.left, r.right]);
+        }
+        return spans;
+    }
+
     return {
         get activeIndex() { return activeIndex; },
         get itemRects() { return rects; },
@@ -217,16 +232,20 @@ export function createProximityHover(options: Options = {}) {
          * the main axis — the slack keeps the gaps between items "on-item".
          */
         isNearItem(event: MouseEvent, slack = 4) {
-            for (const el of items.values()) {
-                if (!el) continue;
-                const r = el.getBoundingClientRect();
-                if (axis === 'y' ? r.height === 0 : r.width === 0) continue;
-                const [cursor, start, end] = axis === 'y'
-                    ? [event.clientY, r.top, r.bottom]
-                    : [event.clientX, r.left, r.right];
-                if (cursor >= start - slack && cursor <= end + slack) return true;
-            }
-            return false;
+            const cursor = axis === 'y' ? event.clientY : event.clientX;
+            return hitSpans().some(([start, end]) => cursor >= start - slack && cursor <= end + slack);
+        },
+        /**
+         * Whether the pointer is anywhere between the first and the last item on
+         * the main axis (plus `slack`), e.g. over a section label between rows.
+         */
+        isWithinItems(event: MouseEvent, slack = 4) {
+            const spans = hitSpans();
+            if (spans.length === 0) return false;
+            const cursor = axis === 'y' ? event.clientY : event.clientX;
+            const start = Math.min(...spans.map(([s]) => s));
+            const end = Math.max(...spans.map(([, e]) => e));
+            return cursor >= start - slack && cursor <= end + slack;
         },
         /** Mark which item is selected and re-measure so its highlight tracks it. */
         setSelected(idx: number | null) {

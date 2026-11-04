@@ -25,7 +25,7 @@
     import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {tick} from 'svelte';
+    import {removeChipAndMoveFocus, isChipRemoveKey} from '$plugins/core/modules/chat/components/composer/utils/chipFocus.js';
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();
@@ -55,38 +55,24 @@
     }
 
     /**
-     * Removes a chip and lands focus somewhere sensible: the chip that slid into the
-     * removed slot, otherwise the preceding one, otherwise the textarea once the row
-     * is empty. Without this, focus falls back to `<body>` and keyboard users have to
-     * tab in from the top of the page again.
+     * Removes a chip and lands focus somewhere sensible — the shared chip-row
+     * behaviour, see `chipFocus.ts`.
      */
-    async function removeAndMoveFocus(file: File, index: number) {
-        composerContext.attachments.remove(file);
-        // tick() flushes the re-render; the extra frame lets the removed chip's
-        // (zero-duration) out-transition finish so it is out of the DOM before we
-        // pick the chip to focus by index.
-        await tick();
-        await new Promise(requestAnimationFrame);
-
-        if (!composerContext.attachments.hasAny) {
-            composerContext.focusInput();
-            return;
-        }
-
-        const chips = chipButtons();
-        if (chips.length === 0) {
-            composerContext.focusInput();
-            return;
-        }
-        focusChip(Math.min(index, chips.length - 1));
+    function removeAndMoveFocus(file: File, index: number) {
+        void removeChipAndMoveFocus({
+            remove: () => composerContext.attachments.remove(file),
+            hasRemaining: () => composerContext.attachments.hasAny,
+            chipButtons,
+            focusChip: i => focusChip(i),
+            focusFallback: () => composerContext.focusInput(),
+            index
+        });
     }
 
-    // Enter/Space is handled here rather than through the button's click handler so
-    // keyboard removal can move focus onward while a mouse click returns to the textarea.
-    // preventDefault stops the browser from firing a synthetic click afterwards.
+    // Enter/Space removes from the keyboard so focus can move onward; arrow keys
+    // walk the row. A mouse click returns to the textarea.
     function onChipKeydown(event: KeyboardEvent, file: File, index: number) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
+        if (isChipRemoveKey(event)) {
             void removeAndMoveFocus(file, index);
             return;
         }
@@ -222,7 +208,7 @@
         padding-inline-start: var(--space-1);
         padding-inline-end: var(--space-2);
         font-size: var(--font-size-xxs);
-        animation: file-chip-slide-up var(--duration-medium, 500ms) var(--easing-spring) both;
+        animation: file-chip-slide-up var(--duration-medium) var(--easing-spring) both;
         animation-delay: var(--file-chip-delay, 0ms);
     }
 

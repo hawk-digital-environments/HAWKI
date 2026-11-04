@@ -16,13 +16,13 @@
   reads as one continuous move rather than three.
 
   ## Usage
-  Rendered by `ChatComposer` in the top row's left group, after `ModelPicker`. That group is
+  Rendered by `ChatComposer` in the top row's left group, before `ModelPicker`. That group is
   only mounted while `guard.showsAiUiElements` is true — which in a room is exactly when the
   message carries a handle, i.e. whenever there is a chip to show:
   ```svelte
   <div class="chat-composer-left">
-      <ModelPicker/>
       <MentionChips/>
+      <ModelPicker/>
   </div>
   ```
 -->
@@ -59,7 +59,9 @@
     // the unroll rather than on top of it. No overshoot and barely any scale: the chip
     // makes its entrance on the inside, and a bouncing row would only fight it.
     const enter = {duration: 95, scaleFrom: 0.94, overshoot: false} as const;
-    const leave = {direction: 'out', scaleFrom: 0.94} as const;
+    // Leaving blurs out as it collapses, the reverse of the pill's blur-in arrival, so a
+    // removed tag dissolves rather than being squeezed shut with sharp text inside it.
+    const leave = {direction: 'out', scaleFrom: 0.94, blur: 2} as const;
 </script>
 
 {#each chips as chip (chip.handle)}

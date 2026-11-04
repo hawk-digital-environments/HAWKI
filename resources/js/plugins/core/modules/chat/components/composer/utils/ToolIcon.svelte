@@ -19,9 +19,9 @@
 -->
 <script lang="ts">
 
-    import type {AiToolOrCapability} from '$plugins/core/stores/aiToolStoreData.js';
+    import {type AiToolOrCapability, toolCategoryOf} from '$plugins/core/stores/aiToolStoreData.js';
+    import MenuSwatch from '$plugins/core/modules/chat/components/composer/utils/MenuSwatch.svelte';
     import ToolboxIcon from '$lib/components/ui/icons/iconset/ToolboxIcon.svelte';
-    import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
 
     interface Props {
         tool: AiToolOrCapability;
@@ -34,6 +34,11 @@
     }
 
     const {tool, size = 16, swatch = false, checked = false}: Props = $props();
+
+    // The swatch is tinted by the tool-picker section the tool lives in; the gray
+    // MCP section tints a step lighter (the neutral strengths).
+    const category = $derived(toolCategoryOf(tool));
+    const categoryInk = $derived(`var(--color-tool-category-${category})`);
 </script>
 
 {#snippet glyph()}
@@ -53,13 +58,11 @@
 {/snippet}
 
 {#if swatch}
-    <!-- The tool's name sits right next to it, so the icon is decoration rather than content. -->
-    <span class={['tool-icon-swatch', checked && 'tool-icon-swatch--checked']} aria-hidden="true">
+    <!-- The shared swatch box (see `MenuSwatch`); the `tool-icon-swatch` class stays
+         so inset rows can keep tuning its radius from outside. -->
+    <MenuSwatch class="tool-icon-swatch" ink={categoryInk} neutral={category === 'mcp'} {checked} data-tool-category={category}>
         {@render glyph()}
-        {#if checked}
-            <span class="tool-icon-check"><Tick02Icon size={16}/></span>
-        {/if}
-    </span>
+    </MenuSwatch>
 {:else}
     {@render glyph()}
 {/if}
@@ -82,57 +85,10 @@
         object-fit: contain;
     }
 
-    /*
-      The counterpart to `.assistant-row-emoji`: same box, same radius, same low-alpha
-      diagonal tint, so the two menus share one rhythm and one weight. Only the color
-      differs — assistants are color-coded because the tint says *who* you are addressing,
-      and tools carry no such identity, so theirs stays neutral per the token file's rule
-      that chrome is neutral and chroma is reserved for accent and status.
-    */
-    .tool-icon-swatch {
-        position: relative;
-        display: inline-flex;
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        /* A fixed square keeps every row's swatch identical; the gap between it and the
-           centred 16px glyph is what reads as the inner padding. Matches the assistant
-           swatch exactly — its emoji renders at `--font-size-sm`, which is this 16px. */
-        width: calc(0.25rem * 8);
-        height: calc(0.25rem * 8);
-        /* `--corner-sm` would land at three quarters of this box and swell it toward a
-           circle — a step down keeps it a rounded rect, as on the assistant swatch. */
-        border-radius: var(--corner-xs);
-        /*
-          Blue rather than neutral, so a tool swatch reads as the tool counterpart of the
-          assistant's color-coded one instead of as disabled chrome. `--color-accent-text`
-          is the accent stop that is already tuned per theme — deep blue on light chrome,
-          light blue on dark — so the same mix holds up in both.
-        */
-        background-color: color-mix(in oklab, var(--color-accent-text) 15%, transparent);
-        /* The glyph inherits the same blue, so swatch and icon read as one mark. */
-        color: var(--color-accent-text);
-        line-height: 0;
-    }
-
-    /*
-      Selection is marked on the swatch, matching `AssistantRow`: the tint deepens to
-      roughly triple strength and the check covers the glyph. Mixed toward the raised
-      surface rather than toward `transparent`, so the fill is opaque.
-    */
-    .tool-icon-swatch--checked {
-        background-color: color-mix(in oklab, var(--color-accent-text) 35%, var(--color-surface-raised));
-    }
-
-    .tool-icon-check {
-        position: absolute;
-        border-radius: inherit;
-        background-color: inherit;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        inset: 0;
-        color: var(--color-accent-text);
+    /* On a swatch the glyph takes the section ink (set by `MenuSwatch`), not its
+       own capability color. */
+    :global(.tool-icon-swatch) .tool-icon {
+        color: inherit;
     }
 </style>
 

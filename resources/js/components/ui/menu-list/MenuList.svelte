@@ -26,9 +26,13 @@
         /** Suppress both sliding highlights (active selection + proximity hover),
             e.g. while the list is sliding through a transition. */
         disabled?: boolean;
+        /** Keep the proximity highlight on the nearest row while the pointer is anywhere
+            between the first and the last row — e.g. over a section label — so it glides
+            from section to section instead of disappearing between them. */
+        bridgeSections?: boolean;
     }
 
-    const {children, disabled = false, class: className, ...rest}: Props = $props();
+    const {children, disabled = false, bridgeSections = false, class: className, ...rest}: Props = $props();
 
     const hover = createProximityHover({axis: 'y'});
 
@@ -140,8 +144,11 @@
         // disappears in the empty space around the list instead of reaching for
         // the nearest row. The narrow gaps *between* rows still count as "on a
         // row" — otherwise the highlight would blink off every time the pointer
-        // crossed one.
-        if (!hover.isNearItem(event) || isExcluded(event)) {
+        // crossed one. With `bridgeSections` everything between the first and the
+        // last row counts, so section labels don't break the glide — but content
+        // above or below the rows (a form control, a header) still clears it.
+        const onRows = bridgeSections ? hover.isWithinItems(event) : hover.isNearItem(event);
+        if (!onRows || isExcluded(event)) {
             hover.handlers.onmouseleave();
             return;
         }

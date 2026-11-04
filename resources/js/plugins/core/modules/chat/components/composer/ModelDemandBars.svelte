@@ -8,7 +8,7 @@
 
   ## Usage
   Used wherever a model is listed for selection, so the user can see load before picking:
-  in `ModelPicker`'s per-option snippet (compact, no label) and in `ModelConflictPicker`'s
+  in `ModelMenuListItem`'s rows (compact, no label) and in `ModelConflictPicker`'s
   replacement-model cards:
   ```svelte
   {#if m.status !== 'offline'}

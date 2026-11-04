@@ -157,10 +157,18 @@
            neutral hover grey the assistant button used to sit on. */
         background-color: color-mix(
             in oklab,
-            color-mix(in oklab, var(--assistant-from), var(--assistant-to)) 15%,
+            color-mix(in oklab, var(--assistant-from), var(--assistant-to)) var(--mention-chip-fill, 15%),
             transparent
         );
         opacity: 0;
+        transition: background-color var(--duration-fast);
+    }
+
+    /* Deepening the chip's own tint on hover, rather than swapping in the neutral hover
+       grey, keeps the pill in the assistant's colors while it signals it can be pressed. */
+    .mention-chip:hover:not(:disabled),
+    .mention-chip:focus-visible:not(:disabled) {
+        --mention-chip-fill: 25%;
     }
 
     /*
@@ -228,7 +236,7 @@
         */
         color: color-mix(in oklab, var(--mention-chip-lead) 55%, transparent);
         line-height: 0;
-        transition: color var(--duration-fast, 150ms);
+        transition: color var(--duration-fast);
     }
 
     /* Hovering anywhere on the chip lights the X — the X is the only part that

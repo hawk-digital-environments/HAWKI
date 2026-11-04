@@ -23,7 +23,7 @@ Low-level primitive components with no business logic and no dependency on app s
 | `BorderBeam`                            | `ui/border-beam/`     | Animated border highlight effect                                                        |
 | `StatusDot`                             | `ui/status-dot/`      | Colored status indicator dot                                                            |
 | `Separator`                             | `ui/separator/`       | Visual divider line                                                                     |
-| `RadioCard`, `RadioCardGroup`           | `ui/radio-card/`      | Card-style radio group — each card is selectable with a spring-animated indicator       |
+| `RadioRow`, `RadioRowGroup`             | `ui/radio-row/`       | Radio group of flat menu rows with sliding highlights and a spring-animated indicator   |
 | `Citation`, `CitationList`, `CitationReference`, `CitationRoot` | `ui/citations/` | Web-search citation tiles and inline reference chips rendered below AI messages |
 
 ---
@@ -47,43 +47,48 @@ The toast system consists of two parts: the `Toaster` component (rendered once b
 
 ---
 
-## RadioCard
+## RadioRow
 
-`RadioCardGroup` + `RadioCard` implement a card-style radio group. Bind `value` on the group; each card's `value` prop identifies it.
+`RadioRowGroup` + `RadioRow` implement a radio group of flat menu rows. Bind `value` on the group; each row's `value` prop identifies it. The rows sit in a `MenuList`, so the selection and the pointer get its sliding highlights.
 
 ```svelte
 <script lang="ts">
-    import RadioCardGroup from '$lib/components/ui/radio-card/RadioCardGroup.svelte';
-    import RadioCard from '$lib/components/ui/radio-card/RadioCard.svelte';
+    import RadioRowGroup from '$lib/components/ui/radio-row/RadioRowGroup.svelte';
+    import RadioRow from '$lib/components/ui/radio-row/RadioRow.svelte';
+    import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
 
     let selected = $state('a');
 </script>
 
-<RadioCardGroup bind:value={selected} name="my-group">
-    <RadioCard value="a">Option A</RadioCard>
-    <RadioCard value="b">Option B</RadioCard>
-    <RadioCard value="c" disabled>Option C (disabled)</RadioCard>
-</RadioCardGroup>
+<RadioRowGroup bind:value={selected} name="my-group">
+    <RadioRow value="a">Option A</RadioRow>
+    <RadioRow value="b">
+        Option B
+        {#snippet trailing()}<InfoPopover info="What option B does"/>{/snippet}
+    </RadioRow>
+    <RadioRow value="c" disabled>Option C (disabled)</RadioRow>
+</RadioRowGroup>
 ```
 
-**`RadioCardGroup` props:**
+**`RadioRowGroup` props:**
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
-| `value` | `string` | `''` | The selected card's value. Bindable. |
-| `disabled` | `boolean` | `false` | Disables (and dims) every card in the group. |
+| `value` | `string` | `''` | The selected row's value. Bindable. |
+| `disabled` | `boolean` | `false` | Disables every row in the group. |
 | `name` | `string` | — | Shared `name` for the underlying radio inputs. |
 | `onChange` | `(value: string) => void` | — | Called with the newly selected value. |
 
-**`RadioCard` props:**
+**`RadioRow` props:**
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
-| `value` | `string` | — | The value this card represents. |
-| `disabled` | `boolean` | `false` | Disables this card individually. |
-| `children` | `Snippet` | — | Card content. |
+| `value` | `string` | — | The value this row represents. |
+| `disabled` | `boolean` | `false` | Disables this row individually. |
+| `children` | `Snippet` | — | Row label. |
+| `trailing` | `Snippet` | — | Content at the row's end edge (status dots, an info button). It sits outside the radio, so its controls never select the row. |
 
-Selection is animated with a spring-driven dot indicator. Cards are keyboard-reachable with Space/Enter and carry full ARIA `role="radio"` / `role="radiogroup"` semantics.
+Selection is animated with a spring-driven dot indicator. The group is a single Tab stop (the selected row); ArrowUp/ArrowDown move to and select the previous/next enabled row, Home/End jump to the ends, and Space/Enter select the focused row. The group carries `role="radiogroup"` and each row's control `role="radio"`.
 
 ---
 

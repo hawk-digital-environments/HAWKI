@@ -66,7 +66,7 @@
         color: var(--color-text);
         cursor: pointer;
         text-align: left;
-        transition: border-color var(--duration-fast, 150ms) var(--easing-default);
+        transition: border-color var(--duration-fast) var(--easing-default);
     }
 
     .system-prompt-preview:hover {

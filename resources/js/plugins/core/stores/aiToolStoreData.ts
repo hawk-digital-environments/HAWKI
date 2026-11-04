@@ -22,6 +22,27 @@ type AiToolWrapper = AiTool & {
 
 export type AiToolOrCapability = AiToolWrapper | AiToolCapabilityWrapper;
 
+/** The tool-picker section a tool belongs to; drives its `--color-tool-category-*` ink. */
+export type ToolCategory = 'capability' | 'function' | 'mcp';
+
+/**
+ * Sorts a tool into its tool-picker section, mirroring the grouping in `ToolMenu`:
+ * capabilities, HAWKI function tools (no MCP server), then MCP-server tools.
+ */
+export function toolCategoryOf(tool: AiToolOrCapability): ToolCategory {
+    if (tool.is_capability) {
+        return 'capability';
+    }
+    return tool.server ? 'mcp' : 'function';
+}
+
+/** Current catalog membership is resolved first; this separates temporary outages from model conflicts. */
+export function toolAvailabilityFor(tool: AiToolOrCapability, model: AiModel | null | undefined): 'available' | 'offline' | 'model-incompatible' {
+    if (!model) return 'model-incompatible';
+    if (tool.isAvailableFor(model)) return 'available';
+    return tool.isAvailableFor(model, true) ? 'offline' : 'model-incompatible';
+}
+
 /**
  * Merges raw tools and capabilities into one flat list for display, wrapping each in
  * `isAvailableFor`/`displayName`/`description` helpers. A tool whose `capability_key` matches a

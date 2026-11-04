@@ -2,6 +2,7 @@ import z from 'zod';
 import {wellKnownAiToolCapabilities} from '$plugins/core/schemas/resources/ai-tools-capabilities.schema.js';
 import AiProvidersSchema from '$plugins/core/schemas/resources/ai-providers.schema.js';
 import {wellKnownAiModelFlags} from '$plugins/core/schemas/resources/ai-model-flags.js';
+import AiModelDescriptionsSchema from '$plugins/core/schemas/resources/ai-model-descriptions.js';
 
 /**
  * Validates the `ai-models` API resource — every AI model (chat, image generation, video
@@ -38,6 +39,8 @@ const BaseAiModelSchema = z.object({
     model_id: z.string(),
     model_type: z.union([z.enum(wellKnownAiModelTypes), z.string()]).nullable(),
     label: z.string(),
+    /** Link to the vendor's documentation page for this model, if the backend knows one (shown on the model card). */
+    documentation_url: z.string().nullable().optional(),
     /** Input modalities the model accepts, e.g. `['text', 'image']`. */
     input: z.array(z.union([z.enum(wellKnownAiModelIoMethods), z.string()])),
     /** Output modalities the model can produce. */
@@ -53,6 +56,8 @@ const BaseAiModelSchema = z.object({
     /** Free-form map of behavioral/feature toggles (e.g. `file_upload`, `tool_calling`) to their value; keyed by {@link wellKnownAiModelSettings}. */
     settings: z.record(z.union([z.enum(wellKnownAiModelSettings), z.string()]), z.unknown()).nullable(),
     provider: AiProvidersSchema.optional(),
+    /** Localized description texts (the `ai-model-descriptions` resource), present when fetched with `include=description`. Pick a locale via a helper like `ModelCard`'s — don't blindly take the first entry. */
+    description: z.array(AiModelDescriptionsSchema).optional(),
     /** Descriptive badges shown in the UI (e.g. `open-weights`, `strength-code-generation`), referencing {@link wellKnownAiModelFlags} ids. */
     flags: z.array(z.union([z.enum(wellKnownAiModelFlags), z.string()])).nullable(),
     /** IDs of the `ai-tools` this model is linked/restricted to. */

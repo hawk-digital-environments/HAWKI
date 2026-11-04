@@ -138,7 +138,8 @@
 <style>
     .history-row {
         /* The trigger sits inside the row's rounded rectangle with the same gap
-           on every side, one radius step tighter than the row. */
+           on every side, one radius step tighter than the row. `--nav-row-h`
+           is scoped by `SidebarRoot`, which the history list renders inside. */
         --action-gap: var(--space-1);
         --action-size: calc(var(--nav-row-h) - 2 * var(--action-gap));
         position: relative;
