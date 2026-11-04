@@ -496,7 +496,13 @@ function setDateSpan(activeThread, msgDate, formatDay = true) {
 
 
 function deconstContent(inputContent) {
-    inputContent = String(inputContent);
+    // Coerce only primitives (e.g. numbers) to string; structured AI content
+    // arrives as an object and must be unwrapped below, not stringified.
+    if (inputContent === null || inputContent === undefined) {
+        inputContent = '';
+    } else if (typeof inputContent !== 'object') {
+        inputContent = String(inputContent);
+    }
     function createResult(messageText, groundingMetadata = '', citations = []) {
         return {
             messageText,
