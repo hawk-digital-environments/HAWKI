@@ -192,7 +192,6 @@
              squeeze the other out of a short sidebar. -->
         <div
             class="history"
-            class:titled={store.conversations.length > 0}
             class:fade-top={fadeTop}
             class:fade-bottom={fadeBottom}
             bind:this={historyEl}
@@ -337,8 +336,10 @@
         flex-shrink: 0;
         align-items: center;
         justify-content: space-between;
-        /* Fits the filter button, so a section without one has the same height. */
-        min-height: calc(var(--nav-row-h) - 2px);
+        /* A full row, like every other line of the sidebar, so the title's text
+           keeps the rows' rhythm and a section without a filter button is just as
+           tall. */
+        min-height: var(--nav-row-h);
         padding-left: var(--history-text-inset);
     }
 
@@ -461,13 +462,6 @@
         -webkit-mask-image: var(--history-fade);
     }
 
-    /* Takes back the empty space the filter button's taller box leaves above the
-       title, so the gap under the search measures to the text.
-       On the scroller rather than the header, which it would otherwise clip. */
-    .history.titled {
-        margin-top: calc((var(--history-title-size) * var(--line-height-normal) - var(--nav-row-h) + 2px) / 2);
-    }
-
     .history.fade-top {
         --fade-top: var(--space-6);
     }
@@ -480,8 +474,13 @@
         display: none;
     }
 
+    /* Takes the place of a row, so it sits on the same rhythm as the rows it
+       stands in for. */
     .hint {
-        margin: var(--space-3);
+        display: flex;
+        align-items: center;
+        min-height: var(--nav-row-h);
+        margin: 0 var(--space-3);
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
         line-height: var(--line-height-normal);
