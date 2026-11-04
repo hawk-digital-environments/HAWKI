@@ -126,7 +126,7 @@
                 </span>
             {:else}
                 <span class="welcome-eyes" aria-hidden="true" in:textRise|global={{index: 0}} out:textRise={leave}>
-                    <EyeTracker shape="Circle" size={64} eyeScale={1.2} within=".welcome" />
+                    <EyeTracker shape="Circle" size={64} eyeScale={1.2} follow={50} within=".welcome" />
                 </span>
             {/if}
             <svelte:element
