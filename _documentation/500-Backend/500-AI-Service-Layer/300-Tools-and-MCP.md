@@ -57,6 +57,22 @@ class GetCurrentWeatherTool extends AbstractTool
 
 **Settings.** `AbstractTool` also implements `SettingsAwareToolInterface`, which exposes a `setSettings(array)` / `getSettings()` pair. The agent layer calls `setSettings()` with per-model tool configuration before invoking the tool. Use this when a tool has configurable behaviour that varies per model assignment (e.g. API keys, result counts).
 
+## Tool-Calling Budgets
+
+Every agent run enforces two **independent** limits: a **step budget** (how many model generations — round-trips — a run may use, all tools combined) and a **per-tool call ceiling** (how often a single tool may be invoked).
+
+| Layer | Source | Behaviour |
+|---|---|---|
+| Step budget | Model setting `max_tool_calling_rounds`, default **5** | Always the setting — the SDK's `round(1.5 × tool count)` heuristic is unreachable for HAWKI agents. A setting of `0` means **off**: unlimited generations, bounded only by the per-tool layer |
+| Per-tool call ceiling | The tool's own `setMaxRuns()`; the model setting fills the blank for tools without one (MCP tools declare none) | The tool's own declaration is authoritative and never overridden. Over-limit calls receive the model-workable `[ERROR] ... Do not call this tool again!` result, so the run stays answerable |
+
+Notes:
+
+- Tool ceilings do **not** influence the step budget — the two layers are enforced independently (`AbstractTextGeneratingAgent::maxSteps()` for the step budget, `AbstractTool::handle()` for the per-tool count, `LaravelToolConverter` for the blank-filling at conversion time).
+- Steps ≠ calls: the loop's final step never executes tool calls (a budget of N yields at most N−1 executing steps), while a single step may batch parallel calls — each counts against the per-tool ceiling.
+- When the budget runs out while the model still requests tools, the final step's calls are replaced by a refusal message and the run ends without another generation — the loop does not force a closing answer.
+- With the limit off (`0`), provider mechanisms that keep stepping without tool calls (e.g. Anthropic's `pause_turn` continuation) are also unbounded — that is what "off" means; the operator owns it.
+
 ## Database-Backed Tool Records
 
 Tools are not just PHP classes — they are persisted in the database so operators can control which tools are enabled, assigned to which models, and with what settings.

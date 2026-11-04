@@ -8,6 +8,7 @@ namespace App\Services\Ai\Tools\LaravelAi;
 use App\Models\Ai\AiTool;
 use App\Models\Ai\McpServer;
 use App\Providers\AiServiceProvider;
+use App\Services\Ai\Tools\AbstractTool;
 use App\Services\Ai\Tools\Contracts\SettingsAwareToolInterface;
 use App\Services\Ai\Tools\Contracts\ToolInterface;
 use App\Services\Ai\Tools\Exceptions\InvalidToolConfigurationException;
@@ -60,19 +61,46 @@ readonly class LaravelToolConverter
      * - {@see ToolType::MCP}      — builds a lazy Neuron tool whose callable delegates to
      *                                  {@see HawkiMcpClient} at invocation time.
      *
+     * When $maxRuns is greater than zero it is applied to the converted tool as the default
+     * per-instance call ceiling ({@see AbstractTool::applyDefaultMaxRuns()}) — the model's
+     * tool-calling budget, resolved from the run's model settings by the caller. A tool's
+     * own ceiling always wins; the budget only fills the blank for tools without one.
+     *
+     * @param int $maxRuns Default per-run call ceiling to apply to the converted tool when it
+     *                     declares none of its own; 0 = leave unlimited.
      */
-    public function convert(AiTool $tool, array $settings = []): ToolInterface
+    public function convert(AiTool $tool, array $settings = [], int $maxRuns = 0): ToolInterface
     {
         if ($tool->type === ToolType::MCP) {
-            return $this->provideSettingsForTool($this->convertMcpTool($tool), $settings);
+            return $this->provideSettingsForTool(
+                $this->applyDefaultRunCeiling($this->convertMcpTool($tool), $maxRuns),
+                $settings
+            );
         }
 
         if ($tool->type === ToolType::FUNCTION) {
-            return $this->provideSettingsForTool($this->convertFunctionTool($tool), $settings);
+            return $this->provideSettingsForTool(
+                $this->applyDefaultRunCeiling($this->convertFunctionTool($tool), $maxRuns),
+                $settings
+            );
         }
 
         // @phpstan-ignore deadCode.unreachable
         throw InvalidToolConfigurationException::forUnsupportedToolType($tool->type->value, $tool->name);
+    }
+
+    /**
+     * Applies the model-budget run ceiling to HAWKI-side tool instances.
+     * Tools outside HAWKI's {@see AbstractTool} hierarchy (e.g. provider-native tools,
+     * which are not executed here) are returned unchanged.
+     */
+    private function applyDefaultRunCeiling(ToolInterface $tool, int $maxRuns): ToolInterface
+    {
+        if ($tool instanceof AbstractTool) {
+            $tool->applyDefaultMaxRuns($maxRuns);
+        }
+
+        return $tool;
     }
 
     /**
