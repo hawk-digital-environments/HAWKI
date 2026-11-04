@@ -1,13 +1,17 @@
 <!--
   @component General-purpose button primitive.
 
-  Supports seven `variant` styles — `fill`, `accent`, `surface`, `stroke`, `ghost`,
-  `iconGhost`, `delete` (destructive) — and three `size` options — `xs`, `sm`, `md`. Renders a native
+  Supports six `variant` styles — `fill`, `surface`, `stroke`, `ghost`, `iconGhost`,
+  `delete` (destructive) — and three `size` options — `xs`, `sm`, `md`. Renders a native
   `<button>` element and forwards all `HTMLButtonAttributes` via rest-props.
 
+  Every variant shares one state model: hover, press, `highlight` and an attached menu's
+  `data-state="open"` all show the variant's hover look, and a disabled button always shows
+  the disabled text color (plus the disabled fill, for variants that have a fill).
+
   If `iconLeft` and/or `iconRight` are given without `children`, the button
-  automatically switches to a compact icon-only square (internal `iconOnly`
-  size) — no separate prop needed for that case.
+  automatically switches to an icon-only square as tall as its `size` (`sm` when no
+  size is given) — no separate prop needed for that case.
 
   Three modifiers cover the "button that opens a menu" case, so menu triggers don't have to
   restyle the button from outside: `disclosure` turns the icon into a disclosure chevron that
@@ -49,7 +53,6 @@
         variants: {
             variant: {
                 fill: 'btn--fill',
-                accent: 'btn--accent',
                 surface: 'btn--surface',
                 stroke: 'btn--stroke',
                 ghost: 'btn--ghost',
@@ -59,17 +62,14 @@
             size: {
                 xs: 'btn--xs',
                 sm: 'btn--sm',
-                md: 'btn--md',
-                // This is an internal size used when an icon is provided without children.
-                // It can not be set directly via the `size` prop.
-                iconOnly: 'btn--iconOnly'
+                md: 'btn--md'
             }
         },
         defaultVariants: {variant: 'fill', size: 'md'}
     });
 
     export type ButtonVariant = VariantProps<typeof buttonVariants>['variant'];
-    export type ButtonSize = Exclude<VariantProps<typeof buttonVariants>['size'], 'iconOnly'>;
+    export type ButtonSize = VariantProps<typeof buttonVariants>['size'];
 </script>
 
 <script lang="ts">
@@ -111,6 +111,7 @@
         children,
         iconLeft: IconLeft,
         iconRight: IconRight,
+        block = false,
         highlight,
         disclosure = false,
         truncate = false,
@@ -132,19 +133,22 @@
         return activeValues.includes(String(highlight).toLowerCase());
     });
 
+    const iconOnly = $derived(Boolean((IconLeft || IconRight) && !children));
+
 </script>
 
 <button bind:this={ref} {...mergeProps(
     {
         class: buttonVariants({
                 variant,
-                size: ((IconLeft || IconRight) && !children) ? 'iconOnly' : size
+                size: iconOnly ? (size ?? 'sm') : size
             }
         )
     },
     {
         class: {
-            'btn--block': restProps.block,
+            'btn--iconOnly': iconOnly,
+            'btn--block': block,
             'btn--active': forceActive,
             'btn--disclosure': disclosure,
             'btn--truncate': truncate
@@ -169,16 +173,31 @@
 <style>
     /* ── Base ──────────────────────────────────────────────────────────── */
 
+    /*
+      A variant only sets the input properties below; the base rule and the two state rules
+      turn them into paint. So every variant gets the same states (hover, press, highlight,
+      open menu, disabled), and a theme override or a caller only ever swaps an input instead
+      of out-specifying a state rule. `ghost` is these defaults as they stand.
+    */
     .btn {
+        --btn-bg: transparent;
+        --btn-color: var(--color-text);
+        --btn-border-color: transparent;
+        --btn-bg-hover: var(--color-hover);
+        --btn-color-hover: var(--btn-color);
+        --btn-bg-disabled: transparent;
+        --btn-color-disabled: var(--color-text-disabled);
+
         display: inline-flex;
         align-items: center;
         justify-content: space-between;
-        border: none;
         font-family: inherit;
+        font-weight: var(--font-weight-normal);
         cursor: pointer;
         box-sizing: border-box;
-        border: var(--border);
-        color: var(--color-text);
+        border: var(--divider-width) solid var(--btn-border-color);
+        background: var(--btn-bg);
+        color: var(--btn-color);
         transition-property: color, background-color, border-color, opacity, text-decoration;
         transition-timing-function: var(--easing-default, cubic-bezier(0.4, 0, 0.2, 1));
         transition-duration: var(--duration-fast, 150ms);
@@ -186,9 +205,20 @@
         flex-shrink: 0;
         user-select: none;
 
+        /* The border clears so the fill, which paints under it, shows through: a filled
+           outline reads as one pill instead of a fill inside a darker ring. Painting the
+           border in the fill colour instead would double a translucent fill (`delete`)
+           into a ring of its own. */
+        &:not(:disabled):is(:hover, :active, .btn--active, [data-state='open']) {
+            background: var(--btn-bg-hover);
+            border-color: transparent;
+            color: var(--btn-color-hover);
+        }
+
         &:disabled {
             cursor: not-allowed;
-            opacity: 0.5;
+            background: var(--btn-bg-disabled);
+            color: var(--btn-color-disabled);
         }
 
         &:focus-visible {
@@ -205,106 +235,35 @@
 
     /* The light accent tint of the sidebar's action row ("New chat"); the hover leans
        toward the text color, so it deepens the tint. */
-    .btn--fill,
-    .btn--accent {
+    .btn--fill {
         --btn-bg: var(--color-accent-100);
         --btn-bg-hover: color-mix(in oklab, var(--color-accent-100) 85%, var(--color-accent-text));
         --btn-color: var(--color-accent-text);
-
-        background: var(--btn-bg);
-        color: var(--btn-color);
-        font-weight: var(--font-weight-normal);
-        border-color: transparent;
-
-        &:not(:disabled):hover {
-            --btn-bg: var(--btn-bg-hover);
-        }
-
-        &:disabled {
-            opacity: 1;
-            --btn-bg: var(--color-disabled-bg);
-            --btn-color: var(--color-text-disabled);
-        }
+        --btn-bg-disabled: var(--color-disabled-bg);
     }
 
-    :global(html.darkMode) :is(.btn--fill, .btn--accent) {
+    :global(html.darkMode) .btn--fill {
         --btn-bg-hover: var(--color-accent-fill-hover);
     }
 
     /* A neutral filled pill that sits a step lighter than the surface it is on, so the
-       darker hover below reads as a change. The resting state of a menu trigger that should
+       darker hover reads as a change. The resting state of a menu trigger that should
        look like a control rather than a bare label. */
     .btn--surface {
         --btn-bg: var(--color-surface-light);
-        --btn-color: var(--color-text);
-
-        background: var(--btn-bg);
-        color: var(--btn-color);
-        border-color: transparent;
-
-        &:not(:disabled):hover,
-        &:not(:disabled):active,
-        &[data-state='open'] {
-            --btn-bg: var(--color-hover);
-        }
+        --btn-bg-disabled: var(--color-disabled-bg);
     }
 
+    /* The ghost button with a hairline around it. */
     .btn--stroke {
-        --btn-bg: transparent;
-        --btn-color: var(--color-text);
-
-        background: var(--btn-bg);
-        color: var(--btn-color);
-        border: var(--border);
-
-        &:not(:disabled):hover {
-            --btn-bg: var(--color-highlight);
-            --btn-color: var(--color-text);
-        }
-
-        &:not(:disabled):active {
-            --btn-bg: var(--color-highlight);
-            --btn-color: var(--color-text);
-        }
+        --btn-border-color: var(--color-border);
     }
 
-    .btn--ghost {
-        --btn-bg: transparent;
-        --btn-color: var(--color-text);
-
-        background: var(--btn-bg);
-        color: var(--btn-color);
-        border-color: transparent;
-
-        &:not(:disabled):hover {
-            --btn-bg: var(--color-hover);
-            --btn-color: var(--color-text);
-        }
-
-        &:not(:disabled):active {
-            --btn-bg: var(--color-hover);
-            --btn-color: var(--color-text);
-        }
-    }
-
+    /* A bare icon: no fill in any state, only the muted glyph lifting to the text color. */
     .btn--iconGhost {
-        --btn-bg: transparent;
         --btn-color: var(--color-text-muted);
-
-        background: var(--btn-bg);
-        color: var(--btn-color);
-        border-color: transparent;
-
-        &:not(:disabled):hover,
-        &:not(:disabled):active {
-            --btn-bg: transparent;
-            --btn-color: var(--color-text);
-        }
-    }
-
-    .btn--active {
-        --btn-bg: var(--color-hover);
-        --btn-color: var(--color-text);
+        --btn-bg-hover: transparent;
+        --btn-color-hover: var(--color-text);
     }
 
     /* The destructive counterpart of the accent tint: the same light fill and deepening
@@ -313,24 +272,11 @@
         --btn-bg: color-mix(in oklab, var(--color-error) 12%, transparent);
         --btn-bg-hover: color-mix(in oklab, var(--color-error) 22%, transparent);
         --btn-color: var(--color-error);
-
-        background: var(--btn-bg);
-        color: var(--btn-color);
-        border-color: transparent;
-
-        &:not(:disabled):hover {
-            --btn-bg: var(--btn-bg-hover);
-        }
-
-        &:disabled {
-            opacity: 1;
-            --btn-bg: var(--color-disabled-bg);
-            --btn-color: var(--color-text-disabled);
-        }
+        --btn-bg-disabled: var(--color-disabled-bg);
     }
 
     /* The error red is too dark to read on dark chrome, so the label lifts toward white. */
-    :global(html.darkMode) .btn--delete:not(:disabled) {
+    :global(html.darkMode) .btn--delete {
         --btn-bg: color-mix(in oklab, var(--color-error) 25%, transparent);
         --btn-bg-hover: color-mix(in oklab, var(--color-error) 35%, transparent);
         --btn-color: color-mix(in oklab, var(--color-error) 60%, white);
@@ -338,84 +284,38 @@
 
     /* ── Sizes ─────────────────────────────────────────────────────────── */
 
-    /*
-      The inline padding is asymmetric on purpose. An icon's glyph box carries transparent
-      bearing of its own — roughly 4px for an 18px chevron — so an end that finishes with an
-      icon already reads wider than it measures, while an end that finishes with the label
-      stops at the text's ink. Each size therefore leaves the base step on whichever end
-      holds an icon and spends the wider step on the end that holds the label, so both ends
-      read as the same gap. A button with no icon at all is ink on both ends, and gets the
-      wider step twice.
-    */
+    /* Each size pads both ends the same, whether an end holds an icon or the label. */
 
     .btn--xs {
+        --btn-height: 2rem;
+        --btn-pad: calc(var(--space-2_5) + var(--space-1));
         --btn-icon-size: 14px;
-        width: fit-content;
-        height: 2rem;
         column-gap: var(--space-1);
-        padding: 0 var(--space-2);
         font-size: var(--font-size-xs);
-        border-radius: var(--corner-full);
-
-        &:not(:has(> :global(.btnIcon))) {
-            padding-inline: var(--space-3);
-        }
-
-        &:has(> :global(.btnIcon):first-child) {
-            padding-inline-end: var(--space-3);
-        }
-
-        &:has(> :global(.btnIcon):last-child) {
-            padding-inline-start: var(--space-3);
-        }
     }
 
     .btn--sm {
+        --btn-height: 2rem;
+        --btn-pad: calc(var(--space-2_5) + var(--space-1));
         --btn-icon-size: 16px;
-        width: fit-content;
-        height: 2rem;
-        padding: 0 var(--space-2);
         font-size: var(--font-size-sm);
-        border-radius: var(--corner-full);
-
-        &:not(:has(> :global(.btnIcon))) {
-            padding-inline: var(--space-3);
-        }
-
-        &:has(> :global(.btnIcon):first-child) {
-            padding-inline-end: var(--space-3);
-        }
-
-        &:has(> :global(.btnIcon):last-child) {
-            padding-inline-start: var(--space-3);
-        }
     }
 
     .btn--md {
+        --btn-height: 2.5rem;
+        --btn-pad: calc(var(--space-4) + var(--space-1));
         --btn-icon-size: 18px;
-        position: relative;
-        display: grid;
-        grid-template-columns: auto 1fr;
         column-gap: var(--space-3);
-        align-items: center;
-        height: 2.5rem;
         min-width: 6rem;
-        padding: var(--space-2) var(--space-4);
-        overflow: hidden;
+        justify-content: center;
         font-size: var(--font-size-md);
+    }
+
+    :is(.btn--xs, .btn--sm, .btn--md) {
+        width: fit-content;
+        height: var(--btn-height);
+        padding: 0 var(--btn-pad);
         border-radius: var(--corner-full);
-
-        &:not(:has(> :global(.btnIcon))) {
-            padding-inline: calc(var(--space-4) + var(--space-1));
-        }
-
-        &:has(> :global(.btnIcon):first-child) {
-            padding-inline-end: calc(var(--space-4) + var(--space-1));
-        }
-
-        &:has(> :global(.btnIcon):last-child) {
-            padding-inline-start: calc(var(--space-4) + var(--space-1));
-        }
     }
 
     /* ── Modifiers ──────────────────────────────────────────────────────── */
@@ -426,13 +326,15 @@
         height: var(--btn-icon-size, 18px);
     }
 
+    /* A square as tall as its size's labelled button, so the two line up in a row. The
+       glyph keeps the full 18px whatever the size; `iconSize` still overrides it. */
     .btn--iconOnly {
-        width: 2rem;
-        height: 2rem;
+        --btn-icon-size: 18px;
+        width: var(--btn-height);
+        min-width: 0;
         padding: 0;
         flex-shrink: 0;
         justify-content: center;
-        border-radius: var(--corner-full);
     }
 
     .btn--iconGhost.btn--iconOnly {

@@ -4,6 +4,8 @@ import {createStableContext} from '$lib/utils/stableContext.js';
 export interface MenuListItemState {
     active: boolean;
     inset: boolean;
+    /** Tints the hover highlight in the error hue while it sits on this row. */
+    destructive?: boolean;
 }
 
 export interface MenuListContextValue {
@@ -29,13 +31,15 @@ export function useMenuList(): MenuListContextValue | null {
 
 /**
  * For rows that need no active/inset state: an attachment that registers the row
- * with the enclosing MenuList, or null when there is no list around it.
+ * with the enclosing MenuList, or null when there is no list around it. Pass
+ * `destructive` for a row whose hover highlight takes the error tint.
  */
-export function useMenuListRow(): Attachment<HTMLElement> | null {
+export function useMenuListRow(options: {destructive?: boolean} = {}): Attachment<HTMLElement> | null {
     const list = useMenuList();
     if (!list) return null;
     return (element) => {
         const index = list.register(element);
+        if (options.destructive) list.setState(index, {active: false, inset: false, destructive: true});
         return () => list.unregister(index);
     };
 }

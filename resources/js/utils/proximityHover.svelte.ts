@@ -19,6 +19,12 @@ interface Options {
      * highlights read as one surface.
      */
     hoverFrom?: 'item' | 'selection';
+    /**
+     * Reshapes an item's measured rect before the highlights use it, e.g. to pull a
+     * nested row's highlight in from the left. Whatever it returns rides the same
+     * springs, so such a change glides along with the move instead of jumping.
+     */
+    adjustRect?: (idx: number, rect: ItemRect) => ItemRect;
 }
 
 const EMPTY_RECT: ItemRect = {top: 0, left: 0, width: 0, height: 0};
@@ -41,7 +47,7 @@ const EMPTY_RECT: ItemRect = {top: 0, left: 0, width: 0, height: 0};
  * of your own.
  */
 export function createProximityHover(options: Options = {}) {
-    const { axis = 'y', hoverFrom = 'item' } = options;
+    const { axis = 'y', hoverFrom = 'item', adjustRect } = options;
     const reducedMotion = useReducedMotion();
 
     let container: HTMLElement | null = null;
@@ -126,12 +132,13 @@ export function createProximityHover(options: Options = {}) {
             // still attract the highlight.
             if (!el || el.closest('[inert]')) continue;
             const r = el.getBoundingClientRect();
-            next[idx] = {
+            const rect = {
                 top: (r.top - containerRect.top) / scale + scrollTop,
                 left: (r.left - containerRect.left) / scale + scrollLeft,
                 width: r.width / scale,
                 height: r.height / scale,
             };
+            next[idx] = adjustRect ? adjustRect(idx, rect) : rect;
         }
         rects = next;
         syncHighlights();

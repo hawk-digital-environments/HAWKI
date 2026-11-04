@@ -5,16 +5,17 @@
   needed to keep them there. MenuListItem children register through a dedicated
   context module so the container can track them.
 
-  Rows are laid out as a vertical flex column; the highlight of a row marked
-  `inset` is pulled in from the left by `--list-inset`, so nested rows can nest
-  their highlight too.
+  Both highlights move on the proximity-hover helper's springs. Rows are laid out
+  as a vertical flex column; the highlight of a row marked `inset` is pulled in
+  from the left by `--list-inset`, so nested rows can nest their highlight too, and
+  a row marked `destructive` tints the hover highlight in the error hue.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import type {Attachment} from 'svelte/attachments';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
-    import {createProximityHover} from '$lib/utils/proximityHover.svelte.js';
+    import {createProximityHover, type ItemRect} from '$lib/utils/proximityHover.svelte.js';
     import {
         type MenuListItemState,
         provideMenuList
@@ -34,13 +35,24 @@
 
     const {children, disabled = false, bridgeSections = false, class: className, ...rest}: Props = $props();
 
-    const hover = createProximityHover({axis: 'y'});
-
     // Rows register in mount order; indices are handed out monotonically and
     // freed on unmount. Highlights are positioned from measured rects, so the
     // exact index values never need to stay contiguous.
     let nextIndex = 0;
     let itemStates = $state<Record<number, MenuListItemState>>({});
+
+    // `--list-inset` may be any CSS length, so a hidden probe resolves it to px.
+    let insetProbe = $state<HTMLElement | null>(null);
+
+    // A highlight spans the list's full width, or starts at `--list-inset` on a nested
+    // row. Handing that edge to the helper puts it on the springs with everything else,
+    // so moving between a nested and a top-level row glides sideways too.
+    function placeHighlight(index: number, rect: ItemRect): ItemRect {
+        const inset = itemStates[index]?.inset ? (insetProbe?.offsetWidth ?? 0) : 0;
+        return {...rect, left: inset};
+    }
+
+    const hover = createProximityHover({axis: 'y', adjustRect: placeHighlight});
 
     provideMenuList({
         register(el) {
@@ -66,22 +78,30 @@
     });
 
     // While the list is reflowing (breakpoint change, container width animation)
-    // the highlights snap to the new row positions instead of sliding across
+    // the highlights snap to the new row positions instead of gliding across
     // from their now-stale coordinates.
-    let reflowing = $state(false);
+    let reflowing = false;
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
     // The active highlight should glide when the *selection itself* moves even
-    // though that coincides with a reflow. Track index changes so the snap-guard applies only to spurious
-    // re-measures of the same row, never to a genuine selection move mid-flight.
+    // though that coincides with a reflow. Track index changes so the snap applies
+    // only to spurious re-measures of the same row, never to a genuine selection
+    // move mid-flight.
     let previousActiveIndex: number | null | undefined;
-    let selectionMoved = $state(false);
+    let selectionMoved = false;
+
+    /** Re-measures the rows. The highlights jump rather than glide while they are
+        hidden (`disabled`) or the list merely reflows, so they reappear in place. */
+    function remeasure() {
+        if (disabled || (reflowing && !selectionMoved)) hover.snapToItems();
+        else hover.measureItems();
+    }
 
     function reflow() {
         reflowing = true;
-        hover.measureItems();
+        remeasure();
         if (settleTimer) clearTimeout(settleTimer);
-        // Re-enable sliding once the viewport stops changing; clear the
+        // Re-enable gliding once the viewport stops changing; clear the
         // selection-move flag so the next reflow snaps as usual.
         settleTimer = setTimeout(() => {
             reflowing = false;
@@ -127,8 +147,16 @@
         hover.setSelected(activeIndex);
 
         if (disabled) hover.handlers.onmouseleave();
-        else hover.measureItems();
+        remeasure();
     });
+
+    // The row the hover highlight last sat on. It keeps that row's tint while it
+    // fades out there, instead of switching colour on the way out.
+    let hoveredIndex = $state<number | null>(null);
+    $effect(() => {
+        if (hover.hoverVisible) hoveredIndex = hover.activeIndex;
+    });
+    const hoverDestructive = $derived(hoveredIndex !== null && (itemStates[hoveredIndex]?.destructive ?? false));
 
     // Regions inside the container that are not rows (e.g. a section picker or
     // search trigger) opt out with `data-list-no-hover`: the proximity highlight
@@ -159,16 +187,6 @@
         if (isExcluded(event)) return;
         hover.handlers.onmouseenter();
     }
-
-    const activeRect = $derived(hover.selectedRect);
-    const hoverRect = $derived(
-        hover.activeIndex !== null ? hover.itemRects[hover.activeIndex] : null
-    );
-    const hoverOnActive = $derived(hover.activeIndex !== null && hover.activeIndex === activeIndex);
-    const activeInset = $derived(activeIndex !== null && (itemStates[activeIndex]?.inset ?? false));
-    const hoverInset = $derived(
-        hover.activeIndex !== null && (itemStates[hover.activeIndex]?.inset ?? false)
-    );
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -- the mouse handlers
@@ -183,24 +201,28 @@
     })}
     {@attach attachList}
 >
-    {#if activeRect}
+    <span class="inset-probe" aria-hidden="true" bind:this={insetProbe}></span>
+    {#if hover.selectionHighlight}
+        {@const rect = hover.selectionHighlight}
         <span
             class="active-bg"
-            class:inset={activeInset}
             class:hidden={disabled}
-            class:no-transition={disabled || (reflowing && !selectionMoved)}
-            style:top="{activeRect.top}px"
-            style:height="{activeRect.height}px"
+            aria-hidden="true"
+            style:top="{rect.top}px"
+            style:left="{rect.left}px"
+            style:height="{rect.height}px"
         ></span>
     {/if}
-    {#if hoverRect && !disabled}
+    {#if hover.hoverHighlight && !disabled}
+        {@const rect = hover.hoverHighlight}
         <span
             class="hover-bg"
-            class:on-active={hoverOnActive}
-            class:inset={hoverInset}
-            class:no-transition={reflowing}
-            style:top="{hoverRect.top}px"
-            style:height="{hoverRect.height}px"
+            class:shown={hover.hoverVisible}
+            class:destructive={hoverDestructive}
+            aria-hidden="true"
+            style:top="{rect.top}px"
+            style:left="{rect.left}px"
+            style:height="{rect.height}px"
         ></span>
     {/if}
     {@render children()}
@@ -222,70 +244,59 @@
         overflow-x: hidden;
     }
 
-    /* Sliding highlight that follows the active selection. */
-    .active-bg {
+    /* Resolves `--list-inset` to px for the highlights' left edge. */
+    .inset-probe {
         position: absolute;
+        top: 0;
         left: 0;
+        width: var(--list-inset, var(--space-4));
+        height: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    /* Both highlights are placed from the helper's springs; only colour and
+       opacity transition here. */
+    .active-bg,
+    .hover-bg {
+        position: absolute;
         right: 0;
         /* Highlights paint below the rows (which are positioned at 1). */
-        --menu-list-highlight-z: 0;
-        z-index: var(--menu-list-highlight-z);
+        z-index: var(--menu-list-highlight-z, 0);
         pointer-events: none;
-        background: var(--color-active-surface);
         border-radius: var(--corner-sm);
+    }
+
+    /* Follows the active selection. */
+    .active-bg {
+        background: var(--color-active-surface);
         opacity: 1;
         transition:
-            top 200ms cubic-bezier(0.34, 1.12, 0.64, 1),
-            height 200ms cubic-bezier(0.34, 1.12, 0.64, 1),
-            left 200ms cubic-bezier(0.34, 1.12, 0.64, 1),
             background 150ms ease,
             opacity 220ms ease-in-out;
     }
 
     /* Crossfade the active highlight through a transition rather than letting it
-       chase the moving rows. Its position stays pinned while hidden (see
-       `no-transition`), so it fades out in place and fades back in already
-       sitting on the new active row. */
+       chase the moving rows. While hidden it snaps (see `remeasure`), so it fades
+       out in place and fades back in already sitting on the new active row. */
     .active-bg.hidden {
         opacity: 0;
     }
 
-    /* Single sliding highlight that follows the nearest row. */
+    /* Follows the row nearest the pointer, and fades out where it lands. */
     .hover-bg {
-        position: absolute;
-        left: 0;
-        right: 0;
-        z-index: var(--menu-list-highlight-z, 0);
-        pointer-events: none;
         background: var(--color-hover);
-        border-radius: var(--corner-sm);
+        opacity: 0;
         transition:
-            top 200ms var(--easing-spring),
-            height 200ms var(--easing-spring),
-            left 200ms var(--easing-spring);
+            background-color var(--duration-fast, 150ms) ease,
+            opacity var(--duration-fast, 150ms) ease;
     }
 
-    /* The active surface is opaque, so hovering the active row leaves it as is. */
-    .hover-bg.on-active {
-        background: var(--color-active-surface);
+    .hover-bg.shown {
+        opacity: 1;
     }
 
-    /* During a reflow, snap straight to the re-measured position instead of
-       gliding across from stale coordinates. The active highlight keeps its
-       opacity transition so it can still crossfade through a transition while
-       its position stays pinned. */
-    .active-bg.no-transition {
-        transition: opacity 220ms ease-in-out;
-    }
-
-    .hover-bg.no-transition {
-        transition: none;
-    }
-
-    /* Nested rows: inset the highlight so it sits under the parent's label. The
-       amount is the list's to set — rows only say *that* they are nested. */
-    .active-bg.inset,
-    .hover-bg.inset {
-        left: var(--list-inset, var(--space-4));
+    .hover-bg.destructive {
+        background: color-mix(in oklch, var(--color-error) 10%, transparent);
     }
 </style>

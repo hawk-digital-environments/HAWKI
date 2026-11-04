@@ -60,9 +60,10 @@
     }: Props = $props();
 
     // Inside a MenuList (every DropdownMenu provides one) the row is highlighted by the
-    // list's sliding "magnetic" hover instead of its own :hover background.
-    const listRow = useMenuListRow();
-    const magnetic = $derived(!!listRow && !disabled && variant !== 'destructive');
+    // list's sliding "magnetic" hover instead of its own :hover background — a
+    // destructive row too, which tints that highlight red while it is on it.
+    const listRow = useMenuListRow({get destructive() { return variant === 'destructive'; }});
+    const magnetic = $derived(!!listRow && !disabled);
 
     const IconLeft = $derived.by(() => {
         if (variant === 'destructive' && !iconLeft) {
@@ -128,7 +129,7 @@
         color: var(--color-text);
     }
 
-    .dropdown-item.variant--destructive:is([data-highlighted], :hover:not([data-disabled])) {
+    .dropdown-item.variant--destructive:is([data-highlighted]:not(.magnetic), [data-highlighted]:focus-visible, :hover:not([data-disabled], .magnetic)) {
         background-color: color-mix(in oklch, var(--color-error) 10%, transparent);
         color: var(--color-error);
     }
