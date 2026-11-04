@@ -17,6 +17,7 @@
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuCheckboxItem from '$lib/components/ui/dropdown-menu/DropdownMenuCheckboxItem.svelte';
     import SidebarIconButton from '$lib/components/ui/sidebar/SidebarIconButton.svelte';
+    import TooltipGroup from '$lib/components/ui/tooltip/TooltipGroup.svelte';
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import PlusSignIcon from '$lib/components/ui/icons/iconset/PlusSignIcon.svelte';
     import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
@@ -112,38 +113,41 @@
     }
 </script>
 
-<div class="space-tabs">
-    <CollapsibleTabs items={tabs} value={current} onChange={selectSpace} aria-label={__('ui.navigation.spaces')}/>
-    {#if spaces.length > 1}
-        <DropdownMenu align="end">
-            {#snippet trigger({props})}
-                <SidebarIconButton icon={PlusSignIcon} label={__('ui.navigation.pinSpaces')} {...props}/>
-            {/snippet}
-            <!-- In a fixed order, so a row stays under the pointer when it is pinned. -->
-            {#each spaces as space (space.id)}
-                <DropdownMenuCheckboxItem
-                    checked={pinnedIds.includes(space.id)}
-                    onCheckedChange={() => togglePin(space.id)}
-                    closeOnSelect={false}
-                    indicator="none"
-                    iconLeft={space.icon}
-                >
-                    {#snippet children(pinned)}
-                        <span class="space-label">{space.label}</span>
-                        <!-- The composer pickers' pin glyph: shown on hover until pinned. -->
-                        <span class="pin" class:pinned aria-hidden="true">
-                            {#if pinned}
-                                <PinOffIcon size={15}/>
-                            {:else}
-                                <PinIcon size={15}/>
-                            {/if}
-                        </span>
-                    {/snippet}
-                </DropdownMenuCheckboxItem>
-            {/each}
-        </DropdownMenu>
-    {/if}
-</div>
+<!-- The tabs' tooltips and the add button's are one bubble that travels along the row. -->
+<TooltipGroup delayDuration={300}>
+    <div class="space-tabs">
+        <CollapsibleTabs items={tabs} value={current} onChange={selectSpace} aria-label={__('ui.navigation.spaces')}/>
+        {#if spaces.length > 1}
+            <DropdownMenu align="end">
+                {#snippet trigger({props})}
+                    <SidebarIconButton icon={PlusSignIcon} label={__('ui.navigation.pinSpaces')} {...props}/>
+                {/snippet}
+                <!-- In a fixed order, so a row stays under the pointer when it is pinned. -->
+                {#each spaces as space (space.id)}
+                    <DropdownMenuCheckboxItem
+                        checked={pinnedIds.includes(space.id)}
+                        onCheckedChange={() => togglePin(space.id)}
+                        closeOnSelect={false}
+                        indicator="none"
+                        iconLeft={space.icon}
+                    >
+                        {#snippet children(pinned)}
+                            <span class="space-label">{space.label}</span>
+                            <!-- The composer pickers' pin glyph: shown on hover until pinned. -->
+                            <span class="pin" class:pinned aria-hidden="true">
+                                {#if pinned}
+                                    <PinOffIcon size={15}/>
+                                {:else}
+                                    <PinIcon size={15}/>
+                                {/if}
+                            </span>
+                        {/snippet}
+                    </DropdownMenuCheckboxItem>
+                {/each}
+            </DropdownMenu>
+        {/if}
+    </div>
+</TooltipGroup>
 
 <!-- The tabs show the numbers, so the hotkeys render no keycap. -->
 {#each pinnedSpaces.slice(0, 9) as space, index (space.id)}
