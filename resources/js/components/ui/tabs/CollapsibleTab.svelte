@@ -67,9 +67,14 @@
     // Until the label has been measured, CSS sizes it, so a selected tab doesn't
     // grow in from nothing on first paint.
     const clipWidth = $derived(naturalWidth ? `${labelWidth.current}px` : expanded ? 'auto' : '0px');
+
+    // Narrower than the spring has it only when the strip is short of room; then
+    // the label fades out where it is cut and the tooltip names the tab in full.
+    let shownWidth = $state(0);
+    const truncated = $derived(expanded && naturalWidth > 0 && shownWidth + 1 < labelWidth.current);
 </script>
 
-<Tooltip tooltip={item.label} disabled={expanded} side="bottom" delayDuration={300}>
+<Tooltip tooltip={item.label} disabled={expanded && !truncated} side="bottom" delayDuration={300}>
     {#snippet children({props})}
         <button
             {...mergeProps(props, {onclick: onselect, onkeydown})}
@@ -90,7 +95,13 @@
                     {/if}
                 </span>
             {/if}
-            <span class="label-clip" class:shown={expanded} style:width={clipWidth}>
+            <span
+                class="label-clip"
+                class:shown={expanded}
+                class:truncated
+                style:width={clipWidth}
+                bind:clientWidth={shownWidth}
+            >
                 <span class="label" bind:offsetWidth={naturalWidth}>{item.label}</span>
             </span>
         </button>
@@ -106,7 +117,9 @@
         position: relative;
         /* Above the highlights, which paint at 0. */
         z-index: 1;
-        flex-shrink: 0;
+        /* Fills its slot, which the strip may make narrower than the open label:
+           the label clip gives way, the icon and padding keep the square. */
+        min-width: 0;
         display: flex;
         align-items: center;
         height: var(--nav-row-h);
@@ -171,6 +184,11 @@
 
     .label-clip.shown {
         opacity: 1;
+    }
+
+    .label-clip.truncated {
+        mask-image: linear-gradient(to right, #000 calc(100% - var(--space-4)), transparent);
+        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-4)), transparent);
     }
 
     /* The gap to the icon and the extra room at the end ride along with the label,

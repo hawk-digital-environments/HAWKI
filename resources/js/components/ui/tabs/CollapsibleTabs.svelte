@@ -13,7 +13,9 @@
   Home and End move focus, Enter or Space selects. A collapsed tab names itself
   in a tooltip.
 
-  Too many tabs for the width scroll sideways, without a scrollbar.
+  When the tabs don't fit, the open label gives way first and fades out where it
+  is cut; only once every tab is down to its square does the strip scroll
+  sideways, without a scrollbar.
 
   @example
   ```svelte
@@ -142,12 +144,20 @@
         else hover.handlers.onmouseleave();
     }
 
+    // A slot keeps at least its square, which would stop it growing from nothing;
+    // while it grows in or out, the floor is lifted.
+    function growSlot(node: Element, direction: 'in' | 'out') {
+        if (reducedMotion.current) return {duration: 0};
+        const grow = growTransition(node, {mode: 'horizontal', direction});
+        return {...grow, css: (t: number) => `${grow.css(t)} min-width: 0;`};
+    }
+
     function slotIn(node: Element) {
-        return reducedMotion.current ? {duration: 0} : growTransition(node, {mode: 'horizontal'});
+        return growSlot(node, 'in');
     }
 
     function slotOut(node: Element) {
-        return reducedMotion.current ? {duration: 0} : growTransition(node, {mode: 'horizontal', direction: 'out'});
+        return growSlot(node, 'out');
     }
 </script>
 
@@ -206,7 +216,12 @@
        and snap the highlights. */
     .strip {
         position: relative;
-        display: flex;
+        /* One column per tab, at its natural width while they all fit. Short of
+           room, the columns share it out evenly from the squares up, so the only
+           one that gives way is the one with an open label. */
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(auto, max-content);
         flex: 1;
         min-width: 0;
         overflow-x: auto;
@@ -218,9 +233,10 @@
         display: none;
     }
 
+    /* A collapsed tab is a row-high square and never gets narrower. */
     .slot {
         display: flex;
-        flex-shrink: 0;
+        min-width: var(--nav-row-h);
     }
 
     /* Below the tabs, which sit at 1. The selection's fill is the same one the
