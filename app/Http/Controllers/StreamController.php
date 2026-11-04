@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
-use App\Models\Room;
 use App\Services\Ai\AiService;
 use App\Services\Ai\Exceptions\AmbiguousModelIdException;
 use App\Services\Ai\Models\Identifiers\ModelFinder;
@@ -15,6 +14,7 @@ use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
 use App\Services\ExternalContent\CitationUrlCleaner;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Chat\Room\Repositories\RoomRepository;
 use App\Services\Users\Repositories\UserRepository;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Contracts\Support\Arrayable;
@@ -41,6 +41,7 @@ class StreamController extends Controller
         private readonly GroupMessageHandler  $groupMessageHandler,
         private readonly LoggerInterface      $logger,
         private readonly UserRepository       $userRepository,
+        private readonly RoomRepository       $roomRepository,
         private readonly CitationUrlCleaner   $citationCleaner,
         private readonly ModelFinder          $modelFinder
     )
@@ -154,7 +155,7 @@ class StreamController extends Controller
         }
 
         if ($validatedData['broadcast']) {
-            $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
+            $room = $this->roomRepository->findOneBySlugOrFail($validatedData['slug']);
             try {
                 $model = $this->modelFinder->findOrFail($validatedData['payload']['model']);
             } catch (\Throwable) {
@@ -393,8 +394,7 @@ class StreamController extends Controller
         // Store the qualified identifier, even if the request referenced the model by its numeric id
         $validatedData['payload']['model'] = $model->getIdentifier();
 
-        // @todo use a repository
-        $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($validatedData['slug']);
 
         try {
             // Broadcast initial generation status

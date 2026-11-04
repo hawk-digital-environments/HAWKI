@@ -305,6 +305,33 @@
         align-items: center;
     }
 
+    #member-info-modal .member-role-row {
+        display: flex;
+        align-items: center;
+        gap: .25rem;
+    }
+
+    #member-info-modal .member-role-row #role {
+        text-transform: capitalize;
+    }
+
+    #member-info-modal .member-role-selector {
+        display: none;
+        margin: 1rem 0;
+        padding: .5rem 2.5rem .5rem 1rem;
+        user-select: none;
+        border-radius: var(--border-radius-normal);
+
+        /* Replace the native arrow (which ignores padding) with a chevron inset by the horizontal padding */
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                          linear-gradient(135deg, currentColor 50%, transparent 50%);
+        background-position: calc(100% - 1rem - 5px) 50%, calc(100% - 1rem) 50%;
+        background-size: 5px 5px;
+        background-repeat: no-repeat;
+    }
+
     /* SECTION: BUTTONS */
     button {
         color: var(--text-color);
