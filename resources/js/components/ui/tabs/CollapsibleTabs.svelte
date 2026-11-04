@@ -138,9 +138,10 @@
     }
 
     // The highlight only belongs to a tab the pointer is on, so it lets go in the
-    // empty end of the strip instead of reaching for the last tab.
+    // empty end of the strip instead of reaching for the last tab. The default
+    // slack bridges the gaps between tabs, so crossing one doesn't blink it off.
     function handleMousemove(event: MouseEvent) {
-        if (hover.isNearItem(event, 0)) hover.handlers.onmousemove(event);
+        if (hover.isNearItem(event)) hover.handlers.onmousemove(event);
         else hover.handlers.onmouseleave();
     }
 
@@ -222,6 +223,8 @@
         display: grid;
         grid-auto-flow: column;
         grid-auto-columns: minmax(auto, max-content);
+        /* The same small gap as between the sidebar's list rows. */
+        column-gap: var(--space-1);
         flex: 1;
         min-width: 0;
         overflow-x: auto;
