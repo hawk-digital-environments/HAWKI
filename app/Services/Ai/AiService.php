@@ -34,8 +34,8 @@ use Illuminate\Container\Attributes\Singleton;
  * $agent  = $this->aiService->getAgent($request->validated());
  * $stream = $agent->sendStreaming();
  *
- * // Look up a model by its string identifier
- * $model = $this->aiService->getModels()->findOneOrFail('gpt-4o');
+ * // Look up a model by its provider-qualified identifier (see ModelFinder)
+ * $model = app(\App\Services\Ai\Models\Identifiers\ModelFinder::class)->findOrFail('openAi/gpt-4o');
  *
  * // Obtain a cached MCP client for a server record
  * $client = $this->aiService->getMcpClient($mcpServer);

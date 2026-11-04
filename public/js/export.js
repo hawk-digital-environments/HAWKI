@@ -12,15 +12,16 @@ function convertChatlogToJson() {
         msgObj.role = messageElement.dataset.role;
         msgObj.content = messageElement.dataset.rawMsg;
         msgObj.timestamp = messageElement.dataset.created_at;
-        msgObj.model = messageElement.dataset.model ? messageElement.dataset.model : null,
+        msgObj.model = messageElement.dataset.model ? messageElement.dataset.model : null;
+        msgObj.model_removed = msgObj.model ? isModelRemoved(msgObj.model) : false;
 
-            msgObj.attachments = Array.from(messageElement.querySelectorAll('.attachment')).map(atch => {
-                return {
-                    name: atch.querySelector('.name-tag')?.innerText || '',
-                    mime: atch.dataset.mime || '',
-                    imageUrl: atch.querySelector('img')?.getAttribute('src') || null
-                };
-            });
+        msgObj.attachments = Array.from(messageElement.querySelectorAll('.attachment')).map(atch => {
+            return {
+                name: atch.querySelector('.name-tag')?.innerText || '',
+                mime: atch.dataset.mime || '',
+                imageUrl: atch.querySelector('img')?.getAttribute('src') || null
+            };
+        });
 
         messagesList.push(msgObj);
     });
@@ -56,7 +57,7 @@ function exportAsCsv() {
     }
 
     // Define headers explicitly
-    const headers = ['id', 'author', 'role', 'content', 'timestamp', 'model', 'attachments'];
+    const headers = ['id', 'author', 'role', 'content', 'timestamp', 'model', 'model_removed', 'attachments'];
     const headerRow = headers.join(',') + '\n';
 
     // Convert messages to CSV rows
@@ -75,6 +76,7 @@ function exportAsCsv() {
             msg.content?.replace(/"/g, '""') || '',
             msg.timestamp,
             msg.model || '',
+            msg.model_removed,
             attachmentsStr
         ].map(v => `"${v}"`).join(',');
 
@@ -96,6 +98,15 @@ function exportAsCsv() {
     URL.revokeObjectURL(url);
 }
 
+
+/**
+ * Draws the text with the currently active font and returns its measured width,
+ * so a second text can be placed right after it on the same line.
+ */
+function drawTextAndGetWidth(doc, text, x, y) {
+    doc.text(text, x, y);
+    return doc.getTextWidth(text);
+}
 
 async function exportAsPDF() {
 
@@ -146,12 +157,11 @@ async function exportAsPDF() {
     yOffset += 20;
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(__('Summery'), margin, yOffset);
+    const summeryTitleWidth = drawTextAndGetWidth(doc, __('Summery'), margin, yOffset);
 
-    const textLenght = __('Summery').length;
     doc.setFont(font, 'italic');
     doc.setFontSize(titleFS);
-    doc.text(` (${__('Auto_Generated')})`, margin + (textLenght * 4) + 0, yOffset);
+    doc.text(` (${__('Auto_Generated')})`, margin + summeryTitleWidth, yOffset);
     doc.setFont(font, 'normal');
 
 
@@ -209,11 +219,7 @@ async function exportAsPDF() {
         // Calculate the height required for the full message
         const metadataHeight = lineHeight * 3; // Header (Message #, Author, Role, etc.)
 
-        if (isValidJson(msg.content)) {
-            msg.content = JSON.parse(msg.content).text;
-        } else {
-            msg.content = msg.content;
-        }
+        msg.content = deconstContent(msg.content).messageText;
 
         const wrappedContent = doc.splitTextToSize(msg.content, maxWidth); // Split text into lines
         const contentHeight = wrappedContent.length * lineHeight;
@@ -233,10 +239,9 @@ async function exportAsPDF() {
         doc.setFont(font, 'bold');
 
         if (msg.model) {
-            doc.text(`${msg.author}`, margin, yOffset);
+            const authorWidth = drawTextAndGetWidth(doc, `${msg.author}`, margin, yOffset);
             doc.setFontSize(smallFS);
-            const textLenght = msg.model.length;
-            doc.text(`(${msg.model}):`, margin + (textLenght * 2.5) + 3, yOffset);
+            doc.text(`(${msg.model})${getRemovedModelSuffix(msg.model)}:`, margin + authorWidth + 3, yOffset);
         } else {
             doc.text(`${msg.author}:`, margin, yOffset);
         }
@@ -440,7 +445,7 @@ async function exportAsWord() {
     );
 
     for (const message of messages) {
-        let authorText = message.model ? `${message.author} (${message.model})` : `${message.author}`;
+        const authorText = message.model ? buildModelAuthorText(message.author, message.model) : message.author;
 
         chatLogChildren.push(
             new docx.Paragraph({
@@ -562,11 +567,7 @@ async function preparePrintPage() {
 
         for (const msg of messages) {
             const decryptedContent = await decryptWithSymKey(key, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-            if (isValidJson(decryptedContent)) {
-                msg.content.text = JSON.parse(decryptedContent).text;
-            } else {
-                msg.content.text = decryptedContent;
-            }
+            msg.content.text = deconstContent(decryptedContent).messageText;
         }
 
     } else {
@@ -582,14 +583,8 @@ async function preparePrintPage() {
         let msgKey = key.roomKey;
         for (const msg of messages) {
             msgKey = msg.message_role === 'assistant' ? key.aiKey : key.roomKey;
-            let decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-            if (decryptedContent.startsWith('{') || decryptedContent.startsWith('"')) {
-                decryptedContent = JSON.parse(decryptedContent);
-                if (decryptedContent.text) {
-                    decryptedContent = decryptedContent.text;
-                }
-            }
-            msg.content.text = decryptedContent;
+            const decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
+            msg.content.text = deconstContent(decryptedContent).messageText;
         }
     }
 
@@ -634,11 +629,7 @@ function generateMessageElements(messageObj) {
     const messageElement = messageClone.querySelector('.message');
 
     if (messageObj.model && messageObj.message_role === 'assistant') {
-        model = window.getAiModel(messageObj.model);
-        messageElement.querySelector('.message-author').innerHTML =
-            model ?
-                `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>` :
-                `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+        messageElement.querySelector('.message-author').innerHTML = buildModelAuthorRefHtml(messageObj.author.username, messageObj.model);
     } else {
         messageElement.querySelector('.message-author').innerText = messageObj.author.name;
     }

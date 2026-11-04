@@ -11,8 +11,19 @@ class DecoratedModel extends ParentModel
 
     public static string $tag = 'decorated_original';
 
+    public static string $extraTag = 'untouched';
+
+    private string $label;
+
+    private readonly string $note;
+
     public function identify(): string
     {
         return 'decorated';
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label;
     }
 }

@@ -10,6 +10,10 @@ services:
         class: App\Services\PhpStan\CastableObjectPropertiesExtension
         tags:
             - phpstan.properties.readWriteExtension
+    -
+        class: App\Services\PhpStan\DecoratorTraitPropertiesExtension
+        tags:
+            - phpstan.properties.readWriteExtension
 
 parameters:
     paths:
