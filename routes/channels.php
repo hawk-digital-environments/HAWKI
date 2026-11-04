@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Room;
+use App\Services\Chat\Room\Repositories\RoomRepository;
 use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Broadcast;
 // });
 
 Broadcast::channel('Rooms.{roomSlug}', function (User $user, string $roomSlug) {
-    $room = Room::where('slug', $roomSlug)->firstOrFail();
+    $room = app(RoomRepository::class)->findOneBySlugOrFail($roomSlug);
 
     $isMember = $room->isMember($user->id);
     return $isMember;

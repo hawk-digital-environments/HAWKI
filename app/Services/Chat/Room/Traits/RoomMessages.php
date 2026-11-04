@@ -4,7 +4,6 @@ namespace App\Services\Chat\Room\Traits;
 
 use App\Http\Resources\Legacy\MessageResource;
 use App\Jobs\SendMessage;
-use App\Models\Room;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +14,7 @@ trait RoomMessages{
     public function sendMessage(array $data, string $slug, User $user): ?array
     {
 
-        $room = Room::where('slug', $slug)->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
 
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
 
@@ -37,7 +36,7 @@ trait RoomMessages{
 
     public function updateMessage(array $data, string $slug): array{
 
-        $room = Room::where('slug', $slug)->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
         $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
         $message = $room->getMessageById($data['message_id']);
 
@@ -57,7 +56,7 @@ trait RoomMessages{
 
 
     public function retrieveMessage(string $message_id, string $slug): array{
-        $room = Room::where('slug', $slug)->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
         if(!$room->isMember(Auth::id())){
             throw new AuthorizationException();
         }
@@ -66,7 +65,7 @@ trait RoomMessages{
 
     public function markAsRead(array $validatedData, string $slug): bool{
         try{
-            $room = Room::where('slug', $slug)->firstOrFail();
+            $room = $this->roomRepository->findOneBySlugOrFail($slug);
             $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
             $message = $room->getMessageById($validatedData['message_id']);
             $message->addReadSignature($member);
