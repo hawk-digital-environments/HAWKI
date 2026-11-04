@@ -1,32 +1,41 @@
 <!--
-@component Primary chat input panel — a `<svelte-snippet>` entry point registered by
-`core.plugin.ts`. Combines the message textarea, model selector, tool/file controls,
-system-prompt editing, and a conflict resolver for capability mismatches. It is a thin shell:
-all send/attachment/tool state lives in the `ComposerContext` it creates internally
-(`createComposerContext`), keyed by the `context` prop.
+  @component Primary chat input panel — a `<svelte-snippet>` entry point registered by
+  `core.plugin.ts`. Combines the message textarea, model selector, tool/file controls,
+  system-prompt editing, and a conflict resolver for capability mismatches. It is a thin shell:
+  all send/attachment/tool state lives in the `ComposerContext` it wires up
+  (`createComposerContext`), keyed by the `context` prop.
 
-Rendered once per page for either an AI conversation or a group room chat (see
-`resources/views/modules/chat.blade.php` and `resources/views/modules/groupchat.blade.php`):
-```blade
-<x-svelte type="ChatComposer" :props="['context' => 'aiConv']" />
-<x-svelte type="ChatComposer" :props="['context' => 'room']" />
-```
+  Rendered once per page for either an AI conversation or a group room chat (see
+  `resources/views/modules/chat.blade.php` and `resources/views/modules/groupchat.blade.php`):
+  ```blade
+  <x-svelte type="ChatComposer" :props="['context' => 'aiConv']" />
+  <x-svelte type="ChatComposer" :props="['context' => 'room']" />
+  ```
+
+  Inside the routed chat pages the `ChatLayout` above already owns the composer
+  context (created through `useChatComposerContext`); this component adopts it
+  via `findComposerContext` instead of building its own, which is what keeps
+  the composer's state alive across the pages' navigation.
 -->
 <script lang="ts">
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
-    import {type ComposerContext, type ComposerContextType, createComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import type {MessageSenderTransportInterface} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
+    import {
+        type ComposerContext,
+        type ComposerContextType,
+        createComposerContext,
+        findComposerContext
+    } from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import OldUiStyling from '$plugins/core/modules/chat/components/composer/OldUiStyling.svelte';
     import FileDragAndDrop from '$plugins/core/modules/chat/components/composer/FileDragAndDrop.svelte';
     import ComposerBorderBeam from '$plugins/core/modules/chat/components/composer/ComposerBorderBeam.svelte';
     import ComposerFocusWrap from '$plugins/core/modules/chat/components/composer/utils/ComposerFocusWrap.svelte';
     import ModePanel from '$plugins/core/modules/chat/components/composer/ModePanel.svelte';
     import ModelPicker from '$plugins/core/modules/chat/components/composer/ModelPicker.svelte';
-    import ModelPickerV2 from '$plugins/core/modules/chat/components/composer/ModelPickerV2.svelte';
     import SettingsMenu from '$plugins/core/modules/chat/components/composer/SettingsMenu.svelte';
+    import type {ComponentProps} from 'svelte';
     import ComposerTextarea from '$plugins/core/modules/chat/components/composer/ComposerTextarea.svelte';
     import ModelConflictPicker from '$plugins/core/modules/chat/components/composer/ModelConflictPicker.svelte';
     import FileChips from '$plugins/core/modules/chat/components/composer/FileChips.svelte';
@@ -36,92 +45,56 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import AssistantMenu from '$plugins/core/modules/chat/components/composer/AssistantMenu.svelte';
     import MentionChips from '$plugins/core/modules/chat/components/composer/MentionChips.svelte';
     import ComposerActionButtons from '$plugins/core/modules/chat/components/composer/ComposerActionButtons.svelte';
+    import {provideExclusiveMenuGroup} from '$lib/components/ui/dropdown-menu/exclusiveMenuGroup.js';
 
     interface Props {
         /** Which kind of chat this composer sends into ('aiConv' for a 1:1 AI conversation, 'room' for a group room); determines context-specific behavior (e.g. write-access checks, name menu variant). */
         context: ComposerContextType;
-        /** Optional native transport used by routed plugin pages. */
-        transport?: MessageSenderTransportInterface;
-        /** Prompt of the currently opened conversation. */
-        initialSystemPrompt?: string;
-        /** Called when the user changes the system prompt. */
-        onSystemPromptChange?: (prompt: string) => void;
-        /** Native draft-improvement callback. */
-        onImproveMessage?: (message: string, systemPrompt: string) => Promise<string>;
-        /** Forces the composer into its active state while an external request is running. */
-        forcedActive?: boolean;
-        /** Gives the parent access to edit/regen mode controls. */
-        onReady?: (context: ComposerContext) => void;
     }
 
     const {
-        context: contextType = 'aiConv',
-        transport,
-        initialSystemPrompt,
-        onSystemPromptChange,
-        onImproveMessage,
-        forcedActive = false,
-        onReady
+        context: contextType = 'aiConv'
     }: Props = $props();
 
     const app = useApp();
     const toastContext = useToastContext();
-    // This is a bit of a hack to work around the "state_referenced_locally" warning thrown by svelte.
-    const initialOptions = (() => ({
-        transport,
-        initialSystemPrompt,
-        onSetSystemPrompt: onSystemPromptChange,
-        onImproveMessage,
-        useLegacyBridge: !transport
-    }))();
-    const chatContext = createComposerContext(app, (() => contextType)(), toastContext, initialOptions);
-    (() => onReady)()?.(chatContext);
 
-    $effect(() => {
-        chatContext.forcedActive = forcedActive;
-    });
+    // The routed chat pages sit below the ChatLayout, whose composer context
+    // (see `useChatComposerContext`) is already published in the context
+    // tree — adopt it. Everywhere else — the legacy blade snippets and room
+    // chats — no context is published, so build a fresh per-mount one. The
+    // context type is fixed for the lifetime of the mount either way.
+    const chatContext: ComposerContext = (() => {
+        return findComposerContext() ?? createComposerContext(app, contextType, toastContext);
+    })();
+
+    // The composer's menus (model, settings, assistants, tools) never stack: opening one
+    // closes the other.
+    provideExclusiveMenuGroup();
 
     let textareaEl = $state(null as HTMLTextAreaElement | null);
     let buttonEl = $state(null as HTMLButtonElement | null);
 
     // Shared so the tool-chip overflow badge can open the picker.
     let toolPickerOpen = $state(false);
+    // Typing `@` or `/` in the textarea opens these same menus in command mode, filtered by
+    // what follows the trigger and driven from the textarea.
     let assistantMenuOpen = $state(false);
-
-    /** Opens the menu a typed `@`/`/` trigger asked for (see `ComposerTextarea`) — the
-     *  trigger character is already gone from the message by the time this runs. */
-    function openMenuFromTyping(trigger: '@' | '/') {
-        if (trigger === '@') {
-            assistantMenuOpen = true;
-        } else {
-            toolPickerOpen = true;
-        }
-    }
-
-    // A menu opened from typing borrowed the caret; when it closes again, the cursor
-    // goes back to the textarea — bits-ui would otherwise leave focus on the menu's
-    // trigger button.
-    let menusWereOpen = false;
-    $effect(() => {
-        const open = assistantMenuOpen || toolPickerOpen;
-        if (menusWereOpen && !open) {
-            chatContext.autoFocusInput();
-        }
-        menusWereOpen = open;
-    });
+    let command = $state<ComponentProps<typeof ComposerTextarea>['command']>(null);
+    let assistantMenu = $state<ReturnType<typeof AssistantMenu> | null>(null);
+    let toolMenu = $state<ReturnType<typeof ToolMenu> | null>(null);
 
     const hasFiles = $derived(chatContext.attachments.list.length > 0);
 
     const aiHandleStore = useStore('ai-handle');
-    const experiments = useStore('experiments');
 
-    // Model and settings belong to HAWKI itself: a study assistant brings its own model and
-    // configuration, so tagging one hides both controls. Nothing tagged (a 1:1 AI chat, or
+    // Model, settings and tools belong to HAWKI itself: an assistant brings its own model,
+    // configuration and tools, so tagging one hides those controls. Nothing tagged (a 1:1 AI chat, or
     // regen in a room) still counts as addressing HAWKI.
-    const addressesStudyAssistant = $derived(
+    const isAssistant = $derived(
         chatContext.handlesInMessage.some(handle => handle !== aiHandleStore.hawkiHandle)
     );
-    const showsHawkiControls = $derived(chatContext.guard.showsAiUiElements && !addressesStudyAssistant);
+    const showsHawkiControls = $derived(chatContext.guard.showsAiUiElements && !isAssistant);
 
     // Whether the top row has anything in it at all. In a room it does not until the message
     // addresses someone: no tags, and no model/settings controls either. An AI conversation
@@ -236,11 +209,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
                                                      halves of the row should move at the same time —
                                                      the settings group on the right already does. -->
                                                 <div class="chat-composer-model" transition:growTransition={{mode: 'horizontal'}}>
-                                                    {#if experiments.isEnabled('modelPickerV2')}
-                                                        <ModelPickerV2/>
-                                                    {:else}
-                                                        <ModelPicker/>
-                                                    {/if}
+                                                    <ModelPicker/>
                                                 </div>
                                             {/if}
                                         </div>
@@ -258,7 +227,14 @@ Rendered once per page for either an AI conversation or a group room chat (see
                             <!-- Separator -->
                             <div class="chat-composer-sep"></div>
 
-                            <ComposerTextarea bind:ref={textareaEl} onSend={handleSend} onTriggerMenu={openMenuFromTyping}/>
+                            <ComposerTextarea
+                                bind:ref={textareaEl}
+                                bind:command
+                                bind:assistantMenuOpen
+                                bind:toolMenuOpen={toolPickerOpen}
+                                {assistantMenu}
+                                {toolMenu}
+                                onSend={handleSend}/>
                             <ModelConflictPicker/>
 
                             <!-- File chips -->
@@ -277,11 +253,21 @@ Rendered once per page for either an AI conversation or a group room chat (see
                             <div class="chat-composer-bottom-row">
                                 <div class="chat-bottom-left">
                                     <FilePicker/>
-                                    <AssistantMenu bind:open={assistantMenuOpen}/>
-                                    <ToolMenu bind:open={toolPickerOpen}/>
-                                    <div class="chat-tool-chip-lane">
-                                        <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
-                                    </div>
+                                    <AssistantMenu
+                                        bind:this={assistantMenu}
+                                        bind:open={assistantMenuOpen}
+                                        command={command?.trigger === '@' ? command : null}/>
+                                    <!-- An assistant brings its own tools, so tagging one hides the
+                                         tool controls just like the model and settings. -->
+                                    {#if !isAssistant}
+                                        <ToolMenu
+                                            bind:this={toolMenu}
+                                            bind:open={toolPickerOpen}
+                                            command={command?.trigger === '/' ? command : null}/>
+                                        <div class="chat-tool-chip-lane">
+                                            <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
+                                        </div>
+                                    {/if}
                                 </div>
                                 <div class="chat-bottom-right">
                                     <ComposerActionButtons
@@ -319,20 +305,15 @@ Rendered once per page for either an AI conversation or a group room chat (see
         overflow: hidden;
         cursor: text;
         transform-origin: bottom;
-        transition: border-color var(--duration-fast, 150ms) var(--easing-default);
-    }
-
-    :global(.chat-composer-card:hover) {
-        /* --color-hover is a fill token and reads almost invisible as a hairline,
-           so deepen it along the accent ramp — same blue, more contrast. */
-        border-color: color-mix(in oklab, var(--color-hover) 45%, var(--color-accent-fill));
+        transition: border-color var(--duration-fast) var(--easing-default);
     }
 
     :global(.chat-composer-card--error) {
         border-color: color-mix(in oklch, var(--color-error) 50%, transparent);
     }
 
-    :global(.chat-composer-card:focus-within) {
+    /* Keyboard navigation only — see ComposerFocusWrap. */
+    :global(.chat-composer-card[data-focus-visible]) {
         border-color: var(--color-focus-ring);
         box-shadow: 0 0 0 2px var(--color-focus-ring);
     }
@@ -406,7 +387,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
     .chat-section-shell {
         display: grid;
         grid-template-rows: 0fr;
-        transition: grid-template-rows var(--duration-fast, 300ms) var(--easing-spring);
+        transition: grid-template-rows var(--duration-fast) var(--easing-spring);
     }
 
     .chat-section-shell--open {
@@ -426,7 +407,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
         gap: calc(0.25rem * 1.5);
         padding-inline: var(--space-2, calc(0.25rem * 2));
         padding-bottom: calc(0.25rem * 1.5);
-        animation: composer-section-slide-up var(--duration-fast, 300ms) var(--easing-spring) both;
+        animation: composer-section-slide-up var(--duration-fast) var(--easing-spring) both;
     }
 
     /* ── Bottom row ───────────────────────────────────────────────────── */

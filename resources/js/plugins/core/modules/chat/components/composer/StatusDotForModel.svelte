@@ -3,7 +3,7 @@
   that fills in model-specific translated labels/tooltips for the `online` /
   `offline` / `unknown` states from `AiModel.status`. Use this (rather than
   `StatusDot` directly) anywhere a model's availability needs to be shown —
-  it keeps the wording consistent (e.g. in `ModelPicker`'s dropdown list).
+  it keeps the wording consistent (e.g. in `ModelMenuListItem`'s rows).
 
   @example
   ```svelte

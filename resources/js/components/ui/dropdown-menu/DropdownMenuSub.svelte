@@ -30,6 +30,10 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import {noHoverFocusProps} from '$lib/components/ui/dropdown-menu/noHoverFocus.js';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
+    import {useMenuListRow} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Whether the submenu is open. Supports bind:open. */
@@ -46,6 +50,8 @@
         children?: Snippet;
         /** Additional props forwarded to the `SubContent` element. */
         contentProps?: Omit<DropdownMenuSubContentProps, 'children'>;
+        /** An optional icon before the trigger row's label, aligned like `DropdownMenuItem`'s `iconLeft`. */
+        iconLeft?: IconComponent;
     }
 
     let {
@@ -56,19 +62,40 @@
         openDelay = 100,
         children,
         contentProps,
+        iconLeft: IconLeft,
         class: className,
         ...restProps
     }: Props = $props();
 
     const breakpoint = useBreakpoint();
 
+    // The trigger joins the parent menu's sliding hover (see DropdownMenuItem); the
+    // submenu panel gets a list of its own.
+    const listRow = useMenuListRow();
+    const magnetic = $derived(!!listRow && !disabled);
+
+    // Gap between the trigger row and the parent panel's outer edge (its padding + border),
+    // measured on mount and again on each open: the flyout clears that edge instead of overlapping the parent panel,
+    // whatever padding the parent menu uses.
+    let triggerEl = $state<HTMLElement | null>(null);
+    let parentInset = $state(0);
+    $effect(() => {
+        void open;
+        if (!triggerEl) return;
+        const panel = triggerEl.closest('.dropdown-content');
+        if (panel) parentInset = panel.getBoundingClientRect().right - triggerEl.getBoundingClientRect().right;
+    });
+
     const fullContentProps = $derived.by(() => mergeProps(
         breakpoint.is('bpSmallerThanMd')
             ? {side: 'bottom', align: 'end', sideOffset: 4}
-            : {sideOffset: 8},
+            // Sit flush against the parent panel, and pull the flyout up by its own
+            // padding + border so its first row lines up with the trigger row.
+            : {sideOffset: parentInset, alignOffset: -5},
         {
             class: 'dropdown-content dropdown-content--dropdown dropdown-sub-content'
         },
+        noHoverFocusProps,
         contentProps ?? {}
     ) as DropdownMenuSubContentProps);
 </script>
@@ -76,7 +103,10 @@
 <DropdownMenuPrimitive.Sub bind:open>
     <DropdownMenuPrimitive.SubTrigger {disabled} {openDelay}>
         {#snippet child({props})}
-            <div {...mergeProps({class: `dropdown-sub-trigger${className ? ` ${className}` : ''}`}, restProps, props)}>
+            <div bind:this={triggerEl} {@attach magnetic ? listRow : null} {...mergeProps({class: [`dropdown-sub-trigger${className ? ` ${className}` : ''}`, magnetic && 'magnetic']}, restProps, props)}>
+                {#if IconLeft}
+                    <IconLeft size="14" aria-hidden="true"/>
+                {/if}
                 <span class="dropdown-sub-trigger-label">
                     <SnippetOrString value={label}/>
                 </span>
@@ -91,7 +121,9 @@
     </DropdownMenuPrimitive.SubTrigger>
     <DropdownMenuPrimitive.Portal>
         <DropdownMenuPrimitive.SubContent {...fullContentProps as any}>
-            {@render children?.()}
+            <MenuList class="dropdown-menu-list" bridgeSections>
+                {@render children?.()}
+            </MenuList>
         </DropdownMenuPrimitive.SubContent>
     </DropdownMenuPrimitive.Portal>
 </DropdownMenuPrimitive.Sub>
@@ -100,7 +132,7 @@
     .dropdown-sub-trigger {
         position: relative;
         display: flex;
-        cursor: default;
+        cursor: pointer;
         align-items: center;
         gap: var(--space-2, calc(0.25rem * 2));
         border-radius: var(--corner-sm);
@@ -114,7 +146,7 @@
         transition: background-color var(--duration-fast, 150ms);
     }
 
-    .dropdown-sub-trigger[data-highlighted],
+    .dropdown-sub-trigger:is([data-highlighted]:not(.magnetic), [data-highlighted]:focus-visible, :hover:not([data-disabled], .magnetic)),
     .dropdown-sub-trigger[data-state="open"] {
         background-color: var(--color-hover);
         color: var(--color-text);
@@ -141,6 +173,38 @@
 
     :global(.dropdown-sub-content) {
         min-width: calc(0.25rem * 40);
+    }
+
+    /* Grow out of the trigger row and drift in from it, instead of the root menu's centred scale. */
+    :global(.dropdown-content.dropdown-sub-content[data-state="open"]) {
+        transform-origin: var(--bits-dropdown-menu-content-transform-origin);
+        animation: dropdown-sub-in var(--duration-extra-fast) var(--easing-spring);
+    }
+
+    :global(.dropdown-content.dropdown-sub-content[data-state="closed"]) {
+        transform-origin: var(--bits-dropdown-menu-content-transform-origin);
+        animation: dropdown-sub-out var(--duration-extra-fast) var(--easing-in);
+    }
+
+    :global(.dropdown-sub-content[data-side="right"]) { --dropdown-sub-shift: -4px 0; }
+    :global(.dropdown-sub-content[data-side="left"]) { --dropdown-sub-shift: 4px 0; }
+    :global(.dropdown-sub-content[data-side="bottom"]) { --dropdown-sub-shift: 0 -4px; }
+    :global(.dropdown-sub-content[data-side="top"]) { --dropdown-sub-shift: 0 4px; }
+
+    @keyframes -global-dropdown-sub-in {
+        from {
+            opacity: 0;
+            scale: 0.96;
+            translate: var(--dropdown-sub-shift, 0 0);
+        }
+    }
+
+    @keyframes -global-dropdown-sub-out {
+        to {
+            opacity: 0;
+            scale: 0.98;
+            translate: var(--dropdown-sub-shift, 0 0);
+        }
     }
 
     @media (--bp-smaller-than-md) {

@@ -40,7 +40,10 @@ export function createProximityHover(options: Options = {}) {
         const {scrollTop, scrollLeft} = container;
         const next: Record<number, ItemRect> = {};
         for (const [idx, el] of items) {
-            if (!el) continue;
+            // Items inside an `inert` subtree (e.g. a collapsed accordion panel)
+            // keep their box while clipped out of view, so they would otherwise
+            // still attract the highlight.
+            if (!el || el.closest('[inert]')) continue;
             const r = el.getBoundingClientRect();
             next[idx] = {
                 top: r.top - containerRect.top + scrollTop,
