@@ -69,15 +69,17 @@
         padding-bottom: var(--space-4);
     }
 
-    /* Padded like the rows below, so the logo starts on the same line as their
-       content. The auto margin pushes everything after it to the row's right side. */
+    /* The wordmark's stem has no side bearing, so it is inset by the same extra
+       amount as the text-only history rows below (ChatSidebar) to start on their
+       line. The auto margin pushes everything after it to the row's right side. */
     .brand {
+        --brand-inset: calc(var(--nav-item-pad-x) + 1.5px);
         flex-shrink: 0;
         margin-right: auto;
         display: inline-flex;
         align-items: center;
         height: var(--nav-row-h);
-        padding-inline: var(--nav-item-pad-x);
+        padding-inline: var(--brand-inset) var(--nav-item-pad-x);
         color: inherit;
         text-decoration: none;
         border-radius: var(--corner-sm);
@@ -109,6 +111,10 @@
     }
 
     @media (--bp-md-and-smaller) {
+        .brand {
+            --brand-inset: calc(var(--nav-item-pad-x) + 0.67px);
+        }
+
         .toggle {
             display: flex;
         }
