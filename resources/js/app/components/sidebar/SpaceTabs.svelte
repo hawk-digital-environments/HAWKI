@@ -16,7 +16,6 @@
     import type {CollapsibleTabItem} from '$lib/components/ui/tabs/CollapsibleTab.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuCheckboxItem from '$lib/components/ui/dropdown-menu/DropdownMenuCheckboxItem.svelte';
-    import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
     import SidebarIconButton from '$lib/components/ui/sidebar/SidebarIconButton.svelte';
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import PlusSignIcon from '$lib/components/ui/icons/iconset/PlusSignIcon.svelte';
@@ -120,7 +119,6 @@
             {#snippet trigger({props})}
                 <SidebarIconButton icon={PlusSignIcon} label={__('ui.navigation.pinSpaces')} {...props}/>
             {/snippet}
-            <DropdownMenuLabel>{__('ui.navigation.spaces')}</DropdownMenuLabel>
             <!-- In a fixed order, so a row stays under the pointer when it is pinned. -->
             {#each spaces as space (space.id)}
                 <DropdownMenuCheckboxItem
