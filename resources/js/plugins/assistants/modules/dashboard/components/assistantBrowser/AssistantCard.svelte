@@ -1,13 +1,10 @@
 <script lang="ts">
     import ReleaseStageStatus from "$plugins/assistants/modules/builder/components/ReleaseStageStatus.svelte";
     import AssistantBanner from "$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte";
-    import AssistantAvatarIcon from "$plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte";
     import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
-    import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
     import {toggleAssistantFavorite} from "$plugins/assistants/api/resources/assistantsClient";
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
-    import {resolveAssistantAvatar} from "$plugins/assistants/utils/resolveAssistantAvatar";
     import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {useRouter} from "$lib/components/ui/routing/hooks/useRouter.svelte";
@@ -64,12 +61,6 @@
         }
     }
 
-    // Fall back to a neutral appearance for legacy assistants that predate
-    // the avatar builder's Erscheinungsbild (see resolveAssistantAvatar).
-    const avatar = $derived<AssistantAvatar>(
-        resolveAssistantAvatar(assistant.avatar, assistant.name)
-    );
-
 
 </script>
 <!--@todo: Link truned to button because style didn't budge-->
@@ -102,12 +93,6 @@
                 <span class="text">{__('assistants.card.remix')}</span>
             </div>
         {/if}
-        <div class="category tag">
-            <span class="text">{assistant.category? __(assistant.category.text) : __('assistants.card.category_unknown')}</span>
-        </div>
-    </div>
-    <div class="avatar-wrap">
-        <AssistantAvatarIcon size="small" assistantAvatar={avatar} />
     </div>
     <div class="content">
         <div class="info">
@@ -116,6 +101,9 @@
                 <span class="handle">@{assistant.handle}</span>
             </div>
             <div class="tags">
+                <span class="category">
+                    {assistant.category? __(assistant.category.text) : __('assistants.card.category_unknown')}
+                </span>
                 {#if assistant.release_stage}
                     <ReleaseStageStatus
                         stage={assistant.releaseStage}
@@ -195,24 +183,12 @@
         position: relative;
         overflow: hidden;
     }
-
-    /* Avatar icon straddles the banner / content boundary, lifted by a surface
-       ring — mirroring the builder's Erscheinungsbild preview. */
-    .avatar-wrap {
-        position: absolute;
-        top: calc(6rem - 1.5rem);
-        left: var(--space-4);
-        z-index: 2;
-        padding: 3px;
-        background: var(--color-surface-raised);
-        /* Concentric with the avatar inside: its radius + the 3px ring. */
-        border-radius: calc(var(--corner-sm) + 3px);
-        box-shadow: var(--elevation-1);
-    }
-    /* Avatar corner: a quarter of its 3rem edge (the detail page scales the
-       same ratio to its larger avatar). */
-    .avatar-wrap :global(.icon-container) {
-        border-radius: var(--corner-sm);
+    /* The banner is the card's only avatar: taller than the default and
+       dissolving into the card surface toward the bottom, so the cover and
+       the content read as one continuous plane. */
+    .cover :global(.banner-container) {
+        height: 8rem;
+        mask-image: linear-gradient(to bottom, #000 35%, transparent);
     }
     .favourite-btn{
         position: absolute;
@@ -267,11 +243,23 @@
         display: block;
     }
 
+    .tags{
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-1_5);
+    }
     .category{
-        position: absolute;
-        bottom: var(--space-2);
-        right: var(--space-2);
-        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        height: 1.5rem;
+        padding: 0 var(--space-2_5);
+        border-radius: var(--corner-full);
+        background-color: var(--color-surface-light);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xxs);
+        font-weight: var(--font-weight-medium);
+        line-height: 1;
     }
 
 
@@ -290,10 +278,8 @@
         display: flex;
         flex-direction: column;
         row-gap: var(--space-2);
-        /* Top padding clears the avatar hanging below the banner (half its
-           3rem edge + the 2×3px ring, see .avatar-wrap), then leaves a
-           --space-3 gap before the name. */
-        padding: calc(1.5rem + 6px + var(--space-3)) var(--space-4) var(--space-4);
+        /* The banner's fade already separates cover and text. */
+        padding: var(--space-1) var(--space-4) var(--space-4);
     }
     .header{
         display: flex;
@@ -307,10 +293,6 @@
         --overflow-text-color: var(--color-text);
         /* Tight lines so name and handle read as one block. */
         --overflow-text-line-height: var(--line-height-tight);
-    }
-    /* An empty tag row would add a second row-gap above the description. */
-    .tags:not(:has(*)){
-        display: none;
     }
     .header .handle{
         line-height: var(--line-height-tight);
