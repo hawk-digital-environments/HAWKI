@@ -67,14 +67,20 @@
     const titleEnd = $derived(titleSplit < 0 ? '' : title.slice(titleSplit + 1));
 
     const MAX_TITLE_AVATARS = 3;
-    /** Matches the close transition, so the set is only swapped while hidden. */
-    const TITLE_CLOSE_MS = 320;
+    /** Hover intent: a cursor merely passing over the title doesn't open it. */
+    const TITLE_OPEN_DELAY_MS = 80;
+    /** Covers the close transition (gap 250ms), so the set is only swapped while hidden. */
+    const TITLE_CLOSE_MS = 260;
 
     type TitleAvatar = {key: string; avatar: AssistantAvatar; tilt: number; fromTilt: number};
 
     let titleOpen = $state(false);
+    /** Between leaving and the close finishing: avatars play their own exit
+     *  pose instead of reversing the entrance. */
+    let titleClosing = $state(false);
     let titleAvatars = $state<TitleAvatar[]>([]);
     let repickTimer: ReturnType<typeof setTimeout> | undefined;
+    let openTimer: ReturnType<typeof setTimeout> | undefined;
 
     function pickTitleAvatars(): TitleAvatar[] {
         const unique = new Map<string, AssistantAvatar>();
@@ -105,17 +111,31 @@
     });
 
     function openTitle() {
-        clearTimeout(repickTimer);
-        titleOpen = true;
+        clearTimeout(openTimer);
+        openTimer = setTimeout(() => {
+            clearTimeout(repickTimer);
+            titleClosing = false;
+            titleOpen = true;
+        }, TITLE_OPEN_DELAY_MS);
     }
 
     function closeTitle() {
+        clearTimeout(openTimer);
+        if (!titleOpen) return;
         titleOpen = false;
+        titleClosing = true;
         clearTimeout(repickTimer);
-        repickTimer = setTimeout(() => (titleAvatars = pickTitleAvatars()), TITLE_CLOSE_MS);
+        // Fresh keys mount new elements straight into the hidden entrance pose.
+        repickTimer = setTimeout(() => {
+            titleClosing = false;
+            titleAvatars = pickTitleAvatars();
+        }, TITLE_CLOSE_MS);
     }
 
-    $effect(() => () => clearTimeout(repickTimer));
+    $effect(() => () => {
+        clearTimeout(repickTimer);
+        clearTimeout(openTimer);
+    });
 </script>
 
 <Page fade="short">
@@ -133,6 +153,7 @@
                 <h1
                         class="store-title"
                         class:open={titleOpen && titleAvatars.length > 0}
+                        class:closing={titleClosing}
                         style:--count={titleAvatars.length}
                         onpointerenter={openTitle}
                         onpointerleave={closeTitle}
@@ -202,15 +223,15 @@
         gap: var(--avatar-space);
         width: var(--word-space);
         height: var(--avatar-size);
-        transition: width 280ms var(--ease-smooth-out);
+        transition: width 250ms var(--ease-smooth-out);
     }
 
     .open .title-gap {
         width: calc(var(--count) * (var(--avatar-size) + var(--avatar-space)) + var(--avatar-space));
-        transition: width 420ms var(--ease-smooth-out);
+        transition: width 400ms var(--ease-smooth-out);
     }
 
-    /* Exit: quick, together, no delay — shrink, fade and soften away. */
+    /* Hidden entrance pose: low, small and steeply leaning. */
     .title-avatar {
         flex: none;
         width: var(--avatar-size);
@@ -218,16 +239,24 @@
         opacity: 0;
         filter: blur(2px);
         transform: translateY(0.18em) rotate(var(--from-tilt)) scale(0.4);
+    }
+
+    /* Exit: quick, together, no delay — shrink in place on its own tilt and
+       fade, instead of swinging back out along the entrance path. */
+    .closing .title-avatar {
+        opacity: 0;
+        filter: blur(2px);
+        transform: rotate(var(--tilt)) scale(0.6);
         transition:
-            transform 160ms cubic-bezier(0.4, 0, 1, 1),
-            opacity 140ms ease-in,
-            filter 140ms ease-in;
+            transform 150ms var(--ease-smooth-out),
+            opacity 150ms var(--ease-smooth-out),
+            filter 150ms var(--ease-smooth-out);
     }
 
     /* Enter: staggered spring pop that swings in from a steep lean and
        settles on its own small tilt. */
     .open .title-avatar {
-        --delay: calc(60ms + var(--i) * 55ms);
+        --delay: calc(var(--i) * 40ms);
         opacity: 1;
         filter: blur(0);
         transform: translateY(0) rotate(var(--tilt)) scale(1);
@@ -273,7 +302,8 @@
         }
 
         .title-avatar,
-        .open .title-avatar {
+        .open .title-avatar,
+        .closing .title-avatar {
             filter: none;
             transform: rotate(var(--tilt));
             transition: opacity 150ms ease-out;
