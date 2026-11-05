@@ -187,7 +187,13 @@
        dissolving into the card surface toward the bottom, so the cover and
        the content read as one continuous plane. */
     .cover :global(.banner-container) {
-        height: 8rem;
+        /* 8rem of visible cover + the 2.5rem tail the content overlaps
+           (see .content's negative margin). */
+        height: 10.5rem;
+        /* Keep the glyph centred in the visible 8rem, clear of the title. */
+        align-items: flex-start;
+        padding-top: 2.25rem;
+        box-sizing: border-box;
         /* Eased (ease-in-out) fade instead of a linear ramp: a linear mask
            leaves visible "corners" where the ramp starts and ends. */
         mask-image: linear-gradient(
@@ -291,7 +297,11 @@
         display: flex;
         flex-direction: column;
         min-height: 50%;
-        background-color: var(--color-surface-raised);
+        /* Pulled up over the banner's fading tail, so the cover's colour
+           runs on behind the name and handle. Transparent so the fade shows
+           through; the card itself provides the surface below it. */
+        position: relative;
+        margin-top: -2.5rem;
     }
     .info{
         flex-grow: 1;
