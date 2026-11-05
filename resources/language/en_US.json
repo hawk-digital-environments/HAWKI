@@ -175,6 +175,7 @@
     "The_web_search": "the Web",
     "The_knowledge_base": "the Vector Database",
     "Reasoning_Msg": "Compare possible options",
+    "Started_Msg": "One moment, please. The AI is processing your request...",
     "Parameters": "Parameters",
     "Temperature": "Temperature",
     "Precise": "Precise",
