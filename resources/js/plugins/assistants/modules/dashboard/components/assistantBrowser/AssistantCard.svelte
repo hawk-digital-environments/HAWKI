@@ -74,7 +74,7 @@
     }}
 >
     <div class="cover">
-        <AssistantBanner assistantAvatar={assistant.avatar} />
+        <AssistantBanner assistantAvatar={assistant.avatar} fade />
         <div
             class="favourite-btn"
             role="presentation"
@@ -194,27 +194,6 @@
         align-items: flex-start;
         padding-top: 2.25rem;
         box-sizing: border-box;
-        /* Eased (ease-in-out) fade instead of a linear ramp: a linear mask
-           leaves visible "corners" where the ramp starts and ends. */
-        mask-image: linear-gradient(
-            to bottom,
-            rgb(0 0 0 / 1) 20%,
-            rgb(0 0 0 / 0.987) 26.5%,
-            rgb(0 0 0 / 0.951) 32.4%,
-            rgb(0 0 0 / 0.896) 38%,
-            rgb(0 0 0 / 0.825) 43.2%,
-            rgb(0 0 0 / 0.741) 48.2%,
-            rgb(0 0 0 / 0.648) 53%,
-            rgb(0 0 0 / 0.55) 57.7%,
-            rgb(0 0 0 / 0.45) 62.3%,
-            rgb(0 0 0 / 0.352) 67%,
-            rgb(0 0 0 / 0.259) 71.8%,
-            rgb(0 0 0 / 0.175) 76.8%,
-            rgb(0 0 0 / 0.104) 82%,
-            rgb(0 0 0 / 0.049) 87.6%,
-            rgb(0 0 0 / 0.013) 93.5%,
-            rgb(0 0 0 / 0) 100%
-        );
     }
     .favourite-btn{
         position: absolute;

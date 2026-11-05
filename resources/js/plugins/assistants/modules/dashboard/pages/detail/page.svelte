@@ -11,7 +11,6 @@
     import VersionCard from "$plugins/assistants/modules/dashboard/components/versionTimeline/VersionCard.svelte";
     import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte";
     import AssistantBanner from "$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte";
-    import AssistantAvatarIcon from "$plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte";
     import {submitAssistantFeedbacks} from "$plugins/assistants/api/resources/assistantFeedbackClient";
     import {ApiError} from "$plugins/assistants/api/errors";
     import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
@@ -407,14 +406,10 @@
                     {/if}
                 </div>
             </div>
-            <AssistantBanner assistantAvatar={avatar} />
+            <AssistantBanner assistantAvatar={avatar} fade />
         </div>
 
         <div class="overview">
-            <div class="avatar">
-                <AssistantAvatarIcon size="large" assistantAvatar={avatar} />
-            </div>
-
             <div class="head">
                 <div class="name-wrapper">
                     <h2 class="name">
@@ -630,31 +625,45 @@
         position: relative;
         width: 100%;
         /* Concentric with the round 2rem top-bar buttons inset by
-           --space-2: their 1rem radius + the inset. */
-        border-radius: calc(1rem + var(--space-2));
+           --space-2: their 1rem radius + the inset. Top corners only — the
+           bottom dissolves into the page, so rounding there would show as a
+           faint notch at each end of the fade. */
+        border-radius: calc(1rem + var(--space-2)) calc(1rem + var(--space-2)) 0 0;
         overflow: hidden;
     }
+    /* The banner is the page's only avatar (same as the store cards): its
+       fading tail runs on behind the name and handle. */
+    .page-content {
+        --cover-visible: 10rem;
+        --cover-symbol: 5rem;
+        --cover-overlap: 5.5rem; /* name + handle sit on the fade */
+    }
     .cover :global(.banner-container) {
-        height: 13rem;
+        height: calc(var(--cover-visible) + var(--cover-overlap));
+        /* Keep the glyph centred in the visible part, clear of the name. */
+        align-items: flex-start;
+        padding-top: calc((var(--cover-visible) - var(--cover-symbol)) / 2);
+        box-sizing: border-box;
     }
     .cover :global(.banner-container .symbol) {
-        font-size: 5rem;
+        font-size: var(--cover-symbol);
     }
 
-    /* Overview: avatar tile beside the name/handle and description. */
+    /* Overview: name/handle and description, pulled up over the banner's
+       tail (cancelling the page gap as well). */
+    /* Centred under the banner's centred glyph, so symbol, name and summary
+       read as one hero; the body below stays left-aligned. */
     .overview {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: var(--space-4);
-        align-items: start;
-    }
-    /* Same corner as the cover above. */
-    .overview .avatar :global(.icon-container) {
-        border-radius: calc(1rem + var(--space-2));
+        position: relative;
+        margin-top: calc(-1 * (var(--cover-overlap) + var(--space-5)));
+        /* Extra air before the metadata cards closes the hero off. */
+        margin-bottom: var(--space-3);
+        text-align: center;
     }
     .head {
         display: flex;
         flex-direction: column;
+        align-items: center;
         gap: var(--space-3);
         min-width: 0;
     }
@@ -663,10 +672,13 @@
         flex-direction: column;
         gap: var(--space-0_5);
         min-width: 0;
+        /* Centred (shrink-wrapped) but still capped, so a long name keeps
+           truncating instead of overflowing. */
+        max-width: 100%;
     }
     .name {
         margin: 0;
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-2xl);
         font-weight: var(--font-weight-medium);
         letter-spacing: -0.01em;
         color: var(--color-text);
@@ -697,6 +709,8 @@
     }
     .description {
         margin: 0;
+        /* Short summary as a centred block: a readable measure. */
+        max-width: 40rem;
         font-size: var(--font-size-sm);
         line-height: var(--line-height-normal);
         color: var(--color-text-muted);
@@ -815,15 +829,12 @@
             gap: var(--space-4);
             padding: var(--space-4);
         }
-        .cover :global(.banner-container) {
-            height: 9rem;
+        .page-content {
+            --cover-visible: 7rem;
+            --cover-symbol: 3.5rem;
         }
-        .cover :global(.banner-container .symbol) {
-            font-size: 3.5rem;
-        }
-        /* Stack the avatar tile above the name/handle. */
         .overview {
-            grid-template-columns: 1fr;
+            margin-top: calc(-1 * (var(--cover-overlap) + var(--space-4)));
         }
         /* Too narrow for the labelled buttons: "Remixen" and "Ausprobieren"
            become round icon buttons like the others, so the whole top bar
