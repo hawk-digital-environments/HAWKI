@@ -74,6 +74,10 @@
         --nav-icon-size: 18px;
         --nav-font-size: 0.875rem;
         --nav-item-pad-x: calc((var(--nav-row-h) - var(--nav-icon-size)) / 2 + var(--space-0_5));
+        /* Where text-only rows (wordmark, history) start: on the visible edge of
+           the row icons, whose glyphs begin 2/24 into the icon box. On small
+           screens the icons are 20px and pulled out by 1px. */
+        --nav-text-inset: calc(var(--nav-item-pad-x) + 1.5px);
         --nav-track: var(--nav-w);
         --aside-track: 0rem;
         --panel-bg: var(--color-bg);
@@ -108,6 +112,7 @@
             --nav-w: 13rem;
             grid-template-columns: minmax(0, 1fr);
             grid-template-areas: 'main';
+            --nav-text-inset: calc(var(--nav-item-pad-x) + 0.67px);
         }
     }
 </style>

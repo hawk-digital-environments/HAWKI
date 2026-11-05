@@ -295,9 +295,8 @@
         flex: 1;
         flex-direction: column;
         gap: var(--nav-group-gap);
-        /* The title and rows are text-only, so they start where the search glyph
-           visibly does: its ring begins 2/24 into the 18px icon box. */
-        --history-text-inset: calc(var(--nav-item-pad-x) + 1.5px);
+        /* The title and rows are text-only (see --nav-text-inset, SidebarRoot). */
+        --history-text-inset: var(--nav-text-inset);
         /* The title reads at the same size as the search and the rows. */
         --history-title-size: var(--nav-font-size);
     }
@@ -305,7 +304,6 @@
     /* The search icon is 20px here and pulled out by 1px (AppSidebar). */
     @media (--bp-md-and-smaller) {
         .chat-sidebar {
-            --history-text-inset: calc(var(--nav-item-pad-x) + 0.67px);
             --history-title-size: var(--font-size-sm);
         }
     }
@@ -428,14 +426,14 @@
     }
 
     .filter-trigger :global(svg) {
-        width: 16px;
-        height: 16px;
+        width: var(--space-4);
+        height: var(--space-4);
     }
 
     @media (--bp-md-and-smaller) {
         .filter-trigger :global(svg) {
-            width: 18px;
-            height: 18px;
+            width: var(--nav-icon-size);
+            height: var(--nav-icon-size);
         }
     }
 
@@ -480,7 +478,7 @@
         display: flex;
         align-items: center;
         min-height: var(--nav-row-h);
-        margin: 0 var(--space-3);
+        margin: 0 var(--nav-item-pad-x) 0 var(--history-text-inset);
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
         line-height: var(--line-height-normal);

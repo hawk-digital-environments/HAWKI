@@ -154,7 +154,7 @@
         gap: var(--space-2);
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--space-3) 0 var(--nav-item-pad-x);
+        padding-inline: var(--nav-item-pad-x);
         border: none;
         background: transparent;
         color: var(--color-nav-text);
