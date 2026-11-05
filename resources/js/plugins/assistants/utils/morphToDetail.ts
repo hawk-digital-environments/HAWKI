@@ -40,6 +40,19 @@ const MAX_WAIT_MS = 800;
 
 type Direction = 'open' | 'back';
 
+/** The morph currently running, if any. */
+let activeMorph: ViewTransition | null = null;
+
+/**
+ * Resolves once the running morph has finished, or `null` when none is
+ * running. Lets the page that mounts under a morph hold back its own entrance
+ * motion — e.g. the card grid's enter animation, which would otherwise fade
+ * the very card the cover is landing on.
+ */
+export function morphSettled(): Promise<void> | null {
+    return activeMorph ? activeMorph.finished.then(() => undefined, () => undefined) : null;
+}
+
 /**
  * Resolves with the first element matching `selector` once it is in the DOM,
  * or with null after MAX_WAIT_MS.
@@ -113,6 +126,11 @@ function run(direction: Direction, update: () => Promise<(() => void) | void>): 
         const undo = await update();
         if (undo) cleanups.push(undo);
         await tick();
+    });
+
+    activeMorph = transition;
+    cleanups.push(() => {
+        if (activeMorph === transition) activeMorph = null;
     });
 
     // Also runs when the transition is skipped (a failed or vetoed

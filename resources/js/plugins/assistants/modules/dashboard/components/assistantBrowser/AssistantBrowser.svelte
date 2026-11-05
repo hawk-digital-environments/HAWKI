@@ -10,6 +10,7 @@
     import type {Snippet} from 'svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
+    import {morphSettled} from "$plugins/assistants/utils/morphToDetail";
     import CategoryBar from "$plugins/assistants/modules/dashboard/components/categoryBar/CategoryBar.svelte";
 
     const {__} = useTranslator();
@@ -66,6 +67,25 @@
             window.history.replaceState(window.history.state, '', url);
         }
     });
+
+    // Grid enter/leave animation. Held back while a detail → store morph is
+    // landing: the store mounts under it and its cards load in, and the
+    // enter fade would also fade the card the cover is morphing into.
+    let grid = $state<HTMLElement | null>(null);
+    $effect(() => {
+        if (!grid) return;
+        const controller = autoAnimate(grid);
+        const settled = morphSettled();
+        let disposed = false;
+        if (settled) {
+            controller.disable();
+            void settled.then(() => { if (!disposed) controller.enable(); });
+        }
+        return () => {
+            disposed = true;
+            controller.disable();
+        };
+    });
 </script>
 
 {#snippet controls()}
@@ -85,7 +105,7 @@
 {/if}
 
 <div class="wrapper">
-    <div class="grid-responsive" use:autoAnimate>
+    <div class="grid-responsive" bind:this={grid}>
         {#each list.assistants as assistant (assistant.id)}
             <AssistantCard assistant={assistant} />
         {/each}
