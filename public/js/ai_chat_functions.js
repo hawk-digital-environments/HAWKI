@@ -228,6 +228,14 @@ async function buildRequestObjectForAiConv(
                         messageElement = addMessageToChatlog(messageObj, false);
                     }
 
+                    // Keep the dataset in sync with this request's config. The header
+                    // object carries tools/params top-level (no metadata key), so
+                    // addMessageToChatlog skips them — without this, regenerating a
+                    // message whose generation failed before it was stored would lose
+                    // the original tools and params (see onRegenerateBtn).
+                    messageElement.dataset.tools = JSON.stringify(msgAttributes['metadata'].tools ?? []);
+                    messageElement.dataset.params = JSON.stringify(msgAttributes['metadata'].params ?? {});
+
                     messageBodyElement = messageElement.querySelector('[data-id="message-body"]');
                     if (!messageBodyElement) {
                         console.error('Message body element not found!');
