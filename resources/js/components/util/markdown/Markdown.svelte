@@ -8,6 +8,7 @@
     import type {CodeBlockOptions, NodeRendererCodeBlockProps} from 'markstream-svelte';
     import ExtendedLinkNode from '$lib/components/util/markdown/extension/ExtendedLinkNode.svelte';
     import HeadingNode from '$lib/components/util/markdown/extension/HeadingNode.svelte';
+    import MathNode from '$lib/components/util/markdown/extension/MathNode.svelte';
     import TableNode from '$lib/components/util/markdown/extension/TableNode.svelte';
     import {provideMarkdownHeadingBaseLevel} from '$lib/components/util/markdown/extension/headingBaseLevel.js';
     import 'katex/dist/katex.min.css';
@@ -53,7 +54,7 @@
     isDark={themeStore.theme === 'dark'}
     final={!isStreaming}
     showTooltips={false}
-    customComponents={{link: ExtendedLinkNode, heading: HeadingNode, table: TableNode}}
+    customComponents={{link: ExtendedLinkNode, heading: HeadingNode, math_block: MathNode, table: TableNode}}
     codeBlockOptions={codeBlockOptions}
     codeBlockProps={codeBlockProps}
     typewriter={!!isStreaming}
@@ -67,6 +68,47 @@
             :global(table td) {
                 min-width: 200px;
             }
+        }
+
+        /* Top-level tables scroll via their node-slot wrapper above. Nested
+           tables (e.g. inside a blockquote) render directly inside their
+           parent with no slot wrapper, so wide ones overflow the message
+           column and get clipped by the chat panel (overflow-x: hidden).
+           Make the blockquote their scroll container, mirroring the
+           top-level behavior. */
+        :global(blockquote) {
+            overflow-x: auto;
+
+            :global(table td) {
+                min-width: 200px;
+            }
+        }
+
+        /* Task-list checkboxes are native controls; the app reset's `font:
+           inherit` (via svelte-snippet) scales them up against the text.
+           Render them GitHub-style: native ~13px size (0.8em at the 16px
+           message font), middle-aligned on the line, tinted with the theme
+           accent instead of the UA gray. The explicit minimums guard against
+           page-wide input rules (style.css gives every input min-width:10rem
+           / min-height:2.5rem — min-* clamp width/height regardless of
+           importance, which once rendered these at 160×40px). */
+        :global(input[type='checkbox'].checkbox-node) {
+            width: 0.8em;
+            height: 0.8em;
+            min-width: 0.8em;
+            min-height: 0.8em;
+            margin: 0 0.35em 0 0;
+            vertical-align: middle;
+            accent-color: var(--accent-color);
+        }
+
+        /* Task items carry both their list marker and the checkbox — a
+           double indicator (worst at deep nesting where markers shrink to
+           squares). GitHub-style: drop the marker, the checkbox IS the
+           marker. The direct-child chain keeps ancestor items of nested
+           task lists unaffected. */
+        :global(li:has(> p > .checkbox-node)) {
+            list-style: none;
         }
 
         /* markstream-svelte sizes headings by tag. With `headingBaseLevel`
@@ -92,6 +134,34 @@
         /* mermaid-preview has default overflow:clip, which clips the edge of the diagram.
         This element is the one that moves when dragging the diagram.*/
         :global(.mermaid-preview) { overflow: visible; }
+
+        /* The HTML/SVG preview frame ships viewport-sized (80vw × 70vh,
+           max-width 960px) but renders inline below the code block, so it
+           overflows the message column. Fit it to the container instead;
+           the iframe scrolls its own content. Drop this once the upstream
+           fix is released and the dependency bumped (see MARKSTREAM-SVELTE.md). */
+        :global(.html-preview-frame) {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 10;
+            min-height: 16rem;
+            max-height: 70vh;
+            margin-top: 0.5rem;
+        }
+
+        /* The component emits `is-dark` but the package CSS targets `--dark`,
+           so dark rules never apply: the frame stays white while its text
+           inherits the light chat color. Restyle until fixed upstream. */
+        :global(.html-preview-frame.is-dark) {
+            background-color: var(--color-surface);
+            color: var(--color-text);
+            box-shadow: none;
+        }
+
+        :global(.html-preview-frame.is-dark .html-preview-frame__header) {
+            border-bottom-color: var(--color-border);
+        }
     }
 
     :global(.darkMode) {

@@ -634,29 +634,8 @@ function activateMessageControls(msgElement) {
     if (!msgElement.classList.contains('AI') && msgElement.querySelector('#regenerate-btn')) {
         msgElement.querySelector('#regenerate-btn').remove();
     }
-    const mathBlocks = msgElement.querySelectorAll('.math');
-    for (let i = 0; i < mathBlocks.length; i++) {
-        const mathBlock = mathBlocks[i];
-
-        if (!mathBlock.querySelector('.copy-btn')) {
-            const copyBtnTemp = document.getElementById('copy-btn-template');
-            const clone = document.importNode(copyBtnTemp.content, true);
-            const copyBtn = clone.querySelector('.copy-btn');
-            copyBtn.classList.add('math-copy-btn');
-
-            copyBtn.addEventListener('click', function () {
-                copyMathBlock(mathBlock);
-            });
-            mathBlock.appendChild(copyBtn);
-        }
-    }
     const controls = msgElement.querySelector('.message-controls');
     controls.style.display = 'flex';
-}
-
-function copyMathBlock(block) {
-    const m = block.dataset.rawmath;
-    navigator.clipboard.writeText(m);
 }
 
 // Copies content of the message box without the css attributes

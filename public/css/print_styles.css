@@ -2,7 +2,7 @@
 @import url('custom-styles.css');
 * {
     -ms-overflow-style: none;
-    font-family: "Fira Sans", sans-serif;
+    font-family: 'Fira Sans', sans-serif;
     line-height: 1.5;
     box-sizing: border-box;
 }
@@ -14,28 +14,28 @@
     margin-right: 1cm;
 }
 
-h1{
+h1 {
     margin-top: 4rem;
     margin-bottom: 0;
 }
-h3{
+h3 {
     margin-top: 2rem;
 }
 
-.wrapper{
+.wrapper {
     margin-top: 4rem;
     margin-bottom: 5rem;
     margin-left: 3rem;
     margin-right: 3rem;
 }
 
-.thread{
+.thread {
     display: flex;
     flex-direction: column;
     row-gap: 3rem;
 }
 
-.date_span{
+.date_span {
     display: flex;
     justify-content: left;
     align-items: center;
@@ -44,34 +44,73 @@ h3{
     font-weight: 400;
 }
 
-.branch .message{
-    page-break-inside:avoid;
-
+.branch .message {
+    page-break-inside: avoid;
 }
-.message-author{
+.message-author {
     font-style: italic;
     font-size: var(--font-md);
     font-weight: 600;
-
 }
 
-.branch{
+.branch {
     padding-left: 3rem;
     border-left: var(--border-stroke-thin);
 }
 
-
 pre {
-    background: var(--code-background);
-    border: var(--border-stroke-thin);
-    border-radius: var(--border-radius-tight);
+    /* Literal values: the design-token stylesheets (custom-styles.css, tokens)
+       are not loaded in the print template, so no CSS variables resolve here. */
+    background: #f8f8f8;
+    border: 1px solid #d4d4d4;
+    border-radius: 0.5rem;
     overflow-x: hidden;
     text-wrap: wrap;
 }
 
+/* markstream-svelte renders enhanced code blocks (Monaco via stream-diffs) as
+   divs with [data-markstream-code-block], not as <pre>. Unroll them for print:
+   flat light styling (regardless of the chat's dark mode), no height cap and
+   no inner scrolling, so long code is not silently cut off on paper.
+   These rules are unlayered and therefore win over markstream's layered css. */
+.markstream-svelte [data-markstream-code-block],
+.markstream-svelte [data-markstream-code-block].is-dark {
+    background: #f8f8f8;
+    border: 1px solid #d4d4d4;
+    border-radius: 0.5rem;
+    box-shadow: none;
+    color: #24292f;
+    max-height: none;
+    overflow: visible;
+}
 
+.markstream-svelte [data-markstream-code-block] .stream-diffs-shell,
+.markstream-svelte [data-markstream-code-block] diffs-container,
+.markstream-svelte [data-markstream-code-block] .code-pre-fallback,
+.markstream-svelte [data-markstream-code-block] .monaco-editor,
+.markstream-svelte [data-markstream-code-block] .monaco-scrollable-element {
+    max-height: none !important;
+    overflow: visible !important;
+}
 
-.attachments{
+/* Interactive toolbar buttons (copy/preview/font size) are meaningless on paper. */
+.markstream-svelte [data-markstream-code-block] .code-block-header__actions {
+    display: none;
+}
+
+/* An open HTML/SVG preview is an interactive artifact: printing it yields a
+   blank box, so hide it (the code block itself still prints). */
+.markstream-svelte .html-preview-frame {
+    display: none;
+}
+
+/* The math-block copy button (Markdown.svelte extension MathNode) is an
+   interactive affordance; hide it on paper. */
+.markstream-svelte .math-node .math-copy-btn {
+    display: none;
+}
+
+.attachments {
     display: flex;
     flex-direction: column;
     row-gap: 1rem;
@@ -83,7 +122,7 @@ pre {
 
     grid-template-columns: 1fr auto;
 
-    column-gap: .5rem;
+    column-gap: 0.5rem;
     align-items: center;
 
     width: fit-content;
@@ -95,7 +134,7 @@ pre {
     border: var(--border-stroke-thin);
 }
 
-.attachment .content{
+.attachment .content {
     display: flex;
     grid-template-columns: auto minmax(0, 1fr);
     column-gap: 0.5rem;
@@ -103,11 +142,11 @@ pre {
     overflow: hidden;
 }
 
-.attachment .controls{
+.attachment .controls {
     min-width: 1rem;
     display: none;
 }
-.attachment.edit-mode .controls{
+.attachment.edit-mode .controls {
     display: block;
 }
 
