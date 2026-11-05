@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm;
 
 
-use App\Console\Commands\Dev\UpdateLiteLlmStaticDataCommand;
 use App\Utils\JobMetrics;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Client\RequestException;
 
 /**
  * Downloads the full LiteLLM model catalog and writes it to static PHP files on disk.
@@ -19,7 +19,7 @@ use Illuminate\Filesystem\Filesystem;
  * These files are committed to the repository and serve as an offline fallback for
  * {@see StaticLiteLlmDataStore} when the live API is unavailable.
  *
- * Invoked exclusively by {@see UpdateLiteLlmStaticDataCommand}.
+ * Invoked exclusively by {@see \App\Console\Commands\Dev\UpdateLiteLlmStaticDataCommand}.
  */
 readonly class StaticLiteLlmDataUpdater
 {
@@ -35,7 +35,8 @@ readonly class StaticLiteLlmDataUpdater
      * Downloads all records from the LiteLLM API and writes them to per-provider static files.
      *
      * Existing files are deleted before writing so that removed or renamed providers do not
-     * leave stale files behind. Returns a {@see JobMetrics} instance with the full operation log.
+     * leave stale files behind. If the download fails or yields no records, the existing files
+     * are kept and the failure is reported as an error on the returned {@see JobMetrics}.
      */
     public function run(): JobMetrics
     {
@@ -57,19 +58,29 @@ readonly class StaticLiteLlmDataUpdater
 
         $metrics->announceStart();
 
-        $this->clearExistingStaticLiteLlmDataFiles($metrics);
+        // Download everything before touching the existing files, so a failed request leaves them intact
+        try {
+            $catalog = $this->apiClient->fetchRawCatalog()->catalog;
+        } catch (\Throwable $e) {
+            $metrics->error($this->describeFetchFailure($e));
+            $metrics->info('The existing static LiteLLM data files were left untouched.');
+            $metrics->announceCompletion();
+            return $metrics;
+        }
 
-        foreach ($this->apiClient->fetchData() as $row) {
+        $clearedExistingFiles = false;
+        foreach ($this->apiClient->normalizeCatalog($catalog) as $row) {
+            // Only delete the old files once the catalog actually yielded a record, so that a
+            // catalog without any recognizable model records also leaves the existing files intact
+            if (!$clearedExistingFiles) {
+                $this->clearExistingStaticLiteLlmDataFiles($metrics);
+                $clearedExistingFiles = true;
+            }
+
             try {
-                $providerName = $row['provider'] ?? null;
-                if (!$providerName) {
-                    $metrics->warning('Row missing provider name', ['row' => $row]);
-                    continue;
-                }
+                $addPhpArrayAsSubArrayToFile($row['provider'], $row);
 
-                $addPhpArrayAsSubArrayToFile($providerName, $row);
-
-                $metrics->increment('Models of "' . $providerName . '" processed');
+                $metrics->increment('Models of "' . $row['provider'] . '" processed');
             } catch (\Throwable $e) {
                 $metrics->error('Error processing row', ['row' => $row, 'exception' => $e]);
             }
@@ -81,9 +92,29 @@ readonly class StaticLiteLlmDataUpdater
             $metrics->debug('Closed file for provider ' . $providerName);
         }
 
+        if ($fileToWrite === []) {
+            $metrics->error(sprintf(
+                'The LiteLLM catalog at %s contained no model records. The URL may be wrong or the response format may have changed.',
+                $this->apiClient->getUrl()
+            ));
+            $metrics->info('The existing static LiteLLM data files were left untouched.');
+        }
+
         $metrics->announceCompletion();
 
         return $metrics;
+    }
+
+    /** Turns a failed catalog download into a human-readable message for the command output. */
+    private function describeFetchFailure(\Throwable $e): string
+    {
+        $url = $this->apiClient->getUrl();
+
+        if ($e instanceof RequestException) {
+            return sprintf('The LiteLLM catalog at %s responded with HTTP %d.', $url, $e->response->status());
+        }
+
+        return sprintf('Failed to download the LiteLLM catalog from %s: %s', $url, $e->getMessage());
     }
 
     /** Deletes the entire static data directory so stale provider files do not persist across runs. */

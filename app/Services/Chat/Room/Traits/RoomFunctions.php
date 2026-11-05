@@ -22,9 +22,7 @@ trait RoomFunctions
     public function create(array $data): Room
     {
         // Create the room with name and description
-        $room = Room::create([
-            'room_name' => $data['room_name'],
-        ]);
+        $room = $this->roomRepository->create($data['room_name']);
 
         // Because we need the room to have members (that will act as audience for sync logs)
         // we first create the room and members without triggering the events,
@@ -44,7 +42,7 @@ trait RoomFunctions
 
     public function load($slug)
     {
-        $room = Room::where('slug', $slug)->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
 
         if (!$room->isMember(Auth::id())) {
             throw new AuthorizationException();
@@ -63,7 +61,7 @@ trait RoomFunctions
     public function update(array $data, string $slug)
     {
 
-        $room = Room::where('slug', $slug)->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
 
         try {
             if (!empty($data['image'])) {
@@ -90,7 +88,7 @@ trait RoomFunctions
     {
         $avatarStorage = app(AvatarStorageService::class);
         try {
-            $room = Room::where('slug', $slug)->firstOrFail();
+            $room = $this->roomRepository->findOneBySlugOrFail($slug);
 
             $newAvatar = $avatarStorage->store(
                 file: FileReference::fromUploadedFile($image),
@@ -117,7 +115,7 @@ trait RoomFunctions
 
     public function delete($slug)
     {
-        $room = Room::where('slug', $slug)->firstOrFail();
+        $room = $this->roomRepository->findOneBySlugOrFail($slug);
 
         try {
             $room->deleteRoom();

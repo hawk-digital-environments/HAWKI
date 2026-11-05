@@ -80,7 +80,7 @@ Notable fields on the `AiModel` type (from `$lib/schemas/resources/ai-models.sch
 
 ### Key methods
 
-**`getOneById(modelId)`** — Accepts an `AiModel` object, a numeric ID, or a `model_id` string. Returns `null` when no match is found.
+**`getOneById(modelId)`** — Accepts an `AiModel` object, a numeric ID, or a provider-qualified `model_id` string (`<provider_id>/<model_id>`, e.g. `openAi/gpt-5-nano`). Returns `null` when no match is found.
 
 **`getModelByIdOrFallback(modelId, fallbackType?)`** — Like `getOneById` but never returns `null`. Falls back to the model assigned to `fallbackType` (default: `'default'`), then to the first available model. Use this when building a chat request and a concrete model is always required.
 

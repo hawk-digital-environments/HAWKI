@@ -103,6 +103,53 @@ function insertOrUpdateSvelteBody(
     }
 }
 
+/**
+ * Returns true when the model reference is no longer available (removed or deactivated),
+ * i.e. it is not returned by getAiModel().
+ */
+function isModelRemoved(modelRef) {
+    return window.getAiModel(modelRef) === null;
+}
+
+/**
+ * Returns the author-line suffix for a model reference: an empty string when the model is
+ * still available, or " <Obsolete>" when it has been removed — mirroring the chat header.
+ */
+function getRemovedModelSuffix(modelRef) {
+    return isModelRemoved(modelRef) ? ` ${__('Obsolete')}` : '';
+}
+
+/**
+ * Builds the author header of an AI message for exports: "<username> (<provider_id>/<model_id>)".
+ * Exports always show the stored provider-qualified reference instead of the current display
+ * label, so the record stays lossless; removed models are marked as obsolete.
+ */
+function buildModelAuthorRefHtml(username, modelRef) {
+    return `<span>${username} </span><span class="message-author-model">(${modelRef})${getRemovedModelSuffix(modelRef)}</span>`;
+}
+
+/**
+ * Plain-text variant of {@link buildModelAuthorRefHtml} for text-based exports.
+ */
+function buildModelAuthorText(username, modelRef) {
+    return `${username} (${modelRef})${getRemovedModelSuffix(modelRef)}`;
+}
+
+/**
+ * Builds the author header of an AI message: "<username> (<provider> <model label>)".
+ * Models that are no longer available (removed or deactivated) are not returned by getAiModel(),
+ * so the stored "<provider_id>/<model_id>" reference is shown instead, marked as obsolete.
+ */
+function buildModelAuthorHtml(username, modelRef) {
+    const model = window.getAiModel(modelRef);
+    if (!model) {
+        // No label available: show the raw reference like the exports do.
+        return buildModelAuthorRefHtml(username, modelRef);
+    }
+    const label = model.provider?.name ? `${model.provider.name} ${model.label}` : model.label;
+    return `<span>${username} </span><span class="message-author-model">(${label})</span>`;
+}
+
 function addMessageToChatlog(messageObj, isFromServer = false, isStreaming = null) {
     isStreaming = isStreaming ?? !isFromServer;
     if (typeof messageObj.content === 'string') {
@@ -190,11 +237,7 @@ function addMessageToChatlog(messageObj, isFromServer = false, isStreaming = nul
 
     /// Set Author Name
     if (messageObj.model && messageObj.message_role === 'assistant') {
-        const model = window.getAiModel(messageObj.model);
-        messageElement.querySelector('.message-author').innerHTML =
-            model ?
-                `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>` :
-                `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+        messageElement.querySelector('.message-author').innerHTML = buildModelAuthorHtml(messageObj.author.username, messageObj.model);
 
         messageElement.dataset.model = messageObj.model;
         messageElement.dataset.author = messageObj.author.username;
@@ -343,11 +386,7 @@ function updateMessageElement(messageElement, messageObj, updateContent = false,
 
     if (messageElement.classList.contains('AI')) {
         const username = messageElement.dataset.author;
-        const model = window.getAiModel(messageObj.model);
-        messageElement.querySelector('.message-author').innerHTML =
-            model ?
-                `<span>${username} </span><span class="message-author-model">(${model.label})</span>` :
-                `<span>${username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+        messageElement.querySelector('.message-author').innerHTML = buildModelAuthorHtml(username, messageObj.model);
         messageElement.dataset.model = messageObj.model;
     }
 
@@ -457,6 +496,13 @@ function setDateSpan(activeThread, msgDate, formatDay = true) {
 
 
 function deconstContent(inputContent) {
+    // Coerce only primitives (e.g. numbers) to string; structured AI content
+    // arrives as an object and must be unwrapped below, not stringified.
+    if (inputContent === null || inputContent === undefined) {
+        inputContent = '';
+    } else if (typeof inputContent !== 'object') {
+        inputContent = String(inputContent);
+    }
     function createResult(messageText, groundingMetadata = '', citations = []) {
         return {
             messageText,
@@ -802,8 +848,41 @@ function messageReadAloud(provider) {
 
 //#region MSG_CTL: REGENERATE
 
+// Prefix for a temporary DOM id given to AI messages that were never stored
+// (e.g. the previous generation failed), so they can still enter regen mode.
+const UNSAVED_MSG_ID_PREFIX = 'unsaved-msg-';
+
 async function onRegenerateBtn(btn) {
-    const messageId = btn.closest('.message').id;
+    const messageElement = btn.closest('.message');
+
+    // The message has no ID if its generation failed before it was stored.
+    // Regenerate it through the normal send flow, which stores it and assigns the ID.
+    if (!messageElement.id || messageElement.id.startsWith(UNSAVED_MSG_ID_PREFIX)) {
+        if (!messageElement.id) {
+            messageElement.id = UNSAVED_MSG_ID_PREFIX + Date.now();
+        }
+        const parseDataset = (value, fallback) => {
+            try {
+                return value ? JSON.parse(value) : fallback;
+            } catch {
+                return fallback;
+            }
+        };
+        window.oldUiBridge.triggerEnterMode('regen', {
+            message_id: messageElement.id,
+            message_role: messageElement.dataset.role || 'assistant',
+            model: messageElement.dataset.model || null,
+            completion: 0,
+            content: {text: messageElement.dataset.rawMsg || '', attachments: []},
+            metadata: {
+                tools: parseDataset(messageElement.dataset.tools, []),
+                params: parseDataset(messageElement.dataset.params, {})
+            }
+        });
+        return;
+    }
+
+    const messageId = messageElement.id;
     const message = window.oldUiMessageHistory.findMessageById(messageId);
     if (!message) {
         throw new Error(`Message with ID ${messageId} not found in message history.`);
@@ -835,6 +914,9 @@ async function regenerateMessage(payload) {
 
     const threadIndex = messageElement.closest('.thread').id;
 
+    // Never stored (previous generation failed): send it as a new message instead of an update.
+    const isUnsaved = messageElement.id.startsWith(UNSAVED_MSG_ID_PREFIX);
+
     //reset message content
     messageElement.dataset.rawMsg = '';
 
@@ -848,6 +930,7 @@ async function regenerateMessage(payload) {
                     'broadcasting': false,
                     'slug': '',
                     'regenerationElement': messageElement,
+                    'isUpdate': !isUnsaved,
                     'stream': true,
                     'model': payload.model.model_id,
                     'metadata': metadata
@@ -857,7 +940,7 @@ async function regenerateMessage(payload) {
                     response,
                     msgAttributes,
                     messageElement,
-                    true);
+                    !isUnsaved);
                 break;
             case('groupchat'):
                 const aiKey = (window.userKeychain.roomKeys[activeRoom.slug] || {}).aiKey;
@@ -957,17 +1040,59 @@ function createStatusElement(status, messageElement) {
         if (status.key === 'reasoning' || status.key === 'reasoning_delta') {
             statusText = __('Reasoning_Msg');
 
-            if (status.key === 'reasoning_delta' && typeof status.value === 'string' && status.value.length > 50) {
-                if (!reasoningElement) {
-                    reasoningElement = document.createElement('div');
-                    reasoningElement.dataset.id = 'reasoning-block';
-                    reasoningElement.classList.add('think');
-                    reasoningElement.innerHTML = `<div class="content-container" data-id="reasoning-block-text" style="flex-direction: column"></div>`;
-                    messageElement.querySelector('.message-text').appendChild(reasoningElement);
-                } else {
-                    reasoningElement.style.display = '';
+            if (status.key === 'reasoning_delta' && typeof status.value === 'string' && status.value.length > 0) {
+                // Deltas are fragments of one continuous reasoning text: accumulate before rendering
+                const reasoningText = (messageElement.dataset.reasoningText || '') + status.value;
+                messageElement.dataset.reasoningText = reasoningText;
+
+                // The block only appears once there is something substantial to show
+                if (reasoningText.length > 50) {
+                    if (!reasoningElement) {
+                        reasoningElement = document.createElement('div');
+                        reasoningElement.dataset.id = 'reasoning-block';
+                        reasoningElement.classList.add('think');
+                        reasoningElement.innerHTML = `<div class="content-container" data-id="reasoning-block-text" style="flex-direction: column"></div>`;
+                        messageElement.querySelector('.message-text').appendChild(reasoningElement);
+
+                        // Mounted once with the text so far; later deltas update it in place
+                        // via `messageUpdate` — re-creating it per delta would flash and reset the scroll position
+                        const snippet = document.createElement('svelte-snippet');
+                        snippet.setAttribute('type', 'MessageBody');
+                        snippet.setAttribute('props', JSON.stringify({message: reasoningText, isStreaming: true}));
+                        reasoningElement.querySelector('[data-id="reasoning-block-text"]').appendChild(snippet);
+
+                        // Keeps the newest text in view. The markdown renders asynchronously
+                        // (markstream), so the container is pinned to its bottom every frame
+                        // instead of scrolling once per delta. Pinning cannot disable the follow
+                        // (it ends at the bottom), only the user scrolling up can — scrolling
+                        // back down re-enables it. The loop stops when the block leaves the DOM.
+                        const scrollContainer = reasoningElement.querySelector('[data-id="reasoning-block-text"]');
+                        scrollContainer.dataset.following = '1';
+                        const followLatest = () => {
+                            if (!scrollContainer.isConnected || scrollContainer.dataset.following === '') {
+                                scrollContainer.dataset.followLoopRunning = '';
+                                return;
+                            }
+                            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                            requestAnimationFrame(followLatest);
+                        };
+                        scrollContainer.addEventListener('scroll', () => {
+                            const following = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 40;
+                            scrollContainer.dataset.following = following ? '1' : '';
+                            if (following && scrollContainer.dataset.followLoopRunning !== '1') {
+                                scrollContainer.dataset.followLoopRunning = '1';
+                                requestAnimationFrame(followLatest);
+                            }
+                        }, {passive: true});
+                        scrollContainer.dataset.followLoopRunning = '1';
+                        requestAnimationFrame(followLatest);
+                    } else {
+                        reasoningElement.style.display = '';
+
+                        reasoningElement.querySelector('svelte-snippet')
+                            .dispatchEvent(new CustomEvent('messageUpdate', {detail: reasoningText}));
+                    }
                 }
-                reasoningElement.querySelector('[data-id="reasoning-block-text"]').innerHTML = getMarkdownRendererHtml(status.value);
             }
         } else {
             statusText = __('Started_Msg');

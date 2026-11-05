@@ -35,7 +35,7 @@ Mostly scheduled replacements or code with explicit self-deprecating comments. L
 | `app/Models/Room.php` | `app(UserKeychainRepository::class)`, `app(GroupMessageHandler::class)`, `app(AvatarStorageService::class)` inside model methods; business logic (`addMember`, `removeMember`, `deleteRoom`) in the model | No `app()` in models; no business logic in models | Self-acknowledged — the file has a `"Please don't do it like this"` comment at the offending lines |
 | `app/Models/User.php` | `now()` called directly inside model methods | Never use `now()` in services / value objects (models cannot use constructor injection, making this irresolvable without restructuring) | Known structural limitation |
 | `app/Http/Controllers/RoomController.php` | `User::find(1)` direct Eloquent static; authorization + business logic inline in two methods (`getAttachmentUrl`, `deleteAttachment`); `Auth::id()` / `Auth::user()` facade | Controllers call one service method; no direct DB access | New finding |
-| `app/Http/Controllers/StreamController.php` | Inline validation (not delegated to `FormRequest`); 130-line `handleGroupChatRequest` private method mixing domain logic, encryption, model queries, and broadcasting; `Room::where()` direct Eloquent static | Delegate validation to `FormRequest`; no business logic in controllers | New finding |
+| `app/Http/Controllers/StreamController.php` | Inline validation (not delegated to `FormRequest`); 130-line `handleGroupChatRequest` private method mixing domain logic, encryption, model queries, and broadcasting | Delegate validation to `FormRequest`; no business logic in controllers | New finding |
 
 ---
 

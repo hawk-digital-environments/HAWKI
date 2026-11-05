@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Records\UsageRecord;
+use App\Services\Ai\Models\Identifiers\Values\AiModelIdentifier;
 
 class TopTokenUsers extends Command
 {
@@ -28,7 +29,14 @@ class TopTokenUsers extends Command
             ->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
 
         if ($modelFilter) {
-            $query->where('model', $modelFilter);
+            // Usage is recorded with the qualified `<provider_id>/<model_id>`, a plain model id matches all providers
+            $query->where(fn($query) => $query
+                ->where('model', $modelFilter)
+                ->when(
+                    !AiModelIdentifier::fromString($modelFilter)->isQualified(),
+                    fn($query) => $query->orWhere('model', 'like', '%' . AiModelIdentifier::SEPARATOR . $modelFilter)
+                )
+            );
         }
 
         $topUsers = $query->groupBy('user_id')

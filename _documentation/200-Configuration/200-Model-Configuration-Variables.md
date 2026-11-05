@@ -11,9 +11,10 @@ This document describes the environment variables available for fine-grained con
 5. [Model Activation Variables](#model-activation-variables)
 6. [Tool Capability Variables](#tool-capability-variables)
 7. [Provider-Level Settings](#provider-level-settings)
-8. [Default and System Model Selection](#default-and-system-model-selection)
-9. [Best Practices](#best-practices)
-10. [Examples](#examples)
+8. [Request Timeouts](#request-timeouts)
+9. [Default and System Model Selection](#default-and-system-model-selection)
+10. [Best Practices](#best-practices)
+11. [Examples](#examples)
 
 ---
 
@@ -49,9 +50,9 @@ These variables are **not** required in `.env`. When absent, the defaults define
 Your `.env` file is where all site-specific values live. Model configuration variables go here:
 
 ```bash
-MODELS_OPENAI_GPT5_ACTIVE=false
+MODELS_OPENAI_GPT5_5_ACTIVE=false
 MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD=true
-DEFAULT_MODEL=gpt-4.1-nano
+DEFAULT_MODEL=gpt-5-nano
 ```
 
 ### Layer 2 — Config Files (deployment-time)
@@ -125,9 +126,9 @@ MODELS_{PROVIDER}_{MODEL_ID}_ACTIVE
 
 | Original Model ID             | Environment Variable                             |
 |-------------------------------|--------------------------------------------------|
-| `gpt-5`                       | `MODELS_OPENAI_GPT5_ACTIVE`                      |
-| `gpt-4.1-nano`                | `MODELS_OPENAI_GPT4_1_NANO_ACTIVE`               |
-| `gemini-2.5-pro`              | `MODELS_GOOGLE_GEMINI_2_5_PRO_ACTIVE`            |
+| `gpt-5.5`                     | `MODELS_OPENAI_GPT5_5_ACTIVE`                    |
+| `gpt-5-nano`                  | `MODELS_OPENAI_GPT5_NANO_ACTIVE`                 |
+| `gemini-3.8-flash`            | `MODELS_GOOGLE_GEMINI_3_8_FLASH_ACTIVE`          |
 | `meta-llama-3.1-8b-instruct`  | `MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_ACTIVE`  |
 | `qwen3-omni-30b-a3b-instruct` | `MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_ACTIVE` |
 
@@ -150,9 +151,9 @@ MODELS_{PROVIDER}_{MODEL_ID}_TOOLS_{CAPABILITY}
 
 | Model ID                      | Capability          | Variable                                                    |
 |-------------------------------|---------------------|-------------------------------------------------------------|
-| `gpt-5`                       | file_upload         | `MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD`                      |
-| `gpt-5`                       | native_capabilities | `MODELS_OPENAI_GPT5_TOOLS_NATIVE_CAPABILITIES`              |
-| `gemini-2.5-pro`              | file_upload         | `MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_FILE_UPLOAD`            |
+| `gpt-5.5`                     | file_upload         | `MODELS_OPENAI_GPT5_5_TOOLS_FILE_UPLOAD`                    |
+| `gpt-5.5`                     | native_capabilities | `MODELS_OPENAI_GPT5_5_TOOLS_NATIVE_CAPABILITIES`            |
+| `gemini-3.1-pro-preview`      | file_upload         | `MODELS_GOOGLE_GEMINI_3_1_PRO_TOOLS_FILE_UPLOAD`            |
 | `qwen3-omni-30b-a3b-instruct` | file_upload         | `MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD` |
 
 ### Parameter Variables
@@ -192,11 +193,11 @@ Model activation defaults are defined in the provider's model list file. The lis
 
 ```bash
 # Disable expensive models in development
-MODELS_OPENAI_GPT5_ACTIVE=false
-MODELS_GOOGLE_GEMINI_2_5_PRO_ACTIVE=false
+MODELS_OPENAI_GPT5_5_ACTIVE=false
+MODELS_GOOGLE_GEMINI_3_1_PRO_ACTIVE=false
 
 # Enable specific models for testing
-MODELS_OPENAI_GPT4_1_NANO_ACTIVE=true
+MODELS_OPENAI_GPT5_NANO_ACTIVE=true
 MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_ACTIVE=true
 ```
 
@@ -221,9 +222,9 @@ MODELS_{PROVIDER}_{MODEL_ID}_TOOLS_{CAPABILITY}=true|false
 Enables document and image file uploads for a model.
 
 ```bash
-MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD=false
+MODELS_OPENAI_GPT5_5_TOOLS_FILE_UPLOAD=false
 MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_FILE_UPLOAD=true
-MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_FILE_UPLOAD=false
+MODELS_GOOGLE_GEMINI_3_1_PRO_TOOLS_FILE_UPLOAD=false
 ```
 
 > **Default policy:** External cloud API endpoints (OpenAI, Google) have file upload disabled by default. This protects data sovereignty — uploaded content must not leave academic infrastructure or be reused for model training. Enable external providers explicitly and at your own risk.
@@ -245,12 +246,12 @@ Enables the vendor's built-in tool suite for models that support it (currently O
 
 ```bash
 # OpenAI — enable native tool suite (web search, code execution via Responses API)
-MODELS_OPENAI_GPT5_TOOLS_NATIVE_CAPABILITIES=true
-MODELS_OPENAI_GPT4_1_TOOLS_NATIVE_CAPABILITIES=true
+MODELS_OPENAI_GPT5_5_TOOLS_NATIVE_CAPABILITIES=true
+MODELS_OPENAI_GPT5_4_TOOLS_NATIVE_CAPABILITIES=true
 
 # Google — enable native tool suite (grounding, code execution)
 MODELS_GOOGLE_GEMINI_3_5_FLASH_TOOLS_NATIVE_CAPABILITIES=true
-MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_NATIVE_CAPABILITIES=true
+MODELS_GOOGLE_GEMINI_3_1_PRO_TOOLS_NATIVE_CAPABILITIES=true
 ```
 
 > Setting `NATIVE_CAPABILITIES=false` forces the model into HAWKI-registered-tool-only mode, disabling all vendor-provided native tools even if the model supports them.
@@ -264,8 +265,8 @@ For OpenAI / Google models (native capabilities pattern):
 'tools' => [
     'stream'              => true,
     'tool_calling'        => true,
-    'file_upload'         => env('MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD', false),
-    'native_capabilities' => env('MODELS_OPENAI_GPT5_TOOLS_NATIVE_CAPABILITIES', true),
+    'file_upload'         => env('MODELS_OPENAI_GPT5_5_TOOLS_FILE_UPLOAD', false),
+    'native_capabilities' => env('MODELS_OPENAI_GPT5_5_TOOLS_NATIVE_CAPABILITIES', true),
 ],
 ```
 
@@ -311,28 +312,68 @@ Disabling a provider sets `active=false` for the provider record in the database
 
 ---
 
+## Request Timeouts
+
+Timeouts are set per provider in the `adapter` settings of its entry in `config/model_providers.php`:
+
+```php
+// config/model_providers.php
+'providers' => [
+    'gwdg' => [
+        // ...
+        'adapter' => [
+            'request_timeout' => 300,
+            'stall_timeout' => 120,
+        ],
+    ],
+],
+```
+
+**`request_timeout`** — Time budget in seconds for **non-streaming requests**; default 60, `0` removes the limit. It is a hard limit for the *complete* answer — a model that has not fully replied within `request_timeout` seconds is aborted. Streaming requests are not governed by it at all: a stream may run as long as it keeps sending data, matching HAWKI 2.4.
+
+**`stall_timeout`** — HAWKI aborts a **streaming request** that receives **no data** for this number of seconds, whether the silence occurs before the model starts answering or in the middle of a stream. This protects against connections that hang silently while still allowing reasoning models to think for a long time: raise the value for models that stay silent longer than the limit before their first output. Receiving any data resets the timer, so an actively streaming answer — or a provider that sends keep-alive bytes while thinking — is never aborted by it. Disabled by default; with stall detection disabled, streams have no idle limit (this also removes the previous behaviour where a silent stream was aborted after 60 seconds). A typical value is 120 seconds. This requires PHP's `allow_url_fopen` setting (on by default); without it, streams are served through curl — they keep no total limit and stall detection uses curl's low-speed abort instead.
+
+In short:
+
+- Model thinks in silence for minutes before answering → raise `stall_timeout`
+- "The answer must be complete within N seconds" (non-streaming only) → `request_timeout`
+- Protection against hanging connections → `stall_timeout`
+
+Stall detection is supported by these drivers:
+
+| Driver | Providers |
+|---|---|
+| `openai-compatible` | GWDG, HuggingFace, all "OpenAI-like" providers |
+| `ollama` | Ollama |
+
+The following drivers accept the setting but ignore it: `openai`, `google` (Gemini), `anthropic`, `openai_azure`, `mistral`, `deepseek`, `open_router`. The `aws_bedrock` driver uses the AWS SDK and can never support it.
+
+Both keys are optional — a provider without `adapter` timeout settings uses the 60 seconds default and no stall detection. The GWDG provider entry ships with the HAWKI 2.4 behaviour by default: no total limit (`request_timeout = 0`) and a 120 seconds stall timeout, configurable via `GWDG_REQUEST_TIMEOUT` and `GWDG_STALL_TIMEOUT`.
+
+---
+
 ## Default and System Model Selection
 
 Set which models are used by default for each task type:
 
 ```bash
 # User-facing default models
-DEFAULT_MODEL=gpt-4.1-nano
+DEFAULT_MODEL=gpt-5-nano
 DEFAULT_WEBSEARCH_MODEL=gemini-3.5-flash
 DEFAULT_FILEUPLOAD_MODEL=qwen3-omni-30b-a3b-instruct
 DEFAULT_VISION_MODEL=qwen3-omni-30b-a3b-instruct
 
 # Internal system tasks
-TITLE_GENERATOR_MODEL=gpt-4.1-nano
-PROMPT_IMPROVEMENT_MODEL=gpt-4.1-nano
-SUMMARIZER_MODEL=gpt-4.1-nano
+TITLE_GENERATOR_MODEL=gpt-5-nano
+PROMPT_IMPROVEMENT_MODEL=gpt-5-nano
+SUMMARIZER_MODEL=gpt-5-nano
 ```
 
 For deployments that use external app access you can set separate defaults that apply only to the ext-app context (falls back to the user-facing defaults when not set):
 
 ```bash
 # Optional — override defaults for external app requests only
-DEFAULT_EXT_APP_MODEL=gpt-4.1-nano
+DEFAULT_EXT_APP_MODEL=gpt-5-nano
 DEFAULT_EXT_APP_WEBSEARCH_MODEL=
 DEFAULT_EXT_APP_FILEUPLOAD_MODEL=
 DEFAULT_EXT_APP_VISION_MODEL=
@@ -352,7 +393,7 @@ The defaults in model list files work well for most deployments. Add env variabl
 
 ```bash
 # Disable GPT-5 to control API costs in development
-MODELS_OPENAI_GPT5_ACTIVE=false
+MODELS_OPENAI_GPT5_5_ACTIVE=false
 
 # Use self-hosted vision model
 DEFAULT_VISION_MODEL=qwen3-omni-30b-a3b-instruct
@@ -371,17 +412,17 @@ php hawki models list --active    # verify result
 **Development** — minimize cost:
 
 ```bash
-DEFAULT_MODEL=gpt-4.1-nano
-MODELS_OPENAI_GPT5_ACTIVE=false
-MODELS_GOOGLE_GEMINI_2_5_PRO_ACTIVE=false
+DEFAULT_MODEL=gpt-5-nano
+MODELS_OPENAI_GPT5_5_ACTIVE=false
+MODELS_GOOGLE_GEMINI_3_1_PRO_ACTIVE=false
 ```
 
 **Production** — enable all appropriate models:
 
 ```bash
-MODELS_OPENAI_GPT5_ACTIVE=true
-MODELS_OPENAI_GPT4_1_ACTIVE=true
-MODELS_GOOGLE_GEMINI_2_5_PRO_ACTIVE=true
+MODELS_OPENAI_GPT5_5_ACTIVE=true
+MODELS_OPENAI_GPT5_4_ACTIVE=true
+MODELS_GOOGLE_GEMINI_3_1_PRO_ACTIVE=true
 ```
 
 ### 5. Data sovereignty defaults
@@ -390,7 +431,7 @@ External provider file upload is disabled by default for data protection reasons
 
 ```bash
 # Only enable if you have confirmed the provider does not retain uploaded data
-MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD=true
+MODELS_OPENAI_GPT5_5_TOOLS_FILE_UPLOAD=true
 ```
 
 Use self-hosted (GWDG, Ollama) models for sensitive file processing where possible.
@@ -416,18 +457,18 @@ OLLAMA_API_URL=http://localhost:11434
 
 ```bash
 # Use cheap models as defaults
-DEFAULT_MODEL=gpt-4.1-nano
+DEFAULT_MODEL=gpt-5-nano
 DEFAULT_WEBSEARCH_MODEL=gemini-3.5-flash
 DEFAULT_FILEUPLOAD_MODEL=meta-llama-3.1-8b-instruct
 DEFAULT_VISION_MODEL=qwen3-omni-30b-a3b-instruct
 
 # Disable expensive models
-MODELS_OPENAI_GPT5_ACTIVE=false
-MODELS_OPENAI_GPT4_1_ACTIVE=false
-MODELS_GOOGLE_GEMINI_2_5_PRO_ACTIVE=false
+MODELS_OPENAI_GPT5_5_ACTIVE=false
+MODELS_OPENAI_GPT5_4_ACTIVE=false
+MODELS_GOOGLE_GEMINI_3_1_PRO_ACTIVE=false
 
 # Disable file upload for external APIs
-MODELS_OPENAI_GPT4_1_NANO_TOOLS_FILE_UPLOAD=false
+MODELS_OPENAI_GPT5_NANO_TOOLS_FILE_UPLOAD=false
 MODELS_GOOGLE_GEMINI_3_5_FLASH_TOOLS_FILE_UPLOAD=false
 
 # Enable for self-hosted model
@@ -461,14 +502,14 @@ OPENAI_ACTIVE=true
 GWDG_ACTIVE=true
 GOOGLE_ACTIVE=true
 
-MODELS_OPENAI_GPT5_ACTIVE=true
-MODELS_OPENAI_GPT4_1_ACTIVE=true
-MODELS_GOOGLE_GEMINI_2_5_PRO_ACTIVE=true
+MODELS_OPENAI_GPT5_5_ACTIVE=true
+MODELS_OPENAI_GPT5_4_ACTIVE=true
+MODELS_GOOGLE_GEMINI_3_1_PRO_ACTIVE=true
 
-MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD=true
-MODELS_OPENAI_GPT5_TOOLS_NATIVE_CAPABILITIES=true
-MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_FILE_UPLOAD=true
-MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_NATIVE_CAPABILITIES=true
+MODELS_OPENAI_GPT5_5_TOOLS_FILE_UPLOAD=true
+MODELS_OPENAI_GPT5_5_TOOLS_NATIVE_CAPABILITIES=true
+MODELS_GOOGLE_GEMINI_3_1_PRO_TOOLS_FILE_UPLOAD=true
+MODELS_GOOGLE_GEMINI_3_1_PRO_TOOLS_NATIVE_CAPABILITIES=true
 
 MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD=true
 MODELS_GWDG_GEMMA_4_31B_INSTRUCT_TOOLS_FILE_UPLOAD=true
@@ -479,28 +520,28 @@ MODELS_GWDG_GEMMA_4_31B_INSTRUCT_TOOLS_FILE_UPLOAD=true
 ```bash
 # Enable reasoning models
 MODELS_GWDG_DEEPSEEK_V4_FLASH_ACTIVE=true
-MODELS_GWDG_QWEN35_122B_A10B_ACTIVE=true
+MODELS_GWDG_QWEN35_397B_A17B_ACTIVE=true
 
 # Enable file processing for relevant models
 MODELS_GWDG_DEEPSEEK_V4_FLASH_TOOLS_FILE_UPLOAD=true
 MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_FILE_UPLOAD=true
-MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_TOOLS_FILE_UPLOAD=true
-MODELS_OPENAI_GPT4_1_TOOLS_FILE_UPLOAD=true
+MODELS_GWDG_GLM_5_3_FLASH_TOOLS_FILE_UPLOAD=true
+MODELS_OPENAI_GPT5_4_TOOLS_FILE_UPLOAD=true
 
-DEFAULT_MODEL=qwen3.5-122b-a10b
-DEFAULT_FILEUPLOAD_MODEL=mistral-medium-3.5-128b
-DEFAULT_WEBSEARCH_MODEL=gemini-2.5-pro
+DEFAULT_MODEL=qwen3.5-397b-a17b
+DEFAULT_FILEUPLOAD_MODEL=glm-5.3-flash
+DEFAULT_WEBSEARCH_MODEL=gemini-3.1-pro-preview
 ```
 
 ### Example 5: Task-Specific Multi-Model Setup
 
 ```bash
 # Fast, cheap model for general chat
-DEFAULT_MODEL=gpt-4.1-nano
+DEFAULT_MODEL=gpt-5-nano
 
 # Best model for web search (native capabilities enabled)
-DEFAULT_WEBSEARCH_MODEL=gemini-2.5-pro
-MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_NATIVE_CAPABILITIES=true
+DEFAULT_WEBSEARCH_MODEL=gemini-3.1-pro-preview
+MODELS_GOOGLE_GEMINI_3_1_PRO_TOOLS_NATIVE_CAPABILITIES=true
 
 # Cost-effective model for documents
 DEFAULT_FILEUPLOAD_MODEL=meta-llama-3.1-8b-instruct

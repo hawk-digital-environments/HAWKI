@@ -26,7 +26,7 @@ class StaticLiteLlmDataStore extends AbstractLiteLlmDataStore
     public function __construct(
         LoggerInterface                      $logger,
         LiteLlmDriverNameProviderNameMapping $nameMapping,
-        private readonly SystemPaths                  $paths,
+        private readonly SystemPaths         $paths,
     )
     {
         parent::__construct($logger, $nameMapping);
@@ -48,10 +48,12 @@ class StaticLiteLlmDataStore extends AbstractLiteLlmDataStore
     /**
      * Requires the static PHP file for the provider and parses its contents.
      *
-     * Returns an empty array when the file does not exist or contains invalid data;
+     * Returns an empty list when the file does not exist or contains invalid data;
      * errors are logged but not re-thrown so the caller can proceed gracefully.
+     *
+     * @return iterable<LiteLlmModelData>
      */
-    protected function getProviderModelInformationList(AiProviderProxy $provider): array
+    protected function getProviderModelInformationList(AiProviderProxy $provider): iterable
     {
         $providerName = $this->nameMapping->getProviderNameFromProxy($provider);
         $providerLogData = [

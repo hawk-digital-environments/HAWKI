@@ -14,8 +14,13 @@
     type Props = {
         /** Whether the conversation has unread messages. Shows a visual indicator if true. */
         hasUnreadMessages?: boolean;
+        /**
+         * The current user's role in this room. Required when the menu is not rendered for the active room
+         * (e.g. in the sidebar); if omitted, the role of the active conversation is used.
+         */
+        role?: string;
     } & Pick<ComponentProps<typeof ChatNameMenu>,
-        'name' | 'nameClickRenames' | 'slug' | 'allowRename' | 'isRenaming' |
+        'name' | 'nameClickRenames' | 'slug' | 'isRenaming' |
         'class' | 'buttonProps' | 'block' | 'triggerIcon'>;
 
     let {
@@ -23,8 +28,11 @@
         slug,
         isRenaming = $bindable(false),
         hasUnreadMessages,
+        role,
         ...restProps
     }: Props = $props();
+
+    const canAdministrate = $derived(role !== undefined ? role === 'admin' : oldUiMessageHistory.canAdministrate);
 
     let leaveConfirmOpen = $state(false);
     let deleteConfirmOpen = $state(false);
@@ -44,12 +52,13 @@
 
 <ChatNameMenu
     bind:isRenaming={isRenaming}
+    allowRename={canAdministrate}
     name={name ?? ''}
     slug={slug ?? ''}
     {...restProps}
 >
     {#if !!slug}
-        {#if oldUiMessageHistory.canAdministrate}
+        {#if canAdministrate}
             <DropdownMenuItem
                 icon={Settings05Icon}
                 onclick={() => oldUiBridge.triggerOpenRoomControlPanel(slug ?? '')}>
@@ -70,7 +79,7 @@
             onclick={() => leaveConfirmOpen = true}>
             {__('chat.nameMenu.leaveAction')}
         </DropdownMenuItem>
-        {#if oldUiMessageHistory.canAdministrate}
+        {#if canAdministrate}
             <DropdownMenuItem
                 variant="destructive"
                 onclick={() => deleteConfirmOpen = true}>

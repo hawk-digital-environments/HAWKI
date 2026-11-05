@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4fcbb95bff4d0c612cab76ac1c1e931c",
+    "content-hash": "4604975c30cd5a0c0deb0d60487c3507",
     "packages": [
         {
             "name": "0.0.0/composer-include-files",
@@ -2280,20 +2280,20 @@
         },
         {
             "name": "laravel/ai",
-            "version": "v0.10.1",
+            "version": "v0.10.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/ai.git",
-                "reference": "47f0ffdb86639f710eb93fcdf1bd07635599f270"
+                "reference": "c3848aae389f45c605eefb0dda5bd5fa7df76eaa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/ai/zipball/47f0ffdb86639f710eb93fcdf1bd07635599f270",
-                "reference": "47f0ffdb86639f710eb93fcdf1bd07635599f270",
+                "url": "https://api.github.com/repos/laravel/ai/zipball/c3848aae389f45c605eefb0dda5bd5fa7df76eaa",
+                "reference": "c3848aae389f45c605eefb0dda5bd5fa7df76eaa",
                 "shasum": ""
             },
             "require": {
-                "aws/aws-sdk-php": "^3.339",
+                "aws/aws-sdk-php": "^3.369.1",
                 "illuminate/console": "^12.0|^13.0",
                 "illuminate/container": "^12.0|^13.0",
                 "illuminate/contracts": "^12.0|^13.0",
@@ -2352,7 +2352,7 @@
                 "issues": "https://github.com/laravel/ai/issues",
                 "source": "https://github.com/laravel/ai"
             },
-            "time": "2026-07-21T17:48:17+00:00"
+            "time": "2026-08-06T13:39:04+00:00"
         },
         {
             "name": "laravel/framework",

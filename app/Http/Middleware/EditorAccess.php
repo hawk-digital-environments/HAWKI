@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -7,12 +9,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-use App\Models\Room;
+use App\Services\Chat\Room\Repositories\RoomRepository;
 use App\Models\Member;
-use Illuminate\Support\Facades\Log;
 
 class EditorAccess
 {
+    public function __construct(
+        private readonly RoomRepository $roomRepository
+    )
+    {
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -21,12 +28,10 @@ class EditorAccess
     public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();
-        // get the room
-        $room = Room::where('slug', $request->route('slug'))->firstOrFail();
-        // find member model
-        $member = $room->members()->where('user_id', $user->id)->first();
+        // get the room (only rooms the user is a member of are found)
+        $room = $this->roomRepository->findOneBySlugOrFail($request->route('slug'));
 
-        if($member->hasRole('admin') || $member->hasRole('editor')){
+        if ($this->roomRepository->isMemberWithRole($room, $user, Member::ROLE_ADMIN, Member::ROLE_EDITOR)) {
             return $next($request);
         }
 
