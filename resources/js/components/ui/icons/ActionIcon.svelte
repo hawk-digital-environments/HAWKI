@@ -155,7 +155,12 @@
         backdrop-filter: blur(6px);
     }
     button[data-variant='frosted']:hover:not(:disabled) {
-        background-color: var(--action-icon-hover-bg, oklch(100% 0 0 / 0.4));
+        /* Brighten from the button's own fill — never drop below it, so a
+           near-opaque backdrop doesn't fade on hover. */
+        background-color: var(
+            --action-icon-hover-bg,
+            color-mix(in oklch, var(--action-icon-bg, oklch(100% 0 0 / 0.25)), oklch(100% 0 0) 40%)
+        );
         transform: scale(1.06);
     }
     button[data-variant='frosted'][data-active] :global(svg) {
