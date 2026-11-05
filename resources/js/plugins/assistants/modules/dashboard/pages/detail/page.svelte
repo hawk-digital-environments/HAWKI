@@ -36,6 +36,7 @@
 
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
     import {detailReturnPath} from '$plugins/assistants/modules/dashboard/contexts/detailReturn.js';
+    import {morphFromDetail} from '$plugins/assistants/utils/morphToDetail';
     import type {RouteParams} from '$lib/components/ui/routing/index.js';
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
     import {requestBuilderIntent} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte";
@@ -281,8 +282,14 @@
     );
     // Back to the page the assistant was opened from; the store when there is
     // none (a direct URL, a reload).
+    // The cover morphs back into the assistant's card (see morphToDetail).
     const goBack = () => {
-        router.goTo(detailReturnPath() ?? router.getPath("assistants.dashboard.store"));
+        const target = detailReturnPath() ?? router.getPath("assistants.dashboard.store");
+        if (!assistant?.id) {
+            void router.goTo(target);
+            return;
+        }
+        morphFromDetail(assistant.id, () => router.goTo(target));
     }
 
 </script>
@@ -320,7 +327,8 @@
             />
         {/if}
 
-        <div class="cover">
+        <!-- data-assistant-cover: the store card's morph waits for it (morphToDetail). -->
+        <div class="cover" data-assistant-cover>
             <div class="topbar">
                 <ButtonWithTooltip
                         variant="ghost"
@@ -597,6 +605,8 @@
     }
 
     .page-content {
+        /* Morph target for the store card as a whole (morphToDetail). */
+        view-transition-name: assistant-container;
         display: flex;
         flex-direction: column;
         gap: var(--space-5);
@@ -640,6 +650,8 @@
     }
     .cover :global(.banner-container) {
         height: calc(var(--cover-visible) + var(--cover-overlap));
+        /* Morph target for the store card's banner (morphToDetail). */
+        view-transition-name: assistant-cover;
         /* Keep the glyph centred in the visible part, clear of the name. */
         align-items: flex-start;
         padding-top: calc((var(--cover-visible) - var(--cover-symbol)) / 2);
@@ -647,6 +659,8 @@
     }
     .cover :global(.banner-container .symbol) {
         font-size: var(--cover-symbol);
+        /* Morph target for the store card's glyph (morphToDetail). */
+        view-transition-name: assistant-symbol;
     }
 
     /* Overview: name/handle and description, pulled up over the banner's

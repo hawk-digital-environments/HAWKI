@@ -11,6 +11,7 @@
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import {getAvatar} from "$plugins/assistants/api/resources/userAvatarClient";
     import {rememberDetailReturnPath} from "$plugins/assistants/modules/dashboard/contexts/detailReturn";
+    import {morphToDetail} from "$plugins/assistants/utils/morphToDetail";
     // The handle is kept because `path` is a live getter — the detail page's
     // back button needs it read at click time.
     const router = useRouter();
@@ -64,13 +65,16 @@
 
 </script>
 <!--@todo: Link truned to button because style didn't budge-->
+<!-- data-assistant-card: the detail page's back morph finds its card by it (morphToDetail). -->
 <button
     class="assistant-card"
-    onclick={()=>{
+    data-assistant-card={assistant.id}
+    onclick={(event)=>{
         rememberDetailReturnPath(router.path);
-        goToRoute(
+        // Banner morphs into the detail page's cover (see morphToDetail).
+        morphToDetail(event.currentTarget, () => goToRoute(
            p('assistants.dashboard.details', { id: assistant.id })
-        )
+        ));
     }}
 >
     <div class="cover">
@@ -362,5 +366,4 @@
         display: flex;
         flex-direction: row;
     }
-
 </style>
