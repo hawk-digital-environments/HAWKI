@@ -12,27 +12,48 @@
    instead of easing to a dead stop. The view-transition pseudo-elements
    inherit from <html>, so they can read these. */
 :root {
-    --assistant-morph-duration: var(--duration-medium);
+    --assistant-morph-duration: 400ms;
     --assistant-morph-spring: linear(0, 0.034, 0.116, 0.224, 0.341, 0.456, 0.563, 0.658, 0.739, 0.807, 0.862, 0.905, 0.938, 0.963, 0.981, 0.994, 1.002, 1.007, 1.01, 1.011, 1.011, 1.01, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1);
 }
 
-/* The card's banner and glyph spring into (or back out of) the detail cover. */
+/* Open is an invitation and gets the spring; back gets out of the way:
+   shorter, on a plain ease-out, never overshooting. Everything below times
+   itself with --assistant-morph-ease, so the direction flag swaps both. */
+:root {
+    --assistant-morph-ease: var(--assistant-morph-spring);
+}
+:root[data-assistant-morph="back"] {
+    --assistant-morph-duration: 350ms;
+    --assistant-morph-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The card's banner, glyph and title spring into (or back out of) the
+   detail cover. */
 ::view-transition-group(assistant-cover),
-::view-transition-group(assistant-symbol) {
+::view-transition-group(assistant-symbol),
+::view-transition-group(assistant-title) {
     animation-duration: var(--assistant-morph-duration);
-    animation-timing-function: var(--assistant-morph-spring);
+    animation-timing-function: var(--assistant-morph-ease);
 }
 
 /* On both pages the banner's rounding comes from a clipping parent (the
-   card / the detail cover), which a view-transition snapshot escapes.
-   Re-clip with the same top corners — 24px on both ends (--corner-lg =
-   1rem + --space-2) — and square bottom corners, where the banner fades
-   out anyway. On the image pair rather than the group, so the lift below
-   scales the rounded box as a whole instead of zooming inside a clip. */
+   card / the detail cover), which a view-transition snapshot escapes, so
+   the image pair re-clips it: 24px top corners on both ends (--corner-lg =
+   1rem + --space-2). The bottom corners differ — square on the card, where
+   the content continues below; rounded on the detail page's free-standing
+   cover — so they animate along with the box instead of snapping at the
+   end. On the image pair rather than the group, so the lift scales the
+   rounded box as a whole instead of zooming inside a clip. */
 ::view-transition-image-pair(assistant-cover) {
-    border-radius: var(--corner-lg) var(--corner-lg) 0 0;
     overflow: clip;
-    animation: assistant-morph-lift var(--assistant-morph-duration) var(--easing-spring) both;
+    animation:
+        assistant-morph-lift var(--assistant-morph-duration) var(--easing-spring) both,
+        assistant-morph-corners-open var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+:root[data-assistant-morph="back"]::view-transition-image-pair(assistant-cover) {
+    animation:
+        assistant-morph-lift var(--assistant-morph-duration) var(--easing-spring) both,
+        assistant-morph-corners-back var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
 
 /* The two covers differ wildly in aspect ratio: stretch both snapshots to
@@ -46,8 +67,9 @@
     object-fit: fill;
 }
 
-/* The glyph gets a small bump of its own on the way. */
-::view-transition-image-pair(assistant-symbol) {
+/* The glyph gets a small bump of its own on the way in — a lift that rides
+   on the sticker's own -8deg lean. Going back stays quiet. */
+:root[data-assistant-morph="open"]::view-transition-image-pair(assistant-symbol) {
     animation: assistant-morph-symbol var(--assistant-morph-duration) var(--easing-spring) both;
 }
 
@@ -59,7 +81,7 @@
    below it. */
 ::view-transition-group(assistant-container) {
     animation-duration: var(--assistant-morph-duration);
-    animation-timing-function: var(--assistant-morph-spring);
+    animation-timing-function: var(--assistant-morph-ease);
     border-radius: var(--corner-lg);
     overflow: clip;
 }
@@ -80,19 +102,19 @@
 /* Open: the store recedes under the lifted card. What is left of the
    detail page outside the container (the chat dock) fades in. */
 :root[data-assistant-morph="open"]::view-transition-old(assistant-page) {
-    animation: assistant-morph-recede var(--assistant-morph-duration) var(--assistant-morph-spring) both;
+    animation: assistant-morph-recede var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
 :root[data-assistant-morph="open"]::view-transition-new(assistant-page) {
-    animation: assistant-morph-fade-in var(--assistant-morph-duration) var(--assistant-morph-spring) both;
+    animation: assistant-morph-fade-in var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
 
 /* Back: the exact reverse — the rest of the detail page fades out and the
    store comes forward as the page shrinks back into its card. */
 :root[data-assistant-morph="back"]::view-transition-old(assistant-page) {
-    animation: assistant-morph-fade-out var(--assistant-morph-duration) var(--assistant-morph-spring) both;
+    animation: assistant-morph-fade-out var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
 :root[data-assistant-morph="back"]::view-transition-new(assistant-page) {
-    animation: assistant-morph-advance var(--assistant-morph-duration) var(--assistant-morph-spring) both;
+    animation: assistant-morph-advance var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
 
 @keyframes assistant-morph-lift {
@@ -102,8 +124,16 @@
 }
 @keyframes assistant-morph-symbol {
     0%   { scale: 1;    rotate: 0deg; }
-    40%  { scale: 1.18; rotate: -6deg; }
+    40%  { scale: 1.12; rotate: -4deg; }
     100% { scale: 1;    rotate: 0deg; }
+}
+@keyframes assistant-morph-corners-open {
+    from { border-radius: var(--corner-lg) var(--corner-lg) 0 0; }
+    to   { border-radius: var(--corner-lg); }
+}
+@keyframes assistant-morph-corners-back {
+    from { border-radius: var(--corner-lg); }
+    to   { border-radius: var(--corner-lg) var(--corner-lg) 0 0; }
 }
 @keyframes assistant-morph-recede {
     to { opacity: 0; scale: 0.96; filter: blur(2px); }

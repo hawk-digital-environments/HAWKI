@@ -694,6 +694,10 @@
     .name :global(.overflow-text) {
         padding-bottom: 0.15em;
         margin-bottom: -0.15em;
+        /* Hugs the text, so the store card's title morphs into exactly the
+           words (morphToDetail). */
+        width: fit-content;
+        view-transition-name: assistant-title;
     }
     .handle {
         margin: 0;

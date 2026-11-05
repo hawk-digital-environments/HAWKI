@@ -2,7 +2,7 @@
  * Store card ⇄ detail page morph, built on the View Transitions API.
  *
  * A card's banner and glyph share `view-transition-name`s with the detail
- * page's cover (`assistant-cover`, `assistant-symbol`), and the card as a
+ * page's cover (`assistant-cover`, `assistant-symbol`, `assistant-title`), and the card as a
  * whole shares `assistant-container` with the detail page's content column,
  * so the browser grows the card into the page with the content scaling
  * inside it (a container transform). The detail page carries its names permanently; a card
@@ -22,6 +22,8 @@ import './morphToDetail.css';
 
 const MORPH_COVER = 'assistant-cover';
 const MORPH_SYMBOL = 'assistant-symbol';
+/** The card's poster title ⇄ the detail cover's name. */
+const MORPH_TITLE = 'assistant-title';
 /** The card as a whole ⇄ the detail page's content column: the container the content scales inside. */
 const MORPH_CONTAINER = 'assistant-container';
 const MORPH_PAGE = 'assistant-page';
@@ -72,17 +74,20 @@ function canMorph(): boolean {
     return !!document.startViewTransition && !useReducedMotion().current;
 }
 
-/** Tags a card, its banner and its glyph; returns the undo. */
+/** Tags a card, its banner, its glyph and its title; returns the undo. */
 function nameCard(card: HTMLElement): () => void {
     const banner = card.querySelector<HTMLElement>('.banner-container');
     const symbol = card.querySelector<HTMLElement>('.symbol');
+    const title = card.querySelector<HTMLElement>('.cover-title .overflow-text');
     card.style.viewTransitionName = MORPH_CONTAINER;
     if (banner) banner.style.viewTransitionName = MORPH_COVER;
     if (symbol) symbol.style.viewTransitionName = MORPH_SYMBOL;
+    if (title) title.style.viewTransitionName = MORPH_TITLE;
     return () => {
         card.style.viewTransitionName = '';
         if (banner) banner.style.viewTransitionName = '';
         if (symbol) symbol.style.viewTransitionName = '';
+        if (title) title.style.viewTransitionName = '';
     };
 }
 

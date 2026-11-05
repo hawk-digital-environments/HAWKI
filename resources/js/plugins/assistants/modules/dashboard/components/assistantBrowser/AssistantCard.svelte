@@ -238,6 +238,9 @@
     .cover-title :global(.overflow-text) {
         padding-bottom: 0.15em;
         margin-bottom: -0.15em;
+        /* Hug the text, so the title morph (morphToDetail) scales the words
+           rather than a box of empty space beside them. */
+        width: fit-content;
     }
     .favourite-btn{
         position: absolute;
