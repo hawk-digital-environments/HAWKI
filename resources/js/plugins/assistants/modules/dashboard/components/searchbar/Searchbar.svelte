@@ -76,6 +76,7 @@
     <input
             id="searchbar"
             type="text"
+            placeholder={__('assistants.browser.search_placeholder')}
             bind:value={text}
             oninput={handleInput}
             onkeydown={(event) => {
@@ -88,23 +89,33 @@
 </div>
 
 <style>
+    /* Soft filled pill at rest; on focus it lifts to the page surface with an
+       accent edge and a wide, faint accent halo (an outline, not a shadow). */
     .searchbar{
         display: flex;
         flex-direction: row;
         width: 100%;
-        gap: var(--space-1);
-        padding: var(--space-2_5) var(--space-3);
+        min-height: 3.5rem;
+        gap: var(--space-3);
+        padding: 0 var(--space-5);
         align-items: center;
-        border: var(--border);
-        border-radius: var(--corner-md);
-        background-color: var(--color-surface-raised);
+        border: 1px solid transparent;
+        border-radius: var(--corner-full);
+        background-color: var(--color-surface-light);
+        outline: 4px solid transparent;
+        outline-offset: 0;
         transition:
-            border-color var(--duration-fast),
-            box-shadow var(--duration-fast);
+            background-color 150ms ease-out,
+            border-color 150ms ease-out,
+            outline-color 150ms ease-out;
+    }
+    .searchbar:hover{
+        background-color: color-mix(in oklch, var(--color-surface-light), var(--color-text) 4%);
     }
     .searchbar:focus-within{
+        background-color: var(--color-surface-raised);
         border-color: var(--color-accent-300);
-        box-shadow: 0 0 0 3px var(--color-accent-100);
+        outline-color: var(--color-accent-100);
     }
     .icon-wrapper{
         display: flex;
@@ -113,6 +124,10 @@
         color: var(--color-text-muted);
         cursor: default;
         user-select: none;
+        transition: color 150ms ease-out;
+    }
+    .searchbar:focus-within .icon-wrapper{
+        color: var(--color-text);
     }
     .icon{
         display: inline-flex;
@@ -154,8 +169,9 @@
     input{
         width: 100%;
         min-height: 1.5rem !important;
+        padding: 0;
         color: var(--color-text);
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-base);
         background-color: transparent;
         border: none;
         outline: none;

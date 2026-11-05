@@ -7,6 +7,7 @@
     import {StatusIcon} from '$lib/components/ui/icons';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import autoAnimate from "@formkit/auto-animate";
+    import type {Snippet} from 'svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
     import CategoryBar from "$plugins/assistants/modules/dashboard/components/categoryBar/CategoryBar.svelte";
@@ -22,6 +23,7 @@
         activeFilters = new Set<string>(),
         onSearchChange,
         onFilterChange,
+        hero,
         emptyTitle = __('assistants.browser.empty_title'),
         emptyDescription = __('assistants.browser.empty_description')
     } = $props<{
@@ -33,6 +35,9 @@
         onSearchChange: (query: string) => void;
         /** Called with the next filter set whenever a category is toggled or reset. */
         onFilterChange: (filters: Set<string>) => void;
+        /** Hero content (e.g. a page title) rendered above the search controls;
+         *  turns the controls into a vertically centred hero section. */
+        hero?: Snippet;
         emptyTitle?: string;
         emptyDescription?: string;
     }>();
@@ -63,8 +68,21 @@
     });
 </script>
 
-<Searchbar defaultValue={searchQuery} onChange={onSearchChange} loading={list.loading} loadingLabel={__('assistants.browser.loading')} />
-<CategoryBar {activeFilters} {onFilterChange} />
+{#snippet controls()}
+    <Searchbar defaultValue={searchQuery} onChange={onSearchChange} loading={list.loading} loadingLabel={__('assistants.browser.loading')} />
+    <CategoryBar {activeFilters} {onFilterChange} />
+{/snippet}
+
+{#if hero}
+    <section class="hero">
+        {@render hero()}
+        <div class="hero-controls">
+            {@render controls()}
+        </div>
+    </section>
+{:else}
+    {@render controls()}
+{/if}
 
 <div class="wrapper">
     <div class="grid-responsive" use:autoAnimate>
@@ -116,6 +134,30 @@
        disabled _off/containers.css; restored here (scoped to the browser) so the
        cards wrap into columns instead of overflowing. min(...,100%) keeps a
        single column from exceeding a narrow container. */
+    /* Fills most of the viewport and centres the title and search in it, so
+       the gallery starts just below — its top row peeks in as a scroll hint. */
+    .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-6);
+        min-height: min(72dvh, 48rem);
+        padding-bottom: var(--space-6);
+    }
+    .hero-controls {
+        --categories-justify: safe center;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        width: 100%;
+        max-width: 42rem;
+    }
+    @media (--bp-bigger-than-sm) {
+        .hero-controls {
+            --categories-wrap: wrap;
+        }
+    }
     .wrapper {
         display: flex;
         flex-direction: column;

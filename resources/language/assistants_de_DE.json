@@ -100,7 +100,8 @@
             "loading": "Lade Assistenten…",
             "no_results": "Es wurden keine Ergebnisse gefunden",
             "pagination_of": "von",
-            "search": "Suchen"
+            "search": "Suchen",
+            "search_placeholder": "Assistenten durchsuchen…"
         },
 
         "card": {

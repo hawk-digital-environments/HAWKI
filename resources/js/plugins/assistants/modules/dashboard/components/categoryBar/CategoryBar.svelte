@@ -54,9 +54,13 @@
     .categories-list {
         display: flex;
         flex-direction: row;
+        /* Hosts (the store hero) can centre and wrap the chips. */
+        flex-wrap: var(--categories-wrap, nowrap);
+        justify-content: var(--categories-justify, flex-start);
         gap: var(--space-2);
         overflow-x: auto;
-        padding: var(--space-0_5);
+        padding: var(--space-1);
+        scrollbar-width: none;
     }
     .categories-list::-webkit-scrollbar {
         display: none;

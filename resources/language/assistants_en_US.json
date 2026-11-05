@@ -100,7 +100,8 @@
             "loading": "Loading assistants…",
             "no_results": "No results were found",
             "pagination_of": "of",
-            "search": "Search"
+            "search": "Search",
+            "search_placeholder": "Search assistants…"
         },
 
         "card": {
