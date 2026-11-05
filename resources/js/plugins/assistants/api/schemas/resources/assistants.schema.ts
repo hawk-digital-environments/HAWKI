@@ -1,5 +1,5 @@
 import z from 'zod';
-import { BACKGROUNDS } from '$lib/plugins/assistants/presets/backgrounds';
+import { BACKGROUNDS, normalizeIconCss } from '$lib/plugins/assistants/presets/backgrounds';
 import { ReleaseMode, ReviewStage, type Assistant, type AssistantAvatar, type AssistantKey } from '$plugins/assistants/types/assistant';
 import { AssistantCategorySchema } from '$plugins/assistants/types/assistant/AssistantCategory';
 import { AssistantTagSchema } from '$plugins/assistants/types/assistant/AssistantTag';
@@ -275,7 +275,7 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
         ? {
             id: wire.assistant_avatar.id,
             name: wire.assistant_avatar.name,
-            iconCss: wire.assistant_avatar.icon_css
+            iconCss: normalizeIconCss(wire.assistant_avatar.icon_css)
         }
         : FALLBACK_AVATAR,
 

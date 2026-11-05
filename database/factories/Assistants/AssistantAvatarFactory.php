@@ -12,12 +12,12 @@ class AssistantAvatarFactory extends Factory
 {
     private const EMOJIS = ['🎓', '📚', '💡', '🧪', '🏫', '🎯', '🔬', '🌐'];
     private const GRADIENTS = [
-        'background: linear-gradient(135deg, rgb(73,66,215), rgb(101,34,195));',
-        'background: linear-gradient(135deg, rgb(219,39,119), rgb(225,29,72));',
-        'background: linear-gradient(135deg, rgb(245,158,11), rgb(234,88,12));',
-        'background: linear-gradient(135deg, rgb(16,185,129), rgb(5,150,105));',
-        'background: linear-gradient(135deg, rgb(59,130,246), rgb(37,99,235));',
-        'background: linear-gradient(135deg, rgb(239,68,68), rgb(220,38,38));',
+        'background: hsl(228 80% 52%); color: hsl(205 100% 88%)',
+        'background: hsl(345 75% 66%); color: hsl(340 65% 18%)',
+        'background: hsl(45 98% 60%); color: hsl(355 75% 18%)',
+        'background: hsl(155 100% 19%); color: hsl(72 90% 62%)',
+        'background: hsl(205 90% 84%); color: hsl(225 70% 25%)',
+        'background: hsl(330 85% 90%); color: hsl(340 60% 22%)',
     ];
     protected $model = AssistantAvatar::class;
 

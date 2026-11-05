@@ -154,6 +154,10 @@
     // Fall back to a neutral appearance only for legacy assistants that
     // predate the avatar builder's Erscheinungsbild (see resolveAssistantAvatar);
     // assistants with a persisted avatar render their real emoji + gradient.
+    /** The cover's two shades, read back out of the avatar CSS so the info
+     *  tiles can wear the same pair as the header. */
+    const coverBackground = $derived(avatar.iconCss.match(/(?:^|;)\s*background:\s*([^;]+)/)?.[1]);
+    const coverForeground = $derived(avatar.iconCss.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1]);
     const avatar = $derived<AssistantAvatar>(
         resolveAssistantAvatar(assistant?.avatar, assistant?.name ?? '?')
     );
@@ -328,7 +332,9 @@
         {/if}
 
         <!-- data-assistant-cover: the store card's morph waits for it (morphToDetail). -->
-        <div class="cover" data-assistant-cover>
+        <!-- Carries the avatar's CSS, so the top bar and the title inherit its
+             foreground shade (`color`) on the flat background. -->
+        <div class="cover" data-assistant-cover style={avatar.iconCss}>
             <div class="topbar">
                 <ButtonWithTooltip
                         variant="ghost"
@@ -414,21 +420,16 @@
                     {/if}
                 </div>
             </div>
-            <AssistantBanner assistantAvatar={avatar} fade />
-        </div>
-
-        <div class="overview">
-            <div class="head">
-                <div class="name-wrapper">
-                    <h2 class="name">
-                        <OverflowTooltip value={assistant.name} truncate="clamp" lines={1} />
-                    </h2>
-                    <p class="handle">@{assistant.handle}</p>
-                </div>
-
-                <p class="description">{assistant.description}</p>
+            <AssistantBanner assistantAvatar={avatar} />
+            <div class="name-wrapper">
+                <h2 class="name">
+                    <OverflowTooltip value={assistant.name} truncate="clamp" lines={2} />
+                </h2>
+                <p class="handle">@{assistant.handle}</p>
             </div>
         </div>
+
+        <p class="description">{assistant.description}</p>
 
         <div class="badges">
 <!--            <ReleaseStageStatus stage={assistant.releaseStage} />-->
@@ -437,7 +438,7 @@
             {/if}
         </div>
 
-        <div class="metadata">
+        <div class="metadata" style:--tile-bg={coverBackground} style:--tile-fg={coverForeground}>
             <StatusCard
                 label={__('assistants.detail.meta_creator')}
                 status={assistant.creator.displayName}
@@ -472,7 +473,7 @@
 
         <div class="tags">
             {#if assistant.category}
-                <span class="tag tag-accent">{__(assistant.category.text)}</span>
+                <span class="tag tag-accent" style={avatar.iconCss}>{__(assistant.category.text)}</span>
             {/if}
             {#each assistant.tags as tag}
                 <span class="tag">{tag.text}</span>
@@ -628,80 +629,77 @@
         justify-content: space-between;
         gap: var(--space-4);
     }
-    /* Cover: the avatar banner (gradient + symbol) as a wide hero. Height is
-       lifted from the card default via :global so the shared component still
-       drives the look. */
+    /* Cover: a flat two-tone poster, like the store cards — the name set big
+       and heavy in the avatar's foreground shade at the bottom left, the
+       glyph as a white sticker at the bottom right. */
     .cover {
         position: relative;
         width: 100%;
-        /* Concentric with the round 2rem top-bar buttons inset by
-           --space-2: their 1rem radius + the inset. Top corners only — the
-           bottom dissolves into the page, so rounding there would show as a
-           faint notch at each end of the fade. */
-        border-radius: calc(1rem + var(--space-2)) calc(1rem + var(--space-2)) 0 0;
+        /* Concentric with the round 2rem top-bar buttons inset by --space-2:
+           their 1rem radius + the inset. */
+        border-radius: calc(1rem + var(--space-2));
         overflow: hidden;
     }
-    /* The banner is the page's only avatar (same as the store cards): its
-       fading tail runs on behind the name and handle. */
     .page-content {
-        --cover-visible: 10rem;
-        --cover-symbol: 5rem;
-        --cover-overlap: 5.5rem; /* name + handle sit on the fade */
+        --cover-height: 18rem;
+        --cover-symbol: 6rem;
+        --cover-inset: var(--space-6);
     }
     .cover :global(.banner-container) {
-        height: calc(var(--cover-visible) + var(--cover-overlap));
+        height: var(--cover-height);
         /* Morph target for the store card's banner (morphToDetail). */
         view-transition-name: assistant-cover;
-        /* Keep the glyph centred in the visible part, clear of the name. */
-        align-items: flex-start;
-        padding-top: calc((var(--cover-visible) - var(--cover-symbol)) / 2);
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding: var(--cover-inset);
         box-sizing: border-box;
     }
     .cover :global(.banner-container .symbol) {
-        font-size: var(--cover-symbol);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--cover-symbol);
+        height: var(--cover-symbol);
+        border-radius: var(--corner-full);
+        background: oklch(100% 0 0);
+        font-size: calc(var(--cover-symbol) * 0.55);
+        rotate: -8deg;
         /* Morph target for the store card's glyph (morphToDetail). */
         view-transition-name: assistant-symbol;
     }
-
-    /* Overview: name/handle and description, pulled up over the banner's
-       tail (cancelling the page gap as well). */
-    /* Centred under the banner's centred glyph, so symbol, name and summary
-       read as one hero; the body below stays left-aligned. */
-    .overview {
-        position: relative;
-        margin-top: calc(-1 * (var(--cover-overlap) + var(--space-5)));
-        /* Extra air before the metadata cards closes the hero off. */
-        margin-bottom: var(--space-3);
-        text-align: center;
-    }
-    .head {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-3);
-        min-width: 0;
-    }
     .name-wrapper {
+        position: absolute;
+        left: var(--cover-inset);
+        right: calc(var(--cover-inset) * 2 + var(--cover-symbol));
+        bottom: var(--cover-inset);
         display: flex;
         flex-direction: column;
-        gap: var(--space-0_5);
+        gap: var(--space-2);
         min-width: 0;
-        /* Centred (shrink-wrapped) but still capped, so a long name keeps
-           truncating instead of overflowing. */
-        max-width: 100%;
     }
     .name {
         margin: 0;
-        font-size: var(--font-size-2xl);
-        font-weight: var(--font-weight-medium);
-        letter-spacing: -0.01em;
-        color: var(--color-text);
+        /* Typography for the OverflowTooltip'd name. */
+        --overflow-text-font-size: clamp(var(--font-size-2xl), 5vw, 3.5rem);
+        --overflow-text-font-weight: 700;
+        --overflow-text-color: currentColor;
+        --overflow-text-line-height: 0.95;
+        letter-spacing: -0.035em;
+        text-wrap: balance;
         overflow-wrap: anywhere;
+    }
+    /* The 2-line clamp clips at the line box, and at this tight leading the
+       last line's descenders (g, y) hang below it: extend the clip box with
+       padding, cancelled by a negative margin so the layout doesn't move. */
+    .name :global(.overflow-text) {
+        padding-bottom: 0.15em;
+        margin-bottom: -0.15em;
     }
     .handle {
         margin: 0;
         font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
+        font-weight: var(--font-weight-medium);
+        opacity: 0.75;
     }
     .controls {
         display: flex;
@@ -709,25 +707,24 @@
         gap: var(--space-2);
         flex-shrink: 0;
     }
-    /* Over the banner's imagery the back and outline buttons get a solid
-       white fill with dark ink in both themes (like the store cards' tags). */
+    /* Top-bar buttons tinted in the cover's own foreground shade instead of
+       white pills (same treatment as the store cards' favourite button). */
     .topbar :global(.btn:is(.back, .btn--stroke)) {
-        --btn-bg: oklch(100% 0 0 / 0.9);
-        --btn-color: oklch(20% 0 0);
+        --btn-bg: color-mix(in oklch, currentColor 14%, transparent);
+        --btn-color: currentColor;
         border-color: transparent;
     }
     .topbar :global(.btn:is(.back, .btn--stroke):not(:disabled):hover),
     .topbar :global(.btn:is(.back, .btn--stroke).btn--active) {
-        --btn-bg: oklch(88% 0 0);
-        --btn-color: oklch(20% 0 0);
+        --btn-bg: color-mix(in oklch, currentColor 24%, transparent);
+        --btn-color: currentColor;
     }
     .description {
         margin: 0;
-        /* Short summary as a centred block: a readable measure. */
-        max-width: 40rem;
-        font-size: var(--font-size-sm);
+        max-width: 48rem;
+        font-size: var(--font-size-base);
         line-height: var(--line-height-normal);
-        color: var(--color-text-muted);
+        color: var(--color-text);
     }
 
     /* Badge row (release stage + risk pill). */
@@ -749,11 +746,23 @@
         grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
         gap: var(--space-3);
     }
-    /* Accent-blue leading icons. The cards themselves stay neutral (ValidationState.UNKNOWN), so
-       this is a page-level override rather than a StatusCard variant. */
-    .metadata :global(.status-card .icon) {
-        color: var(--color-accent-text);
+    /* Tiles in the header's own pair, inverted: its foreground shade as the
+       fill, its background shade for icon, title and value. The cards are
+       ValidationState.UNKNOWN, so this is a page-level override rather than a
+       StatusCard variant. */
+    .metadata :global(.status-card) {
+        background: var(--tile-fg, var(--color-hover));
+        /* Repointing --color-text rather than overriding `color`: component
+           styles are served inside `@layer components`, so the `.u-label`
+           utility (later `utilities` layer) beats any selector here — but it
+           reads var(--color-text), as does StatusCard's own value color. */
+        --color-text: var(--tile-bg);
+        color: var(--color-text);
     }
+    .metadata :global(.status-card .icon) {
+        color: inherit;
+    }
+
     /* Same corner as the form fields (Input/Textarea: --corner-md). */
     .metadata :global(.status-card) {
         border-radius: var(--corner-md);
@@ -792,9 +801,8 @@
         border-radius: var(--corner-full);
         white-space: nowrap;
     }
+    /* The category wears the assistant's own two-tone pair (inline style). */
     .tag-accent {
-        color: var(--color-accent-text);
-        background: var(--color-accent-100);
         border-color: transparent;
     }
 
@@ -844,11 +852,9 @@
             padding: var(--space-4);
         }
         .page-content {
-            --cover-visible: 7rem;
-            --cover-symbol: 3.5rem;
-        }
-        .overview {
-            margin-top: calc(-1 * (var(--cover-overlap) + var(--space-4)));
+            --cover-height: 14rem;
+            --cover-symbol: 4rem;
+            --cover-inset: var(--space-4);
         }
         /* Too narrow for the labelled buttons: "Remixen" and "Ausprobieren"
            become round icon buttons like the others, so the whole top bar

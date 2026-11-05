@@ -5,7 +5,6 @@
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
     import {toggleAssistantFavorite} from "$plugins/assistants/api/resources/assistantsClient";
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
-    import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import {useRouter} from "$lib/components/ui/routing/hooks/useRouter.svelte";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
@@ -83,34 +82,31 @@
         ));
     }}
 >
-    <div class="cover">
-        <AssistantBanner assistantAvatar={assistant.avatar} fade />
+    <!-- The cover carries the avatar's CSS too, so its foreground shade
+         (`color`) is inherited by the title set on the flat background. -->
+    <div class="cover" style={assistant.avatar.iconCss}>
+        <AssistantBanner assistantAvatar={assistant.avatar} />
+        <div class="cover-title">
+            <OverflowTooltip value={assistant.name} truncate="clamp" lines={2} focusable={false} />
+        </div>
         <div
             class="favourite-btn"
             role="presentation"
         >
+            <!-- Tinted in the cover's own foreground shade instead of a white pill. -->
             <FavButton
                     id="favBtn"
                     isActive={assistant.isFavorite}
-                    color="oklch(20% 0 0)"
-                    background="oklch(100% 0 0 / 0.9)"
+                    color="currentColor"
+                    background="color-mix(in oklch, currentColor 14%, transparent)"
    					onchange={onFavoriteChange}
             />
         </div>
-        {#if assistant.allowRemix}
-            <div class="remix-tag tag">
-                <span class="icon"><SplitIcon size={16} /></span>
-                <span class="text">{__('assistants.card.remix')}</span>
-            </div>
-        {/if}
     </div>
     <div class="content">
         <div class="info">
-            <div class="header">
-                <OverflowTooltip value={assistant.name} focusable={false} />
-                <span class="handle">@{assistant.handle}</span>
-            </div>
             <div class="tags">
+                <span class="handle">@{assistant.handle}</span>
                 <span class="category">
                     {assistant.category? __(assistant.category.text) : __('assistants.card.category_unknown')}
                 </span>
@@ -200,82 +196,72 @@
         position: relative;
         overflow: hidden;
     }
-    /* The banner is the card's only avatar: taller than the default and
-       dissolving into the card surface toward the bottom, so the cover and
-       the content read as one continuous plane. */
+    /* Flat two-tone poster: a sticker-like glyph in the top corner, the name
+       set big and heavy in the avatar's foreground shade across the bottom. */
     .cover :global(.banner-container) {
-        /* 8rem of visible cover + the 2.5rem tail the content overlaps
-           (see .content's negative margin). */
         height: 10.5rem;
-        /* Keep the glyph centred in the visible 8rem, clear of the title. */
         align-items: flex-start;
-        padding-top: 2.25rem;
+        justify-content: flex-start;
+        padding: var(--space-4);
         box-sizing: border-box;
     }
-    .favourite-btn{
-        position: absolute;
-        top: var(--space-2);
-        left: var(--space-2);
-        z-index: 1;
-    }
-    .tag{
-        display: flex;
-        flex-direction: row;
-        height: 1.5rem;
-        align-items: center;
-        padding: 0 var(--space-2_5);
-        column-gap: var(--space-1_5);
-        overflow: hidden;
-        /* Tags keep a fixed white fill in both themes, so the text is always
-           dark rather than following the theme's text color. */
-        color: oklch(20% 0 0);
-        border-radius: var(--corner-full);
-        background-color: oklch(100% 0 0 / 0.9);
-        backdrop-filter: blur(6px);
-    }
-    .tag .text{
-        font-size: var(--font-size-xxs);
-        line-height: 1;
-        font-weight: var(--font-weight-medium);
-    }
-
-    .remix-tag{
-        position: absolute;
-        top: var(--space-2);
-        right: var(--space-2);
-        /* Match the favourite button's height. */
-        height: 2rem;
-        cursor: pointer;
-        transition:
-            background-color var(--duration-fast),
-            transform var(--duration-fast);
-    }
-    /* Same hover feedback as the favourite button. */
-    .remix-tag:hover {
-        background-color: oklch(100% 0 0 / 1);
-        transform: scale(1.06);
-    }
-    .remix-tag .icon {
+    /* White sticker disc: every emoji reads on every ground (a grey ➗ on
+       ink would vanish), and the slight lean makes it feel stuck on. */
+    .cover :global(.symbol) {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: var(--font-size-sm);
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: var(--corner-full);
+        background: oklch(100% 0 0);
+        font-size: 1.9rem;
+        rotate: -8deg;
     }
-    .remix-tag .icon :global(svg) {
-        display: block;
+    .cover-title {
+        position: absolute;
+        right: var(--space-4);
+        bottom: var(--space-4);
+        left: var(--space-4);
+        /* Typography for the OverflowTooltip'd name, consumed through that
+           component's custom properties. */
+        --overflow-text-font-size: var(--font-size-2xl);
+        --overflow-text-font-weight: 700;
+        --overflow-text-color: currentColor;
+        --overflow-text-line-height: 0.95;
+        letter-spacing: -0.035em;
+        text-wrap: balance;
+    }
+    /* The 2-line clamp clips at the line box, and at this tight leading the
+       last line's descenders (g, y) hang below it: extend the clip box with
+       padding, cancelled by a negative margin so the layout doesn't move. */
+    .cover-title :global(.overflow-text) {
+        padding-bottom: 0.15em;
+        margin-bottom: -0.15em;
+    }
+    .favourite-btn{
+        position: absolute;
+        top: var(--space-3);
+        right: var(--space-3);
+        z-index: 1;
     }
 
     .tags{
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: var(--space-1_5);
+        gap: var(--space-1_5) var(--space-2);
+    }
+    .handle{
+        font-size: var(--font-size-xs);
+        line-height: var(--line-height-tight);
+        color: var(--color-text-muted);
     }
     .category{
         display: inline-flex;
         align-items: center;
-        height: 1.5rem;
-        padding: 0 var(--space-2_5);
+        height: 1.375rem;
+        padding: 0 var(--space-2);
         border-radius: var(--corner-full);
         background-color: var(--color-surface-light);
         color: var(--color-text-muted);
@@ -284,8 +270,6 @@
         line-height: 1;
     }
 
-
-
     .content{
         /* Absorb extra height when the stretched card is taller than the
            content, keeping the creator footer pinned to the card's bottom. */
@@ -293,37 +277,13 @@
         display: flex;
         flex-direction: column;
         min-height: 50%;
-        /* Pulled up over the banner's fading tail, so the cover's colour
-           runs on behind the name and handle. Transparent so the fade shows
-           through; the card itself provides the surface below it. */
-        position: relative;
-        margin-top: -2.5rem;
     }
     .info{
         flex-grow: 1;
         display: flex;
         flex-direction: column;
         row-gap: var(--space-2);
-        /* The banner's fade already separates cover and text. */
-        padding: var(--space-1) var(--space-4) var(--space-4);
-    }
-    .header{
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-0_5);
-        /* Typography for the OverflowTooltip'd name, consumed through that
-           component's custom properties so the style stays scoped here
-           instead of reaching into the child with :global(). */
-        --overflow-text-font-size: var(--font-size-base);
-        --overflow-text-font-weight: var(--font-weight-medium);
-        --overflow-text-color: var(--color-text);
-        /* Tight lines so name and handle read as one block. */
-        --overflow-text-line-height: var(--line-height-tight);
-    }
-    .header .handle{
-        line-height: var(--line-height-tight);
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
+        padding: var(--space-4);
     }
     /* Fixed number of lines before truncating (same pattern as VersionCard)
        so long descriptions can't grow one card taller than its neighbours;
@@ -343,7 +303,7 @@
     .footer{
         display: flex;
         flex-direction: row;
-        border-top: var(--divider);
+        gap: var(--space-2);
         height: 3.25rem;
         align-items: center;
         padding: 0 var(--space-4);
