@@ -3,8 +3,9 @@ let abortCtrl = new AbortController();
 
 async function buildRequestObject(msgAttributes, onData, onError) {
     const msgs = createMessageLogForAI(msgAttributes['regenerationElement']);
-    const isUpdate = msgAttributes['regenerationElement'] ? true : false;
-    const msgID = msgAttributes['regenerationElement'] ? msgAttributes['regenerationElement'].id : null;
+    // 'isUpdate' can be set to false to regenerate a message that was never stored.
+    const isUpdate = msgAttributes['isUpdate'] ?? !!msgAttributes['regenerationElement'];
+    const msgID = isUpdate ? msgAttributes['regenerationElement'].id : null;
     const requestObject = {
         broadcast: msgAttributes['broadcasting'],
         threadIndex: msgAttributes['threadIndex'],

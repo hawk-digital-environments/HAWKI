@@ -188,6 +188,8 @@ async function buildRequestObjectForAiConv(
     let messageObj;
     let citations = [];
     let messageTextEl;
+    // A passed-in element already exists in the chatlog (regeneration) and must not be removed on error.
+    const reusesProvidedElement = !!messageElement;
 
 
     return new Promise((resolve, reject) => {
@@ -297,7 +299,7 @@ async function buildRequestObjectForAiConv(
 
                 const requestObj = {
                     'isAi': true,
-                    'threadId': activeThreadIndex,
+                    'threadId': Number(msgAttributes['threadIndex'] ?? activeThreadIndex),
                     'content': {
                         'text': {
                             'ciphertext': cryptoMsg.ciphertext,
@@ -339,7 +341,7 @@ async function buildRequestObjectForAiConv(
             }
         }, () => {
             response.triggerError(window.__('legacy.aiChat.streamProcessingError'));
-            if (!isUpdate && messageElement) {
+            if (!isUpdate && !reusesProvidedElement && messageElement) {
                 messageElement.remove();
             }
             reject();
