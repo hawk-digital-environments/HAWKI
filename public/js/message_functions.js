@@ -802,8 +802,41 @@ function messageReadAloud(provider) {
 
 //#region MSG_CTL: REGENERATE
 
+// Prefix for a temporary DOM id given to AI messages that were never stored
+// (e.g. the previous generation failed), so they can still enter regen mode.
+const UNSAVED_MSG_ID_PREFIX = 'unsaved-msg-';
+
 async function onRegenerateBtn(btn) {
-    const messageId = btn.closest('.message').id;
+    const messageElement = btn.closest('.message');
+
+    // The message has no ID if its generation failed before it was stored.
+    // Regenerate it through the normal send flow, which stores it and assigns the ID.
+    if (!messageElement.id || messageElement.id.startsWith(UNSAVED_MSG_ID_PREFIX)) {
+        if (!messageElement.id) {
+            messageElement.id = UNSAVED_MSG_ID_PREFIX + Date.now();
+        }
+        const parseDataset = (value, fallback) => {
+            try {
+                return value ? JSON.parse(value) : fallback;
+            } catch {
+                return fallback;
+            }
+        };
+        window.oldUiBridge.triggerEnterMode('regen', {
+            message_id: messageElement.id,
+            message_role: messageElement.dataset.role || 'assistant',
+            model: messageElement.dataset.model || null,
+            completion: 0,
+            content: {text: messageElement.dataset.rawMsg || '', attachments: []},
+            metadata: {
+                tools: parseDataset(messageElement.dataset.tools, []),
+                params: parseDataset(messageElement.dataset.params, {})
+            }
+        });
+        return;
+    }
+
+    const messageId = messageElement.id;
     const message = window.oldUiMessageHistory.findMessageById(messageId);
     if (!message) {
         throw new Error(`Message with ID ${messageId} not found in message history.`);
@@ -835,6 +868,9 @@ async function regenerateMessage(payload) {
 
     const threadIndex = messageElement.closest('.thread').id;
 
+    // Never stored (previous generation failed): send it as a new message instead of an update.
+    const isUnsaved = messageElement.id.startsWith(UNSAVED_MSG_ID_PREFIX);
+
     //reset message content
     messageElement.dataset.rawMsg = '';
 
@@ -848,6 +884,7 @@ async function regenerateMessage(payload) {
                     'broadcasting': false,
                     'slug': '',
                     'regenerationElement': messageElement,
+                    'isUpdate': !isUnsaved,
                     'stream': true,
                     'model': payload.model.model_id,
                     'metadata': metadata
@@ -857,7 +894,7 @@ async function regenerateMessage(payload) {
                     response,
                     msgAttributes,
                     messageElement,
-                    true);
+                    !isUnsaved);
                 break;
             case('groupchat'):
                 const aiKey = (window.userKeychain.roomKeys[activeRoom.slug] || {}).aiKey;
