@@ -69,31 +69,6 @@ pre {
     text-wrap: wrap;
 }
 
-pre code.hljs {
-    display: block;
-    overflow-x: auto;
-    padding: 1em;
-}
-
-code.hljs {
-    padding: 3px 5px;
-}
-
-.hljs-code-header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    text-transform: capitalize;
-
-    padding-top: .25rem;
-    padding-bottom: .25rem;
-    padding-left: 1rem;
-    padding-right: 0;
-
-    border-bottom: var(--border-stroke-thin);
-    font-size: var(--font-xs);
-}
-
 
 
 .attachments{
