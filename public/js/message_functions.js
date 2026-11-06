@@ -634,56 +634,8 @@ function activateMessageControls(msgElement) {
     if (!msgElement.classList.contains('AI') && msgElement.querySelector('#regenerate-btn')) {
         msgElement.querySelector('#regenerate-btn').remove();
     }
-    const codeBlocks = msgElement.querySelectorAll('pre');
-    for (let i = 0; i < codeBlocks.length; i++) {
-        const code = codeBlocks[i];
-        const header = code.querySelector('.hljs-code-header');
-
-        if (!header.querySelector('.copy-btn')) {
-            const copyBtnTemp = document.getElementById('copy-btn-template');
-            const clone = document.importNode(copyBtnTemp.content, true);
-            const copyBtn = clone.querySelector('.copy-btn');
-
-            if (copyBtn) {
-                copyBtn.addEventListener('click', function () {
-                    copyCodeBlock(copyBtn);
-                });
-                header.appendChild(copyBtn);
-            }
-        }
-    }
-
-    const mathBlocks = msgElement.querySelectorAll('.math');
-    for (let i = 0; i < mathBlocks.length; i++) {
-        const mathBlock = mathBlocks[i];
-
-        if (!mathBlock.querySelector('.copy-btn')) {
-            const copyBtnTemp = document.getElementById('copy-btn-template');
-            const clone = document.importNode(copyBtnTemp.content, true);
-            const copyBtn = clone.querySelector('.copy-btn');
-            copyBtn.classList.add('math-copy-btn');
-
-            copyBtn.addEventListener('click', function () {
-                copyMathBlock(mathBlock);
-            });
-            mathBlock.appendChild(copyBtn);
-        }
-    }
     const controls = msgElement.querySelector('.message-controls');
     controls.style.display = 'flex';
-}
-
-function copyCodeBlock(btn) {
-    const codeBlock = btn.closest('pre').querySelector('code');
-    const clone = codeBlock.cloneNode(true);
-    const msgTxt = clone.textContent.trim();
-    const trimmedMsg = msgTxt.trim();
-    navigator.clipboard.writeText(trimmedMsg);
-}
-
-function copyMathBlock(block) {
-    const m = block.dataset.rawmath;
-    navigator.clipboard.writeText(m);
 }
 
 // Copies content of the message box without the css attributes
@@ -694,16 +646,6 @@ function CopyMessageToClipboard(provider) {
     const content = messageElement.dataset.rawMsg;
 
     const trimmedMsg = content.trim();
-    navigator.clipboard.writeText(trimmedMsg);
-}
-
-function copyCodeBlockToClipboard(provider) {
-    const codeBlock = provider.closest('pre').querySelector('code');
-
-    // Get the text content of the modified clone
-    const content = codeBlock.innerHTML;
-
-    const trimmedCont = content.trim();
     navigator.clipboard.writeText(trimmedMsg);
 }
 

@@ -136,8 +136,5 @@ The `echo` loader is the primary example of this pattern. It dynamically imports
 | `pdfJsLib` | `pdfjs-dist`, `pdfjs-dist/web/pdf_viewer` | PDF rendering; sets `window.pdfjsLib` and configures the worker URL |
 | `docx` | `docx` | DOCX file creation |
 | `docxPreview` | `docx-preview` | DOCX file preview rendering |
-| `md` | `markdown-it` | Pre-configured Markdown parser (HTML disabled, linkify off) |
-| `hljs` | `highlight.js` | Syntax highlighting |
-| `renderMathInElement` | `katex`, `katex/contrib/auto-render` | Math rendering; also imports the KaTeX CSS |
 
 The promise cache (`dependencyPromises`) is module-level, so each dependency is instantiated at most once per page load even if `dependencyLoader` is called from multiple components.
