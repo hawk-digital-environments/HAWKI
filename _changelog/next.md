@@ -6,11 +6,11 @@
 
 ### Quality of Life
 
-[//]: # (- Improvements and enhancements that improve the user experience.)
+- Improved UI rendering of bullet lists, HTML previews, non-scrollable overflow tables, LaTeX formulas, and other elements.
 
 ### Bugfix
 
-[//]: # (- List of bugs that have been fixed in this version.)
+- Fixed a JavaScript error causing broken streaming of AI messages containing code blocks.
 
 ### Internals
 
