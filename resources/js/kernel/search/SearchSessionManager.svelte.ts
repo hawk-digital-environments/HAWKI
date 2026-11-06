@@ -1,10 +1,9 @@
 /**
  * Sessions: one independent view of the search index per SearchBar.
  *
- * The manager owns everything sessions *share* — the app-wide dynamic
- * concurrency budget and the recent-selection history — and nothing else. Each
- * session owns its own query, scope, freeze state, worker reply and dynamic
- * queries, so opening a second bar neither reloads a source nor cancels the
+ * The manager owns what sessions *share* — the app-wide dynamic concurrency
+ * budget — and nothing else. Each session owns its own query, scope, freeze
+ * state, worker reply and dynamic queries, so opening a second bar neither reloads a source nor cancels the
  * first bar's work. Static loading and the shared index stay with the extension
  * that hosts this manager.
  *
@@ -16,7 +15,7 @@
  *    previous rows on screen, for at most `SEARCH_LOCAL_PENDING_DELAY_MS`, so
  *    a keystroke swaps one list for the next instead of flashing an empty or
  *    pending state in between. A blank query needs no worker: the whole
- *    list — every source plus the recents group — is resolved locally.
+ *    list of every source is resolved locally.
  * 2. **Dynamic**, after a 250 ms debounce: each group is published whole once
  *    all of its providers have settled, failures included.
  *
@@ -29,9 +28,7 @@ import {
     SEARCH_DYNAMIC_CANDIDATE_LIMIT,
     SEARCH_DYNAMIC_CONCURRENCY,
     SEARCH_DYNAMIC_MIN_QUERY_LENGTH,
-    SEARCH_LOCAL_PENDING_DELAY_MS,
-    SEARCH_RECENT_GROUP_ID,
-    SEARCH_RECENT_ROWS
+    SEARCH_LOCAL_PENDING_DELAY_MS
 } from '$lib/kernel/search/types.js';
 import type {SearchSessionHost} from '$lib/kernel/search/sessionHost.js';
 import type {SearchProviderDefinition} from '$lib/kernel/search/searchRegistry.js';
@@ -39,7 +36,6 @@ import {documentKey, type IndexedDocument} from '$lib/kernel/search/sharedIndex.
 import {resolveSearchScope, scopeMatches, type KnownSearchScope, type ResolvedSearchScope} from '$lib/kernel/search/scope.js';
 import {SearchEngine} from '$lib/kernel/search/searchEngine.js';
 import {normalizeSearchQuery, queryLength} from '$lib/kernel/search/query.js';
-import {SearchRecentsStore} from '$lib/kernel/search/sessionHistory.js';
 import {
     appendReadyGroups,
     applyRowLimits,
@@ -69,20 +65,18 @@ export class SearchSessionManager {
     private readonly host: SearchSessionHost;
     private readonly gate: ConcurrencyGate;
     private readonly sessions = new Set<SearchSessionImpl>();
-    private readonly recents: SearchRecentsStore;
     private disposed = false;
 
     public constructor(host: SearchSessionHost) {
         this.host = host;
         this.gate = new ConcurrencyGate(SEARCH_DYNAMIC_CONCURRENCY);
-        this.recents = new SearchRecentsStore(host.app.localStorage, host.identity);
     }
 
     public createSession(options: SearchSessionOptions = {}): SearchSession {
         if (this.disposed) {
             throw new Error('The search session manager is disposed; no further sessions can be created.');
         }
-        const session = new SearchSessionImpl(this.host, this.gate, this.recents, options, disposed => this.sessions.delete(disposed), () => this.invalidate());
+        const session = new SearchSessionImpl(this.host, this.gate, options, disposed => this.sessions.delete(disposed));
         this.sessions.add(session);
         return session;
     }
@@ -101,11 +95,9 @@ export class SearchSessionManager {
 
     /**
      * The user or the connection changed. Everything the previous identity
-     * produced is dropped — queries, results and freeze — and the history is
-     * re-read for whoever is signed in now.
+     * produced is dropped — queries, results and freeze.
      */
     public reset(): void {
-        this.recents.useIdentity(this.host.identity);
         for (const session of [...this.sessions]) {
             session.resetSession();
         }
@@ -122,11 +114,9 @@ export class SearchSessionManager {
 
 class SearchSessionImpl implements SearchSession {
     private readonly host: SearchSessionHost;
-    private readonly recents: SearchRecentsStore;
     private readonly allowedScope: SearchScope | undefined;
     private readonly runner: DynamicQueryRunner;
     private readonly forget: (session: SearchSessionImpl) => void;
-    private readonly selectionChanged: () => void;
     private readonly stateView: SearchSessionState;
     private readonly timers: SchedulerTimers;
 
@@ -156,16 +146,12 @@ class SearchSessionImpl implements SearchSession {
     public constructor(
         host: SearchSessionHost,
         gate: ConcurrencyGate,
-        recents: SearchRecentsStore,
         options: SearchSessionOptions,
-        forget: (session: SearchSessionImpl) => void,
-        selectionChanged: () => void
+        forget: (session: SearchSessionImpl) => void
     ) {
         this.host = host;
-        this.recents = recents;
         this.allowedScope = options.allowedScope ? {...options.allowedScope} : undefined;
         this.forget = forget;
-        this.selectionChanged = selectionChanged;
         this.timers = this.host.schedulerTimers ?? DEFAULT_SCHEDULER_TIMERS;
         this.runner = new DynamicQueryRunner(
             gate,
@@ -243,12 +229,6 @@ class SearchSessionImpl implements SearchSession {
                 const entry = this.liveEntry(row, active);
                 if (!row.available || !entry) {
                     return null;
-                }
-                // Only local entities are worth remembering: a remote hit has no
-                // stable local row to resolve the id back to on the next visit.
-                if (row.kind === 'static') {
-                    this.recents.record(entityKey);
-                    this.selectionChanged();
                 }
                 return {...entry, providerId: row.providerId, groupId: row.groupId, kind: row.kind, available: true};
             }
@@ -406,15 +386,13 @@ class SearchSessionImpl implements SearchSession {
         }
         if (this.query === '') {
             const candidates = this.blankCandidates(scope, active);
-            const groups = candidates.length === 0 ? [] : rankGroups(candidates, this.rankingGroups(candidates));
-            const recent = this.recentGroupView(scope, active);
-            return recent === null ? groups : [...groups, recent];
+            return candidates.length === 0 ? [] : rankGroups(candidates, this.rankingGroups(candidates));
         }
         const local = this.staticCandidates(scope, active);
         const remote = this.dynamicCandidates(active).map(candidate => {
             const copy = this.host.index.documentsForEntity(candidate.row.entityKey, scope)
                 .find(document => active.has(document.provider.id));
-            return copy ? staticCandidate(copy, candidate.score, 0) : candidate;
+            return copy ? staticCandidate(copy, candidate.score) : candidate;
         });
         const candidates = [...local, ...remote];
         return candidates.length === 0 ? [] : rankGroups(candidates, this.rankingGroups(candidates));
@@ -429,7 +407,7 @@ class SearchSessionImpl implements SearchSession {
         for (const document of this.host.index.candidates(scope)) {
             const score = scores.get(document.key);
             if (score !== undefined && active.has(document.provider.id)) {
-                candidates.push(staticCandidate(document, score, 0));
+                candidates.push(staticCandidate(document, score));
             }
         }
         return candidates;
@@ -437,51 +415,12 @@ class SearchSessionImpl implements SearchSession {
 
     /**
      * A blank query lists every static source in its registration order —
-     * the "open the palette and see everything" view — and
-     * {@link recentGroupView} appends the user's last picks below it.
+     * the "open the palette and see everything" view.
      */
     private blankCandidates(scope: ResolvedSearchScope, active: ReadonlySet<string>): RankingCandidate[] {
         return this.host.index.candidates(scope)
             .filter(document => document.provider.kind === 'static' && active.has(document.provider.id))
-            .map(document => staticCandidate(document, 0, 0));
-    }
-
-    /**
-     * The "Recently used" group of a blank query: the selections that still
-     * resolve to a live in-scope row, most recent first, at most
-     * {@link SEARCH_RECENT_ROWS} rows. A row may already sit in its natural
-     * group above — the recents group deliberately repeats it instead of
-     * thinning the list.
-     */
-    private recentGroupView(scope: ResolvedSearchScope, active: ReadonlySet<string>): SearchGroupView | null {
-        const rows: SearchRow[] = [];
-        for (const selection of this.recents.entries) {
-            if (rows.length >= SEARCH_RECENT_ROWS) {
-                break;
-            }
-            for (const document of this.host.index.documentsForEntity(selection.entityKey, scope)) {
-                if (document.provider.kind !== 'static' || !active.has(document.provider.id)) {
-                    continue;
-                }
-                rows.push({
-                    ...document.entry,
-                    providerId: document.provider.id,
-                    groupId: SEARCH_RECENT_GROUP_ID,
-                    kind: document.provider.kind,
-                    available: true
-                });
-                break;
-            }
-        }
-        if (rows.length === 0) {
-            return null;
-        }
-        return {
-            id: SEARCH_RECENT_GROUP_ID,
-            label: this.host.groupLabel(SEARCH_RECENT_GROUP_ID),
-            kind: 'static',
-            items: rows
-        };
+            .map(document => staticCandidate(document, 0));
     }
 
     /**
@@ -539,7 +478,6 @@ class SearchSessionImpl implements SearchSession {
         this.dynamicCache = pending.map(item => ({
             row: item.row,
             score: scores.get(item.key) ?? 0,
-            recency: 0,
             providerOrder: item.providerOrder,
             entryOrder: item.entryOrder,
             preferStatic: false
@@ -766,7 +704,7 @@ class SearchSessionImpl implements SearchSession {
     }
 }
 
-function staticCandidate(document: IndexedDocument, score: number, recency: number): RankingCandidate {
+function staticCandidate(document: IndexedDocument, score: number): RankingCandidate {
     return {
         row: {
             ...document.entry,
@@ -776,7 +714,6 @@ function staticCandidate(document: IndexedDocument, score: number, recency: numb
             available: true
         },
         score,
-        recency,
         providerOrder: document.provider.order,
         entryOrder: document.entryOrder,
         preferStatic: true

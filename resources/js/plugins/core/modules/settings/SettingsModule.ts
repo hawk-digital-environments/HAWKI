@@ -1,12 +1,11 @@
 import type {HawkiModule} from '$lib/kernel/modules/types.js';
 import type {ModuleSearchRegistrar} from '$lib/kernel/search/types.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
-import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
+import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
 import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
 import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
 import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
 import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
-import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
 
 /** A settings section the account dialog can open. */
 export type SettingsSection = 'general' | 'profile' | 'experiments';
@@ -33,7 +32,7 @@ export class SettingsModule implements HawkiModule {
                 return [
                     {
                         id: 'general', entityKey: 'action/core:settings/general',
-                        title: __('ui.search.settings.general'), icon: Settings05Icon,
+                        title: __('ui.search.settings.general'), icon: Settings03Icon,
                         keywords: [__('ui.settings.nav.general'), __('ui.settings.general.languageLabel')],
                         onSelect: () => app.events.sync.triggerVoid('settingsRequested', 'general')
                     },
@@ -54,11 +53,6 @@ export class SettingsModule implements HawkiModule {
                         icon: theme.isDark ? SunIcon : MoonIcon,
                         keywords: [__('ui.settings.general.themeLabel'), __('ui.settings.general.themeLight'), __('ui.settings.general.themeDark')],
                         onSelect: () => {theme.theme = theme.isDark ? 'light' : 'dark';}
-                    },
-                    {
-                        id: 'logout', entityKey: 'action/core:settings/logout',
-                        title: __('ui.profile.logout'), icon: Logout02Icon,
-                        onSelect: () => {void app.logout();}
                     }
                 ];
             }

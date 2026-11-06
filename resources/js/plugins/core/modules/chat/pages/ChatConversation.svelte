@@ -222,6 +222,7 @@
     onOpenChange={open => !open && (messageToDelete = null)}
     title={__('chat.actions.deleteConfirmTitle')}
     description={__('chat.actions.deleteConfirmDescription')}
+    confirmVariant="delete"
     onConfirm={removeMessage}
 />
 

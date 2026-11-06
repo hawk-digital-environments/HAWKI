@@ -1,13 +1,26 @@
 {
     "ui": {
         "loading": "Wird geladen…",
+        "eyeTracker": {
+            "ariaLabel": "Ein Ball mit zwei Augen, der dem Mauszeiger folgt",
+            "lines": {
+                "1": "Hey, ich seh dich.",
+                "2": "Boop.",
+                "3": "Das kitzelt.",
+                "4": "Hallo!",
+                "5": "Hör auf, mich anzustupsen.",
+                "6": "Ich hab dich im Blick.",
+                "7": "Schon wieder? Okay.",
+                "8": "Du hast mich gefunden."
+            }
+        },
         "navigation": {
             "skipToContent": "Zum Hauptinhalt springen",
             "open": "Navigation öffnen",
             "close": "Navigation schließen",
-            "collapse": "Seitenleiste einklappen",
-            "expand": "Seitenleiste ausklappen",
             "search": "Suchen",
+            "spaces": "Bereiche",
+            "pinSpaces": "Bereiche anheften",
             "newChat": "Neuer Chat",
             "label": "Navigation"
         },
@@ -35,7 +48,6 @@
         },
         "profile": {
             "fallbackName": "Profil",
-            "menuTitle": "Kontomenü",
             "lightMode": "Heller Modus",
             "darkMode": "Dunkler Modus",
             "settings": "Einstellungen",
@@ -98,8 +110,6 @@
         "search": {
             "title": "Suche",
             "placeholder": "Suchen…",
-            "closeHint": "Esc drücken zum Schließen",
-            "closeKey": "Esc",
             "conversations": "Unterhaltungen",
             "settings": {
                 "label": "Einstellungen",
@@ -123,7 +133,6 @@
             "unavailable": "Nicht mehr verfügbar",
             "errorInGroup": "„:group“ konnte nicht durchsucht werden.",
             "retry": "Erneut versuchen",
-            "recents": "Zuletzt verwendet",
             "retryLabel": "„:group“ erneut durchsuchen",
             "noResults": "Nichts passt zu „:query“.",
             "empty": "Noch nichts zum Durchsuchen."

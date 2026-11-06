@@ -83,7 +83,7 @@ export class SearchEngine {
 
     /**
      * Every query term must fuzzy-match somewhere across the indexed fields.
-     * Blank queries use recents/registration order outside this engine.
+     * Blank queries use registration order outside this engine.
      */
     public search(query: string): SearchScores {
         if (query.trim() === '' || this.keys.size === 0) {

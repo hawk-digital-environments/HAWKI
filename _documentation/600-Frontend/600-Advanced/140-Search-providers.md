@@ -45,7 +45,7 @@ Providers return `SearchEntry` objects.
 | Field | Purpose |
 | --- | --- |
 | `id` | Unique entry ID within the provider. |
-| `entityKey` | Stable identity across providers, used for deduplication and recent selections. |
+| `entityKey` | Stable identity across providers, used for deduplication and selection. |
 | `title` | Displayed title and primary searchable text. |
 | `description` | Optional text displayed below the title. It does not participate in matching. |
 | `icon` | Optional existing `IconComponent`. |
@@ -158,19 +158,17 @@ Call `freezeOrder()` on keyboard selection or actual pointer movement into a res
 
 Dispose the session on close or unmount. Its cancellation does not stop another session or the shared static sources.
 
-## Ranking, freezing, and recents
+## Ranking and freezing
 
 Fuse.js scores local and server results using title, keyword, and content weights of 2, 1.5, and 1. The worker's static index and the per-session index over server results use the same incremental engine. Server results are few (at most 20 per provider), so they are scored on the main thread. [Token search](https://www.fusejs.io/token-search.html) requires every query term to match somewhere across those fields, with typo tolerance, substring matching, and case and accent insensitivity. The fuzzy threshold is 0.3. The kernel inverts Fuse's lower-is-better scores for descending ranking, reserving zero for unmatched server results. Server results without a local text match remain eligible after scored results. Ties retain provider and item order. A current static copy wins when multiple providers return the same entity. Groups follow their best match, with at most five rows per group and 20 rows overall.
 
 Once selection intent freezes the view, existing rows keep their positions. New groups append within the limits; new matches for visible groups wait for the next query or scope change. A removed entry leaves a disabled placeholder, and its action becomes unavailable immediately. Retry preserves the freeze.
 
-An empty query lists every static source in group, provider, and item registration order — chat actions, the newest conversations, account actions — and appends a **Recently used** group below it: the selections that still resolve to a live in-scope row, most recent first, at most three rows (`SEARCH_RECENT_ROWS`). A row may appear in both its own group and the recents group; the recents group deliberately repeats it instead of thinning the list. When nothing resolves, the group is absent. Storage contains only entity IDs and timestamps, scoped to the user and connection. Dynamic selections never enter this history. Empty queries never request server results.
+An empty query lists every static source in group, provider, and item registration order — chat actions, the newest conversations, account actions. Empty queries never request server results.
 
 ## Privacy and persistence
 
-The search index lives in memory only. Titles, keywords and content exist as plaintext solely in RAM and are never serialized to storage. Nothing is written to disk when a palette closes or the app reloads.
-
-The only persisted artifact is the recents history: one `hawki.search.recents.<identity>` storage key holding entity IDs and timestamps, never titles or content. Rows are resolved against the live index at read time, so a renamed entry shows its new title and a deleted one disappears.
+The search index lives in memory only. Titles, keywords and content exist as plaintext solely in RAM and are never serialized to storage. Search persists nothing: nothing is written to disk when a palette closes or the app reloads.
 
 Rules for anything that changes this:
 

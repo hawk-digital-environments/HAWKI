@@ -24,7 +24,7 @@
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
-    import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
+    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
     import GeneralSettings from '$lib/app/components/settings/pages/GeneralSettings.svelte';
     import ProfileSettings from '$lib/app/components/settings/pages/ProfileSettings.svelte';
     import ExperimentsSettings from '$lib/app/components/settings/pages/ExperimentsSettings.svelte';
@@ -58,7 +58,7 @@
 
     // $derived so the labels follow runtime locale switches from the general settings page.
     const navItems: Array<{path: string; label: string; icon: IconComponent}> = $derived([
-        {path: '/general', label: __('ui.settings.nav.general'), icon: Settings05Icon},
+        {path: '/general', label: __('ui.settings.nav.general'), icon: Settings03Icon},
         {path: '/profile', label: __('ui.settings.nav.profile'), icon: UserIcon},
         {path: '/experiments', label: __('ui.settings.nav.experiments'), icon: FlaskConicalIcon}
     ]);
@@ -76,30 +76,17 @@
     // The panel follows its content's measured height so a section switch
     // resizes the dialog (or sheet) smoothly; an `auto` height can't transition.
     let contentHeight = $state<number | null>(null);
-    // While the height animates, the panel's own scrollbar would flash.
-    let resizing = $state(false);
 
     const measureContent: Attachment<HTMLElement> = (element) => {
-        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
         const observer = new ResizeObserver(() => {
-            const height = element.offsetHeight;
-            // The first measurement lands instantly (auto → px doesn't animate).
-            if (contentHeight !== null && height !== contentHeight && !reducedMotion.matches) {
-                resizing = true;
-            }
-            contentHeight = height;
+            contentHeight = element.offsetHeight;
         });
         observer.observe(element);
         return () => {
             observer.disconnect();
             contentHeight = null;
-            resizing = false;
         };
     };
-
-    function endResize(event: TransitionEvent): void {
-        if (event.target === event.currentTarget) resizing = false;
-    }
 
     // Point the hash router at the requested section before the RouterView
     // mounts; the strategy writes the hash, and the view resolves from it.
@@ -120,10 +107,7 @@
 {#snippet panel()}
     <div
         class="settings-panel"
-        class:resizing
         style:--settings-content-height={contentHeight === null ? undefined : `${contentHeight}px`}
-        ontransitionend={endResize}
-        ontransitioncancel={endResize}
     >
         <div {@attach measureContent}>
             <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
@@ -180,9 +164,7 @@
     /* One grid on a single surface: the nav on the left, the page scrolling on
        its own on the right, both below a header row holding the title and the
        dialog's close button (a 24px box inset by --space-4). Every edge — and
-       the gap under the header — shares that one inset, and the corner radius
-       is the frames' radius plus it, so the 8px fields inside sit concentric
-       with it.
+       the gap under the header — shares that one inset.
 
        The dialog is as tall as the current page and hangs from a fixed top
        edge, so switching to a shorter or taller section never moves the nav.
@@ -200,7 +182,7 @@
         overflow: hidden;
         padding: 0;
         gap: 0;
-        border-radius: var(--corner-lg);
+        border-radius: calc(var(--corner-lg) - var(--space-1));
     }
 
     /* A 24px title line under the shared inset centres the title on the close
@@ -259,6 +241,8 @@
         min-height: 0;
         max-height: 100%;
         overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         /* A little more air towards the nav than on the outer edges. */
         padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
         /* Until the first measurement the property is unset, which makes this
@@ -267,8 +251,8 @@
         transition: height var(--duration-extra-fast) var(--easing-default);
     }
 
-    .settings-panel.resizing {
-        overflow-y: hidden;
+    .settings-panel::-webkit-scrollbar {
+        display: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
