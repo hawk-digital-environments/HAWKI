@@ -35,7 +35,7 @@
     import RemixDetails from "$plugins/assistants/modules/dashboard/components/assistantBrowser/RemixDetails.svelte";
 
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
-    import {detailReturnPath} from '$plugins/assistants/modules/dashboard/contexts/detailReturn.js';
+    import {detailReturnPath, markDetailReturn} from '$plugins/assistants/modules/dashboard/contexts/detailReturn.js';
     import {morphFromDetail} from '$plugins/assistants/utils/morphToDetail';
     import type {RouteParams} from '$lib/components/ui/routing/index.js';
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
@@ -289,6 +289,7 @@
     // The cover morphs back into the assistant's card (see morphToDetail).
     const goBack = () => {
         const target = detailReturnPath() ?? router.getPath("assistants.dashboard.store");
+        markDetailReturn();
         if (!assistant?.id) {
             void router.goTo(target);
             return;

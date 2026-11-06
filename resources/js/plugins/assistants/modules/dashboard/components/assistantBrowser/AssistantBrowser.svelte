@@ -11,6 +11,8 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
     import {morphSettled} from "$plugins/assistants/utils/morphToDetail";
+    import {takeDetailReturnScroll} from "$plugins/assistants/modules/dashboard/contexts/detailReturn";
+    import {useRouter} from "$lib/components/ui/routing/hooks/useRouter.svelte";
     import CategoryBar from "$plugins/assistants/modules/dashboard/components/categoryBar/CategoryBar.svelte";
 
     const {__} = useTranslator();
@@ -85,6 +87,17 @@
             disposed = true;
             controller.disable();
         };
+    });
+
+    // Back from a detail page: restore the scroll position the list was left
+    // at, once its cards are in. Runs in the same flush that renders them, so
+    // the back morph (which waits for the card) already sees the card in place.
+    let pendingScroll = takeDetailReturnScroll(useRouter().path);
+    $effect(() => {
+        if (pendingScroll === null || list.assistants.length === 0 || !grid) return;
+        const scroller = grid.closest<HTMLElement>('.page-scroll');
+        if (scroller) scroller.scrollTop = pendingScroll;
+        pendingScroll = null;
     });
 </script>
 

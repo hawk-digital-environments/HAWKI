@@ -75,7 +75,9 @@
     style:--assistant-color={assistantColor}
     {@attach magnetic()}
     onclick={(event)=>{
-        rememberDetailReturnPath(router.path);
+        // The page's scroll region, so going back can restore the position.
+        const scroller = event.currentTarget.closest<HTMLElement>('.page-scroll');
+        rememberDetailReturnPath(router.path, scroller?.scrollTop ?? 0);
         // Banner morphs into the detail page's cover (see morphToDetail).
         morphToDetail(event.currentTarget, () => goToRoute(
            p('assistants.dashboard.details', { id: assistant.id })
