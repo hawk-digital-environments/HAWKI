@@ -2,8 +2,6 @@
 @import url('custom-styles.css');
 
 @layer legacy {
-
-
     /* SECTION: GENERALS */
     * {
         scrollbar-width: 0px;
@@ -30,8 +28,11 @@
         color: var(--link-color);
     }
 
-
-    input, .text-panel, .text-input {
+    /* Checkbox/radio inputs are excluded: they must keep their native size —
+       the page-wide minimums here would clamp them to 160×40px. */
+    input:not([type='checkbox']):not([type='radio']),
+    .text-panel,
+    .text-input {
         min-height: 2.5rem;
         min-width: 10rem;
         outline: none;
@@ -43,7 +44,7 @@
         color: var(--text-color);
     }
 
-    input {
+    input:not([type='checkbox']):not([type='radio']) {
         padding: 0.5rem 1rem;
         height: 2.3rem;
     }
@@ -56,12 +57,11 @@
         background-color: transparent;
     }
 
-
     .text-input {
         width: 100%;
         /* min-height: fit-content; */
         height: 3rem;
-        padding: .5rem 1rem;
+        padding: 0.5rem 1rem;
         resize: none;
         align-content: start;
         font-size: var(--font-sm);
@@ -76,7 +76,6 @@
     .text-input::placeholder {
         font-size: var(--font-xs);
     }
-
 
     .password-input-wrapper {
         display: flex;
@@ -112,10 +111,9 @@
         z-index: 1;
         /* background-color: var(--background-main); */
         width: fit-content;
-        padding: 0 .2rem;
+        padding: 0 0.2rem;
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
-
     }
 
     /* .label-header{
@@ -133,7 +131,6 @@
         background-color: var(--background-secondary) !important;
         -webkit-text-fill-color: black;
     }
-
 
     .accentText {
         text-decoration: underline;
@@ -158,7 +155,6 @@
         text-align: center;
     }
 
-
     ::-webkit-scrollbar {
         width: 7px;
         height: 7px;
@@ -176,7 +172,6 @@
     ::-webkit-scrollbar-thumb:hover {
         background: #555;
     }
-
 
     svg:not(.lucide-icon) {
         stroke: var(--stroke-color);
@@ -206,7 +201,6 @@
         justify-content: center;
         background-color: rgb(79, 79, 105);
         color: white;
-
     }
 
     .round-icon img {
@@ -267,7 +261,6 @@
         width: 60em;
     }
 
-
     .modal-content-wrapper {
         direction: rtl;
         overflow-y: auto;
@@ -288,7 +281,6 @@
     .content-box {
         padding-bottom: 3rem;
     }
-
 
     .modal-buttons-bar {
         display: flex;
@@ -320,7 +312,8 @@
         border-radius: var(--border-radius-tight);
     }
 
-    .btn-xs, .btn-sm {
+    .btn-xs,
+    .btn-sm {
         display: flex;
         align-items: center;
 
@@ -330,7 +323,7 @@
         width: fit-content;
         height: fit-content;
 
-        padding: .25rem .5rem;
+        padding: 0.25rem 0.5rem;
         box-sizing: border-box;
     }
 
@@ -349,8 +342,9 @@
         border: var(--border-stroke-thin);
     }
 
-
-    .btn-md, .btn-md-fill, .btn-md-stroke {
+    .btn-md,
+    .btn-md-fill,
+    .btn-md-stroke {
         position: relative;
         display: grid;
         grid-template-columns: auto 1fr;
@@ -359,7 +353,7 @@
 
         height: 2.5rem;
         min-width: 6rem;
-        padding: .5rem 1rem;
+        padding: 0.5rem 1rem;
 
         cursor: pointer;
         overflow: hidden;
@@ -414,8 +408,8 @@
         font-size: var(--font-sm);
     }
 
-
-    .btn-lg-fill, .btn-lg-stroke {
+    .btn-lg-fill,
+    .btn-lg-stroke {
         width: max-content;
         min-width: 8rem;
         height: 2.5rem;
@@ -454,7 +448,6 @@
         width: 5rem;
     }
 
-
     .delete-btn {
         background-color: red;
         color: white;
@@ -471,7 +464,6 @@
         z-index: 99;
         cursor: pointer;
     }
-
 
     .quick-actions {
         position: absolute;
@@ -543,10 +535,9 @@
         box-sizing: border-box;
     }
 
-
     .row {
         width: 100%;
-        margin: .5rem 0;
+        margin: 0.5rem 0;
     }
 
     .flex-row {
@@ -656,11 +647,10 @@
         /*right: -150%;*/
     }
 
-
     /* SECTION: EDIT BUTTONS PANEL */
     .edit-panel {
         position: absolute;
-        bottom: .5rem;
+        bottom: 0.5rem;
 
         height: min-content;
         display: flex;
@@ -677,17 +667,17 @@
     }
 
     .edit-panel button {
-        opacity: .5;
+        opacity: 0.5;
     }
 
     .edit-panel button:hover {
         opacity: 1;
     }
 
-    .edit-panel #edit-confirm, .edit-panel #edit-abort {
+    .edit-panel #edit-confirm,
+    .edit-panel #edit-abort {
         display: none;
     }
-
 
     #overlay {
         position: absolute;
