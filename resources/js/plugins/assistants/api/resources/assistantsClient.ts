@@ -38,14 +38,17 @@ export const ASSISTANT_LIST_INCLUDES = [
  * (`viewAssistantFeedback` in the resource's `links`), and requesting a
  * denied include rejects the *entire* request with a 403 — not just that one
  * relationship. It's fetched separately, only after the initial response
- * confirms the permission is granted (see `detail/page.svelte`).
+ * confirms the permission is granted (see `AssistantDetail.svelte`).
  */
 export const ASSISTANT_DETAIL_INCLUDES = [
   "creator",
   "assistant_category",
   "assistant_tags",
   "assistant_avatar",
-  "assistant_versions"
+  "assistant_versions",
+  // The "Remixed from" box: the source assistant and who made it.
+  "remixed_assistant",
+  "remix_creator"
 ] as const;
 
 /** {@link ASSISTANT_DETAIL_INCLUDES} plus the owner-only knowledge files. */

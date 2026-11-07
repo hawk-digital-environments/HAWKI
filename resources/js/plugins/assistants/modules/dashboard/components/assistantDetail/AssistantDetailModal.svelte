@@ -15,6 +15,7 @@
     import {Dialog as DialogPrimitive} from 'bits-ui';
     import AssistantDetail from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetail.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import type {Assistant} from '$plugins/assistants/types/assistant/Assistant';
 
     interface Props {
         /** Id of the assistant to show. */
@@ -23,9 +24,11 @@
         onClose: () => void;
         /** After a successful delete. Defaults to `onClose`. */
         onDeleted?: () => void;
+        /** The list's copy of the assistant, shown while the detail loads. */
+        initial?: Assistant;
     }
 
-    const {id, onClose, onDeleted}: Props = $props();
+    const {id, onClose, onDeleted, initial}: Props = $props();
     const {__} = useTranslator();
 </script>
 
@@ -37,7 +40,7 @@
             {#snippet child({props})}
                 <div {...props} class="detail-modal">
                     <DialogPrimitive.Title class="u-sr-only">{__('assistants.detail.dialog_title')}</DialogPrimitive.Title>
-                    <AssistantDetail {id} onBack={onClose} {onDeleted} />
+                    <AssistantDetail {id} onBack={onClose} {onDeleted} {initial} />
                 </div>
             {/snippet}
         </DialogPrimitive.Content>

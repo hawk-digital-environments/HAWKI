@@ -24,20 +24,18 @@
 </script>
 
 
+<!-- One entry of the change history: a dot on a continuous track, the
+     version and date on the dot's line, what changed underneath. -->
 <div class="version-card">
-    <div class="indicator">
-        <div class="circle"></div>
-        <div class="line"></div>
-    </div>
+    <span class="dot" aria-hidden="true"></span>
     <div class="content">
-        <div class="header">
-            <span class="version">{version}</span>
-            <span>.</span>
+        <p class="header">
+            <span class="version">v{version}</span>
             <span class="date">{date}</span>
-        </div>
+        </p>
         {#if note}
             <div class="fields">
-                <span class="fields-label">{__('assistants.detail.version_note')}</span>
+                <span class="u-sr-only">{__('assistants.detail.version_note')}</span>
                 <Badge variant="secondary" style="max-width: 100%; min-width: 0;">
                     <OverflowTooltip value={note}/>
                 </Badge>
@@ -45,7 +43,7 @@
         {/if}
         {#if changedKeys && changedKeys.length > 0}
             <div class="fields">
-                <span class="fields-label">{__('assistants.detail.changed_fields')}</span>
+                <span class="u-sr-only">{__('assistants.detail.changed_fields')}</span>
                 {#each changedKeys as field (field)}
                     <Badge variant="secondary">{field}</Badge>
                 {/each}
@@ -56,79 +54,94 @@
     </div>
 </div>
 
-
 <style>
+    /* Neutral and minimal: a border-grey track, quiet grey dots, and the
+       current version marked in the text color. */
     .version-card {
-        display: flex;
-        flex-direction: row;
-        width: 100%;
-        height: fit-content;
+        --row: 1.5rem;          /* height of the version/date line */
+        --dot: 0.625rem;        /* column width = the current version's dot */
+        position: relative;
+        display: grid;
+        grid-template-columns: var(--dot) minmax(0, 1fr);
+        column-gap: var(--space-3);
+        padding-bottom: var(--space-4);
     }
-    .indicator{
+    .version-card:last-child {
+        padding-bottom: 0;
+    }
+
+    /* The track: from this dot's centre down to the next dot's centre, so the
+       line runs unbroken through the whole history. */
+    .version-card:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: calc(var(--dot) / 2 - 1px);
+        top: calc(var(--row) / 2);
+        bottom: calc(var(--row) / -2);
+        width: 2px;
+        border-radius: var(--corner-full);
+        background-color: var(--color-border);
+    }
+
+    /* Older versions: smaller, softer dots sitting on the track; the current
+       one full size and full strength. */
+    .dot {
+        position: relative;
+        justify-self: center;
+        width: 0.5rem;
+        height: 0.5rem;
+        margin-top: calc((var(--row) - 0.5rem) / 2);
+        border-radius: var(--corner-full);
+        background-color: var(--color-text-disabled);
+    }
+    .version-card:first-child .dot {
+        width: var(--dot);
+        height: var(--dot);
+        margin-top: calc((var(--row) - var(--dot)) / 2);
+        background-color: var(--color-text);
+    }
+
+    .content {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        align-content: center;
-        width: 3rem;
-        min-width: 3rem;
-        /*padding-top: .5rem;*/
+        gap: var(--space-1);
+        min-width: 0;
     }
-    .indicator .circle {
-        width: 10px;
-        height: 10px;
-        aspect-ratio: 1/1;
-        border-radius: 50%;
-        background-color: gray;
-    }
-    .indicator .line {
-        width: 1px;
-        background-color: gray;
-        height: 100%;
-    }
-    .version-card:first-child .indicator .circle {
-        background-color: var(--color-accent-500);
-    }
-    .version-card:last-child .indicator .line {
-        display: none;
-    }
-
-
-    .content{
-        margin-top: -5px;
-        margin-bottom: 1.5rem;
-        width: 90%;
-        max-height: 5rem;
-        /*overflow: hidden;*/
-    }
-    .header{
+    .header {
         display: flex;
-        gap: .5rem;
-        height: 1.5rem;
-        padding: 0;
+        align-items: baseline;
+        gap: var(--space-2);
+        padding-top: calc(var(--row) / 2 - 0.5em);
+        box-sizing: border-box;
+        height: var(--row);
         margin: 0;
         font-size: var(--font-size-sm);
-        line-height: var(--font-size-xs);
+        line-height: 1;
     }
-    .version{
-        font-weight: bold;
+    .version {
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text);
+        font-variant-numeric: tabular-nums;
     }
-    .fields{
+    /* Secondary to the version: smaller and muted. */
+    .date {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+    .fields {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: var(--space-1);
-        margin-top: var(--space-1);
     }
-    .fields-label{
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        margin-right: var(--space-1);
+    /* Changed-field chips in regular weight: quiet labels, not emphasis. */
+    .fields :global(.badge) {
+        font-weight: var(--font-weight-normal);
     }
-    .note{
-        font-size: var(--font-size-xs);
-        padding: 0;
+    .note {
         margin: 0;
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
-
 </style>

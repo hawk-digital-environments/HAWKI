@@ -68,6 +68,7 @@
     import TaskEdit01Icon from "$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte";
     import SquareLock02Icon from "$lib/components/ui/icons/iconset/SquareLock02Icon.svelte";
     import CheckmarkBadge01Icon from "$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte";
+    import Loader from "$lib/components/ui/loader/Loader.svelte";
     import GlobeIcon from "$lib/components/ui/icons/iconset/GlobeIcon.svelte";
 
     interface Props {
@@ -77,9 +78,13 @@
         onBack: () => void;
         /** After a successful delete. Defaults to `onBack`. */
         onDeleted?: () => void;
+        /** The assistant as already loaded elsewhere (the list's card), shown
+         *  right away while the full detail — versions, tags, permissions —
+         *  is fetched. */
+        initial?: Assistant;
     }
 
-    const {id, onBack, onDeleted}: Props = $props();
+    const {id, onBack, onDeleted, initial}: Props = $props();
     // The handle is kept (not just `goToRoute` destructured off it) because
     // `path` is a live getter — the builder needs it read at click time.
     const router = useRouter();
@@ -89,7 +94,9 @@
     const breakpoint = useBreakpoint();
 
     const {__} = useTranslator();
-    let assistant = $state<Assistant | undefined>(undefined);
+    // Seeded once from the list's copy; the fetch below then replaces it.
+    // svelte-ignore state_referenced_locally
+    let assistant = $state<Assistant | undefined>(initial?.id === id ? initial : undefined);
     let loading = $state(true);
     let error = $state<Error | null>(null);
     let feedbacks = $state<AssistantFeedback[]>([]);
@@ -103,8 +110,13 @@
         if (!id) return;
 
         // A conversation belongs to the assistant it was held with.
-        untrack(() => testChat.clear());
+        untrack(() => {
+            testChat.clear();
+            // Another assistant: drop what is shown rather than flash it.
+            if (assistant?.id !== id) assistant = undefined;
+        });
         loading = true;
+        error = null;
         getAssistant(id, {
             include: [...new Set([...ASSISTANT_DETAIL_INCLUDES])],
         })
@@ -285,9 +297,12 @@
 </script>
 <div class="detail-shell" class:test-open={chatOpen}>
 <div class="detail-scroll">
-    {#if loading}
-        <p>Loading...</p>
-    {:else if error}
+    {#if !assistant && !error}
+        <!-- Only without a list copy to show (a shared link, a reload). -->
+        <Loader active label={__('assistants.browser.loading')} class="detail-loader">
+            {#snippet children()}{/snippet}
+        </Loader>
+    {:else if !assistant && error}
         <p>Error: {error.message}</p>
     {:else if assistant}
 
@@ -559,6 +574,11 @@
         display: none;
     }
 
+    /* The spinner centred in the view while there is nothing to show yet. */
+    .detail-scroll :global(.detail-loader) {
+        height: 100%;
+    }
+
     /* Wide viewports: the track opens in step with the dock's morph, so the
        content makes room for the column. */
     @media (--bp-xl) {
@@ -767,13 +787,14 @@
         padding-inline-start: var(--space-4);
     }
 
-    /* Tag pills — neutral surface pills with an accent-filled category, echoing
-       the sidebar's accent-100 highlight language. */
     .tags {
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-2);
     }
+    /* Filled pills without an outline, like the store cards' category tag.
+       The category (.tag-accent) wears the assistant's own two-tone pair
+       through its inline style. */
     .tag {
         display: inline-flex;
         align-items: center;
@@ -782,14 +803,9 @@
         font-size: var(--font-size-xxs);
         font-weight: var(--font-weight-medium);
         color: var(--color-text-muted);
-        background: var(--color-surface-raised);
-        border: var(--border);
+        background: var(--color-surface-light);
         border-radius: var(--corner-full);
         white-space: nowrap;
-    }
-    /* The category wears the assistant's own two-tone pair (inline style). */
-    .tag-accent {
-        border-color: transparent;
     }
 
     /* Sections. */

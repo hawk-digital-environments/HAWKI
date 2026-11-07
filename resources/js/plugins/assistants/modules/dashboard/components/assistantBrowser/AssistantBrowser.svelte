@@ -173,7 +173,12 @@
 
 
 {#if detailId.current}
-    <AssistantDetailModal id={detailId.current} onClose={closeDetail} onDeleted={onDetailDeleted} />
+    <AssistantDetailModal
+        id={detailId.current}
+        initial={list.assistants.find(item => item.id === detailId.current)}
+        onClose={closeDetail}
+        onDeleted={onDetailDeleted}
+    />
 {/if}
 
 <style>
