@@ -123,6 +123,7 @@
         },
 
         "detail": {
+            "dialog_title": "Assistant details",
             "back": "Back",
             "edit": "Edit",
             "menu_aria": "Open assistant menu",

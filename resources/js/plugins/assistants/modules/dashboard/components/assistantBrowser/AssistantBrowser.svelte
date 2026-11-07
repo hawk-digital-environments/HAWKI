@@ -7,12 +7,13 @@
     import {StatusIcon} from '$lib/components/ui/icons';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import autoAnimate from "@formkit/auto-animate";
-    import type {Snippet} from 'svelte';
+    import {tick, untrack, type Snippet} from 'svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
-    import {morphSettled} from "$plugins/assistants/utils/morphToDetail";
-    import {takeDetailReturnScroll} from "$plugins/assistants/modules/dashboard/contexts/detailReturn";
+    import {morphFromDetail, morphToDetail} from "$plugins/assistants/utils/morphToDetail";
     import {useRouter} from "$lib/components/ui/routing/hooks/useRouter.svelte";
+    import {useQueryState} from "$lib/components/ui/routing/hooks/useQueryState.svelte";
+    import AssistantDetailModal from "$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetailModal.svelte";
     import CategoryBar from "$plugins/assistants/modules/dashboard/components/categoryBar/CategoryBar.svelte";
 
     const {__} = useTranslator();
@@ -45,60 +46,69 @@
         emptyDescription?: string;
     }>();
 
+    const router = useRouter();
+
     // --- URL sync -------------------------------------------------------
     // Keep the URL's query string in sync with the live search/category/page
     // state, so filtered views are shareable/bookmarkable. The initial state
     // itself is seeded from the URL by the owning page (see
-    // readBrowserUrlState) before the first request fires. `replaceState`,
-    // not `pushState`: the search box commits per debounced keystroke (plus
-    // Enter/icon-click), so a `pushState` per commit would spam browser
-    // history. The router (`pathRoutingStrategy.svelte.ts`) only tracks
-    // `location.pathname`, so rewriting just the query string here never
-    // interferes with it. The page number is not restored from the URL: the
-    // list always starts on page 1.
+    // readBrowserUrlState) before the first request fires. Through the
+    // router (not raw `history.replaceState`), so its own copy of the query
+    // stays current and the detail modal's `?assistant=` survives; replaced,
+    // not pushed, since the search box commits per debounced keystroke. The
+    // page number is not restored from the URL: the list always starts on
+    // page 1.
     $effect(() => {
-        const params = new URLSearchParams();
-        const trimmedQuery = searchQuery.trim();
-        if (trimmedQuery) params.set('q', trimmedQuery);
-        if (activeFilters.size) params.set('category', [...activeFilters].join(','));
-        if (list.currentPage > 1) params.set('page', String(list.currentPage));
-
-        const query = params.toString();
-        const url = window.location.pathname + (query ? `?${query}` : '');
-        if (url !== window.location.pathname + window.location.search) {
-            window.history.replaceState(window.history.state, '', url);
-        }
-    });
-
-    // Grid enter/leave animation. Held back while a detail → store morph is
-    // landing: the store mounts under it and its cards load in, and the
-    // enter fade would also fade the card the cover is morphing into.
-    let grid = $state<HTMLElement | null>(null);
-    $effect(() => {
-        if (!grid) return;
-        const controller = autoAnimate(grid);
-        const settled = morphSettled();
-        let disposed = false;
-        if (settled) {
-            controller.disable();
-            void settled.then(() => { if (!disposed) controller.enable(); });
-        }
-        return () => {
-            disposed = true;
-            controller.disable();
+        const changes = {
+            q: searchQuery.trim() || null,
+            category: activeFilters.size ? [...activeFilters].join(',') : null,
+            page: list.currentPage > 1 ? String(list.currentPage) : null,
         };
+        untrack(() => router.setQuery(changes, {replace: true}));
     });
 
-    // Back from a detail page: restore the scroll position the list was left
-    // at, once its cards are in. Runs in the same flush that renders them, so
-    // the back morph (which waits for the card) already sees the card in place.
-    let pendingScroll = takeDetailReturnScroll(useRouter().path);
-    $effect(() => {
-        if (pendingScroll === null || list.assistants.length === 0 || !grid) return;
-        const scroller = grid.closest<HTMLElement>('.page-scroll');
-        if (scroller) scroller.scrollTop = pendingScroll;
-        pendingScroll = null;
-    });
+    // --- Detail modal ---------------------------------------------------
+    // An opened assistant lives in `?assistant=<id>` and shows as a
+    // full-screen modal over this list, which stays mounted beneath — so
+    // scroll position, filters and the loaded page survive the round trip.
+    const detailId = useQueryState('assistant');
+    /** Whether the open modal pushed its own history entry (a card click), so
+     *  closing can step back over it instead of stacking another entry. */
+    let pushedDetail = false;
+
+    function openDetail(card: HTMLElement, id: string): void {
+        morphToDetail(card, async () => {
+            pushedDetail = true;
+            router.setQuery({assistant: id}, {replace: false});
+        });
+    }
+
+    /** Removes `?assistant=`; resolves once the modal is gone. */
+    async function dismissDetail(): Promise<void> {
+        if (pushedDetail) {
+            pushedDetail = false;
+            await new Promise<void>(resolve => {
+                window.addEventListener('popstate', () => resolve(), {once: true});
+                window.history.back();
+            });
+        } else {
+            // Entered with `?assistant=` already in the URL (a shared link).
+            detailId.current = null;
+        }
+        await tick();
+    }
+
+    function closeDetail(): void {
+        const id = detailId.current;
+        if (id) morphFromDetail(id, dismissDetail);
+        else void dismissDetail();
+    }
+
+    /** A deleted assistant has no card to morph back into: close plainly, refresh. */
+    async function onDetailDeleted(): Promise<void> {
+        await dismissDetail();
+        await list.load();
+    }
 </script>
 
 {#snippet controls()}
@@ -118,9 +128,9 @@
 {/if}
 
 <div class="wrapper">
-    <div class="grid-responsive" bind:this={grid}>
+    <div class="grid-responsive" use:autoAnimate>
         {#each list.assistants as assistant (assistant.id)}
-            <AssistantCard assistant={assistant} />
+            <AssistantCard assistant={assistant} onOpen={(card) => { if (assistant.id) openDetail(card, assistant.id); }} />
         {/each}
     </div>
 
@@ -161,6 +171,10 @@
 {/if}
 
 
+
+{#if detailId.current}
+    <AssistantDetailModal id={detailId.current} onClose={closeDetail} onDeleted={onDetailDeleted} />
+{/if}
 
 <style>
     /* Responsive card grid. The full definition previously lived in the now

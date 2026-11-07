@@ -1,5 +1,5 @@
 /*
- * Store card ⇄ detail page morph — see morphToDetail.ts.
+ * Store card ⇄ detail modal morph — see morphToDetail.ts.
  *
  * Imported by morphToDetail.ts, so it is loaded whichever of the two pages
  * the transition starts on. Page-level animations are keyed on
@@ -99,22 +99,53 @@
     animation: none;
 }
 
-/* Open: the store recedes under the lifted card. What is left of the
-   detail page outside the container (the chat dock) fades in. */
+/* The list stays mounted under the modal, so the main area has a snapshot
+   on both ends — but only the end without the modal shows it; the other is
+   the list hidden beneath the modal surface, and would paint the list over
+   that surface while it fades. */
+
+/* Open: the list recedes while the modal surface fades in over it. */
 :root[data-assistant-morph="open"]::view-transition-old(assistant-page) {
     animation: assistant-morph-recede var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
 :root[data-assistant-morph="open"]::view-transition-new(assistant-page) {
-    animation: assistant-morph-fade-in var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+    animation: none;
+    opacity: 0;
 }
 
-/* Back: the exact reverse — the rest of the detail page fades out and the
-   store comes forward as the page shrinks back into its card. */
+/* Back: the exact reverse — the modal surface fades out and the list comes
+   forward as the detail shrinks back into its card. */
 :root[data-assistant-morph="back"]::view-transition-old(assistant-page) {
-    animation: assistant-morph-fade-out var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+    animation: none;
+    opacity: 0;
 }
 :root[data-assistant-morph="back"]::view-transition-new(assistant-page) {
     animation: assistant-morph-advance var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+
+/* Layer order, pinned: the browser stacks groups in the old state's paint
+   order and appends new-only ones on top — so on open the modal surface
+   (new-only) would land above the detail content and cover it as it fades
+   in. List at the bottom, then the modal surface, then the morphing
+   container and the cover parts riding on it. */
+::view-transition-group(assistant-page)      { z-index: 0; }
+::view-transition-group(assistant-modal)     { z-index: 1; }
+::view-transition-group(assistant-container) { z-index: 2; }
+::view-transition-group(assistant-cover)     { z-index: 3; }
+::view-transition-group(assistant-symbol),
+::view-transition-group(assistant-title)     { z-index: 4; }
+
+/* The modal's own surface (everything of the detail view outside the
+   morphing container: its background, the test-chat dock). Exists on one
+   end only, so it simply fades. */
+::view-transition-group(assistant-modal) {
+    animation: none;
+}
+::view-transition-new(assistant-modal) {
+    animation: assistant-morph-fade-in var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+::view-transition-old(assistant-modal) {
+    animation: assistant-morph-fade-out var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
 
 @keyframes assistant-morph-lift {

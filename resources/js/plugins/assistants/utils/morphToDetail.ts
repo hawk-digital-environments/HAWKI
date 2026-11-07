@@ -1,19 +1,22 @@
 /**
- * Store card ⇄ detail page morph, built on the View Transitions API.
+ * Store card ⇄ detail modal morph, built on the View Transitions API.
  *
- * A card's banner and glyph share `view-transition-name`s with the detail
- * page's cover (`assistant-cover`, `assistant-symbol`, `assistant-title`), and the card as a
- * whole shares `assistant-container` with the detail page's content column,
- * so the browser grows the card into the page with the content scaling
- * inside it (a container transform). The detail page carries its names permanently; a card
- * only gets them for the duration of a transition (names must be unique per
- * snapshot, and a store shows many cards). The main content area is named
- * too, so the pages swap inside it while the sidebar stays put.
+ * The detail view opens as a full-screen modal over the list, which stays
+ * mounted beneath it (AssistantDetailModal). A card's banner, glyph and title
+ * share `view-transition-name`s with the detail cover (`assistant-cover`,
+ * `assistant-symbol`, `assistant-title`), and the card as a whole shares
+ * `assistant-container` with the detail's content column, so the browser
+ * grows the card into the modal with the content scaling inside it (a
+ * container transform). The detail view carries its names permanently; a card
+ * only holds them while it is one end of the morph — names must be unique per
+ * snapshot, and since the card stays in the DOM under the open modal, it
+ * gives them up before the modal's snapshot is taken. The list's main area
+ * (`assistant-page`) recedes under the modal surface (`assistant-modal`).
  *
  * Direction is exposed as `data-assistant-morph="open" | "back"` on <html>,
  * which morphToDetail.css keys its animations on.
  *
- * Falls back to a plain navigation where the API is missing or the user
+ * Falls back to opening/closing without a morph where the API is missing or the user
  * prefers reduced motion.
  */
 import {tick} from 'svelte';
@@ -32,26 +35,13 @@ const MORPH_PAGE = 'assistant-page';
 const DETAIL_COVER_SELECTOR = '[data-assistant-cover]';
 
 /**
- * Longest the old page stays frozen while the next page loads its data. Past
+ * Longest the old view stays frozen while the detail loads its data. Past
  * that the transition runs anyway: the cover then cross-fades instead of
  * morphing, which beats a stalled screen.
  */
 const MAX_WAIT_MS = 800;
 
 type Direction = 'open' | 'back';
-
-/** The morph currently running, if any. */
-let activeMorph: ViewTransition | null = null;
-
-/**
- * Resolves once the running morph has finished, or `null` when none is
- * running. Lets the page that mounts under a morph hold back its own entrance
- * motion — e.g. the card grid's enter animation, which would otherwise fade
- * the very card the cover is landing on.
- */
-export function morphSettled(): Promise<void> | null {
-    return activeMorph ? activeMorph.finished.then(() => undefined, () => undefined) : null;
-}
 
 /**
  * Resolves with the first element matching `selector` once it is in the DOM,
@@ -128,48 +118,44 @@ function run(direction: Direction, update: () => Promise<(() => void) | void>): 
         await tick();
     });
 
-    activeMorph = transition;
-    cleanups.push(() => {
-        if (activeMorph === transition) activeMorph = null;
-    });
-
     // Also runs when the transition is skipped (a failed or vetoed
     // navigation) — never leave stale names behind.
     void transition.finished.finally(() => cleanups.forEach(fn => fn()));
 }
 
 /**
- * Store → detail: runs `navigate` inside a view transition that morphs
- * `card`'s banner into the detail page's cover.
+ * List → detail: runs `open` (which shows the detail modal) inside a view
+ * transition that morphs `card` into the detail view.
  */
-export function morphToDetail(card: HTMLElement, navigate: () => Promise<void>): void {
+export function morphToDetail(card: HTMLElement, open: () => Promise<void>): void {
     if (!canMorph()) {
-        void navigate();
+        void open();
         return;
     }
-    // The card must be named before the old snapshot is taken.
+    // The card must be named before the old snapshot is taken…
     const unnameCard = nameCard(card);
     run('open', async () => {
-        await navigate();
+        await open();
         await waitFor(DETAIL_COVER_SELECTOR);
-        return unnameCard;
+        // …and unnamed before the new one: it is still in the DOM under the
+        // modal, whose detail view now holds the same names.
+        unnameCard();
     });
 }
 
 /**
- * Detail → store (or whichever list the assistant was opened from): runs
- * `navigate` inside a view transition that morphs the detail cover back into
- * the card of `assistantId`, once that card has rendered.
+ * Detail → list: runs `close` (which removes the detail modal) inside a view
+ * transition that morphs the detail view back into the card of `assistantId`.
  */
-export function morphFromDetail(assistantId: string | number, navigate: () => Promise<void>): void {
+export function morphFromDetail(assistantId: string | number, close: () => Promise<void>): void {
     if (!canMorph()) {
-        void navigate();
+        void close();
         return;
     }
     run('back', async () => {
-        await navigate();
+        await close();
         const card = await waitFor(`[data-assistant-card="${CSS.escape(String(assistantId))}"]`);
-        // Named only now, after the detail page (and its permanent names)
+        // Named only now, after the detail modal (and its permanent names)
         // has left the DOM — the new snapshot is taken after this callback.
         return card ? nameCard(card) : undefined;
     });

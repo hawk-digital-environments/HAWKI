@@ -6,25 +6,20 @@
     import {toggleAssistantFavorite} from "$plugins/assistants/api/resources/assistantsClient";
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
-    import {useRouter} from "$lib/components/ui/routing/hooks/useRouter.svelte";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import {getAvatar} from "$plugins/assistants/api/resources/userAvatarClient";
-    import {rememberDetailReturnPath} from "$plugins/assistants/modules/dashboard/contexts/detailReturn";
-    import {morphToDetail} from "$plugins/assistants/utils/morphToDetail";
     import {magnetic} from "$lib/components/ui/magnetic/magnetic.svelte";
     import {assistantRowAppearance} from "$plugins/assistants/utils/assistantRowAppearance";
-    // The handle is kept because `path` is a live getter — the detail page's
-    // back button needs it read at click time.
-    const router = useRouter();
-    const {goToRoute, p} = router;
-
 
     const {__} = useTranslator();
 
     let {
-        assistant
+        assistant,
+        onOpen
     } = $props<{
         assistant: Assistant;
+        /** Open the assistant's detail view; receives the card for the morph. */
+        onOpen: (card: HTMLElement) => void;
     }>();
 
     const toast = useToastContext();
@@ -68,21 +63,13 @@
 
 </script>
 <!--@todo: Link truned to button because style didn't budge-->
-<!-- data-assistant-card: the detail page's back morph finds its card by it (morphToDetail). -->
+<!-- data-assistant-card: the detail modal's closing morph finds its card by it (morphToDetail). -->
 <button
     class="assistant-card"
     data-assistant-card={assistant.id}
     style:--assistant-color={assistantColor}
     {@attach magnetic()}
-    onclick={(event)=>{
-        // The page's scroll region, so going back can restore the position.
-        const scroller = event.currentTarget.closest<HTMLElement>('.page-scroll');
-        rememberDetailReturnPath(router.path, scroller?.scrollTop ?? 0);
-        // Banner morphs into the detail page's cover (see morphToDetail).
-        morphToDetail(event.currentTarget, () => goToRoute(
-           p('assistants.dashboard.details', { id: assistant.id })
-        ));
-    }}
+    onclick={(event) => onOpen(event.currentTarget)}
 >
     <!-- The cover carries the avatar's CSS too, so its foreground shade
          (`color`) is inherited by the title set on the flat background. -->
