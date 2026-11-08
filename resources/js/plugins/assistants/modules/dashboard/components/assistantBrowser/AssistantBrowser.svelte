@@ -6,7 +6,7 @@
     import SearchRemoveIcon from '$lib/components/ui/icons/iconset/SearchRemoveIcon.svelte';
     import {StatusIcon} from '$lib/components/ui/icons';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
-    import autoAnimate from "@formkit/auto-animate";
+    import autoAnimate, {type AutoAnimationPlugin} from "@formkit/auto-animate";
     import {tick, untrack, type Snippet} from 'svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
@@ -112,6 +112,38 @@
         await dismissDetail();
         await list.load();
     }
+
+    // --- Grid motion ----------------------------------------------------
+    // autoAnimate's defaults, except that a card which stays only slides to
+    // its new spot. The default also tweens width/height when the card's row
+    // height changes (cards stretch to their row), which reflows the card's
+    // content mid-flight and makes it morph. Here the size snaps instead.
+    const GRID_DURATION_MS = 250;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const gridMotion: AutoAnimationPlugin = (el, action, oldCoords, newCoords) => {
+        // A plugin opts out of autoAnimate's own reduced-motion check.
+        const duration = reducedMotion.matches ? 0 : GRID_DURATION_MS;
+        if (action === 'add') {
+            return new KeyframeEffect(el, [
+                {transform: 'scale(.98)', opacity: 0},
+                {transform: 'scale(.98)', opacity: 0, offset: 0.5},
+                {transform: 'scale(1)', opacity: 1},
+            ], {duration: duration * 1.5, easing: 'ease-in'});
+        }
+        if (action === 'remove') {
+            return new KeyframeEffect(el, [
+                {transform: 'scale(1)', opacity: 1},
+                {transform: 'scale(.98)', opacity: 0},
+            ], {duration, easing: 'ease-out'});
+        }
+        const dx = oldCoords && newCoords ? oldCoords.left - newCoords.left : 0;
+        const dy = oldCoords && newCoords ? oldCoords.top - newCoords.top : 0;
+        return new KeyframeEffect(el, [
+            {transform: `translate(${dx}px, ${dy}px)`},
+            {transform: 'translate(0, 0)'},
+        ], {duration, easing: 'ease-in-out'});
+    };
 </script>
 
 {#snippet controls()}
@@ -134,7 +166,7 @@
 {/if}
 
 <div class="wrapper">
-    <div class="grid-responsive" use:autoAnimate>
+    <div class="grid-responsive" use:autoAnimate={gridMotion}>
         {#each list.assistants as assistant (assistant.id)}
             <AssistantCard assistant={assistant} onOpen={(card) => { if (assistant.id) openDetail(card, assistant.id); }} />
         {/each}
