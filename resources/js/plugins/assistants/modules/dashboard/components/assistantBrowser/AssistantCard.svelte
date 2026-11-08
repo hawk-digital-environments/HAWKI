@@ -223,10 +223,12 @@
     }
     /* The 2-line clamp clips at the line box, and at this tight leading the
        last line's descenders (g, y) hang below it: extend the clip box with
-       padding, cancelled by a negative margin so the layout doesn't move. */
+       padding, cancelled by a negative margin so the layout doesn't move.
+       Keep it small: at this leading the third line's cap tops start just
+       below the descenders, and a larger extension lets them peek through. */
     .cover-title :global(.overflow-text) {
-        padding-bottom: 0.15em;
-        margin-bottom: -0.15em;
+        padding-bottom: 0.05em;
+        margin-bottom: -0.05em;
         /* Hug the text, so the title morph (morphToDetail) scales the words
            rather than a box of empty space beside them. */
         width: fit-content;
