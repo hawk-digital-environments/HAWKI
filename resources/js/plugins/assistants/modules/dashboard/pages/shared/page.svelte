@@ -54,10 +54,11 @@
     applyFilter();
 </script>
 
-<Page title={__('assistants.shared.title')}>
+<Page fade="short">
     <div class="page-content">
 
         <AssistantBrowser
+                title={__('assistants.shared.title')}
                 searchQuery={searchQuery}
                 activeFilters={activeFilters}
                 onSearchChange={handleSearchChange}

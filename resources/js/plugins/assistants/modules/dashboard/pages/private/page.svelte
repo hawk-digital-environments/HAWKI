@@ -56,10 +56,11 @@
 
     applyFilter();
 </script>
-<Page title={__('assistants.private.title')}>
+<Page fade="short">
     <div class="page-content">
 
         <AssistantBrowser
+                title={__('assistants.private.title')}
                 searchQuery={searchQuery}
                 activeFilters={activeFilters}
                 onSearchChange={handleSearchChange}

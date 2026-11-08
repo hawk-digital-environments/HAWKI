@@ -61,10 +61,11 @@
     applyFilter();
 </script>
 
-<Page title={__('assistants.favourites.title')}>
+<Page fade="short">
     <div class="page-content">
 
         <AssistantBrowser
+                title={__('assistants.favourites.title')}
                 searchQuery={searchQuery}
                 activeFilters={activeFilters}
                 onSearchChange={handleSearchChange}
