@@ -81,6 +81,9 @@
     let titleAvatars = $state<TitleAvatar[]>([]);
     let repickTimer: ReturnType<typeof setTimeout> | undefined;
     let openTimer: ReturnType<typeof setTimeout> | undefined;
+    let introTimer: ReturnType<typeof setTimeout> | undefined;
+    let titleHovered = false;
+    let introPlayed = false;
 
     function pickTitleAvatars(): TitleAvatar[] {
         const unique = new Map<string, AssistantAvatar>();
@@ -110,6 +113,34 @@
         });
     });
 
+    /** Intro: once avatars are available, open the title once on page load
+     *  and close it again after a short hold (unless the pointer is on it). */
+    const TITLE_INTRO_DELAY_MS = 400;
+    const TITLE_INTRO_HOLD_MS = 1600;
+
+    $effect(() => {
+        if (introPlayed || titleAvatars.length === 0) return;
+        introPlayed = true;
+        introTimer = setTimeout(() => {
+            openTitle();
+            introTimer = setTimeout(() => {
+                if (!titleHovered) closeTitle();
+            }, TITLE_INTRO_HOLD_MS);
+        }, TITLE_INTRO_DELAY_MS);
+    });
+
+    function handleTitleEnter() {
+        titleHovered = true;
+        clearTimeout(introTimer);
+        openTitle();
+    }
+
+    function handleTitleLeave() {
+        titleHovered = false;
+        clearTimeout(introTimer);
+        closeTitle();
+    }
+
     function openTitle() {
         clearTimeout(openTimer);
         openTimer = setTimeout(() => {
@@ -135,6 +166,7 @@
     $effect(() => () => {
         clearTimeout(repickTimer);
         clearTimeout(openTimer);
+        clearTimeout(introTimer);
     });
 </script>
 
@@ -155,8 +187,8 @@
                         class:open={titleOpen && titleAvatars.length > 0}
                         class:closing={titleClosing}
                         style:--count={titleAvatars.length}
-                        onpointerenter={openTitle}
-                        onpointerleave={closeTitle}
+                        onpointerenter={handleTitleEnter}
+                        onpointerleave={handleTitleLeave}
                 >
                     <span>{titleStart}</span>
                     <span class="title-gap" aria-hidden="true">
