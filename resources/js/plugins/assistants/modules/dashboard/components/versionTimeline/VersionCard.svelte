@@ -135,10 +135,6 @@
         align-items: center;
         gap: var(--space-1);
     }
-    /* Changed-field chips in regular weight: quiet labels, not emphasis. */
-    .fields :global(.badge) {
-        font-weight: var(--font-weight-normal);
-    }
     .note {
         margin: 0;
         font-size: var(--font-size-xs);

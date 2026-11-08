@@ -51,7 +51,7 @@
         padding-inline: var(--space-2);
         padding-block: var(--space-0_5);
         font-size: var(--font-size-xxs);
-        font-weight: var(--font-weight-semibold, 600);
+        font-weight: var(--font-weight-normal);
         line-height: var(--line-height-tight);
         white-space: nowrap;
     }
@@ -64,8 +64,9 @@
         border-color: transparent;
     }
 
+    /* Neutral grey, not the tinted secondary background. */
     .badge--secondary {
-        background-color: var(--color-bg-secondary);
+        background-color: var(--color-surface-light);
         color: var(--color-text-muted);
         border-color: transparent;
     }
