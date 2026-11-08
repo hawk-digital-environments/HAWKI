@@ -283,6 +283,11 @@
             const feedback = await submitAssistantFeedbacks(value, assistant);
             feedbacks = [...feedbacks, feedback];
             toast.success(__('assistants.detail.feedback_sent'));
+            // The POST response carries no `user`, so the optimistic entry has
+            // no author; refetch with the included user to resolve it.
+            if (assistant.actionPermissions?.viewAssistantFeedback) {
+                void loadFeedbacks(assistant.id);
+            }
         } catch (err) {
             toast.error(ApiError.from(err).userMessage);
         }
