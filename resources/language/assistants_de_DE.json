@@ -74,12 +74,12 @@
             "empty_description": ""
         },
         "drafts": {
-            "title": "Meine Entwürfe",
+            "title": "Assistenten-Entwürfe",
             "empty_title":  "Keine Entwürfe vorhanden",
             "empty_description": "Du hast noch keine Assistenten als Entwurf gespeichert."
         },
         "private": {
-            "title": "Meine privaten Assistenten",
+            "title": "Private Assistenten",
             "empty_title":  "Keine privaten Assistenten vorhanden",
             "empty_description": "Assistenten, die du als privat speicherst, sind nur für dich sichtbar."
         },
@@ -89,7 +89,7 @@
             "empty_description": "Hier erscheinen Assistenten, die andere Benutzer für dich freigegeben haben."
         },
         "favourites": {
-            "title": "Favoriten",
+            "title": "Favorisierte Assistenten",
             "empty_title":  "Keine Favoriten gespeichert",
             "empty_description": "Markiere Assistenten mit dem Herz-Symbol, um sie hier zu sehen."
         },
