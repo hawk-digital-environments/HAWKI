@@ -107,7 +107,7 @@
         "card": {
             "remix": "Remix",
             "category_unknown": "Unknown",
-            "remixed_via": ". via"
+            "remixed_via": "via"
         },
 
         "release_stage": {

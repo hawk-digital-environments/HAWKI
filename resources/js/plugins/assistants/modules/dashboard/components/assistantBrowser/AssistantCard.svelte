@@ -330,5 +330,6 @@
     .creator-info .creator-text{
         display: flex;
         flex-direction: row;
+        gap: .25em;
     }
 </style>
