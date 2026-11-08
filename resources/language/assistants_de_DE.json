@@ -213,7 +213,7 @@
                 "handle_available": "Dieser Handle ist verfügbar.",
                 "handle_checking": "Verfügbarkeit wird geprüft…",
                 "input_description": "Kurzbeschreibung",
-                "input_description_hint": "Ein Satz, der auf der Karte des Assistenten im App Store angezeigt wird.",
+                "input_description_hint": "Ein Satz, der auf der Karte des Assistenten im Assistenten-Store angezeigt wird.",
                 "input_short_description": "Ausführliche Beschreibung",
                 "input_detail_description_hint": "Wird auf der Detailseite angezeigt. Erkläre, was der Assistent macht, für wen er gedacht ist und wie man ihn nutzt.",
                 "input_category": "Kategorie",
@@ -228,7 +228,7 @@
                 "avatar_backgrounds_prev": "Vorherige Hintergründe",
                 "avatar_backgrounds_next": "Weitere Hintergründe",
                 "input_tags": "Tags",
-                "input_tags_hint": "Schlagwörter, mit denen andere deinen Assistenten im App Store finden.",
+                "input_tags_hint": "Schlagwörter, mit denen andere deinen Assistenten im Assistenten-Store finden.",
                 "tag_add": "Tag hinzufügen",
                 "tag_input_aria": "Tag eingeben",
                 "tag_confirm_aria": "Tag bestätigen"

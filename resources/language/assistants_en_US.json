@@ -213,7 +213,7 @@
                 "handle_available": "This handle is available.",
                 "handle_checking": "Checking availability…",
                 "input_description": "Short description",
-                "input_description_hint": "One sentence shown on the assistant's card in the app store.",
+                "input_description_hint": "One sentence shown on the assistant's card in the Assistant Store.",
                 "input_short_description": "Detailed description",
                 "input_detail_description_hint": "Shown on the detail page. Explain what the assistant does, who it is for and how to use it.",
                 "input_category": "Category",
@@ -228,7 +228,7 @@
                 "avatar_backgrounds_prev": "Previous backgrounds",
                 "avatar_backgrounds_next": "More backgrounds",
                 "input_tags": "Tags",
-                "input_tags_hint": "Keywords that help others find your assistant in the app store.",
+                "input_tags_hint": "Keywords that help others find your assistant in the Assistant Store.",
                 "tag_add": "Add tag",
                 "tag_input_aria": "Enter tag",
                 "tag_confirm_aria": "Confirm tag"
