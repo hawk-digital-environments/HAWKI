@@ -195,7 +195,7 @@
         box-sizing: border-box;
     }
     /* White sticker disc: every emoji reads on every ground (a grey ➗ on
-       ink would vanish), and the slight lean makes it feel stuck on. */
+       ink would vanish). */
     .cover :global(.symbol) {
         display: flex;
         align-items: center;
@@ -205,7 +205,6 @@
         border-radius: var(--corner-full);
         background: oklch(100% 0 0);
         font-size: 1.9rem;
-        rotate: -8deg;
     }
     .cover-title {
         position: absolute;

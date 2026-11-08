@@ -679,7 +679,6 @@
         border-radius: var(--corner-full);
         background: oklch(100% 0 0);
         font-size: calc(var(--cover-symbol) * 0.55);
-        rotate: -8deg;
         /* Morph target for the store card's glyph (morphToDetail). */
         view-transition-name: assistant-symbol;
     }
