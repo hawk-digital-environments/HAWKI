@@ -301,7 +301,8 @@
 
 </script>
 <div class="detail-shell" class:test-open={chatOpen}>
-<div class="detail-scroll">
+<!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
+<div class="detail-scroll" data-pull-to-close>
     {#if !assistant && !error}
         <!-- Only without a list copy to show (a shared link, a reload). -->
         <Loader active label={__('assistants.browser.loading')} class="detail-loader">
