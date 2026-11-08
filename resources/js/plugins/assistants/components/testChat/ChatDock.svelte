@@ -5,7 +5,8 @@
   collapsed, so a running conversation survives closing the dock.
 
   The host positions it: a `position: relative` box that defines
-  `--test-panel-w` and `--test-fab-inset`, and (on `--bp-xl`) opens a grid
+  `--test-panel-w` and `--test-fab-inset` (optionally `--test-launcher-bg`
+  / `--test-launcher-fg` to tint the launcher), and (on `--bp-xl`) opens a grid
   track of `--test-panel-w` beside its content while the dock is open (see
   the builder layout and the store's detail page).
 -->
@@ -151,13 +152,15 @@
         border: none;
         /* Brand ramp of the builder's primary step action
            (BuilderStepFooter) and the sidebar's create button. */
-        background: linear-gradient(
+        /* Hosts may tint it with their own pair (e.g. the store detail page
+           passes the assistant's cover colours). */
+        background: var(--test-launcher-bg, linear-gradient(
             135deg,
             var(--gradient-brand-1),
             var(--gradient-brand-2) 55%,
             var(--gradient-brand-3)
-        );
-        color: var(--color-on-accent-fill);
+        ));
+        color: var(--test-launcher-fg, var(--color-on-accent-fill));
         cursor: pointer;
         /* Blue returns only as the surface nears the circle. */
         transition: opacity 160ms var(--settle) 190ms, filter 150ms;

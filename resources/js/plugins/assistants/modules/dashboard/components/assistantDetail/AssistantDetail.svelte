@@ -552,6 +552,8 @@
 </div>
 {#if assistant}
     <ChatDock bind:open={chatOpen} chat={testChat}
+              --test-launcher-bg={coverBackground}
+              --test-launcher-fg={coverForeground}
               title={__('assistants.detail.try_out')}>
         <Chatbox assistant={assistant} chat={testChat}/>
     </ChatDock>
