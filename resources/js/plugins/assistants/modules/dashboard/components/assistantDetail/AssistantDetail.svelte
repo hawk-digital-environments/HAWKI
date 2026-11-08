@@ -476,6 +476,13 @@
                 type={ValidationState.UNKNOWN} />
         </div>
 
+        {#if assistant.remixedAssistant}
+            <RemixDetails
+                    remixedAssistant={assistant.remixedAssistant}
+                    creator={assistant.remixCreator ?? null}
+            />
+        {/if}
+
         <FadeText
             value={assistant.detailDescription}
             lines={DESCRIPTION_COLLAPSED_LINES}
@@ -491,13 +498,6 @@
             {/each}
         </div>
 
-
-        {#if assistant.remixedAssistant}
-            <RemixDetails
-                    remixedAssistant={assistant.remixedAssistant}
-                    creator={assistant.remixCreator ?? null}
-            />
-        {/if}
 
         {#if assistant.riskLevel}
             <hr>
