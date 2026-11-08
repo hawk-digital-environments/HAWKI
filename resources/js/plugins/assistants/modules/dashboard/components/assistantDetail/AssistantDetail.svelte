@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
     import {untrack} from "svelte";
+    import {MediaQuery} from "svelte/reactivity";
 
     import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
@@ -275,6 +276,9 @@
      *  Open by default, except on small screens where it would cover the
      *  whole page — there it starts as the chat button (as in the builder). */
     let chatOpen = $state(!window.matchMedia(breakpointsQueries.bpMdAndSmaller).matches);
+
+    /** Small screens run the cover full-bleed (see the styles). */
+    const fullBleedCover = new MediaQuery(breakpointsQueries.bpSmAndSmaller);
     const testChat = createChatStore(createChatConfig(() => assistant!));
 
     async function onFeedbackSend(value: string) {
@@ -300,7 +304,9 @@
     );
 
 </script>
-<div class="detail-shell" class:test-open={chatOpen}>
+<!-- The full-bleed cover runs under the floating nav trigger itself, so it
+     opts out of the content fade there (it would wash out the cover's top). -->
+<div class="detail-shell" class:test-open={chatOpen} data-content-fade={fullBleedCover.current ? 'none' : undefined}>
 <!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
 <div class="detail-scroll" data-pull-to-close>
     {#if !assistant && !error}
@@ -755,7 +761,8 @@
     /* Metadata cards. */
     .metadata {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+        /* Two columns on phones, more as room allows. */
+        grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
         gap: var(--space-3);
     }
     /* Tiles in the header's own pair, inverted: its foreground shade as the
@@ -863,6 +870,31 @@
             --cover-height: 14rem;
             --cover-symbol: 4rem;
             --cover-inset: var(--space-4);
+        }
+        /* Full-bleed cover, like an App Store story: it runs into the top
+           and side edges, square, instead of sitting inset as a card. The
+           floating nav trigger's reserve moves into the cover (it grows by
+           the same amount), and the top bar shares the trigger's row,
+           beside it. */
+        .detail-scroll {
+            padding-top: 0;
+        }
+        .page-content {
+            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+            --cover-height: calc(14rem + var(--nav-reserve));
+            padding-top: 0;
+        }
+        .cover {
+            width: auto;
+            margin-inline: calc(-1 * var(--space-4));
+            border-radius: 0;
+        }
+        .topbar {
+            top: var(--space-2_5);
+            left: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+            right: var(--space-2_5);
+            min-height: var(--nav-row-h);
+            align-items: center;
         }
         /* Too narrow for the labelled buttons: "Remixen" and "Ausprobieren"
            become round icon buttons like the others, so the whole top bar

@@ -27,6 +27,17 @@
     --assistant-morph-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* The detail cover's rounding, the cover morph's far end: square where
+   the cover runs full-bleed (AssistantDetail, small screens). */
+:root {
+    --assistant-detail-cover-radius: var(--corner-lg);
+}
+@media (--bp-sm-and-smaller) {
+    :root {
+        --assistant-detail-cover-radius: 0px;
+    }
+}
+
 /* The card's banner, glyph and title spring into (or back out of) the
    detail cover. */
 ::view-transition-group(assistant-cover),
@@ -160,10 +171,10 @@
 }
 @keyframes assistant-morph-corners-open {
     from { border-radius: var(--corner-lg) var(--corner-lg) 0 0; }
-    to   { border-radius: var(--corner-lg); }
+    to   { border-radius: var(--assistant-detail-cover-radius); }
 }
 @keyframes assistant-morph-corners-back {
-    from { border-radius: var(--corner-lg); }
+    from { border-radius: var(--assistant-detail-cover-radius); }
     to   { border-radius: var(--corner-lg) var(--corner-lg) 0 0; }
 }
 @keyframes assistant-morph-recede {
