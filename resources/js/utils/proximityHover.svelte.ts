@@ -127,7 +127,10 @@ export function createProximityHover(options: Options = {}) {
         const {scrollTop, scrollLeft} = container;
         const next: Record<number, ItemRect> = {};
         for (const [idx, el] of items) {
-            if (!el) continue;
+            // Items inside an `inert` subtree (e.g. a collapsed accordion panel)
+            // keep their box while clipped out of view, so they would otherwise
+            // still attract the highlight. Disabled rows get no hover highlight.
+            if (!el || el.closest('[inert]') || el.matches(':disabled')) continue;
             const r = el.getBoundingClientRect();
             const rect = {
                 top: (r.top - containerRect.top) / scale + scrollTop,

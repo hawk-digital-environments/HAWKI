@@ -4,13 +4,29 @@
   low-level `Root`/`Trigger`/`Portal`/`Content` primitives behind a single
   component. Below the `--bp-md-and-smaller` breakpoint the content panel
   automatically renders as a `BottomSheet` instead of a floating popover —
-  item components don't need to know which one is active.
+  item components don't need to know which one is active. `sheet={false}` keeps the
+  popover at every size, e.g. for a menu driven from a text field while the on-screen
+  keyboard is up.
 
   Compose it with the other family members as `children`:
   `DropdownMenuItem`, `DropdownMenuGroup`, `DropdownMenuLabel`,
   `DropdownMenuSeparator`, `DropdownMenuCheckboxItem`, `DropdownMenuSwitchItem`,
   `DropdownMenuRadioGroup` + `DropdownMenuRadioItem`, `DropdownMenuSub` for a
-  hover-opening submenu, and `DropdownMenuDetailView` for a nested two-panel picker.
+  hover-opening submenu, `DropdownMenuEmpty`, `DropdownMenuSection` for a group
+  of items that folds away, and `DropdownMenuDetailView` for a nested two-panel
+  picker.
+
+  `layout="panel"` turns the content into the shape the composer's pickers use: a fixed
+  `width`, a header that stays put (a search field, a title) and a `DropdownMenuDetailView`
+  scrolling underneath it, instead of one scrolling block.
+
+  ```svelte
+  <DropdownMenu bind:open layout="panel" width="19rem">
+      {#snippet trigger({props})}…{/snippet}
+      <MenuSearchField bind:value={query} placeholder="Search"/>
+      <DropdownMenuDetailView open={!!detail}>…rows…</DropdownMenuDetailView>
+  </DropdownMenu>
+  ```
 
   ```svelte
   <DropdownMenu bind:open title={__('chat.export.title')} align="end">
@@ -30,10 +46,13 @@
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, type DropdownMenuContentProps, mergeProps} from 'bits-ui';
-    import type {Snippet} from 'svelte';
+    import {tick, type Snippet} from 'svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
+    import {noHoverFocusProps} from '$lib/components/ui/dropdown-menu/noHoverFocus.js';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
+    import {provideExclusiveMenuGroup, useExclusiveMenuGroup} from '$lib/components/ui/dropdown-menu/exclusiveMenuGroup.js';
 
     interface Props {
         /** Whether the dropdown is open. Supports bind:open. */
@@ -58,6 +77,31 @@
         sideOffset?: number;
         /** Additional props forwarded to the DropdownMenu.Content element. */
         contentProps?: Omit<DropdownMenuContentProps, 'children'>;
+        /** `list` (default) is one scrolling block of items. `panel` fixes the content's
+         *  height to its box and stops it scrolling as a whole, so a header stays anchored
+         *  while a `DropdownMenuDetailView` scrolls beneath it. */
+        layout?: 'list' | 'panel';
+        /** Fixed width of the dropdown, e.g. `'19rem'`. Without it the content sizes to its
+         *  widest item — which makes it resize as items are filtered or folded away. Capped
+         *  at the viewport either way. Ignored by the mobile sheet, which is full-width. */
+        width?: string;
+        /** Cap on the content's height, e.g. `'24rem'`. The available height below the
+         *  trigger always wins when it is smaller. */
+        maxHeight?: string;
+        /**
+         * Wraps the items in a `MenuList`, so a single highlight slides to the row nearest
+         * the pointer (the sidebar's "magnetic" hover). Turn off when the content lays out
+         * its own scroll area — then wrap the rows inside it in
+         * `<MenuList class="dropdown-menu-list" bridgeSections>` instead.
+         * @defaultValue true
+         */
+        magneticHover?: boolean;
+        /**
+         * Below `md`, render the content as a `BottomSheet`. Turn off to keep the floating
+         * popover there too — its rows still get touch-sized targets.
+         * @defaultValue true
+         */
+        sheet?: boolean;
     }
 
     let {
@@ -69,13 +113,33 @@
         side = 'bottom',
         align = undefined,
         sideOffset = 4,
-        contentProps
+        contentProps,
+        layout = 'list',
+        width,
+        maxHeight,
+        magneticHover = true,
+        sheet = true
     }: Props = $props();
 
     let triggerEl = $state<HTMLElement | null>(null);
     const onOpenChange = (openNew: boolean) => {
         open = openNew;
     };
+
+    // Within an exclusive group (see `provideExclusiveMenuGroup`) opening this menu closes
+    // the group's other one. Menus nested in this one's content don't join the group, or
+    // opening them would close this one.
+    const menuGroup = useExclusiveMenuGroup();
+    provideExclusiveMenuGroup(null);
+    const closeMenu = () => {
+        open = false;
+    };
+
+    $effect(() => {
+        if (!menuGroup || !open) return;
+        menuGroup.claim(closeMenu);
+        return () => menuGroup.release(closeMenu);
+    });
 
     function resolvedAlign(): 'start' | 'center' | 'end' {
         if (align) return align;
@@ -87,18 +151,125 @@
         return 'center';
     }
 
+    // Sizing travels as custom properties so the stylesheet keeps the caps and fallbacks;
+    // the props only say how wide and how tall this particular menu may get.
+    const sizeStyle = $derived([
+        width ? `--dropdown-width: ${width};` : '',
+        maxHeight ? `--dropdown-max-height: ${maxHeight};` : ''
+    ].join(''));
+    type Side = NonNullable<Props['side']>;
+
+    // The side the panel landed on when it opened (after collision flipping). Held for as
+    // long as the menu stays open so content that grows or shrinks inside it — e.g. a
+    // detail view replacing a list — can't flip the panel to the other side of the trigger.
+    let contentEl = $state<HTMLElement | null>(null);
+
+    // A sheet opens with the on-screen keyboard down: neither the dialog nor the menu may
+    // autofocus their first field (usually a search input), and `MenuSearchField` holds back
+    // inside a sheet too. The panel itself takes focus instead, which also blurs a textarea
+    // that opened the menu, so focus still lives inside the sheet for keyboard and
+    // screen-reader users.
+    let sheetContentEl = $state<HTMLElement | null>(null);
+
+    function preventAutoFocus(event: Event) {
+        event.preventDefault();
+    }
+
+    function focusSheetPanel(event: Event) {
+        event.preventDefault();
+        requestAnimationFrame(() => sheetContentEl?.focus({preventScroll: true}));
+    }
+    let lockedSide = $state<Side | null>(null);
+
+    // bits-ui hands focus back to the trigger on close. Moving focus by script out of a
+    // field that shows a ring (the menu's search input always does) makes the trigger show
+    // one too, even when the menu was closed with the pointer. So the last interaction while
+    // open decides: a keyboard close keeps the default ring, a pointer close refocuses the
+    // trigger without it.
+    let closedByKeyboard = false;
+
+    $effect(() => {
+        if (!open) return;
+        const track = (event: Event) => {
+            closedByKeyboard = event.type === 'keydown';
+        };
+        window.addEventListener('pointerdown', track, true);
+        window.addEventListener('keydown', track, true);
+        return () => {
+            window.removeEventListener('pointerdown', track, true);
+            window.removeEventListener('keydown', track, true);
+        };
+    });
+
+    function returnFocusToTrigger(event: Event) {
+        // `mergeProps` only composes DOM event handlers; this one is chained like a plain
+        // callback, so it runs even after a consumer's handler placed focus itself.
+        if (event.defaultPrevented || closedByKeyboard) return;
+        const selector = '[data-dropdown-menu-trigger]';
+        const target = triggerEl?.matches(selector) ? triggerEl : triggerEl?.querySelector<HTMLElement>(selector);
+        if (!target || target.matches(':disabled')) return;
+        event.preventDefault();
+        // Blur first so the ring of the field losing focus can't carry over to the trigger.
+        (document.activeElement as HTMLElement | null)?.blur();
+        target.focus({preventScroll: true, focusVisible: false} as FocusOptions);
+    }
+
+    $effect(() => {
+        if (!open) lockedSide = null;
+    });
+
+    function lockPlacedSide() {
+        void tick().then(() => {
+            const placed = contentEl?.dataset.side as Side | undefined;
+            if (open && placed && !lockedSide) lockedSide = placed;
+        });
+    }
+
     const fullContentProps = $derived.by(() => {
-        return mergeProps(
+        const merged = mergeProps(
             {
                 side,
                 align: resolvedAlign(),
                 sideOffset,
-                class: 'dropdown-content'
+                class: ['dropdown-content', layout === 'panel' && 'dropdown-content--panel'],
+                style: sizeStyle || undefined,
+                onPlaced: lockPlacedSide
             },
-            contentProps ?? {}
+            noHoverFocusProps,
+            contentProps ?? {},
+            // Last, so it can tell whether a consumer already placed focus (preventDefault).
+            {onCloseAutoFocus: returnFocusToTrigger}
         ) as DropdownMenuContentProps;
+
+        // Once locked, pin the side and stop flipping; the size middleware still caps the
+        // panel's height to the space available on that side.
+        return lockedSide ? {...merged, side: lockedSide, avoidCollisions: false} : merged;
     });
 </script>
+
+{#snippet items()}
+    <!-- A panel lays out its own scroll area, so the hover list belongs inside it (see `magneticHover`). -->
+    {#if magneticHover && layout !== 'panel'}
+        <MenuList class="dropdown-menu-list" bridgeSections>
+            {@render children?.()}
+        </MenuList>
+    {:else}
+        {@render children?.()}
+    {/if}
+{/snippet}
+
+{#snippet popover()}
+    <DropdownMenuPrimitive.Portal>
+        <DropdownMenuPrimitive.Content bind:ref={contentEl} {...mergeProps(fullContentProps, {class: 'dropdown-content--dropdown'}) as any}>
+            {#if title}
+                <div class="dropdown-title">
+                    <SnippetOrString value={title}/>
+                </div>
+            {/if}
+            {@render items()}
+        </DropdownMenuPrimitive.Content>
+    </DropdownMenuPrimitive.Portal>
+{/snippet}
 
 <DropdownMenuPrimitive.Root bind:open {onOpenChange}>
     {#if trigger}
@@ -114,44 +285,75 @@
             {/snippet}
         </DropdownMenuPrimitive.Trigger>
     {/if}
-    <Breakpoint>
-        {#snippet bpSmallerThanMd()}
-            <BottomSheet bind:open={open} title={title}>
-                <DropdownMenuPrimitive.ContentStatic {...mergeProps(fullContentProps, {class: 'dropdown-content--sheet'}) as any}>
-                    {@render children?.()}
-                </DropdownMenuPrimitive.ContentStatic>
-            </BottomSheet>
-        {/snippet}
-        {#snippet children()}
-            <DropdownMenuPrimitive.Portal>
-                <DropdownMenuPrimitive.Content {...mergeProps(fullContentProps, {class: 'dropdown-content--dropdown'}) as any}>
-                    {#if title}
-                        <div class="dropdown-title">
-                            <SnippetOrString value={title}/>
-                        </div>
-                    {/if}
-                    {@render children?.()}
-                </DropdownMenuPrimitive.Content>
-            </DropdownMenuPrimitive.Portal>
-        {/snippet}
-    </Breakpoint>
+    {#if sheet}
+        <Breakpoint>
+            {#snippet bpSmallerThanMd()}
+                <BottomSheet bind:open={open} title={title} contentProps={{onOpenAutoFocus: preventAutoFocus}}>
+                    <DropdownMenuPrimitive.ContentStatic
+                        bind:ref={sheetContentEl}
+                        {...mergeProps(fullContentProps, {class: 'dropdown-content--sheet', onOpenAutoFocus: focusSheetPanel}) as any}>
+                        {@render items()}
+                    </DropdownMenuPrimitive.ContentStatic>
+                </BottomSheet>
+            {/snippet}
+            {#snippet children()}
+                {@render popover()}
+            {/snippet}
+        </Breakpoint>
+    {:else}
+        {@render popover()}
+    {/if}
 </DropdownMenuPrimitive.Root>
 
 <style>
     :global(.dropdown-content.dropdown-content--dropdown) {
         --dropdown-bg: var(--color-surface-raised);
 
+        position: relative;
         /* Above sticky/faded chrome like the chat header overlay. bits-ui copies
            this z-index onto the floating wrapper it positions the panel with. */
         z-index: var(--layer-overlay);
         min-width: 8rem;
+        /* `width` fixes the box; without it the content still sizes to its items. Either way
+           it stays inside the viewport. */
+        width: var(--dropdown-width, auto);
+        max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
         border-radius: var(--corner-md);
         border: var(--border);
         background-color: var(--dropdown-bg);
         padding: var(--space-1, 0.25rem);
         box-shadow: var(--elevation-1);
-        max-height: calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4));
+        max-height: min(
+            var(--dropdown-max-height, 100vh),
+            calc(var(--bits-dropdown-menu-content-available-height, 999px) - var(--space-4))
+        );
         overflow: auto;
+    }
+
+    /*
+      A panel doesn't scroll itself: it lays its children out in a column and leaves the
+      scrolling to the one that owns it, so anything above (a search field, the title) stays
+      anchored. The padding goes with it — the scrolling child pads its own rows, or the
+      divider it draws would be clipped by this box's `overflow: hidden`.
+    */
+    :global(.dropdown-content.dropdown-content--dropdown.dropdown-content--panel) {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    :global(.dropdown-content--panel) .dropdown-title {
+        padding-inline: var(--space-3);
+        padding-bottom: 0;
+    }
+
+    /* The MenuList around the rows only carries the sliding hover; layout and
+       scrolling stay with the panel. Doubled class to beat MenuList's own styles. */
+    :global(.list.dropdown-menu-list.dropdown-menu-list) {
+        display: block;
+        flex: none;
+        overflow: visible;
     }
 
     :global(.dropdown-content[data-state="open"]) {
@@ -196,11 +398,14 @@
 
     /* Below `md` the menu is a BottomSheet, so every row gets a touch-sized
        target (≥ 44px, like SingleSelect's sheet). Submenu panels are included:
-       DropdownMenuSub floats them over the sheet at this size. */
+       DropdownMenuSub floats them over the sheet at this size — and so is a
+       popover kept with `sheet={false}`. */
     @media (--bp-smaller-than-md) {
-        :global(.dropdown-content:is(.dropdown-content--sheet, .dropdown-sub-content)) {
+        :global(.dropdown-content:is(.dropdown-content--sheet, .dropdown-content--dropdown, .dropdown-sub-content)) {
+            --dropdown-touch-target: 2.75rem;
+
             :global(:is(.dropdown-item, .dropdown-checkbox-item, .dropdown-radio-item, .dropdown-sub-trigger)) {
-                min-height: 2.75rem;
+                min-height: var(--dropdown-touch-target);
             }
         }
     }

@@ -75,7 +75,7 @@
  * ```
  */
 import {onDestroy} from 'svelte';
-import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
+import {createStableContext} from '$lib/utils/stableContext.js';
 import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
@@ -455,13 +455,13 @@ export class ComposerContext {
 /**
  * Svelte context accessor pair for the composer.
  *
- * `createHmrSafeContext()` mirrors Svelte's `createContext()` `[get, set]`
+ * `createStableContext()` mirrors Svelte's `createContext()` `[get, set]`
  * tuple but keeps its key stable across Vite HMR module re-evaluations (see
  * its doc block). `get` is re-exported below as {@link useComposerContext}
  * with an extra guard so a missing provider produces an actionable message
  * instead of the generic one.
  */
-const [get, set] = createHmrSafeContext<ComposerContext>('hawki.chat.composer-context');
+const [get, set] = createStableContext<ComposerContext>('hawki.chat.composer-context');
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {

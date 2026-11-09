@@ -134,9 +134,13 @@
         stroke-width: 3;
     }
 
-    /* Chained with .popover-content to beat its roomier default padding. */
+    /* Short help text: shrink to the content with tooltip-like padding instead
+       of the generic popover's fixed width and roomy padding. */
     :global(.popover-content.info-button-popover) {
-        padding: var(--space-2) var(--space-3);
+        width: max-content;
+        padding-block: var(--space-2);
+        padding-inline: var(--space-3);
+        border-radius: var(--corner-sm);
         font-size: var(--font-size-xxs);
         max-width: 300px;
         max-height: 400px;

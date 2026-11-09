@@ -4,7 +4,8 @@
  * chip blinking into existence. Because the width is animated in real layout, whatever sits
  * next to the chip glides aside instead of jumping. Leave is the same motion, faster.
  *
- * Shared by the composer's tool chips and by the assistant tags next to the model picker.
+ * Shared by the composer's tool chips, the assistant tags next to the model picker, and the
+ * tool/assistant menu triggers (which pass `blur` so they grow and blur in rather than slide).
  * A chip that plays its own arrival animation on the inside (`MentionChip` reveals its
  * handle and then fills the pill in) should turn the overshoot off and start near its final
  * size, so the row's motion stays a plain unroll and doesn't compete with what follows it.
@@ -15,6 +16,8 @@
  * @param params.overshoot - Whether the enter swings past its final width and settles back
  *   (`backOut`). Turn it off for a chip whose neighbours should not be nudged twice.
  * @param params.duration - Overrides the duration in ms (default 320 entering, 180 leaving).
+ * @param params.blur - Blur in px the chip is at when fully collapsed (default 0). Lets a
+ *   chip whose fill blurs in on arrival blur back out the same way instead of just shrinking.
  *
  * @example
  * // Tool chip: a pop with overshoot.
@@ -24,26 +27,31 @@
  * // Assistant tag: a plain unroll, since the chip animates its own arrival afterwards.
  * <span in:chipPop={{duration: 280, scaleFrom: 0.94, overshoot: false}}>…</span>
  */
-import {backOut, cubicIn, cubicOut} from 'svelte/easing';
+import {backOut, cubicOut} from 'svelte/easing';
+import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
 export interface ChipPopParams {
     direction?: 'in' | 'out';
     scaleFrom?: number;
     overshoot?: boolean;
     duration?: number;
+    blur?: number;
 }
 
 export function chipPop(node: Element, params?: ChipPopParams) {
-    const {direction = 'in', scaleFrom = 0.7, overshoot = true, duration} = params ?? {};
+    const {direction = 'in', scaleFrom = 0.7, overshoot = true, duration, blur = 0} = params ?? {};
     const width = node.getBoundingClientRect().width;
     const entering = direction === 'in';
     return {
-        duration: duration ?? (entering ? 320 : 180),
-        easing: entering ? (overshoot ? backOut : cubicOut) : cubicIn,
-        css: (t: number) => `
+        duration: motionDuration(duration ?? (entering ? 320 : 180)),
+        // Svelte plays an outro as `1 - easing(p)`, so cubicOut collapses straight away.
+        // cubicIn held the chip near full width and snapped it shut, which read as sluggish.
+        easing: entering && overshoot ? backOut : cubicOut,
+        css: (t: number, u: number) => `
             width: ${Math.max(0, t * width)}px;
             opacity: ${Math.min(1, t * 1.6)};
             transform: scale(${scaleFrom + (1 - scaleFrom) * t});
+            ${blur > 0 ? `filter: blur(${Math.max(0, u * blur)}px);` : ''}
             overflow: hidden;
             white-space: nowrap;
         `,

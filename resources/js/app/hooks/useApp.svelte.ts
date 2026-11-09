@@ -1,8 +1,8 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
-import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
+import {createStableContext} from '$lib/utils/stableContext.js';
 import {getHawkiApp} from '$lib/legacy/legacy.js';
 
-const [get, set] = createHmrSafeContext<HawkiApp>('hawki.app');
+const [get, set] = createStableContext<HawkiApp>('hawki.app');
 
 /**
  * Provides the {@link HawkiApp} instance to a component subtree via Svelte
