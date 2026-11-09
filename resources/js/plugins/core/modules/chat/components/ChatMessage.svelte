@@ -266,6 +266,44 @@
                 {/if}
             </div>
         {/if}
+
+        {#if hasThreadSection}
+            <div class="thread" class:composing={composingInThread}>
+                <button
+                    type="button"
+                    class="thread-toggle"
+                    class:open={threadOpen}
+                    aria-expanded={threadOpen}
+                    aria-controls={threadPanelId}
+                    onclick={() => threadOpen = !threadOpen}
+                >
+                    <MessageCircleReplyIcon size={16} />
+                    <span class="thread-label">{threadToggleLabel}</span>
+                    <span class="thread-chevron" aria-hidden="true"><ArrowRight01Icon size={16} /></span>
+                </button>
+
+                {#if threadOpen}
+                    <div class="thread-panel" id={threadPanelId} transition:growTransition>
+                        {#each replies as reply (reply.clientKey ?? reply.message_id)}
+                            <ChatMessageSelf message={reply} {composer} isThreadReply {onDelete} {onDeleteAttachment} />
+                        {/each}
+
+                        {#if composingInThread}
+                            <div class="thread-active" role="status">
+                                <span class="thread-active-dot" aria-hidden="true"></span>
+                                {__('chat.thread.writing')}
+                            </div>
+                        {:else if canThread}
+                            <div class="thread-reply">
+                                <Button variant="ghost" size="xs" iconLeft={MessageCircleReplyIcon} onclick={openThreadComposer}>
+                                    {__('chat.thread.reply')}
+                                </Button>
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
+            </div>
+        {/if}
     </div>
 </article>
 
@@ -285,8 +323,8 @@
         height: 2rem;
         place-items: center;
         border-radius: var(--corner-full);
-        background: var(--color-active-surface);
-        color: var(--color-active-text);
+        background: var(--color-accent-100);
+        color: var(--color-accent-text);
     }
 
     /* An assistant-authored message paints the circle in its own tint and

@@ -444,7 +444,7 @@
         gap: var(--space-0_5);
         padding-inline: var(--space-1_5);
         border-radius: var(--corner-full);
-        background: var(--color-active-surface);
+        background: var(--color-accent-100);
         font-size: var(--font-size-xxs);
         font-variant-numeric: tabular-nums;
     }
@@ -562,7 +562,7 @@
         min-height: 1.25rem;
         padding-inline: var(--space-2);
         border-radius: var(--corner-full);
-        background: var(--color-active-surface);
+        background: var(--color-accent-100);
         color: var(--color-text);
         font-size: var(--font-size-xxs);
         text-decoration: none;

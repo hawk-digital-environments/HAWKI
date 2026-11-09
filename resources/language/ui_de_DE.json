@@ -27,8 +27,6 @@
             "skipToContent": "Zum Hauptinhalt springen",
             "open": "Navigation öffnen",
             "close": "Navigation schließen",
-            "collapse": "Seitenleiste einklappen",
-            "expand": "Seitenleiste ausklappen",
             "search": "Suchen",
             "spaces": "Bereiche",
             "pinSpaces": "Bereiche anheften",
@@ -87,7 +85,6 @@
         },
         "profile": {
             "fallbackName": "Profil",
-            "menuTitle": "Kontomenü",
             "lightMode": "Heller Modus",
             "darkMode": "Dunkler Modus",
             "settings": "Einstellungen",
@@ -141,10 +138,6 @@
                 "emptyTitle": "Keine Experimente verfügbar",
                 "emptyHint": "Aktuell gibt es nichts auszuprobieren. Neue Experimente erscheinen hier.",
                 "flags": {
-                    "modelPickerV2": {
-                        "title": "Neue Modellauswahl",
-                        "description": "Eine erweiterte Modellauswahl mit Anbieter-Tabs, Suche, Favoriten und Tastaturkürzeln."
-                    },
                     "statsForNerds": {
                         "title": "Statistiken für Nerds",
                         "description": "Zeigt Token-Anzahl, Tokens pro Sekunde und Zeitangaben unter jeder KI-Antwort."

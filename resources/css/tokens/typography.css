@@ -17,7 +17,7 @@
         --font-size-sm:    1rem;      /* --font-sm   = 16px   */
         --font-size-base:  1.10rem;   /* --font-md   ≈ 17.6px */
         --font-size-lg:    1.25rem;   /* --font-lg   = 20px   */
-        --font-size-xl:    1.65rem;   /* --font-xl   ≈ 26.4px */
+        --font-size-xl:    1.60rem;   /* ≈ 25.6px (legacy --font-xl ≈ 28.8px) */
         --font-size-2xl:   2.25rem;   /* --font-xxl  = 36px (legacy 40px, toned down) */
 
         /* ── Line heights ───────────────────────────────────────────────── */

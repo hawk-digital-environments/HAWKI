@@ -20,6 +20,7 @@
     import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
     import RouterView from '$lib/components/ui/routing/RouterView.svelte';
     import {createRouter} from '$lib/components/ui/routing/index.js';
+    import {untrack} from 'svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
@@ -29,7 +30,6 @@
     import ExperimentsSettings from '$lib/app/components/settings/pages/ExperimentsSettings.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
-    import {untrack} from 'svelte';
 
     interface Props {
         open?: boolean;
@@ -206,7 +206,7 @@
         overflow: hidden;
         padding: 0;
         gap: 0;
-        border-radius: var(--corner-lg);
+        border-radius: calc(var(--corner-lg) - var(--space-1));
     }
 
     /* A 24px title line under the shared inset centres the title on the close
@@ -283,12 +283,19 @@
         min-height: 0;
         max-height: 100%;
         overflow-y: auto;
+        /* The panel still scrolls, but without a visible bar. */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         /* A little more air towards the nav than on the outer edges. */
         padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
         /* Until the first measurement the property is unset, which makes this
            declaration invalid and leaves the height at auto. */
         height: calc(var(--settings-content-height) + 2 * var(--space-4));
         transition: height var(--duration-extra-fast) var(--easing-default);
+    }
+
+    .settings-panel::-webkit-scrollbar {
+        display: none;
     }
 
     .settings-panel.resizing {

@@ -61,6 +61,8 @@
     bind:open={deleteConfirmOpen}
     title={__('chat.nameMenu.deleteConfirmTitle', {name: name})}
     description={__('chat.nameMenu.deleteConfirmDescription')}
+    okLabel={__('chat.nameMenu.deleteConfirmLabel')}
+    confirmVariant="delete"
     onConfirm={() => slug && oldUiBridge.triggerDeleteChat(slug)}
 />
 

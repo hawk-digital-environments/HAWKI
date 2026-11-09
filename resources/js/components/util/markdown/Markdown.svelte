@@ -194,7 +194,7 @@
         }
 
         :global(mark) {
-            background: var(--color-active-surface);
+            background: var(--color-accent-100);
             color: inherit;
         }
 
@@ -375,5 +375,8 @@
         font-size: var(--font-size-xxs);
         line-height: var(--line-height-normal);
         box-shadow: var(--elevation-1);
+        /* mermaid-preview has default overflow:clip, which clips the edge of the diagram.
+        This element is the one that moves when dragging the diagram.*/
+        :global(.mermaid-preview) { overflow: visible; }
     }
 </style>

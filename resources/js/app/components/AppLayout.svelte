@@ -1,7 +1,7 @@
 <!--
   @component App-level layout assembly: the grid shell with the navigation
   sidebar in the `nav` column and the page content in the `main` column. The
-  layout mechanics (open/closed state, rail collapse, off-canvas behaviour)
+  layout mechanics (open/closed state, off-canvas behaviour)
   live in the components under components/ui/sidebar.
 -->
 <script lang="ts">

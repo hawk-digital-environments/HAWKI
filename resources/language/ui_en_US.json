@@ -27,8 +27,6 @@
             "skipToContent": "Skip to main content",
             "open": "Open navigation",
             "close": "Close navigation",
-            "collapse": "Collapse sidebar",
-            "expand": "Expand sidebar",
             "search": "Search",
             "spaces": "Spaces",
             "pinSpaces": "Pin spaces",
@@ -87,7 +85,6 @@
         },
         "profile": {
             "fallbackName": "Profile",
-            "menuTitle": "Account menu",
             "lightMode": "Light mode",
             "darkMode": "Dark mode",
             "settings": "Settings",
@@ -141,10 +138,6 @@
                 "emptyTitle": "No experiments available",
                 "emptyHint": "There is nothing to try right now. New experiments will show up here.",
                 "flags": {
-                    "modelPickerV2": {
-                        "title": "New model picker",
-                        "description": "A richer model picker with provider tabs, search, favorites and keyboard shortcuts."
-                    },
                     "statsForNerds": {
                         "title": "Stats for nerds",
                         "description": "Shows token counts, tokens per second and timing details below every AI response."

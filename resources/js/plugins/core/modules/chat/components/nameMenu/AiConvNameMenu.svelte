@@ -42,6 +42,8 @@
 <ConfirmDialog
     bind:open={deleteConfirmOpen}
     title={__('chat.nameMenu.deleteConfirmTitle', {name: name})}
+    okLabel={__('chat.nameMenu.deleteConfirmLabel')}
+    confirmVariant="delete"
     onConfirm={() => slug && oldUiBridge.triggerDeleteChat(slug)}
 />
 <ChatNameMenu

@@ -63,6 +63,7 @@ Usage (embedded in the legacy attachment template — see
     bind:open={deleteConfirm}
     title={__('chat.attachmentDropdown.deleteTitle')}
     description={__('chat.attachmentDropdown.deleteDescription', {name: fileData.name})}
+    confirmVariant="delete"
     onConfirm={() => oldUiBridge.triggerDeleteAttachment(fileData)}
 />
 

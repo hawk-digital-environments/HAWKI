@@ -96,7 +96,7 @@
         grid-template-areas: 'body';
         height: 100%;
         min-height: 0;
-        background: var(--color-surface-raised);
+        background: var(--color-bg);
     }
 
     .page.with-header {
