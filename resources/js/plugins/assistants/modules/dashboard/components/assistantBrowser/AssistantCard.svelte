@@ -216,7 +216,7 @@
         --overflow-text-font-size: var(--font-size-2xl);
         --overflow-text-font-weight: 700;
         --overflow-text-color: currentColor;
-        --overflow-text-line-height: 0.95;
+        --overflow-text-line-height: 1;
         letter-spacing: -0.035em;
         text-wrap: balance;
     }
@@ -226,8 +226,8 @@
        Keep it small: at this leading the third line's cap tops start just
        below the descenders, and a larger extension lets them peek through. */
     .cover-title :global(.overflow-text) {
-        padding-bottom: 0.05em;
-        margin-bottom: -0.05em;
+        padding-bottom: 0.08em;
+        margin-bottom: -0.08em;
         /* Hug the text, so the title morph (morphToDetail) scales the words
            rather than a box of empty space beside them. */
         width: fit-content;
