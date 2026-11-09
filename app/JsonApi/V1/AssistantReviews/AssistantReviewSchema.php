@@ -13,6 +13,7 @@ use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
 use LaravelJsonApi\Eloquent\Fields\Str;
+use LaravelJsonApi\Eloquent\Filters\Where;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
 
@@ -38,6 +39,7 @@ class AssistantReviewSchema extends Schema
             ID::make(),
             Str::make('status'),
             Str::make('reason'),
+            DateTime::make('reviewed_at')->readOnly(),
             DateTime::make('created_at')->sortable()->readOnly(),
             DateTime::make('updated_at')->sortable()->readOnly(),
             BelongsTo::make('assistant')->readOnly(),
@@ -46,7 +48,11 @@ class AssistantReviewSchema extends Schema
 
     public function filters(): array
     {
-        return [];
+        return [
+            // Drives the review queue: filter[status]=pending (or any other
+            // review status).
+            Where::make('status'),
+        ];
     }
 
     public function pagination(): ?PagePagination
@@ -62,8 +68,8 @@ class AssistantReviewSchema extends Schema
             return $query;
         }
 
-        return $query->whereHas('assistant', fn (Builder $assistantQuery) =>
-            $this->assistantRepository->filterPrivilegedForUser($assistantQuery, $user));
+        // Accessible reviews: own submissions plus own organizations' —
+        // never another org's. Menu visibility is the probe's job.
+        return $query->whereHas('assistant', fn (Builder $assistantQuery) => $this->assistantRepository->filterPrivilegedForUser($assistantQuery, $user));
     }
-
 }

@@ -1,8 +1,7 @@
 {
     "assistants": {
-
-        "assistant" : "Assistent",
-        "assistants" : "Assistenten",
+        "assistant": "Assistent",
+        "assistants": "Assistenten",
         "categories": {
             "academic_writing": "Wissenschaftliches Schreiben",
             "computer_science": "Informatik",
@@ -48,7 +47,7 @@
         },
         "sidebar": {
             "home": "Startseite",
-            "store":"Store",
+            "store": "Store",
             "my_assistants": "Meine Assistenten",
             "drafts": "Entwürfe",
             "private": "Privat",
@@ -56,12 +55,12 @@
             "shared": "Freigegeben",
             "create": "Assistent erstellen",
             "switch_case": "Bereich wechseln",
-            "back": "Zurück"
+            "back": "Zurück",
+            "reviews": "Prüfungen"
         },
-
         "entry": {
             "title": "Assistent erstellen",
-            "description":"Wähle, wie du deinen neuen Assistenten erstellen möchtest.",
+            "description": "Wähle, wie du deinen neuen Assistenten erstellen möchtest.",
             "advanced": "Erweitert",
             "advanced_description": "Volle Kontrolle über alle Einstellungen, Wissen, Modell und Freigabe.",
             "coming_soon": "Bald verfügbar",
@@ -75,25 +74,24 @@
         },
         "drafts": {
             "title": "Assistenten-Entwürfe",
-            "empty_title":  "Keine Entwürfe vorhanden",
+            "empty_title": "Keine Entwürfe vorhanden",
             "empty_description": "Du hast noch keine Assistenten als Entwurf gespeichert."
         },
         "private": {
             "title": "Private Assistenten",
-            "empty_title":  "Keine privaten Assistenten vorhanden",
+            "empty_title": "Keine privaten Assistenten vorhanden",
             "empty_description": "Assistenten, die du als privat speicherst, sind nur für dich sichtbar."
         },
         "shared": {
             "title": "Freigegebene Assistenten",
-            "empty_title":  "Keine freigegebene Assistant",
+            "empty_title": "Keine freigegebene Assistant",
             "empty_description": "Hier erscheinen Assistenten, die andere Benutzer für dich freigegeben haben."
         },
         "favourites": {
             "title": "Favorisierte Assistenten",
-            "empty_title":  "Keine Favoriten gespeichert",
+            "empty_title": "Keine Favoriten gespeichert",
             "empty_description": "Markiere Assistenten mit dem Herz-Symbol, um sie hier zu sehen."
         },
-
         "browser": {
             "empty_title": "Keine Assistenten gefunden",
             "empty_description": "Keine Assistenten passen zu deinen aktuellen Filtern.",
@@ -103,7 +101,6 @@
             "search": "Suchen",
             "search_placeholder": "Assistenten durchsuchen…"
         },
-
         "card": {
             "remix": "Remix",
             "open_aria": "Details von :name öffnen",
@@ -120,16 +117,15 @@
 
         "release_stage": {
             "private": "Privat",
-            "organizational": "Föderiert freigegeben",
-            "federated": "Verifiziert"
+            "organizational": "Hochschulintern",
+            "federated": "Föderiert",
+            "draft": "Entwurf"
         },
-
         "risk": {
             "low": "Geringes Risiko",
             "medium": "Mittleres Risiko",
             "high": "Hohes Risiko"
         },
-
         "detail": {
             "dialog_title": "Assistentendetails",
             "back": "Zurück",
@@ -164,7 +160,10 @@
             "release_pending": "In Prüfung",
             "release_updated": "Veröffentlichungsstatus geändert.",
             "release_submitted": "Assistent zur Prüfung eingereicht.",
-            "release_failed": "Der Veröffentlichungsstatus konnte nicht geändert werden."
+            "release_failed": "Der Veröffentlichungsstatus konnte nicht geändert werden.",
+            "review_title": "Prüfung",
+            "review_requested_hint": "In Prüfung — der Assistent wird nach Genehmigung als „:stage“ freigegeben.",
+            "review_decided_on": "Entschieden am :date"
         },
         "feedback": {
             "feedback_to": "Feedback an",
@@ -177,8 +176,7 @@
             "original_status": "Original-Status:",
             "remix_hint": "Dein Remix startet als privater Entwurf und muss vor einer breiteren Freigabe geprüft werden. Vertrauensstatus wird nicht vom Original übernommen."
         },
-
-        "builder":{
+        "builder": {
             "sidebar": {
                 "new_assistant": "Neuer Assistent",
                 "general": "Allgemein",
@@ -424,7 +422,11 @@
                 "saved": "Assistent gespeichert.",
                 "submitted": "Assistent zur Prüfung eingereicht.",
                 "save_failed": "Speichern fehlgeschlagen."
-            }
+            },
+            "edit_released_title": "Sie sind dabei, einen veröffentlichten Assistenten zu bearbeiten",
+            "edit_released_description": "Jede Änderung setzt ihn auf privat zurück und erfordert eine neue Veröffentlichungsanfrage.",
+            "edit_released_confirm": "Trotzdem bearbeiten",
+            "edit_released_cancel": "Zurück"
         },
         "testChat": {
             "status": {
@@ -442,6 +444,124 @@
             "unnamed": "Dein Assistent",
             "placeholder": "Nachricht an deinen Assistenten…",
             "send": "Senden"
+        },
+        "reviews": {
+            "title": "Meine Einreichungen",
+            "empty_title": "Noch nichts eingereicht",
+            "empty_description": "Assistenten, die du zur Prüfung einreichst, erscheinen hier mit ihrem Prüfungsstatus.",
+            "tab": {
+                "all": "Alle"
+            }
+        },
+        "review": {
+            "outdated_hint": "Veraltete Genehmigung. Für eine Veröffentlichung bitte erneut zur Prüfung einreichen.",
+            "status": {
+                "pending": "In Prüfung",
+                "approved": "Genehmigt",
+                "denied": "Abgelehnt",
+                "needs_revision": "Überarbeitung erforderlich"
+            }
+        },
+        "admin": {
+            "section": "Assistenten-Prüfung",
+            "queue": {
+                "title": "Prüfungswarteschlange",
+                "description": "Einreichungen, die vor der Veröffentlichung auf eine Entscheidung warten.",
+                "empty": "Keine Prüfungen in diesem Status.",
+                "no_access": "Du hast keine Berechtigung, Assistenten zu prüfen.",
+                "tab": {
+                    "label": "Prüfungsstatus",
+                    "all": "Alle",
+                    "pending": "Offen",
+                    "needs_revision": "Überarbeitung nötig",
+                    "denied": "Abgelehnt",
+                    "approved": "Genehmigt"
+                },
+                "columns": {
+                    "name": "Assistent",
+                    "handle": "Handle",
+                    "stage": "Release-Stufe",
+                    "submitted": "Eingereicht",
+                    "status": "Status"
+                },
+                "status": {
+                    "pending": "In Prüfung",
+                    "approved": "Genehmigt",
+                    "denied": "Abgelehnt",
+                    "needs_revision": "Überarbeitung nötig"
+                }
+            },
+            "detail": {
+                "title": "Prüfung",
+                "no_access": "Du hast keine Berechtigung, Assistenten zu prüfen.",
+                "previous_reason": "Vorherige Entscheidung",
+                "changed_keys": "Geändert seit der letzten Veröffentlichung",
+                "no_draft": "Kein offener Entwurf.",
+                "fields": {
+                    "description": "Beschreibung",
+                    "greeting": "Begrüßung",
+                    "system_prompt": "System-Prompt",
+                    "name": "Name",
+                    "handle": "Handle",
+                    "detail_description": "Detaillierte Beschreibung",
+                    "model": "Modell",
+                    "max_tokens": "Max. Tokens",
+                    "temp": "Temperatur",
+                    "top_p": "Top-P",
+                    "allow_remix": "Remix erlauben",
+                    "allow_model_select": "Modellauswahl",
+                    "category": "Kategorie",
+                    "tags": "Tags",
+                    "prompts": "Prompts",
+                    "tools": "Werkzeuge",
+                    "settings": "Einstellungen",
+                    "attachments": "Wissensdateien",
+                    "avatar": "Avatar"
+                },
+                "versions": "Versionen",
+                "draft_version": "Arbeitsentwurf (offene Änderungen)",
+                "no_versions": "Noch keine veröffentlichten Versionen.",
+                "rollback": "Zurücksetzen",
+                "rollback_confirm_title": "Auf Version :version zurücksetzen?",
+                "rollback_confirm_description": "Alle Versionen über :version werden gelöscht und der Assistent auf diesen Stand zurückgesetzt. Das kann nicht rückgängig gemacht werden.",
+                "rollback_submit_description": "Das Zurücksetzen auf Version :version wird zur Prüfung eingereicht und erst nach Freigabe durch eine Administratorin angewendet.",
+                "reason": "Begründung",
+                "reason_placeholder": "Sag der Erstellerin oder dem Ersteller, was zu ändern ist…",
+                "toast": {
+                    "approved": "Prüfung genehmigt — die neue Version ist veröffentlicht.",
+                    "denied": "Prüfung abgelehnt.",
+                    "needs_revision": "Überarbeitung angefordert.",
+                    "rolled_back": "Auf Version :version zurückgesetzt.",
+                    "rollback_submitted": "Zurücksetzen auf Version :version zur Prüfung eingereicht.",
+                    "failed": "Aktion fehlgeschlagen:"
+                },
+                "note_label": "Einreichungshinweis",
+                "previous_step": "Vorheriger Schritt",
+                "next_step": "Nächster Schritt",
+                "chip_jump_hint": "Im entsprechenden Schritt anzeigen",
+                "field_required": "Dieses Feld ist erforderlich.",
+                "value_yes": "Ja",
+                "value_no": "Nein",
+                "decision_title": "Entscheidung wählen",
+                "decision_approved_label": "Genehmigen",
+                "decision_approved_description": "Veröffentlicht den eingereichten Stand als nächste Version.",
+                "decision_needs_revision_label": "Überarbeitung anfordern",
+                "decision_needs_revision_description": "Sendet deine Begründung zurück; die Erstellerin kann überarbeiten und erneut einreichen.",
+                "decision_needs_revision_lift_description": "Hebt die Ablehnung auf — es wird nichts veröffentlicht und die Erstellerin kann überarbeiten und erneut einreichen.",
+                "decision_denied_label": "Ablehnen",
+                "decision_denied_description": "Blockiert diese Einreichung endgültig.",
+                "decided_approved": "Genehmigt am :date",
+                "decided_denied": "Abgelehnt am :date",
+                "decided_needs_revision": "Überarbeitung angefordert am :date"
+            },
+            "steps": {
+                "progress": "Prüfungsfortschritt",
+                "changes": "Änderungen",
+                "review": "Prüfung",
+                "back": "Zurück",
+                "continue_to": "Weiter zu :step",
+                "submit": "Absenden"
+            }
         }
     }
 }

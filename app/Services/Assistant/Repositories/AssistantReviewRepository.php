@@ -17,6 +17,16 @@ class AssistantReviewRepository extends AbstractRepository
         return $review->load('assistant');
     }
 
+    /**
+     * Re-fetch the review by key under a row lock, so parallel decisions
+     * serialise inside the caller's transaction. Null when the review row
+     * vanished between the caller's fetch and this lock (a lost race).
+     */
+    public function lockForUpdate(AssistantReview $review): ?AssistantReview
+    {
+        return $this->getQuery()->whereKey($review->getKey())->lockForUpdate()->first();
+    }
+
     public function updateOrCreateForAssistant(int $assistantId, array $data): AssistantReview
     {
         $review = $this->getQuery()->where('assistant_id', $assistantId)->first()
@@ -33,19 +43,6 @@ class AssistantReviewRepository extends AbstractRepository
         $review->forceFill($data)->save();
 
         return $review;
-    }
-
-    public function resetReviewForAssistant(int $assistantId): void
-    {
-        $review = $this->getQuery()->where('assistant_id', $assistantId)->first();
-
-        if (null === $review) {
-            return;
-        }
-
-        $review->status = AssistantReviewStatus::PENDING;
-        $review->reason = 'Assistant updated since last review';
-        $review->save();
     }
 
     public function deleteReviewForAssistantUnlessDenied(int $assistantId): void

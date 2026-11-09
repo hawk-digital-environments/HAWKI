@@ -1,12 +1,18 @@
 <script lang="ts">
     import ReleaseStageStatus from '$plugins/assistants/modules/builder/components/ReleaseStageStatus.svelte';
+    import StatusPill from '$plugins/assistants/components/status/StatusPill.svelte';
     import AssistantBanner from '$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte';
     import type { Assistant } from '$plugins/assistants/types/assistant/Assistant';
+    import { ReviewStage } from '$plugins/assistants/types/assistant/ReviewStage';
+    import { ReleaseMode } from '$plugins/assistants/types/assistant/ReleaseMode';
+    import { reviewPillTone } from '$plugins/assistants/components/status/reviewTones.js';
     import FavButton from '$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte';
     import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
     import Avatar from '$lib/components/ui/avatar/Avatar.svelte';
     import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
+    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import Clock01Icon from '$lib/components/ui/icons/iconset/Clock01Icon.svelte';
     import { getAvatar } from '$plugins/assistants/api/resources/userAvatarClient';
     import { magnetic } from '$lib/components/ui/magnetic/magnetic.svelte';
     import { assistantRowAppearance } from '$plugins/assistants/utils/assistantRowAppearance';
@@ -24,6 +30,16 @@
     }>();
 
     const toast = useToastContext();
+
+    /**
+     * An approved review only counts as current while the assistant is
+     * public — after falling back to private, it is an outdated record that
+     * never takes effect by itself (publishing needs a fresh review).
+     */
+    const outdatedApproval = $derived(
+        assistant.review?.status === ReviewStage.APPROVED
+        && (assistant.releaseStage === ReleaseMode.PRIVATE || assistant.releaseStage === ReleaseMode.DRAFT)
+    );
 
     let userAvatarUrl = $state<string | null>(null);
     let card = $state<HTMLElement>();
@@ -107,6 +123,27 @@
                     <ReleaseStageStatus stage={assistant.releaseStage} />
                 {/if}
                 <AssistantAvailabilityStatus {assistant} />
+                {#if assistant.review}
+                    <StatusPill
+                        tone={reviewPillTone(assistant.review.status)}
+                        label={__(`assistants.review.status.${assistant.review.status}`)}
+                    />
+                    {#if outdatedApproval}
+                        <Tooltip
+                            tooltip={__('assistants.review.outdated_hint')}
+                            side="top"
+                            delayDuration={300}
+                            focusable={false}
+                            hiddenLabel={__('assistants.review.outdated_hint')}
+                        >
+                            {#snippet children({ props })}
+                                <span class="outdated-icon" {...props}>
+                                    <Clock01Icon size="1em" aria-hidden="true" />
+                                </span>
+                            {/snippet}
+                        </Tooltip>
+                    {/if}
+                {/if}
             </div>
             <div class="description">
                 {assistant.description}
@@ -254,6 +291,14 @@
         flex-wrap: wrap;
         align-items: center;
         gap: var(--space-1_5) var(--space-2);
+    }
+    /* The review pill's outdated marker: matches the pills' icon scale so
+       it centres on the tags row. */
+    .outdated-icon {
+        display: inline-flex;
+        align-items: center;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
     }
     .category {
         display: inline-flex;

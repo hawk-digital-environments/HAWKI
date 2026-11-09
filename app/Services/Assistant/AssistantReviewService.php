@@ -6,6 +6,8 @@ namespace App\Services\Assistant;
 
 use App\Models\Assistants\AssistantReview;
 use App\Models\User;
+use App\Services\Assistant\Exceptions\AssistantReviewNotFoundException;
+use App\Services\Assistant\Repositories\AssistantReviewRepository;
 use App\Services\Assistant\Values\AssistantReviewStatus;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Database\DatabaseManager;
@@ -17,6 +19,8 @@ readonly class AssistantReviewService
 {
     public function __construct(
         private AssistantService $assistantService,
+        private AssistantVersionService $versionService,
+        private AssistantReviewRepository $reviewRepository,
         private DatabaseManager $db,
         private ClockInterface $clock,
     ) {
@@ -27,7 +31,7 @@ readonly class AssistantReviewService
      * denial. Only genuine transitions trigger the side effects; the previous
      * status is supplied by the caller (captured reliably before the save).
      *
-     * @param AssistantReviewStatus|null $previous the status before the update, or null if unknown
+     * @param null|AssistantReviewStatus $previous the status before the update, or null if unknown
      */
     public function applyStatusTransition(AssistantReview $review, ?AssistantReviewStatus $previous, ?User $reviewer): void
     {
@@ -43,7 +47,7 @@ readonly class AssistantReviewService
 
         // An org admin can reject an assistant in two ways:
         // 1) DENIED permanently blocks resubmission,
-        // 2) NEEDS_REVISION lets the creator revise and submit again. 
+        // 2) NEEDS_REVISION lets the creator revise and submit again.
         // Both statuses are treated the same here: demote the assistant back to private.
         if (self::isDenial($newStatus) && !self::isDenial($previous)) {
             if (null !== $reviewer) {
@@ -52,42 +56,44 @@ readonly class AssistantReviewService
         }
     }
 
-    /** Whether the status is one of the two denial variants. */
-    private static function isDenial(?AssistantReviewStatus $status): bool
-    {
-        return AssistantReviewStatus::DENIED === $status
-            || AssistantReviewStatus::NEEDS_REVISION === $status;
-    }
-
     /**
-          * Mark the review approved, record who approved it and when, then promote
+     * Mark the review approved, record who approved it and when, then promote
      * the assistant to its requested public stage.
      *
      * Concurrency: the review row is locked for the duration of the
      * transaction so parallel approve()/deny() calls serialise. The caller is
      * responsible for invoking this only on a real transition into APPROVED
      * (applyStatusTransition() performs that gate).
-     * @param AssistantReview $review
-     * @param User $reviewer
-     * @return void
      */
     public function approve(AssistantReview $review, User $reviewer): void
     {
         $this->db->transaction(function () use ($review, $reviewer): void {
-            $locked = AssistantReview::whereKey($review->id)->lockForUpdate()->first();
+            $locked = $this->reviewRepository->lockForUpdate($review);
 
-            if ($locked === null) {
-                abort(422 ,"The requested review does not exist.");
+            if (null === $locked) {
+                throw AssistantReviewNotFoundException::duringDecision();
             }
 
             // Re-apply the audit fields onto the locked row directly so the
-            // update is consistent with the latest persisted state.
+            // update is consistent with the latest persisted state. The
+            // reason is cleared: it belonged to a previous denial that the
+            // approval supersedes (reopening clears it the same way).
             $locked->status = AssistantReviewStatus::APPROVED;
+            $locked->reason = null;
             $locked->reviewer_id = $reviewer->id;
             $locked->reviewed_at = Carbon::instance($this->clock->now());
             $locked->save();
 
-            $review->setRawAttributes($locked->getAttributes()); # TODO: use orm
+            $review->setRawAttributes($locked->getAttributes()); // TODO: use orm
+
+            // The approved state becomes the next published version; a fresh
+            // working draft is respawned from it.
+            $promoted = $this->versionService->promoteDraft($locked->assistant);
+
+            // The reviewed snapshot goes live; drafts without a payload (legacy/fixture) keep the live state.
+            if (\is_array($promoted->payload)) {
+                $this->versionService->restore($locked->assistant, $promoted->payload);
+            }
 
             $this->assistantService->promoteRequested($locked->assistant);
         });
@@ -109,10 +115,10 @@ readonly class AssistantReviewService
         AssistantReviewStatus $status = AssistantReviewStatus::DENIED,
     ): void {
         $this->db->transaction(function () use ($review, $reviewer, $reason, $status): void {
-            $locked = AssistantReview::whereKey($review->id)->lockForUpdate()->first();
+            $locked = $this->reviewRepository->lockForUpdate($review);
 
-            if ($locked === null) {
-                abort(422 ,"The requested review does not exist.");
+            if (null === $locked) {
+                throw AssistantReviewNotFoundException::duringDecision();
             }
 
             $locked->status = $status;
@@ -125,6 +131,15 @@ readonly class AssistantReviewService
 
             $this->assistantService->revokeRelease($locked->assistant);
         });
+    }
+
+    /**
+     * Whether the status is one of the two denial variants.
+     */
+    private static function isDenial(?AssistantReviewStatus $status): bool
+    {
+        return AssistantReviewStatus::DENIED === $status
+            || AssistantReviewStatus::NEEDS_REVISION === $status;
     }
 }
 

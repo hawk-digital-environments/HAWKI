@@ -14,12 +14,14 @@ use App\Http\Requests\Assistant\UploadAssistantAttachmentRequest;
 use App\JsonApi\V1\Assistants\AssistantQuery;
 use App\JsonApi\V1\Assistants\AssistantRequest;
 use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
+use App\JsonApi\V1\Assistants\RollbackAssistantRequest;
 use App\Models\Assistants\Assistant;
 use App\Policies\Traits\AuthorizesSensitiveIncludesTrait;
 use App\Services\Assistant\AssistantService;
-use App\Services\Assistant\Repositories\AssistantRepository;
+use App\Services\Assistant\AssistantVersionService;
 use App\Services\Assistant\Events\AssistantCreatedEvent;
 use App\Services\Assistant\Events\AssistantUpdatedEvent;
+use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Storage\Values\FileReference;
 use Illuminate\Contracts\Support\Responsable;
@@ -48,6 +50,7 @@ class AssistantController extends Controller
 
     public function __construct(
         private readonly AssistantService $assistantService,
+        private readonly AssistantVersionService $versionService,
         private readonly \Illuminate\Contracts\Events\Dispatcher $events,
     ) {
     }
@@ -147,6 +150,24 @@ class AssistantController extends Controller
         Assistant $assistant,
     ): Responsable {
         $assistant = $this->assistantService->release($assistant, $request->releaseStage(), $request->note());
+
+        return $this->refetchedResponse($route, $store, $assistant);
+    }
+
+    /**
+     * Restore an earlier published version of the assistant. Every version
+     * above the target is deleted, the target's frozen state is restored, and
+     * the working draft restarts from it.
+     *
+     * @return DataResponse
+     */
+    public function rollback(
+        RollbackAssistantRequest $request,
+        Route $route,
+        StoreContract $store,
+        Assistant $assistant,
+    ): Responsable {
+        $assistant = $this->versionService->rollback($assistant, $request->version());
 
         return $this->refetchedResponse($route, $store, $assistant);
     }

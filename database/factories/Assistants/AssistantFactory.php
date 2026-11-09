@@ -57,12 +57,14 @@ class AssistantFactory extends Factory
     {
         return $this->afterCreating(static function (Assistant $assistant): void {
             if (!$assistant->assistantVersions()->exists()) {
+                // The baseline row is the mutable working draft at version
+                // 0.0; the first approval promotes it to 1.0.
                 // `text` is reserved for the creator's release note; the
                 // factory baseline version is created without one.
                 $assistant->assistantVersions()->save((new \App\Models\Assistants\AssistantVersion())->forceFill([
                     'text' => '',
-                    'version' => 1.0,
-                ]),);
+                    'version' => \App\Models\Assistants\AssistantVersion::DRAFT_VERSION,
+                ]), );
             }
         });
     }

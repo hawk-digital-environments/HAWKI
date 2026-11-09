@@ -183,6 +183,16 @@ class AssistantRepository extends AbstractRepository
         return $assistant->load($relations);
     }
 
+    /**
+     * Re-fetch the assistant by key under a row lock, for decisions made
+     * inside the caller's transaction. Null when the row vanished between
+     * the caller's fetch and this lock (a lost race).
+     */
+    public function lockForUpdate(Assistant $assistant): ?Assistant
+    {
+        return $this->getQuery()->whereKey($assistant->getKey())->lockForUpdate()->first();
+    }
+
     public function findOneByHandle(string $handle): ?Assistant
     {
         return $this->getQuery()->where('handle', $handle)->first();

@@ -37,5 +37,14 @@ class AssistantReviewPolicy
     {
         return $this->orgMembership->isAdminOf($user, $review->assistant->organization_id);
     }
+
+    /**
+     * May the user decide reviews at all — an admin of at least one
+     * organization? `update` remains the per-review boundary.
+     */
+    public function updateAny(User $user): bool
+    {
+        return $this->orgMembership->isAdminAnywhere($user);
+    }
 }
 

@@ -72,6 +72,16 @@ class AssistantPolicy implements DefinesSensitiveIncludes
         return $user->id === $assistant->creator_id;
     }
 
+    /**
+     * Rolling back to an earlier published version is an editorial decision
+     * over the assistant's content, so it sits with the organization's admins
+     * — the same tier that approves reviews.
+     */
+    public function rollback(User $user, Assistant $assistant): bool
+    {
+        return $this->orgMembership->isAdminOf($user, $assistant->organization);
+    }
+
     public function addFavorite(User $user, Assistant $assistant): bool
     {
         return $this->view($user, $assistant);

@@ -23,7 +23,14 @@
     // This page owns the list: it is created here, published to the subtree
     // (AssistantBrowser picks it up via useAssistantListContext), and released
     // when the page unmounts.
-    const list = createAssistantListContext(useApp(), useToastContext());
+    const list = createAssistantListContext(useApp(), useToastContext(), [
+        // Own assistants only: the privileged includes are safe here and
+        // seed the detail modal's first paint (review + feedback sections),
+        // so its opening morph captures the settled layout.
+        'assistant_review',
+        'assistant_feedback',
+        'assistant_feedback.user'
+    ]);
 
     // Search text and category filters are event-driven: the search bar and
     // category bar report commits via callbacks, and each handler applies the

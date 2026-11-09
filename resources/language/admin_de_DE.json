@@ -1,0 +1,7 @@
+{
+    "admin": {
+        "title": "Verwaltung",
+        "forbidden_title": "Kein Zugriff",
+        "forbidden": "Du hast keine Berechtigung, diese Seite aufzurufen."
+    }
+}

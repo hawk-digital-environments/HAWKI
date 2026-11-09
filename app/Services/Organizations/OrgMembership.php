@@ -17,7 +17,7 @@ use App\Models\User;
  */
 readonly class OrgMembership
 {
-    public function isAdminOf(User $user, Organization|int|null $organization): bool
+    public function isAdminOf(User $user, null|int|Organization $organization): bool
     {
         $organizationId = $organization instanceof Organization ? $organization->id : $organization;
 
@@ -28,6 +28,17 @@ readonly class OrgMembership
         return $user->organizations()
             ->wherePivot('role', 'admin')
             ->where('organizations.id', $organizationId)
+            ->exists();
+    }
+
+    /**
+     * Is the user an admin of at least one organization? The class-level
+     * verdict behind "may this user review at all".
+     */
+    public function isAdminAnywhere(User $user): bool
+    {
+        return $user->organizations()
+            ->wherePivot('role', 'admin')
             ->exists();
     }
 }
