@@ -22,6 +22,7 @@
 - Multiple Mermaid diagram previews failed to render at the same time: generated diagrams could receive duplicate render IDs, causing the renderer to silently draw only one and skip the rest. Fixed upstream in `markstream` 2.0.15.
 - `php hawki init` and `php hawki run -build` no longer run an unattended `composer update` when outdated packages are detected. Setup and build now only perform a deterministic `composer install`; upgrading packages is a deliberate decision. Previously the silent update could jump packages across major versions (e.g. `laravel/ai` 0.10 → 1.3), breaking the app with errors that first surfaced in unrelated commands like `models sync`.
 - Model enrichment (pricing, context windows, feature flags) stopped updating because LiteLLM discontinued their catalog API. Lookups always fell back to the static files. The catalog is now read from LiteLLM's GitHub file.
+- Fixed the announcement CLI: `--anchor` names were mangled into booleans by `FILTER_VALIDATE_BOOLEAN`, `announcement:make` created timestamped folders that didn't match the published `view`, and string `--users=` ids made targeted announcements invisible to their own targets on MySQL.
 
 ### Internals
 
@@ -50,6 +51,7 @@
 - Added `App\Services\Ai\Providers\Adapters\Values\AnthropicThinkingConfig`, a value object shared by the Anthropic and AWS Bedrock adapters that decides the extended-thinking budget (capped at half of max tokens, minimum 1,024) and the sampling overrides Anthropic requires. Every deviation from the user's configured parameters (thinking disabled, temperature/top-p neutralised) is returned as a warning and logged by the adapters. Behaviour change: a requested thinking budget below 1,024 tokens now disables thinking with a warning instead of being silently raised to the minimum.
 - LiteLLM catalog: downloaded once into a shared cache and filtered per provider, kept fresh via ETag revalidation every 5 minutes. During upstream outages cached data is served for up to 24 h, then the static files take over.
 - The `static_llm_data` updater no longer deletes the old files when the catalog is unreachable.
+- **Announcements in the Svelte frontend**: new non-Eloquent `announcements` JSON:API resource carrying per-user seen/accepted state and localized markdown. Acknowledgement goes through `PATCH` with write-only `seen`/`accepted` flags, so timestamps are always server-stamped; the list order (newest first, undated last) is a documented contract the new `AnnouncementStore` dialog queue builds on. Forced announcements must be confirmed (decline = logout), anchored ones wait for their trigger (e.g. attaching a file), past news lands on the new "Aktuelles" page in the profile menu. Details: `_documentation/500-Backend/1000-Infrastructure/300-Announcements.md`.
 
 ### Deprecation
 
