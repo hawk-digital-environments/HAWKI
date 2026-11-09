@@ -308,7 +308,7 @@
         column-gap: var(--space-3);
         min-width: 6rem;
         justify-content: center;
-        font-size: var(--font-size-md);
+        font-size: var(--font-size-sm);
     }
 
     :is(.btn--xs, .btn--sm, .btn--md) {
