@@ -9,6 +9,7 @@ use App\Services\Ai\Agents\Exceptions\InvalidToolTransferStringException;
 use App\Services\Ai\Agents\Implementations\Chat\ChatToolResolver;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Models\Capabilities\AiModelCapabilityRegistry;
+use App\Services\Ai\Models\Settings\Values\AiModelSettings;
 use App\Services\Ai\Models\Capabilities\Values\AiModelCapabilityDefinition;
 use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
@@ -63,10 +64,16 @@ class ChatToolResolverTest extends TestCase
     private function makeModel(bool $hasNativeCapability = false, string $capabilityKey = 'web_search'): AiModel&MockObject
     {
         $nativeCaps = $this->makeNativeCapabilities($hasNativeCapability, $capabilityKey);
+        // The run-time guard reads the model's settings — tool calling on.
+        $settings = AiModelSettings::fromArray(['tool_calling' => true]);
         $model = $this->createMock(AiModel::class);
         // AiModel exposes cast properties via Eloquent's magic __get
         $model->method('__get')->willReturnCallback(
-            fn(string $k) => $k === 'native_capabilities' ? $nativeCaps : null
+            fn(string $k) => match ($k) {
+                'native_capabilities' => $nativeCaps,
+                'settings' => $settings,
+                default => null,
+            }
         );
         return $model;
     }

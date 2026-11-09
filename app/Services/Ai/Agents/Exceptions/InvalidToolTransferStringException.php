@@ -5,6 +5,15 @@ namespace App\Services\Ai\Agents\Exceptions;
 
 class InvalidToolTransferStringException extends \InvalidArgumentException implements AgentExceptionInterface
 {
+    /**
+     * Client-facing response for every malformed or unresolvable tool request:
+     * the frontend translates the code and never shows the raw message.
+     */
+    public function render(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(['message' => 'The selected tool is currently unavailable.', 'code' => 'TOOL_UNAVAILABLE'], 422);
+    }
+
     public static function forNotAString(): self
     {
         return new self('Tool transfer strings must be an array of strings.');
@@ -62,5 +71,10 @@ class InvalidToolTransferStringException extends \InvalidArgumentException imple
             'Tool transfer string "%s" does not contain a tool name.',
             $transferString
         ));
+    }
+
+    public static function forModelWithoutToolCalling(string $modelId): self
+    {
+        return new self(sprintf('The model "%s" does not support tool calling.', $modelId));
     }
 }

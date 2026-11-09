@@ -143,14 +143,14 @@
             },
             "modePanel": {
                 "editTitle": "Edit message",
-                "regenTitle": "Regenerate AI response",
                 "threadTitle": "Write message in thread",
                 "defaultTitle": "Mode",
                 "cancelEdit": "Exit edit mode",
-                "cancelRegen": "Cancel regeneration",
                 "cancelThread": "Leave thread view",
                 "cancelDefault": "Exit mode",
-                "actionBusy": "You can not do this right now. Please wait until the current action is finished."
+                "actionBusy": "You can not do this right now. Please wait until the current action is finished.",
+                "regenTitle": "Regenerate AI response",
+                "cancelRegen": "Cancel regeneration"
             },
             "settings": {
                 "presetCreative": "Creative",
@@ -292,16 +292,16 @@
                 "emptyMessageTooltip": "Please enter a message",
                 "sendTooltip": "Send message",
                 "saveLabel": "Save",
-                "regenerateLabel": "Regenerate",
                 "sendLabel": "Send",
-                "cancelRegeneration": "Cancel regeneration",
                 "leaveThread": "Leave thread",
                 "cancelEdit": "Cancel editing",
                 "cancelResponse": "Cancel AI response",
                 "improvementError": "Could not load improvement suggestions",
                 "improvementModelSaidNoError": "Your message is good as it is. No improvements suggested.",
                 "improveTooltip": "Improve your input with AI-powered suggestions",
-                "cancelLabel": "Cancel"
+                "cancelLabel": "Cancel",
+                "regenerateLabel": "Regenerate",
+                "cancelRegeneration": "Cancel regeneration"
             },
             "demandBars": {
                 "low": "Low",
@@ -312,12 +312,6 @@
                 "highTooltip": "High load — responses delayed",
                 "ariaLabel": "Load: :label"
             },
-            "regen": {
-                "onlyAssistantMessages": "Only assistant messages can be regenerated",
-                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
-                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
-                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
-            },
             "sending": {
                 "responseError": "An error occurred while processing the response.",
                 "sendError": "An error occurred while sending the message."
@@ -326,7 +320,20 @@
                 "label": "Favorites",
                 "add": "Add to favorites",
                 "remove": "Remove from favorites"
+            },
+            "regen": {
+                "onlyAssistantMessages": "Only assistant messages can be regenerated",
+                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
+                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
+                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
             }
+        },
+        "regenerate": {
+            "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback."
+        },
+        "tools": {
+            "accessDenied": "You no longer have access to a selected tool. Review your selection and try again.",
+            "unavailable": "A selected tool is currently unavailable for this model. Review your selection."
         }
     }
 }

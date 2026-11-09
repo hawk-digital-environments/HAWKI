@@ -231,3 +231,23 @@ export function createToolOrCapabilityWithStateFromTransferString(
 
     return createToolOrCapabilityWithState(resolvedTool, resolvedInnerTool, toolSettings);
 }
+
+/** Re-resolves a persisted list of tool-transfer strings (e.g. a message's
+ *  `metadata.tools` snapshot, reused by a regeneration) against the current
+ *  catalog and `model`. Throws — never silently drops — when a selection can
+ *  no longer run: `TOOL_ACCESS_DENIED` when the tool/capability is unknown to
+ *  the catalog, `TOOL_UNAVAILABLE` when the model cannot use it (tool calling
+ *  switched off, or the tool not available for this model). */
+export function validatedToolSnapshot(
+    requested: readonly string[],
+    toolStore: AiToolStore,
+    model: AiModel
+): string[] {
+    if (requested.length === 0) return [];
+    return requested.map(transferString => {
+        const tool = createToolOrCapabilityWithStateFromTransferString(transferString, toolStore);
+        if (!tool) throw new Error('TOOL_ACCESS_DENIED');
+        if (!model || !tool.isAvailableFor(model)) throw new Error('TOOL_UNAVAILABLE');
+        return tool.toTransferString();
+    });
+}

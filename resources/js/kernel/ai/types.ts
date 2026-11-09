@@ -21,6 +21,10 @@ export interface AiStreamRequest {
     messages: AiMessage[];
     tools?: string[] | null;
     params?: AiModelParameters | null;
+    /** Assistant handle (no `@`) the run is bound to; travels as
+     *  `payload.hawkiExtensions.assistant_handle` and is ignored by backends
+     *  without assistant support. */
+    assistantHandle?: string | null;
     threadIndex?: number;
     slug?: string;
     isUpdate?: boolean;
