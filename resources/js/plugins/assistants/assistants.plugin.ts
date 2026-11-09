@@ -108,6 +108,9 @@ export default class AssistantsPlugin implements HawkiPlugin {
             { order: 10 }
         );
 
+        // The composer's `@` menu links here to browse every assistant.
+        registrar.add('aiAssistantsOverviewRoute', () => 'assistants.dashboard.index');
+
         // Pins an assistant-addressed chat send to the assistant (binding,
         // model/tools/params, display author) and shows the assistant's
         // greeting/starter prompts in the chat welcome — see

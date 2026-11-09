@@ -116,7 +116,7 @@
         ></textarea>
         <Button
             class="send-btn"
-            variant="accent"
+            variant="fill"
             iconLeft={ArrowUp02Icon}
             aria-label={__('assistants.testChat.send')}
             disabled={!canSend}

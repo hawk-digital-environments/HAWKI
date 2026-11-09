@@ -2,10 +2,11 @@
   @component A single assistant row inside `AssistantMenu` — mirrors `ToolMenuListItem`,
   but toggles an `@handle` in the composer message instead of a tool. The whole row acts as
   a checkbox (checked = the handle is currently present in the message); the visuals come
-  from `AssistantRow`, shared with the caret-anchored `AssistantMentionPopup`.
+  from `AssistantRow`, shared wherever an assistant row is listed.
 
-  A separate info button on the right — or ArrowRight — opens `AssistantMenuDetail` for that
-  assistant instead of toggling it, stopping propagation so it never also tags.
+  A separate info chevron on the right — revealed on the row being pointed at or focused, as in
+  `ModelMenuListItem` — or ArrowRight opens `AssistantMenuDetail` for that assistant instead
+  of toggling it, stopping propagation so it never also tags.
 
   ## Usage
   Rendered by `AssistantMenu`, once per assistant from the `ai-handle` store:
@@ -21,11 +22,11 @@
 
     /** One assistant row, pre-wired with its appearance and toggle callback by `AssistantMenu`. */
     export interface AssistantMenuEntry {
-        /** The assistant (handle, label, grouping, pin state) this row represents. */
+        /** The assistant (handle, label, grouping, favourite state) this row represents. */
         assistant: AiAssistant;
-        /** Emoji shown at the start of the row. */
+        /** Icon shown at the start of the row. */
         emoji: string;
-        /** The assistant's two color stops, tinting its emoji swatch and handle. */
+        /** The assistant's two color stops, tinting its icon swatch and handle. */
         colors: BeamColors;
         /** `true` when the assistant's handle is present in the current message. */
         active: boolean;
@@ -36,8 +37,8 @@
 <script lang="ts">
     import DropdownMenuCheckboxItem from '$lib/components/ui/dropdown-menu/DropdownMenuCheckboxItem.svelte';
     import AssistantRow from '$plugins/core/modules/chat/components/composer/AssistantRow.svelte';
-    import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
+    import MenuRowInfoButton from '$plugins/core/modules/chat/components/composer/MenuRowInfoButton.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -54,16 +55,16 @@
 
     const {entry, onOpenDetail}: Props = $props();
 
-    // A row is lifted into the "Pinned" section by a local composer pin or by its
-    // server-side flag (a favourite); the pin button targets whichever mechanism
-    // owns the row's pin.
+    // A row is lifted into the "Favorites" section by a local composer pin (assistants
+    // without a server-side favourite, e.g. HAWKI) or by its server-side favourite; the
+    // favourite button targets whichever mechanism owns the row's state.
     const pinned = $derived(
-        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned
+        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.favorite
     );
 
     function togglePin() {
-        if (entry.assistant.onTogglePin) {
-            entry.assistant.onTogglePin(!pinned);
+        if (entry.assistant.onToggleFavorite) {
+            entry.assistant.onToggleFavorite(!pinned);
         } else {
             pinStore.toggle('assistant', entry.assistant.id);
         }
@@ -91,6 +92,7 @@
 -->
 <DropdownMenuCheckboxItem
     checked={entry.active}
+    indicator="none"
     closeOnSelect={false}
     onCheckedChange={entry.onToggle}
     onkeydown={onRowKeydown}
@@ -110,21 +112,7 @@
             {pinned}
             onToggle={togglePin}/>
 
-        <button
-            type="button"
-            class="assistant-item-info"
-            aria-label={__('chat.composer.assistantMenu.infoDefault')}
-            tabindex={-1}
-            onpointerdown={(e) => e.stopPropagation()}
-            onpointerup={(e) => e.stopPropagation()}
-            onkeydown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.stopPropagation();
-                }
-            }}
-            onclick={openDetail}>
-            <ArrowRight01Icon size={16}/>
-        </button>
+        <MenuRowInfoButton label={__('chat.composer.assistantMenu.infoDefault')} onOpen={openDetail}/>
     {/snippet}
 </DropdownMenuCheckboxItem>
 
@@ -132,37 +120,26 @@
     /* The whole row toggles the mention, so signal it as clickable. */
     :global(.dropdown-checkbox-item.assistant-menu-item) {
         cursor: pointer;
-        /* Check now lives on the emoji swatch, so drop the reserved right padding. */
-        padding-right: var(--space-2, calc(0.25rem * 2));
+        /* Matches the vertical inset, so the swatch sits evenly in the row's corner. */
+        padding-left: var(--space-1_5);
         gap: var(--space-2, calc(0.25rem * 2));
     }
 
-    /* Built-in absolute check is replaced by the one `AssistantRow` lays over its swatch. */
-    :global(.dropdown-checkbox-item.assistant-menu-item .dropdown-item-indicator) {
-        display: none;
+    /* Concentric with the row's highlight: its corner radius minus the inset, so the gap
+       around the swatch stays even into the corner too. */
+    :global(.dropdown-checkbox-item.assistant-menu-item .assistant-row-emoji) {
+        border-radius: calc(var(--corner-sm) - var(--space-1_5));
     }
 
-    /* Mirrors `.tool-item-info`: a chevron that only opens the detail view. Rendered at
-       full strength, with no hover state, so it reads as a plain affordance. */
-    /* The pin only shows on the row the user is pointing at; pinned rows keep their own
-       button visible. Mirrors `ToolMenuListItem`. */
-    :global(.dropdown-checkbox-item.assistant-menu-item:hover .menu-pin-button),
-    :global(.dropdown-checkbox-item.assistant-menu-item:focus-within .menu-pin-button) {
-        opacity: 1;
+    /* Two lines at the shared tight leading run a fraction past the 32px swatch and stretch
+       the row; a 16px line each keeps the text exactly swatch-tall, so the swatch's inset
+       above and below matches the one on the left. */
+    :global(.dropdown-checkbox-item.assistant-menu-item :is(.assistant-row-label, .assistant-row-description)) {
+        line-height: calc(0.25rem * 4);
     }
 
-    .assistant-item-info {
-        display: flex;
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        padding: 6px 0;
-        margin: 0;
-        border: none;
-        background: none;
-        pointer-events: all;
-        line-height: 0;
-        color: var(--color-text);
-        cursor: pointer;
-    }
+    /* The favourite and the info chevron only show on the row being pointed at or
+       focused — through `--dropdown-item-action-opacity` and `MenuRowInfoButton`'s
+       own reveal rules; tagged/pinned rows keep theirs visible, so their options
+       are at hand. */
 </style>

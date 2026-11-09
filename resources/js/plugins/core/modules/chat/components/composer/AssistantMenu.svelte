@@ -4,9 +4,9 @@
 
   Lists every taggable AI participant from the `ai-handle` store: in a room the existing
   HAWKI assistant (`@hawki`) first, then the assistants other plugins contribute via the
-  `aiAssistants` hook (the assistants plugin appends the user's real assistants there,
-  grouped by their category). In an AI conversation only those are listed — every message
-  there already goes to HAWKI, so tagging it would say nothing.
+  `aiAssistants` hook. In an AI
+  conversation only those are listed — every message there already goes to HAWKI, so
+  tagging it would say nothing.
   Each row toggles that assistant's `@handle` in `composerContext.message`, which is what
   makes a room message addressed to the AI (see `ComposerContext.containsAiHandle`).
 
@@ -14,47 +14,71 @@
   out (`ComposerContext.addHandleToMessage` replaces rather than appends), so the rows behave
   as one choice even though they are rendered as checkable items.
 
-  Pinned assistants are lifted into a "Pinned" section above the content sections: rows the
-  user pinned locally (the `composer-pins` store, toggled per row by `MenuPinButton`) plus
-  rows a hook flagged `pinned` (a favourited assistant). The remaining rows are grouped by
+  Favourite assistants are lifted into a "Favorites" section above the content sections: rows
+  a hook flagged `favorite` (the assistant's server-side favourite) plus rows favourited
+  locally (the `composer-pins` store, for rows without a server-side favourite such as HAWKI;
+  toggled per row by `MenuPinButton`). The remaining rows are grouped by
   their entry's `group` — the assistant's real category — with one fallback section for
   ungrouped rows.
 
   Each row's info icon (or ArrowRight) drills into `AssistantMenuDetail` in place of the
   list — a two-panel `DropdownMenuDetailView`, same as the tool picker.
 
-  This is the browse-all entry point; typing `@` in the message instead opens
-  `AssistantMentionPopup` at the caret, which filters the same assistants as you type.
+  Typing `@` in the message opens this same menu in command mode (`command` set): the
+  textarea keeps focus, what is typed after the `@` filters the list in place of the search
+  field, and the textarea drives the highlight through `move`/`selectActive` — see
+  `utils/commandMenu.ts`.
 -->
 <script lang="ts">
     import {untrack} from 'svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
+    import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
     import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
     import AssistantMenuListItem, {type AssistantMenuEntry} from '$plugins/core/modules/chat/components/composer/AssistantMenuListItem.svelte';
     import AssistantMenuDetail from '$plugins/core/modules/chat/components/composer/AssistantMenuDetail.svelte';
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
+    import DropdownMenuEmpty from '$lib/components/ui/dropdown-menu/DropdownMenuEmpty.svelte';
     import MenuSearchField from '$plugins/core/modules/chat/components/composer/MenuSearchField.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
-    import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {chipPop} from '$lib/utils/transitions/chipPop';
+    import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
+    import {type RouterScope, useRouterScope} from '$lib/components/ui/routing/index.js';
     import AtIcon from '$lib/components/ui/icons/iconset/AtIcon.svelte';
-    import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance';
+    import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {usePickerMenuBehaviours} from '$plugins/core/modules/chat/components/composer/utils/pickerMenuBehaviours.svelte.js';
+    import {createCommandMenu, createCommandKeeper, type MenuCommand} from '$plugins/core/modules/chat/components/composer/utils/commandMenu.js';
 
     const composerContext = useComposerContext();
     const aiHandleStore = useStore('ai-handle');
     const pinStore = useStore('composer-pins');
     const {__} = useTranslator();
 
+    // Captured defensively: on legacy Blade pages the composer mounts through the snippet
+    // loader without a `RouterView` above it, so no router exists here. The store shortcut
+    // below — the router's only use in this component — then simply stays hidden. Same
+    // pattern as `Link.svelte`.
+    let routerScope: RouterScope | undefined;
+    try {
+        routerScope = useRouterScope();
+    } catch { /* not rendered inside a <RouterView> (legacy snippet mount) */ }
+
     interface Props {
         /** Whether the tagging menu is open. Supports bind:open. */
         open?: boolean;
+        /** Set while a typed `@query` drives the menu from the message textarea. */
+        command?: MenuCommand | null;
     }
 
     // Bindable so the menu can be opened externally, e.g. when the user types "@".
-    let {open = $bindable(false)}: Props = $props();
+    let {open = $bindable(false), command = null}: Props = $props();
+
+    // What the menu shows: the command, kept while the menu closes after it ended.
+    const keepCommand = createCommandKeeper();
+    const shownCommand = $derived(keepCommand(open, command));
 
     // When set, the picker shows the detail view for this assistant instead of the list.
     let detailAssistantId = $state<string | null>(null);
@@ -70,8 +94,7 @@
     let searchEnabled = $state(true);
 
     function toEntry(assistant: AiAssistant): AssistantMenuEntry {
-        // Hook-provided assistants carry their own presentation (the assistants plugin
-        // derives it from the assistant's name and avatar gradient); anything else
+        // Hook-provided assistants carry their own presentation; anything else
         // falls back to the name's first glyph on the brand colors.
         const appearance = assistant.appearance ?? defaultAssistantAppearance(assistant.label);
         return {
@@ -112,7 +135,7 @@
             .some(text => text.toLowerCase().includes(needle));
     }
 
-    const needle = $derived(query.trim().toLowerCase());
+    const needle = $derived((shownCommand ? shownCommand.query : query).trim().toLowerCase());
     const shownHawkiEntry = $derived(
         hawkiEntry && (!needle || matchesQuery(hawkiEntry, needle)) ? hawkiEntry : null
     );
@@ -124,25 +147,25 @@
         ...shownOtherEntries
     ]);
 
-    // A row is lifted into the "Pinned" section by a local composer pin or by the entry's
-    // server-side `pinned` flag (a favourited assistant).
+    // A row is lifted into the "Favorites" section by a local composer pin or by the entry's
+    // server-side `favorite` flag.
     function isLifted(entry: AssistantMenuEntry): boolean {
-        return pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned;
+        return pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.favorite;
     }
 
-    // Pinned rows: local pins in the order they were pinned, then favourite-pinned rows in
+    // Favourite rows: local pins in the order they were set, then server-side favourites in
     // list order — and dropped from the sections below, so each assistant appears exactly once.
     const pinnedEntries = $derived([
         ...pinStore.partition('assistant', shownEntries, entry => entry.assistant.id).pinned,
-        ...shownEntries.filter(entry => entry.assistant.pinned && !pinStore.isPinned('assistant', entry.assistant.id))
+        ...shownEntries.filter(entry => entry.assistant.favorite && !pinStore.isPinned('assistant', entry.assistant.id))
     ]);
     const unpinnedHawkiEntry = $derived(
         shownHawkiEntry && !isLifted(shownHawkiEntry) ? shownHawkiEntry : null
     );
     const unpinnedOtherEntries = $derived(shownOtherEntries.filter(entry => !isLifted(entry)));
 
-    // The content sections: rows grouped by their entry's `group` (the assistant's real
-    // category), in first-appearance order. Ungrouped rows share the fallback section.
+    // The content sections: rows grouped by their entry's `group`, in first-appearance
+    // order. Ungrouped rows share the fallback section.
     interface EntryGroup {
         id: string;
         label: string;
@@ -187,6 +210,13 @@
         return entry ? {...entry} : null;
     });
 
+    // Shortcut next to the search field to the full assistant overview (the store), when a
+    // plugin provides one.
+    function openOverview(route: string) {
+        open = false;
+        void routerScope?.current.goToRoute(route);
+    }
+
     function openAssistantDetail(entry: AssistantMenuEntry) {
         detailAssistantId = entry.assistant.id;
     }
@@ -205,12 +235,44 @@
         });
     }
 
-    // When closing the menu, the detail view is kept for a short delay to avoid flickering
-    // mid-close; matches the tool picker.
-    $effect(() => {
-        if (!open) {
+    // The tagged assistant's row, unless it is filtered out.
+    function activeRow(container: ParentNode): HTMLElement | null {
+        const handle = composerContext.handlesInMessage[0];
+        return handle && shownEntries.some(entry => entry.assistant.handle === handle)
+            ? container.querySelector<HTMLElement>(`[data-assistant-handle="${CSS.escape(handle)}"]`)
+            : null;
+    }
+
+    const commandMenu = createCommandMenu('.assistant-menu-content', () => shownCommand, activeRow);
+
+    /** Moves the command highlight; called by `ComposerTextarea` on ArrowUp/ArrowDown. */
+    export function move(delta: number): boolean {
+        return commandMenu.move(delta);
+    }
+
+    /** Toggles the highlighted row; called by `ComposerTextarea` on Enter/Tab. */
+    export function selectActive(): boolean {
+        return commandMenu.selectActive();
+    }
+
+    // The shared picker-menu machinery: reset + detail keep-open on close,
+    // reveal-the-tagged-assistant on open (skipped in command mode, where the
+    // command highlight takes over), the search-field keyboard redirect, and
+    // the command highlight resetting whenever the typed query changes the rows.
+    const menu = usePickerMenuBehaviours({
+        isOpen: () => open,
+        onClose: () => {
             query = '';
-        }
+        },
+        hasDetail: () => detailAssistantId !== null,
+        clearDetail: () => {
+            detailAssistantId = null;
+        },
+        initialRow: activeRow,
+        contentSelector: '.assistant-menu-content',
+        skipReveal: () => shownCommand !== null,
+        commandQuery: () => shownCommand?.query ?? null,
+        resetCommandHighlight: () => commandMenu.reset()
     });
 
     // Snapshot the search decision per menu session: reading `entries`
@@ -221,23 +283,27 @@
             searchEnabled = untrack(() => entries.length) > 1;
         }
     });
-
-    $effect(() => {
-        if (!open && detailAssistantId) {
-            const t = setTimeout(() => {
-                detailAssistantId = null;
-            }, 200);
-            return () => clearTimeout(t);
-        }
-    });
 </script>
 
 {#if hawkiEntry || otherEntries.length > 0}
-    <div transition:growTransition={{mode: 'horizontal'}}>
+    <div in:chipPop={{blur: 6}} out:chipPop={{direction: 'out', blur: 6}}>
         <DropdownMenu
             disabled={composerContext.guard.disablesFeature('input', false)}
             bind:open
-            contentProps={{class: 'assistant-menu-content'}}>
+            sheet={!shownCommand}
+            layout="panel"
+            width="calc(var(--space-1) * 76)"
+            maxHeight="24rem"
+            magneticHover={false}
+            contentProps={{
+                class: 'assistant-menu-content',
+                onkeydowncapture: menu.onContentKeydownCapture,
+                onOpenAutoFocus: commandMenu.onOpenAutoFocus,
+                onCloseAutoFocus: commandMenu.onCloseAutoFocus,
+                onInteractOutside: commandMenu.onInteractOutside,
+                onmousemove: commandMenu.onMouseMove,
+                ...commandMenu.anchorProps()
+            }}>
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"
@@ -247,10 +313,22 @@
                     {...props}/>
             {/snippet}
 
-            {#if !detailEntry && searchEnabled}
+            {#if !detailEntry && searchEnabled && !shownCommand}
                 <MenuSearchField
                     bind:value={query}
-                    placeholder={__('chat.composer.assistantMenu.searchPlaceholder')}/>
+                    placeholder={__('chat.composer.assistantMenu.searchPlaceholder')}>
+                    {#snippet action()}
+                        {@const route = aiHandleStore.overviewRoute}
+                        {#if route && routerScope}
+                            <ButtonWithTooltip
+                                variant="ghost"
+                                size="sm"
+                                iconLeft={Store01Icon}
+                                tooltip={__('chat.composer.assistantMenu.openStore')}
+                                onclick={() => openOverview(route)}/>
+                        {/if}
+                    {/snippet}
+                </MenuSearchField>
             {/if}
 
             <DropdownMenuDetailView open={!!detailEntry}>
@@ -260,56 +338,29 @@
                     {/if}
                 {/snippet}
 
-                {#if pinnedEntries.length > 0}
-                    <DropdownMenuLabel>{__('chat.composer.pin.pinnedLabel')}</DropdownMenuLabel>
-                    {#each pinnedEntries as entry (entry.assistant.id)}
-                        <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
-                    {/each}
-                {/if}
-
-                {#each groups as group (group.id)}
-                    {#if group.entries.length > 0}
-                        <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
-                        {#each group.entries as entry (entry.assistant.id)}
+                <!-- Inside the scrolling viewport, so the sliding hover scrolls with the rows. -->
+                <MenuList class="dropdown-menu-list" bridgeSections>
+                    {#if pinnedEntries.length > 0}
+                        <DropdownMenuLabel>{__('chat.composer.favorite.label')}</DropdownMenuLabel>
+                        {#each pinnedEntries as entry (entry.assistant.id)}
                             <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
                         {/each}
                     {/if}
-                {/each}
+
+                    {#each groups as group (group.id)}
+                        {#if group.entries.length > 0}
+                            <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                            {#each group.entries as entry (entry.assistant.id)}
+                                <AssistantMenuListItem {entry} onOpenDetail={openAssistantDetail}/>
+                            {/each}
+                        {/if}
+                    {/each}
+                </MenuList>
 
                 {#if !shownHawkiEntry && shownOtherEntries.length === 0}
-                    <p class="no-results">{__('chat.composer.assistantMenu.noResults')}</p>
+                    <DropdownMenuEmpty>{__('chat.composer.assistantMenu.noResults')}</DropdownMenuEmpty>
                 {/if}
             </DropdownMenuDetailView>
         </DropdownMenu>
     </div>
 {/if}
-
-<style>
-    .no-results {
-        padding: var(--space-3);
-        margin: 0;
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        text-align: center;
-    }
-
-    /*
-      Match the tool picker: one fixed width, and scrolling inside the animated detail-view
-      viewport so the dropdown chrome stays anchored while the panels slide.
-    */
-    :global(.dropdown-content.dropdown-content--dropdown.assistant-menu-content) {
-        width: calc(0.25rem * 76);
-        max-width: calc(100vw - var(--space-8, calc(0.25rem * 8)));
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-
-        /* The padding collides with the inner view container (overflow: hidden), so the
-           inner view handles its own padding instead. */
-        padding: 0;
-
-        :global(.view) {
-            padding: var(--space-1)
-        }
-    }
-</style>

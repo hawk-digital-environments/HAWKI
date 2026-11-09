@@ -91,7 +91,9 @@ export class ToolMenuFocusContext {
     }
 
     private isDisabled(element: HTMLElement): boolean {
-        return element.hasAttribute('data-disabled') || element.matches(':disabled');
+        return element.hasAttribute('data-disabled')
+            || element.matches(':disabled')
+            || element.closest('[inert]') !== null;
     }
 }
 

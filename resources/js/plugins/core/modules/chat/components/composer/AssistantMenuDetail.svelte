@@ -3,7 +3,7 @@
   `AssistantMenu`'s `DropdownMenuDetailView` when the user clicks a row's info icon — the
   `@` menu's counterpart to `ToolMenuDetail`.
 
-  Shows the assistant's emoji swatch, display name and `@handle`, a `MenuPinButton` and a
+  Shows the assistant's emoji swatch, display name and `@handle`, a `MenuPinButton` (as a favourite toggle) and a
   toggle (the latter mirrors the checkbox in `AssistantMenuListItem`, wired to the same
   `entry.onToggle`), and the assistant's description in full.
 
@@ -30,7 +30,7 @@
     import {onMount} from 'svelte';
     import type {AssistantMenuEntry} from '$plugins/core/modules/chat/components/composer/AssistantMenuListItem.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
-    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import DropdownMenuBackButton from '$lib/components/ui/dropdown-menu/DropdownMenuBackButton.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -49,15 +49,15 @@
 
     let {entry, onCloseDetail}: Props = $props();
 
-    // Same pin semantics as the list row: a local composer pin or the row's
-    // server-side flag (a favourite), with the toggle routed accordingly.
+    // Same favourite semantics as the list row: a local composer pin or the row's
+    // server-side favourite, with the toggle routed accordingly.
     const pinned = $derived(
-        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.pinned
+        pinStore.isPinned('assistant', entry.assistant.id) || !!entry.assistant.favorite
     );
 
     function togglePin() {
-        if (entry.assistant.onTogglePin) {
-            entry.assistant.onTogglePin(!pinned);
+        if (entry.assistant.onToggleFavorite) {
+            entry.assistant.onToggleFavorite(!pinned);
         } else {
             pinStore.toggle('assistant', entry.assistant.id);
         }
@@ -128,19 +128,10 @@
     style:--assistant-to={entry.colors.to}
     bind:this={detailEl}
     onkeydown={onDetailKeydown}>
-    <button
-        type="button"
-        class="assistant-detail-back"
-        bind:this={backEl}
-        onpointerdowncapture={(e) => e.stopPropagation()}
-        onclick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onCloseDetail?.();
-        }}>
-        <ArrowLeft01Icon size={16}/>
-        <span>{__('chat.composer.assistantMenu.backButton')}</span>
-    </button>
+    <DropdownMenuBackButton
+        bind:ref={backEl}
+        label={__('chat.composer.assistantMenu.backButton')}
+        onBack={onCloseDetail}/>
 
     <div class="assistant-detail-header">
         <span class="assistant-detail-title">
@@ -184,25 +175,10 @@
         padding-bottom: var(--space-2, calc(0.25rem * 2));
     }
 
-    .assistant-detail-back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1, 0.25rem);
+    /* Hugs its label instead of stretching across the column. */
+    .assistant-detail > :global(.dropdown-menu-back) {
         align-self: flex-start;
         margin-bottom: var(--space-1, 0.25rem);
-        padding: var(--space-1, 0.25rem) var(--space-2, calc(0.25rem * 2));
-        border: none;
-        border-radius: var(--corner-sm);
-        background: none;
-        color: var(--color-text-muted, var(--color-text));
-        font-size: var(--font-size-xs);
-        cursor: pointer;
-        transition: background-color var(--duration-fast, 150ms);
-    }
-
-    .assistant-detail-back:hover {
-        background-color: var(--color-hover);
-        color: var(--color-text);
     }
 
     .assistant-detail-header {

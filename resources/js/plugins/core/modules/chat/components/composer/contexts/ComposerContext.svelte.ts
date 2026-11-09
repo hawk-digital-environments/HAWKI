@@ -91,7 +91,7 @@ import {GuardSlice} from '$plugins/core/modules/chat/components/composer/context
 import {MessageSender} from '$plugins/core/modules/chat/components/composer/contexts/sending/MessageSender.js';
 import {OldUiBridgeTransport} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/OldUiBridgeTransport.js';
 import type {SendMessageStatus} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageStatus.svelte.js';
-import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
+import {breakpointsQueries} from '$lib/components/util/breakpoints/breakpoints.js';
 import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte';
@@ -122,12 +122,12 @@ export interface CreateComposerContextOptions {
     useLegacyBridge?: boolean;
 }
 
-/** {@link SyncPipeline} channel name used by {@link ComposerContext.focusInput}. */
-const FOCUS_INPUT_PIPELINE = 'focusInput';
-
-/** Channel-to-payload map for the context-internal {@link SyncPipeline}. `void` = no payload. */
-interface FlowList {
-    [FOCUS_INPUT_PIPELINE]: void;
+declare module '$lib/kernel/extendableTypes.js' {
+    interface HawkiSyncEvents {
+        /** The chat composer's input should receive focus. Triggered by
+         *  {@link ComposerContext.focusInput}; handled by the mounted composer itself. */
+        onComposerFocusRequested: void;
+    }
 }
 
 /**
@@ -204,7 +204,8 @@ export class ComposerContext {
          * Reads the taggable assistant entries (also backed by the `ai-handle`
          * store) so derived state can react to which participant is addressed.
          */
-        private readonly getAssistants: () => AiAssistant[]
+        private readonly getAssistants: () => AiAssistant[],
+        private readonly events: HawkiApp['events']
     ) {
         this._systemPrompt = $state(initialSystemPrompt);
 
@@ -240,8 +241,6 @@ export class ComposerContext {
         });
     }
 
-    /** Internal event bus for imperative, fire-and-forget signals (currently only "focus the input"). */
-    private sync = new SyncPipeline<FlowList>();
     /** Backing field for {@link systemPrompt}; declared as `$state` in the constructor. */
     private _systemPrompt: string;
     /** Backing field for {@link sendStatus}. `null` while idle. */
@@ -345,15 +344,21 @@ export class ComposerContext {
     }
 
     /** Imperatively requests that the textarea receives focus. Called by modes after
-     *  pre-filling the message so the cursor lands in the input without a user click. */
+     *  pre-filling the message so the cursor lands in the input without a user click.
+     *  Broadcast as the `onComposerFocusRequested` kernel event so delivery follows the
+     *  composer's mount state instead of call-site timing. */
     public focusInput(): void {
-        this.sync.trigger(FOCUS_INPUT_PIPELINE);
+        this.events.sync.triggerVoid('onComposerFocusRequested');
     }
 
-    /** Registers a handler that fires whenever {@link focusInput} is called.
-     *  Returns an unsubscribe function. Typically called by the textarea component. */
-    public onFocusInput(handler: () => void): () => void {
-        return this.sync.on(FOCUS_INPUT_PIPELINE, handler);
+    /** Like {@link focusInput}, but for focus the user did not explicitly ask for (opening
+     *  a chat, picking a model). Skipped on small screens, where focusing the textarea
+     *  would pop up the on-screen keyboard. */
+    public autoFocusInput(): void {
+        if (window.matchMedia(breakpointsQueries.bpSmallerThanMd).matches) {
+            return;
+        }
+        this.focusInput();
     }
 
     /** Starts a send operation. Returns `null` without doing anything when `guard.canSend`
@@ -383,8 +388,11 @@ export class ComposerContext {
 
         status.response.then((res) => {
             res.body.then(() => {
-                // Clear the send status only after the response body has been fully received
-                this._sendStatus = null;
+                // Clear the send status only after the response body has been fully received,
+                // and only if no newer send has taken its place in the meantime
+                if (this._sendStatus === status) {
+                    this._sendStatus = null;
+                }
             });
         });
 
@@ -455,11 +463,10 @@ export class ComposerContext {
 /**
  * Svelte context accessor pair for the composer.
  *
- * `createStableContext()` mirrors Svelte's `createContext()` `[get, set]`
- * tuple but keeps its key stable across Vite HMR module re-evaluations (see
- * its doc block). `get` is re-exported below as {@link useComposerContext}
- * with an extra guard so a missing provider produces an actionable message
- * instead of the generic one.
+ * `createStableContext()` provides a `[get, set]` tuple whose key identity
+ * stays stable across module (re-)evaluations (see its doc block). `get` is
+ * re-exported below as {@link useComposerContext} with an extra guard so a
+ * missing provider produces an actionable message instead of the generic one.
  */
 const [get, set] = createStableContext<ComposerContext>('hawki.chat.composer-context');
 
@@ -475,6 +482,22 @@ export function useComposerContext(): ComposerContext {
         throw new Error('No ComposerContext found in Svelte context tree. Make sure to call createComposerContext() in a parent component.');
     }
     return context;
+}
+
+/**
+ * Returns the {@link ComposerContext} published by the nearest ancestor that
+ * created one, or `null` when there is none.
+ *
+ * Lets `ChatComposer` adopt a context owned higher up the tree (the chat
+ * layout's — see `useChatComposerContext`) instead of always building its own,
+ * without a try/catch at the call site.
+ */
+export function findComposerContext(): ComposerContext | null {
+    try {
+        return get();
+    } catch {
+        return null;
+    }
 }
 
 /**
@@ -622,7 +645,8 @@ export function createComposerContext(
         onSetSystemPrompt,
         options.onImproveMessage ?? ((message, systemPrompt) => oldUiBridge.triggerImproveMessage(message, systemPrompt)),
         (message) => aiHandleStore.getHandleMatchesIn(message),
-        () => aiHandleStore.assistants
+        () => aiHandleStore.assistants,
+        app.events
     );
 
     const unbinders = options.useLegacyBridge === false ? [] : [

@@ -3,11 +3,11 @@
 
   Only renders anything for **capability** entries that have more than one way to be
   fulfilled (e.g. "web search" backed by two different MCP tools, or a capability the
-  model can also do natively). It shows a `RadioCardGroup` with an "auto" option, an
+  model can also do natively). It shows a `RadioRowGroup` with an "auto" option, an
   optional "native" option (when `entry.tool.hasNativeCapabilityFor` is true for some
-  model), and one radio card per concrete tool that can fulfill the capability — each
-  annotated with a `StatusDotForTool` reflecting whether it works with the currently
-  selected `composerContext.model.current`.
+  model), and one radio row per concrete tool that can fulfill the capability.
+  Like the tool and model lists, only exceptions get a `StatusDotForTool`: an option that is
+  not fully online or does not work with the current `composerContext.model.current`.
 
   Selecting an option calls `composerContext.tools.set(tool, selection, settings)`,
   which becomes the new `toolSelection` read back via `composerContext.tools.get(tool, true)`.
@@ -29,11 +29,12 @@
     import type {ToolMenuEntry} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
-    import RadioCardGroup from '$lib/components/ui/radio-card/RadioCardGroup.svelte';
-    import RadioCard from '$lib/components/ui/radio-card/RadioCard.svelte';
+    import RadioRowGroup from '$lib/components/ui/radio-row/RadioRowGroup.svelte';
+    import RadioRow from '$lib/components/ui/radio-row/RadioRow.svelte';
     import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
     import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
     import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
+    import type {ComponentProps} from 'svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -107,6 +108,13 @@
         return currentState.toolSelection?.name || 'auto';
     });
 
+    type StatusTool = ComponentProps<typeof StatusDotForTool>['tool'];
+
+    /** The list only surfaces exceptions: an option that is not online, or not supported. */
+    function needsStatus(tool: StatusTool, supported: boolean): boolean {
+        return !supported || tool.status !== 'online';
+    }
+
     function handleToolSelectionChange(newValue: string) {
         const tool = entry.tool;
         if (!tool.is_capability) {
@@ -128,44 +136,43 @@
     }
 </script>
 
+{#snippet meta(tool: StatusTool, supported: boolean, label: string, info: string)}
+    {#if needsStatus(tool, supported)}
+        <StatusDotForTool {tool} {supported}/>
+    {/if}
+    <InfoPopover {label} {info}/>
+{/snippet}
+
 {#if show}
     <DropdownMenuSeparator/>
-    {#if show}
-        <DropdownMenuLabel id={variantLabelId}>{__('chat.composer.toolMenuConfig.variantLabel')}</DropdownMenuLabel>
-        <RadioCardGroup
-            value={currentToolSelectionString}
-            onChange={handleToolSelectionChange}
-            aria-labelledby={variantLabelId}
-        >
-            <RadioCard value="auto" disabled={!isAnyToolAvailableForCurrentModel}>
-                {__('chat.composer.toolMenuConfig.autoLabel')}
-                {#snippet meta()}
-                    <StatusDotForTool tool={entry.tool} supported={isAnyToolAvailableForCurrentModel}/>
-                    <InfoPopover
-                        label={__('chat.composer.toolMenuConfig.autoLabel')}
-                        info={__('chat.composer.toolMenuConfig.autoInfo')}/>
+    <DropdownMenuLabel id={variantLabelId}>{__('chat.composer.toolMenuConfig.variantLabel')}</DropdownMenuLabel>
+    <RadioRowGroup
+        value={currentToolSelectionString}
+        onChange={handleToolSelectionChange}
+        aria-labelledby={variantLabelId}
+    >
+        <RadioRow value="auto" disabled={!isAnyToolAvailableForCurrentModel}>
+            {__('chat.composer.toolMenuConfig.autoLabel')}
+            {#snippet trailing()}
+                {@render meta(entry.tool, isAnyToolAvailableForCurrentModel, __('chat.composer.toolMenuConfig.autoLabel'), __('chat.composer.toolMenuConfig.autoInfo'))}
+            {/snippet}
+        </RadioRow>
+        {#if anyModelHasNativeCapability}
+            <RadioRow value="native" disabled={!hasNativeCapability}>
+                {__('chat.composer.toolMenuConfig.nativeLabel')}
+                {#snippet trailing()}
+                    {@render meta(entry.tool, hasNativeCapability, __('chat.composer.toolMenuConfig.nativeLabel'), __('chat.composer.toolMenuConfig.nativeInfo'))}
                 {/snippet}
-            </RadioCard>
-            {#if anyModelHasNativeCapability}
-                <RadioCard value="native" disabled={!hasNativeCapability}>
-                    {__('chat.composer.toolMenuConfig.nativeLabel')}
-                    {#snippet meta()}
-                        <StatusDotForTool tool={entry.tool} supported={hasNativeCapability}/>
-                        <InfoPopover
-                            label={__('chat.composer.toolMenuConfig.nativeLabel')}
-                            info={__('chat.composer.toolMenuConfig.nativeInfo')}/>
-                    {/snippet}
-                </RadioCard>
-            {/if}
-            {#each toolSelectOptions as option}
-                <RadioCard value={option.name} disabled={option.status === 'offline'}>
-                    {option.displayName}
-                    {#snippet meta()}
-                        <StatusDotForTool tool={option} supported={option.isAvailableFor(composerContext.model.current)} showLabel={option.status === 'offline'} focusable={false}/>
-                        <InfoPopover label={option.displayName} info={option.description}/>
-                    {/snippet}
-                </RadioCard>
-            {/each}
-        </RadioCardGroup>
-    {/if}
+            </RadioRow>
+        {/if}
+        {#each toolSelectOptions as option (option.name)}
+            <RadioRow value={option.name} disabled={option.status === 'offline'}>
+                {option.displayName}
+                {#snippet trailing()}
+                    {@render meta(option, option.isAvailableFor(composerContext.model.current), option.displayName, option.description)}
+                {/snippet}
+            </RadioRow>
+        {/each}
+    </RadioRowGroup>
 {/if}
+

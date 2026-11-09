@@ -14,6 +14,12 @@
         --color-capability-video: oklch(48% 0.22 320);
         --color-capability-knowledge-base: oklch(48% 0.1 210);
         --color-capability-web-fetch: oklch(48% 0.09 190);
+
+        /* Tool-picker sections, colored by origin: what HAWKI ships (capabilities and
+           function tools) carries the brand blue, third-party MCP tools stay neutral. */
+        --color-tool-category-capability: var(--color-accent-text);
+        --color-tool-category-function: var(--color-accent-text);
+        --color-tool-category-mcp: var(--color-text-muted);
     }
 
     html.darkMode {

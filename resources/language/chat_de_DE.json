@@ -237,7 +237,12 @@
                     "knowledgeBaseDescription": "Dieses Tool ermöglicht es der KI, auf eine umfangreiche Wissensdatenbank zuzugreifen, die speziell für HAWKI entwickelt wurde. Die Daten werden von deiner Hochschule zur Verfügung gestellt und enthalten Informationen zu Kursen, Veranstaltungen, Richtlinien und vielem mehr."
                 },
                 "searchPlaceholder": "Werkzeuge suchen",
-                "noResults": "Keine passenden Werkzeuge"
+                "noResults": "Keine passenden Werkzeuge",
+                "deactivateGroup": "Alle :count Tools von :label deaktivieren",
+                "activateGroup": "Alle :count Tools von :label aktivieren",
+                "expandGroup": ":count Tools von :label anzeigen",
+                "collapseGroup": ":count Tools von :label ausblenden",
+                "groupToolCount": ":count Tools"
             },
             "assistantMenu": {
                 "title": "Assistenz taggen",
@@ -253,7 +258,8 @@
                     "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum"
                 },
                 "searchPlaceholder": "Assistenten suchen",
-                "noResults": "Keine passenden Assistenten"
+                "noResults": "Keine passenden Assistenten",
+                "openStore": "Assistenten-Store öffnen"
             },
             "mentionChips": {
                 "removeAriaLabel": ":assistant aus der Nachricht entfernen"
@@ -262,16 +268,17 @@
                 "switchModel": "Aktuelles Modell wechseln",
                 "placeholder": "Modellauswahl",
                 "searchPlaceholder": "Modelle durchsuchen…",
-                "allTab": "Alle",
                 "otherProvider": "Sonstige",
-                "providerTab": "Modelle von :provider anzeigen",
                 "noResults": "Keine Modelle gefunden.",
                 "favorites": "Angepinnte Modelle",
                 "addFavorite": ":model anpinnen",
                 "removeFavorite": ":model loslösen",
-                "listAriaLabel": "Verfügbare Modelle",
                 "switchModelCurrent": "Modell wechseln, aktuell: :model",
-                "allModelsLink": "Alle Modelle entdecken"
+                "allModelsLink": "Alle Modelle entdecken",
+                "backButton": "Modelle",
+                "infoDefault": "Mehr Informationen zum Modell anzeigen",
+                "useModel": "Modell verwenden",
+                "currentModel": "Aktuelles Modell"
             },
             "fileChips": {
                 "conflictMessage": "Vom aktuellen Modell nicht unterstützt",
@@ -297,7 +304,7 @@
             },
             "toolMenuConfig": {
                 "variantLabel": "Variante",
-                "autoLabel": "automatisch",
+                "autoLabel": "Automatisch",
                 "autoInfo": "Das Modell wählt automatisch die beste Variante für die Aufgabe aus. (Natives Tool bevorzugt, ansonsten die erste verfügbare Alternative)",
                 "nativeLabel": "Natives Tool",
                 "nativeInfo": "Dieses Tool wird vom Model-Anbieter direkt zur Verfügung gestellt."
@@ -338,6 +345,11 @@
                 "pinnedLabel": "Angeheftet",
                 "pin": "Oben in diesem Menü anheften",
                 "unpin": "Nicht mehr anheften"
+            },
+            "favorite": {
+                "label": "Favoriten",
+                "add": "Zu Favoriten hinzufügen",
+                "remove": "Aus Favoriten entfernen"
             }
         },
         "tools": {

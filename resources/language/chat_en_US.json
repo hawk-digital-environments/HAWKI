@@ -237,7 +237,12 @@
                     "knowledgeBaseDescription": "This tool enables the AI to access an extensive knowledge base developed specifically for HAWKI. The data is provided by your university and contains information about courses, events, policies, and much more."
                 },
                 "searchPlaceholder": "Search tools",
-                "noResults": "No matching tools"
+                "noResults": "No matching tools",
+                "deactivateGroup": "Deactivate all :count tools from :label",
+                "activateGroup": "Activate all :count tools from :label",
+                "expandGroup": "Show :count tools from :label",
+                "collapseGroup": "Hide :count tools from :label",
+                "groupToolCount": ":count tools"
             },
             "assistantMenu": {
                 "title": "Tag an assistant",
@@ -253,7 +258,8 @@
                     "hawkiDescription": "The general HAWKI assistant for this room"
                 },
                 "searchPlaceholder": "Search assistants",
-                "noResults": "No matching assistants"
+                "noResults": "No matching assistants",
+                "openStore": "Open assistant store"
             },
             "mentionChips": {
                 "removeAriaLabel": "Remove :assistant from the message"
@@ -262,16 +268,17 @@
                 "switchModel": "Switch current model",
                 "placeholder": "Select model",
                 "searchPlaceholder": "Search models…",
-                "allTab": "All",
                 "otherProvider": "Other",
-                "providerTab": "Show :provider models",
                 "noResults": "No models found.",
                 "favorites": "Pinned models",
                 "addFavorite": "Pin :model",
                 "removeFavorite": "Unpin :model",
-                "listAriaLabel": "Available models",
                 "switchModelCurrent": "Switch model, current: :model",
-                "allModelsLink": "Explore all models"
+                "allModelsLink": "Explore all models",
+                "backButton": "Models",
+                "infoDefault": "Show more information about the model",
+                "useModel": "Use model",
+                "currentModel": "Current model"
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
@@ -297,7 +304,7 @@
             },
             "toolMenuConfig": {
                 "variantLabel": "Variant",
-                "autoLabel": "automatic",
+                "autoLabel": "Automatic",
                 "autoInfo": "The model automatically selects the best variant for the task. (Native tool preferred, otherwise the first available alternative)",
                 "nativeLabel": "Native Tool",
                 "nativeInfo": "This tool is provided directly by the model provider."
@@ -338,6 +345,11 @@
                 "pinnedLabel": "Pinned",
                 "pin": "Pin to the top of this menu",
                 "unpin": "Remove from pinned"
+            },
+            "favorite": {
+                "label": "Favorites",
+                "add": "Add to favorites",
+                "remove": "Remove from favorites"
             }
         },
         "tools": {

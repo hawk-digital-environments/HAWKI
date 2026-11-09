@@ -103,7 +103,13 @@ export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
         const requested = createToolOrCapabilityWithState(tool, toolSelection, toolSettings);
         const current = createToolOrCapabilityWithStateFromTransferString(requested.toTransferString(), this.toolStore);
         if (!current || !current.isAvailableFor(this.model.current, true)) return;
-        this._active[current.name] = current;
+        if (this._active[current.name]) {
+            this._active[current.name] = current;
+        } else {
+            // Rebuild rather than assign: the $state proxy keeps a deleted key's original slot,
+            // so a re-enabled tool would jump back there instead of sorting by activation order.
+            this._active = {...this._active, [current.name]: current};
+        }
         delete this._disabled[tool.name];
     }
 

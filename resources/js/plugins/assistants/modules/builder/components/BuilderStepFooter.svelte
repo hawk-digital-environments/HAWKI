@@ -138,7 +138,7 @@
 
     <div class="actions">
         {#if !isLast}
-            <Button class="icon-end brand press" variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
+            <Button class="icon-end brand press" variant="fill" iconRight={ArrowRight01Icon} onclick={next}>
                 <!-- The slot eases to the new label's width; the keyed label fades in. -->
                 <span class="continue-label" style:width={continueWidth === undefined ? undefined : `${continueWidth}px`}>
                     {#key continueText}
@@ -147,7 +147,7 @@
                 </span>
             </Button>
         {:else if canRelease}
-            <Button class="icon-start brand press" variant="accent" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
+            <Button class="icon-start brand press" variant="fill" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
                 {releaseText}
             </Button>
         {/if}

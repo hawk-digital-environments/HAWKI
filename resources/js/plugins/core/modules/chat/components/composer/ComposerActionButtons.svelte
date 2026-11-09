@@ -186,7 +186,7 @@
             aria-describedby={sendHintId}
             aria-disabled={!canSend}
             aria-keyshortcuts="Enter"
-            variant="accent"
+            variant="fill"
             iconRight={SendIcon}
             size="sm"
             class="chat-send-btn"
@@ -205,12 +205,19 @@
 
 <style>
     /* Inactive send button (aria-disabled, still focusable): mirror Button's
-       disabled fill look. Combined selectors out-specify the accent variant's
-       own background and hover rules. */
-    :global(.btn.chat-send-btn[aria-disabled="true"]),
-    :global(.btn.chat-send-btn[aria-disabled="true"]:hover) {
+       disabled look, the model picker's fill rather than --color-disabled-bg, and
+       keep hover from lighting it up. */
+    :global(.btn.chat-send-btn[aria-disabled="true"]) {
         --btn-bg: var(--color-surface-light);
+        --btn-bg-hover: var(--color-surface-light);
         --btn-color: var(--color-text-disabled);
+        --btn-color-hover: var(--color-text-disabled);
         cursor: not-allowed;
+    }
+
+    /* --color-text-disabled is too close to that fill in dark mode to read. */
+    :global(html.darkMode .btn.chat-send-btn[aria-disabled="true"]) {
+        --btn-color: color-mix(in oklab, var(--color-text) 50%, var(--color-surface-light));
+        --btn-color-hover: color-mix(in oklab, var(--color-text) 50%, var(--color-surface-light));
     }
 </style>
