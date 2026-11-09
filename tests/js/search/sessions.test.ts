@@ -80,7 +80,7 @@ test('disabled dynamic callbacks cannot return into the current query', async ()
     } finally {api.dispose();}
 });
 
-test('a server-only match uses an available static copy and records static history', async () => {
+test('a server-only match uses an available static copy', async () => {
     const host = new TestSearchHost();
     host.register('core:test', 'core', ({group}) => {
         group('local', {kind: 'static', label: () => 'Local'}).add('local', staticSourceOf([entry('local', 'Roadmap', {entityKey:'shared'})]));
@@ -92,8 +92,6 @@ test('a server-only match uses an available static copy and records static histo
         session.setInput({query: 'design'}); await tick(280);
         assert.equal(session.state.groups[0].id, 'core:test.local');
         assert.equal(session.select('shared')!.kind, 'static');
-        const history = JSON.parse([...host.storage.items.values()][0]);
-        assert.deepEqual(Object.keys(history[0]).sort(), ['at', 'entityKey']);
         const second = api.createSession();
         assert.deepEqual(rowTitles(second.state.groups), ['Roadmap']);
     } finally {api.dispose();}

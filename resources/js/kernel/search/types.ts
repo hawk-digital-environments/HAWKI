@@ -62,8 +62,8 @@ export interface DynamicSearchRuntime extends SearchRuntime {
  *
  * `id` only has to be unique inside its own provider — the kernel namespaces
  * it into a document key. `entityKey` is the cross-provider identity of the
- * *thing* behind the row and is what deduplication, selection and the recents
- * history use, so two providers describing the same conversation must agree on
+ * *thing* behind the row and is what deduplication and selection use, so two
+ * providers describing the same conversation must agree on
  * it (e.g. `ai-convs/<slug>`).
  *
  * `title`, `keywords` and `content` are matched; `description` is display
@@ -251,8 +251,8 @@ export interface SearchSession {
     /** Call on real pointer movement into the rows, or on keyboard selection. */
     freezeOrder(): void;
     /**
-     * Validates the row behind `entityKey`, records it in the static recents
-     * history and returns it, or `null` when it is gone/unavailable. The
+     * Validates the row behind `entityKey` and returns it, or `null` when it
+     * is gone/unavailable. The
      * caller closes its host and then invokes `row.onSelect()`.
      */
     select(entityKey: string): SearchRow | null;
@@ -281,8 +281,6 @@ export const SEARCH_ROWS_PER_GROUP = 5;
 /** At most this many rows overall, headings and status messages excluded. */
 export const SEARCH_ROWS_TOTAL = 20;
 
-/** At most this many recent selections are remembered per user/connection. */
-export const SEARCH_RECENTS_LIMIT = 10;
 
 /** Dynamic providers are debounced by this much; static matching is never debounced. */
 export const SEARCH_DYNAMIC_DEBOUNCE_MS = 250;

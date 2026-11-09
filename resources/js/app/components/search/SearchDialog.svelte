@@ -30,6 +30,43 @@
     const search = useApp().search;
     const {__} = useTranslator();
 
+    /**
+     * The session outlives the close animation so the results do not
+     * collapse into a bare field while the dialog is still fading out.
+     * `CLOSE_LINGER_MS` tracks the close animation duration
+     * (`--duration-extra-fast`, 200ms); with reduced motion the extra 20ms are
+     * invisible.
+     */
+    const CLOSE_LINGER_MS = 220;
+    let sessionActive = $state(false);
+    let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** The content's height: the panel springs to it as the rows change. */
+    let contentHeight = $state<number | undefined>();
+
+    $effect(() => {
+        if (open) {
+            if (closeTimer !== null) {
+                clearTimeout(closeTimer);
+                closeTimer = null;
+            }
+            sessionActive = true;
+            return;
+        }
+        closeTimer = setTimeout(() => {
+            closeTimer = null;
+            sessionActive = false;
+            // Unset, so the next opening doesn't grow from this one's height.
+            contentHeight = undefined;
+        }, CLOSE_LINGER_MS);
+        return () => {
+            if (closeTimer !== null) {
+                clearTimeout(closeTimer);
+                closeTimer = null;
+            }
+        };
+    });
+
     function select(entry: SearchEntry) {
         open = false;
         entry.onSelect();
@@ -45,14 +82,11 @@
         <DialogPrimitive.Overlay class="dialog-overlay" />
         <DialogPrimitive.Content class="search-dialog" aria-describedby={undefined}>
             <DialogPrimitive.Title class="u-sr-only">{__('ui.search.title')}</DialogPrimitive.Title>
-            <SearchBar {search} active={open} autofocus onSelect={select}>
-                {#snippet hint()}
-                    <!-- The keycap is decorative (aria-hidden); the text next to
-                         it carries the hint for screen readers. -->
-                    <span class="u-sr-only">{__('ui.search.closeHint')}</span>
-                    <Kbd key="Escape" label={__('ui.search.closeKey')} alwaysVisible />
-                {/snippet}
-            </SearchBar>
+            <div class="search-dialog-frame" style:height={contentHeight === undefined ? undefined : `${contentHeight}px`}>
+                <div class="search-dialog-content" bind:offsetHeight={contentHeight}>
+                    <SearchBar {search} active={sessionActive} autofocus onSelect={select} />
+                </div>
+            </div>
         </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
 </DialogPrimitive.Root>
@@ -62,31 +96,47 @@
        the dialog's own class. The overlay reuses `.dialog-overlay` from
        Dialog.svelte so both kinds of modal dim the page identically. */
     :global(.search-dialog) {
+        --search-dialog-cap: 27.5rem;
+        --search-dialog-max-height: min(var(--search-dialog-cap), 76dvh);
         position: fixed;
-        /* Spotlight sits in the upper third rather than dead centre: the list
-           below the field grows and shrinks with the results, and anchoring
-           the top keeps the field from jumping as it does. */
-        top: 18vh;
+        /* The top edge stays where a panel at the cap height sits centred, so
+           the field holds still while the rows under it filter down. */
+        top: max(12dvh, calc(50dvh - var(--search-dialog-cap) / 2));
         left: 50%;
         translate: -50% 0;
         z-index: var(--layer-overlay);
         display: flex;
         flex-direction: column;
-        width: min(36rem, calc(100vw - 2 * var(--space-4)));
-        max-height: 64vh;
+        width: min(33.75rem, calc(100vw - 2 * var(--space-4)));
+        max-height: var(--search-dialog-max-height);
         border: var(--border);
         border-radius: var(--corner-md);
         background-color: var(--color-surface-raised);
-        box-shadow: var(--elevation-2);
         overflow: hidden;
 
         &[data-state='open'] {
-            animation: search-dialog-in var(--duration-normal, 200ms) var(--easing-default, ease);
+            animation: search-dialog-in var(--duration-fast) var(--easing-spring);
         }
 
         &[data-state='closed'] {
-            animation: search-dialog-out var(--duration-normal, 200ms) var(--easing-default, ease);
+            animation: search-dialog-out var(--duration-extra-fast) var(--easing-default);
         }
+    }
+
+    /* Both stop at the panel's cap, less its border, so the list scrolls past it. */
+    :global(.search-dialog-frame),
+    :global(.search-dialog-content) {
+        max-height: calc(var(--search-dialog-max-height) - 2 * var(--divider-width));
+    }
+
+    :global(.search-dialog-frame) {
+        overflow: hidden;
+        transition: height var(--duration-extra-fast) var(--easing-out);
+    }
+
+    :global(.search-dialog-content) {
+        display: flex;
+        flex-direction: column;
     }
 
     @keyframes search-dialog-in {
@@ -117,14 +167,18 @@
         :global(.search-dialog[data-state='closed']) {
             animation: none;
         }
+
+        :global(.search-dialog-frame) {
+            transition: none;
+        }
     }
 
     /* The field snaps to the top edge so the on-screen keyboard leaves as much
        room as possible for results. */
     @media (--bp-md-and-smaller) {
         :global(.search-dialog) {
+            --search-dialog-max-height: calc(100dvh - 2 * var(--space-4));
             top: var(--space-4);
-            max-height: calc(100dvh - 2 * var(--space-4));
         }
     }
 </style>
