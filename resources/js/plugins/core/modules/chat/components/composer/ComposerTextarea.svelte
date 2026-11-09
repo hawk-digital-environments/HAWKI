@@ -199,7 +199,8 @@
             ? aiHandleStore.assistants
             : aiHandleStore.assistants.filter(assistant => assistant.handle !== aiHandleStore.hawkiHandle)
     );
-    const mentionsEnabled = $derived(taggableAssistants.length > 0);
+    const mentionsEnabled = $derived(taggableAssistants.length > 0
+        && !composerContext.guard.disablesFeature('assistants'));
     // The `/` menu is the tool menu by another route, so it follows the same guard — and,
     // like the tool button, stays available in a room chat that tags nobody yet, so tools
     // can be picked before choosing who they are for.

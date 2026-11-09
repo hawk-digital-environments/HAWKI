@@ -1,6 +1,7 @@
 import type {AiModelParameters} from '$lib/kernel/ai/types.js';
 import type {ChatAssistantIdentity, ChatConversation, ChatMessage} from '$plugins/core/modules/chat/types.js';
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 
 /**
  * The resolved description of one outgoing chat send, threaded through the
@@ -8,11 +9,12 @@ import type {ComposerContext} from '$plugins/core/modules/chat/components/compos
  * the response.
  *
  * The chat module fills in the composer's own selection (model, active
- * tools, parameter list); handlers may rewrite the run — e.g. the
- * assistants plugin pins model/tools/params to the addressed assistant's
- * configuration and supplies its display identity — and mark the exchange
- * as bound to an assistant handle. The handle travels as
- * `payload.hawkiExtensions.assistant_handle` (the backend's sole
+ * tools, parameter list) — or, for a regenerate, the message's snapshot and
+ * the picked participant (see `chatRegenerateHooks.ts`); handlers may
+ * rewrite the run — e.g. the assistants plugin pins model/tools/params to the
+ * addressed assistant's configuration and supplies its display identity —
+ * and mark the exchange as bound to an assistant handle. The handle travels
+ * as `payload.hawkiExtensions.assistant_handle` (the backend's sole
  * assistant-detection mechanism, mirroring the OpenAI responses endpoint)
  * and is persisted as the conversation binding
  * (`ai-convs.hawkiExtensions.assistant_handle`).
@@ -39,12 +41,15 @@ export interface ChatSendDescriptor {
 
 /** Context for the `chatSend` hook. */
 export interface ChatSendContext {
-    /** The composer the send originates from. */
-    composer: ComposerContext;
+    /** The composer the send originates from; null for a regenerate. */
+    composer: ComposerContext | null;
     /** The conversation the send goes into; null while the first message creates it. */
     conversation: ChatConversation | null;
-    /** The assistant message a regen overwrites, when the composer is in regen mode. */
+    /** The assistant message a regenerate overwrites; null on composer sends. */
     regenMessage: ChatMessage | null;
+    /** The participant a regenerate is addressed to; null on composer sends. Handlers
+     *  claim it through its `chatBinding` — unclaimed stays a plain run. */
+    regenParticipant: AiAssistant | null;
 }
 
 declare module '$lib/kernel/extendableTypes.js' {

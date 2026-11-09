@@ -27,15 +27,17 @@
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MessageCircleReplyIcon from '$lib/components/ui/icons/iconset/MessageCircleReplyIcon.svelte';
     import VolumeHighIcon from '$lib/components/ui/icons/iconset/VolumeHighIcon.svelte';
+    import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
     import ChatMessageSelf from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import MessageBody from '$plugins/core/modules/chat/components/message/MessageBody.svelte';
     import MessageReasoning from '$plugins/core/modules/chat/components/message/MessageReasoning.svelte';
     import RegenerateMenu from '$plugins/core/modules/chat/components/message/RegenerateMenu.svelte';
     import MessageStats from '$plugins/core/modules/chat/components/message/MessageStats.svelte';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
-    import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
+    import type {ChatRegeneratePick} from '$plugins/core/modules/chat/hooks/chatRegenerateHooks.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {messageTrunkId} from '$plugins/core/modules/chat/utils/messageThreads.js';
+    import {MESSAGE_HISTORY_CAP} from '$plugins/core/modules/chat/transport/ChatTransport.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -50,8 +52,9 @@
         /** True when this message is itself a thread reply — it gets no thread of its own. */
         isThreadReply?: boolean;
         composer?: ComposerContext | null;
-        /** Enables the regenerate menu on assistant messages; `model` is `null` for "same model as before". */
-        onRegenerate?: (message: ChatMessageType, model: AiModel | null) => void;
+        /** Enables the regenerate menu on assistant messages; the pick names the participant
+         *  (and, for HAWKI, the model) the reply is re-run with. */
+        onRegenerate?: (message: ChatMessageType, pick: ChatRegeneratePick) => void;
         onDelete: (message: ChatMessageType) => void;
         onDeleteAttachment: (message: ChatMessageType, fileId: string) => void;
         /** Level of the message's visually hidden author heading; thread replies render one level deeper. Defaults to 3. */
@@ -62,6 +65,7 @@
     const {__} = useTranslator();
     const toast = useToastContext();
     const aiModelStore = useStore('ai-models');
+    const handleStore = useStore('ai-handle');
     const experiments = useStore('experiments');
     const isAssistant = $derived(message.message_role === 'assistant');
     const showStats = $derived(isAssistant && experiments.isEnabled('statsForNerds') && Boolean(message.stats));
@@ -91,9 +95,29 @@
                 ? __('chat.thread.replyCountOne')
                 : __('chat.thread.replyCount', {count: String(replies.length)})
     );
+    // Trunk message + replies have reached the send cap: older replies are dropped from AI runs.
+    const threadHistoryCapped = $derived(replies.length + 1 >= MESSAGE_HISTORY_CAP);
+    const historyCapLabel = $derived(__('chat.thread.historyCap', {count: String(MESSAGE_HISTORY_CAP)}));
+
+    // Who already answered this thread (participant rows from the `aiAssistants` hook): the
+    // latest assistant reply's author, else the trunk message's own author. Seeded once per
+    // thread; afterwards the addressed participant is the user's choice.
+    const threadSeedHandle = $derived.by(() => {
+        const answerable = (candidate: ChatMessageType): string | null => {
+            if (candidate.message_role !== 'assistant') return null;
+            const handle = candidate.assistant?.handle;
+            return handle !== undefined && handleStore.assistants.some(entry => entry.chatBinding === handle) ? handle : null;
+        };
+        for (let index = replies.length - 1; index >= 0; index--) {
+            const handle = answerable(replies[index]);
+            if (handle !== null) return handle;
+        }
+        return answerable(message);
+    });
 
     let threadOpen = $state(false);
     let wasComposingInThread = false;
+    let threadSeeded = false;
 
     // The thread follows the composer: entering thread mode opens it, leaving
     // the mode with nothing written closes it again (mirrors the legacy UI).
@@ -115,6 +139,13 @@
         if (trunkId === null) return;
         threadOpen = true;
         composer?.mode.enter('thread', String(trunkId));
+        // Entering reset the composer; pre-address whoever already answered, strictly on the
+        // first open of this thread. The empty-message guard leaves a blocked enter's draft alone.
+        const seed = threadSeedHandle;
+        if (!threadSeeded && seed !== null && composer?.mode.isThread && composer.message.trim() === '') {
+            threadSeeded = true;
+            composer.addHandleToMessage(`@${seed}`);
+        }
     }
 
     function copyMessage() {
@@ -231,18 +262,23 @@
 
         {#if hasThreadSection}
             <div class="thread" class:composing={composingInThread}>
-                <button
-                    type="button"
-                    class="thread-toggle"
-                    class:open={threadOpen}
-                    aria-expanded={threadOpen}
-                    aria-controls={threadPanelId}
-                    onclick={() => threadOpen = !threadOpen}
-                >
-                    <MessageCircleReplyIcon size={16} />
-                    <span class="thread-label">{threadToggleLabel}</span>
-                    <span class="thread-chevron" aria-hidden="true"><ArrowRight01Icon size={16} /></span>
-                </button>
+                <div class="thread-head">
+                    <button
+                        type="button"
+                        class="thread-toggle"
+                        class:open={threadOpen}
+                        aria-expanded={threadOpen}
+                        aria-controls={threadPanelId}
+                        onclick={() => threadOpen = !threadOpen}
+                    >
+                        <MessageCircleReplyIcon size={16} />
+                        <span class="thread-label">{threadToggleLabel}</span>
+                        <span class="thread-chevron" aria-hidden="true"><ArrowRight01Icon size={16} /></span>
+                    </button>
+                    {#if threadHistoryCapped}
+                        <InfoPopover label={threadToggleLabel} info={historyCapLabel} popoverSide="top"/>
+                    {/if}
+                </div>
 
                 {#if threadOpen}
                     <div class="thread-panel" id={threadPanelId} transition:growTransition>
@@ -385,6 +421,14 @@
     /* ── Thread ───────────────────────────────────────────────────────── */
 
     .thread { margin-top: var(--space-1); }
+
+    /* Toggle row: the toggle itself plus, once the thread's history reached the send
+       cap, the info affordance explaining that older replies are dropped from runs. */
+    .thread-head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
 
     /* Same quiet pill as the reasoning trigger: a line of accent text with a
        chevron, pulled left by its own padding so the icon aligns with the

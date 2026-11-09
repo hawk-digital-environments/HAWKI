@@ -15,9 +15,9 @@ export interface ChatEditModeState {
  *
  * Pre-fills the composer with the original message text and its attachments
  * (reconstructed as `RemoteFile` references to already-uploaded files). Locks
- * model, settings, and tools UI to prevent changes that would make the edited
- * message inconsistent with the original. Blocks send until the user actually
- * changes the text or attachments.
+ * model, settings, tools and assistant addressing UI to prevent changes that
+ * would make the edited message inconsistent with the original. Blocks send
+ * until the user actually changes the text or attachments.
  */
 export class ChatEditMode extends AbstractMode<ChatMessage, ChatEditModeState> {
     public canSend(context: ComposerContext, state: ChatEditModeState): boolean {
@@ -27,7 +27,7 @@ export class ChatEditMode extends AbstractMode<ChatMessage, ChatEditModeState> {
     }
 
     public disablesUiFeature(feature: DisabledChatFeature): boolean {
-        return ['models', 'settings', 'tools'].includes(feature);
+        return ['models', 'settings', 'tools', 'assistants'].includes(feature);
     }
 
     public enter(context: ComposerContext, data: ChatMessage): ChatEditModeState {
