@@ -18,12 +18,15 @@
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import AttachmentIcon from '$lib/components/ui/icons/iconset/AttachmentIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';
+    import {FILE_UPLOAD_ANNOUNCEMENT_ANCHOR} from '$plugins/core/stores/AnnouncementStore.svelte.js';
 
     const composerContext = useComposerContext();
     const toastContext = useToastContext();
     const translator = useTranslator();
+    const announcementStore = useStore('announcements');
 
     let inputEl: HTMLInputElement;
     let isAdding = $state(false);
@@ -39,6 +42,7 @@
         const target = e.target as HTMLInputElement;
         if (target.files?.length) {
             reportAttachmentIssues(translator, toastContext, composerContext.attachments.add(target.files));
+            announcementStore.triggerAnchor(FILE_UPLOAD_ANNOUNCEMENT_ANCHOR);
             target.value = '';
         }
         isAdding = false;
