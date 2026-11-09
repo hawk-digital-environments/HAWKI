@@ -1,0 +1,62 @@
+import type { AiModelParameters } from '$lib/kernel/ai/types.js';
+import type { ChatAssistantIdentity, ChatConversation, ChatMessage } from '$plugins/core/modules/chat/types.js';
+import type { ComposerContext } from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import type { AiAssistant } from '$plugins/core/stores/AiHandleStore.svelte.js';
+
+/**
+ * The resolved description of one outgoing chat send, threaded through the
+ * `chatSend` hook before the transport creates the conversation and streams
+ * the response.
+ *
+ * The chat module fills in the composer's own selection (model, active
+ * tools, parameter list) — or, for a regenerate, the message's snapshot and
+ * the picked participant (see `chatRegenerateHooks.ts`); handlers may
+ * rewrite the run (e.g. a plugin pins model/tools/params to the addressed
+ * assistant's configuration and supplies its display identity) and mark the
+ * exchange as bound to an assistant handle. The handle travels as
+ * `payload.hawkiExtensions.assistant_handle` (the backend's sole
+ * assistant-detection mechanism, mirroring the OpenAI responses endpoint)
+ * and is persisted as the conversation binding.
+ *
+ * Core registers no handler — with none registered, every send and
+ * regenerate runs as the plain, user-configured request the transport
+ * assembled. The hook is the contract plugins build assistant-style runs on.
+ */
+export interface ChatSendDescriptor {
+    /**
+     * Assistant handle (without the leading `@`) the exchange is bound to,
+     * or null for a plain model run. Travels as
+     * `payload.hawkiExtensions.assistant_handle` (the backend assembles the
+     * assistant from it) and is persisted as the conversation binding.
+     */
+    assistantHandle: string | null;
+    /** Display identity for the AI message's author; null keeps the model-label rendering. */
+    assistant: ChatAssistantIdentity | null;
+    /** Display author for the streamed assistant message; null keeps the default HAWKI author. */
+    author: ChatMessage['author'] | null;
+    /** Model id the run is addressed to (also persisted on the AI message). */
+    model: string;
+    /** Tool-transfer strings for the run (also persisted in the message metadata). */
+    tools: string[];
+    /** Sampling parameters for the run (also persisted in the message metadata). */
+    params: AiModelParameters | null;
+}
+
+/** Context for the `chatSend` hook. */
+export interface ChatSendContext {
+    /** The composer the send originates from; null for a regenerate. */
+    composer: ComposerContext | null;
+    /** The conversation the send goes into; null while the first message creates it. */
+    conversation: ChatConversation | null;
+    /** The assistant message a regenerate overwrites; null on composer sends. */
+    regenMessage: ChatMessage | null;
+    /** The participant a regenerate is addressed to; null on composer sends. Handlers
+     *  claim it through its `chatBinding` — unclaimed stays a plain run. */
+    regenParticipant: AiAssistant | null;
+}
+
+declare module '$lib/kernel/extendableTypes.js' {
+    interface HawkiHooks {
+        chatSend: { value: ChatSendDescriptor; ctx: ChatSendContext };
+    }
+}
