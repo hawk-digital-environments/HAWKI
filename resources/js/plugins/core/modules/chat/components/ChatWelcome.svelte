@@ -18,6 +18,10 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
     import type {ChatWelcomeSection} from '$plugins/core/modules/chat/hooks/chatWelcomeHooks.js';
+    import {textRise} from '$lib/utils/transitions/textRise.js';
+    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
+    import {EASING_SPRING} from '$lib/utils/transitions/easings.js';
+    import {tick} from 'svelte';
 
     interface Props {
         /** The page's composer; starter prompts pre-fill it. May be null until ready. */
@@ -50,6 +54,50 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
         return {...resolved, starterPrompts: resolved.starterPrompts ?? []};
     });
 
+    /**
+     * What the hero shows, as one value per participant. Rendered through a one-item keyed
+     * `{#each}` rather than `{#key}`: an outgoing each-item keeps the value it was rendered
+     * with, so the old hero fades out with its own copy instead of the new one.
+     */
+    const hero = $derived({
+        key: section ? `${section.id}:${section.handle ?? section.title}` : 'default',
+        icon: section?.icon,
+        tint: section?.tint,
+        title: section
+            ? section.title
+            : userName ? __('chat.page.welcomeTitle', {name: userName}) : __('chat.page.welcomeTitleAnonymous'),
+        description: section ? (section.description ?? '') : __('chat.page.welcomeDescription'),
+        starterPrompts: section?.starterPrompts ?? []
+    });
+    const leave = {direction: 'out'} as const;
+
+    let stage = $state<HTMLDivElement | null>(null);
+    let resize: Animation | null = null;
+
+    // Glide the stage between the old and the new hero's height instead of snapping, so
+    // the composer centred below it travels along. Measured before the swap (the current,
+    // possibly mid-animation height) and after it (the incoming hero alone). In a layout
+    // where the hero fills the panel both heights match and nothing animates.
+    $effect.pre(() => {
+        const key = hero.key;
+        if (!stage) return;
+        const from = stage.getBoundingClientRect().height;
+
+        void tick().then(() => {
+            const incoming = stage?.querySelector<HTMLElement>(`[data-hero-key="${CSS.escape(key)}"]`);
+            if (!stage || !incoming || key !== hero.key) return;
+            const to = incoming.getBoundingClientRect().height;
+            resize?.cancel();
+            resize = null;
+            const duration = motionDuration(500);
+            if (Math.abs(from - to) < 1 || duration === 0) return;
+            resize = stage.animate(
+                [{height: `${from}px`}, {height: `${to}px`}],
+                {duration, easing: EASING_SPRING}
+            );
+        });
+    });
+
     function selectPrompt(prompt: string) {
         if (!composer) return;
         composer.message = prompt;
@@ -60,44 +108,58 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     }
 </script>
 
-{#snippet eyes()}
-    <span class="welcome-eyes" aria-hidden="true">
-        <EyeTracker shape="Circle" size={64} eyeScale={1.2} follow={50} within=".welcome" />
-    </span>
-{/snippet}
-
-{#if section}
-    <div class="welcome">
-        {#if section.icon}
-            <span class="welcome-icon personalized" style:--assistant-tint={section.tint} aria-hidden="true">
-                <span class="welcome-glyph">{section.icon}</span>
-            </span>
-        {:else}
-            {@render eyes()}
-        {/if}
-        <svelte:element this={`h${headingLevel}`} class="title">{section.title}</svelte:element>
-        {#if section.description}
-            <p>{section.description}</p>
-        {/if}
-        {#if section.starterPrompts.length > 0}
-            <div class="starter-prompts">
-                <StarterPrompts prompts={section.starterPrompts} onselect={selectPrompt}
-                                aria-label={__('chat.page.starterPrompts')}/>
-            </div>
-        {/if}
-    </div>
-{:else}
-    <div class="welcome">
-        {@render eyes()}
-        <svelte:element this={`h${headingLevel}`} class="title">
-            {userName ? __('chat.page.welcomeTitle', {name: userName}) : __('chat.page.welcomeTitleAnonymous')}
-        </svelte:element>
-        <p>{__('chat.page.welcomeDescription')}</p>
-    </div>
-{/if}
+<!-- Keyed on the addressed participant: tagging or swapping an assistant swaps the whole
+     hero, the old copy fading out quietly while the new one rises in line by line. Both
+     share one grid cell during the hand-off so the layout doesn't jump. Entrances are
+     global so the hero also rises in when the welcome first mounts; exits stay local so
+     leaving the empty state (first message sent) doesn't hold the old hero on screen. -->
+<div class="welcome-stage" bind:this={stage}>
+    {#each [hero] as current (current.key)}
+        <div class="welcome" data-hero-key={current.key}>
+            {#if current.icon}
+                <span
+                    class="welcome-icon personalized"
+                    style:--assistant-tint={current.tint}
+                    aria-hidden="true"
+                    in:textRise|global={{index: 0}}
+                    out:textRise={leave}>
+                    <span class="welcome-glyph">{current.icon}</span>
+                </span>
+            {:else}
+                <span class="welcome-eyes" aria-hidden="true" in:textRise|global={{index: 0}} out:textRise={leave}>
+                    <EyeTracker shape="Circle" size={64} eyeScale={1.2} follow={50} within=".welcome" />
+                </span>
+            {/if}
+            <svelte:element
+                this={`h${headingLevel}`}
+                class="title"
+                in:textRise|global={{index: 1}}
+                out:textRise={leave}>{current.title}</svelte:element>
+            {#if current.description}
+                <p in:textRise|global={{index: 2}} out:textRise={leave}>{current.description}</p>
+            {/if}
+            {#if current.starterPrompts.length > 0}
+                <div class="starter-prompts" in:textRise|global={{index: 3}} out:textRise={leave}>
+                    <StarterPrompts prompts={current.starterPrompts} onselect={selectPrompt}
+                                    aria-label={__('chat.page.starterPrompts')}/>
+                </div>
+            {/if}
+        </div>
+    {/each}
+</div>
 
 <style>
+    /* Items centre instead of stretching so each hero keeps its own height —
+       the stage animates between them (a hero that fills via `height: 100%`
+       is unaffected). */
+    .welcome-stage {
+        display: grid;
+        height: 100%;
+        align-items: center;
+    }
+
     .welcome {
+        grid-area: 1 / 1;
         display: flex;
         height: 100%;
         min-height: 18rem;
