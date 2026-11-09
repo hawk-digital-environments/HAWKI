@@ -159,6 +159,11 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     }
 
     .welcome {
+        /* The hero's icon circle and glyph are a matched pair of bespoke sizes —
+           no global token fits, so they live here as component-local tokens. */
+        --welcome-icon-size: 3.25rem;
+        --welcome-glyph-size: 1.6rem;
+
         grid-area: 1 / 1;
         display: flex;
         height: 100%;
@@ -173,11 +178,11 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
 
     .welcome-icon {
         display: grid;
-        width: 3.25rem;
-        height: 3.25rem;
-        margin-bottom: var(--space-4);
+        width: var(--welcome-icon-size);
+        height: var(--welcome-icon-size);
+        margin-bottom: var(--space-5);
         place-items: center;
-        border-radius: var(--corner-lg);
+        border-radius: var(--corner-full);
         background: var(--color-active-surface);
         color: var(--color-active-text);
     }
@@ -190,19 +195,19 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
        hugs the ball */
     .welcome-eyes :global(.eyt) { width: auto; height: auto; }
 
-    /* A section that brings its own glyph paints the square in its tint —
+    /* A section that brings its own glyph paints the circle in its tint —
        the same treatment an assistant-authored message's circle gets. */
     .welcome-icon.personalized {
         background: color-mix(in oklab, var(--assistant-tint, var(--color-active-surface)) 18%, transparent);
     }
 
     .welcome-glyph {
-        font-size: 1.6rem;
+        font-size: var(--welcome-glyph-size);
         line-height: 1;
     }
 
     .title { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
-    p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }
+    p { max-width: 40rem; margin: 0; color: var(--color-text-muted); text-wrap: balance; }
 
     .starter-prompts {
         max-width: 40rem;
