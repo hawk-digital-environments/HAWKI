@@ -1,13 +1,14 @@
 <!--
   @component One row of the chat sidebar's history list: a list item holding the
-  conversation link plus an actions menu (rename / delete) that only appears
-  while the row is hovered, focused, or its menu is open. Link and menu trigger
-  are siblings — a trigger nested inside the link would be invalid HTML.
+  conversation link plus an actions menu (pin / rename / delete) that only
+  appears while the row is hovered, focused, or its menu is open. Link and menu
+  trigger are siblings — a trigger nested inside the link would be invalid HTML.
 
   Renaming happens inline — the link is swapped for a text field that commits on
   Enter / blur and cancels on Escape, after which focus returns to the row;
-  deleting goes through a `ConfirmDialog`. Both actions are reported through
-  `onRename` / `onDelete`, so the page owns the store calls and error handling.
+  deleting goes through a `ConfirmDialog`. The actions are reported through
+  `onTogglePin` / `onRename` / `onDelete`, so the page owns the store calls and
+  error handling.
 -->
 <script lang="ts">
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
@@ -17,7 +18,9 @@
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
-    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
+    import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
+    import PinOffIcon from '$lib/components/ui/icons/iconset/PinOffIcon.svelte';
+    import Edit03Icon from '$lib/components/ui/icons/iconset/Edit03Icon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -28,15 +31,17 @@
         /** Where the row leads; a path or a named route (see `Link`). */
         href: ComponentProps<typeof SidebarItem>['href'];
         active?: boolean;
+        pinned?: boolean;
         /** Leading visual, e.g. the "still generating" indicator. */
         media?: Snippet;
         /** Accessible name of the row, defaults to the conversation name. */
         rowLabel?: string;
+        onTogglePin: () => void;
         onRename: (name: string) => void | Promise<void>;
         onDelete: () => void | Promise<void>;
     }
 
-    const {name, href, active = false, media, rowLabel, onRename, onDelete, class: className, ...restProps}: Props = $props();
+    const {name, href, active = false, pinned = false, media, rowLabel, onTogglePin, onRename, onDelete, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const toast = useToastContext();
     const id = $props.id();
@@ -136,7 +141,10 @@
                         tooltipSide="right"
                     />
                 {/snippet}
-                <DropdownMenuItem iconLeft={Edit02Icon} onclick={() => renaming = true}>
+                <DropdownMenuItem iconLeft={pinned ? PinOffIcon : PinIcon} onclick={onTogglePin}>
+                    {__(pinned ? 'chat.nameMenu.unpin' : 'chat.nameMenu.pin')}
+                </DropdownMenuItem>
+                <DropdownMenuItem iconLeft={Edit03Icon} onclick={() => renaming = true}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
                 <DropdownMenuItem iconLeft={Delete02Icon} variant="destructive" onclick={() => deleteOpen = true}>
@@ -151,6 +159,8 @@
     bind:open={deleteOpen}
     title={__('chat.nameMenu.deleteConfirmTitle', {name})}
     description={__('chat.nameMenu.deleteConfirmDescription')}
+    okLabel={__('chat.nameMenu.deleteConfirmLabel')}
+    confirmVariant="delete"
     onConfirm={onDelete}
 />
 
@@ -167,6 +177,7 @@
     /* The label has to stop before the trigger, otherwise a long chat name
        runs underneath it. */
     .history-row :global(.sidebar-item) {
+        padding-left: var(--history-text-inset);
         padding-right: calc(var(--nav-row-h) - var(--action-gap));
     }
 
@@ -185,7 +196,6 @@
         /* Hidden at rest — the list stays quiet until a row is pointed at. */
         opacity: 0;
         pointer-events: none;
-        transition: opacity var(--duration-fast);
     }
 
     .history-row:hover .actions,
@@ -203,6 +213,15 @@
         /* No plate behind the glyph — the row underneath already carries the
            hover / active surface. */
         background: transparent;
+        /* Only shows on a pointed-at row, so it takes that row's label color. */
+        color: var(--color-nav-text-hover);
+    }
+
+    /* Always showing on mobile, so it recedes like the sidebar's other icons. */
+    @media (--bp-md-and-smaller) {
+        .actions :global(button) {
+            color: var(--color-nav-icon);
+        }
     }
 
     /* The glyph sits directly on the selected row's surface, so it takes the
@@ -224,13 +243,13 @@
     .rename-input {
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
+        padding: 0 var(--nav-item-pad-x) 0 var(--history-text-inset);
         border: 1px solid var(--color-focus-ring);
         border-radius: var(--corner-sm);
         background: var(--color-surface-raised);
         color: var(--color-text);
         font: inherit;
-        font-size: var(--font-size-xs);
+        font-size: var(--nav-font-size);
     }
 
     .rename-input:focus,

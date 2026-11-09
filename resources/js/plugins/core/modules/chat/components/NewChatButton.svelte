@@ -7,7 +7,9 @@
 -->
 <script lang="ts">
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
-    import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
+    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
+    import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
+    import {isApple} from '$lib/utils/platform.js';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -20,13 +22,19 @@
 
     function newChat() {
         if (sidebar.mobile) sidebar.navOpen = false;
-        store.startNew();
+        store.requestNewChat();
         void router.goToRoute('chat.index');
     }
 </script>
 
 <SidebarButton
-    icon={Add01Icon}
+    icon={BubbleChatAddIcon}
     label={__('chat.sidebar.newChat')}
+    shortcut={isApple ? '⇧⌘O' : 'Ctrl Shift O'}
     onclick={newChat}
 />
+
+<!-- The button shows its own hint, so the hotkey renders no keycap. -->
+<Kbd key="o" ctrl shift onPress={newChat}>
+    {#snippet children()}{/snippet}
+</Kbd>

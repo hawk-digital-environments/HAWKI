@@ -10,10 +10,11 @@ section describing the currently addressed participant — e.g. the assistants
 plugin shows the addressed assistant's name, greeting and starter prompts.
 -->
 <script lang="ts">
-    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
+    import EyeTracker from '$lib/components/ui/eye-tracker/EyeTracker.svelte';
     import StarterPrompts from '$lib/components/ui/starter-prompts/StarterPrompts.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
     import type {ChatWelcomeSection} from '$plugins/core/modules/chat/hooks/chatWelcomeHooks.js';
@@ -30,6 +31,8 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     const {composer = null, conversation = null, headingLevel = 1}: Props = $props();
     const app = useApp();
     const {__} = useTranslator();
+    const connection = useConnection();
+    const userName = $derived(connection.hasUserInfo ? connection.userinfo.name : '');
 
     /** The hook section with `starterPrompts` normalised to a list. */
     type ResolvedWelcomeSection = ChatWelcomeSection & {starterPrompts: string[]};
@@ -57,15 +60,21 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     }
 </script>
 
+{#snippet eyes()}
+    <span class="welcome-eyes" aria-hidden="true">
+        <EyeTracker shape="Circle" size={64} eyeScale={1.2} follow={50} within=".welcome" />
+    </span>
+{/snippet}
+
 {#if section}
     <div class="welcome">
-        <span class="welcome-icon" class:personalized={section.icon} style:--assistant-tint={section.tint} aria-hidden="true">
-            {#if section.icon}
+        {#if section.icon}
+            <span class="welcome-icon personalized" style:--assistant-tint={section.tint} aria-hidden="true">
                 <span class="welcome-glyph">{section.icon}</span>
-            {:else}
-                <BubbleChatAddIcon size={28} />
-            {/if}
-        </span>
+            </span>
+        {:else}
+            {@render eyes()}
+        {/if}
         <svelte:element this={`h${headingLevel}`} class="title">{section.title}</svelte:element>
         {#if section.description}
             <p>{section.description}</p>
@@ -79,8 +88,10 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
     </div>
 {:else}
     <div class="welcome">
-        <span class="welcome-icon" aria-hidden="true"><BubbleChatAddIcon size={28} /></span>
-        <svelte:element this={`h${headingLevel}`} class="title">{__('chat.page.welcomeTitle')}</svelte:element>
+        {@render eyes()}
+        <svelte:element this={`h${headingLevel}`} class="title">
+            {userName ? __('chat.page.welcomeTitle', {name: userName}) : __('chat.page.welcomeTitleAnonymous')}
+        </svelte:element>
         <p>{__('chat.page.welcomeDescription')}</p>
     </div>
 {/if}
@@ -108,6 +119,14 @@ plugin shows the addressed assistant's name, greeting and starter prompts.
         background: var(--color-active-surface);
         color: var(--color-active-text);
     }
+
+    .welcome-eyes {
+        margin-bottom: var(--space-4);
+    }
+
+    /* the tracker's 200px frame is sized for a wall of knobs; here it
+       hugs the ball */
+    .welcome-eyes :global(.eyt) { width: auto; height: auto; }
 
     /* A section that brings its own glyph paints the square in its tint —
        the same treatment an assistant-authored message's circle gets. */

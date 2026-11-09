@@ -53,7 +53,9 @@
 
     :global(:root) {
         --nav-row-h: 2.25rem;
-        --nav-group-gap: var(--space-3);
+        --nav-group-gap: var(--space-4);
+        /* At the root so menus portalled out of the sidebar can size against it. */
+        --nav-w: 20rem;
     }
 
     .sidebar-layout {
@@ -68,16 +70,17 @@
             --nav-track 280ms var(--easing-spring),
             --aside-track 280ms var(--easing-spring);
 
-        --nav-w: 16rem;
-        --rail-w: calc(var(--nav-row-h) + 2 * var(--space-2) + var(--divider-width));
         --aside-w: 20rem;
         --nav-icon-size: 18px;
-        --nav-item-pad-x: calc(
-            (var(--rail-w) - 2 * var(--space-2) - var(--divider-width) - var(--nav-icon-size)) / 2
-        );
+        --nav-font-size: 0.875rem;
+        --nav-item-pad-x: calc((var(--nav-row-h) - var(--nav-icon-size)) / 2 + var(--space-0_5));
+        /* Where text-only rows (wordmark, history) start: on the visible edge of
+           the row icons, whose glyphs begin 2/24 into the icon box. On small
+           screens the icons are 20px and pulled out by 1px. */
+        --nav-text-inset: calc(var(--nav-item-pad-x) + 1.5px);
         --nav-track: var(--nav-w);
         --aside-track: 0rem;
-        --panel-bg: color-mix(in oklch, var(--color-surface-raised) 60%, transparent);
+        --panel-bg: var(--color-bg);
 
         background: var(--color-bg);
     }
@@ -91,7 +94,7 @@
     }
 
     .sidebar-layout:not(.nav-open) {
-        --nav-track: var(--rail-w);
+        --nav-track: 0px;
     }
 
     @media (--bp-lg-and-smaller) {
@@ -109,6 +112,7 @@
             --nav-w: 13rem;
             grid-template-columns: minmax(0, 1fr);
             grid-template-areas: 'main';
+            --nav-text-inset: calc(var(--nav-item-pad-x) + 0.67px);
         }
     }
 </style>

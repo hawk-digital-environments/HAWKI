@@ -10,12 +10,15 @@
             "generating": "Generating response",
             "empty": "Your conversations will appear here.",
             "unreadMessages": "unread messages",
-            "groups": {
+            "title": "Recents",
+            "pinned": "Pinned",
+            "filter": {
+                "label": "Filter chats",
+                "clear": "Remove filter",
                 "today": "Today",
-                "yesterday": "Yesterday",
-                "last7Days": "Last 7 days",
-                "last30Days": "Last 30 days",
-                "older": "Older"
+                "last7Days": "Last week",
+                "last30Days": "Last month",
+                "empty": "No chats in this period."
             }
         },
         "page": {
@@ -50,7 +53,8 @@
             "noImprovementModel": "No model is available to improve the message.",
             "noConversationOpen": "No conversation is open.",
             "requestFailed": "The AI request failed.",
-            "welcomeTitle": "How can I help?",
+            "welcomeTitle": "Ask away, :name.",
+            "welcomeTitleAnonymous": "Ask away.",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
             "starterPrompts": "Suggested opening messages",
             "disclaimer": "AI can make mistakes. Check important information."
@@ -89,8 +93,11 @@
             "deleteConfirmDescription": "Are you sure you want to delete this chat? This action cannot be undone.",
             "leaveConfirmTitle": "Leave room :name",
             "deleteConfirmTitle": "Delete chat :name",
+            "deleteConfirmLabel": "Delete",
             "newNameAriaLabel": "New chat name",
             "actionsTooltip": "Chat actions",
+            "pin": "Pin",
+            "unpin": "Unpin",
             "actionsForChat": "Actions for chat :name",
             "renameAriaLabel": "Rename chat: :name",
             "rename": "Rename",

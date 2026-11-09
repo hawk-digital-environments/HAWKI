@@ -32,6 +32,28 @@ function decodeLegacyHtml(value: string): string {
     return textarea.value;
 }
 
+const PINNED_STORAGE_KEY = 'hawki.chat.pins';
+
+function readPinnedSlugs(): string[] {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+        const parsed: unknown = JSON.parse(localStorage.getItem(PINNED_STORAGE_KEY) ?? '[]');
+        return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
+    } catch {
+        // A user-editable storage key is never trusted: unreadable pins are simply no pins.
+        return [];
+    }
+}
+
+function writePinnedSlugs(slugs: string[]): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+        localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(slugs));
+    } catch {
+        // Storage can be full or blocked (private mode); pins then just don't survive a reload.
+    }
+}
+
 export class ChatStore implements DataStore {
     public readonly name = 'chat';
 
@@ -42,6 +64,11 @@ export class ChatStore implements DataStore {
     public error = $state<string | null>(null);
     /** Conversation slugs with an AI request still running in this tab. */
     public generatingSlugs = $state<string[]>([]);
+    /**
+     * Pinned conversation slugs in the order they were pinned. A per-browser
+     * display preference like the composer pins, so it lives in `localStorage`.
+     */
+    public pinnedSlugs = $state<string[]>(readPinnedSlugs());
 
     private _dependencies: ChatStoreDependencies | null = null;
     private activeLoad = 0;
@@ -219,6 +246,18 @@ export class ChatStore implements DataStore {
         this.conversations = this.conversations.filter(item => item.slug !== slug);
         this.conversationCache.delete(slug);
         if (this.active?.slug === slug) this.active = null;
+        if (this.isPinned(slug)) this.togglePin(slug);
+    }
+
+    public isPinned(slug: string): boolean {
+        return this.pinnedSlugs.includes(slug);
+    }
+
+    public togglePin(slug: string): void {
+        this.pinnedSlugs = this.isPinned(slug)
+            ? this.pinnedSlugs.filter(item => item !== slug)
+            : [...this.pinnedSlugs, slug];
+        writePinnedSlugs(this.pinnedSlugs);
     }
 
     public async removeMessage(messageId: string): Promise<void> {
