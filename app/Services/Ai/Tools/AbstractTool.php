@@ -87,8 +87,12 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
      * Returns the per-instance run ceiling: the maximum number of calls this tool may
      * receive in a single agent session, or 0 when unlimited.
      *
-     * Public so the agent layer can derive the loop step budget from the highest
-     * declared tool ceiling (see AbstractTextGeneratingAgent::maxSteps()).
+     * A tool's own ceiling is authoritative and independent of the loop's step budget
+     * ({@see \App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent::maxSteps()}
+     * derives that from the model setting alone); the getter exists so the conversion
+     * pipeline and tests can inspect the declared value. Tools without a ceiling of
+     * their own inherit the model's round limit via {@see applyDefaultMaxRuns()} at
+     * conversion time.
      */
     public function getMaxRuns(): int
     {

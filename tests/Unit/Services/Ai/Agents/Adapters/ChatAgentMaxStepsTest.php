@@ -32,6 +32,9 @@ use Tests\TestCase;
  * `maxSteps(): ?int` method. Without that hook the loop falls back to its
  * `round(1.5 x tool count)` heuristic and the declared model guardrail is
  * never consumed (TOOL_CALL_BUG.md, R1).
+ *
+ * The budget is rounds + 1: the SDK's final step never executes tool calls, so
+ * the extra step guarantees a closing answer generation after the last round.
  */
 #[CoversClass(ChatAgent::class)]
 #[CoversClass(TextGenerationOptions::class)]
@@ -85,15 +88,28 @@ class ChatAgentMaxStepsTest extends TestCase
     // Tests
     // =========================================================================
 
-    public function testItExposesTheModelRoundLimitAsTheSdkStepBudget(): void
+    public function testItGrantsOneAnswerStepMoreThanTheModelRoundLimit(): void
     {
-        // No explicit limit: the registry default (5) applies.
+        // No explicit limit: the registry default (5 rounds) applies, plus the
+        // reserved answer generation.
         $agent = $this->makeAgent($this->makeSettings());
 
         static::assertSame(
-            5,
+            6,
             TextGenerationOptions::forAgent($agent)->maxSteps
         );
+    }
+
+    public function testItAllowsASingleToolRoundWhenTheRoundLimitIsOne(): void
+    {
+        // A limit of 1 must yield one executing step plus the answer step —
+        // wiring the setting through unchanged would bar tool execution entirely,
+        // because the SDK's single step is already the execution-barred final step.
+        $agent = $this->makeAgent($this->makeSettings([
+            WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 1,
+        ]));
+
+        static::assertSame(2, TextGenerationOptions::forAgent($agent)->maxSteps);
     }
 
     public function testItTreatsAZeroRoundLimitAsOff(): void
@@ -116,7 +132,7 @@ class ChatAgentMaxStepsTest extends TestCase
             WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 7,
         ]));
 
-        static::assertSame(7, TextGenerationOptions::forAgent($agent)->maxSteps);
+        static::assertSame(8, TextGenerationOptions::forAgent($agent)->maxSteps);
     }
 
     public function testItDoesNotLetToolCeilingsInfluenceTheStepBudget(): void
@@ -128,6 +144,6 @@ class ChatAgentMaxStepsTest extends TestCase
             [new TestTool($this->createMock(LoggerInterface::class))]
         );
 
-        static::assertSame(5, TextGenerationOptions::forAgent($agent)->maxSteps);
+        static::assertSame(6, TextGenerationOptions::forAgent($agent)->maxSteps);
     }
 }
