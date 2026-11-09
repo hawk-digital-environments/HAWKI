@@ -153,8 +153,17 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
     }
 
     /**
-     * Step budget for the SDK's tool-calling loop: always the model's
-     * `max_tool_calling_rounds` setting (5 by default).
+     * Step budget for the SDK's tool-calling loop: the model's `max_tool_calling_rounds`
+     * setting (5 by default) plus one reserved answer generation.
+     *
+     * The SDK's final step never executes tool calls — their results would land in the
+     * message history with no generation left to process them — so a budget of N yields
+     * at most N−1 tool-executing steps. Returning rounds + 1 aligns the budget with the
+     * setting's semantics: a setting of N allows N tool-calling rounds and still
+     * guarantees a closing answer generation (a setting of 1 remains usable instead of
+     * barring tools entirely). The extra step is headroom only — the loop breaks early
+     * once the model stops requesting tools, so it is spent solely when all N rounds
+     * are actually used.
      *
      * A setting of 0 means "off": unlimited model generations, bounded only by the
      * per-tool call ceilings enforced separately by each tool's own `setMaxRuns()`.
@@ -172,7 +181,7 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
     {
         $rounds = $this->context->model->settings->getMaxToolCallingRounds();
 
-        return $rounds > 0 ? $rounds : self::UNLIMITED_STEPS;
+        return $rounds > 0 ? $rounds + 1 : self::UNLIMITED_STEPS;
     }
 
     /**
