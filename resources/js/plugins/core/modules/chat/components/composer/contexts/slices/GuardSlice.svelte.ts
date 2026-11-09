@@ -41,6 +41,15 @@ export class GuardSlice {
             return 'chat.composer.actions.noMessageTooltip';
         }
 
+        // An addressed assistant that cannot run right now (see `AiAssistant.unavailable`).
+        const unavailable = context.addressedAssistants.find(assistant => assistant.unavailable)?.unavailable;
+        if (unavailable === 'deactivated') {
+            return 'chat.composer.actions.assistantDeactivatedTooltip';
+        }
+        if (unavailable === 'offline') {
+            return 'chat.composer.actions.assistantOfflineTooltip';
+        }
+
         if (context.tools.authorizationPending) {
             return 'chat.tools.authorizationRefreshing';
         }

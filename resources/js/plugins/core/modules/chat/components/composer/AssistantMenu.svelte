@@ -74,11 +74,14 @@
         // derives it from the assistant's name and avatar gradient); anything else
         // falls back to the name's first glyph on the brand colors.
         const appearance = assistant.appearance ?? defaultAssistantAppearance(assistant.label);
+        const active = composerContext.handlesInMessage.includes(assistant.handle);
         return {
             assistant,
             emoji: appearance.icon,
             colors: appearance.colors,
-            active: composerContext.handlesInMessage.includes(assistant.handle),
+            active,
+            // An offline assistant is shown grayed out; it can still be untagged, never tagged.
+            disabled: assistant.unavailable === 'offline' && !active,
             onToggle(active) {
                 if (active) {
                     composerContext.addHandleToMessage(assistant.handle);
@@ -98,7 +101,10 @@
 
     // `assistants` is HAWKI first, then the hook-contributed assistants; it is empty until
     // the `ai-handle` store has loaded.
-    const entries = $derived(aiHandleStore.assistants.map(toEntry));
+    // Deactivated assistants (their model is no longer offered) are not offered at all.
+    const entries = $derived(aiHandleStore.assistants
+        .filter(assistant => assistant.unavailable !== 'deactivated')
+        .map(toEntry));
     // HAWKI is only taggable where it is one participant among many; in an AI conversation
     // it is the implicit recipient of every message.
     const hawkiEntry = $derived(composerContext.type === 'room'

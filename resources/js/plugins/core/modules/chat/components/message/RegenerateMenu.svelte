@@ -137,7 +137,7 @@
     <DropdownMenuItem
         class="regen-menu-item"
         iconLeft={ArrowReloadHorizontalIcon}
-        disabled={!quickPick || (!author && usedModel?.status === 'offline')}
+        disabled={!quickPick || (author ? !!author.unavailable : usedModel?.status === 'offline')}
         onSelect={() => quickPick && regenerate(quickPick)}
     >
         <span class="regen-menu-label">

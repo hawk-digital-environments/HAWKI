@@ -203,11 +203,26 @@ test('offline tool issues and send guidance remain distinct from model incompati
     const tools: any = {active: [resolve('capability:web_search:search', store)], authorizationPending: false};
     const usage = new ModelUsageSlice({models: [model]} as any, selectedModel as any, tools,
         {list: [], hasImages: false} as any, {showsAiUiElements: true, disablesFeature: () => false} as any);
-    const guard = new GuardSlice(() => ({hasWriteAccess: true, messageWithoutHandles: 'Draft', tools, modelUsage: usage} as any));
+    const guard = new GuardSlice(() => ({hasWriteAccess: true, messageWithoutHandles: 'Draft', addressedAssistants: [], tools, modelUsage: usage} as any));
     assert.deepEqual(usage.issues.map(issue => issue.type), ['offline_tools']);
     assert.equal(guard.cannotSendReason, 'chat.tools.offline');
     assert.equal(guard.canSend, false);
     selectedModel.current = {...model, tool_ids: []};
     assert.deepEqual(usage.issues.map(issue => issue.type), ['missing_tools']);
     assert.equal(guard.cannotSendReason, 'chat.composer.actions.invalidModelTooltip');
+});
+
+test('an addressed assistant that cannot run blocks the send with its own reason', async () => {
+    const {GuardSlice} = await import('../../../resources/js/plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js');
+    const addressed = $state({list: [] as any[]});
+    const guard = new GuardSlice(() => ({
+        hasWriteAccess: true, messageWithoutHandles: 'Draft', addressedAssistants: addressed.list,
+        tools: {authorizationPending: false}, modelUsage: {issues: []},
+        mode: {instance: {canSend: () => true}, state: {}}
+    } as any));
+    assert.equal(guard.cannotSendReason, null);
+    addressed.list = [{handle: '@tutor', unavailable: 'deactivated'}];
+    assert.equal(guard.cannotSendReason, 'chat.composer.actions.assistantDeactivatedTooltip');
+    addressed.list = [{handle: '@tutor', unavailable: 'offline'}];
+    assert.equal(guard.cannotSendReason, 'chat.composer.actions.assistantOfflineTooltip');
 });

@@ -52,6 +52,14 @@ export interface AiAssistant {
      *  the assistant run. Absent for participants that are not
      *  assistant-backed (HAWKI). */
     chatBinding?: string;
+    /** Why the participant cannot run right now; absent when it can.
+     *  - `deactivated`: it runs on a model that is no longer offered. Pickers
+     *    hide it, but its handle stays recognized so a typed or bound
+     *    `@handle` is blocked with an explanation instead of silently
+     *    going to HAWKI.
+     *  - `offline`: its model is offered but currently unreachable. Pickers
+     *    show it grayed out and not selectable. */
+    unavailable?: 'deactivated' | 'offline';
     /** Presentation override; falls back to the shared default appearance. */
     appearance?: AssistantAppearance;
     /** Server-side pin toggle for this row (e.g. toggling the favourite).

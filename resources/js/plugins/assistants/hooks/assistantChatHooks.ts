@@ -134,8 +134,14 @@ export function assistantRegenerateGroups(
         {
             id: 'assistants',
             label: ctx.translate('chat.composer.assistantMenu.assistantsLabel'),
+            // Deactivated assistants are hidden like in the `@` menu; offline ones stay, grayed out.
             entries: assistantHandlesStore.menuAssistants(ctx.translate)
-                .map(assistant => ({id: assistant.id, participant: assistant}))
+                .filter(assistant => assistant.unavailable !== 'deactivated')
+                .map(assistant => ({
+                    id: assistant.id,
+                    participant: assistant,
+                    disabled: assistant.unavailable === 'offline'
+                }))
         },
         ...groups
     ];

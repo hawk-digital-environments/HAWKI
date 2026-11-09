@@ -14,6 +14,9 @@
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import {getAvatar} from "$plugins/assistants/api/resources/userAvatarClient";
     import {rememberDetailReturnPath} from "$plugins/assistants/modules/dashboard/contexts/detailReturn";
+    import AssistantAvailabilityStatus from "$plugins/assistants/components/status/AssistantAvailabilityStatus.svelte";
+    import {assistantUnavailability} from "$plugins/assistants/utils/assistantAvailability";
+    import {useStore} from "$lib/app/hooks/useStore.svelte.js";
     // The handle is kept because `path` is a live getter — the detail page's
     // back button needs it read at click time.
     const router = useRouter();
@@ -70,11 +73,17 @@
         resolveAssistantAvatar(assistant.avatar, assistant.name)
     );
 
+    // A deactivated or offline assistant stays listed (and opens its detail page, where its
+    // creator can pick a new model), but is grayed out.
+    const aiModelStore = useStore('ai-models');
+    const unavailable = $derived(assistantUnavailability(assistant, aiModelStore) !== null);
+
 
 </script>
 <!--@todo: Link truned to button because style didn't budge-->
 <button
     class="assistant-card"
+    class:assistant-card--unavailable={unavailable}
     onclick={()=>{
         rememberDetailReturnPath(router.path);
         goToRoute(
@@ -121,6 +130,7 @@
                         stage={assistant.releaseStage}
                     />
                 {/if}
+                <AssistantAvailabilityStatus {assistant}/>
 
 
             </div>
@@ -185,6 +195,13 @@
         color: inherit;
         text-decoration: none;
     }
+    /* Only the assistant's own visuals recede; its status pill and the controls stay legible. */
+    .assistant-card--unavailable .cover,
+    .assistant-card--unavailable .avatar-wrap {
+        filter: grayscale(1);
+        opacity: 0.6;
+    }
+
     .assistant-card:hover{
         transform: translateY(-4px);
         border-color: var(--color-accent-200);

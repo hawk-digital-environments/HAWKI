@@ -29,6 +29,8 @@
         colors: BeamColors;
         /** `true` when the assistant's handle is present in the current message. */
         active: boolean;
+        /** `true` when the row cannot be toggled (e.g. the assistant's model is offline). */
+        disabled?: boolean;
         /** Adds (`true`) or removes (`false`) the handle from the composer message. */
         onToggle: (active: boolean) => void;
     }
@@ -93,6 +95,7 @@
     checked={entry.active}
     closeOnSelect={false}
     onCheckedChange={entry.onToggle}
+    disabled={entry.disabled}
     onkeydown={onRowKeydown}
     data-assistant-handle={entry.assistant.handle}
     aria-keyshortcuts="ArrowRight"
@@ -135,6 +138,10 @@
         /* Check now lives on the emoji swatch, so drop the reserved right padding. */
         padding-right: var(--space-2, calc(0.25rem * 2));
         gap: var(--space-2, calc(0.25rem * 2));
+    }
+
+    :global(.dropdown-checkbox-item.assistant-menu-item[data-disabled]) {
+        cursor: not-allowed;
     }
 
     /* Built-in absolute check is replaced by the one `AssistantRow` lays over its swatch. */

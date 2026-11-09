@@ -41,7 +41,10 @@
             release_stage: [
                 ReleaseMode.ORGANIZATIONAL,
                 ReleaseMode.FEDERATED
-            ]
+            ],
+            // Assistants whose model is no longer offered are deactivated: they stay in
+            // their creator's and favourites' lists, but are not offered in the store.
+            model_available: true
         });
     }
 

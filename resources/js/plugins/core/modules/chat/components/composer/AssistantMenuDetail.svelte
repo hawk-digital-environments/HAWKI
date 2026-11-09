@@ -165,6 +165,7 @@
                 bind:this={toggleEl}
                 aria-label={entry.active ? __('chat.composer.assistantMenu.untagAssistantAction') : __('chat.composer.assistantMenu.tagAssistantAction')}
                 aria-checked={entry.active ? 'true' : 'false'}
+                disabled={entry.disabled}
                 onpointerdowncapture={(e) => e.stopPropagation()}
                 onclick={() => entry.onToggle(!entry.active)}>
                 <Switch checked={entry.active} presentational/>

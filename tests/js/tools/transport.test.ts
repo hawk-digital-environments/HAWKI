@@ -458,3 +458,78 @@ test('legacy HTTP denial passes through the real client and translates without r
         assert.equal(refreshes, 1);
     } finally {Object.assign(globalThis, previous);}
 });
+
+/** Points the fixture's model store at a catalog where `retired-model` is no longer offered. */
+function retireModel(f: ReturnType<typeof fixture>) {
+    const get = f.app.stores.get;
+    f.app.stores.get = (name: string) => name === 'ai-models'
+        ? {...get(name), getOneById: (id: string) => id === 'retired-model' ? null : model}
+        : get(name);
+}
+
+test('a send addressed to an assistant whose model is gone names the assistant, not a tool', async () => {
+    const f = fixture([]);
+    // Stand-in for the assistants plugin's `chatSend` handler pinning the assistant's model.
+    f.app.hooks.apply = (_name: string, value: any) => ({...value, assistantHandle: 'tutor', model: 'retired-model', tools: []});
+    retireModel(f);
+    await f.transport.sendMessage(f.options);
+    await f.finish();
+    assert.deepEqual(f.errors, ['chat.errors.assistantModelUnavailable']);
+    assert.deepEqual(f.streams, []);
+});
+
+test('regenerating with an assistant whose model is gone names the assistant, not a tool', async () => {
+    const f = fixture([]);
+    f.app.hooks.apply = (_name: string, value: any, ctx: any) => ctx.regenParticipant?.chatBinding === 'tutor'
+        ? {...value, assistantHandle: 'tutor', model: 'retired-model', tools: []} : value;
+    retireModel(f);
+    const participant: any = {id: 'assistant:tutor', handle: '@tutor', label: 'Tutor', description: '', chatBinding: 'tutor'};
+    await assert.rejects(
+        f.transport.regenerateMessage('chat-1', {message_id: '2', model: model.model_id, metadata: {tools: []}} as any, {participant, model: null}),
+        /chat.errors.assistantModelUnavailable/
+    );
+    assert.deepEqual(f.streams, []);
+    assert.equal(f.generations(), 0);
+});
+
+for (const [code, key] of [
+    ['PROVIDER_UNREACHABLE', 'chat.errors.providerUnreachable'],
+    ['PROVIDER_BUSY', 'chat.errors.providerBusy'],
+    ['GENERATION_FAILED', 'chat.errors.generationFailed'],
+    ['SOME_FUTURE_CODE', 'chat.errors.generationFailed'],
+    [null, 'chat.errors.generationFailed']
+] as const) {
+    test(`stream error ${code ?? 'without a code'} shows a translated message, never server prose`, async () => {
+        const f = fixture();
+        f.setPacket({type: 'error', ...(code ? {code} : {}), content: 'Do not show server text'});
+        await f.transport.sendMessage(f.options);
+        await f.finish();
+        assert.deepEqual(f.errors, [key]);
+        assert.equal(f.streams.length, 1);
+    });
+}
+
+test('a server MODEL_UNAVAILABLE names the assistant for an assistant run and the model otherwise', async () => {
+    const {ApiTransportError} = await import('../../../resources/js/kernel/api/errors.js');
+    for (const [assistantHandle, key] of [['tutor', 'chat.errors.assistantModelUnavailable'], [null, 'chat.errors.modelUnavailable']] as const) {
+        const f = fixture([]);
+        f.app.hooks.apply = (_name: string, value: any) => ({...value, assistantHandle});
+        f.app.aiApi.stream = async function* () {
+            throw new ApiTransportError(422, [], {code: 'MODEL_UNAVAILABLE', message: 'Server detail'}, 'Server detail');
+        };
+        await f.transport.sendMessage(f.options);
+        await f.finish();
+        assert.deepEqual(f.errors, [key]);
+    }
+});
+
+test('a server error without a known code never shows its raw text', async () => {
+    const {ApiTransportError} = await import('../../../resources/js/kernel/api/errors.js');
+    const f = fixture([]);
+    f.app.aiApi.stream = async function* () {
+        throw new ApiTransportError(500, [], {message: 'Server Error'}, 'Request failed with status 500: Server Error');
+    };
+    await f.transport.sendMessage(f.options);
+    await f.finish();
+    assert.deepEqual(f.errors, ['chat.page.requestFailed']);
+});

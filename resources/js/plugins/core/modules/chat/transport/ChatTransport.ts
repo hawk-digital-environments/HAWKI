@@ -16,6 +16,20 @@ import type {ChatRegeneratePick} from '$plugins/core/modules/chat/hooks/chatRege
  *  (see `ChatTransport.messageHistory`); older ones are dropped from the request. */
 export const MESSAGE_HISTORY_CAP = 20;
 
+/** Translation keys for the error codes a run can fail with — raised by the transport's own
+ *  checks, returned by `/req/streamAI` as an HTTP error body, or sent as an `error` packet. */
+const errorCodeKeys: Record<string, string> = {
+    TOOL_ACCESS_DENIED: 'chat.tools.accessDenied',
+    TOOL_UNAVAILABLE: 'chat.tools.unavailable',
+    TOOL_OFFLINE: 'chat.tools.requiredOffline',
+    TOOL_AUTHORIZATION_REFRESHING: 'chat.tools.authorizationRefreshing',
+    MODEL_UNAVAILABLE: 'chat.errors.modelUnavailable',
+    ASSISTANT_MODEL_UNAVAILABLE: 'chat.errors.assistantModelUnavailable',
+    PROVIDER_UNREACHABLE: 'chat.errors.providerUnreachable',
+    PROVIDER_BUSY: 'chat.errors.providerBusy',
+    GENERATION_FAILED: 'chat.errors.generationFailed'
+};
+
 /**
  * Lifecycle of one assistant reply as seen by the page that owns the
  * conversation. Pages use it to announce progress to screen readers
@@ -242,7 +256,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const translator = this.app.translator;
         const requestedModelId = pick?.model ?? message.model;
         const model = this.app.stores.get('ai-models').getModelByIdOrFallback(requestedModelId);
-        if (!model) throw new Error(translator.__('chat.tools.unavailable'));
+        if (!model) throw new Error(this.errorMessage('MODEL_UNAVAILABLE'));
 
         // The message's snapshot is the base; a claiming handler may replace any of it.
         const storedTools = message.metadata?.tools;
@@ -259,7 +273,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         });
 
         const resolvedModel = this.app.stores.get('ai-models').getOneById(send.model);
-        if (!resolvedModel) throw new Error(translator.__('chat.tools.unavailable'));
+        if (!resolvedModel) throw new Error(this.errorMessage(send.assistantHandle ? 'ASSISTANT_MODEL_UNAVAILABLE' : 'MODEL_UNAVAILABLE'));
         // The fallback notice concerns the plain path only — a claimed run's model comes from the participant.
         if (!send.assistantHandle && requestedModelId && resolvedModel.model_id !== requestedModelId) {
             onNotice?.(translator.__('chat.regenerate.modelNotAvailable', {model: requestedModelId, fallback: resolvedModel.label}));
@@ -309,7 +323,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const send = this.resolveSendDescriptor(context);
         if (context.tools.reconcile(context.model.current, false)) throw new Error('TOOL_ACCESS_DENIED');
         const model = this.app.stores.get('ai-models').getOneById(send.model);
-        if (!model) throw new Error('TOOL_UNAVAILABLE');
+        if (!model) throw new Error(send.assistantHandle ? 'ASSISTANT_MODEL_UNAVAILABLE' : 'MODEL_UNAVAILABLE');
         return {
             actorId: this.actorId(),
             modelId: model.model_id,
@@ -510,8 +524,8 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
                 if (packet.type === 'error') {
                     if (packet.code === 'TOOL_ACCESS_DENIED') void this.app.refreshConnection().catch(() => undefined);
-                    throw new Error(String(packet.code === 'TOOL_ACCESS_DENIED' || packet.code === 'TOOL_UNAVAILABLE' || packet.code === 'TOOL_OFFLINE'
-                        ? packet.code : packet.content ?? this.app.translator.__('chat.page.requestFailed')));
+                    // A known code is translated by `errorMessage`; server prose is never shown.
+                    throw new Error(typeof packet.code === 'string' && packet.code in errorCodeKeys ? packet.code : 'GENERATION_FAILED');
                 }
                 if (packet.type === 'reasoning_start' || packet.type === 'reasoning_delta'
                     || packet.type === 'reasoning_end' || packet.type === 'provider_tool_event') {
@@ -576,7 +590,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 this.options.onGeneration?.({type: 'aborted', slug: conversationSlug});
                 return;
             }
-            const message = this.errorMessage(error);
+            const message = this.errorMessage(error, request);
             this.options.onGeneration?.({type: 'failed', slug: conversationSlug, error: message});
             responseWriter.triggerError(message);
         }
@@ -677,17 +691,25 @@ export class ChatTransport implements MessageSenderTransportInterface {
     private assertCurrentRequest(request: AssistantRequest): void {
         if (request.actorId !== this.actorId()) throw new Error('TOOL_ACCESS_DENIED');
         const model = this.app.stores.get('ai-models').getOneById(request.modelId);
-        if (!model) throw new Error('TOOL_UNAVAILABLE');
+        if (!model) throw new Error(request.assistantHandle ? 'ASSISTANT_MODEL_UNAVAILABLE' : 'MODEL_UNAVAILABLE');
         const current = validatedToolSnapshot(request.tools, this.app.stores.get('ai-tools'), model);
         if (current.some((tool, index) => tool !== request.tools[index])) throw new Error('TOOL_ACCESS_DENIED');
     }
 
-    private errorMessage(error: unknown): string {
-        const code = error instanceof ApiTransportError || error instanceof AiApiError ? error.code : error instanceof Error ? error.message : null;
-        if (code === 'TOOL_ACCESS_DENIED') return this.app.translator.__('chat.tools.accessDenied');
-        if (code === 'TOOL_UNAVAILABLE') return this.app.translator.__('chat.tools.unavailable');
-        if (code === 'TOOL_OFFLINE') return this.app.translator.__('chat.tools.requiredOffline');
-        if (code === 'TOOL_AUTHORIZATION_REFRESHING') return this.app.translator.__('chat.tools.authorizationRefreshing');
+    /**
+     * The user-facing message for a failed send/regenerate: `error` is an error code (as a
+     * string or the message of an `Error`), or a transport error carrying one. `request` lets
+     * a generic `MODEL_UNAVAILABLE` from the server name the addressed assistant instead.
+     */
+    private errorMessage(error: unknown, request?: AssistantRequest): string {
+        let code = typeof error === 'string' ? error
+            : error instanceof ApiTransportError || error instanceof AiApiError ? error.code
+            : error instanceof Error ? error.message : undefined;
+        if (code === 'MODEL_UNAVAILABLE' && request?.assistantHandle) code = 'ASSISTANT_MODEL_UNAVAILABLE';
+        const key = code ? errorCodeKeys[code] : undefined;
+        if (key) return this.app.translator.__(key);
+        // The server answered with an error that has no known code: never show its raw text.
+        if (error instanceof ApiTransportError || error instanceof AiApiError) return this.app.translator.__('chat.page.requestFailed');
         return error instanceof Error ? error.message : this.app.translator.__('chat.page.sendError');
     }
 }

@@ -67,6 +67,7 @@
     import SquareLock02Icon from "$lib/components/ui/icons/iconset/SquareLock02Icon.svelte";
     import CheckmarkBadge01Icon from "$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte";
     import GlobeIcon from "$lib/components/ui/icons/iconset/GlobeIcon.svelte";
+    import AssistantAvailabilityStatus from "$plugins/assistants/components/status/AssistantAvailabilityStatus.svelte";
 
     /**
      * The kernel's route renderer hands each matched page its route params
@@ -428,6 +429,7 @@
         </div>
 
         <div class="badges">
+            <AssistantAvailabilityStatus {assistant} withHint/>
 <!--            <ReleaseStageStatus stage={assistant.releaseStage} />-->
             {#if assistant.riskLevel}
 <!--                <RiskStatus level={assistant.riskLevel} />-->
