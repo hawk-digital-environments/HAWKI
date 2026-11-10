@@ -58,7 +58,13 @@ export class OldUiBridgeTransport implements MessageSenderTransportInterface {
         if (!authorization.validate()) return;
         return this.oldUiBridge.triggerSendMessage({
             ...opt,
-            mode: context.mode.state,
+            // `pickedParticipant` is composer-internal — keep it out of the legacy payload.
+            mode: context.mode.isRegen
+                ? (() => {
+                    const {pickedParticipant: _picked, ...regen} = context.mode.getState('regen');
+                    return regen;
+                })()
+                : context.mode.state,
             systemPrompt: context.systemPrompt,
             model: initialModel,
             contextType: context.type,

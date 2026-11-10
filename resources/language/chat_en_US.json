@@ -162,7 +162,9 @@
                 "cancelThread": "Leave thread view",
                 "cancelDefault": "Exit mode",
                 "modeExited": "Back in normal writing mode.",
-                "actionBusy": "You can not do this right now. Please wait until the current action is finished."
+                "actionBusy": "You can not do this right now. Please wait until the current action is finished.",
+                "regenTitle": "Regenerate AI response",
+                "cancelRegen": "Cancel regeneration"
             },
             "settings": {
                 "presetCreative": "Creative",
@@ -313,7 +315,9 @@
                 "improvementError": "Could not load improvement suggestions",
                 "improvementModelSaidNoError": "Your message is good as it is. No improvements suggested.",
                 "improveTooltip": "Improve your input with AI-powered suggestions",
-                "cancelLabel": "Cancel"
+                "cancelLabel": "Cancel",
+                "regenerateLabel": "Regenerate",
+                "cancelRegeneration": "Cancel regeneration"
             },
             "demandBars": {
                 "low": "Low",
@@ -332,6 +336,12 @@
                 "pinnedLabel": "Pinned",
                 "pin": "Pin to the top of this menu",
                 "unpin": "Remove from pinned"
+            },
+            "regen": {
+                "onlyAssistantMessages": "Only assistant messages can be regenerated",
+                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
+                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
+                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
             }
         },
         "tools": {

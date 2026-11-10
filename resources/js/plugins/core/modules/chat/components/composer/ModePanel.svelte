@@ -1,8 +1,8 @@
 <!--
   @component Banner shown above the composer's model/settings row whenever the composer
-  is in a non-default mode (`composerContext.mode.isEdit` / `isThread`).
+  is in a non-default mode (`composerContext.mode.isEdit` / `isRegen` / `isThread`).
   Shows a mode-specific icon, title, and a truncated preview of the message being edited
-  (`mode.getState('edit').originalMessage`; empty for `thread`),
+  or regenerated (`mode.getState('edit'|'regen').originalMessage`; empty for `thread`),
   plus a cancel button that calls `composerContext.mode.exit()` — restoring the
   checkpoint taken when the mode was entered, effectively undoing everything the mode did.
 
@@ -23,6 +23,7 @@
     import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
     import ThreadIcon from '$lib/components/ui/icons/iconset/ThreadIcon.svelte';
     import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
+    import RefreshIcon from '$lib/components/ui/icons/iconset/RefreshIcon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -34,6 +35,9 @@
         if (composerContext.mode.isEdit) {
             return __('chat.composer.modePanel.editTitle');
         }
+        if (composerContext.mode.isRegen) {
+            return __('chat.composer.modePanel.regenTitle');
+        }
         if (composerContext.mode.isThread) {
             return __('chat.composer.modePanel.threadTitle');
         }
@@ -44,6 +48,9 @@
         if (composerContext.mode.isEdit) {
             return composerContext.mode.getState('edit').originalMessage;
         }
+        if (composerContext.mode.isRegen) {
+            return composerContext.mode.getState('regen').originalMessage;
+        }
 
         return '';
     });
@@ -51,6 +58,9 @@
     const PanelIcon = $derived.by(() => {
         if (composerContext.mode.isEdit) {
             return Edit02Icon;
+        }
+        if (composerContext.mode.isRegen) {
+            return RefreshIcon;
         }
         if (composerContext.mode.isThread) {
             return ThreadIcon;
@@ -61,6 +71,9 @@
     const cancelButtonTitle = $derived.by(() => {
         if (composerContext.mode.isEdit) {
             return __('chat.composer.modePanel.cancelEdit');
+        }
+        if (composerContext.mode.isRegen) {
+            return __('chat.composer.modePanel.cancelRegen');
         }
         if (composerContext.mode.isThread) {
             return __('chat.composer.modePanel.cancelThread');

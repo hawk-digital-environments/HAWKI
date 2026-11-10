@@ -24,6 +24,7 @@
     import Copy01Icon from '$lib/components/ui/icons/iconset/Copy01Icon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import MessageEdit01Icon from '$lib/components/ui/icons/iconset/MessageEdit01Icon.svelte';
+    import ArrowReloadHorizontalIcon from '$lib/components/ui/icons/iconset/ArrowReloadHorizontalIcon.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MessageCircleReplyIcon from '$lib/components/ui/icons/iconset/MessageCircleReplyIcon.svelte';
     import VolumeHighIcon from '$lib/components/ui/icons/iconset/VolumeHighIcon.svelte';
@@ -31,10 +32,8 @@
     import ChatMessageSelf from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import MessageBody from '$plugins/core/modules/chat/components/message/MessageBody.svelte';
     import MessageReasoning from '$plugins/core/modules/chat/components/message/MessageReasoning.svelte';
-    import RegenerateMenu from '$plugins/core/modules/chat/components/message/RegenerateMenu.svelte';
     import MessageStats from '$plugins/core/modules/chat/components/message/MessageStats.svelte';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
-    import type {ChatRegeneratePick} from '$plugins/core/modules/chat/hooks/chatRegenerateHooks.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {messageTrunkId} from '$plugins/core/modules/chat/utils/messageThreads.js';
     import {MESSAGE_HISTORY_CAP} from '$plugins/core/modules/chat/transport/ChatTransport.js';
@@ -52,16 +51,13 @@
         /** True when this message is itself a thread reply — it gets no thread of its own. */
         isThreadReply?: boolean;
         composer?: ComposerContext | null;
-        /** Enables the regenerate menu on assistant messages; the pick names the participant
-         *  (and, for HAWKI, the model) the reply is re-run with. */
-        onRegenerate?: (message: ChatMessageType, pick: ChatRegeneratePick) => void;
         onDelete: (message: ChatMessageType) => void;
         onDeleteAttachment: (message: ChatMessageType, fileId: string) => void;
         /** Level of the message's visually hidden author heading; thread replies render one level deeper. Defaults to 3. */
         headingLevel?: number;
     }
 
-    const {message, replies = [], isThreadReply = false, composer = null, onRegenerate, onDelete, onDeleteAttachment, headingLevel = 3, class: className, ...restProps}: Props = $props();
+    const {message, replies = [], isThreadReply = false, composer = null, onDelete, onDeleteAttachment, headingLevel = 3, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const toast = useToastContext();
     const aiModelStore = useStore('ai-models');
@@ -249,9 +245,8 @@
                 {#if composer && !isAssistant}
                     <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={MessageEdit01Icon} tooltip={__('chat.actions.edit')} onclick={() => composer?.mode.enter('edit', message)} /></li>
                 {/if}
-                {#if onRegenerate && isAssistant}
-                    <!-- The action bar disappears while the reply streams; focus moves to the article instead of getting lost. -->
-                    <li><RegenerateMenu {message} {onRegenerate} returnFocusTo={article} /></li>
+                {#if composer && isAssistant}
+                    <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={ArrowReloadHorizontalIcon} tooltip={__('chat.actions.regenerate')} onclick={() => composer?.mode.enter('regen', message)} /></li>
                 {/if}
                 {#if canThread}
                     <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} /></li>
@@ -283,7 +278,7 @@
                 {#if threadOpen}
                     <div class="thread-panel" id={threadPanelId} transition:growTransition>
                         {#each replies as reply (reply.clientKey ?? reply.message_id)}
-                            <ChatMessageSelf message={reply} {composer} {onRegenerate} isThreadReply {onDelete} {onDeleteAttachment} headingLevel={headingLevel + 1} />
+                            <ChatMessageSelf message={reply} {composer} isThreadReply {onDelete} {onDeleteAttachment} headingLevel={headingLevel + 1} />
                         {/each}
 
                         {#if composingInThread}

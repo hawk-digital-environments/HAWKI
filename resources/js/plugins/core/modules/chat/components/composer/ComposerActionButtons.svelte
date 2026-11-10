@@ -76,6 +76,9 @@
         if (composerContext.mode.isEdit) {
             return __('chat.composer.actions.saveLabel');
         }
+        if (composerContext.mode.isRegen) {
+            return __('chat.composer.actions.regenerateLabel');
+        }
         return __('chat.composer.actions.sendLabel');
     });
 
@@ -86,6 +89,9 @@
 
     const cancelTooltip = $derived.by(() => {
         if (isNotSendingInNonDefaultMode) {
+            if (composerContext.mode.isRegen) {
+                return __('chat.composer.actions.cancelRegeneration');
+            }
             if (composerContext.mode.isThread) {
                 return __('chat.composer.actions.leaveThread');
             }
@@ -109,7 +115,7 @@
     });
 
     const SendIcon = $derived.by(() => {
-        if (composerContext.mode.isEdit) {
+        if (composerContext.mode.isRegen || composerContext.mode.isEdit) {
             return Tick02Icon;
         }
         return SentIcon;
