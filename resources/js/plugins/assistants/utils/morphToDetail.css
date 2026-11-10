@@ -34,10 +34,12 @@
 }
 
 /* The card's banner, glyph and title spring into (or back out of) the
-   detail cover. */
+   detail cover. The handle rides along with the title (its movement is set
+   from morphToDetail.ts); these timings also pace its fade. */
 ::view-transition-group(assistant-cover),
 ::view-transition-group(assistant-symbol),
-::view-transition-group(assistant-title) {
+::view-transition-group(assistant-title),
+::view-transition-group(assistant-handle) {
     animation-duration: var(--assistant-morph-duration);
     animation-timing-function: var(--assistant-morph-ease);
 }
@@ -137,7 +139,8 @@
 ::view-transition-group(assistant-container) { z-index: 2; }
 ::view-transition-group(assistant-cover)     { z-index: 3; }
 ::view-transition-group(assistant-symbol),
-::view-transition-group(assistant-title)     { z-index: 4; }
+::view-transition-group(assistant-title),
+::view-transition-group(assistant-handle)    { z-index: 4; }
 
 /* The modal's own surface (everything of the detail view outside the
    morphing container: its background, the test-chat dock). Exists on one
@@ -157,6 +160,11 @@
     30%  { scale: 1.035; }
     100% { scale: 1; }
 }
+/* Scaled from its top-left corner, like the title image it rides with. */
+::view-transition-group(assistant-handle) {
+    transform-origin: 0 0;
+}
+
 @keyframes assistant-morph-symbol {
     0%   { scale: 1;    rotate: 0deg; }
     40%  { scale: 1.12; rotate: -4deg; }

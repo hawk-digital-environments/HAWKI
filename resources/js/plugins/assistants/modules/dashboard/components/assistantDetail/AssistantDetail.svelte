@@ -707,6 +707,8 @@
         view-transition-name: assistant-title;
     }
     .handle {
+        /* Rides along with the title in the store card morph (morphToDetail). */
+        view-transition-name: assistant-handle;
         margin: 0;
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-medium);

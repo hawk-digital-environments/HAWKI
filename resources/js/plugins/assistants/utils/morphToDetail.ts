@@ -27,12 +27,19 @@ const MORPH_COVER = 'assistant-cover';
 const MORPH_SYMBOL = 'assistant-symbol';
 /** The card's poster title ⇄ the detail cover's name. */
 const MORPH_TITLE = 'assistant-title';
+/** The detail cover's handle: no counterpart on the card, so it rides along with the title. */
+const MORPH_HANDLE = 'assistant-handle';
 /** The card as a whole ⇄ the detail page's content column: the container the content scales inside. */
 const MORPH_CONTAINER = 'assistant-container';
 const MORPH_PAGE = 'assistant-page';
 
 /** The detail page marks its cover with this attribute. */
 const DETAIL_COVER_SELECTOR = '[data-assistant-cover]';
+/** The detail cover's name (the title morph's detail end) and handle. */
+const DETAIL_TITLE_SELECTOR = '.name .overflow-text';
+const DETAIL_HANDLE_SELECTOR = '.handle';
+/** The card's poster title (the title morph's card end). */
+const CARD_TITLE_SELECTOR = '.cover-title .overflow-text';
 
 /**
  * Longest the old view stays frozen while the detail loads its data. Past
@@ -81,7 +88,7 @@ function canMorph(): boolean {
 function nameCard(card: HTMLElement): () => void {
     const banner = card.querySelector<HTMLElement>('.banner-container');
     const symbol = card.querySelector<HTMLElement>('.symbol');
-    const title = card.querySelector<HTMLElement>('.cover-title .overflow-text');
+    const title = card.querySelector<HTMLElement>(CARD_TITLE_SELECTOR);
     card.style.viewTransitionName = MORPH_CONTAINER;
     if (banner) banner.style.viewTransitionName = MORPH_COVER;
     if (symbol) symbol.style.viewTransitionName = MORPH_SYMBOL;
@@ -98,7 +105,7 @@ function nameCard(card: HTMLElement): () => void {
  * Shared run: names the main area, flags the direction, runs `update` inside
  * the transition and cleans every temporary name up afterwards.
  */
-function run(direction: Direction, update: () => Promise<(() => void) | void>): void {
+function run(direction: Direction, update: () => Promise<(() => void) | void>): ViewTransition {
     // The landmark persists across both pages, so its old/new snapshots are
     // exactly the two pages.
     const main = document.getElementById('main-content');
@@ -121,6 +128,50 @@ function run(direction: Direction, update: () => Promise<(() => void) | void>): 
     // Also runs when the transition is skipped (a failed or vetoed
     // navigation) — never leave stale names behind.
     void transition.finished.finally(() => cleanups.forEach(fn => fn()));
+    return transition;
+}
+
+/** Where the title morph's two ends and the handle sit. */
+interface HandleRide {
+    cardTitle: DOMRect;
+    detailTitle: DOMRect;
+    handle: DOMRect;
+}
+
+/** Measures the detail cover's title and handle; null without either. */
+function measureDetail(cover: Element | null): Omit<HandleRide, 'cardTitle'> | null {
+    const title = cover?.querySelector(DETAIL_TITLE_SELECTOR);
+    const handle = cover?.querySelector(DETAIL_HANDLE_SELECTOR);
+    return title && handle
+        ? {detailTitle: title.getBoundingClientRect(), handle: handle.getBoundingClientRect()}
+        : null;
+}
+
+/**
+ * The handle exists on the detail end only, so the browser would just fade
+ * it in (or out) in place. Instead it rides along with the title: at the
+ * card end it sits where it would under the card's title, scaled by the
+ * title's own scale, and travels with it on the same timing.
+ */
+function rideHandle(transition: ViewTransition, direction: Direction, ride: () => HandleRide | null): void {
+    void transition.ready.then(() => {
+        const at = ride();
+        if (!at || !at.detailTitle.width) return;
+        const scale = at.cardTitle.width / at.detailTitle.width;
+        const atCard = `translate(${at.cardTitle.left + (at.handle.left - at.detailTitle.left) * scale}px, `
+            + `${at.cardTitle.top + (at.handle.top - at.detailTitle.top) * scale}px) scale(${scale})`;
+        const atDetail = `translate(${at.handle.left}px, ${at.handle.top}px)`;
+        const root = getComputedStyle(document.documentElement);
+        document.documentElement.animate(
+            {transform: direction === 'open' ? [atCard, atDetail] : [atDetail, atCard]},
+            {
+                duration: parseFloat(root.getPropertyValue('--assistant-morph-duration')) || 400,
+                easing: root.getPropertyValue('--assistant-morph-ease').trim() || 'ease',
+                fill: 'both',
+                pseudoElement: `::view-transition-group(${MORPH_HANDLE})`,
+            },
+        );
+    }).catch(() => {});
 }
 
 /**
@@ -132,15 +183,19 @@ export function morphToDetail(card: HTMLElement, open: () => Promise<void>): voi
         void open();
         return;
     }
+    // Measured now, at the old end: the card is under the modal later.
+    const cardTitle = card.querySelector(CARD_TITLE_SELECTOR)?.getBoundingClientRect();
+    let detail: ReturnType<typeof measureDetail> = null;
     // The card must be named before the old snapshot is taken…
     const unnameCard = nameCard(card);
-    run('open', async () => {
+    const transition = run('open', async () => {
         await open();
-        await waitFor(DETAIL_COVER_SELECTOR);
+        detail = measureDetail(await waitFor(DETAIL_COVER_SELECTOR));
         // …and unnamed before the new one: it is still in the DOM under the
         // modal, whose detail view now holds the same names.
         unnameCard();
     });
+    rideHandle(transition, 'open', () => cardTitle && detail ? {cardTitle, ...detail} : null);
 }
 
 /**
@@ -152,11 +207,16 @@ export function morphFromDetail(assistantId: string | number, close: () => Promi
         void close();
         return;
     }
-    run('back', async () => {
+    // Measured now, at the old end, before the modal leaves the DOM.
+    const detail = measureDetail(document.querySelector(DETAIL_COVER_SELECTOR));
+    let cardTitle: DOMRect | undefined;
+    const transition = run('back', async () => {
         await close();
         const card = await waitFor(`[data-assistant-card="${CSS.escape(String(assistantId))}"]`);
+        cardTitle = card?.querySelector(CARD_TITLE_SELECTOR)?.getBoundingClientRect();
         // Named only now, after the detail modal (and its permanent names)
         // has left the DOM — the new snapshot is taken after this callback.
         return card ? nameCard(card) : undefined;
     });
+    rideHandle(transition, 'back', () => cardTitle && detail ? {cardTitle, ...detail} : null);
 }
