@@ -35,12 +35,24 @@ export function formatDateTime(value: DateValue, locales?: Intl.LocalesArgument)
     if (Number.isNaN(date.getTime())) return String(value);
 
     const now = new Date();
-    const isToday = date.getFullYear() === now.getFullYear()
-        && date.getMonth() === now.getMonth()
-        && date.getDate() === now.getDate();
+    const isToday =
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate();
 
-    return new Intl.DateTimeFormat(locales, isToday
-        ? {hour: '2-digit', minute: '2-digit'}
-        : {dateStyle: 'short', timeStyle: 'short'}
+    return new Intl.DateTimeFormat(
+        locales,
+        isToday ? { hour: '2-digit', minute: '2-digit' } : { dateStyle: 'short', timeStyle: 'short' }
     ).format(date);
+}
+
+/**
+ * Formats a date without a time part. Invalid values are returned unchanged
+ * as strings.
+ */
+export function formatDate(value: DateValue, locales?: Intl.LocalesArgument): string {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    return new Intl.DateTimeFormat(locales, { dateStyle: 'short' }).format(date);
 }

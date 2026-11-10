@@ -56,6 +56,8 @@
     import ArrowDown01Icon from '$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte';
     import ArrowUp01Icon from '$lib/components/ui/icons/iconset/ArrowUp01Icon.svelte';
     import { useBreakpoint } from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import { useApp } from '$lib/app/hooks/useApp.svelte.js';
+    import { formatDate } from '$lib/utils/date';
     import DropdownMenuSub from '$lib/components/ui/dropdown-menu/DropdownMenuSub.svelte';
     import DropdownMenuRadioGroup from '$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte';
     import DropdownMenuRadioItem from '$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte';
@@ -91,8 +93,18 @@
 
     const toast = useToastContext();
     const breakpoint = useBreakpoint();
+    const app = useApp();
 
     const { __ } = useTranslator();
+    /** Intl locale matching the active UI locale (dates/counts re-format on
+     *  a locale switch); undefined until the locale has loaded. */
+    const intlLocale = $derived.by(() => {
+        try {
+            return app.localization.locale.htmlLang;
+        } catch {
+            return undefined;
+        }
+    });
     // Seeded once from the list's copy; the fetch below then replaces it.
     // svelte-ignore state_referenced_locally
     let assistant = $state<Assistant | undefined>(initial?.id === id ? initial : undefined);
@@ -181,7 +193,7 @@
     const coverForeground = $derived(avatar.iconCss.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1]);
 
     const lastUpdateLabel = $derived(
-        assistant?.versions[0]?.createdAt ? new Date(assistant.versions[0]?.createdAt).toLocaleDateString('de-DE') : '—'
+        assistant?.versions[0]?.createdAt ? formatDate(assistant.versions[0].createdAt, intlLocale) : '—'
     );
 
     /**
@@ -309,7 +321,7 @@
 
     const usageLabel = $derived(
         assistant?.usageCount != null ?
-            `${assistant.usageCount.toLocaleString('de-DE')} ${__('assistants.detail.meta_usage_unit')}`
+            `${assistant.usageCount.toLocaleString(intlLocale)} ${__('assistants.detail.meta_usage_unit')}`
         :   '—'
     );
 
@@ -336,9 +348,7 @@
                 active
                 label={__('assistants.browser.loading')}
                 class="detail-loader"
-            >
-                {#snippet children()}{/snippet}
-            </Loader>
+            />
         {:else if !assistant && error}
             <p>Error: {error.message}</p>
         {:else if assistant}
@@ -589,7 +599,7 @@
                             {#each versionsNewestFirst as version, index (version.id)}
                                 <VersionCard
                                     version={version.version}
-                                    date={new Date(version.createdAt).toLocaleDateString('de-DE')}
+                                    date={formatDate(version.createdAt, intlLocale)}
                                     changedKeys={version.changedKeys}
                                     isCreation={index === assistant.versions.length - 1}
                                     note={version.text}
