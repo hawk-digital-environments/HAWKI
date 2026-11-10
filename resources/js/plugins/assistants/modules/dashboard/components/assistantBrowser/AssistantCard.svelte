@@ -5,6 +5,7 @@
     import FavButton from '$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte';
     import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
+    import Avatar from '$lib/components/ui/avatar/Avatar.svelte';
     import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
     import { getAvatar } from '$plugins/assistants/api/resources/userAvatarClient';
     import { magnetic } from '$lib/components/ui/magnetic/magnetic.svelte';
@@ -103,18 +104,15 @@
         </div>
         <div class="footer">
             <div class="creator-info">
-                <div class="avatar">
-                    {#if userAvatarUrl}
-                        <img
-                            src={userAvatarUrl}
-                            alt=""
-                        />
-                    {:else}
-                        <span class="creator-initials">
-                            {assistant.creator.displayName.slice(0, 2)}
-                        </span>
-                    {/if}
-                </div>
+                <!-- Decorative (the name sits right beside it): the shared
+                     Avatar gains a broken-image fallback for free. -->
+                <Avatar
+                    src={userAvatarUrl ?? undefined}
+                    name={assistant.creator.displayName}
+                    label={assistant.creator.displayName}
+                    size={28}
+                    aria-hidden="true"
+                />
                 <div class="creator-text">
                     <span class="title">{assistant.creator.displayName}</span>
                     {#if assistant.remixedAssistant}
@@ -164,10 +162,6 @@
         border-radius: var(--corner-lg);
         background: transparent;
         cursor: pointer;
-    }
-    .assistant-card .open:focus-visible {
-        outline: 2px solid var(--color-focus-ring);
-        outline-offset: 2px;
     }
     /* Depth: the glyph follows the pointer a little further than the card
        (on top of the card's own pull; --magnet-x/y come from magnetic()). */
@@ -301,23 +295,6 @@
         align-items: center;
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
-    }
-    .creator-info .avatar {
-        display: flex;
-        width: 1.75rem;
-        height: 1.75rem;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        border-radius: var(--corner-full);
-        font-size: var(--font-size-xxs);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-accent-text);
-        background: var(--color-accent-100);
-    }
-    .creator-info .avatar img {
-        width: 100%;
-        height: 100%;
     }
     .creator-info .remix-from {
         opacity: 0.75;

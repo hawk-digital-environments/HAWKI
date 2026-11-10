@@ -58,10 +58,6 @@
             color 150ms ease-out,
             scale 120ms cubic-bezier(0.22, 1, 0.36, 1);
     }
-    button:focus-visible {
-        outline: 2px solid var(--color-focus-ring);
-        outline-offset: 2px;
-    }
     button.isActive,
     button.isActive:hover {
         color: var(--color-surface-raised);
