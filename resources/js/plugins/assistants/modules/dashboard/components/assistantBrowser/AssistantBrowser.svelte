@@ -8,6 +8,7 @@
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import autoAnimate, { type AutoAnimationPlugin } from '@formkit/auto-animate';
     import { tick, untrack, type Snippet } from 'svelte';
+    import { useReducedMotion } from '$lib/utils/transitions/reducedMotion.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
     import { morphFromDetail, morphToDetail } from '$plugins/assistants/utils/morphToDetail';
@@ -132,11 +133,11 @@
     // height changes (cards stretch to their row), which reflows the card's
     // content mid-flight and makes it morph. Here the size snaps instead.
     const GRID_DURATION_MS = 250;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const reducedMotion = useReducedMotion();
 
     const gridMotion: AutoAnimationPlugin = (el, action, oldCoords, newCoords) => {
         // A plugin opts out of autoAnimate's own reduced-motion check.
-        const duration = reducedMotion.matches ? 0 : GRID_DURATION_MS;
+        const duration = reducedMotion.current ? 0 : GRID_DURATION_MS;
         if (action === 'add') {
             return new KeyframeEffect(
                 el,

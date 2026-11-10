@@ -46,7 +46,6 @@
     import WindowsOldIcon from '$lib/components/ui/icons/iconset/WindowsOldIcon.svelte';
     import Chatbox from '$plugins/assistants/components/testChat';
     import { growTransition } from '$lib/utils/transitions/growTransition';
-    import { breakpointsQueries } from '$lib/components/util/breakpoints/breakpoints.js';
     import ChatDock from '$plugins/assistants/components/testChat/ChatDock.svelte';
     import { createChatStore } from '$plugins/assistants/components/testChat/stream/chatStore.svelte.js';
     import { createChatConfig } from '$plugins/assistants/components/testChat/stream/chatConfig.svelte.js';
@@ -288,7 +287,7 @@
      *  assistant once the chatbox is rendered, i.e. after it has loaded.
      *  Open by default, except on small screens where it would cover the
      *  whole page — there it starts as the chat button (as in the builder). */
-    let chatOpen = $state(!window.matchMedia(breakpointsQueries.bpMdAndSmaller).matches);
+    let chatOpen = $state(!breakpoint.is('bpMdAndSmaller'));
 
     const testChat = createChatStore(createChatConfig(() => assistant!));
 
