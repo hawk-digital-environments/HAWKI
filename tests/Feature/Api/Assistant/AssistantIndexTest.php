@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use Database\Seeders\AssistantSettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
@@ -585,6 +586,56 @@ class AssistantIndexTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
+    public function testCanFilterAssistantsByModelAvailableTrue(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Offered model', 'model' => $this->seedOfferedModel('filter-test-offered')]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Retired model', 'model' => 'removed-from-catalog-model']);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['model_available' => 'true']]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.name', 'Offered model');
+    }
+
+    public function testCanFilterAssistantsByModelAvailableFalse(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Offered model', 'model' => $this->seedOfferedModel('filter-test-offered')]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Retired model', 'model' => 'removed-from-catalog-model']);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['model_available' => 'false']]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.name', 'Retired model');
+    }
+
+    public function testModelAvailableFilterHonorsContextualScopes(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Offered', 'model' => $this->seedOfferedModel('filter-test-offered')]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'No usage rule', 'model' => $this->seedOfferedModel('filter-test-no-rule', withUsageRule: false)]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Deactivated model', 'model' => $this->seedOfferedModel('filter-test-inactive-model', activeModel: false)]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Deactivated provider', 'model' => $this->seedOfferedModel('filter-test-inactive-provider', activeProvider: false)]);
+
+        $this->actingAsUser($user);
+
+        // "Offered" means exactly what the ai-models list shows: active model,
+        // active provider and a usage rule for the current context.
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['model_available' => 'true']]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.name', 'Offered');
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['model_available' => 'false']]))
+            ->assertOk()
+            ->assertJsonCount(3, 'data');
+    }
+
     public function testCanFilterAssistantsBySharedWithUser(): void
     {
         $owner = User::factory()->create();
@@ -673,5 +724,46 @@ class AssistantIndexTest extends TestCase
         $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['shared_with_user' => 'false']]))
             ->assertOk()
             ->assertJsonCount(2, 'data');
+    }
+
+    /**
+     * Inserts a model that counts as offered (active provider, active model,
+     * usage rule for the current context) and returns its model_id. Dropping
+     * the usage rule or deactivating the model/provider simulates a model that
+     * is no longer offered — exactly what AiModel's contextual scopes hide
+     * from the ai-models list. Raw inserts because no AiModel factory exists;
+     * mirrors AiToolSeederTest::seedModels (the JSON columns hydrate through
+     * their casts).
+     */
+    private function seedOfferedModel(
+        string $modelId,
+        bool $withUsageRule = true,
+        bool $activeModel = true,
+        bool $activeProvider = true,
+    ): string {
+        $providerId = DB::table('ai_providers')->insertGetId([
+            'provider_id' => 'filter-test-' . $modelId,
+            'name' => 'Filter Test Provider ' . $modelId,
+            'adapter_key' => 'openAi',
+            'active' => $activeProvider,
+        ]);
+
+        $modelPk = DB::table('ai_models')->insertGetId([
+            'provider_id' => $providerId,
+            'model_id' => $modelId,
+            'label' => 'Filter Test Model ' . $modelId,
+            'active' => $activeModel,
+            'native_capabilities' => '[]',
+            'limits' => '{}',
+            'pricing' => '{}',
+            'flags' => '[]',
+            'settings' => '{}',
+        ]);
+
+        if ($withUsageRule) {
+            DB::table('ai_model_usage_rules')->insert(['ai_model_id' => $modelPk, 'usage_type' => 'main']);
+        }
+
+        return $modelId;
     }
 }
