@@ -305,6 +305,12 @@
             : '—',
     );
 
+    /** Timeline order, newest first. Hoisted so the template doesn't re-copy
+     *  and reverse the array on every dependency change. */
+    const versionsNewestFirst = $derived(
+        assistant ? [...assistant.versions].reverse() : [],
+    );
+
 </script>
 <!-- The full-bleed cover runs under the floating nav trigger itself, so it
      opts out of the content fade there (it would wash out the cover's top). -->
@@ -536,7 +542,7 @@
             <section class="section">
                 <h3 class="section-title">{__('assistants.detail.history_title')}</h3>
                 <VersionTimeline>
-                    {#each [...assistant.versions].reverse() as version, index (version.id)}
+                    {#each versionsNewestFirst as version, index (version.id)}
                         <VersionCard
                             version={version.version}
                             date={new Date(version.createdAt).toLocaleDateString('de-DE')}
