@@ -136,11 +136,12 @@ export class ChatTransport implements MessageSenderTransportInterface {
         let generationStarted = false;
         let conversationCreated = false;
         let provisionalTitle: string | null = null;
-        const optimisticMessage = this.optimisticUserMessage(opt);
+        // A regenerate re-runs an existing reply in place — no user message is shown or persisted.
+        const optimisticMessage = context.mode.isRegen ? null : this.optimisticUserMessage(opt);
 
         // A new conversation has no slug/cache entry yet. Let ChatIndex render
         // the message locally while the create request is in flight.
-        if (!targetSlug) {
+        if (!targetSlug && optimisticMessage) {
             this.options.onConversationPending?.(optimisticMessage);
         }
 
@@ -167,8 +168,11 @@ export class ChatTransport implements MessageSenderTransportInterface {
             // The persisted binding follows the assistant this send addresses (null = plain
             // HAWKI chat). Awaited alongside the uploads so a failed rebind fails the send
             // visibly instead of silently diverging from what the run used; a freshly created
-            // conversation already carries the binding from `create` above.
-            if (conversationCreated) {
+            // conversation already carries the binding from `create` above. A regenerate is
+            // exempt: re-running one reply must not rebind the conversation.
+            if (context.mode.isRegen) {
+                await this.uploadAttachments(opt);
+            } else if (conversationCreated) {
                 await this.uploadAttachments(opt);
             } else {
                 await Promise.all([
@@ -177,28 +181,34 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 ]);
             }
             if (status.failed) {
-                this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
+                if (optimisticMessage) this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
                 this.store.finishGeneration(targetSlug);
                 if (conversationCreated) this.options.onConversationPending?.(null);
                 return;
             }
 
-            this.assertCurrentRequest(request);
-            const encrypted = await this.store.encryptText(sentMessage);
-            this.assertCurrentRequest(request);
-            const userMessage = await this.store.persistMessage(targetSlug, {
-                isAi: false,
-                threadId: request.threadId,
-                completion: true,
-                content: {text: encrypted, attachments: this.attachmentUuids(opt)},
-                __plainText: sentMessage
-            });
-            status.markAccepted();
-            if (request.actorId !== this.actorId()) throw new Error('TOOL_ACCESS_DENIED');
-            this.store.replaceMessage(targetSlug, optimisticMessage.message_id, {...userMessage, clientKey: optimisticMessage.clientKey});
-            this.assertCurrentRequest(request);
+            if (!context.mode.isRegen) {
+                this.assertCurrentRequest(request);
+                const encrypted = await this.store.encryptText(sentMessage);
+                this.assertCurrentRequest(request);
+                const userMessage = await this.store.persistMessage(targetSlug, {
+                    isAi: false,
+                    threadId: request.threadId,
+                    completion: true,
+                    content: {text: encrypted, attachments: this.attachmentUuids(opt)},
+                    __plainText: sentMessage
+                });
+                status.markAccepted();
+                if (request.actorId !== this.actorId()) throw new Error('TOOL_ACCESS_DENIED');
+                if (optimisticMessage) {
+                    this.store.replaceMessage(targetSlug, optimisticMessage.message_id, {...userMessage, clientKey: optimisticMessage.clientKey});
+                } else {
+                    this.store.appendMessage(targetSlug, userMessage);
+                }
+                this.assertCurrentRequest(request);
+            }
         } catch (error) {
-            if (targetSlug) {
+            if (optimisticMessage && targetSlug) {
                 this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
             }
             if (generationStarted && targetSlug) this.store.finishGeneration(targetSlug);
@@ -302,7 +312,10 @@ export class ChatTransport implements MessageSenderTransportInterface {
 
     /** Snapshot of the composer state that shapes the assistant reply for a regular send. */
     private requestFromContext(context: ComposerContext): AssistantRequest {
-        const threadId = context.mode.isThread ? Number(context.mode.getState('thread').threadId) : 0;
+        const regenState = context.mode.isRegen ? context.mode.getState('regen') : null;
+        const threadId = regenState
+            ? this.threadIdForMessage(regenState.messageId)
+            : context.mode.isThread ? Number(context.mode.getState('thread').threadId) : 0;
         // The resolved run description: the composer's own selection, possibly
         // rewritten by a `chatSend` hook handler (e.g. pinning model/tools/
         // params to the addressed assistant and binding the conversation).
@@ -317,7 +330,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
             params: send.params,
             systemPrompt: context.systemPrompt,
             threadId: Number.isFinite(threadId) ? threadId : 0,
-            regenerateMessageId: null,
+            regenerateMessageId: regenState?.messageId ?? null,
             assistantHandle: send.assistantHandle,
             author: send.author,
             assistant: send.assistant ?? undefined
@@ -343,7 +356,10 @@ export class ChatTransport implements MessageSenderTransportInterface {
             composer: context,
             conversation: this.store.active,
             regenMessage: null,
-            regenParticipant: null
+            // A regen participant picked in the model picker; unclaimed stays a plain run.
+            regenParticipant: context.mode.isRegen
+                ? context.mode.getState('regen').pickedParticipant ?? null
+                : null
         });
     }
 
