@@ -27,15 +27,10 @@
     --assistant-morph-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* The detail cover's rounding, the cover morph's far end: square where
-   the cover runs full-bleed (AssistantDetail, small screens). */
+/* The detail cover's rounding, the cover morph's far end: square, as the
+   cover runs full-bleed at every width (AssistantDetail). */
 :root {
-    --assistant-detail-cover-radius: var(--corner-lg);
-}
-@media (--bp-sm-and-smaller) {
-    :root {
-        --assistant-detail-cover-radius: 0px;
-    }
+    --assistant-detail-cover-radius: 0px;
 }
 
 /* The card's banner, glyph and title spring into (or back out of) the
@@ -49,11 +44,9 @@
 
 /* On both pages the banner's rounding comes from a clipping parent (the
    card / the detail cover), which a view-transition snapshot escapes, so
-   the image pair re-clips it: 24px top corners on both ends (--corner-lg =
-   1rem + --space-2). The bottom corners differ — square on the card, where
-   the content continues below; rounded on the detail page's free-standing
-   cover — so they animate along with the box instead of snapping at the
-   end. On the image pair rather than the group, so the lift scales the
+   the image pair re-clips it: rounded top corners on the card (--corner-lg),
+   square on the detail page's full-bleed cover, so they animate along with
+   the box instead of snapping at the end. On the image pair rather than the group, so the lift scales the
    rounded box as a whole instead of zooming inside a clip. */
 ::view-transition-image-pair(assistant-cover) {
     overflow: clip;

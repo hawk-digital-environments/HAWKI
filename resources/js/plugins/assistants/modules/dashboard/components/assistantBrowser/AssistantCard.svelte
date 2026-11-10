@@ -95,7 +95,6 @@
     <div class="content">
         <div class="info">
             <div class="tags">
-                <span class="handle">@{assistant.handle}</span>
                 <span class="category">
                     {assistant.category? __(assistant.category.text) : __('assistants.card.category_unknown')}
                 </span>
@@ -244,11 +243,6 @@
         flex-wrap: wrap;
         align-items: center;
         gap: var(--space-1_5) var(--space-2);
-    }
-    .handle{
-        font-size: var(--font-size-xs);
-        line-height: var(--line-height-tight);
-        color: var(--color-text-muted);
     }
     .category{
         display: inline-flex;

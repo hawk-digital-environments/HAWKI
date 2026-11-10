@@ -267,15 +267,17 @@
         padding: 0 var(--space-3);
         font-size: var(--font-size-sm);
         border-radius: var(--corner-full);
+        /* At this size the label reads as one unit with its icon. */
+        gap: var(--space-1_5);
 
-        /* Icons carry their own side bearing, so the icon side sits a notch
-           tighter than the text side to look even. */
+        /* Icons carry their own side bearing (2–5px inside the 16px box), so
+           the icon side sits tighter than the text side to look even. */
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-2_5);
+            padding-inline-start: var(--space-2);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-2_5);
+            padding-inline-end: var(--space-2);
         }
     }
 

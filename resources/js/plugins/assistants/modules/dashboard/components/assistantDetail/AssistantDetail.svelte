@@ -349,11 +349,12 @@
             <div class="topbar">
                 <ButtonWithTooltip
                         variant="ghost"
+                        size="sm"
                         iconLeft={ArrowLeft01Icon}
                         tooltip={__('assistants.detail.back')}
                         class="back"
                         onclick={onBack}
-                />
+                ><span class="btn-label">{__('assistants.detail.back')}</span></ButtonWithTooltip>
                 <div class="controls">
                     <FavButton
                         id="favBtn"
@@ -613,14 +614,6 @@
         }
     }
 
-    /* Same scroll-away reserve as Page's default scroll region, which this
-       page replaces: at-rest content clears the floating nav trigger. */
-    @media (--bp-md-and-smaller) {
-        .detail-scroll {
-            padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
-        }
-    }
-
     .page-content {
         /* Morph target for the store card as a whole (morphToDetail). */
         view-transition-name: assistant-container;
@@ -630,15 +623,18 @@
         width: 100%;
         margin: 0 auto;
         padding: var(--space-6);
+        /* The cover runs into the top edge. */
+        padding-top: 0;
     }
 
     /* Top bar, overlaid on the cover: back on the left, the assistant's
-       actions on the right. */
+       actions on the right. Inset like the cover's own content (name,
+       glyph). */
     .topbar {
         position: absolute;
-        top: var(--space-2);
-        left: var(--space-2);
-        right: var(--space-2);
+        top: var(--cover-inset);
+        left: var(--cover-inset);
+        right: var(--cover-inset);
         z-index: 1;
         display: flex;
         align-items: flex-start;
@@ -647,13 +643,12 @@
     }
     /* Cover: a flat two-tone poster, like the store cards — the name set big
        and heavy in the avatar's foreground shade at the bottom left, the
-       glyph as a white sticker at the bottom right. */
+       glyph as a white sticker at the bottom right. Full-bleed, like an App
+       Store story: it runs into the top and side edges, square, instead of
+       sitting inset as a card. */
     .cover {
         position: relative;
-        width: 100%;
-        /* Concentric with the round 2rem top-bar buttons inset by --space-2:
-           their 1rem radius + the inset. */
-        border-radius: calc(1rem + var(--space-2));
+        margin-inline: calc(-1 * var(--space-6));
         overflow: hidden;
     }
     .page-content {
@@ -857,6 +852,23 @@
         margin: 0;
     }
 
+    /* Where the nav trigger floats over the page, its reserve moves into
+       the full-bleed cover (it grows by the same amount), and the top bar
+       shares the trigger's row, beside it. */
+    @media (--bp-md-and-smaller) {
+        .page-content {
+            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+            --cover-height: calc(18rem + var(--nav-reserve));
+        }
+        .topbar {
+            top: var(--space-2_5);
+            left: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+            right: var(--cover-inset);
+            min-height: var(--nav-row-h);
+            align-items: center;
+        }
+    }
+
     /* Narrow screens: reclaim horizontal space and let the header adapt instead
        of staying locked to the desktop two-column / inline-controls layout.
        (The token widens the switch from the former raw 40rem to ≤767px — the
@@ -868,40 +880,19 @@
             padding: var(--space-4);
         }
         .page-content {
-            --cover-height: 14rem;
+            --cover-height: calc(14rem + var(--nav-reserve));
             --cover-symbol: 4rem;
             --cover-inset: var(--space-4);
-        }
-        /* Full-bleed cover, like an App Store story: it runs into the top
-           and side edges, square, instead of sitting inset as a card. The
-           floating nav trigger's reserve moves into the cover (it grows by
-           the same amount), and the top bar shares the trigger's row,
-           beside it. */
-        .detail-scroll {
-            padding-top: 0;
-        }
-        .page-content {
-            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
-            --cover-height: calc(14rem + var(--nav-reserve));
             padding-top: 0;
         }
         .cover {
-            width: auto;
             margin-inline: calc(-1 * var(--space-4));
-            border-radius: 0;
         }
-        .topbar {
-            top: var(--space-2_5);
-            left: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
-            right: var(--space-2_5);
-            min-height: var(--nav-row-h);
-            align-items: center;
-        }
-        /* Too narrow for the labelled buttons: "Remixen" and "Ausprobieren"
-           become round icon buttons like the others, so the whole top bar
+        /* Too narrow for the labelled buttons: "Zurück", "Remixen" and
+           "Ausprobieren" become round icon buttons like the others, so the whole top bar
            stays on one line. The labels stay readable for screen readers. */
         /* Specific enough to beat Button's icon-side padding (its :has rule). */
-        .topbar .controls :global(.btn.btn--sm) {
+        .topbar :global(.btn.btn--sm) {
             width: 2rem;
             padding: 0;
         }

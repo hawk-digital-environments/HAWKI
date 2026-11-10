@@ -127,7 +127,7 @@
             "back": "Back",
             "edit": "Edit",
             "menu_aria": "Open assistant menu",
-            "favourite_aria": "Toggle favourite",
+            "favourite_aria": "Favourite",
             "delete": "Delete",
             "delete_confirm_title": "Delete assistant :name",
             "delete_confirm_description": "Are you sure you want to delete this assistant? This action cannot be undone.",
