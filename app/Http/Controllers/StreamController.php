@@ -12,6 +12,7 @@ use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\AiService;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Ai\Extensions\HawkiExtensionsRegistry;
+use App\Services\Ai\Values\StreamErrorCode;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
@@ -20,13 +21,10 @@ use App\Services\Storage\AvatarStorageService;
 use App\Services\Users\Repositories\UserRepository;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Laravel\Ai\Exceptions\ProviderOverloadedException;
-use Laravel\Ai\Exceptions\RateLimitedException;
 use Laravel\Ai\Responses\Data\Citation as CitationData;
 use Laravel\Ai\Streaming\Events\Citation;
 use Laravel\Ai\Streaming\Events\Error;
@@ -228,9 +226,9 @@ class StreamController extends Controller
         $avatar_url = $this->avatarStorage->retrieveAvatar($hawki)?->getUrl();
 
         // `code` lets clients show a translated, specific message; `content` stays for older clients.
-        $formatError = static fn (string $errorMessage, string $code = 'GENERATION_FAILED') => json_encode([
+        $formatError = static fn (string $errorMessage, StreamErrorCode $code = StreamErrorCode::GENERATION_FAILED) => json_encode([
             'content' => $errorMessage,
-            'code' => $code,
+            'code' => $code->value,
             'type' => 'error',
             'isDone' => true,
         ], \JSON_THROW_ON_ERROR) . "\n";
@@ -367,7 +365,7 @@ class StreamController extends Controller
 
             yield $formatError(
                 'There was an error while sending your request to the AI agent. Please try again later.',
-                $this->streamErrorCode($e),
+                StreamErrorCode::fromThrowable($e),
             );
 
             return;
@@ -376,37 +374,13 @@ class StreamController extends Controller
 
             yield $formatError(
                 'There was an error while sending your request to the AI agent. Please try again later.',
-                $this->streamErrorCode($e),
+                StreamErrorCode::fromThrowable($e),
             );
 
             return;
         }
 
         $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
-    }
-
-    /**
-     * Classifies a failed stream for the client: the provider could not be reached or
-     * answered with a server error (`PROVIDER_UNREACHABLE`), it is overloaded or rate-limits
-     * us (`PROVIDER_BUSY`), or anything else (`GENERATION_FAILED`). Wrapped exceptions are
-     * classified by the first recognizable cause in the chain.
-     */
-    private function streamErrorCode(\Throwable $e): string
-    {
-        for ($current = $e; $current !== null; $current = $current->getPrevious()) {
-            if ($current instanceof RateLimitedException || $current instanceof ProviderOverloadedException) {
-                return 'PROVIDER_BUSY';
-            }
-            if ($current instanceof ConnectionException) {
-                return 'PROVIDER_UNREACHABLE';
-            }
-            if ($current instanceof RequestException) {
-                return $current->response->tooManyRequests() ? 'PROVIDER_BUSY'
-                    : ($current->response->serverError() ? 'PROVIDER_UNREACHABLE' : 'GENERATION_FAILED');
-            }
-        }
-
-        return 'GENERATION_FAILED';
     }
 
     /**
