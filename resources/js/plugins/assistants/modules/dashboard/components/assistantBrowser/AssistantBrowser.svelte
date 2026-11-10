@@ -101,10 +101,25 @@
         await tick();
     }
 
+    /** The modal has no trigger element to return focus to (it opens from a
+     * card, not a DialogTrigger), so closing would strand keyboard and screen
+     * reader users on <body>. Hand focus back to the card's open button. */
+    function returnFocusToCard(assistantId: string): void {
+        document.querySelector<HTMLElement>(
+            `[data-assistant-card="${CSS.escape(assistantId)}"] .open`,
+        )?.focus();
+    }
+
     function closeDetail(): void {
         const id = detailId.current;
-        if (id) morphFromDetail(id, dismissDetail);
-        else void dismissDetail();
+        if (!id) {
+            void dismissDetail();
+            return;
+        }
+        morphFromDetail(id, async () => {
+            await dismissDetail();
+            returnFocusToCard(id);
+        });
     }
 
     /** A deleted assistant has no card to morph back into: close plainly, refresh. */
