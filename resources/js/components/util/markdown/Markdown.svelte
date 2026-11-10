@@ -401,7 +401,6 @@
         :global(.html-preview-frame.is-dark .html-preview-frame__header) {
             border-bottom-color: var(--color-border);
         }
-    }
 
         :global(span.code-block-language-icon) { color: var(--color-text-muted); }
 

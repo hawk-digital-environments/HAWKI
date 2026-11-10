@@ -11,8 +11,10 @@
     import {MathBlockNode} from 'markstream-svelte';
     import Copy01Icon from '$lib/components/ui/icons/iconset/Copy01Icon.svelte';
     import CopyCheckIcon from '$lib/components/ui/icons/iconset/CopyCheckIcon.svelte';
-    import {__} from '$lib/utils/translator.js';
     import {onDestroy} from 'svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     interface Props {
         /** The parsed math node; `raw` / `content` / `markup` hold the LaTeX source. */
