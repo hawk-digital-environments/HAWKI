@@ -1,7 +1,7 @@
-import {ApiError} from "$plugins/assistants/api/errors";
-import {toggleAssistantFavorite} from "$plugins/assistants/api/resources/assistantsClient";
-import type {ToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
-import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
+import { ApiError } from '$plugins/assistants/api/errors';
+import { toggleAssistantFavorite } from '$plugins/assistants/api/resources/assistantsClient';
+import type { ToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
+import type { Assistant } from '$plugins/assistants/types/assistant/Assistant';
 
 /** Translated label lookup, as provided by `useTranslator`'s `__`. */
 type Translate = (label: string, replacements?: Record<string, string>) => string;
@@ -15,7 +15,7 @@ export async function persistFavourite(
     assistant: Assistant,
     active: boolean,
     toast: ToastContext,
-    __: Translate,
+    __: Translate
 ): Promise<void> {
     try {
         await toggleAssistantFavorite(assistant, active);

@@ -12,8 +12,8 @@
     <ActionIcon icon={Cancel01Icon} label={__('ui.dialog.closeLabel')} size="sm" class="dialog-close" {...props}/>
 -->
 <script lang="ts">
-    import type {IconComponent} from '$lib/components/ui/icons';
-    import type {HTMLButtonAttributes} from 'svelte/elements';
+    import type { IconComponent } from '$lib/components/ui/icons';
+    import type { HTMLButtonAttributes } from 'svelte/elements';
 
     interface Props {
         icon: IconComponent;
@@ -52,20 +52,20 @@
 </script>
 
 <button
-        bind:this={el}
-        type="button"
-        class="action-icon {cls}"
-        style={style}
-        data-variant={variant}
-        data-tone={tone}
-        data-size={size}
-        data-active={active || undefined}
-        aria-label={label}
-        {disabled}
-        {onclick}
-        {...rest}
+    bind:this={el}
+    type="button"
+    class="action-icon {cls}"
+    {style}
+    data-variant={variant}
+    data-tone={tone}
+    data-size={size}
+    data-active={active || undefined}
+    aria-label={label}
+    {disabled}
+    {onclick}
+    {...rest}
 >
-    <Icon size="1em"/>
+    <Icon size="1em" />
 </button>
 
 <style>

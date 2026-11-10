@@ -1,22 +1,19 @@
 <script lang="ts">
-    import ReleaseStageStatus from "$plugins/assistants/modules/builder/components/ReleaseStageStatus.svelte";
-    import AssistantBanner from "$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte";
-    import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
-    import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
-    import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
-    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
-    import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
-    import {getAvatar} from "$plugins/assistants/api/resources/userAvatarClient";
-    import {magnetic} from "$lib/components/ui/magnetic/magnetic.svelte";
-    import {assistantRowAppearance} from "$plugins/assistants/utils/assistantRowAppearance";
-    import {persistFavourite} from "$plugins/assistants/utils/favouriteToggle";
+    import ReleaseStageStatus from '$plugins/assistants/modules/builder/components/ReleaseStageStatus.svelte';
+    import AssistantBanner from '$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte';
+    import type { Assistant } from '$plugins/assistants/types/assistant/Assistant';
+    import FavButton from '$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte';
+    import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
+    import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
+    import { getAvatar } from '$plugins/assistants/api/resources/userAvatarClient';
+    import { magnetic } from '$lib/components/ui/magnetic/magnetic.svelte';
+    import { assistantRowAppearance } from '$plugins/assistants/utils/assistantRowAppearance';
+    import { persistFavourite } from '$plugins/assistants/utils/favouriteToggle';
 
-    const {__} = useTranslator();
+    const { __ } = useTranslator();
 
-    let {
-        assistant,
-        onOpen
-    } = $props<{
+    let { assistant, onOpen } = $props<{
         assistant: Assistant;
         /** Open the assistant's detail view; receives the card for the morph. */
         onOpen: (card: HTMLElement) => void;
@@ -35,11 +32,10 @@
         // A plain storage path today — no blob/object URL to revoke. If
         // getAvatar ever fetches a blob again, give it an AbortSignal and
         // revoke here (house pattern: builderGuideChat).
-        void getAvatar(identifier).then(url => {
+        void getAvatar(identifier).then((url) => {
             userAvatarUrl = url;
         });
     });
-
 
     /** Persists the favourite toggle: failures surface as a toast and
          FavButton rolls its optimistic flip back (see persistFavourite). */
@@ -47,8 +43,8 @@
 
     // The assistant's own color (its gradient's main stop) for the hover outline.
     const assistantColor = $derived(assistantRowAppearance(assistant).colors.to);
-
 </script>
+
 <!-- data-assistant-card: the detail modal's closing morph finds its card by it (morphToDetail). -->
 <article
     class="assistant-card"
@@ -60,15 +56,26 @@
     <!-- Stretched over the whole card: the card's single primary action, a
          real button in its own right. The favourite sits as a sibling above
          it — interactive elements must never nest. -->
-    <button class="open" onclick={() => card && onOpen(card)}>
-        <span class="u-sr-only">{__('assistants.card.open_aria', {name: assistant.name})}</span>
+    <button
+        class="open"
+        onclick={() => card && onOpen(card)}
+    >
+        <span class="u-sr-only">{__('assistants.card.open_aria', { name: assistant.name })}</span>
     </button>
     <!-- The cover carries the avatar's CSS too, so its foreground shade
          (`color`) is inherited by the title set on the flat background. -->
-    <div class="cover" style={assistant.avatar.iconCss}>
+    <div
+        class="cover"
+        style={assistant.avatar.iconCss}
+    >
         <AssistantBanner assistantAvatar={assistant.avatar} />
         <div class="cover-title">
-            <OverflowTooltip value={assistant.name} truncate="clamp" lines={2} focusable={false} />
+            <OverflowTooltip
+                value={assistant.name}
+                truncate="clamp"
+                lines={2}
+                focusable={false}
+            />
         </div>
     </div>
     <div class="favourite-btn">
@@ -84,15 +91,11 @@
         <div class="info">
             <div class="tags">
                 <span class="category">
-                    {assistant.category? __(assistant.category.text) : __('assistants.card.category_unknown')}
+                    {assistant.category ? __(assistant.category.text) : __('assistants.card.category_unknown')}
                 </span>
                 {#if assistant.release_stage}
-                    <ReleaseStageStatus
-                        stage={assistant.releaseStage}
-                    />
+                    <ReleaseStageStatus stage={assistant.releaseStage} />
                 {/if}
-
-
             </div>
             <div class="description">
                 {assistant.description}
@@ -102,32 +105,31 @@
             <div class="creator-info">
                 <div class="avatar">
                     {#if userAvatarUrl}
-                        <img src={userAvatarUrl} alt="">
+                        <img
+                            src={userAvatarUrl}
+                            alt=""
+                        />
                     {:else}
                         <span class="creator-initials">
-                            {assistant.creator.displayName.slice(0,2)}
+                            {assistant.creator.displayName.slice(0, 2)}
                         </span>
                     {/if}
-
                 </div>
-                    <div class="creator-text">
+                <div class="creator-text">
                     <span class="title">{assistant.creator.displayName}</span>
                     {#if assistant.remixedAssistant}
                         <div class="remix-from">
                             <span>{__('assistants.card.remixed_via')}</span>
                             <span>
-                            {assistant.remixedAssistant.name}
-                        </span>
+                                {assistant.remixedAssistant.name}
+                            </span>
                         </div>
                     {/if}
                 </div>
-
             </div>
         </div>
-
     </div>
 </article>
-
 
 <style>
     .assistant-card {
@@ -170,11 +172,9 @@
     /* Depth: the glyph follows the pointer a little further than the card
        (on top of the card's own pull; --magnet-x/y come from magnetic()). */
     .assistant-card :global(.symbol) {
-        translate:
-            calc(var(--magnet-x, 0) * 4px)
-            calc(var(--magnet-y, 0) * 2.5px);
+        translate: calc(var(--magnet-x, 0) * 4px) calc(var(--magnet-y, 0) * 2.5px);
     }
-    .assistant-card:hover{
+    .assistant-card:hover {
         border-color: var(--assistant-color, var(--color-accent-200));
         box-shadow: var(--elevation-2);
     }
@@ -233,20 +233,20 @@
            rather than a box of empty space beside them. */
         width: fit-content;
     }
-    .favourite-btn{
+    .favourite-btn {
         position: absolute;
         top: var(--space-3);
         right: var(--space-3);
         z-index: 1;
     }
 
-    .tags{
+    .tags {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: var(--space-1_5) var(--space-2);
     }
-    .category{
+    .category {
         display: inline-flex;
         align-items: center;
         height: 1.375rem;
@@ -259,14 +259,14 @@
         line-height: 1;
     }
 
-    .content{
+    .content {
         /* Absorb extra height when the stretched card is taller than the
            content, keeping the creator footer pinned to the card's bottom. */
         flex-grow: 1;
         display: flex;
         flex-direction: column;
     }
-    .info{
+    .info {
         flex-grow: 1;
         display: flex;
         flex-direction: column;
@@ -276,7 +276,7 @@
     /* Fixed number of lines before truncating (same pattern as VersionCard)
        so long descriptions can't grow one card taller than its neighbours;
        the full text stays available on the assistant's detail page. */
-    .description{
+    .description {
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 3;
@@ -287,8 +287,7 @@
         color: var(--color-text-muted);
     }
 
-
-    .footer{
+    .footer {
         display: flex;
         flex-direction: row;
         gap: var(--space-2);
@@ -296,14 +295,14 @@
         align-items: center;
         padding: 0 var(--space-4);
     }
-    .creator-info{
+    .creator-info {
         display: flex;
         gap: var(--space-2);
         align-items: center;
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
-    .creator-info .avatar{
+    .creator-info .avatar {
         display: flex;
         width: 1.75rem;
         height: 1.75rem;
@@ -316,16 +315,16 @@
         color: var(--color-accent-text);
         background: var(--color-accent-100);
     }
-    .creator-info .avatar img{
+    .creator-info .avatar img {
         width: 100%;
         height: 100%;
     }
-    .creator-info .remix-from{
-        opacity: .75;
+    .creator-info .remix-from {
+        opacity: 0.75;
     }
-    .creator-info .creator-text{
+    .creator-info .creator-text {
         display: flex;
         flex-direction: row;
-        gap: .25em;
+        gap: 0.25em;
     }
 </style>

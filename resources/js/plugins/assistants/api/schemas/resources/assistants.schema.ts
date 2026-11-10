@@ -1,6 +1,12 @@
 import z from 'zod';
 import { BACKGROUNDS, normalizeIconCss } from '$lib/plugins/assistants/presets/backgrounds';
-import { ReleaseMode, ReviewStage, type Assistant, type AssistantAvatar, type AssistantKey } from '$plugins/assistants/types/assistant';
+import {
+    ReleaseMode,
+    ReviewStage,
+    type Assistant,
+    type AssistantAvatar,
+    type AssistantKey
+} from '$plugins/assistants/types/assistant';
 import { AssistantCategorySchema } from '$plugins/assistants/types/assistant/AssistantCategory';
 import { AssistantTagSchema } from '$plugins/assistants/types/assistant/AssistantTag';
 import type { UploadFile } from '$plugins/assistants/types/UploadFile';
@@ -68,10 +74,13 @@ const WireUserPromptSchema = z.object({
 const WireSettingValueSchema = z.object({
     id: z.string(),
     value: z.string().nullable(),
-    setting: z.object({
-        id: z.string(),
-        key: z.string()
-    }).nullable().optional()
+    setting: z
+        .object({
+            id: z.string(),
+            key: z.string()
+        })
+        .nullable()
+        .optional()
 });
 
 const WireVersionSchema = z.object({
@@ -206,13 +215,13 @@ function settingValue(
     values: AssistantResource['assistant_setting_values'],
     key: keyof typeof SETTING_KEY_TO_FIELD
 ): string | null {
-    return values?.find(entry => entry.setting?.key === key)?.value ?? null;
+    return values?.find((entry) => entry.setting?.key === key)?.value ?? null;
 }
 
 /** Server attachments carry no size or timestamps, so those stay undefined and render empty. */
 function toUploadFiles(attachments: AssistantResource['assistant_attachments']): UploadFile[] {
     if (!attachments?.length) return [];
-    return attachments.map(attachment => {
+    return attachments.map((attachment) => {
         const ragStatus = attachment.rag_status ?? null;
         return {
             uuid: attachment.uuid ?? undefined,
@@ -221,9 +230,7 @@ function toUploadFiles(attachments: AssistantResource['assistant_attachments']):
             // A failed/skipped ingestion leaves the row disabled with its
             // error tooltip; pending/ingesting files keep the plain
             // "complete" upload state until the watcher reports a change.
-            status: ragStatus === 'failed' || ragStatus === 'skipped'
-                ? ('error' as const)
-                : ('complete' as const),
+            status: ragStatus === 'failed' || ragStatus === 'skipped' ? ('error' as const) : ('complete' as const),
             progress: 100,
             ragStatus,
             ragError: attachment.rag_error ?? null,
@@ -260,7 +267,7 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
     riskNote: null,
     usageCount: null,
 
-    starterPrompts: wire.assistant_user_prompts?.map(prompt => prompt.text) ?? [],
+    starterPrompts: wire.assistant_user_prompts?.map((prompt) => prompt.text) ?? [],
 
     model: wire.model ?? '',
     maxTokens: wire.max_tokens ?? 0,
@@ -271,13 +278,14 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
     answerStyle: settingValue(wire.assistant_setting_values, 'answer_style'),
     language: settingValue(wire.assistant_setting_values, 'language'),
 
-    avatar: wire.assistant_avatar
-        ? {
-            id: wire.assistant_avatar.id,
-            name: wire.assistant_avatar.name,
-            iconCss: normalizeIconCss(wire.assistant_avatar.icon_css)
-        }
-        : FALLBACK_AVATAR,
+    avatar:
+        wire.assistant_avatar ?
+            {
+                id: wire.assistant_avatar.id,
+                name: wire.assistant_avatar.name,
+                iconCss: normalizeIconCss(wire.assistant_avatar.icon_css)
+            }
+        :   FALLBACK_AVATAR,
 
     createdAt: wire.created_at ?? '',
     updatedAt: wire.updated_at ?? '',
@@ -290,36 +298,39 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
         displayName: wire.creator?.display_name ?? '',
         avatar: wire.creator?.avatar ?? undefined
     },
-    versions: wire.assistant_versions?.map(version => ({
-        id: version.id,
-        text: version.text,
-        version: String(version.version),
-        changedKeys: version.changed_keys ?? null,
-        createdAt: version.created_at,
-        updatedAt: version.updated_at
-    })) ?? [],
+    versions:
+        wire.assistant_versions?.map((version) => ({
+            id: version.id,
+            text: version.text,
+            version: String(version.version),
+            changedKeys: version.changed_keys ?? null,
+            createdAt: version.created_at,
+            updatedAt: version.updated_at
+        })) ?? [],
 
-    review: wire.assistant_review
-        ? {
-            status: wire.assistant_review.status,
-            reason: wire.assistant_review.reason ?? null
-        }
-        : null,
+    review:
+        wire.assistant_review ?
+            {
+                status: wire.assistant_review.status,
+                reason: wire.assistant_review.reason ?? null
+            }
+        :   null,
 
-    remixCreator: wire.remix_creator
-        ? {
-            id: wire.remix_creator.id,
-            displayName: wire.remix_creator.display_name ?? '',
-            avatar: wire.remix_creator.avatar ?? undefined
-        }
-        : null,
+    remixCreator:
+        wire.remix_creator ?
+            {
+                id: wire.remix_creator.id,
+                displayName: wire.remix_creator.display_name ?? '',
+                avatar: wire.remix_creator.avatar ?? undefined
+            }
+        :   null,
     remixedAssistant: wire.remixed_assistant ?? null,
 
     files: toUploadFiles(wire.assistant_attachments),
     aiTools: wire.ai_tools ?? undefined,
 
     actionPermissions: linksToPermissions(wire._links),
-    feedbacks: wire.assistant_feedback?.map(feedback => ({
+    feedbacks: wire.assistant_feedback?.map((feedback) => ({
         id: feedback.id,
         text: feedback.text,
         author: feedback.user?.display_name ?? '',
@@ -395,7 +406,7 @@ export function createEmptyAssistant(): Assistant {
         actionPermissions: null,
 
         remixCreator: null,
-        remixedAssistant: null,
+        remixedAssistant: null
     };
 }
 
@@ -410,12 +421,8 @@ export function createEmptyAssistant(): Assistant {
  * endpoint via {@link BuilderContext.requestRelease} — not a plain attribute
  * PATCH.
  */
-export function assistantToApi(
-    assistant: Assistant,
-    changedKeys?: Set<AssistantKey>,
-): JsonApiResourceBody {
-    const include = (key: AssistantKey) =>
-        !changedKeys || changedKeys.has(key);
+export function assistantToApi(assistant: Assistant, changedKeys?: Set<AssistantKey>): JsonApiResourceBody {
+    const include = (key: AssistantKey) => !changedKeys || changedKeys.has(key);
     return {
         type: 'assistants',
         id: assistant.id,
@@ -426,30 +433,31 @@ export function assistantToApi(
             ...(include('greeting') && { greeting: assistant.greeting }),
             ...(include('description') && { description: assistant.description }),
             ...(include('detailDescription') && {
-                detail_description: assistant.detailDescription,
+                detail_description: assistant.detailDescription
             }),
             ...(include('allowRemix') && { allow_remix: assistant.allowRemix }),
             ...(include('allowModelSelect') && {
                 // allow_model_select: assistant.allowModelSelect,
-                allow_model_select: false,
+                allow_model_select: false
             }),
             ...(include('model') && { model: assistant.model }),
             ...(include('maxTokens') && { max_tokens: assistant.maxTokens }),
             ...(include('temp') && { temp: assistant.temp }),
-            ...(include('topP') && { top_p: assistant.topP }),
+            ...(include('topP') && { top_p: assistant.topP })
         },
         relationships: {
             // A missing category is sent as an explicit null (`data: null`)
             // to unset category
             ...(include('category') && {
-                assistant_category: assistant.category
-                    ? {
-                        data: {
-                            type: 'assistant-categories',
-                            id: assistant.category.id,
-                        },
-                    }
-                    : {data: null},
+                assistant_category:
+                    assistant.category ?
+                        {
+                            data: {
+                                type: 'assistant-categories',
+                                id: assistant.category.id
+                            }
+                        }
+                    :   { data: null }
             }),
 
             ...(include('tags') &&
@@ -457,9 +465,9 @@ export function assistantToApi(
                     assistant_tags: {
                         data: assistant.tags.map((t) => ({
                             type: 'assistant-tags',
-                            id: t.id,
-                        })),
-                    },
+                            id: t.id
+                        }))
+                    }
                 }),
 
             ...(include('aiTools') &&
@@ -467,11 +475,11 @@ export function assistantToApi(
                     ai_tools: {
                         data: assistant.aiTools.map((tool) => ({
                             type: 'ai-tools',
-                            id: String(tool.id),
-                        })),
-                    },
-                }),
-        },
+                            id: String(tool.id)
+                        }))
+                    }
+                })
+        }
     };
 }
 
@@ -481,18 +489,14 @@ export function assistantToApi(
 // ─────────────────────────────────────────────────────────────────────────
 
 /** Maps an {@link Assistant} option field to its `key` in the options store. */
-export const ASSISTANT_SETTING_KEY_MAP: Partial<
-    Pick<Assistant, 'formality' | 'language' | 'answerStyle'>
-> = {
+export const ASSISTANT_SETTING_KEY_MAP: Partial<Pick<Assistant, 'formality' | 'language' | 'answerStyle'>> = {
     formality: 'formality',
     language: 'language',
-    answerStyle: 'answer_style',
+    answerStyle: 'answer_style'
 };
 
 /** The `Assistant` fields that are persisted as setting values (see `assistant-settings.schema.ts`). */
-export const ASSISTANT_SETTING_KEYS = Object.keys(
-    ASSISTANT_SETTING_KEY_MAP,
-) as (keyof Assistant)[];
+export const ASSISTANT_SETTING_KEYS = Object.keys(ASSISTANT_SETTING_KEY_MAP) as (keyof Assistant)[];
 
 /**
  * Inverse of the write mapping in {@link assistantToApi}: maps a JSON:API field
@@ -529,12 +533,10 @@ const API_FIELD_TO_KEY: Record<string, keyof Assistant> = {
     // relationships
     assistant_category: 'category',
     assistant_tags: 'tags',
-    ai_tools: 'aiTools',
+    ai_tools: 'aiTools'
 };
 
 /** Map a JSON:API error field name to its `Assistant` key, if known. */
-export function apiFieldToAssistantKey(
-    field?: string,
-): keyof Assistant | undefined {
+export function apiFieldToAssistantKey(field?: string): keyof Assistant | undefined {
     return field ? API_FIELD_TO_KEY[field] : undefined;
 }

@@ -2,7 +2,7 @@
     let {
         label,
         isActive = false,
-        onchange,
+        onchange
     } = $props<{
         label: string;
         isActive?: boolean;
@@ -11,9 +11,9 @@
 </script>
 
 <button
-        class="category-btn"
-        class:isActive
-        onclick={onchange}
+    class="category-btn"
+    class:isActive
+    onclick={onchange}
 >
     {label}
 </button>
@@ -21,7 +21,7 @@
 <style>
     /* Filled pill: no outline at rest, a deeper fill on hover, and the active
        chip inverts to a solid ink pill so the selection reads at a glance. */
-    button{
+    button {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -46,31 +46,31 @@
             color 150ms ease-out,
             scale 450ms cubic-bezier(0.34, 3.85, 0.64, 1);
     }
-    button:hover{
+    button:hover {
         color: var(--color-text);
         background-color: color-mix(in oklch, var(--color-surface-light), var(--color-text) 7%);
     }
     /* Press: a quick, direct squeeze. */
-    button:active{
+    button:active {
         scale: 0.94;
         transition:
             background-color 150ms ease-out,
             color 150ms ease-out,
             scale 120ms cubic-bezier(0.22, 1, 0.36, 1);
     }
-    button:focus-visible{
+    button:focus-visible {
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;
     }
     button.isActive,
-    button.isActive:hover{
+    button.isActive:hover {
         color: var(--color-surface-raised);
         background-color: var(--color-text);
     }
 
-    @media (prefers-reduced-motion: reduce){
+    @media (prefers-reduced-motion: reduce) {
         button,
-        button:active{
+        button:active {
             scale: none;
         }
     }

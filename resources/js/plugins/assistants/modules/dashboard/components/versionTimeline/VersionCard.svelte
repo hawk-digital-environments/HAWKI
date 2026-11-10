@@ -1,15 +1,9 @@
 <script lang="ts">
     import Badge from '$lib/components/ui/badge/Badge.svelte';
     import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
-    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
 
-    let{
-        version,
-        date,
-        changedKeys,
-        isCreation,
-        note
-    } = $props <{
+    let { version, date, changedKeys, isCreation, note } = $props<{
         version: string;
         date: string;
         /** Assistant fields this revision touched; `null`/empty when none were recorded. */
@@ -20,14 +14,16 @@
         note?: string;
     }>();
 
-    const {__} = useTranslator();
+    const { __ } = useTranslator();
 </script>
-
 
 <!-- One entry of the change history: a dot on a continuous track, the
      version and date on the dot's line, what changed underneath. -->
 <div class="version-card">
-    <span class="dot" aria-hidden="true"></span>
+    <span
+        class="dot"
+        aria-hidden="true"
+    ></span>
     <div class="content">
         <p class="header">
             <span class="version">v{version}</span>
@@ -36,8 +32,11 @@
         {#if note}
             <div class="fields">
                 <span class="u-sr-only">{__('assistants.detail.version_note')}</span>
-                <Badge variant="secondary" style="max-width: 100%; min-width: 0;">
-                    <OverflowTooltip value={note}/>
+                <Badge
+                    variant="secondary"
+                    style="max-width: 100%; min-width: 0;"
+                >
+                    <OverflowTooltip value={note} />
                 </Badge>
             </div>
         {/if}
@@ -58,8 +57,8 @@
     /* Neutral and minimal: a border-grey track, quiet grey dots, and the
        current version marked in the text color. */
     .version-card {
-        --row: 1.5rem;          /* height of the version/date line */
-        --dot: 0.625rem;        /* column width = the current version's dot */
+        --row: 1.5rem; /* height of the version/date line */
+        --dot: 0.625rem; /* column width = the current version's dot */
         position: relative;
         display: grid;
         grid-template-columns: var(--dot) minmax(0, 1fr);

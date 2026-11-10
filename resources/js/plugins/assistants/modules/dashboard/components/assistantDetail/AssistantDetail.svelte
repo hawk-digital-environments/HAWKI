@@ -5,71 +5,71 @@
   standalone detail route (direct links, reloads).
 -->
 <script lang="ts">
-    import {untrack} from "svelte";
+    import { untrack } from 'svelte';
 
-    import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
-    import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
-    import ButtonWithTooltip from "$lib/components/ui/button/ButtonWithTooltip.svelte";
-    import FeedbackPanel from "$plugins/assistants/modules/dashboard/components/feedbackPanel/FeedbackPanel.svelte";
-    import ReceivedFeedbackList from "$plugins/assistants/modules/dashboard/components/feedbackPanel/ReceivedFeedbackList.svelte";
-    import type { AssistantFeedback } from "$plugins/assistants/types/assistant/AssistantFeedback"
-    import VersionTimeline from "$plugins/assistants/modules/dashboard/components/versionTimeline/VersionTimeline.svelte";
-    import VersionCard from "$plugins/assistants/modules/dashboard/components/versionTimeline/VersionCard.svelte";
-    import StatusCard from "$plugins/assistants/components/report/StatusCard.svelte";
-    import AssistantBanner from "$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte";
-    import {submitAssistantFeedbacks} from "$plugins/assistants/api/resources/assistantFeedbackClient";
-    import {ApiError} from "$plugins/assistants/api/errors";
-    import {ValidationState} from "$plugins/assistants/types/enums/ValidationState";
-    import {resolveAssistantAvatar} from "$plugins/assistants/utils/resolveAssistantAvatar";
-    import SplitIcon from "$lib/components/ui/icons/iconset/SplitIcon.svelte";
-    import UserIcon from "$lib/components/ui/icons/iconset/UserIcon.svelte";
-    import HashtagIcon from "$lib/components/ui/icons/iconset/HashtagIcon.svelte";
-    import ViewIcon from "$lib/components/ui/icons/iconset/ViewIcon.svelte";
-    import Clock01Icon from "$lib/components/ui/icons/iconset/Clock01Icon.svelte";
-    import ArrowLeft01Icon from "$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte";
-    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
+    import type { AssistantAvatar } from '$plugins/assistants/types/assistant/AssistantAvatar';
+    import FavButton from '$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte';
+    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
+    import FeedbackPanel from '$plugins/assistants/modules/dashboard/components/feedbackPanel/FeedbackPanel.svelte';
+    import ReceivedFeedbackList from '$plugins/assistants/modules/dashboard/components/feedbackPanel/ReceivedFeedbackList.svelte';
+    import type { AssistantFeedback } from '$plugins/assistants/types/assistant/AssistantFeedback';
+    import VersionTimeline from '$plugins/assistants/modules/dashboard/components/versionTimeline/VersionTimeline.svelte';
+    import VersionCard from '$plugins/assistants/modules/dashboard/components/versionTimeline/VersionCard.svelte';
+    import StatusCard from '$plugins/assistants/components/report/StatusCard.svelte';
+    import AssistantBanner from '$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte';
+    import { submitAssistantFeedbacks } from '$plugins/assistants/api/resources/assistantFeedbackClient';
+    import { ApiError } from '$plugins/assistants/api/errors';
+    import { ValidationState } from '$plugins/assistants/types/enums/ValidationState';
+    import { resolveAssistantAvatar } from '$plugins/assistants/utils/resolveAssistantAvatar';
+    import SplitIcon from '$lib/components/ui/icons/iconset/SplitIcon.svelte';
+    import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
+    import HashtagIcon from '$lib/components/ui/icons/iconset/HashtagIcon.svelte';
+    import ViewIcon from '$lib/components/ui/icons/iconset/ViewIcon.svelte';
+    import Clock01Icon from '$lib/components/ui/icons/iconset/Clock01Icon.svelte';
+    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
     import {
         ASSISTANT_DETAIL_INCLUDES,
         deleteAssistant,
         getAssistant,
         requestAssistantRelease
-    } from "$plugins/assistants/api/resources/assistantsClient";
-    import {persistFavourite} from "$plugins/assistants/utils/favouriteToggle";
-    import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
-    import {ReleaseMode} from "$plugins/assistants/types/assistant/ReleaseMode";
-    import RemixDetails from "$plugins/assistants/modules/dashboard/components/assistantBrowser/RemixDetails.svelte";
+    } from '$plugins/assistants/api/resources/assistantsClient';
+    import { persistFavourite } from '$plugins/assistants/utils/favouriteToggle';
+    import type { Assistant } from '$plugins/assistants/types/assistant/Assistant';
+    import { ReleaseMode } from '$plugins/assistants/types/assistant/ReleaseMode';
+    import RemixDetails from '$plugins/assistants/modules/dashboard/components/assistantBrowser/RemixDetails.svelte';
 
-    import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
-    import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte";
-    import {requestBuilderIntent} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte";
-    import Settings03Icon from "$lib/components/ui/icons/iconset/Settings03Icon.svelte";
-    import WindowsOldIcon from "$lib/components/ui/icons/iconset/WindowsOldIcon.svelte";
-    import Chatbox from "$plugins/assistants/components/testChat";
-    import {growTransition} from "$lib/utils/transitions/growTransition";
-    import {breakpointsQueries} from "$lib/components/util/breakpoints/breakpoints.js";
-    import ChatDock from "$plugins/assistants/components/testChat/ChatDock.svelte";
-    import {createChatStore} from "$plugins/assistants/components/testChat/stream/chatStore.svelte.js";
-    import {createChatConfig} from "$plugins/assistants/components/testChat/stream/chatConfig.svelte.js";
-    import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
-    import FadeText from "$lib/components/ui/text/FadeText.svelte";
-    import DropdownMenu from "$lib/components/ui/dropdown-menu/DropdownMenu.svelte";
-    import DropdownMenuItem from "$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte";
-    import ArrowDown01Icon from "$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte";
-    import ArrowUp01Icon from "$lib/components/ui/icons/iconset/ArrowUp01Icon.svelte";
-    import {useBreakpoint} from "$lib/components/util/breakpoints/useBreakpoint.svelte.js";
-    import DropdownMenuSub from "$lib/components/ui/dropdown-menu/DropdownMenuSub.svelte";
-    import DropdownMenuRadioGroup from "$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte";
-    import DropdownMenuRadioItem from "$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte";
-    import DropdownMenuSeparator from "$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte";
-    import ConfirmDialog from "$lib/components/ui/dialog/ConfirmDialog.svelte";
-    import Edit02Icon from "$lib/components/ui/icons/iconset/Edit02Icon.svelte";
-    import Delete02Icon from "$lib/components/ui/icons/iconset/Delete02Icon.svelte";
-    import SentIcon from "$lib/components/ui/icons/iconset/SentIcon.svelte";
-    import TaskEdit01Icon from "$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte";
-    import SquareLock02Icon from "$lib/components/ui/icons/iconset/SquareLock02Icon.svelte";
-    import CheckmarkBadge01Icon from "$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte";
-    import Loader from "$lib/components/ui/loader/Loader.svelte";
-    import GlobeIcon from "$lib/components/ui/icons/iconset/GlobeIcon.svelte";
+    import { useRouter } from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte';
+    import { requestBuilderIntent } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte';
+    import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
+    import WindowsOldIcon from '$lib/components/ui/icons/iconset/WindowsOldIcon.svelte';
+    import Chatbox from '$plugins/assistants/components/testChat';
+    import { growTransition } from '$lib/utils/transitions/growTransition';
+    import { breakpointsQueries } from '$lib/components/util/breakpoints/breakpoints.js';
+    import ChatDock from '$plugins/assistants/components/testChat/ChatDock.svelte';
+    import { createChatStore } from '$plugins/assistants/components/testChat/stream/chatStore.svelte.js';
+    import { createChatConfig } from '$plugins/assistants/components/testChat/stream/chatConfig.svelte.js';
+    import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
+    import FadeText from '$lib/components/ui/text/FadeText.svelte';
+    import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
+    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
+    import ArrowDown01Icon from '$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte';
+    import ArrowUp01Icon from '$lib/components/ui/icons/iconset/ArrowUp01Icon.svelte';
+    import { useBreakpoint } from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import DropdownMenuSub from '$lib/components/ui/dropdown-menu/DropdownMenuSub.svelte';
+    import DropdownMenuRadioGroup from '$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte';
+    import DropdownMenuRadioItem from '$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte';
+    import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
+    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
+    import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
+    import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
+    import TaskEdit01Icon from '$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte';
+    import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
+    import CheckmarkBadge01Icon from '$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte';
+    import Loader from '$lib/components/ui/loader/Loader.svelte';
+    import GlobeIcon from '$lib/components/ui/icons/iconset/GlobeIcon.svelte';
 
     interface Props {
         /** Id of the assistant to show. */
@@ -84,16 +84,16 @@
         initial?: Assistant;
     }
 
-    const {id, onBack, onDeleted, initial}: Props = $props();
+    const { id, onBack, onDeleted, initial }: Props = $props();
     // The handle is kept (not just `goToRoute` destructured off it) because
     // `path` is a live getter — the builder needs it read at click time.
     const router = useRouter();
-    const {goToRoute} = router;
+    const { goToRoute } = router;
 
     const toast = useToastContext();
     const breakpoint = useBreakpoint();
 
-    const {__} = useTranslator();
+    const { __ } = useTranslator();
     // Seeded once from the list's copy; the fetch below then replaces it.
     // svelte-ignore state_referenced_locally
     let assistant = $state<Assistant | undefined>(initial?.id === id ? initial : undefined);
@@ -121,35 +121,43 @@
         });
         loading = true;
         error = null;
-        getAssistant(id, {
-            include: [...new Set([...ASSISTANT_DETAIL_INCLUDES])],
-        }, controller.signal)
-        .then(result => {
-            if (controller.signal.aborted) return;
-            assistant = result;
-            // `assistant_feedback` is a permission-gated relationship
-            // (`viewAssistantFeedback`) — requesting it as part of the main
-            // include list would 403 the *whole* fetch when denied, so it's
-            // only loaded once the initial response confirms it's allowed.
-            if (result.actionPermissions?.viewAssistantFeedback) {
-                void loadFeedbacks(result.id, controller.signal);
-            }
-        })
-        .catch(err => {
-            if (!controller.signal.aborted) error = err;
-        })
-        .finally(() => {
-            if (!controller.signal.aborted) loading = false;
-        });
+        getAssistant(
+            id,
+            {
+                include: [...new Set([...ASSISTANT_DETAIL_INCLUDES])]
+            },
+            controller.signal
+        )
+            .then((result) => {
+                if (controller.signal.aborted) return;
+                assistant = result;
+                // `assistant_feedback` is a permission-gated relationship
+                // (`viewAssistantFeedback`) — requesting it as part of the main
+                // include list would 403 the *whole* fetch when denied, so it's
+                // only loaded once the initial response confirms it's allowed.
+                if (result.actionPermissions?.viewAssistantFeedback) {
+                    void loadFeedbacks(result.id, controller.signal);
+                }
+            })
+            .catch((err) => {
+                if (!controller.signal.aborted) error = err;
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) loading = false;
+            });
         return () => controller.abort();
     });
 
     async function loadFeedbacks(assistantId: string | null, signal?: AbortSignal): Promise<void> {
         if (!assistantId) return;
         try {
-            const withFeedback = await getAssistant(assistantId, {
-                include: ['assistant_feedback', 'assistant_feedback.user'],
-            }, signal);
+            const withFeedback = await getAssistant(
+                assistantId,
+                {
+                    include: ['assistant_feedback', 'assistant_feedback.user']
+                },
+                signal
+            );
             if (signal?.aborted) return;
             feedbacks = withFeedback.feedbacks ?? [];
         } catch (err) {
@@ -157,7 +165,6 @@
             console.error('Failed to load assistant feedback:', err);
         }
     }
-
 
     /** Persist the favourite toggle: failures surface as a toast and
      *  FavButton rolls its optimistic flip back (see persistFavourite). */
@@ -168,18 +175,14 @@
     // Fall back to a neutral appearance only for legacy assistants that
     // predate the avatar builder's Erscheinungsbild (see resolveAssistantAvatar);
     // assistants with a persisted avatar render their real emoji + gradient.
-    const avatar = $derived<AssistantAvatar>(
-        resolveAssistantAvatar(assistant?.avatar, assistant?.name ?? '?')
-    );
+    const avatar = $derived<AssistantAvatar>(resolveAssistantAvatar(assistant?.avatar, assistant?.name ?? '?'));
     /** The cover's two shades, read back out of the avatar CSS so the info
      *  tiles can wear the same pair as the header. */
     const coverBackground = $derived(avatar.iconCss.match(/(?:^|;)\s*background:\s*([^;]+)/)?.[1]);
     const coverForeground = $derived(avatar.iconCss.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1]);
 
     const lastUpdateLabel = $derived(
-        assistant?.versions[0]?.createdAt ?
-            new Date(assistant.versions[0]?.createdAt).toLocaleDateString('de-DE'):
-            '—',
+        assistant?.versions[0]?.createdAt ? new Date(assistant.versions[0]?.createdAt).toLocaleDateString('de-DE') : '—'
     );
 
     /**
@@ -194,14 +197,14 @@
      */
     const startRemix = async () => {
         if (!assistant?.id) return;
-        requestBuilderIntent({type: "remix", id: assistant.id}, router.path);
-        await goToRoute("assistants.builder.general");
+        requestBuilderIntent({ type: 'remix', id: assistant.id }, router.path);
+        await goToRoute('assistants.builder.general');
     };
 
     const startEdit = async () => {
         if (!assistant?.id) return;
-        requestBuilderIntent({type: "edit", id: assistant.id}, router.path);
-        await goToRoute("assistants.builder.general");
+        requestBuilderIntent({ type: 'edit', id: assistant.id }, router.path);
+        await goToRoute('assistants.builder.general');
     };
 
     /** Delete flow: the menu's destructive entry opens a `ConfirmDialog`. A
@@ -224,23 +227,27 @@
     /** The menu's publish submenu: the release stages, iconed like the
      *  builder's `ReleaseStage` picker. */
     const releaseOptions = [
-        {stage: ReleaseMode.DRAFT, icon: TaskEdit01Icon, label: __('assistants.detail.release_draft')},
-        {stage: ReleaseMode.PRIVATE, icon: SquareLock02Icon, label: __('assistants.detail.release_private')},
-        {stage: ReleaseMode.ORGANIZATIONAL, icon: CheckmarkBadge01Icon, label: __('assistants.detail.release_organizational')},
-        {stage: ReleaseMode.FEDERATED, icon: GlobeIcon, label: __('assistants.detail.release_federated')},
+        { stage: ReleaseMode.DRAFT, icon: TaskEdit01Icon, label: __('assistants.detail.release_draft') },
+        { stage: ReleaseMode.PRIVATE, icon: SquareLock02Icon, label: __('assistants.detail.release_private') },
+        {
+            stage: ReleaseMode.ORGANIZATIONAL,
+            icon: CheckmarkBadge01Icon,
+            label: __('assistants.detail.release_organizational')
+        },
+        { stage: ReleaseMode.FEDERATED, icon: GlobeIcon, label: __('assistants.detail.release_federated') }
     ];
 
     /** A requested public stage that review hasn't granted yet. */
     const pendingStage = $derived(
-        assistant?.requested_release_stage && assistant.requested_release_stage !== assistant.releaseStage
-            ? assistant.requested_release_stage
-            : null,
+        assistant?.requested_release_stage && assistant.requested_release_stage !== assistant.releaseStage ?
+            assistant.requested_release_stage
+        :   null
     );
 
     const releaseValueLabel = $derived(
-        pendingStage
-            ? __('assistants.detail.release_pending')
-            : releaseOptions.find(option => option.stage === assistant?.releaseStage)?.label,
+        pendingStage ?
+            __('assistants.detail.release_pending')
+        :   releaseOptions.find((option) => option.stage === assistant?.releaseStage)?.label
     );
 
     /** Mobile sheet only: whether the publish row's options are unfolded.
@@ -256,7 +263,7 @@
         const id = assistant.id;
         const stage = value as ReleaseMode;
         try {
-            await requestAssistantRelease({...assistant, releaseStage: stage});
+            await requestAssistantRelease({ ...assistant, releaseStage: stage });
         } catch (err) {
             toast.error(`${__('assistants.detail.release_failed')} ${ApiError.from(err).userMessage}`);
             return;
@@ -265,13 +272,15 @@
         // opens a review (stage unchanged, `requested_release_stage` set),
         // everything else applies right away — so show its answer.
         try {
-            assistant = await getAssistant(id, {include: [...ASSISTANT_DETAIL_INCLUDES]});
+            assistant = await getAssistant(id, { include: [...ASSISTANT_DETAIL_INCLUDES] });
         } catch (err) {
             console.error('Failed to reload assistant after release:', err);
         }
-        toast.success(assistant?.requested_release_stage === stage
-            ? __('assistants.detail.release_submitted')
-            : __('assistants.detail.release_updated'));
+        toast.success(
+            assistant?.requested_release_stage === stage ?
+                __('assistants.detail.release_submitted')
+            :   __('assistants.detail.release_updated')
+        );
     }
 
     /** Open state of the docked test chat (see `ChatDock.svelte`). The chat is
@@ -300,273 +309,313 @@
     }
 
     const usageLabel = $derived(
-        assistant?.usageCount != null
-            ? `${assistant.usageCount.toLocaleString('de-DE')} ${__('assistants.detail.meta_usage_unit')}`
-            : '—',
+        assistant?.usageCount != null ?
+            `${assistant.usageCount.toLocaleString('de-DE')} ${__('assistants.detail.meta_usage_unit')}`
+        :   '—'
     );
 
     /** Timeline order, newest first. Hoisted so the template doesn't re-copy
      *  and reverse the array on every dependency change. */
-    const versionsNewestFirst = $derived(
-        assistant ? [...assistant.versions].reverse() : [],
-    );
-
+    const versionsNewestFirst = $derived(assistant ? [...assistant.versions].reverse() : []);
 </script>
+
 <!-- The full-bleed cover runs under the floating nav trigger itself, so it
      opts out of the content fade there (it would wash out the cover's top). -->
-<div class="detail-shell" class:test-open={chatOpen} data-content-fade="none">
-<!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
-<div class="detail-scroll" data-pull-to-close>
-    {#if !assistant && !error}
-        <!-- Only without a list copy to show (a shared link, a reload). -->
-        <Loader active label={__('assistants.browser.loading')} class="detail-loader">
-            {#snippet children()}{/snippet}
-        </Loader>
-    {:else if !assistant && error}
-        <p>Error: {error.message}</p>
-    {:else if assistant}
+<div
+    class="detail-shell"
+    class:test-open={chatOpen}
+    data-content-fade="none"
+>
+    <!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
+    <div
+        class="detail-scroll"
+        data-pull-to-close
+    >
+        {#if !assistant && !error}
+            <!-- Only without a list copy to show (a shared link, a reload). -->
+            <Loader
+                active
+                label={__('assistants.browser.loading')}
+                class="detail-loader"
+            >
+                {#snippet children()}{/snippet}
+            </Loader>
+        {:else if !assistant && error}
+            <p>Error: {error.message}</p>
+        {:else if assistant}
+            {#snippet releaseStages()}
+                <DropdownMenuRadioGroup
+                    value={assistant?.releaseStage}
+                    onValueChange={onReleaseStageChange}
+                >
+                    {#each releaseOptions as option (option.stage)}
+                        <DropdownMenuRadioItem
+                            value={option.stage}
+                            indicator="check"
+                            iconLeft={option.icon}
+                            iconRight={option.stage === pendingStage ? Clock01Icon : undefined}
+                            >{option.label}{#if option.stage === pendingStage}<span class="u-sr-only"
+                                    >{__('assistants.detail.release_pending')}</span
+                                >{/if}</DropdownMenuRadioItem
+                        >
+                    {/each}
+                </DropdownMenuRadioGroup>
+            {/snippet}
 
-    {#snippet releaseStages()}
-        <DropdownMenuRadioGroup value={assistant?.releaseStage} onValueChange={onReleaseStageChange}>
-            {#each releaseOptions as option (option.stage)}
-                <DropdownMenuRadioItem
-                    value={option.stage}
-                    indicator="check"
-                    iconLeft={option.icon}
-                    iconRight={option.stage === pendingStage ? Clock01Icon : undefined}
-                >{option.label}{#if option.stage === pendingStage}<span class="u-sr-only">{__('assistants.detail.release_pending')}</span>{/if}</DropdownMenuRadioItem>
-            {/each}
-        </DropdownMenuRadioGroup>
-    {/snippet}
-
-    <div class="page-content">
-
-        {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.delete === true}
-            <ConfirmDialog
-                bind:open={deleteConfirmOpen}
-                title={__('assistants.detail.delete_confirm_title', {name: assistant.name})}
-                description={__('assistants.detail.delete_confirm_description')}
-                onConfirm={onDeleteConfirm}
-            />
-        {/if}
-
-        <!-- data-assistant-cover: the store card's morph waits for it (morphToDetail). -->
-        <!-- Carries the avatar's CSS, so the top bar and the title inherit its
-             foreground shade (`color`) on the flat background. -->
-        <div class="cover" data-assistant-cover style={avatar.iconCss}>
-            <div class="topbar">
-                <ButtonWithTooltip
-                        variant="ghost"
-                        size="sm"
-                        iconLeft={ArrowLeft01Icon}
-                        tooltip={__('assistants.detail.back')}
-                        class="back"
-                        onclick={onBack}
-                ><span class="btn-label">{__('assistants.detail.back')}</span></ButtonWithTooltip>
-                <div class="controls">
-                    <FavButton
-                        id="favBtn"
-                        variant="stroke"
-                        isActive={assistant.isFavorite}
-                        onchange={onFavoriteChange}
+            <div class="page-content">
+                {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.delete === true}
+                    <ConfirmDialog
+                        bind:open={deleteConfirmOpen}
+                        title={__('assistants.detail.delete_confirm_title', { name: assistant.name })}
+                        description={__('assistants.detail.delete_confirm_description')}
+                        onConfirm={onDeleteConfirm}
                     />
+                {/if}
 
-                    {#if assistant.allowRemix}
+                <!-- data-assistant-cover: the store card's morph waits for it (morphToDetail). -->
+                <!-- Carries the avatar's CSS, so the top bar and the title inherit its
+             foreground shade (`color`) on the flat background. -->
+                <div
+                    class="cover"
+                    data-assistant-cover
+                    style={avatar.iconCss}
+                >
+                    <div class="topbar">
                         <ButtonWithTooltip
-                            variant="stroke"
+                            variant="ghost"
                             size="sm"
-                            iconLeft={SplitIcon}
-                            tooltip={__('assistants.detail.remix')}
-                            onclick={startRemix}
-                        ><span class="btn-label">{__('assistants.detail.remix')}</span></ButtonWithTooltip>
-                    {/if}
+                            iconLeft={ArrowLeft01Icon}
+                            tooltip={__('assistants.detail.back')}
+                            class="back"
+                            onclick={onBack}
+                            ><span class="btn-label">{__('assistants.detail.back')}</span></ButtonWithTooltip
+                        >
+                        <div class="controls">
+                            <FavButton
+                                id="favBtn"
+                                variant="stroke"
+                                isActive={assistant.isFavorite}
+                                onchange={onFavoriteChange}
+                            />
 
-                    {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.delete === true}
-                        <DropdownMenu align="end" bind:open={menuOpen}>
-                            {#snippet trigger({props})}
+                            {#if assistant.allowRemix}
                                 <ButtonWithTooltip
-                                    {...props}
                                     variant="stroke"
-                                    iconLeft={Settings03Icon}
-                                    tooltip={__('assistants.detail.menu_aria')}
-                                    highlight={props['data-state']}
-                                />
-                            {/snippet}
-                            {#if assistant.actionPermissions?.update === true}
-                                <DropdownMenuItem iconLeft={Edit02Icon} onclick={startEdit}>
-                                    {__('assistants.detail.edit')}
-                                </DropdownMenuItem>
+                                    size="sm"
+                                    iconLeft={SplitIcon}
+                                    tooltip={__('assistants.detail.remix')}
+                                    onclick={startRemix}
+                                    ><span class="btn-label">{__('assistants.detail.remix')}</span></ButtonWithTooltip
+                                >
                             {/if}
-                            {#if assistant.actionPermissions?.release === true}
-                            {#if breakpoint.is('bpSmallerThanMd')}
-                                <!-- In the mobile sheet the row works as a dropdown:
+
+                            {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.delete === true}
+                                <DropdownMenu
+                                    align="end"
+                                    bind:open={menuOpen}
+                                >
+                                    {#snippet trigger({ props })}
+                                        <ButtonWithTooltip
+                                            {...props}
+                                            variant="stroke"
+                                            iconLeft={Settings03Icon}
+                                            tooltip={__('assistants.detail.menu_aria')}
+                                            highlight={props['data-state']}
+                                        />
+                                    {/snippet}
+                                    {#if assistant.actionPermissions?.update === true}
+                                        <DropdownMenuItem
+                                            iconLeft={Edit02Icon}
+                                            onclick={startEdit}
+                                        >
+                                            {__('assistants.detail.edit')}
+                                        </DropdownMenuItem>
+                                    {/if}
+                                    {#if assistant.actionPermissions?.release === true}
+                                        {#if breakpoint.is('bpSmallerThanMd')}
+                                            <!-- In the mobile sheet the row works as a dropdown:
                                      tapping it unfolds the options below it, so the
                                      sheet grows to fit them instead of a panel floating
                                      over it. -->
-                                <DropdownMenuItem
-                                    iconLeft={SentIcon}
-                                    iconRight={publishOpen ? ArrowUp01Icon : ArrowDown01Icon}
-                                    closeOnSelect={false}
-                                    aria-expanded={publishOpen}
-                                    onSelect={() => publishOpen = !publishOpen}
-                                >
-                                    <span class="menu-label">{__('assistants.detail.publish')}</span>
-                                    <span class="menu-value">{releaseValueLabel}</span>
-                                </DropdownMenuItem>
-                                {#if publishOpen}
-                                    <div class="menu-nested" transition:growTransition>
-                                        {@render releaseStages()}
-                                    </div>
-                                {/if}
-                            {:else}
-                                <DropdownMenuSub
-                                    iconLeft={SentIcon}
-                                    label={__('assistants.detail.publish')}
-                                    value={releaseValueLabel}
-                                >
-                                    {@render releaseStages()}
-                                </DropdownMenuSub>
+                                            <DropdownMenuItem
+                                                iconLeft={SentIcon}
+                                                iconRight={publishOpen ? ArrowUp01Icon : ArrowDown01Icon}
+                                                closeOnSelect={false}
+                                                aria-expanded={publishOpen}
+                                                onSelect={() => (publishOpen = !publishOpen)}
+                                            >
+                                                <span class="menu-label">{__('assistants.detail.publish')}</span>
+                                                <span class="menu-value">{releaseValueLabel}</span>
+                                            </DropdownMenuItem>
+                                            {#if publishOpen}
+                                                <div
+                                                    class="menu-nested"
+                                                    transition:growTransition
+                                                >
+                                                    {@render releaseStages()}
+                                                </div>
+                                            {/if}
+                                        {:else}
+                                            <DropdownMenuSub
+                                                iconLeft={SentIcon}
+                                                label={__('assistants.detail.publish')}
+                                                value={releaseValueLabel}
+                                            >
+                                                {@render releaseStages()}
+                                            </DropdownMenuSub>
+                                        {/if}
+                                    {/if}
+                                    {#if assistant.actionPermissions?.delete === true}
+                                        {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true}
+                                            <DropdownMenuSeparator />
+                                        {/if}
+                                        <DropdownMenuItem
+                                            variant="destructive"
+                                            iconLeft={Delete02Icon}
+                                            onclick={() => (deleteConfirmOpen = true)}
+                                        >
+                                            {__('assistants.detail.delete')}
+                                        </DropdownMenuItem>
+                                    {/if}
+                                </DropdownMenu>
                             {/if}
-                            {/if}
-                            {#if assistant.actionPermissions?.delete === true}
-                                {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true}
-                                    <DropdownMenuSeparator/>
-                                {/if}
-                                <DropdownMenuItem variant="destructive" iconLeft={Delete02Icon} onclick={() => deleteConfirmOpen = true}>
-                                    {__('assistants.detail.delete')}
-                                </DropdownMenuItem>
-                            {/if}
-                        </DropdownMenu>
-                    {/if}
+                        </div>
+                    </div>
+                    <AssistantBanner assistantAvatar={avatar} />
+                    <div class="name-wrapper">
+                        <h2 class="name">
+                            <OverflowTooltip
+                                value={assistant.name}
+                                truncate="clamp"
+                                lines={2}
+                            />
+                        </h2>
+                        <p class="handle">@{assistant.handle}</p>
+                    </div>
                 </div>
-            </div>
-            <AssistantBanner assistantAvatar={avatar} />
-            <div class="name-wrapper">
-                <h2 class="name">
-                    <OverflowTooltip value={assistant.name} truncate="clamp" lines={2} />
-                </h2>
-                <p class="handle">@{assistant.handle}</p>
-            </div>
-        </div>
 
-        <p class="description">{assistant.description}</p>
+                <p class="description">{assistant.description}</p>
 
-        <div class="badges">
-<!--            <ReleaseStageStatus stage={assistant.releaseStage} />-->
-            {#if assistant.riskLevel}
-<!--                <RiskStatus level={assistant.riskLevel} />-->
-            {/if}
-        </div>
-
-        <div class="metadata" style:--tile-bg={coverBackground} style:--tile-fg={coverForeground}>
-            <StatusCard
-                label={__('assistants.detail.meta_creator')}
-                status={assistant.creator.displayName}
-                size="large"
-                icon={UserIcon}
-                type={ValidationState.UNKNOWN} />
-            <StatusCard
-                label={__('assistants.detail.meta_version')}
-                status={assistant.versions[0]?.version ?? '—'}
-                size="large"
-                icon={HashtagIcon}
-                type={ValidationState.UNKNOWN} />
-            <StatusCard
-                label={__('assistants.detail.meta_usage')}
-                status={usageLabel}
-                size="large"
-                icon={ViewIcon}
-                type={ValidationState.UNKNOWN} />
-            <StatusCard
-                label={__('assistants.detail.meta_updated')}
-                status={lastUpdateLabel}
-                size="large"
-                icon={Clock01Icon}
-                type={ValidationState.UNKNOWN} />
-        </div>
-
-        {#if assistant.remixedAssistant}
-            <RemixDetails
-                    remixedAssistant={assistant.remixedAssistant}
-                    creator={assistant.remixCreator ?? null}
-            />
-        {/if}
-
-        <FadeText
-            value={assistant.detailDescription}
-            lines={DESCRIPTION_COLLAPSED_LINES}
-            expandLabel={__('assistants.detail.read_more')}
-        />
-
-        <div class="tags">
-            {#if assistant.category}
-                <span class="tag tag-accent" style={avatar.iconCss}>{__(assistant.category.text)}</span>
-            {/if}
-            {#each assistant.tags as tag}
-                <span class="tag">{tag.text}</span>
-            {/each}
-        </div>
-
-
-        {#if assistant.riskLevel}
-            <hr>
-
-            <section class="section">
-                <div class="section-head">
-                    <h3 class="section-title">{__('assistants.detail.trust_title')}</h3>
-<!--                    <RiskStatus level={assistant.riskLevel} />-->
+                <div
+                    class="metadata"
+                    style:--tile-bg={coverBackground}
+                    style:--tile-fg={coverForeground}
+                >
+                    <StatusCard
+                        label={__('assistants.detail.meta_creator')}
+                        status={assistant.creator.displayName}
+                        size="large"
+                        icon={UserIcon}
+                        type={ValidationState.UNKNOWN}
+                    />
+                    <StatusCard
+                        label={__('assistants.detail.meta_version')}
+                        status={assistant.versions[0]?.version ?? '—'}
+                        size="large"
+                        icon={HashtagIcon}
+                        type={ValidationState.UNKNOWN}
+                    />
+                    <StatusCard
+                        label={__('assistants.detail.meta_usage')}
+                        status={usageLabel}
+                        size="large"
+                        icon={ViewIcon}
+                        type={ValidationState.UNKNOWN}
+                    />
+                    <StatusCard
+                        label={__('assistants.detail.meta_updated')}
+                        status={lastUpdateLabel}
+                        size="large"
+                        icon={Clock01Icon}
+                        type={ValidationState.UNKNOWN}
+                    />
                 </div>
-                {#if assistant.riskNote}
-                    <p class="section-text">{assistant.riskNote}</p>
+
+                {#if assistant.remixedAssistant}
+                    <RemixDetails
+                        remixedAssistant={assistant.remixedAssistant}
+                        creator={assistant.remixCreator ?? null}
+                    />
                 {/if}
-            </section>
-        {/if}
 
-        <hr>
+                <FadeText
+                    value={assistant.detailDescription}
+                    lines={DESCRIPTION_COLLAPSED_LINES}
+                    expandLabel={__('assistants.detail.read_more')}
+                />
 
-        <FeedbackPanel
-            assistant={assistant}
-            onsend={onFeedbackSend}
-        />
-
-        {#if assistant.actionPermissions?.viewAssistantFeedback && feedbacks.length > 0}
-            <hr>
-            <ReceivedFeedbackList
-                feedback={feedbacks}
-            />
-        {/if}
-
-        {#if assistant.versions.length > 0}
-            <hr>
-
-            <section class="section">
-                <h3 class="section-title">{__('assistants.detail.history_title')}</h3>
-                <VersionTimeline>
-                    {#each versionsNewestFirst as version, index (version.id)}
-                        <VersionCard
-                            version={version.version}
-                            date={new Date(version.createdAt).toLocaleDateString('de-DE')}
-                            changedKeys={version.changedKeys}
-                            isCreation={index === assistant.versions.length - 1}
-                            note={version.text}
-                        />
+                <div class="tags">
+                    {#if assistant.category}
+                        <span
+                            class="tag tag-accent"
+                            style={avatar.iconCss}>{__(assistant.category.text)}</span
+                        >
+                    {/if}
+                    {#each assistant.tags as tag}
+                        <span class="tag">{tag.text}</span>
                     {/each}
-                </VersionTimeline>
-            </section>
+                </div>
+
+                {#if assistant.riskLevel}
+                    <hr />
+
+                    <section class="section">
+                        <div class="section-head">
+                            <h3 class="section-title">{__('assistants.detail.trust_title')}</h3>
+                        </div>
+                        {#if assistant.riskNote}
+                            <p class="section-text">{assistant.riskNote}</p>
+                        {/if}
+                    </section>
+                {/if}
+
+                <hr />
+
+                <FeedbackPanel
+                    {assistant}
+                    onsend={onFeedbackSend}
+                />
+
+                {#if assistant.actionPermissions?.viewAssistantFeedback && feedbacks.length > 0}
+                    <hr />
+                    <ReceivedFeedbackList feedback={feedbacks} />
+                {/if}
+
+                {#if assistant.versions.length > 0}
+                    <hr />
+
+                    <section class="section">
+                        <h3 class="section-title">{__('assistants.detail.history_title')}</h3>
+                        <VersionTimeline>
+                            {#each versionsNewestFirst as version, index (version.id)}
+                                <VersionCard
+                                    version={version.version}
+                                    date={new Date(version.createdAt).toLocaleDateString('de-DE')}
+                                    changedKeys={version.changedKeys}
+                                    isCreation={index === assistant.versions.length - 1}
+                                    note={version.text}
+                                />
+                            {/each}
+                        </VersionTimeline>
+                    </section>
+                {/if}
+            </div>
         {/if}
-
     </div>
-
-{/if}
-</div>
-{#if assistant}
-    <ChatDock bind:open={chatOpen} chat={testChat}
-              --test-launcher-bg={coverBackground}
-              --test-launcher-fg={coverForeground}
-              title={__('assistants.detail.try_out')}>
-        <Chatbox assistant={assistant} chat={testChat}/>
-    </ChatDock>
-{/if}
+    {#if assistant}
+        <ChatDock
+            bind:open={chatOpen}
+            chat={testChat}
+            --test-launcher-bg={coverBackground}
+            --test-launcher-fg={coverForeground}
+            title={__('assistants.detail.try_out')}
+        >
+            <Chatbox
+                {assistant}
+                chat={testChat}
+            />
+        </ChatDock>
+    {/if}
 </div>
 
 <style>
@@ -617,7 +666,8 @@
     }
 
     @media (--bp-xl) and (prefers-reduced-motion: reduce) {
-        .detail-shell, .detail-shell.test-open {
+        .detail-shell,
+        .detail-shell.test-open {
             transition: none;
         }
     }
@@ -749,19 +799,6 @@
         font-size: var(--font-size-base);
         line-height: var(--line-height-normal);
         color: var(--color-text);
-    }
-
-    /* Badge row (release stage + risk pill). */
-    .badges {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-2);
-    }
-    /* Without badges the empty row would still add a second page gap
-       between the avatar row and the metadata cards. */
-    .badges:not(:has(*)) {
-        display: none;
     }
 
     /* Metadata cards. */

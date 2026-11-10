@@ -19,8 +19,8 @@
  * Falls back to opening/closing without a morph where the API is missing or the user
  * prefers reduced motion.
  */
-import {tick} from 'svelte';
-import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte';
+import { tick } from 'svelte';
+import { useReducedMotion } from '$lib/utils/transitions/reducedMotion.svelte';
 import './morphToDetail.css';
 
 const MORPH_COVER = 'assistant-cover';
@@ -60,7 +60,7 @@ type Direction = 'open' | 'back';
  * timeout, and the whole transition would be skipped.
  */
 function waitFor(selector: string): Promise<HTMLElement | null> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         const found = document.querySelector<HTMLElement>(selector);
         if (found) {
             resolve(found);
@@ -75,7 +75,7 @@ function waitFor(selector: string): Promise<HTMLElement | null> {
             const el = document.querySelector<HTMLElement>(selector);
             if (el) done(el);
         });
-        observer.observe(document.body, {childList: true, subtree: true});
+        observer.observe(document.body, { childList: true, subtree: true });
         const timer = setTimeout(() => done(null), MAX_WAIT_MS);
     });
 }
@@ -114,10 +114,14 @@ function run(direction: Direction, update: () => Promise<(() => void) | void>): 
 
     if (main) {
         main.style.viewTransitionName = MORPH_PAGE;
-        cleanups.push(() => { main.style.viewTransitionName = ''; });
+        cleanups.push(() => {
+            main.style.viewTransitionName = '';
+        });
     }
     root.dataset.assistantMorph = direction;
-    cleanups.push(() => { delete root.dataset.assistantMorph; });
+    cleanups.push(() => {
+        delete root.dataset.assistantMorph;
+    });
 
     const transition = document.startViewTransition(async () => {
         const undo = await update();
@@ -127,7 +131,7 @@ function run(direction: Direction, update: () => Promise<(() => void) | void>): 
 
     // Also runs when the transition is skipped (a failed or vetoed
     // navigation) — never leave stale names behind.
-    void transition.finished.finally(() => cleanups.forEach(fn => fn()));
+    void transition.finished.finally(() => cleanups.forEach((fn) => fn()));
     return transition;
 }
 
@@ -142,9 +146,9 @@ interface HandleRide {
 function measureDetail(cover: Element | null): Omit<HandleRide, 'cardTitle'> | null {
     const title = cover?.querySelector(DETAIL_TITLE_SELECTOR);
     const handle = cover?.querySelector(DETAIL_HANDLE_SELECTOR);
-    return title && handle
-        ? {detailTitle: title.getBoundingClientRect(), handle: handle.getBoundingClientRect()}
-        : null;
+    return title && handle ?
+            { detailTitle: title.getBoundingClientRect(), handle: handle.getBoundingClientRect() }
+        :   null;
 }
 
 /**
@@ -154,24 +158,27 @@ function measureDetail(cover: Element | null): Omit<HandleRide, 'cardTitle'> | n
  * title's own scale, and travels with it on the same timing.
  */
 function rideHandle(transition: ViewTransition, direction: Direction, ride: () => HandleRide | null): void {
-    void transition.ready.then(() => {
-        const at = ride();
-        if (!at || !at.detailTitle.width) return;
-        const scale = at.cardTitle.width / at.detailTitle.width;
-        const atCard = `translate(${at.cardTitle.left + (at.handle.left - at.detailTitle.left) * scale}px, `
-            + `${at.cardTitle.top + (at.handle.top - at.detailTitle.top) * scale}px) scale(${scale})`;
-        const atDetail = `translate(${at.handle.left}px, ${at.handle.top}px)`;
-        const root = getComputedStyle(document.documentElement);
-        document.documentElement.animate(
-            {transform: direction === 'open' ? [atCard, atDetail] : [atDetail, atCard]},
-            {
-                duration: parseFloat(root.getPropertyValue('--assistant-morph-duration')) || 400,
-                easing: root.getPropertyValue('--assistant-morph-ease').trim() || 'ease',
-                fill: 'both',
-                pseudoElement: `::view-transition-group(${MORPH_HANDLE})`,
-            },
-        );
-    }).catch(() => {});
+    void transition.ready
+        .then(() => {
+            const at = ride();
+            if (!at || !at.detailTitle.width) return;
+            const scale = at.cardTitle.width / at.detailTitle.width;
+            const atCard =
+                `translate(${at.cardTitle.left + (at.handle.left - at.detailTitle.left) * scale}px, ` +
+                `${at.cardTitle.top + (at.handle.top - at.detailTitle.top) * scale}px) scale(${scale})`;
+            const atDetail = `translate(${at.handle.left}px, ${at.handle.top}px)`;
+            const root = getComputedStyle(document.documentElement);
+            document.documentElement.animate(
+                { transform: direction === 'open' ? [atCard, atDetail] : [atDetail, atCard] },
+                {
+                    duration: parseFloat(root.getPropertyValue('--assistant-morph-duration')) || 400,
+                    easing: root.getPropertyValue('--assistant-morph-ease').trim() || 'ease',
+                    fill: 'both',
+                    pseudoElement: `::view-transition-group(${MORPH_HANDLE})`
+                }
+            );
+        })
+        .catch(() => {});
 }
 
 /**
@@ -195,7 +202,7 @@ export function morphToDetail(card: HTMLElement, open: () => Promise<void>): voi
         // modal, whose detail view now holds the same names.
         unnameCard();
     });
-    rideHandle(transition, 'open', () => cardTitle && detail ? {cardTitle, ...detail} : null);
+    rideHandle(transition, 'open', () => (cardTitle && detail ? { cardTitle, ...detail } : null));
 }
 
 /**
@@ -218,5 +225,5 @@ export function morphFromDetail(assistantId: string | number, close: () => Promi
         // has left the DOM — the new snapshot is taken after this callback.
         return card ? nameCard(card) : undefined;
     });
-    rideHandle(transition, 'back', () => cardTitle && detail ? {cardTitle, ...detail} : null);
+    rideHandle(transition, 'back', () => (cardTitle && detail ? { cardTitle, ...detail } : null));
 }

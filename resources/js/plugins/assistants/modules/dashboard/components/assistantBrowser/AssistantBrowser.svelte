@@ -1,29 +1,29 @@
 <script lang="ts">
-    import AssistantCard from "./AssistantCard.svelte";
-    import PageNavigation from "./PageNavigation.svelte";
-    import Searchbar from "$plugins/assistants/modules/dashboard/components/searchbar/Searchbar.svelte";
+    import AssistantCard from './AssistantCard.svelte';
+    import PageNavigation from './PageNavigation.svelte';
+    import Searchbar from '$plugins/assistants/modules/dashboard/components/searchbar/Searchbar.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import SearchRemoveIcon from '$lib/components/ui/icons/iconset/SearchRemoveIcon.svelte';
-    import {StatusIcon} from '$lib/components/ui/icons';
+    import { StatusIcon } from '$lib/components/ui/icons';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
-    import autoAnimate, {type AutoAnimationPlugin} from "@formkit/auto-animate";
-    import {tick, untrack, type Snippet} from 'svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
-    import {morphFromDetail, morphToDetail} from "$plugins/assistants/utils/morphToDetail";
-    import {useRouter} from "$lib/components/ui/routing/hooks/useRouter.svelte";
-    import {useQueryState} from "$lib/components/ui/routing/hooks/useQueryState.svelte";
-    import AssistantDetailModal from "$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetailModal.svelte";
-    import CategoryBar from "$plugins/assistants/modules/dashboard/components/categoryBar/CategoryBar.svelte";
+    import autoAnimate, { type AutoAnimationPlugin } from '@formkit/auto-animate';
+    import { tick, untrack, type Snippet } from 'svelte';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
+    import { morphFromDetail, morphToDetail } from '$plugins/assistants/utils/morphToDetail';
+    import { useRouter } from '$lib/components/ui/routing/hooks/useRouter.svelte';
+    import { useQueryState } from '$lib/components/ui/routing/hooks/useQueryState.svelte';
+    import AssistantDetailModal from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetailModal.svelte';
+    import CategoryBar from '$plugins/assistants/modules/dashboard/components/categoryBar/CategoryBar.svelte';
 
-    const {__} = useTranslator();
+    const { __ } = useTranslator();
 
     // Read the list published by the page that owns it. No props to thread
     // through, and nothing is retained once that page unmounts.
     const list = useAssistantListContext();
 
     let {
-        searchQuery = "",
+        searchQuery = '',
         activeFilters = new Set<string>(),
         onSearchChange,
         onFilterChange,
@@ -65,9 +65,9 @@
         const changes = {
             q: searchQuery.trim() || null,
             category: activeFilters.size ? [...activeFilters].join(',') : null,
-            page: list.currentPage > 1 ? String(list.currentPage) : null,
+            page: list.currentPage > 1 ? String(list.currentPage) : null
         };
-        untrack(() => router.setQuery(changes, {replace: true}));
+        untrack(() => router.setQuery(changes, { replace: true }));
     });
 
     // --- Detail modal ---------------------------------------------------
@@ -82,7 +82,7 @@
     function openDetail(card: HTMLElement, id: string): void {
         morphToDetail(card, async () => {
             pushedDetail = true;
-            router.setQuery({assistant: id}, {replace: false});
+            router.setQuery({ assistant: id }, { replace: false });
         });
     }
 
@@ -90,8 +90,8 @@
     async function dismissDetail(): Promise<void> {
         if (pushedDetail) {
             pushedDetail = false;
-            await new Promise<void>(resolve => {
-                window.addEventListener('popstate', () => resolve(), {once: true});
+            await new Promise<void>((resolve) => {
+                window.addEventListener('popstate', () => resolve(), { once: true });
                 window.history.back();
             });
         } else {
@@ -105,9 +105,7 @@
      * card, not a DialogTrigger), so closing would strand keyboard and screen
      * reader users on <body>. Hand focus back to the card's open button. */
     function returnFocusToCard(assistantId: string): void {
-        document.querySelector<HTMLElement>(
-            `[data-assistant-card="${CSS.escape(assistantId)}"] .open`,
-        )?.focus();
+        document.querySelector<HTMLElement>(`[data-assistant-card="${CSS.escape(assistantId)}"] .open`)?.focus();
     }
 
     function closeDetail(): void {
@@ -140,30 +138,47 @@
         // A plugin opts out of autoAnimate's own reduced-motion check.
         const duration = reducedMotion.matches ? 0 : GRID_DURATION_MS;
         if (action === 'add') {
-            return new KeyframeEffect(el, [
-                {transform: 'scale(.98)', opacity: 0},
-                {transform: 'scale(.98)', opacity: 0, offset: 0.5},
-                {transform: 'scale(1)', opacity: 1},
-            ], {duration: duration * 1.5, easing: 'ease-in'});
+            return new KeyframeEffect(
+                el,
+                [
+                    { transform: 'scale(.98)', opacity: 0 },
+                    { transform: 'scale(.98)', opacity: 0, offset: 0.5 },
+                    { transform: 'scale(1)', opacity: 1 }
+                ],
+                { duration: duration * 1.5, easing: 'ease-in' }
+            );
         }
         if (action === 'remove') {
-            return new KeyframeEffect(el, [
-                {transform: 'scale(1)', opacity: 1},
-                {transform: 'scale(.98)', opacity: 0},
-            ], {duration, easing: 'ease-out'});
+            return new KeyframeEffect(
+                el,
+                [
+                    { transform: 'scale(1)', opacity: 1 },
+                    { transform: 'scale(.98)', opacity: 0 }
+                ],
+                { duration, easing: 'ease-out' }
+            );
         }
         const dx = oldCoords && newCoords ? oldCoords.left - newCoords.left : 0;
         const dy = oldCoords && newCoords ? oldCoords.top - newCoords.top : 0;
-        return new KeyframeEffect(el, [
-            {transform: `translate(${dx}px, ${dy}px)`},
-            {transform: 'translate(0, 0)'},
-        ], {duration, easing: 'ease-in-out'});
+        return new KeyframeEffect(
+            el,
+            [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0, 0)' }],
+            { duration, easing: 'ease-in-out' }
+        );
     };
 </script>
 
 {#snippet controls()}
-    <Searchbar defaultValue={searchQuery} onChange={onSearchChange} loading={list.loading} loadingLabel={__('assistants.browser.loading')} />
-    <CategoryBar {activeFilters} {onFilterChange} />
+    <Searchbar
+        defaultValue={searchQuery}
+        onChange={onSearchChange}
+        loading={list.loading}
+        loadingLabel={__('assistants.browser.loading')}
+    />
+    <CategoryBar
+        {activeFilters}
+        {onFilterChange}
+    />
 {/snippet}
 
 {#if hero}
@@ -181,9 +196,17 @@
 {/if}
 
 <div class="wrapper">
-    <div class="grid-responsive" use:autoAnimate={gridMotion}>
+    <div
+        class="grid-responsive"
+        use:autoAnimate={gridMotion}
+    >
         {#each list.assistants as assistant (assistant.id)}
-            <AssistantCard assistant={assistant} onOpen={(card) => { if (assistant.id) openDetail(card, assistant.id); }} />
+            <AssistantCard
+                {assistant}
+                onOpen={(card) => {
+                    if (assistant.id) openDetail(card, assistant.id);
+                }}
+            />
         {/each}
     </div>
 
@@ -200,19 +223,31 @@
 {#if list.assistants.length === 0}
     <!-- role=status (polite live region): the empty text appearing after a
          search/filter finishes is announced to screen readers. -->
-    <div class="empty-list-msg" role="status">
+    <div
+        class="empty-list-msg"
+        role="status"
+    >
         {#if list.loading}
-            <StatusIcon icon={Search01Icon} tone="neutral" size="xl"/>
+            <StatusIcon
+                icon={Search01Icon}
+                tone="neutral"
+                size="xl"
+            />
         {:else}
             <Tooltip
-                    tooltip={__('assistants.browser.no_results')}
-                    side="top"
-                    delayDuration={300}
-                    focusable={false}
-                    hiddenLabel={__('assistants.browser.no_results')}
+                tooltip={__('assistants.browser.no_results')}
+                side="top"
+                delayDuration={300}
+                focusable={false}
+                hiddenLabel={__('assistants.browser.no_results')}
             >
-                {#snippet children({props})}
-                    <StatusIcon {...props} icon={SearchRemoveIcon} tone="neutral" size="xl"/>
+                {#snippet children({ props })}
+                    <StatusIcon
+                        {...props}
+                        icon={SearchRemoveIcon}
+                        tone="neutral"
+                        size="xl"
+                    />
                 {/snippet}
             </Tooltip>
         {/if}
@@ -225,12 +260,10 @@
     </div>
 {/if}
 
-
-
 {#if detailId.current}
     <AssistantDetailModal
         id={detailId.current}
-        initial={list.assistants.find(item => item.id === detailId.current)}
+        initial={list.assistants.find((item) => item.id === detailId.current)}
         onClose={closeDetail}
         onDeleted={onDetailDeleted}
     />
@@ -299,7 +332,7 @@
         width: 100%;
         min-height: 20rem;
     }
-    .empty-list-msg .text{
+    .empty-list-msg .text {
         display: flex;
         flex-direction: column;
         justify-content: center;

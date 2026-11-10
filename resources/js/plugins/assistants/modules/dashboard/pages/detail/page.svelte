@@ -4,10 +4,10 @@
   instead (see AssistantDetailModal), which keeps the list mounted beneath.
 -->
 <script lang="ts">
-    import Page from "$lib/components/ui/page/Page.svelte";
-    import AssistantDetail from "$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetail.svelte";
-    import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
-    import type {RouteParams} from '$lib/components/ui/routing/index.js';
+    import Page from '$lib/components/ui/page/Page.svelte';
+    import AssistantDetail from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetail.svelte';
+    import { useRouter } from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import type { RouteParams } from '$lib/components/ui/routing/index.js';
 
     /**
      * The kernel's route renderer hands each matched page its route params
@@ -17,7 +17,7 @@
         params?: RouteParams;
     }
 
-    const {params = {}}: Props = $props();
+    const { params = {} }: Props = $props();
     const router = useRouter();
 
     // The router types route params loosely (string | string[]) even though
@@ -28,11 +28,14 @@
     });
 
     // Entered directly, there is no list to return to: back goes to the store.
-    const goBack = () => void router.goToRoute("assistants.dashboard.store");
+    const goBack = () => void router.goToRoute('assistants.dashboard.store');
 </script>
 
 <Page fade="short">
     {#snippet body()}
-        <AssistantDetail {id} onBack={goBack} />
+        <AssistantDetail
+            {id}
+            onBack={goBack}
+        />
     {/snippet}
 </Page>

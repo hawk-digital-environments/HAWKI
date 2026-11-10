@@ -21,8 +21,11 @@
   />
   ```
 -->
-<script module lang="ts">
-    import {cva, type VariantProps} from 'class-variance-authority';
+<script
+    module
+    lang="ts"
+>
+    import { cva, type VariantProps } from 'class-variance-authority';
 
     const buttonVariants = cva('btn', {
         variants: {
@@ -42,7 +45,7 @@
                 iconOnly: 'btn--iconOnly'
             }
         },
-        defaultVariants: {variant: 'fill', size: 'md'}
+        defaultVariants: { variant: 'fill', size: 'md' }
     });
 
     export type ButtonVariant = VariantProps<typeof buttonVariants>['variant'];
@@ -50,10 +53,10 @@
 </script>
 
 <script lang="ts">
-    import type {HTMLButtonAttributes} from 'svelte/elements';
-    import {mergeProps} from 'bits-ui';
-    import type {Component} from 'svelte';
-    import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import type { HTMLButtonAttributes } from 'svelte/elements';
+    import { mergeProps } from 'bits-ui';
+    import type { Component } from 'svelte';
+    import type { IconComponent } from '$lib/components/ui/icons/index.js';
 
     interface Props extends HTMLButtonAttributes {
         /** The reference to the underlying button element. Can be used for imperative actions like focusing the button. */
@@ -90,31 +93,38 @@
         const activeValues = ['active', 'true', '1', 'open', 'delayed-open', 'instant-open'];
         return activeValues.includes(String(highlight).toLowerCase());
     });
-
 </script>
 
-<button bind:this={ref} {...mergeProps(
-    {
-        class: buttonVariants({
+<button
+    bind:this={ref}
+    {...mergeProps(
+        {
+            class: buttonVariants({
                 variant,
-                size: ((IconLeft || IconRight) && !children) ? 'iconOnly' : size
+                size: (IconLeft || IconRight) && !children ? 'iconOnly' : size
+            })
+        },
+        {
+            class: {
+                'btn--block': restProps.block,
+                'btn--active': forceActive
             }
-        )
-    },
-    {
-        class: {
-            'btn--block': restProps.block,
-            'btn--active': forceActive
-        }
-    },
-    restProps
-)}>
+        },
+        restProps
+    )}
+>
     {#if IconLeft}
-        <IconLeft class="btnIcon" aria-hidden="true"/>
+        <IconLeft
+            class="btnIcon"
+            aria-hidden="true"
+        />
     {/if}
     {@render children?.()}
     {#if IconRight}
-        <IconRight class="btnIcon" aria-hidden="true"/>
+        <IconRight
+            class="btnIcon"
+            aria-hidden="true"
+        />
     {/if}
 </button>
 

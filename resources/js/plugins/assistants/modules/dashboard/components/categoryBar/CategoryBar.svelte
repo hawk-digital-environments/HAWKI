@@ -1,18 +1,12 @@
 <script lang="ts">
+    import CategoryButton from './CategoryButton.svelte';
+    import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte.js';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
 
-    import CategoryButton from "./CategoryButton.svelte";
-    import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte.js";
-    import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
-
-    const {__} = useTranslator();
-
-
+    const { __ } = useTranslator();
 
     let categories = $derived(assistantOptionsStore.categories);
-    let {
-        activeFilters = new Set<string>(),
-        onFilterChange,
-    } = $props<{
+    let { activeFilters = new Set<string>(), onFilterChange } = $props<{
         activeFilters?: Set<string>;
         /** Receives the next filter set whenever a category is toggled or reset. */
         onFilterChange: (filters: Set<string>) => void;
@@ -32,15 +26,15 @@
 <div class="categories">
     <div class="categories-list">
         <CategoryButton
-                label={__("assistants.categories.all")}
-                isActive={activeFilters.size === 0}
-                onchange={resetFilters}
+            label={__('assistants.categories.all')}
+            isActive={activeFilters.size === 0}
+            onchange={resetFilters}
         />
         {#each categories as category}
             <CategoryButton
-                    label={__(category.text)}
-                    isActive={activeFilters.has(category.text)}
-                    onchange={() => toggleFilter(category.text)}
+                label={__(category.text)}
+                isActive={activeFilters.has(category.text)}
+                onchange={() => toggleFilter(category.text)}
             />
         {/each}
     </div>

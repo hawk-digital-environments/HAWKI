@@ -1,4 +1,5 @@
 {
+    "plugins": ["prettier-plugin-svelte"],
     "arrowParens": "always",
     "bracketSameLine": false,
     "objectWrap": "preserve",

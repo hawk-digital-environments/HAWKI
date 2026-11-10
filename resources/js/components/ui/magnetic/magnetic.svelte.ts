@@ -19,9 +19,9 @@
  * single `pointermove` handler and one layout-read pass per frame while the
  * pointer moves, not a handler and a read per element per event.
  */
-import type {Attachment} from 'svelte/attachments';
-import {Spring} from 'svelte/motion';
-import {useReducedMotion, type ReducedMotionState} from '$lib/utils/transitions/reducedMotion.svelte';
+import type { Attachment } from 'svelte/attachments';
+import { Spring } from 'svelte/motion';
+import { useReducedMotion, type ReducedMotionState } from '$lib/utils/transitions/reducedMotion.svelte';
 
 export interface MagneticOptions {
     /** Furthest the element moves sideways, in px. */
@@ -38,7 +38,7 @@ export interface MagneticOptions {
 /** One attached element and its tuning. */
 interface Magnet {
     el: HTMLElement;
-    spring: Spring<{x: number, y: number}>;
+    spring: Spring<{ x: number; y: number }>;
     maxX: number;
     maxY: number;
     reach: number;
@@ -46,25 +46,25 @@ interface Magnet {
 }
 
 /** Latest pointer position; null while none has been seen (or it left the window). */
-let pointer: {x: number, y: number} | null = null;
+let pointer: { x: number; y: number } | null = null;
 /** Pending rAF id, 0 while none is scheduled. */
 let frame = 0;
 const magnets = new Set<Magnet>();
 
 function release(magnet: Magnet): void {
     if (magnet.spring.target.x !== 0 || magnet.spring.target.y !== 0) {
-        magnet.spring.target = {x: 0, y: 0};
+        magnet.spring.target = { x: 0, y: 0 };
     }
 }
 
 /** Pulls one magnet towards the pointer — the same math the per-element
  *  version used, run at most once per frame. */
-function pull(magnet: Magnet, at: {x: number, y: number}): void {
+function pull(magnet: Magnet, at: { x: number; y: number }): void {
     if (magnet.reducedMotion.current) {
         release(magnet);
         return;
     }
-    const {el, spring, maxX, maxY, reach} = magnet;
+    const { el, spring, maxX, maxY, reach } = magnet;
     const r = el.getBoundingClientRect();
     // Measured against the untranslated box, so the pull can't feed
     // back into itself.
@@ -81,7 +81,7 @@ function pull(magnet: Magnet, at: {x: number, y: number}): void {
         return;
     }
     const strength = reach === 0 ? 1 : (1 - gap / reach) ** 2;
-    spring.target = {x: clamp(dx / halfW) * strength, y: clamp(dy / halfH) * strength};
+    spring.target = { x: clamp(dx / halfW) * strength, y: clamp(dy / halfH) * strength };
 }
 
 function tick(): void {
@@ -96,7 +96,7 @@ function wake(): void {
 
 function onPointerMove(event: PointerEvent): void {
     if (event.pointerType === 'touch') return;
-    pointer = {x: event.clientX, y: event.clientY};
+    pointer = { x: event.clientX, y: event.clientY };
     wake();
 }
 
@@ -110,7 +110,7 @@ function onPointerOut(event: PointerEvent): void {
 /** Window listeners live only while at least one magnet is attached. */
 function retainTracker(): void {
     if (magnets.size === 1) {
-        window.addEventListener('pointermove', onPointerMove, {passive: true});
+        window.addEventListener('pointermove', onPointerMove, { passive: true });
         window.addEventListener('pointerout', onPointerOut);
     }
 }
@@ -126,21 +126,21 @@ function releaseTracker(): void {
 }
 
 export function magnetic(options: MagneticOptions = {}): Attachment<HTMLElement> {
-    const {maxX = 4, maxY = 3, reach = 32, stiffness = 0.2, damping = 0.5} = options;
+    const { maxX = 4, maxY = 3, reach = 32, stiffness = 0.2, damping = 0.5 } = options;
 
     return (el) => {
         const reducedMotion = useReducedMotion();
         const magnet: Magnet = {
             el,
-            spring: new Spring({x: 0, y: 0}, {stiffness, damping}),
+            spring: new Spring({ x: 0, y: 0 }, { stiffness, damping }),
             maxX,
             maxY,
             reach,
-            reducedMotion,
+            reducedMotion
         };
 
         $effect(() => {
-            const {x, y} = magnet.spring.current;
+            const { x, y } = magnet.spring.current;
             el.style.translate = x || y ? `${x * maxX}px ${y * maxY}px` : '';
             el.style.setProperty('--magnet-x', String(x));
             el.style.setProperty('--magnet-y', String(y));

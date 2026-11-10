@@ -1,12 +1,12 @@
 <script lang="ts">
-    import AssistantBrowser from "$plugins/assistants/modules/dashboard/components/assistantBrowser/AssistantBrowser.svelte";
-    import {readBrowserUrlState} from "$plugins/assistants/modules/dashboard/components/assistantBrowser/browserUrlState.js";
-    import {ReleaseMode} from "$plugins/assistants/types/assistant";
-    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {createAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
-    import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte"
+    import AssistantBrowser from '$plugins/assistants/modules/dashboard/components/assistantBrowser/AssistantBrowser.svelte';
+    import { readBrowserUrlState } from '$plugins/assistants/modules/dashboard/components/assistantBrowser/browserUrlState.js';
+    import { ReleaseMode } from '$plugins/assistants/types/assistant';
+    import { useApp } from '$lib/app/hooks/useApp.svelte.js';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import { createAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
+    import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
 
     /**
@@ -14,12 +14,11 @@
      * any props (see core's ChatIndex.svelte), so this interface is intentionally
      * empty.
      */
-    interface Props {
-    }
-    
+    interface Props {}
+
     const {}: Props = $props();
 
-    const {__} = useTranslator();
+    const { __ } = useTranslator();
     assistantOptionsStore.load();
     // This page owns the list: it is created here, published to the subtree
     // (AssistantBrowser picks it up via useAssistantListContext), and released
@@ -38,9 +37,7 @@
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
-            release_stage: [
-                ReleaseMode.DRAFT
-            ]
+            release_stage: [ReleaseMode.DRAFT]
         });
     }
 
@@ -56,17 +53,17 @@
 
     applyFilter();
 </script>
+
 <Page fade="short">
     <div class="page-content">
-
         <AssistantBrowser
-                title={__('assistants.drafts.title')}
-                searchQuery={searchQuery}
-                activeFilters={activeFilters}
-                onSearchChange={handleSearchChange}
-                onFilterChange={handleFilterChange}
-                emptyTitle={__('assistants.drafts.empty_title')}
-                emptyDescription={__('assistants.drafts.empty_description')}
+            title={__('assistants.drafts.title')}
+            {searchQuery}
+            {activeFilters}
+            onSearchChange={handleSearchChange}
+            onFilterChange={handleFilterChange}
+            emptyTitle={__('assistants.drafts.empty_title')}
+            emptyDescription={__('assistants.drafts.empty_description')}
         />
     </div>
 </Page>

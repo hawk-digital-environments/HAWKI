@@ -43,22 +43,19 @@ export default AssistantAvatarsSchema;
  * known presets (see `presets/backgrounds.ts`) rather than trusting whatever
  * string the domain object carries.
  */
-export function avatarToApi(
-    assistant: Assistant,
-    avatar: AssistantAvatar
-): JsonApiResourceBody {
+export function avatarToApi(assistant: Assistant, avatar: AssistantAvatar): JsonApiResourceBody {
     return {
         type: 'assistant-avatars',
         ...(avatar.id ? { id: avatar.id } : {}),
         attributes: {
             name: avatar.name,
-            icon_css: BACKGROUNDS.find((g) => g.value === avatar.iconCss)?.value,
+            icon_css: BACKGROUNDS.find((g) => g.value === avatar.iconCss)?.value
         },
         relationships: {
             assistant: {
                 data: {
                     type: 'assistants',
-                    id: assistant.id,
+                    id: assistant.id
                 }
             }
         }

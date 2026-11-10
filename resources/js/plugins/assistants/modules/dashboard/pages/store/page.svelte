@@ -1,27 +1,26 @@
 <script lang="ts">
-    import {untrack} from 'svelte';
-    import AssistantBrowser from "$plugins/assistants/modules/dashboard/components/assistantBrowser/AssistantBrowser.svelte";
-    import {readBrowserUrlState} from "$plugins/assistants/modules/dashboard/components/assistantBrowser/browserUrlState.js";
-    import {ReleaseMode} from "$plugins/assistants/types/assistant";
-    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {createAssistantListContext} from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
-    import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte"
+    import { untrack } from 'svelte';
+    import AssistantBrowser from '$plugins/assistants/modules/dashboard/components/assistantBrowser/AssistantBrowser.svelte';
+    import { readBrowserUrlState } from '$plugins/assistants/modules/dashboard/components/assistantBrowser/browserUrlState.js';
+    import { ReleaseMode } from '$plugins/assistants/types/assistant';
+    import { useApp } from '$lib/app/hooks/useApp.svelte.js';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import { createAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
+    import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
-    import type {AssistantAvatar} from '$plugins/assistants/types/assistant/AssistantAvatar';
+    import type { AssistantAvatar } from '$plugins/assistants/types/assistant/AssistantAvatar';
 
     /**
      * The kernel's route renderer instantiates page components without passing
      * any props (see core's ChatIndex.svelte), so this interface is intentionally
      * empty.
      */
-    interface Props {
-    }
-    
+    interface Props {}
+
     const {}: Props = $props();
 
-    const {__} = useTranslator();
+    const { __ } = useTranslator();
     assistantOptionsStore.load();
     // This page owns the list: it is created here, published to the subtree
     // (AssistantBrowser picks it up via useAssistantListContext), and released
@@ -40,10 +39,7 @@
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
-            release_stage: [
-                ReleaseMode.ORGANIZATIONAL,
-                ReleaseMode.FEDERATED
-            ]
+            release_stage: [ReleaseMode.ORGANIZATIONAL, ReleaseMode.FEDERATED]
         });
     }
 
@@ -72,7 +68,7 @@
     /** Covers the close transition (gap 250ms), so the set is only swapped while hidden. */
     const TITLE_CLOSE_MS = 260;
 
-    type TitleAvatar = {key: string; avatar: AssistantAvatar; tilt: number; fromTilt: number};
+    type TitleAvatar = { key: string; avatar: AssistantAvatar; tilt: number; fromTilt: number };
 
     let titleOpen = $state(false);
     /** Between leaving and the close finishing: avatars play their own exit
@@ -100,7 +96,7 @@
             // Alternate the lean so the row reads as playful, not crooked.
             const side = i % 2 === 0 ? -1 : 1;
             const tilt = side * (2 + Math.random() * 7);
-            return {key: `${key}|${Math.random()}`, avatar, tilt, fromTilt: -side * (18 + Math.random() * 16)};
+            return { key: `${key}|${Math.random()}`, avatar, tilt, fromTilt: -side * (18 + Math.random() * 16) };
         });
     }
 
@@ -172,34 +168,39 @@
 
 <Page fade="short">
     <div class="page-content">
-
         <AssistantBrowser
-                searchQuery={searchQuery}
-                activeFilters={activeFilters}
-                onSearchChange={handleSearchChange}
-                onFilterChange={handleFilterChange}
-                emptyTitle={__('assistants.store.empty_title')}
-                emptyDescription={__('assistants.store.empty_description')}
+            {searchQuery}
+            {activeFilters}
+            onSearchChange={handleSearchChange}
+            onFilterChange={handleFilterChange}
+            emptyTitle={__('assistants.store.empty_title')}
+            emptyDescription={__('assistants.store.empty_description')}
         >
             {#snippet hero()}
                 <h1
-                        class="store-title"
-                        class:open={titleOpen && titleAvatars.length > 0}
-                        class:closing={titleClosing}
-                        style:--count={titleAvatars.length}
-                        onpointerenter={handleTitleEnter}
-                        onpointerleave={handleTitleLeave}
+                    class="store-title"
+                    class:open={titleOpen && titleAvatars.length > 0}
+                    class:closing={titleClosing}
+                    style:--count={titleAvatars.length}
+                    onpointerenter={handleTitleEnter}
+                    onpointerleave={handleTitleLeave}
                 >
                     <span>{titleStart}</span>
-                    <span class="title-gap" aria-hidden="true">
+                    <span
+                        class="title-gap"
+                        aria-hidden="true"
+                    >
                         {#each titleAvatars as item, i (item.key)}
                             <span
-                                    class="title-avatar"
-                                    style:--i={i}
-                                    style:--tilt="{item.tilt}deg"
-                                    style:--from-tilt="{item.fromTilt}deg"
+                                class="title-avatar"
+                                style:--i={i}
+                                style:--tilt="{item.tilt}deg"
+                                style:--from-tilt="{item.fromTilt}deg"
                             >
-                                <span class="title-avatar-face" style={item.avatar.iconCss}>
+                                <span
+                                    class="title-avatar-face"
+                                    style={item.avatar.iconCss}
+                                >
                                     <span class="title-avatar-glyph">{item.avatar.name}</span>
                                 </span>
                             </span>
@@ -225,9 +226,41 @@
 
     /* Spring (damping ≈ 0.5): overshoots ~16 % and settles with one soft wobble. */
     .store-title {
-        --spring: linear(0, 0.053, 0.185, 0.36, 0.547, 0.725, 0.879, 1, 1.085, 1.137, 1.16, 1.161,
-            1.145, 1.119, 1.089, 1.059, 1.032, 1.009, 0.992, 0.981, 0.975, 0.973, 0.975, 0.978,
-            0.983, 0.988, 0.993, 0.997, 1, 1.002, 1.004, 1.004, 1);
+        --spring: linear(
+            0,
+            0.053,
+            0.185,
+            0.36,
+            0.547,
+            0.725,
+            0.879,
+            1,
+            1.085,
+            1.137,
+            1.16,
+            1.161,
+            1.145,
+            1.119,
+            1.089,
+            1.059,
+            1.032,
+            1.009,
+            0.992,
+            0.981,
+            0.975,
+            0.973,
+            0.975,
+            0.978,
+            0.983,
+            0.988,
+            0.993,
+            0.997,
+            1,
+            1.002,
+            1.004,
+            1.004,
+            1
+        );
         --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
         --avatar-size: 1.1em;
         --avatar-space: 0.24em;

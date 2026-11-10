@@ -20,13 +20,13 @@
   so the detail morphs back into its card from where it was let go.
 -->
 <script lang="ts">
-    import {Dialog as DialogPrimitive} from 'bits-ui';
-    import {Spring} from 'svelte/motion';
+    import { Dialog as DialogPrimitive } from 'bits-ui';
+    import { Spring } from 'svelte/motion';
     import AssistantDetail from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetail.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte';
-    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte';
-    import type {Assistant} from '$plugins/assistants/types/assistant/Assistant';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useBreakpoint } from '$lib/components/util/breakpoints/useBreakpoint.svelte';
+    import { useReducedMotion } from '$lib/utils/transitions/reducedMotion.svelte';
+    import type { Assistant } from '$plugins/assistants/types/assistant/Assistant';
 
     interface Props {
         /** Id of the assistant to show. */
@@ -39,8 +39,8 @@
         initial?: Assistant;
     }
 
-    const {id, onClose, onDeleted, initial}: Props = $props();
-    const {__} = useTranslator();
+    const { id, onClose, onDeleted, initial }: Props = $props();
+    const { __ } = useTranslator();
     const breakpoint = useBreakpoint();
     const reducedMotion = useReducedMotion();
 
@@ -54,13 +54,13 @@
     const VELOCITY_STALE_MS = 100;
 
     /** The modal's downward offset (px). */
-    const offset = new Spring(0, {stiffness: 0.2, damping: 0.85});
+    const offset = new Spring(0, { stiffness: 0.2, damping: 0.85 });
 
     let modal = $state<HTMLElement>();
 
     function release(target: number): Promise<void> {
         // A later set (a catch, another release) rejects the pending one.
-        return offset.set(target, reducedMotion.current ? {instant: true} : undefined);
+        return offset.set(target, reducedMotion.current ? { instant: true } : undefined);
     }
 
     $effect(() => {
@@ -79,8 +79,7 @@
         /** Released into the close morph: the modal is on its way out. */
         let closing = false;
 
-        const findTouch = (list: TouchList) =>
-            Array.from(list).find(t => t.identifier === touchId);
+        const findTouch = (list: TouchList) => Array.from(list).find((t) => t.identifier === touchId);
 
         function onTouchStart(e: TouchEvent) {
             if (closing || touchId !== null || e.touches.length !== 1) return;
@@ -99,7 +98,7 @@
             lastT = e.timeStamp;
             velocity = 0;
             base = moving ? offset.current : 0;
-            if (moving) void offset.set(base, {instant: true});
+            if (moving) void offset.set(base, { instant: true });
         }
 
         function onTouchMove(e: TouchEvent) {
@@ -129,7 +128,7 @@
             if (dt > 0) velocity = (touch.clientY - lastY) / dt;
             lastY = touch.clientY;
             lastT = e.timeStamp;
-            void offset.set(Math.max(0, base + touch.clientY - startY), {instant: true});
+            void offset.set(Math.max(0, base + touch.clientY - startY), { instant: true });
         }
 
         function onTouchEnd(e: TouchEvent) {
@@ -152,8 +151,8 @@
             }
         }
 
-        el.addEventListener('touchstart', onTouchStart, {passive: true});
-        el.addEventListener('touchmove', onTouchMove, {passive: false});
+        el.addEventListener('touchstart', onTouchStart, { passive: true });
+        el.addEventListener('touchmove', onTouchMove, { passive: false });
         el.addEventListener('touchend', onTouchEnd);
         el.addEventListener('touchcancel', onTouchEnd);
         return () => {
@@ -169,14 +168,37 @@
 </script>
 
 <!-- Controlled: bits-ui reports every close request instead of closing itself. -->
-<DialogPrimitive.Root bind:open={() => true, (value) => { if (!value) onClose(); }}>
+<DialogPrimitive.Root
+    bind:open={
+        () => true,
+        (value) => {
+            if (!value) onClose();
+        }
+    }
+>
     <!-- Into the main area (positioned, clipped), so the sidebar stays beside it. -->
     <DialogPrimitive.Portal to="#main-content">
-        <DialogPrimitive.Content trapFocus={false} preventScroll={false} interactOutsideBehavior="ignore">
-            {#snippet child({props})}
-                <div {...props} class="detail-modal" bind:this={modal} style:transform={pullTransform}>
-                    <DialogPrimitive.Title class="u-sr-only">{__('assistants.detail.dialog_title')}</DialogPrimitive.Title>
-                    <AssistantDetail {id} onBack={onClose} {onDeleted} {initial} />
+        <DialogPrimitive.Content
+            trapFocus={false}
+            preventScroll={false}
+            interactOutsideBehavior="ignore"
+        >
+            {#snippet child({ props })}
+                <div
+                    {...props}
+                    class="detail-modal"
+                    bind:this={modal}
+                    style:transform={pullTransform}
+                >
+                    <DialogPrimitive.Title class="u-sr-only"
+                        >{__('assistants.detail.dialog_title')}</DialogPrimitive.Title
+                    >
+                    <AssistantDetail
+                        {id}
+                        onBack={onClose}
+                        {onDeleted}
+                        {initial}
+                    />
                 </div>
             {/snippet}
         </DialogPrimitive.Content>

@@ -1,23 +1,21 @@
 <script lang="ts">
-    import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
+    import type { AssistantAvatar } from '$plugins/assistants/types/assistant/AssistantAvatar';
 
-    let{
-        assistantAvatar,
-        fade = false
-    } = $props <{
-        assistantAvatar: AssistantAvatar,
+    let { assistantAvatar, fade = false } = $props<{
+        assistantAvatar: AssistantAvatar;
         /** Dissolve the banner into the surface below it (store card, detail page). */
-        fade?: boolean
+        fade?: boolean;
     }>();
 </script>
 
-
-<div class="banner-container"
-     class:fade
-     style={assistantAvatar.iconCss}
+<div
+    class="banner-container"
+    class:fade
+    style={assistantAvatar.iconCss}
 >
-    <span class="symbol"
-          style:color="oklch(100% 0 0)"
+    <span
+        class="symbol"
+        style:color="oklch(100% 0 0)"
     >
         {assistantAvatar.name}
     </span>

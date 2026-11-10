@@ -13,7 +13,45 @@
    inherit from <html>, so they can read these. */
 :root {
     --assistant-morph-duration: 400ms;
-    --assistant-morph-spring: linear(0, 0.034, 0.116, 0.224, 0.341, 0.456, 0.563, 0.658, 0.739, 0.807, 0.862, 0.905, 0.938, 0.963, 0.981, 0.994, 1.002, 1.007, 1.01, 1.011, 1.011, 1.01, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+    --assistant-morph-spring: linear(
+        0,
+        0.034,
+        0.116,
+        0.224,
+        0.341,
+        0.456,
+        0.563,
+        0.658,
+        0.739,
+        0.807,
+        0.862,
+        0.905,
+        0.938,
+        0.963,
+        0.981,
+        0.994,
+        1.002,
+        1.007,
+        1.01,
+        1.011,
+        1.011,
+        1.01,
+        1.009,
+        1.008,
+        1.007,
+        1.005,
+        1.004,
+        1.003,
+        1.003,
+        1.002,
+        1.001,
+        1.001,
+        1.001,
+        1,
+        1,
+        1,
+        1
+    );
 }
 
 /* Open is an invitation and gets the spring; back gets out of the way:
@@ -22,7 +60,7 @@
 :root {
     --assistant-morph-ease: var(--assistant-morph-spring);
 }
-:root[data-assistant-morph="back"] {
+:root[data-assistant-morph='back'] {
     --assistant-morph-duration: 350ms;
     --assistant-morph-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -56,7 +94,7 @@
         assistant-morph-lift var(--assistant-morph-duration) var(--easing-spring) both,
         assistant-morph-corners-open var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
-:root[data-assistant-morph="back"]::view-transition-image-pair(assistant-cover) {
+:root[data-assistant-morph='back']::view-transition-image-pair(assistant-cover) {
     animation:
         assistant-morph-lift var(--assistant-morph-duration) var(--easing-spring) both,
         assistant-morph-corners-back var(--assistant-morph-duration) var(--assistant-morph-ease) both;
@@ -75,7 +113,7 @@
 
 /* The glyph gets a small bump of its own on the way in — a lift that rides
    on the sticker's own -8deg lean. Going back stays quiet. */
-:root[data-assistant-morph="open"]::view-transition-image-pair(assistant-symbol) {
+:root[data-assistant-morph='open']::view-transition-image-pair(assistant-symbol) {
     animation: assistant-morph-symbol var(--assistant-morph-duration) var(--easing-spring) both;
 }
 
@@ -111,21 +149,21 @@
    that surface while it fades. */
 
 /* Open: the list recedes while the modal surface fades in over it. */
-:root[data-assistant-morph="open"]::view-transition-old(assistant-page) {
+:root[data-assistant-morph='open']::view-transition-old(assistant-page) {
     animation: assistant-morph-recede var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
-:root[data-assistant-morph="open"]::view-transition-new(assistant-page) {
+:root[data-assistant-morph='open']::view-transition-new(assistant-page) {
     animation: none;
     opacity: 0;
 }
 
 /* Back: the exact reverse — the modal surface fades out and the list comes
    forward as the detail shrinks back into its card. */
-:root[data-assistant-morph="back"]::view-transition-old(assistant-page) {
+:root[data-assistant-morph='back']::view-transition-old(assistant-page) {
     animation: none;
     opacity: 0;
 }
-:root[data-assistant-morph="back"]::view-transition-new(assistant-page) {
+:root[data-assistant-morph='back']::view-transition-new(assistant-page) {
     animation: assistant-morph-advance var(--assistant-morph-duration) var(--assistant-morph-ease) both;
 }
 
@@ -134,13 +172,23 @@
    (new-only) would land above the detail content and cover it as it fades
    in. List at the bottom, then the modal surface, then the morphing
    container and the cover parts riding on it. */
-::view-transition-group(assistant-page)      { z-index: 0; }
-::view-transition-group(assistant-modal)     { z-index: 1; }
-::view-transition-group(assistant-container) { z-index: 2; }
-::view-transition-group(assistant-cover)     { z-index: 3; }
+::view-transition-group(assistant-page) {
+    z-index: 0;
+}
+::view-transition-group(assistant-modal) {
+    z-index: 1;
+}
+::view-transition-group(assistant-container) {
+    z-index: 2;
+}
+::view-transition-group(assistant-cover) {
+    z-index: 3;
+}
 ::view-transition-group(assistant-symbol),
 ::view-transition-group(assistant-title),
-::view-transition-group(assistant-handle)    { z-index: 4; }
+::view-transition-group(assistant-handle) {
+    z-index: 4;
+}
 
 /* The modal's own surface (everything of the detail view outside the
    morphing container: its background, the test-chat dock). Exists on one
@@ -156,9 +204,15 @@
 }
 
 @keyframes assistant-morph-lift {
-    0%   { scale: 1; }
-    30%  { scale: 1.035; }
-    100% { scale: 1; }
+    0% {
+        scale: 1;
+    }
+    30% {
+        scale: 1.035;
+    }
+    100% {
+        scale: 1;
+    }
 }
 /* Scaled from its top-left corner, like the title image it rides with. */
 ::view-transition-group(assistant-handle) {
@@ -166,27 +220,56 @@
 }
 
 @keyframes assistant-morph-symbol {
-    0%   { scale: 1;    rotate: 0deg; }
-    40%  { scale: 1.12; rotate: -4deg; }
-    100% { scale: 1;    rotate: 0deg; }
+    0% {
+        scale: 1;
+        rotate: 0deg;
+    }
+    40% {
+        scale: 1.12;
+        rotate: -4deg;
+    }
+    100% {
+        scale: 1;
+        rotate: 0deg;
+    }
 }
 @keyframes assistant-morph-corners-open {
-    from { border-radius: var(--corner-lg) var(--corner-lg) 0 0; }
-    to   { border-radius: var(--assistant-detail-cover-radius); }
+    from {
+        border-radius: var(--corner-lg) var(--corner-lg) 0 0;
+    }
+    to {
+        border-radius: var(--assistant-detail-cover-radius);
+    }
 }
 @keyframes assistant-morph-corners-back {
-    from { border-radius: var(--assistant-detail-cover-radius); }
-    to   { border-radius: var(--corner-lg) var(--corner-lg) 0 0; }
+    from {
+        border-radius: var(--assistant-detail-cover-radius);
+    }
+    to {
+        border-radius: var(--corner-lg) var(--corner-lg) 0 0;
+    }
 }
 @keyframes assistant-morph-recede {
-    to { opacity: 0; scale: 0.96; filter: blur(2px); }
+    to {
+        opacity: 0;
+        scale: 0.96;
+        filter: blur(2px);
+    }
 }
 @keyframes assistant-morph-fade-in {
-    from { opacity: 0; }
+    from {
+        opacity: 0;
+    }
 }
 @keyframes assistant-morph-fade-out {
-    to { opacity: 0; }
+    to {
+        opacity: 0;
+    }
 }
 @keyframes assistant-morph-advance {
-    from { opacity: 0; scale: 0.96; filter: blur(2px); }
+    from {
+        opacity: 0;
+        scale: 0.96;
+        filter: blur(2px);
+    }
 }
