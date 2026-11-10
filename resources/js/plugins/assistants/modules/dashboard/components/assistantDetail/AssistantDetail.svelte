@@ -105,9 +105,13 @@
     // a bottom fade; FadeText expands it to the full text (one-way).
     const DESCRIPTION_COLLAPSED_LINES = 7;
 
-    // CHECK AWAIT Syntax from Svelte
+    // The load belongs to the `id` it was started for: aborting (id change,
+    // unmount) cancels the request and voids its resolution, so a slow old
+    // response can never clobber a newer one (house pattern, see
+    // builderGuideChat).
     $effect(() => {
         if (!id) return;
+        const controller = new AbortController();
 
         // A conversation belongs to the assistant it was held with.
         untrack(() => {
@@ -119,27 +123,34 @@
         error = null;
         getAssistant(id, {
             include: [...new Set([...ASSISTANT_DETAIL_INCLUDES])],
-        })
+        }, controller.signal)
         .then(result => {
+            if (controller.signal.aborted) return;
             assistant = result;
             // `assistant_feedback` is a permission-gated relationship
             // (`viewAssistantFeedback`) — requesting it as part of the main
             // include list would 403 the *whole* fetch when denied, so it's
             // only loaded once the initial response confirms it's allowed.
             if (result.actionPermissions?.viewAssistantFeedback) {
-                loadFeedbacks(result.id);
+                void loadFeedbacks(result.id, controller.signal);
             }
         })
-        .catch(err => { error = err; })
-        .finally(() => { loading = false; });
+        .catch(err => {
+            if (!controller.signal.aborted) error = err;
+        })
+        .finally(() => {
+            if (!controller.signal.aborted) loading = false;
+        });
+        return () => controller.abort();
     });
 
-    async function loadFeedbacks(id: string | null): Promise<void> {
-        if (!id) return;
+    async function loadFeedbacks(assistantId: string | null, signal?: AbortSignal): Promise<void> {
+        if (!assistantId) return;
         try {
-            const withFeedback = await getAssistant(id, {
+            const withFeedback = await getAssistant(assistantId, {
                 include: ['assistant_feedback', 'assistant_feedback.user'],
-            });
+            }, signal);
+            if (signal?.aborted) return;
             feedbacks = withFeedback.feedbacks ?? [];
         } catch (err) {
             // Feedback is a secondary detail; don't fail the whole page over it.

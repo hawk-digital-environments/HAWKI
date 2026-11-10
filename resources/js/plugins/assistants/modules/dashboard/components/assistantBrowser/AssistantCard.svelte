@@ -27,19 +27,17 @@
     let userAvatarUrl = $state<string | null>(null);
     let card = $state<HTMLElement>();
     $effect(() => {
-        if(assistant.creator.avatar) {
-            getAvatar(assistant.creator.avatar)
-                .then(url => {
-                    userAvatarUrl = url;
-            });
-
-            // Cleanup: revoke the object URL when identifier changes or component unmounts
-            return () => {
-                if (userAvatarUrl) {
-                    URL.revokeObjectURL(userAvatarUrl);
-                }
-            };
+        const identifier = assistant.creator.avatar;
+        if (!identifier) {
+            userAvatarUrl = null;
+            return;
         }
+        // A plain storage path today — no blob/object URL to revoke. If
+        // getAvatar ever fetches a blob again, give it an AbortSignal and
+        // revoke here (house pattern: builderGuideChat).
+        void getAvatar(identifier).then(url => {
+            userAvatarUrl = url;
+        });
     });
 
 

@@ -102,12 +102,14 @@ export function assistantDependency(id: string): `${string}:${string}` {
 export async function getAssistant(
   id: string,
   query?: FetchResourceQuery,
+  signal?: AbortSignal,
 ): Promise<Assistant> {
   try {
     return await useApp().restApi.getResource(ASSISTANTS,
         id,
         {
-            query
+            query,
+            signal
         });
   } catch (err) {
     throw logApiError("getAssistant", err, { id });
