@@ -1,21 +1,25 @@
-import { useApp } from "$lib/app/hooks/useApp.svelte.js";
-import { buildQueryString, type FetchCollectionQuery, type FetchResourceQuery } from "$lib/kernel/api/buildQueryString.js";
-import { decodeJsonApiResourceResponse, type JsonApiPagination } from "$lib/kernel/api/jsonApiEncoding.js";
-import { logApiError } from "$plugins/assistants/api/errors";
-import z from "zod";
-import type { Assistant, Review } from "$plugins/assistants/types/assistant";
+import { useApp } from '$lib/app/hooks/useApp.svelte.js';
 import {
-  assistantToApi,
-  AssistantResourceSchema,
-  AssistantReviewWireSchema,
-  ASSISTANT_SETTING_KEY_MAP,
-} from "$plugins/assistants/api/schemas/resources/assistants.schema.js";
-import type { JsonApiResourceBody } from "$plugins/assistants/api/schemas/wireFragments.js";
-import { assistantOptionsStore } from "$plugins/assistants/stores/AssistantOptionsStore.svelte.js";
+    buildQueryString,
+    type FetchCollectionQuery,
+    type FetchResourceQuery
+} from '$lib/kernel/api/buildQueryString.js';
+import { decodeJsonApiResourceResponse, type JsonApiPagination } from '$lib/kernel/api/jsonApiEncoding.js';
+import { logApiError } from '$plugins/assistants/api/errors';
+import z from 'zod';
+import type { Assistant, Review } from '$plugins/assistants/types/assistant';
+import {
+    assistantToApi,
+    AssistantResourceSchema,
+    AssistantReviewWireSchema,
+    ASSISTANT_SETTING_KEY_MAP
+} from '$plugins/assistants/api/schemas/resources/assistants.schema.js';
+import type { JsonApiResourceBody } from '$plugins/assistants/api/schemas/wireFragments.js';
+import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte.js';
 
-const ASSISTANTS = "assistants";
-const ASSISTANT_USER_PROMPTS = "assistant-user-prompts";
-const ASSISTANT_SETTING_VALUES = "assistant-setting-values";
+const ASSISTANTS = 'assistants';
+const ASSISTANT_USER_PROMPTS = 'assistant-user-prompts';
+const ASSISTANT_SETTING_VALUES = 'assistant-setting-values';
 
 /**
  * Relationships worth loading for a list view: enough to render a card without
@@ -26,10 +30,10 @@ const ASSISTANT_SETTING_VALUES = "assistant-setting-values";
  * names on {@link Assistant}.
  */
 export const ASSISTANT_LIST_INCLUDES = [
-  "creator",
-  "assistant_category",
-  "assistant_avatar",
-  "remixed_assistant",
+    'creator',
+    'assistant_category',
+    'assistant_avatar',
+    'remixed_assistant'
 ] as const;
 
 /**
@@ -38,33 +42,36 @@ export const ASSISTANT_LIST_INCLUDES = [
  * (`viewAssistantFeedback` in the resource's `links`), and requesting a
  * denied include rejects the *entire* request with a 403 — not just that one
  * relationship. It's fetched separately, only after the initial response
- * confirms the permission is granted (see `detail/page.svelte`).
+ * confirms the permission is granted (see `AssistantDetail.svelte`).
  */
 export const ASSISTANT_DETAIL_INCLUDES = [
-  "creator",
-  "assistant_category",
-  "assistant_tags",
-  "assistant_avatar",
-  "assistant_versions"
+    'creator',
+    'assistant_category',
+    'assistant_tags',
+    'assistant_avatar',
+    'assistant_versions',
+    // The "Remixed from" box: the source assistant and who made it.
+    'remixed_assistant',
+    'remix_creator'
 ] as const;
 
 /** {@link ASSISTANT_DETAIL_INCLUDES} plus the owner-only knowledge files. */
 export const ASSISTANT_EDIT_INCLUDES = [
-  ...ASSISTANT_DETAIL_INCLUDES,
-    "assistant_attachments",
-    "assistant_user_prompts",
-    "assistant_setting_values.setting",
-    "ai_tools",
+    ...ASSISTANT_DETAIL_INCLUDES,
+    'assistant_attachments',
+    'assistant_user_prompts',
+    'assistant_setting_values.setting',
+    'ai_tools',
     // The creator's own review state (denied / needs_revision) drives the
     // publish page's denial handling.
-    "assistant_review",
+    'assistant_review'
 ] as const;
 
 /** One page of assistants plus the server's paging metadata. */
 export interface AssistantPage {
-  assistants: Assistant[];
-  /** `undefined` when the response carried no `meta.page` block. */
-  pagination?: JsonApiPagination;
+    assistants: Assistant[];
+    /** `undefined` when the response carried no `meta.page` block. */
+    pagination?: JsonApiPagination;
 }
 
 /**
@@ -78,7 +85,7 @@ export interface AssistantPage {
  * otherwise reuse that stale result instead of refetching.
  */
 export function assistantDependency(id: string): `${string}:${string}` {
-  return `hawki:assistant:${id}`;
+    return `hawki:assistant:${id}`;
 }
 
 /**
@@ -96,19 +103,15 @@ export function assistantDependency(id: string): `${string}:${string}` {
  * assistant.systemPrompt;        // mapped from `system_prompt`
  * assistant.actionPermissions;   // derived from the resource's `_links`
  */
-export async function getAssistant(
-  id: string,
-  query?: FetchResourceQuery,
-): Promise<Assistant> {
-  try {
-    return await useApp().restApi.getResource(ASSISTANTS,
-        id,
-        {
-            query
+export async function getAssistant(id: string, query?: FetchResourceQuery, signal?: AbortSignal): Promise<Assistant> {
+    try {
+        return await useApp().restApi.getResource(ASSISTANTS, id, {
+            query,
+            signal
         });
-  } catch (err) {
-    throw logApiError("getAssistant", err, { id });
-  }
+    } catch (err) {
+        throw logApiError('getAssistant', err, { id });
+    }
 }
 
 /**
@@ -131,21 +134,19 @@ export async function getAssistant(
  *     page: {number: 2, size: 20},
  * });
  */
-export async function listAssistants(
-  query?: FetchCollectionQuery,
-): Promise<AssistantPage> {
-  try {
-      const collection = await useApp().restApi.getResourceCollection(ASSISTANTS, {
-        query
-      })
+export async function listAssistants(query?: FetchCollectionQuery): Promise<AssistantPage> {
+    try {
+        const collection = await useApp().restApi.getResourceCollection(ASSISTANTS, {
+            query
+        });
 
-      return {
-          assistants: Array.from(collection),
-          pagination: collection._pagination,
-      };
-  } catch (err) {
-    throw err
-  }
+        return {
+            assistants: Array.from(collection),
+            pagination: collection._pagination
+        };
+    } catch (err) {
+        throw err;
+    }
 }
 
 /**
@@ -162,17 +163,12 @@ export async function listAssistants(
  * (`createEmptyAssistant()`'s `category`/`aiTools` are empty/null, and its
  * `tags: []` relationship would be a no-op even if it could be sent).
  */
-export async function createAssistant(
-  assistantResource: Assistant,
-): Promise<Assistant> {
-  try {
-    return await useApp().restApi.createResource(
-        ASSISTANTS,
-        assistantToApi(assistantResource).attributes ?? {}
-    );
-  } catch (err) {
-    throw logApiError("createAssistant", err);
-  }
+export async function createAssistant(assistantResource: Assistant): Promise<Assistant> {
+    try {
+        return await useApp().restApi.createResource(ASSISTANTS, assistantToApi(assistantResource).attributes ?? {});
+    } catch (err) {
+        throw logApiError('createAssistant', err);
+    }
 }
 
 /**
@@ -182,17 +178,14 @@ export async function createAssistant(
  * fields (`name`, `temp`, ...) and relationships (`assistant_category`,
  * `assistant_tags`, `ai_tools`) together.
  */
-export async function updateAssistant(
-  id: string,
-  body: JsonApiResourceBody,
-): Promise<Assistant> {
-  try {
-    return await useApp().restApi.updateResource(ASSISTANTS, id, body.attributes ?? {}, {
-      relationships: body.relationships,
-    });
-  } catch (err) {
-    throw logApiError("updateAssistant", err, { id });
-  }
+export async function updateAssistant(id: string, body: JsonApiResourceBody): Promise<Assistant> {
+    try {
+        return await useApp().restApi.updateResource(ASSISTANTS, id, body.attributes ?? {}, {
+            relationships: body.relationships
+        });
+    } catch (err) {
+        throw logApiError('updateAssistant', err, { id });
+    }
 }
 
 /**
@@ -200,11 +193,11 @@ export async function updateAssistant(
  * used to permanently discard a draft the user abandoned in the builder.
  */
 export async function deleteAssistant(id: string): Promise<void> {
-  try {
-    await useApp().restApi.deleteResource(ASSISTANTS, id);
-  } catch (err) {
-    throw logApiError("deleteAssistant", err, { id });
-  }
+    try {
+        await useApp().restApi.deleteResource(ASSISTANTS, id);
+    } catch (err) {
+        throw logApiError('deleteAssistant', err, { id });
+    }
 }
 
 /**
@@ -217,28 +210,24 @@ export async function deleteAssistant(id: string): Promise<void> {
  * `RestApi.fetch`'s doc comment), so resolving at all means success.
  */
 export async function requestAssistantRelease(assistant: Assistant): Promise<boolean> {
-  if (!assistant.id) return false;
-  // Optional version note ("What has changed?"); the backend trims it and
-  // treats blank as "no note", so it is simply omitted when empty.
-  const note = assistant.submissionNote?.trim();
-  try {
-    await useApp().restApi.postToResourceAction(
-      ASSISTANTS,
-      `${assistant.id}/actions/release`,
-      {
-        data: {
-          type: "assistants",
-          attributes: {
-            release_stage: assistant.releaseStage,
-            ...(note ? { note } : {}),
-          },
-        },
-      },
-    );
-    return true;
-  } catch (err) {
-    throw logApiError("requestAssistantRelease", err, { id: assistant.id });
-  }
+    if (!assistant.id) return false;
+    // Optional version note ("What has changed?"); the backend trims it and
+    // treats blank as "no note", so it is simply omitted when empty.
+    const note = assistant.submissionNote?.trim();
+    try {
+        await useApp().restApi.postToResourceAction(ASSISTANTS, `${assistant.id}/actions/release`, {
+            data: {
+                type: 'assistants',
+                attributes: {
+                    release_stage: assistant.releaseStage,
+                    ...(note ? { note } : {})
+                }
+            }
+        });
+        return true;
+    } catch (err) {
+        throw logApiError('requestAssistantRelease', err, { id: assistant.id });
+    }
 }
 
 /**
@@ -254,16 +243,12 @@ export async function requestAssistantRelease(assistant: Assistant): Promise<boo
  * failures (401/404/5xx) still throw for the caller to handle.
  */
 export async function getAssistantReview(id: string | null): Promise<Review | null> {
-  if (!id) return null;
-  const raw = await useApp().restApi.getFromResourceAction(ASSISTANTS, `${id}/assistant-review`, {
-    beforeSchema: (response) => response?.data
-      ? decodeJsonApiResourceResponse(response)
-      : null,
-    schema: AssistantReviewWireSchema.nullable(),
-  });
-  return raw
-    ? {status: raw.status, reason: raw.reason ?? null}
-    : null;
+    if (!id) return null;
+    const raw = await useApp().restApi.getFromResourceAction(ASSISTANTS, `${id}/assistant-review`, {
+        beforeSchema: (response) => (response?.data ? decodeJsonApiResourceResponse(response) : null),
+        schema: AssistantReviewWireSchema.nullable()
+    });
+    return raw ? { status: raw.status, reason: raw.reason ?? null } : null;
 }
 
 /**
@@ -275,20 +260,15 @@ export async function getAssistantReview(id: string | null): Promise<Review | nu
  * other read in this file already goes through.
  */
 export async function requestRemix(id: string): Promise<Assistant> {
-  try {
-    const response = await useApp().restApi.postToResourceAction(
-      ASSISTANTS,
-      `${id}/actions/remix`,
-      { data: {} },
-    );
-    return await getAssistant(response.data.id, {
-      include: [...ASSISTANT_EDIT_INCLUDES],
-    });
-  } catch (err) {
-    throw logApiError("requestRemix", err, { id });
-  }
+    try {
+        const response = await useApp().restApi.postToResourceAction(ASSISTANTS, `${id}/actions/remix`, { data: {} });
+        return await getAssistant(response.data.id, {
+            include: [...ASSISTANT_EDIT_INCLUDES]
+        });
+    } catch (err) {
+        throw logApiError('requestRemix', err, { id });
+    }
 }
-
 
 /**
  * Sets one setting value (formality / language / answer length) on an
@@ -307,64 +287,67 @@ export async function requestRemix(id: string): Promise<Assistant> {
  * that same schema) can validate on its own without running the transform.
  */
 export async function updateAssistantSetting(
-  id: string,
-  settingKey: "formality" | "language" | "answerStyle",
-  settingValue: string,
+    id: string,
+    settingKey: 'formality' | 'language' | 'answerStyle',
+    settingValue: string
 ): Promise<void> {
-  try {
-    const apiKey = ASSISTANT_SETTING_KEY_MAP[settingKey];
-    if (!apiKey) return;
+    try {
+        const apiKey = ASSISTANT_SETTING_KEY_MAP[settingKey];
+        if (!apiKey) return;
 
-    const setting = assistantOptionsStore.settings.find((s) => s.key === apiKey);
-    if (!setting) {
-      throw new Error(`Unknown assistant setting "${apiKey}" (has assistantOptionsStore.load() run?)`);
+        const setting = assistantOptionsStore.settings.find((s) => s.key === apiKey);
+        if (!setting) {
+            throw new Error(`Unknown assistant setting "${apiKey}" (has assistantOptionsStore.load() run?)`);
+        }
+
+        const raw = await useApp().restApi.getResource(ASSISTANTS, id, {
+            query: { include: 'assistant_setting_values.setting' },
+            validateSchema: false
+        });
+        const wire = AssistantResourceSchema.parse(raw);
+        const existing = wire.assistant_setting_values?.find((sv) => sv.setting?.key === apiKey);
+
+        if (existing) {
+            await useApp().restApi.updateResource(ASSISTANT_SETTING_VALUES, existing.id, {
+                value: settingValue
+            });
+        } else {
+            await useApp().restApi.createResource(
+                ASSISTANT_SETTING_VALUES,
+                {
+                    value: settingValue
+                },
+                {
+                    relationships: {
+                        assistant: { data: { type: 'assistants', id } },
+                        setting: { data: { type: 'assistant-settings', id: setting.id } }
+                    }
+                }
+            );
+        }
+    } catch (err) {
+        throw logApiError('updateAssistantSetting', err, { id, settingKey });
     }
-
-    const raw = await useApp().restApi.getResource(ASSISTANTS, id, {
-      query: { include: "assistant_setting_values.setting" },
-      validateSchema: false,
-    });
-    const wire = AssistantResourceSchema.parse(raw);
-    const existing = wire.assistant_setting_values?.find(
-      (sv) => sv.setting?.key === apiKey,
-    );
-
-    if (existing) {
-      await useApp().restApi.updateResource(ASSISTANT_SETTING_VALUES, existing.id, {
-        value: settingValue,
-      });
-    } else {
-      await useApp().restApi.createResource(ASSISTANT_SETTING_VALUES, {
-        value: settingValue,
-      }, {
-        relationships: {
-          assistant: { data: { type: "assistants", id } },
-          setting: { data: { type: "assistant-settings", id: setting.id } },
-        },
-      });
-    }
-  } catch (err) {
-    throw logApiError("updateAssistantSetting", err, { id, settingKey });
-  }
 }
 
-export async function createAssistantPrompts(
-  id: string,
-  promptsAdded: ReadonlyArray<string>,
-): Promise<void> {
-  try {
-    await Promise.all(
-      promptsAdded.map((text) =>
-        useApp().restApi.createResource(ASSISTANT_USER_PROMPTS, { text }, {
-          relationships: {
-            assistant: { data: { type: "assistants", id } },
-          },
-        }),
-      ),
-    );
-  } catch (err) {
-    throw logApiError("createAssistantPrompts", err, { id });
-  }
+export async function createAssistantPrompts(id: string, promptsAdded: ReadonlyArray<string>): Promise<void> {
+    try {
+        await Promise.all(
+            promptsAdded.map((text) =>
+                useApp().restApi.createResource(
+                    ASSISTANT_USER_PROMPTS,
+                    { text },
+                    {
+                        relationships: {
+                            assistant: { data: { type: 'assistants', id } }
+                        }
+                    }
+                )
+            )
+        );
+    } catch (err) {
+        throw logApiError('createAssistantPrompts', err, { id });
+    }
 }
 
 /**
@@ -373,47 +356,36 @@ export async function createAssistantPrompts(
  * {@link updateAssistantSetting} to resolve which `assistant-user-prompts`
  * rows to delete.
  */
-export async function removeAssistantPrompts(
-  id: string,
-  promptsRemoved: ReadonlyArray<string>,
-): Promise<void> {
-  try {
-    const raw = await useApp().restApi.getResource(ASSISTANTS, id, {
-      query: { include: "assistant_user_prompts" },
-      validateSchema: false,
-    });
-    const wire = AssistantResourceSchema.parse(raw);
-    const promptsToRemoveSet = new Set(promptsRemoved);
-    const toRemove = (wire.assistant_user_prompts ?? []).filter((p) =>
-      promptsToRemoveSet.has(p.text),
-    );
-    await Promise.all(
-      toRemove.map((p) => useApp().restApi.deleteResource(ASSISTANT_USER_PROMPTS, p.id)),
-    );
-  } catch (err) {
-    throw logApiError("removeAssistantPrompts", err, { id });
-  }
+export async function removeAssistantPrompts(id: string, promptsRemoved: ReadonlyArray<string>): Promise<void> {
+    try {
+        const raw = await useApp().restApi.getResource(ASSISTANTS, id, {
+            query: { include: 'assistant_user_prompts' },
+            validateSchema: false
+        });
+        const wire = AssistantResourceSchema.parse(raw);
+        const promptsToRemoveSet = new Set(promptsRemoved);
+        const toRemove = (wire.assistant_user_prompts ?? []).filter((p) => promptsToRemoveSet.has(p.text));
+        await Promise.all(toRemove.map((p) => useApp().restApi.deleteResource(ASSISTANT_USER_PROMPTS, p.id)));
+    } catch (err) {
+        throw logApiError('removeAssistantPrompts', err, { id });
+    }
 }
 
-
-export async function toggleAssistantFavorite(
-    assistant: Assistant,
-    active: boolean,
-): Promise<void> {
-  if (!assistant.id) return;
-  const action = `${assistant.id}/actions/favorite`;
-  try {
-    if (active) {
-      await useApp().restApi.postToResourceAction(ASSISTANTS, action, { data: {} });
-    } else {
-      await useApp().restApi.deleteFromResourceAction(ASSISTANTS, action);
+export async function toggleAssistantFavorite(assistant: Assistant, active: boolean): Promise<void> {
+    if (!assistant.id) return;
+    const action = `${assistant.id}/actions/favorite`;
+    try {
+        if (active) {
+            await useApp().restApi.postToResourceAction(ASSISTANTS, action, { data: {} });
+        } else {
+            await useApp().restApi.deleteFromResourceAction(ASSISTANTS, action);
+        }
+    } catch (err) {
+        throw logApiError('toggleAssistantFavorite', err, {
+            id: assistant.id,
+            active
+        });
     }
-  } catch (err) {
-    throw logApiError("toggleAssistantFavorite", err, {
-      id: assistant.id,
-      active,
-    });
-  }
 }
 
 /**
@@ -423,23 +395,19 @@ export async function toggleAssistantFavorite(
  * derived handle up front; the save's unique validation stays the
  * authority for races.
  */
-export async function fetchExistingHandles(
-    candidates: readonly string[],
-    signal?: AbortSignal,
-): Promise<string[]> {
-  const handles = [...new Set(candidates.filter((candidate) => candidate !== ''))];
-  if (handles.length === 0) return [];
+export async function fetchExistingHandles(candidates: readonly string[], signal?: AbortSignal): Promise<string[]> {
+    const handles = [...new Set(candidates.filter((candidate) => candidate !== ''))];
+    if (handles.length === 0) return [];
 
-  try {
-    const response = await useApp().restApi.fetch(
-      `/api/hawki/v1/assistants/actions/handles${buildQueryString({handles: handles.join(',')})}`,
-      {schema: HandlesResponseSchema, signal},
-    );
-    return response.data;
-  } catch (err) {
-    throw logApiError("fetchExistingHandles", err, {handles});
-  }
+    try {
+        const response = await useApp().restApi.fetch(
+            `/api/hawki/v1/assistants/actions/handles${buildQueryString({ handles: handles.join(',') })}`,
+            { schema: HandlesResponseSchema, signal }
+        );
+        return response.data;
+    } catch (err) {
+        throw logApiError('fetchExistingHandles', err, { handles });
+    }
 }
 
-const HandlesResponseSchema = z.object({data: z.array(z.string())});
-
+const HandlesResponseSchema = z.object({ data: z.array(z.string()) });

@@ -2,10 +2,10 @@
     "name": "@hawk-hhg/hawki-2",
     "private": true,
     "type": "module",
- "scripts": {
- "dev": "npm install && vite",
- "postinstall": "patch-package",
- "build": "vite build",
+    "scripts": {
+        "dev": "npm install && vite",
+        "postinstall": "patch-package",
+        "build": "vite build",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
         "test": "npm run test:assistants && npm run test:chat && npm run test:client-schema && npm run test:routing && npm run test:search && npm run test:tools",
         "test:assistants": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/assistants/*.test.ts tests/js/assistants/*.test.svelte.ts",
@@ -44,6 +44,7 @@
         "pdfjs-dist": "^6.2.108",
         "postcss-custom-media": "^12.0.1",
         "prettier": "^3.9.6",
+        "prettier-plugin-svelte": "^4.1.1",
         "pusher-js": "^8.6.0",
         "shadcn-svelte": "^1.4.2",
         "smob": "^1.6.2",

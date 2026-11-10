@@ -1,5 +1,5 @@
 import z from 'zod';
-import { BACKGROUNDS } from '$lib/plugins/assistants/presets/backgrounds';
+import { BACKGROUNDS, normalizeIconCss } from '$lib/plugins/assistants/presets/backgrounds';
 import type { Assistant, AssistantAvatar } from '$plugins/assistants/types/assistant';
 import type { JsonApiResourceBody } from '../wireFragments';
 
@@ -32,7 +32,7 @@ export const AssistantAvatarResourceSchema = z.object({
 const AssistantAvatarsSchema = AssistantAvatarResourceSchema.transform((wire): AssistantAvatar => ({
     id: wire.id,
     name: wire.name,
-    iconCss: wire.icon_css
+    iconCss: normalizeIconCss(wire.icon_css)
 }));
 
 export default AssistantAvatarsSchema;
@@ -43,22 +43,19 @@ export default AssistantAvatarsSchema;
  * known presets (see `presets/backgrounds.ts`) rather than trusting whatever
  * string the domain object carries.
  */
-export function avatarToApi(
-    assistant: Assistant,
-    avatar: AssistantAvatar
-): JsonApiResourceBody {
+export function avatarToApi(assistant: Assistant, avatar: AssistantAvatar): JsonApiResourceBody {
     return {
         type: 'assistant-avatars',
         ...(avatar.id ? { id: avatar.id } : {}),
         attributes: {
             name: avatar.name,
-            icon_css: BACKGROUNDS.find((g) => g.value === avatar.iconCss)?.value,
+            icon_css: BACKGROUNDS.find((g) => g.value === avatar.iconCss)?.value
         },
         relationships: {
             assistant: {
                 data: {
                     type: 'assistants',
-                    id: assistant.id,
+                    id: assistant.id
                 }
             }
         }

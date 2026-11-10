@@ -1,0 +1,275 @@
+/*
+ * Store card ⇄ detail modal morph — see morphToDetail.ts.
+ *
+ * Imported by morphToDetail.ts, so it is loaded whichever of the two pages
+ * the transition starts on. Page-level animations are keyed on
+ * `data-assistant-morph` on <html> ("open" | "back"); the cover/glyph rules
+ * work in both directions.
+ */
+
+/* One timing for the whole morph, so cover and page content move as one:
+   a spring with a ~1% overshoot (the curve ChatDock uses) that settles
+   instead of easing to a dead stop. The view-transition pseudo-elements
+   inherit from <html>, so they can read these. */
+:root {
+    --assistant-morph-duration: 400ms;
+    --assistant-morph-spring: linear(
+        0,
+        0.034,
+        0.116,
+        0.224,
+        0.341,
+        0.456,
+        0.563,
+        0.658,
+        0.739,
+        0.807,
+        0.862,
+        0.905,
+        0.938,
+        0.963,
+        0.981,
+        0.994,
+        1.002,
+        1.007,
+        1.01,
+        1.011,
+        1.011,
+        1.01,
+        1.009,
+        1.008,
+        1.007,
+        1.005,
+        1.004,
+        1.003,
+        1.003,
+        1.002,
+        1.001,
+        1.001,
+        1.001,
+        1,
+        1,
+        1,
+        1
+    );
+}
+
+/* Open is an invitation and gets the spring; back gets out of the way:
+   shorter, on a plain ease-out, never overshooting. Everything below times
+   itself with --assistant-morph-ease, so the direction flag swaps both. */
+:root {
+    --assistant-morph-ease: var(--assistant-morph-spring);
+}
+:root[data-assistant-morph='back'] {
+    --assistant-morph-duration: 350ms;
+    --assistant-morph-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The detail cover's rounding, the cover morph's far end: square, as the
+   cover runs full-bleed at every width (AssistantDetail). */
+:root {
+    --assistant-detail-cover-radius: 0px;
+}
+
+/* The card's banner, glyph and title spring into (or back out of) the
+   detail cover. The handle rides along with the title (its movement is set
+   from morphToDetail.ts); these timings also pace its fade. */
+::view-transition-group(assistant-cover),
+::view-transition-group(assistant-symbol),
+::view-transition-group(assistant-title),
+::view-transition-group(assistant-handle) {
+    animation-duration: var(--assistant-morph-duration);
+    animation-timing-function: var(--assistant-morph-ease);
+}
+
+/* On both pages the banner's rounding comes from a clipping parent (the
+   card / the detail cover), which a view-transition snapshot escapes, so
+   the image pair re-clips it: rounded top corners on the card (--corner-lg),
+   square on the detail page's full-bleed cover, so they animate along with
+   the box instead of snapping at the end. On the image pair rather than the group, so the lift scales the
+   rounded box as a whole instead of zooming inside a clip. */
+::view-transition-image-pair(assistant-cover) {
+    overflow: clip;
+    animation:
+        assistant-morph-lift var(--assistant-morph-duration) var(--easing-spring) both,
+        assistant-morph-corners-open var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+:root[data-assistant-morph='back']::view-transition-image-pair(assistant-cover) {
+    animation:
+        assistant-morph-lift var(--assistant-morph-duration) var(--easing-spring) both,
+        assistant-morph-corners-back var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+
+/* The two covers differ wildly in aspect ratio: stretch both snapshots to
+   the morphing box instead of scaling them by width (the default), so the
+   gradient fills it and nothing balloons. The glyph has its own group, so
+   stretching never distorts it. */
+::view-transition-old(assistant-cover),
+::view-transition-new(assistant-cover) {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+
+/* The glyph gets a small bump of its own on the way in — a lift that rides
+   on the sticker's own -8deg lean. Going back stays quiet. */
+:root[data-assistant-morph='open']::view-transition-image-pair(assistant-symbol) {
+    animation: assistant-morph-symbol var(--assistant-morph-duration) var(--easing-spring) both;
+}
+
+/* Container transform: the card's box grows into the detail page's content
+   column (and shrinks back on the way out). Both snapshots keep the UA's
+   width-based sizing, so the detail content starts at card width and
+   scales up with the box, as if it had been inside the card all along. The
+   clip gives the growing box the card's corners and hides the tall page
+   below it. */
+::view-transition-group(assistant-container) {
+    animation-duration: var(--assistant-morph-duration);
+    animation-timing-function: var(--assistant-morph-ease);
+    border-radius: var(--corner-lg);
+    overflow: clip;
+}
+/* Swap card face ⇄ page face early, so the box spends most of the morph
+   showing the content it is growing into. */
+::view-transition-old(assistant-container),
+::view-transition-new(assistant-container) {
+    animation-duration: var(--duration-fast);
+}
+
+/* Depth, scoped to the main content area (named during the transition) so
+   the sidebar stays still. The area itself doesn't move — only its two
+   snapshots animate. */
+::view-transition-group(assistant-page) {
+    animation: none;
+}
+
+/* The list stays mounted under the modal, so the main area has a snapshot
+   on both ends — but only the end without the modal shows it; the other is
+   the list hidden beneath the modal surface, and would paint the list over
+   that surface while it fades. */
+
+/* Open: the list recedes while the modal surface fades in over it. */
+:root[data-assistant-morph='open']::view-transition-old(assistant-page) {
+    animation: assistant-morph-recede var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+:root[data-assistant-morph='open']::view-transition-new(assistant-page) {
+    animation: none;
+    opacity: 0;
+}
+
+/* Back: the exact reverse — the modal surface fades out and the list comes
+   forward as the detail shrinks back into its card. */
+:root[data-assistant-morph='back']::view-transition-old(assistant-page) {
+    animation: none;
+    opacity: 0;
+}
+:root[data-assistant-morph='back']::view-transition-new(assistant-page) {
+    animation: assistant-morph-advance var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+
+/* Layer order, pinned: the browser stacks groups in the old state's paint
+   order and appends new-only ones on top — so on open the modal surface
+   (new-only) would land above the detail content and cover it as it fades
+   in. List at the bottom, then the modal surface, then the morphing
+   container and the cover parts riding on it. */
+::view-transition-group(assistant-page) {
+    z-index: 0;
+}
+::view-transition-group(assistant-modal) {
+    z-index: 1;
+}
+::view-transition-group(assistant-container) {
+    z-index: 2;
+}
+::view-transition-group(assistant-cover) {
+    z-index: 3;
+}
+::view-transition-group(assistant-symbol),
+::view-transition-group(assistant-title),
+::view-transition-group(assistant-handle) {
+    z-index: 4;
+}
+
+/* The modal's own surface (everything of the detail view outside the
+   morphing container: its background, the test-chat dock). Exists on one
+   end only, so it simply fades. */
+::view-transition-group(assistant-modal) {
+    animation: none;
+}
+::view-transition-new(assistant-modal) {
+    animation: assistant-morph-fade-in var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+::view-transition-old(assistant-modal) {
+    animation: assistant-morph-fade-out var(--assistant-morph-duration) var(--assistant-morph-ease) both;
+}
+
+@keyframes assistant-morph-lift {
+    0% {
+        scale: 1;
+    }
+    30% {
+        scale: 1.035;
+    }
+    100% {
+        scale: 1;
+    }
+}
+/* Scaled from its top-left corner, like the title image it rides with. */
+::view-transition-group(assistant-handle) {
+    transform-origin: 0 0;
+}
+
+@keyframes assistant-morph-symbol {
+    0% {
+        scale: 1;
+        rotate: 0deg;
+    }
+    40% {
+        scale: 1.12;
+        rotate: -4deg;
+    }
+    100% {
+        scale: 1;
+        rotate: 0deg;
+    }
+}
+@keyframes assistant-morph-corners-open {
+    from {
+        border-radius: var(--corner-lg) var(--corner-lg) 0 0;
+    }
+    to {
+        border-radius: var(--assistant-detail-cover-radius);
+    }
+}
+@keyframes assistant-morph-corners-back {
+    from {
+        border-radius: var(--assistant-detail-cover-radius);
+    }
+    to {
+        border-radius: var(--corner-lg) var(--corner-lg) 0 0;
+    }
+}
+@keyframes assistant-morph-recede {
+    to {
+        opacity: 0;
+        scale: 0.96;
+        filter: blur(2px);
+    }
+}
+@keyframes assistant-morph-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+@keyframes assistant-morph-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+@keyframes assistant-morph-advance {
+    from {
+        opacity: 0;
+        scale: 0.96;
+        filter: blur(2px);
+    }
+}

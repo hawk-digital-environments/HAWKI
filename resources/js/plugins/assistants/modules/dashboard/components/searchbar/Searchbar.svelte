@@ -1,15 +1,14 @@
 <script lang="ts">
-
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import Loading03Icon from '$lib/components/ui/icons/iconset/Loading03Icon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    const {__} = useTranslator();
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
+    const { __ } = useTranslator();
     let {
-        defaultValue = "",
+        defaultValue = '',
         loading = false,
-        loadingLabel = "",
-        onChange,
+        loadingLabel = '',
+        onChange
     } = $props<{
         defaultValue?: string;
         loading?: boolean;
@@ -49,13 +48,17 @@
 <div class="searchbar input">
     <div class="icon-wrapper">
         {#if loading}
-            <Tooltip tooltip={loadingLabel} delayDuration={300} focusable={false}>
-                {#snippet children({props})}
+            <Tooltip
+                tooltip={loadingLabel}
+                delayDuration={300}
+                focusable={false}
+            >
+                {#snippet children({ props })}
                     <span
-                            class="icon icon--loading"
-                            role="status"
-                            aria-label={loadingLabel}
-                            {...props}
+                        class="icon icon--loading"
+                        role="status"
+                        aria-label={loadingLabel}
+                        {...props}
                     >
                         <Loading03Icon size="1em" />
                     </span>
@@ -63,10 +66,10 @@
             </Tooltip>
         {:else}
             <button
-                    type="button"
-                    class="icon icon--submit"
-                    onclick={submit}
-                    aria-label={__('assistants.browser.search')}
+                type="button"
+                class="icon icon--submit"
+                onclick={submit}
+                aria-label={__('assistants.browser.search')}
             >
                 <Search01Icon size="1em" />
             </button>
@@ -74,93 +77,109 @@
     </div>
     <label for="searchbar">{__('assistants.browser.search')}</label>
     <input
-            id="searchbar"
-            type="text"
-            bind:value={text}
-            oninput={handleInput}
-            onkeydown={(event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    submit();
-                }
-            }}
+        id="searchbar"
+        type="text"
+        placeholder={__('assistants.browser.search_placeholder')}
+        bind:value={text}
+        oninput={handleInput}
+        onkeydown={(event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submit();
+            }
+        }}
     />
 </div>
 
 <style>
-    .searchbar{
+    /* Soft filled pill at rest; on focus it lifts to the page surface with an
+       accent edge and a wide, faint accent halo (an outline, not a shadow). */
+    .searchbar {
         display: flex;
         flex-direction: row;
         width: 100%;
-        gap: var(--space-1);
-        padding: var(--space-2_5) var(--space-3);
+        min-height: 3.5rem;
+        gap: var(--space-3);
+        padding: 0 var(--space-5);
         align-items: center;
-        border: var(--border);
-        border-radius: var(--corner-md);
-        background-color: var(--color-surface-raised);
+        border: 1px solid transparent;
+        border-radius: var(--corner-full);
+        background-color: var(--color-surface-light);
+        outline: 4px solid transparent;
+        outline-offset: 0;
         transition:
-            border-color var(--duration-fast),
-            box-shadow var(--duration-fast);
+            background-color 150ms ease-out,
+            border-color 150ms ease-out,
+            outline-color 150ms ease-out;
     }
-    .searchbar:focus-within{
+    .searchbar:hover {
+        background-color: color-mix(in oklch, var(--color-surface-light), var(--color-text) 4%);
+    }
+    .searchbar:focus-within {
+        background-color: var(--color-surface-raised);
         border-color: var(--color-accent-300);
-        box-shadow: 0 0 0 3px var(--color-accent-100);
+        outline-color: var(--color-accent-100);
     }
-    .icon-wrapper{
+    .icon-wrapper {
         display: flex;
         justify-content: center;
         align-items: center;
         color: var(--color-text-muted);
         cursor: default;
         user-select: none;
+        transition: color 150ms ease-out;
     }
-    .icon{
+    .searchbar:focus-within .icon-wrapper {
+        color: var(--color-text);
+    }
+    .icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         line-height: 0;
         font-size: var(--font-size-lg);
     }
-    .icon--submit{
+    .icon--submit {
         padding: 0;
         border: none;
         background: none;
         color: inherit;
         cursor: pointer;
     }
-    .icon--submit:focus-visible{
+    .icon--submit:focus-visible {
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;
         border-radius: var(--corner-sm);
     }
-    .icon--loading{
+    .icon--loading {
         animation: searchbar-spin 700ms linear infinite;
     }
 
-    @keyframes searchbar-spin{
-        to{
+    @keyframes searchbar-spin {
+        to {
             rotate: 1turn;
         }
     }
 
-    @media (prefers-reduced-motion: reduce){
-        .icon--loading{
+    @media (prefers-reduced-motion: reduce) {
+        .icon--loading {
             animation-duration: 1400ms;
         }
     }
-    label{
+    label {
         display: none;
     }
-    input{
+    input {
         width: 100%;
         min-height: 1.5rem !important;
+        padding: 0;
         color: var(--color-text);
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-base);
         background-color: transparent;
         border: none;
         outline: none;
     }
-    input::placeholder{
+    input::placeholder {
         color: var(--color-text-muted);
     }
 </style>
