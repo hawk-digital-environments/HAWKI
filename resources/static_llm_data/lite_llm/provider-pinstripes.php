@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'pinstripes/ps/glm-4.5-air',
   'provider' => 'pinstripes',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 1.25E-7,
@@ -23,7 +22,6 @@ return [
     array (
   'id' => 'pinstripes/ps/qwen3.6-35b-a3b',
   'provider' => 'pinstripes',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.4E-7,
@@ -37,7 +35,6 @@ return [
     array (
   'id' => 'pinstripes/ps/qwen3-30b-a3b',
   'provider' => 'pinstripes',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 9.0E-8,
@@ -51,7 +48,6 @@ return [
     array (
   'id' => 'pinstripes/ps/qwen3-coder-30b-a3b',
   'provider' => 'pinstripes',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 3.0E-7,
@@ -65,7 +61,6 @@ return [
     array (
   'id' => 'pinstripes/ps/deepseek-v4-flash',
   'provider' => 'pinstripes',
-  'max_tokens' => 163840,
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 1.0E-7,
@@ -79,7 +74,6 @@ return [
     array (
   'id' => 'pinstripes/ps/minimax-m2.7',
   'provider' => 'pinstripes',
-  'max_tokens' => 1000192,
   'max_input_tokens' => 1000192,
   'max_output_tokens' => 1000192,
   'input_cost_per_token' => 2.55E-7,

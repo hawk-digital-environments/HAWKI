@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'deepinfra/Gryphe/MythoMax-L2-13b',
   'provider' => 'deepinfra',
-  'max_tokens' => 4096,
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 4.0E-7,
@@ -22,7 +21,6 @@ return [
     array (
   'id' => 'deepinfra/NousResearch/Hermes-3-Llama-3.1-405B',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-6,
@@ -34,7 +32,6 @@ return [
     array (
   'id' => 'deepinfra/NousResearch/Hermes-3-Llama-3.1-70B',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 7.0E-7,
@@ -46,7 +43,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/QwQ-32B',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.5E-7,
@@ -58,7 +54,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen2.5-72B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 32768,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 3.6E-7,
@@ -71,7 +66,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen2.5-7B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 32768,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 4.0E-8,
@@ -82,7 +76,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen2.5-VL-32B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
@@ -95,7 +88,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-14B',
   'provider' => 'deepinfra',
-  'max_tokens' => 40960,
   'max_input_tokens' => 40960,
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 1.2E-7,
@@ -108,7 +100,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-235B-A22B',
   'provider' => 'deepinfra',
-  'max_tokens' => 40960,
   'max_input_tokens' => 40960,
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 1.8E-7,
@@ -120,7 +111,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-235B-A22B-Instruct-2507',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 9.0E-8,
@@ -133,7 +123,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-235B-A22B-Thinking-2507',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 3.0E-7,
@@ -145,7 +134,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-30B-A3B',
   'provider' => 'deepinfra',
-  'max_tokens' => 40960,
   'max_input_tokens' => 40960,
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 1.2E-7,
@@ -158,7 +146,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-32B',
   'provider' => 'deepinfra',
-  'max_tokens' => 40960,
   'max_input_tokens' => 40960,
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 8.0E-8,
@@ -171,7 +158,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-Coder-480B-A35B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 4.0E-7,
@@ -183,7 +169,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 3.0E-7,
@@ -198,7 +183,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-Next-80B-A3B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 9.0E-8,
@@ -211,7 +195,6 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-Next-80B-A3B-Thinking',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.4E-7,
@@ -223,7 +206,6 @@ return [
     array (
   'id' => 'deepinfra/Sao10K/L3-8B-Lunaris-v1-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 4.0E-8,
@@ -234,7 +216,6 @@ return [
     array (
   'id' => 'deepinfra/Sao10K/L3.1-70B-Euryale-v2.2',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 8.5E-7,
@@ -246,7 +227,6 @@ return [
     array (
   'id' => 'deepinfra/Sao10K/L3.3-70B-Euryale-v2.3',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 6.5E-7,
@@ -257,7 +237,6 @@ return [
     array (
   'id' => 'deepinfra/allenai/olmOCR-7B-0725-FP8',
   'provider' => 'deepinfra',
-  'max_tokens' => 16384,
   'max_input_tokens' => 16384,
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 2.7E-7,
@@ -268,7 +247,6 @@ return [
     array (
   'id' => 'deepinfra/anthropic/claude-3-7-sonnet-latest',
   'provider' => 'deepinfra',
-  'max_tokens' => 200000,
   'max_input_tokens' => 200000,
   'max_output_tokens' => 200000,
   'input_cost_per_token' => 3.3E-6,
@@ -281,7 +259,6 @@ return [
     array (
   'id' => 'deepinfra/anthropic/claude-4-opus',
   'provider' => 'deepinfra',
-  'max_tokens' => 200000,
   'max_input_tokens' => 200000,
   'max_output_tokens' => 200000,
   'input_cost_per_token' => 1.65E-5,
@@ -293,7 +270,6 @@ return [
     array (
   'id' => 'deepinfra/anthropic/claude-4-sonnet',
   'provider' => 'deepinfra',
-  'max_tokens' => 200000,
   'max_input_tokens' => 200000,
   'max_output_tokens' => 200000,
   'input_cost_per_token' => 3.3E-6,
@@ -305,7 +281,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-R1',
   'provider' => 'deepinfra',
-  'max_tokens' => 163840,
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 7.0E-7,
@@ -317,12 +292,11 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-R1-0528',
   'provider' => 'deepinfra',
-  'max_tokens' => 163840,
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 2.15E-6,
-  'cache_read_input_token_cost' => 4.0E-7,
+  'cache_read_input_token_cost' => 3.5E-7,
   'mode' => 'chat',
   'supports_tool_choice' => true,
   'supports_function_calling' => true,
@@ -330,7 +304,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-R1-0528-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 32768,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.0E-6,
@@ -342,7 +315,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
@@ -353,7 +325,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.7E-7,
@@ -365,7 +336,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-R1-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 40960,
   'max_input_tokens' => 40960,
   'max_output_tokens' => 40960,
   'input_cost_per_token' => 1.0E-6,
@@ -377,7 +347,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V3',
   'provider' => 'deepinfra',
-  'max_tokens' => 163840,
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 3.2E-7,
@@ -390,7 +359,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V3-0324',
   'provider' => 'deepinfra',
-  'max_tokens' => 163840,
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 2.4E-7,
@@ -405,12 +373,11 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V3.1',
   'provider' => 'deepinfra',
-  'max_tokens' => 163840,
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 2.5E-7,
   'output_cost_per_token' => 9.5E-7,
-  'cache_read_input_token_cost' => 2.16E-7,
+  'cache_read_input_token_cost' => 1.3E-7,
   'mode' => 'chat',
   'supports_tool_choice' => true,
   'supports_reasoning' => true,
@@ -420,7 +387,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V3.1-Terminus',
   'provider' => 'deepinfra',
-  'max_tokens' => 163840,
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 2.7E-7,
@@ -433,7 +399,6 @@ return [
     array (
   'id' => 'deepinfra/google/gemini-2.5-flash',
   'provider' => 'deepinfra',
-  'max_tokens' => 1000000,
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 1000000,
   'input_cost_per_token' => 3.0E-7,
@@ -450,7 +415,6 @@ return [
     array (
   'id' => 'deepinfra/google/gemini-2.5-pro',
   'provider' => 'deepinfra',
-  'max_tokens' => 1000000,
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 1000000,
   'input_cost_per_token' => 1.25E-6,
@@ -466,7 +430,6 @@ return [
     array (
   'id' => 'deepinfra/google/gemma-3-12b-it',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 5.0E-8,
@@ -479,7 +442,6 @@ return [
     array (
   'id' => 'deepinfra/google/gemma-3-27b-it',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 8.0E-8,
@@ -492,7 +454,6 @@ return [
     array (
   'id' => 'deepinfra/google/gemma-3-4b-it',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 5.0E-8,
@@ -505,7 +466,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Llama-3.2-11B-Vision-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 4.9E-8,
@@ -516,7 +476,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Llama-3.2-3B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-8,
@@ -528,7 +487,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Llama-3.3-70B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.3E-7,
@@ -540,7 +498,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Llama-3.3-70B-Instruct-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
@@ -553,7 +510,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
   'provider' => 'deepinfra',
-  'max_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'input_cost_per_token' => 2.0E-7,
@@ -566,7 +522,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Llama-4-Scout-17B-16E-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 327680,
   'max_input_tokens' => 327680,
   'max_output_tokens' => 327680,
   'input_cost_per_token' => 1.0E-7,
@@ -579,7 +534,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Llama-Guard-3-8B',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 5.5E-8,
@@ -590,7 +544,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Llama-Guard-4-12B',
   'provider' => 'deepinfra',
-  'max_tokens' => 163840,
   'max_input_tokens' => 163840,
   'max_output_tokens' => 163840,
   'input_cost_per_token' => 1.8E-7,
@@ -601,7 +554,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Meta-Llama-3-8B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 3.0E-8,
@@ -613,7 +565,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 4.0E-7,
@@ -625,7 +576,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 4.0E-7,
@@ -638,7 +588,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Meta-Llama-3.1-8B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 3.0E-8,
@@ -650,7 +599,6 @@ return [
     array (
   'id' => 'deepinfra/meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.0E-8,
@@ -663,7 +611,6 @@ return [
     array (
   'id' => 'deepinfra/microsoft/WizardLM-2-8x22B',
   'provider' => 'deepinfra',
-  'max_tokens' => 65536,
   'max_input_tokens' => 65536,
   'max_output_tokens' => 65536,
   'input_cost_per_token' => 4.8E-7,
@@ -674,7 +621,6 @@ return [
     array (
   'id' => 'deepinfra/microsoft/phi-4',
   'provider' => 'deepinfra',
-  'max_tokens' => 16384,
   'max_input_tokens' => 16384,
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 7.0E-8,
@@ -686,7 +632,6 @@ return [
     array (
   'id' => 'deepinfra/mistralai/Mistral-Nemo-Instruct-2407',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.9E-8,
@@ -699,7 +644,6 @@ return [
     array (
   'id' => 'deepinfra/mistralai/Mistral-Small-24B-Instruct-2501',
   'provider' => 'deepinfra',
-  'max_tokens' => 32768,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 5.0E-8,
@@ -711,7 +655,6 @@ return [
     array (
   'id' => 'deepinfra/mistralai/Mistral-Small-3.2-24B-Instruct-2506',
   'provider' => 'deepinfra',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 7.5E-8,
@@ -723,7 +666,6 @@ return [
     array (
   'id' => 'deepinfra/mistralai/Mixtral-8x7B-Instruct-v0.1',
   'provider' => 'deepinfra',
-  'max_tokens' => 32768,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 4.0E-7,
@@ -735,7 +677,6 @@ return [
     array (
   'id' => 'deepinfra/moonshotai/Kimi-K2-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 5.0E-7,
@@ -747,7 +688,6 @@ return [
     array (
   'id' => 'deepinfra/moonshotai/Kimi-K2-Instruct-0905',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 5.0E-7,
@@ -760,7 +700,6 @@ return [
     array (
   'id' => 'deepinfra/nvidia/Llama-3.1-Nemotron-70B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 6.0E-7,
@@ -772,7 +711,6 @@ return [
     array (
   'id' => 'deepinfra/nvidia/Llama-3.3-Nemotron-Super-49B-v1.5',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.0E-7,
@@ -796,36 +734,8 @@ return [
   'supports_prompt_caching' => true,
 ),
     array (
-  'id' => 'deepinfra/nvidia/NVIDIA-Nemotron-3.5-Lightning',
-  'object' => 'model_catalog.entry',
-  'provider' => 'deepinfra',
-  'mode' => 'chat',
-  'max_input_tokens' => 262144,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => 5.0E-8,
-  'output_cost_per_token' => 2.0E-7,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => true,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => true,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
-  'source' => 'https://deepinfra.com/nvidia/NVIDIA-Nemotron-3.5-Lightning',
-  'supports_tool_choice' => true,
-),
-    array (
   'id' => 'deepinfra/nvidia/NVIDIA-Nemotron-Nano-9B-v2',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 4.0E-8,
@@ -837,7 +747,6 @@ return [
     array (
   'id' => 'deepinfra/openai/gpt-oss-120b',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 3.7E-8,
@@ -850,7 +759,6 @@ return [
     array (
   'id' => 'deepinfra/openai/gpt-oss-20b',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 3.0E-8,
@@ -863,7 +771,6 @@ return [
     array (
   'id' => 'deepinfra/zai-org/GLM-4.5',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 4.0E-7,
@@ -875,7 +782,7 @@ return [
     array (
   'id' => 'deepinfra/openai/gpt-oss-120b-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
+  'max_output_tokens' => 131072,
   'max_input_tokens' => 131072,
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 6.0E-7,
@@ -890,7 +797,7 @@ return [
     array (
   'id' => 'deepinfra/MiniMaxAI/MiniMax-M2.7',
   'provider' => 'deepinfra',
-  'max_tokens' => 196608,
+  'max_output_tokens' => 196608,
   'max_input_tokens' => 196608,
   'input_cost_per_token' => 2.5E-7,
   'output_cost_per_token' => 1.0E-6,
@@ -907,7 +814,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.8-27B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 4.0E-7,
   'output_cost_per_token' => 3.0E-6,
@@ -924,7 +831,7 @@ return [
     array (
   'id' => 'deepinfra/google/gemma-4-31B-it-Ultra',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
+  'max_output_tokens' => 131072,
   'max_input_tokens' => 131072,
   'input_cost_per_token' => 2.7E-7,
   'output_cost_per_token' => 7.6E-7,
@@ -939,7 +846,7 @@ return [
     array (
   'id' => 'deepinfra/moonshotai/Kimi-K2.5',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 4.5E-7,
   'output_cost_per_token' => 2.25E-6,
@@ -956,7 +863,7 @@ return [
     array (
   'id' => 'deepinfra/zai-org/GLM-4.7-Flash',
   'provider' => 'deepinfra',
-  'max_tokens' => 202752,
+  'max_output_tokens' => 202752,
   'max_input_tokens' => 202752,
   'input_cost_per_token' => 6.0E-8,
   'output_cost_per_token' => 4.0E-7,
@@ -973,7 +880,7 @@ return [
     array (
   'id' => 'deepinfra/zai-org/GLM-4.6',
   'provider' => 'deepinfra',
-  'max_tokens' => 202752,
+  'max_output_tokens' => 202752,
   'max_input_tokens' => 202752,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 2.0E-6,
@@ -992,7 +899,7 @@ return [
   'provider' => 'deepinfra',
   'input_cost_per_token' => 5.0E-6,
   'max_input_tokens' => 1000000,
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'mode' => 'chat',
   'output_cost_per_token' => 2.5E-5,
   'prompt_cache_min_tokens' => 1024,
@@ -1008,7 +915,7 @@ return [
     array (
   'id' => 'deepinfra/anthropic/claude-sonnet-4-6',
   'provider' => 'deepinfra',
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'max_input_tokens' => 1000000,
   'input_cost_per_token' => 3.0E-6,
   'output_cost_per_token' => 1.5E-5,
@@ -1025,7 +932,7 @@ return [
     array (
   'id' => 'deepinfra/google/gemini-3.5-flash',
   'provider' => 'deepinfra',
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'max_input_tokens' => 1000000,
   'input_cost_per_token' => 1.5E-6,
   'output_cost_per_token' => 9.0E-6,
@@ -1041,7 +948,7 @@ return [
     array (
   'id' => 'deepinfra/XiaomiMiMo/MiMo-V2.5',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 4.0E-7,
   'output_cost_per_token' => 2.0E-6,
@@ -1058,7 +965,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-Max',
   'provider' => 'deepinfra',
-  'max_tokens' => 256000,
+  'max_output_tokens' => 256000,
   'max_input_tokens' => 256000,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 6.0E-6,
@@ -1074,7 +981,7 @@ return [
     array (
   'id' => 'deepinfra/google/gemma-4-31B-it-turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 9.0E-8,
   'output_cost_per_token' => 3.4E-7,
@@ -1090,7 +997,7 @@ return [
     array (
   'id' => 'deepinfra/thinkingmachines/Inkling-Small',
   'provider' => 'deepinfra',
-  'max_tokens' => 524288,
+  'max_output_tokens' => 524288,
   'max_input_tokens' => 524288,
   'input_cost_per_token' => 4.5E-7,
   'output_cost_per_token' => 1.2E-6,
@@ -1107,7 +1014,7 @@ return [
     array (
   'id' => 'deepinfra/meta-models/Muse-Glimmer-30B',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
+  'max_output_tokens' => 131072,
   'max_input_tokens' => 131072,
   'input_cost_per_token' => 3.0E-7,
   'output_cost_per_token' => 1.2E-6,
@@ -1124,7 +1031,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-Max-Thinking',
   'provider' => 'deepinfra',
-  'max_tokens' => 256000,
+  'max_output_tokens' => 256000,
   'max_input_tokens' => 256000,
   'input_cost_per_token' => 1.2E-6,
   'output_cost_per_token' => 6.0E-6,
@@ -1140,7 +1047,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 8.8E-7,
@@ -1156,7 +1063,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
   'output_cost_per_token' => 6.0E-7,
@@ -1170,7 +1077,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.5-27B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 2.6E-7,
   'output_cost_per_token' => 2.6E-6,
@@ -1185,7 +1092,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.6-35B-A3B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 9.5E-7,
@@ -1200,7 +1107,7 @@ return [
     array (
   'id' => 'deepinfra/nvidia/Nemotron-Content-Safety-3.5',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
+  'max_output_tokens' => 131072,
   'max_input_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 2.0E-7,
@@ -1213,7 +1120,7 @@ return [
   'provider' => 'deepinfra',
   'input_cost_per_token' => 5.0E-6,
   'max_input_tokens' => 1000000,
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'mode' => 'chat',
   'output_cost_per_token' => 2.5E-5,
   'prompt_cache_min_tokens' => 512,
@@ -1229,7 +1136,7 @@ return [
     array (
   'id' => 'deepinfra/thinkingmachines/Inkling',
   'provider' => 'deepinfra',
-  'max_tokens' => 524288,
+  'max_output_tokens' => 524288,
   'max_input_tokens' => 524288,
   'input_cost_per_token' => 9.5E-7,
   'output_cost_per_token' => 4.05E-6,
@@ -1246,7 +1153,7 @@ return [
     array (
   'id' => 'deepinfra/moonshotai/Kimi-K2.6',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 7.5E-7,
   'output_cost_per_token' => 3.5E-6,
@@ -1263,7 +1170,7 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V4-Pro-0813',
   'provider' => 'deepinfra',
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'input_cost_per_token' => 1.3E-6,
   'output_cost_per_token' => 2.6E-6,
@@ -1279,7 +1186,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.7-Max',
   'provider' => 'deepinfra',
-  'max_tokens' => 256000,
+  'max_output_tokens' => 256000,
   'max_input_tokens' => 256000,
   'input_cost_per_token' => 2.5E-6,
   'output_cost_per_token' => 7.5E-6,
@@ -1295,7 +1202,7 @@ return [
     array (
   'id' => 'deepinfra/ByteDance/Seed-2.0-mini',
   'provider' => 'deepinfra',
-  'max_tokens' => 256000,
+  'max_output_tokens' => 256000,
   'max_input_tokens' => 256000,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 4.0E-7,
@@ -1312,7 +1219,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.8-2.4T-A95B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 2.0E-6,
   'output_cost_per_token' => 6.0E-6,
@@ -1329,7 +1236,7 @@ return [
     array (
   'id' => 'deepinfra/MiniMaxAI/MiniMax-M3',
   'provider' => 'deepinfra',
-  'max_tokens' => 524288,
+  'max_output_tokens' => 524288,
   'max_input_tokens' => 524288,
   'input_cost_per_token' => 2.8E-7,
   'output_cost_per_token' => 1.1E-6,
@@ -1346,7 +1253,7 @@ return [
     array (
   'id' => 'deepinfra/google/gemini-3.1-flash-lite',
   'provider' => 'deepinfra',
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'max_input_tokens' => 1000000,
   'input_cost_per_token' => 2.5E-7,
   'output_cost_per_token' => 1.5E-6,
@@ -1362,7 +1269,7 @@ return [
     array (
   'id' => 'deepinfra/google/gemini-3.7-flash',
   'provider' => 'deepinfra',
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'max_input_tokens' => 1000000,
   'input_cost_per_token' => 7.5E-7,
   'output_cost_per_token' => 3.75E-6,
@@ -1379,7 +1286,7 @@ return [
     array (
   'id' => 'deepinfra/inclusionAI/Ling-3.0-flash',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
+  'max_output_tokens' => 131072,
   'max_input_tokens' => 131072,
   'input_cost_per_token' => 6.0E-8,
   'output_cost_per_token' => 1.8E-7,
@@ -1396,7 +1303,7 @@ return [
     array (
   'id' => 'deepinfra/stepfun-ai/Step-3.7-Flash',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 1.15E-6,
@@ -1411,7 +1318,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.5-35B-A3B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 1.4E-7,
   'output_cost_per_token' => 1.0E-6,
@@ -1428,7 +1335,7 @@ return [
     array (
   'id' => 'deepinfra/ByteDance/Seed-1.8',
   'provider' => 'deepinfra',
-  'max_tokens' => 256000,
+  'max_output_tokens' => 256000,
   'max_input_tokens' => 256000,
   'input_cost_per_token' => 2.5E-7,
   'output_cost_per_token' => 2.0E-6,
@@ -1445,7 +1352,7 @@ return [
     array (
   'id' => 'deepinfra/tencent/Hy3',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 1.4E-7,
   'output_cost_per_token' => 5.8E-7,
@@ -1462,7 +1369,7 @@ return [
     array (
   'id' => 'deepinfra/ByteDance/Seed-2.0-code',
   'provider' => 'deepinfra',
-  'max_tokens' => 256000,
+  'max_output_tokens' => 256000,
   'max_input_tokens' => 256000,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 3.0E-6,
@@ -1479,7 +1386,7 @@ return [
     array (
   'id' => 'deepinfra/ByteDance/Seed-2.0-pro',
   'provider' => 'deepinfra',
-  'max_tokens' => 256000,
+  'max_output_tokens' => 256000,
   'max_input_tokens' => 256000,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 3.0E-6,
@@ -1496,7 +1403,7 @@ return [
     array (
   'id' => 'deepinfra/zai-org/GLM-5',
   'provider' => 'deepinfra',
-  'max_tokens' => 202752,
+  'max_output_tokens' => 202752,
   'max_input_tokens' => 202752,
   'input_cost_per_token' => 6.0E-7,
   'output_cost_per_token' => 2.08E-6,
@@ -1513,7 +1420,7 @@ return [
     array (
   'id' => 'deepinfra/nvidia/Nemotron-3-Nano-30B-A3B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 5.0E-8,
   'output_cost_per_token' => 2.0E-7,
@@ -1529,7 +1436,7 @@ return [
     array (
   'id' => 'deepinfra/moonshotai/Kimi-K2.7-Code',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 6.8E-7,
   'output_cost_per_token' => 3.4E-6,
@@ -1548,7 +1455,7 @@ return [
   'provider' => 'deepinfra',
   'input_cost_per_token' => 2.0E-6,
   'max_input_tokens' => 1000000,
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'mode' => 'chat',
   'output_cost_per_token' => 1.0E-5,
   'prompt_cache_min_tokens' => 1024,
@@ -1564,7 +1471,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.5-397B-A17B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 4.5E-7,
   'output_cost_per_token' => 3.0E-6,
@@ -1581,11 +1488,11 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V4-Flash-0731',
   'provider' => 'deepinfra',
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'max_input_tokens' => 1048576,
-  'input_cost_per_token' => 8.0E-8,
+  'input_cost_per_token' => 6.0E-8,
   'output_cost_per_token' => 1.8E-7,
-  'cache_read_input_token_cost' => 1.6E-8,
+  'cache_read_input_token_cost' => 1.5E-8,
   'supports_prompt_caching' => true,
   'mode' => 'chat',
   'supports_function_calling' => true,
@@ -1598,7 +1505,7 @@ return [
     array (
   'id' => 'deepinfra/google/gemma-4-E4B-it',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
+  'max_output_tokens' => 131072,
   'max_input_tokens' => 131072,
   'input_cost_per_token' => 2.0E-8,
   'output_cost_per_token' => 1.0E-7,
@@ -1612,7 +1519,7 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V3.2',
   'provider' => 'deepinfra',
-  'max_tokens' => 163840,
+  'max_output_tokens' => 163840,
   'max_input_tokens' => 163840,
   'input_cost_per_token' => 2.6E-7,
   'output_cost_per_token' => 3.8E-7,
@@ -1628,7 +1535,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.8-Max',
   'provider' => 'deepinfra',
-  'max_tokens' => 256000,
+  'max_output_tokens' => 256000,
   'max_input_tokens' => 256000,
   'input_cost_per_token' => 1.65E-6,
   'output_cost_per_token' => 4.951E-6,
@@ -1646,7 +1553,7 @@ return [
   'provider' => 'deepinfra',
   'input_cost_per_token' => 1.0E-5,
   'max_input_tokens' => 1000000,
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'mode' => 'chat',
   'output_cost_per_token' => 5.0E-5,
   'prompt_cache_min_tokens' => 512,
@@ -1663,7 +1570,7 @@ return [
     array (
   'id' => 'deepinfra/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 5.0E-7,
   'output_cost_per_token' => 2.2E-6,
@@ -1680,7 +1587,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.5-122B-A10B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 2.9E-7,
   'output_cost_per_token' => 2.4E-6,
@@ -1695,7 +1602,7 @@ return [
     array (
   'id' => 'deepinfra/zai-org/GLM-5.1',
   'provider' => 'deepinfra',
-  'max_tokens' => 202752,
+  'max_output_tokens' => 202752,
   'max_input_tokens' => 202752,
   'input_cost_per_token' => 1.05E-6,
   'output_cost_per_token' => 3.5E-6,
@@ -1712,7 +1619,7 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V4-Pro',
   'provider' => 'deepinfra',
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'input_cost_per_token' => 1.3E-6,
   'output_cost_per_token' => 2.6E-6,
@@ -1728,9 +1635,9 @@ return [
     array (
   'id' => 'deepinfra/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
-  'input_cost_per_token' => 8.5E-8,
+  'input_cost_per_token' => 7.5E-8,
   'output_cost_per_token' => 4.0E-7,
   'mode' => 'chat',
   'supports_function_calling' => true,
@@ -1743,7 +1650,7 @@ return [
     array (
   'id' => 'deepinfra/zai-org/GLM-5.2',
   'provider' => 'deepinfra',
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'input_cost_per_token' => 7.5E-7,
   'output_cost_per_token' => 2.4E-6,
@@ -1760,7 +1667,7 @@ return [
     array (
   'id' => 'deepinfra/moonshotai/Kimi-K3',
   'provider' => 'deepinfra',
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'input_cost_per_token' => 2.85E-6,
   'output_cost_per_token' => 1.425E-5,
@@ -1778,7 +1685,7 @@ return [
   'provider' => 'deepinfra',
   'input_cost_per_token' => 5.0E-6,
   'max_input_tokens' => 1000000,
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'mode' => 'chat',
   'output_cost_per_token' => 2.5E-5,
   'prompt_cache_min_tokens' => 2048,
@@ -1794,7 +1701,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.6-27B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 3.2E-7,
   'output_cost_per_token' => 3.2E-6,
@@ -1809,7 +1716,7 @@ return [
     array (
   'id' => 'deepinfra/google/gemma-4-26B-A4B-it',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 7.0E-8,
   'output_cost_per_token' => 3.4E-7,
@@ -1824,7 +1731,7 @@ return [
     array (
   'id' => 'deepinfra/google/gemini-3.1-pro',
   'provider' => 'deepinfra',
-  'max_tokens' => 1000000,
+  'max_output_tokens' => 1000000,
   'max_input_tokens' => 1000000,
   'input_cost_per_token' => 2.0E-6,
   'output_cost_per_token' => 1.2E-5,
@@ -1840,7 +1747,7 @@ return [
     array (
   'id' => 'deepinfra/XiaomiMiMo/MiMo-V2.5-Pro',
   'provider' => 'deepinfra',
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'input_cost_per_token' => 1.0E-6,
   'output_cost_per_token' => 3.0E-6,
@@ -1857,7 +1764,7 @@ return [
     array (
   'id' => 'deepinfra/anthropic/claude-haiku-4-5',
   'provider' => 'deepinfra',
-  'max_tokens' => 200000,
+  'max_output_tokens' => 200000,
   'max_input_tokens' => 200000,
   'input_cost_per_token' => 1.0E-6,
   'output_cost_per_token' => 5.0E-6,
@@ -1873,7 +1780,7 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V4-Flash',
   'provider' => 'deepinfra',
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'input_cost_per_token' => 9.0E-8,
   'output_cost_per_token' => 1.8E-7,
@@ -1890,7 +1797,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V4.1-Flash',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.4E-7,
@@ -1908,7 +1814,6 @@ return [
     array (
   'id' => 'deepinfra/deepseek-ai/DeepSeek-V4.1-Flash-1017',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.4E-7,
@@ -1926,7 +1831,7 @@ return [
     array (
   'id' => 'deepinfra/openai/gpt-oss-120b-Ultra',
   'provider' => 'deepinfra',
-  'max_tokens' => 131072,
+  'max_output_tokens' => 131072,
   'max_input_tokens' => 131072,
   'input_cost_per_token' => 2.0E-7,
   'output_cost_per_token' => 9.5E-7,
@@ -1941,7 +1846,7 @@ return [
     array (
   'id' => 'deepinfra/Qwen/Qwen3.5-9B',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
   'input_cost_per_token' => 1.0E-7,
   'output_cost_per_token' => 1.5E-7,
@@ -1955,7 +1860,7 @@ return [
     array (
   'id' => 'deepinfra/MiniMaxAI/MiniMax-M2.7-Turbo',
   'provider' => 'deepinfra',
-  'max_tokens' => 196608,
+  'max_output_tokens' => 196608,
   'max_input_tokens' => 196608,
   'input_cost_per_token' => 3.8E-7,
   'output_cost_per_token' => 1.7E-6,
@@ -1972,7 +1877,7 @@ return [
     array (
   'id' => 'deepinfra/zai-org/GLM-4.7',
   'provider' => 'deepinfra',
-  'max_tokens' => 202752,
+  'max_output_tokens' => 202752,
   'max_input_tokens' => 202752,
   'input_cost_per_token' => 4.0E-7,
   'output_cost_per_token' => 1.75E-6,
@@ -1989,10 +1894,10 @@ return [
     array (
   'id' => 'deepinfra/google/gemma-4-31B-it',
   'provider' => 'deepinfra',
-  'max_tokens' => 262144,
+  'max_output_tokens' => 262144,
   'max_input_tokens' => 262144,
-  'input_cost_per_token' => 1.3E-7,
-  'output_cost_per_token' => 3.8E-7,
+  'input_cost_per_token' => 2.0E-7,
+  'output_cost_per_token' => 4.0E-7,
   'mode' => 'chat',
   'supports_function_calling' => true,
   'supports_tool_choice' => true,

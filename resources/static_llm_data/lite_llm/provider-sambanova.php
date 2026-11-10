@@ -12,7 +12,6 @@ return [
   'input_cost_per_token' => 6.0E-7,
   'max_input_tokens' => 196608,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 2.4E-6,
   'source' => 'https://cloud.sambanova.ai/plans/pricing',
@@ -26,7 +25,6 @@ return [
   'input_cost_per_token' => 5.0E-6,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
-  'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 7.0E-6,
   'source' => 'https://cloud.sambanova.ai/plans/pricing',
@@ -37,7 +35,6 @@ return [
   'input_cost_per_token' => 6.3E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'metadata' => 
   array (
     'notes' => 'For vision models, images are converted to 6432 input tokens and are billed at that amount',
@@ -56,7 +53,6 @@ return [
   'input_cost_per_token' => 6.0E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 1.2E-6,
   'source' => 'https://cloud.sambanova.ai/plans/pricing',
@@ -67,7 +63,6 @@ return [
     array (
   'id' => 'sambanova/DeepSeek-V3.1',
   'provider' => 'sambanova',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 3.0E-6,
@@ -81,7 +76,6 @@ return [
     array (
   'id' => 'sambanova/gpt-oss-120b',
   'provider' => 'sambanova',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 2.2E-7,
@@ -95,7 +89,6 @@ return [
     array (
   'id' => 'sambanova/DeepSeek-V3.2',
   'provider' => 'sambanova',
-  'max_tokens' => 32768,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 3.0E-6,
@@ -108,7 +101,6 @@ return [
     array (
   'id' => 'sambanova/gemma-4-31B-it',
   'provider' => 'sambanova',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 3.8E-7,

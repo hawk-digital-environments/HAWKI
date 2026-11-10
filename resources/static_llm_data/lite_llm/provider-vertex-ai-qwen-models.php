@@ -14,7 +14,6 @@ return [
   'input_cost_per_token_batches' => 1.1E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 16384,
-  'max_tokens' => 16384,
   'mode' => 'chat',
   'output_cost_per_token' => 8.8E-7,
   'output_cost_per_token_batches' => 4.4E-7,
@@ -25,6 +24,7 @@ return [
     1 => 'us-south1',
   ),
   'supports_function_calling' => true,
+  'supports_pdf_input' => false,
   'supports_tool_choice' => true,
 ),
     array (
@@ -36,7 +36,6 @@ return [
   'input_cost_per_token_batches' => 1.1E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 32768,
-  'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 1.8E-6,
   'output_cost_per_token_batches' => 9.0E-7,
@@ -46,6 +45,7 @@ return [
     0 => 'global',
   ),
   'supports_function_calling' => true,
+  'supports_pdf_input' => false,
   'supports_tool_choice' => true,
 ),
     array (
@@ -55,7 +55,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 1.2E-6,
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',
@@ -64,6 +63,7 @@ return [
     0 => 'global',
   ),
   'supports_function_calling' => true,
+  'supports_pdf_input' => false,
   'supports_tool_choice' => true,
 ),
     array (
@@ -73,7 +73,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 1.2E-6,
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',
@@ -82,6 +81,7 @@ return [
     0 => 'global',
   ),
   'supports_function_calling' => true,
+  'supports_pdf_input' => false,
   'supports_tool_choice' => true,
 ),
 ];

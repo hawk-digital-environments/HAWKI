@@ -13,7 +13,6 @@ return [
   'input_cost_per_token' => 3.0E-7,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'chat',
   'output_cost_per_token' => 9.0E-7,
   'source' => 'https://docs.mistral.ai/models/model-cards/codestral-25-08',
@@ -29,7 +28,6 @@ return [
   'input_cost_per_token' => 3.0E-7,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'chat',
   'output_cost_per_token' => 9.0E-7,
   'source' => 'https://docs.mistral.ai/models/model-cards/codestral-25-08',
@@ -45,7 +43,6 @@ return [
   'input_cost_per_token' => 2.5E-7,
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
-  'max_tokens' => 256000,
   'mode' => 'chat',
   'output_cost_per_token' => 2.5E-7,
   'source' => 'https://mistral.ai/technology/',
@@ -59,12 +56,17 @@ return [
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
-  'max_tokens' => 256000,
   'mode' => 'chat',
   'output_cost_per_token' => 3.0E-7,
+  'reasoning_effort_levels' => 
+  array (
+    0 => 'none',
+    1 => 'high',
+  ),
   'source' => 'https://docs.mistral.ai/models/devstral-small-2-25-12',
   'supports_assistant_prefill' => true,
   'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_tool_choice' => true,
 ),
@@ -75,12 +77,17 @@ return [
   'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
-  'max_tokens' => 256000,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-6,
+  'reasoning_effort_levels' => 
+  array (
+    0 => 'none',
+    1 => 'high',
+  ),
   'source' => 'https://mistral.ai/news/devstral-2-vibe-cli',
   'supports_assistant_prefill' => true,
   'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_tool_choice' => true,
 ),
@@ -91,12 +98,17 @@ return [
   'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
-  'max_tokens' => 256000,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-6,
+  'reasoning_effort_levels' => 
+  array (
+    0 => 'none',
+    1 => 'high',
+  ),
   'source' => 'https://mistral.ai/news/devstral-2-vibe-cli',
   'supports_assistant_prefill' => true,
   'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_tool_choice' => true,
 ),
@@ -106,7 +118,6 @@ return [
   'input_cost_per_token' => 2.0E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'source' => 'https://docs.mistral.ai/models/ministral-3-14b-25-12',
@@ -123,7 +134,6 @@ return [
   'input_cost_per_token' => 2.0E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'source' => 'https://docs.mistral.ai/models/ministral-3-14b-25-12',
@@ -140,7 +150,6 @@ return [
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 1.0E-7,
   'source' => 'https://docs.mistral.ai/models/ministral-3-3b-25-12',
@@ -157,7 +166,6 @@ return [
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 1.0E-7,
   'source' => 'https://docs.mistral.ai/models/ministral-3-3b-25-12',
@@ -173,7 +181,6 @@ return [
   'provider' => 'mistral',
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 8192,
-  'max_tokens' => 8192,
   'mode' => 'embedding',
   'source' => 'https://docs.mistral.ai/models/mistral-embed-23-12',
 ),
@@ -184,7 +191,6 @@ return [
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'reasoning_effort_levels' => 
@@ -241,13 +247,172 @@ return [
   'supports_audio_output' => true,
 ),
     array (
+  'id' => 'mistral/voxtral-mini-transcribe-3',
+  'provider' => 'mistral',
+  'input_cost_per_second' => 5.83333E-5,
+  'mode' => 'audio_transcription',
+  'source' => 'https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/transcriptions',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'mistral/voxtral-mini-transcribe-3-0',
+  'provider' => 'mistral',
+  'input_cost_per_second' => 5.83333E-5,
+  'mode' => 'audio_transcription',
+  'source' => 'https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/transcriptions',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'mistral/voxtral-small-transcribe-3',
+  'provider' => 'mistral',
+  'input_cost_per_second' => 6.66667E-5,
+  'mode' => 'audio_transcription',
+  'source' => 'https://docs.mistral.ai/models/voxtral-small-transcribe-3-0',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/transcriptions',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'mistral/voxtral-small-transcribe-3-0',
+  'provider' => 'mistral',
+  'input_cost_per_second' => 6.66667E-5,
+  'mode' => 'audio_transcription',
+  'source' => 'https://docs.mistral.ai/models/voxtral-small-transcribe-3-0',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/transcriptions',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'mistral/voxtral-mini-transcribe-realtime-3',
+  'provider' => 'mistral',
+  'input_cost_per_second' => 0.000133333,
+  'mode' => 'audio_transcription',
+  'source' => 'https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-3-0',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/transcriptions',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'mistral/voxtral-mini-transcribe-realtime-3-0',
+  'provider' => 'mistral',
+  'input_cost_per_second' => 0.000133333,
+  'mode' => 'audio_transcription',
+  'source' => 'https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-3-0',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/transcriptions',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'mistral/voxtral-mini-tts-3',
+  'provider' => 'mistral',
+  'input_cost_per_character' => 1.3E-5,
+  'mode' => 'audio_speech',
+  'source' => 'https://docs.mistral.ai/models/voxtral-mini-tts-3-0',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supports_audio_output' => true,
+),
+    array (
+  'id' => 'mistral/voxtral-mini-tts-3-0',
+  'provider' => 'mistral',
+  'input_cost_per_character' => 1.3E-5,
+  'mode' => 'audio_speech',
+  'source' => 'https://docs.mistral.ai/models/voxtral-mini-tts-3-0',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supports_audio_output' => true,
+),
+    array (
   'id' => 'mistral/voxtral-small-2507',
   'provider' => 'mistral',
   'cache_read_input_token_cost' => 1.0E-8,
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
-  'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 4.0E-7,
   'source' => 'https://docs.mistral.ai/models/voxtral-small-25-07',
@@ -263,7 +428,6 @@ return [
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
-  'max_tokens' => 32768,
   'mode' => 'chat',
   'output_cost_per_token' => 4.0E-7,
   'source' => 'https://docs.mistral.ai/models/voxtral-small-25-07',
@@ -277,10 +441,10 @@ return [
   'provider' => 'mistral',
   'cache_read_input_token_cost' => 1.4E-7,
   'deprecation_date' => '2026-10-31',
+  'deprecation_source' => 'https://docs.mistral.ai/getting-started/models/models_overview',
   'input_cost_per_token' => 1.4E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 4.4E-6,
   'reasoning_effort_levels' => 
@@ -302,13 +466,30 @@ return [
   'supports_tool_choice' => true,
 ),
     array (
+  'id' => 'mistral/deepseek-v4-1-flash-1017',
+  'provider' => 'mistral',
+  'cache_read_input_token_cost' => 7.0E-9,
+  'input_cost_per_token' => 3.0E-7,
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 131072,
+  'mode' => 'chat',
+  'output_cost_per_token' => 1.2E-6,
+  'source' => 'https://docs.mistral.ai/models/deepseek-v4-flash-1017',
+  'supports_assistant_prefill' => true,
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+  'supports_vision' => true,
+),
+    array (
   'id' => 'mistral/zai-glm-5-3',
   'provider' => 'mistral',
   'cache_read_input_token_cost' => 1.4E-7,
   'input_cost_per_token' => 1.4E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 4.4E-6,
   'reasoning_effort_levels' => 
@@ -326,13 +507,36 @@ return [
   'supports_tool_choice' => true,
 ),
     array (
+  'id' => 'mistral/zai-glm-5-3-flash',
+  'provider' => 'mistral',
+  'cache_read_input_token_cost' => 3.0E-8,
+  'input_cost_per_token' => 1.5E-7,
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 131072,
+  'mode' => 'chat',
+  'output_cost_per_token' => 5.0E-7,
+  'reasoning_effort_levels' => 
+  array (
+    0 => 'low',
+    1 => 'high',
+    2 => 'max',
+  ),
+  'source' => 'https://docs.mistral.ai/models/zai-glm-5-3-flash',
+  'supports_assistant_prefill' => true,
+  'supports_function_calling' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_tool_choice' => true,
+  'supports_vision' => true,
+),
+    array (
   'id' => 'mistral/zai-glm-5',
   'provider' => 'mistral',
   'cache_read_input_token_cost' => 1.4E-7,
   'input_cost_per_token' => 1.4E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 4.4E-6,
   'reasoning_effort_levels' => 
@@ -356,7 +560,6 @@ return [
   'input_cost_per_token' => 1.4E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 4.4E-6,
   'reasoning_effort_levels' => 
@@ -380,7 +583,6 @@ return [
   'input_cost_per_token' => 1.4E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 4.4E-6,
   'reasoning_effort_levels' => 
@@ -469,7 +671,6 @@ return [
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'source' => 'https://docs.mistral.ai/models/model-cards/mistral-medium-3-5-26-04',
@@ -487,7 +688,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-7,
   'source' => 'https://docs.mistral.ai/models/model-cards/mistral-small-4-0-26-03',
@@ -503,7 +703,6 @@ return [
   'provider' => 'mistral',
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 8192,
-  'max_tokens' => 8192,
   'mode' => 'embedding',
 ),
     array (
@@ -512,7 +711,6 @@ return [
   'cache_read_input_token_cost' => 1.5E-8,
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 8192,
-  'max_tokens' => 8192,
   'mode' => 'embedding',
 ),
     array (
@@ -521,24 +719,23 @@ return [
   'cache_read_input_token_cost' => 1.5E-8,
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 8192,
-  'max_tokens' => 8192,
   'mode' => 'embedding',
 ),
     array (
   'id' => 'mistral/mistral-large-4',
   'provider' => 'mistral',
-  'cache_read_input_token_cost' => 6.8E-8,
-  'input_cost_per_token' => 6.8E-7,
+  'cache_read_input_token_cost' => 7.0E-8,
+  'input_cost_per_token' => 7.0E-7,
   'max_input_tokens' => 1048576,
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'mode' => 'chat',
-  'output_cost_per_token' => 2.09E-6,
+  'output_cost_per_token' => 2.1E-6,
   'reasoning_effort_levels' => 
   array (
     0 => 'none',
     1 => 'high',
   ),
-  'source' => 'https://docs.mistral.ai/models/mistral-large-4',
+  'source' => 'https://docs.mistral.ai/models/mistral-large-4-0',
   'supports_assistant_prefill' => true,
   'supports_function_calling' => true,
   'supports_prompt_caching' => true,
@@ -550,18 +747,18 @@ return [
     array (
   'id' => 'mistral/mistral-large-4-0',
   'provider' => 'mistral',
-  'cache_read_input_token_cost' => 6.8E-8,
-  'input_cost_per_token' => 6.8E-7,
+  'cache_read_input_token_cost' => 7.0E-8,
+  'input_cost_per_token' => 7.0E-7,
   'max_input_tokens' => 1048576,
-  'max_tokens' => 1048576,
+  'max_output_tokens' => 1048576,
   'mode' => 'chat',
-  'output_cost_per_token' => 2.09E-6,
+  'output_cost_per_token' => 2.1E-6,
   'reasoning_effort_levels' => 
   array (
     0 => 'none',
     1 => 'high',
   ),
-  'source' => 'https://docs.mistral.ai/models/mistral-large-4',
+  'source' => 'https://docs.mistral.ai/models/mistral-large-4-0',
   'supports_assistant_prefill' => true,
   'supports_function_calling' => true,
   'supports_prompt_caching' => true,
@@ -577,7 +774,6 @@ return [
   'input_cost_per_token' => 5.0E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-6,
   'source' => 'https://docs.mistral.ai/models/mistral-large-3-25-12',
@@ -594,7 +790,6 @@ return [
   'input_cost_per_token' => 5.0E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-6,
   'source' => 'https://docs.mistral.ai/models/mistral-large-3-25-12',
@@ -607,11 +802,11 @@ return [
     array (
   'id' => 'mistral/mistral-large-2512',
   'provider' => 'mistral',
+  'deprecation_date' => '2027-04-30',
   'cache_read_input_token_cost' => 5.0E-8,
   'input_cost_per_token' => 5.0E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-6,
   'source' => 'https://docs.mistral.ai/models/mistral-large-3-25-12',
@@ -628,7 +823,6 @@ return [
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'reasoning_effort_levels' => 
@@ -651,7 +845,6 @@ return [
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'reasoning_effort_levels' => 
@@ -674,7 +867,6 @@ return [
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'reasoning_effort_levels' => 
@@ -693,11 +885,11 @@ return [
     array (
   'id' => 'mistral/mistral-medium-3-5',
   'provider' => 'mistral',
+  'deprecation_date' => '2027-04-30',
   'cache_read_input_token_cost' => 1.5E-7,
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'reasoning_effort_levels' => 
@@ -720,11 +912,16 @@ return [
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 32000,
   'max_output_tokens' => 8191,
-  'max_tokens' => 8191,
   'mode' => 'chat',
   'output_cost_per_token' => 3.0E-7,
+  'reasoning_effort_levels' => 
+  array (
+    0 => 'none',
+    1 => 'high',
+  ),
   'supports_assistant_prefill' => true,
   'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_tool_choice' => true,
 ),
@@ -735,7 +932,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-7,
   'reasoning_effort_levels' => 
@@ -758,7 +954,6 @@ return [
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 1.0E-7,
   'source' => 'https://mistral.ai/pricing',
@@ -775,7 +970,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-7,
   'source' => 'https://mistral.ai/pricing',
@@ -792,7 +986,6 @@ return [
   'input_cost_per_token' => 2.0E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'source' => 'https://mistral.ai/pricing',
@@ -809,7 +1002,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-7,
   'source' => 'https://mistral.ai/pricing',
@@ -826,7 +1018,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-7,
   'source' => 'https://mistral.ai/pricing',
@@ -843,7 +1034,6 @@ return [
   'input_cost_per_token' => 2.5E-7,
   'max_input_tokens' => 32000,
   'max_output_tokens' => 8191,
-  'max_tokens' => 8191,
   'mode' => 'chat',
   'output_cost_per_token' => 2.5E-7,
   'supports_assistant_prefill' => true,
@@ -857,7 +1047,6 @@ return [
   'input_cost_per_token' => 3.0E-7,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'chat',
   'output_cost_per_token' => 3.0E-7,
   'source' => 'https://mistral.ai/technology/',
@@ -872,7 +1061,6 @@ return [
   'input_cost_per_token' => 2.0E-6,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-6,
   'supports_assistant_prefill' => true,
@@ -888,7 +1076,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-7,
   'reasoning_effort_levels' => 
@@ -911,7 +1098,6 @@ return [
   'input_cost_per_token' => 0.0,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 0.0,
   'source' => 'https://docs.mistral.ai/models/model-cards/leanstral-1-5',
@@ -931,6 +1117,7 @@ return [
     array (
   'id' => 'mistral/voxtral-mini-2602',
   'provider' => 'mistral',
+  'deprecation_date' => '2027-04-30',
   'input_cost_per_second' => 5.0E-5,
   'mode' => 'audio_transcription',
   'source' => 'https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-26-02',
@@ -951,6 +1138,7 @@ return [
     array (
   'id' => 'mistral/voxtral-mini-transcribe-realtime-2602',
   'provider' => 'mistral',
+  'deprecation_date' => '2027-04-30',
   'input_cost_per_second' => 0.0001,
   'mode' => 'audio_transcription',
   'source' => 'https://docs.mistral.ai/models/model-cards/voxtral-mini-transcribe-realtime-26-02',
@@ -971,6 +1159,7 @@ return [
     array (
   'id' => 'mistral/voxtral-mini-tts-2603',
   'provider' => 'mistral',
+  'deprecation_date' => '2027-04-30',
   'input_cost_per_character' => 1.6E-5,
   'mode' => 'audio_speech',
   'source' => 'https://docs.mistral.ai/models/model-cards/voxtral-tts-26-03',
@@ -995,7 +1184,6 @@ return [
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'reasoning_effort_levels' => 
@@ -1018,7 +1206,6 @@ return [
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'reasoning_effort_levels' => 
@@ -1041,7 +1228,6 @@ return [
   'input_cost_per_token' => 1.5E-6,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-6,
   'reasoning_effort_levels' => 
@@ -1064,7 +1250,6 @@ return [
   'input_cost_per_token' => 1.5E-7,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
-  'max_tokens' => 262144,
   'mode' => 'chat',
   'output_cost_per_token' => 6.0E-7,
   'reasoning_effort_levels' => 
@@ -1087,7 +1272,6 @@ return [
   'input_cost_per_token' => 3.0E-7,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'chat',
   'output_cost_per_token' => 9.0E-7,
   'source' => 'https://docs.mistral.ai/models/model-cards/codestral-25-08',
@@ -1103,7 +1287,6 @@ return [
   'input_cost_per_token' => 3.0E-7,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'chat',
   'output_cost_per_token' => 9.0E-7,
   'source' => 'https://docs.mistral.ai/models/model-cards/codestral-25-08',
@@ -1119,12 +1302,17 @@ return [
   'input_cost_per_token' => 4.0E-7,
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
-  'max_tokens' => 256000,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-6,
+  'reasoning_effort_levels' => 
+  array (
+    0 => 'none',
+    1 => 'high',
+  ),
   'source' => 'https://mistral.ai/news/devstral-2-vibe-cli',
   'supports_assistant_prefill' => true,
   'supports_function_calling' => true,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_tool_choice' => true,
 ),
@@ -1239,7 +1427,6 @@ return [
   'input_cost_per_token' => 0.0,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 0.0,
   'source' => 'https://docs.mistral.ai/models/model-cards/leanstral-1-5',

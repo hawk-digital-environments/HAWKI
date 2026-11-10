@@ -12,7 +12,6 @@ return [
   'input_cost_per_token' => 2.0E-7,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 1024,
-  'max_tokens' => 1024,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'supports_audio_input' => false,
@@ -31,7 +30,6 @@ return [
   'input_cost_per_token' => 3.0E-6,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
-  'max_tokens' => 16384,
   'mode' => 'chat',
   'output_cost_per_token' => 1.0E-5,
   'supports_audio_input' => false,
@@ -47,7 +45,6 @@ return [
     array (
   'id' => 'watsonx/bigscience/mt0-xxl-13b',
   'provider' => 'watsonx',
-  'max_tokens' => 4096,
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.908E-6,
@@ -61,7 +58,6 @@ return [
     array (
   'id' => 'watsonx/bigscience/mt0-xxl',
   'provider' => 'watsonx',
-  'max_tokens' => 4096,
   'max_input_tokens' => 4096,
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 1.908E-6,
@@ -75,11 +71,10 @@ return [
     array (
   'id' => 'watsonx/core42/jais-13b-chat',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
-  'input_cost_per_token' => 0.0005,
-  'output_cost_per_token' => 0.002,
+  'input_cost_per_token' => 1.8E-6,
+  'output_cost_per_token' => 1.8E-6,
   'mode' => 'chat',
   'supports_function_calling' => false,
   'supports_parallel_function_calling' => false,
@@ -88,7 +83,6 @@ return [
     array (
   'id' => 'watsonx/google/flan-t5-xl-3b',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 6.0E-7,
@@ -101,7 +95,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-13b-chat-v2',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 6.0E-7,
@@ -114,7 +107,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-13b-instruct-v2',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 6.0E-7,
@@ -127,7 +119,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-3-3-8b-instruct',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
@@ -140,7 +131,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-4-h-small',
   'provider' => 'watsonx',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 6.36E-8,
@@ -154,7 +144,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-guardian-3-2-2b',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 1.0E-7,
@@ -167,7 +156,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-guardian-3-3-8b',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 2.0E-7,
@@ -180,7 +168,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-ttm-1024-96-r2',
   'provider' => 'watsonx',
-  'max_tokens' => 512,
   'max_input_tokens' => 512,
   'max_output_tokens' => 512,
   'input_cost_per_token' => 3.8E-7,
@@ -193,7 +180,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-ttm-1536-96-r2',
   'provider' => 'watsonx',
-  'max_tokens' => 512,
   'max_input_tokens' => 512,
   'max_output_tokens' => 512,
   'input_cost_per_token' => 3.8E-7,
@@ -206,7 +192,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-ttm-512-96-r2',
   'provider' => 'watsonx',
-  'max_tokens' => 512,
   'max_input_tokens' => 512,
   'max_output_tokens' => 512,
   'input_cost_per_token' => 3.8E-7,
@@ -219,7 +204,6 @@ return [
     array (
   'id' => 'watsonx/ibm/granite-vision-3-2-2b',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 1.0E-7,
@@ -232,7 +216,6 @@ return [
     array (
   'id' => 'watsonx/meta-llama/llama-3-2-11b-vision-instruct',
   'provider' => 'watsonx',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 3.5E-7,
@@ -245,7 +228,6 @@ return [
     array (
   'id' => 'watsonx/meta-llama/llama-3-2-1b-instruct',
   'provider' => 'watsonx',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 1.0E-7,
@@ -258,7 +240,6 @@ return [
     array (
   'id' => 'watsonx/meta-llama/llama-3-2-3b-instruct',
   'provider' => 'watsonx',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 1.5E-7,
@@ -271,7 +252,6 @@ return [
     array (
   'id' => 'watsonx/meta-llama/llama-3-2-90b-vision-instruct',
   'provider' => 'watsonx',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 2.0E-6,
@@ -284,7 +264,6 @@ return [
     array (
   'id' => 'watsonx/meta-llama/llama-3-3-70b-instruct',
   'provider' => 'watsonx',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 7.526E-7,
@@ -298,7 +277,6 @@ return [
     array (
   'id' => 'watsonx/meta-llama/llama-4-maverick-17b',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 3.71E-7,
@@ -312,7 +290,6 @@ return [
     array (
   'id' => 'watsonx/meta-llama/llama-4-maverick-17b-128e-instruct-fp8',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 3.71E-7,
@@ -326,7 +303,6 @@ return [
     array (
   'id' => 'watsonx/meta-llama/llama-guard-3-11b-vision',
   'provider' => 'watsonx',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 3.5E-7,
@@ -339,7 +315,6 @@ return [
     array (
   'id' => 'watsonx/mistralai/mistral-medium-2505',
   'provider' => 'watsonx',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 3.0E-6,
@@ -352,7 +327,6 @@ return [
     array (
   'id' => 'watsonx/mistralai/mistral-small-2503',
   'provider' => 'watsonx',
-  'max_tokens' => 32000,
   'max_input_tokens' => 32000,
   'max_output_tokens' => 32000,
   'input_cost_per_token' => 1.0E-7,
@@ -365,7 +339,6 @@ return [
     array (
   'id' => 'watsonx/mistralai/mistral-small-3-1-24b-instruct-2503',
   'provider' => 'watsonx',
-  'max_tokens' => 16384,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 1.06E-7,
@@ -379,7 +352,6 @@ return [
     array (
   'id' => 'watsonx/mistralai/pixtral-12b-2409',
   'provider' => 'watsonx',
-  'max_tokens' => 128000,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
   'input_cost_per_token' => 3.5E-7,
@@ -392,7 +364,6 @@ return [
     array (
   'id' => 'watsonx/openai/gpt-oss-120b',
   'provider' => 'watsonx',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 1.59E-7,
@@ -406,7 +377,6 @@ return [
     array (
   'id' => 'watsonx/sdaia/allam-1-13b-instruct',
   'provider' => 'watsonx',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 1.8E-6,

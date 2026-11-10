@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'gradient_ai/alibaba-qwen3-32b',
   'provider' => 'gradient_ai',
-  'max_tokens' => 40960,
   'mode' => 'chat',
   'supported_endpoints' => 
   array (
@@ -27,7 +26,6 @@ return [
   'id' => 'gradient_ai/anthropic-claude-3-opus',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 1.5E-5,
-  'max_tokens' => 1024,
   'mode' => 'chat',
   'output_cost_per_token' => 7.5E-5,
   'supported_endpoints' => 
@@ -46,7 +44,6 @@ return [
   'id' => 'gradient_ai/anthropic-claude-3.5-haiku',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 8.0E-7,
-  'max_tokens' => 1024,
   'mode' => 'chat',
   'output_cost_per_token' => 4.0E-6,
   'supported_endpoints' => 
@@ -65,7 +62,6 @@ return [
   'id' => 'gradient_ai/anthropic-claude-3.5-sonnet',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 3.0E-6,
-  'max_tokens' => 1024,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-5,
   'supported_endpoints' => 
@@ -84,7 +80,6 @@ return [
   'id' => 'gradient_ai/anthropic-claude-3.7-sonnet',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 3.0E-6,
-  'max_tokens' => 1024,
   'mode' => 'chat',
   'output_cost_per_token' => 1.5E-5,
   'supported_endpoints' => 
@@ -103,7 +98,6 @@ return [
   'id' => 'gradient_ai/deepseek-r1-distill-llama-70b',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 9.9E-7,
-  'max_tokens' => 8000,
   'mode' => 'chat',
   'output_cost_per_token' => 9.9E-7,
   'supported_endpoints' => 
@@ -122,7 +116,6 @@ return [
   'id' => 'gradient_ai/llama3-8b-instruct',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 2.0E-7,
-  'max_tokens' => 512,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'supported_endpoints' => 
@@ -141,7 +134,6 @@ return [
   'id' => 'gradient_ai/llama3.3-70b-instruct',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 6.5E-7,
-  'max_tokens' => 2048,
   'mode' => 'chat',
   'output_cost_per_token' => 6.5E-7,
   'supported_endpoints' => 
@@ -160,7 +152,6 @@ return [
   'id' => 'gradient_ai/mistral-nemo-instruct-2407',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 3.0E-7,
-  'max_tokens' => 512,
   'mode' => 'chat',
   'output_cost_per_token' => 3.0E-7,
   'supported_endpoints' => 
@@ -178,7 +169,6 @@ return [
     array (
   'id' => 'gradient_ai/openai-gpt-4o',
   'provider' => 'gradient_ai',
-  'max_tokens' => 16384,
   'mode' => 'chat',
   'supported_endpoints' => 
   array (
@@ -195,7 +185,6 @@ return [
     array (
   'id' => 'gradient_ai/openai-gpt-4o-mini',
   'provider' => 'gradient_ai',
-  'max_tokens' => 16384,
   'mode' => 'chat',
   'supported_endpoints' => 
   array (
@@ -213,7 +202,6 @@ return [
   'id' => 'gradient_ai/openai-o3',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 2.0E-6,
-  'max_tokens' => 100000,
   'mode' => 'chat',
   'output_cost_per_token' => 8.0E-6,
   'supported_endpoints' => 
@@ -232,7 +220,6 @@ return [
   'id' => 'gradient_ai/openai-o3-mini',
   'provider' => 'gradient_ai',
   'input_cost_per_token' => 1.1E-6,
-  'max_tokens' => 100000,
   'mode' => 'chat',
   'output_cost_per_token' => 4.4E-6,
   'supported_endpoints' => 

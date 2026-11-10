@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'sail/moonshotai/Kimi-K3',
   'provider' => 'sail',
-  'max_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'input_cost_per_token' => 2.5E-6,
@@ -32,7 +31,6 @@ return [
     array (
   'id' => 'sail/zai-org/GLM-5.3',
   'provider' => 'sail',
-  'max_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'input_cost_per_token' => 9.8E-7,
@@ -55,7 +53,6 @@ return [
     array (
   'id' => 'sail/zai-org/GLM-5.3-Flash',
   'provider' => 'sail',
-  'max_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'input_cost_per_token' => 1.1E-7,
@@ -78,7 +75,6 @@ return [
     array (
   'id' => 'sail/deepseek-ai/DeepSeek-V4-Pro-0813',
   'provider' => 'sail',
-  'max_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'input_cost_per_token' => 9.2E-7,
@@ -101,7 +97,6 @@ return [
     array (
   'id' => 'sail/deepseek-ai/DeepSeek-V4-Flash-0731',
   'provider' => 'sail',
-  'max_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'input_cost_per_token' => 9.0E-8,
@@ -124,7 +119,6 @@ return [
     array (
   'id' => 'sail/deepseek-ai/DeepSeek-V4.1-Flash',
   'provider' => 'sail',
-  'max_tokens' => 1048576,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 1048576,
   'input_cost_per_token' => 9.0E-8,
@@ -147,7 +141,6 @@ return [
     array (
   'id' => 'sail/moonshotai/Kimi-K2.6',
   'provider' => 'sail',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.0E-6,
@@ -171,7 +164,6 @@ return [
     array (
   'id' => 'sail/google/gemma-4-31B-it',
   'provider' => 'sail',
-  'max_tokens' => 256000,
   'max_input_tokens' => 256000,
   'max_output_tokens' => 256000,
   'input_cost_per_token' => 4.0E-7,
@@ -195,7 +187,6 @@ return [
     array (
   'id' => 'sail/nvidia/Gemma-4-31B-IT-NVFP4',
   'provider' => 'sail',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.4E-7,
@@ -219,7 +210,6 @@ return [
     array (
   'id' => 'sail/google/gemma-4-12B-it',
   'provider' => 'sail',
-  'max_tokens' => 16384,
   'max_input_tokens' => 16384,
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 3.0E-7,
@@ -242,7 +232,6 @@ return [
     array (
   'id' => 'sail/openai/gpt-oss-120b',
   'provider' => 'sail',
-  'max_tokens' => 131072,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 131072,
   'input_cost_per_token' => 6.0E-8,
@@ -259,7 +248,6 @@ return [
     array (
   'id' => 'sail/Qwen/Qwen3.6-35B-A3B',
   'provider' => 'sail',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 5.0E-8,

@@ -15,7 +15,6 @@ return [
   'input_cost_per_token' => 0,
   'max_input_tokens' => 8192,
   'max_output_tokens' => 32000,
-  'max_tokens' => 32000,
   'mode' => 'chat',
   'output_cost_per_token' => 0,
   'supports_reasoning' => true,

@@ -11,7 +11,6 @@ return [
   'provider' => 'meta_llama',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4028,
-  'max_tokens' => 4028,
   'mode' => 'chat',
   'source' => 'https://ai.developer.meta.com/docs/models',
   'supported_modalities' => 
@@ -30,7 +29,6 @@ return [
   'provider' => 'meta_llama',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4028,
-  'max_tokens' => 4028,
   'mode' => 'chat',
   'source' => 'https://ai.developer.meta.com/docs/models',
   'supported_modalities' => 
@@ -49,7 +47,6 @@ return [
   'provider' => 'meta_llama',
   'max_input_tokens' => 1000000,
   'max_output_tokens' => 4028,
-  'max_tokens' => 4028,
   'mode' => 'chat',
   'source' => 'https://ai.developer.meta.com/docs/models',
   'supported_modalities' => 
@@ -69,7 +66,6 @@ return [
   'provider' => 'meta_llama',
   'max_input_tokens' => 10000000,
   'max_output_tokens' => 4028,
-  'max_tokens' => 4028,
   'mode' => 'chat',
   'source' => 'https://ai.developer.meta.com/docs/models',
   'supported_modalities' => 
