@@ -129,6 +129,7 @@
             "edit": "Bearbeiten",
             "menu_aria": "Assistenten-Menü öffnen",
             "favourite_aria": "Favorit",
+            "favourite_failed": "Der Favorit konnte nicht gespeichert werden.",
             "delete": "Löschen",
             "delete_confirm_title": "Assistent :name löschen",
             "delete_confirm_description": "Bist du sicher, dass du diesen Assistenten löschen möchtest? Dieser Vorgang kann nicht rückgängig gemacht werden.",

@@ -3,13 +3,13 @@
     import AssistantBanner from "$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte";
     import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
-    import {toggleAssistantFavorite} from "$plugins/assistants/api/resources/assistantsClient";
     import {useToastContext} from "$lib/components/ui/toast/ToastContext.svelte.js";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import OverflowTooltip from "$lib/components/ui/tooltip/OverflowTooltip.svelte";
     import {getAvatar} from "$plugins/assistants/api/resources/userAvatarClient";
     import {magnetic} from "$lib/components/ui/magnetic/magnetic.svelte";
     import {assistantRowAppearance} from "$plugins/assistants/utils/assistantRowAppearance";
+    import {persistFavourite} from "$plugins/assistants/utils/favouriteToggle";
 
     const {__} = useTranslator();
 
@@ -43,21 +43,9 @@
     });
 
 
-    /** Persist the favourite toggle; the client throws an ApiError on failure,
-        which we surface as a toast so the click isn't silently lost. */
-    async function onFavoriteChange(active: boolean) {
-        try {
-            // @todo: Double check assistant Dependency after load function is implemented.
-            await toggleAssistantFavorite(assistant, active);
-            // Keep the browsed list truthful …
-            // assistantListStore.updateAssistant({ ...assistant, isFavorite: active });
-            // … and drop the detail page's preloaded data, which SvelteKit already
-            // fetched (with the old value) when the pointer entered this card.
-            // await invalidate(assistantDependency(assistant.id));
-        } catch (err) {
-            // toast.error(ApiError.from(err).userMessage);
-        }
-    }
+    /** Persists the favourite toggle: failures surface as a toast and
+         FavButton rolls its optimistic flip back (see persistFavourite). */
+    const onFavoriteChange = (active: boolean) => persistFavourite(assistant, active, toast, __);
 
     // The assistant's own color (its gradient's main stop) for the hover outline.
     const assistantColor = $derived(assistantRowAppearance(assistant).colors.to);

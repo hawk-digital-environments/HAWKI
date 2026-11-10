@@ -32,9 +32,9 @@
         ASSISTANT_DETAIL_INCLUDES,
         deleteAssistant,
         getAssistant,
-        requestAssistantRelease,
-        toggleAssistantFavorite
+        requestAssistantRelease
     } from "$plugins/assistants/api/resources/assistantsClient";
+    import {persistFavourite} from "$plugins/assistants/utils/favouriteToggle";
     import type {Assistant} from "$plugins/assistants/types/assistant/Assistant";
     import {ReleaseMode} from "$plugins/assistants/types/assistant/ReleaseMode";
     import RemixDetails from "$plugins/assistants/modules/dashboard/components/assistantBrowser/RemixDetails.svelte";
@@ -148,16 +148,10 @@
     }
 
 
-    /** Persist the favourite toggle, surfacing any failure as a toast. */
-    async function onFavoriteChange(active: boolean) {
-        if (!assistant) return;
-        try {
-            await toggleAssistantFavorite(assistant, active);
-            // assistantListStore.updateAssistant({ ...assistant, isFavorite: active });
-            // await invalidate(assistantDependency(assistant.id));
-        } catch (err) {
-            // toast.error(ApiError.from(err).userMessage);
-        }
+    /** Persist the favourite toggle: failures surface as a toast and
+     *  FavButton rolls its optimistic flip back (see persistFavourite). */
+    function onFavoriteChange(active: boolean): Promise<void> | undefined {
+        return assistant ? persistFavourite(assistant, active, toast, __) : undefined;
     }
 
     // Fall back to a neutral appearance only for legacy assistants that

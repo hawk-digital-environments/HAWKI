@@ -21,15 +21,20 @@
         isActive: boolean;
         /** `frosted` floats over imagery (cards); `stroke` is an outline button for button rows. */
         variant?: 'frosted' | 'stroke';
-        onchange?: (value: boolean) => void;
+        onchange?: (value: boolean) => void | Promise<void>;
     }>();
 
-    // @todo: wait for the server confirmation before changing isActive;
-    function onclick(e: MouseEvent) {
+    /** Optimistic flip; rolls back when `onchange` rejects (server refusal). */
+    async function onclick(e: MouseEvent) {
         e.preventDefault();
         e.stopPropagation();
-        isActive = !isActive;
-        onchange?.(isActive);
+        const next = !isActive;
+        isActive = next;
+        try {
+            await onchange?.(next);
+        } catch {
+            isActive = !next;
+        }
     }
 
 
