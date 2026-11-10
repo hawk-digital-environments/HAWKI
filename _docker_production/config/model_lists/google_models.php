@@ -51,7 +51,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GOOGLE_GEMINI_3_8_FLASH_TTS_TOOLS_FILE_UPLOAD', false),
-                        // TTS models reject search grounding with an API error — never grant native capabilities
+            // TTS models reject search grounding with an API error — never grant native capabilities
             'native_capabilities' => false,
         ],
     ],
@@ -70,7 +70,7 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GOOGLE_GEMINI_3_8_FLASH_LITE_TTS_TOOLS_FILE_UPLOAD', false),
-                        // TTS models reject search grounding with an API error — never grant native capabilities
+            // TTS models reject search grounding with an API error — never grant native capabilities
             'native_capabilities' => false,
         ],
     ],
@@ -160,7 +160,6 @@ return [
             "image"
         ],
         "output" => [
-
             "text"
         ],
         'tools' => [
