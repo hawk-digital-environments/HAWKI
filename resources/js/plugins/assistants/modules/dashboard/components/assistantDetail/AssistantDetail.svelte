@@ -6,7 +6,6 @@
 -->
 <script lang="ts">
     import {untrack} from "svelte";
-    import {MediaQuery} from "svelte/reactivity";
 
     import type {AssistantAvatar} from "$plugins/assistants/types/assistant/AssistantAvatar";
     import FavButton from "$plugins/assistants/modules/dashboard/components/favButton/FavButton.svelte";
@@ -277,8 +276,6 @@
      *  whole page — there it starts as the chat button (as in the builder). */
     let chatOpen = $state(!window.matchMedia(breakpointsQueries.bpMdAndSmaller).matches);
 
-    /** Small screens run the cover full-bleed (see the styles). */
-    const fullBleedCover = new MediaQuery(breakpointsQueries.bpSmAndSmaller);
     const testChat = createChatStore(createChatConfig(() => assistant!));
 
     async function onFeedbackSend(value: string) {
@@ -306,7 +303,7 @@
 </script>
 <!-- The full-bleed cover runs under the floating nav trigger itself, so it
      opts out of the content fade there (it would wash out the cover's top). -->
-<div class="detail-shell" class:test-open={chatOpen} data-content-fade={fullBleedCover.current ? 'none' : undefined}>
+<div class="detail-shell" class:test-open={chatOpen} data-content-fade="none">
 <!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
 <div class="detail-scroll" data-pull-to-close>
     {#if !assistant && !error}

@@ -182,6 +182,9 @@
 
     .cover {
         position: relative;
+        /* Never squeezed: a cropped banner would be shorter than the one the
+           detail morph lands on (morphToDetail), and snap at the end. */
+        flex-shrink: 0;
         overflow: hidden;
     }
     /* Flat two-tone poster: a sticker-like glyph in the top corner, the name
@@ -263,7 +266,6 @@
         flex-grow: 1;
         display: flex;
         flex-direction: column;
-        min-height: 50%;
     }
     .info{
         flex-grow: 1;
