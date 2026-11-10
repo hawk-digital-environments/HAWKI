@@ -198,7 +198,9 @@
 </div>
 
 {#if list.assistants.length === 0}
-    <div class="empty-list-msg">
+    <!-- role=status (polite live region): the empty text appearing after a
+         search/filter finishes is announced to screen readers. -->
+    <div class="empty-list-msg" role="status">
         {#if list.loading}
             <StatusIcon icon={Search01Icon} tone="neutral" size="xl"/>
         {:else}
