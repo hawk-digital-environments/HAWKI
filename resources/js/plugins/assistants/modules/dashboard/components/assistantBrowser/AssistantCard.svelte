@@ -25,6 +25,7 @@
     const toast = useToastContext();
 
     let userAvatarUrl = $state<string | null>(null);
+    let card = $state<HTMLElement>();
     $effect(() => {
         if(assistant.creator.avatar) {
             getAvatar(assistant.creator.avatar)
@@ -62,15 +63,20 @@
     const assistantColor = $derived(assistantRowAppearance(assistant).colors.to);
 
 </script>
-<!--@todo: Link truned to button because style didn't budge-->
 <!-- data-assistant-card: the detail modal's closing morph finds its card by it (morphToDetail). -->
-<button
+<article
     class="assistant-card"
     data-assistant-card={assistant.id}
+    bind:this={card}
     style:--assistant-color={assistantColor}
     {@attach magnetic()}
-    onclick={(event) => onOpen(event.currentTarget)}
 >
+    <!-- Stretched over the whole card: the card's single primary action, a
+         real button in its own right. The favourite sits as a sibling above
+         it — interactive elements must never nest. -->
+    <button class="open" onclick={() => card && onOpen(card)}>
+        <span class="u-sr-only">{__('assistants.card.open_aria', {name: assistant.name})}</span>
+    </button>
     <!-- The cover carries the avatar's CSS too, so its foreground shade
          (`color`) is inherited by the title set on the flat background. -->
     <div class="cover" style={assistant.avatar.iconCss}>
@@ -78,19 +84,15 @@
         <div class="cover-title">
             <OverflowTooltip value={assistant.name} truncate="clamp" lines={2} focusable={false} />
         </div>
-        <div
-            class="favourite-btn"
-            role="presentation"
-        >
-            <!-- Tinted in the cover's own foreground shade instead of a white pill. -->
-            <FavButton
-                    id="favBtn"
-                    isActive={assistant.isFavorite}
-                    color="currentColor"
-                    background="color-mix(in oklch, currentColor 14%, transparent)"
-   					onchange={onFavoriteChange}
-            />
-        </div>
+    </div>
+    <div class="favourite-btn">
+        <!-- Tinted in the cover's own foreground shade instead of a white pill. -->
+        <FavButton
+            isActive={assistant.isFavorite}
+            color="currentColor"
+            background="color-mix(in oklch, currentColor 14%, transparent)"
+            onchange={onFavoriteChange}
+        />
     </div>
     <div class="content">
         <div class="info">
@@ -138,7 +140,7 @@
         </div>
 
     </div>
-</button>
+</article>
 
 
 <style>
@@ -149,8 +151,6 @@
         /* No height:fit-content — the card fills its grid track so all cards
            in a row share the (clamped, uniform) height. */
         width: 100%;
-        padding: 0;
-        text-align: start;
         /* Fill the grid track; the grid's minmax controls the effective size, so
            the card no longer needs its own min/max width. */
         min-width: 0;
@@ -165,8 +165,21 @@
         transition:
             box-shadow var(--duration-fast) var(--easing-spring),
             border-color var(--duration-fast) var(--easing-spring);
-        color: inherit;
-        text-decoration: none;
+    }
+    /* The card's primary action, stretched over the whole card. */
+    .assistant-card .open {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        padding: 0;
+        border: none;
+        border-radius: var(--corner-lg);
+        background: transparent;
+        cursor: pointer;
+    }
+    .assistant-card .open:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
     }
     /* Depth: the glyph follows the pointer a little further than the card
        (on top of the card's own pull; --magnet-x/y come from magnetic()). */

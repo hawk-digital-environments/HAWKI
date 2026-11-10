@@ -106,6 +106,7 @@
 
         "card": {
             "remix": "Remix",
+            "open_aria": "Open details for :name",
             "category_unknown": "Unknown",
             "remixed_via": "via"
         },
