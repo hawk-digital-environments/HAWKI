@@ -35,6 +35,9 @@
  * | `default` | `ChatDefaultMode`  | Normal compose; stays active after send                 |
  * | `edit`    | `ChatEditMode`     | Edit a past user message; locks model/tools/settings UI |
  * | `thread`  | `ChatInThreadMode` | Compose inside a thread; allows a nested edit mode       |
+ * | `regen`   | `ChatRegenMode`    | Regenerate an assistant reply; pre-fills the composer    |
+ *           |                    | from the message's snapshot; the re-run's participant is |
+ *           |                    | picked in the model picker's regen groups                |
  *
  * ## Checkpointing
  *
@@ -87,6 +90,7 @@ import {ModeSlice} from '$plugins/core/modules/chat/components/composer/contexts
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import {ChatEditMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
 import {ChatInThreadMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
+import {ChatRegenMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
 import {GuardSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
 import {MessageSender} from '$plugins/core/modules/chat/components/composer/contexts/sending/MessageSender.js';
 import {OldUiBridgeTransport} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/OldUiBridgeTransport.js';
@@ -566,6 +570,8 @@ export function createComposerContext(
                     return new ChatEditMode();
                 case 'thread':
                     return new ChatInThreadMode();
+                case 'regen':
+                    return new ChatRegenMode(aiModelStore, toastContext, app.translator);
                 default:
                     throw new Error(`Unsupported mode ${mode}`);
             }
@@ -641,12 +647,8 @@ export function createComposerContext(
             context.model.set(model);
         }),
         oldUiBridge.onEnterMode((mode, data) => {
-            // The legacy UI still requests modes this composer no longer has (`regen` is a
-            // plain per-message action now) — ignore those instead of throwing.
-            if (mode !== 'edit' && mode !== 'thread') {
-                console.warn(`Ignoring request to enter the unsupported composer mode "${String(mode)}".`);
-                return;
-            }
+            // The legacy UI requests `edit`, `thread` and `regen` — every mode the
+            // registry has. An unknown key throws in the mode factory, loudly.
             context.mode.enter(mode, data);
         }),
         oldUiBridge.onExitThread(() => {
