@@ -145,7 +145,7 @@
                 aria-checked={isChecked}
                 {disabled}
                 onclick={toggleFromIndicator}>
-                <Switch checked={isChecked} {disabled}/>
+                <Switch checked={isChecked} {disabled} presentational/>
             </button>
             {#if IconLeft}
                 <IconLeft size="14" class="dropdown-item-icon-start"/>
