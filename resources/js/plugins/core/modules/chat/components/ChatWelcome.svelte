@@ -237,5 +237,5 @@
     }
 
     .starter-prompt:hover { border-color: var(--color-interactive); }
-    .starter-prompt:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+    .starter-prompt:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
 </style>
