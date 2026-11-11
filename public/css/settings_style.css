@@ -218,6 +218,10 @@
         width: 0;
     }
 
+    #policy-content {
+        margin-top: -3rem;
+    }
+
     .back-btn {
         position: relative;
         top: 1.5rem;

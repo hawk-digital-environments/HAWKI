@@ -82,12 +82,7 @@
     }
 
     #passkey-form {
-        padding: 1rem 2rem;
         width: 100%;
-    }
-    .passkey-input{
-        padding: 0 !important;
-        border:none !important;
     }
 
     /* Checkbox/radio inputs are excluded to keep their native size. */

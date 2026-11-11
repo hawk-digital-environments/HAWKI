@@ -31,7 +31,7 @@ export default defineConfig({
     },
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/css/tokens.css', 'resources/js/app.ts'],
+            input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true
         }),
         vitePluginBreakpoints(
