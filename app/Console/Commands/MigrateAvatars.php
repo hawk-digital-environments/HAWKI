@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Room;
+use App\Services\Chat\Room\Repositories\RoomRepository;
 use App\Models\User;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Values\FileReference;
@@ -42,7 +43,10 @@ class MigrateAvatars extends Command
     protected int $roomSkippedCount = 0;
     protected int $roomErrorCount = 0;
 
-    public function __construct(AvatarStorageService $avatarStorage)
+    public function __construct(
+        AvatarStorageService            $avatarStorage,
+        private readonly RoomRepository $roomRepository
+    )
     {
         parent::__construct();
         $this->avatarStorage = $avatarStorage;
@@ -127,18 +131,8 @@ class MigrateAvatars extends Command
     protected function migrateRoomAvatars(bool $isDryRun, bool $force, bool $cleanup, ?string $specificRoom = null): void
     {
         // Get rooms based on options
-        $query = Room::whereNotNull('room_icon')->where('room_icon', '!=', '');
-
-        if ($specificRoom) {
-            // Try to find room by ID or slug
-            if (is_numeric($specificRoom)) {
-                $query->where('id', $specificRoom);
-            } else {
-                $query->where('slug', $specificRoom);
-            }
-        }
-
-        $rooms = $query->get();
+        // Optionally limited to a specific room, found by ID or slug
+        $rooms = $this->roomRepository->findAllWithAvatar($specificRoom ?: null);
 
         if ($rooms->isEmpty()) {
             $this->info('No rooms found with room_icon set.');

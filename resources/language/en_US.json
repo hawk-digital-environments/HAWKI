@@ -110,6 +110,10 @@
     "MarkAllRead": "Mark All As Read",
     "MemberInvite": "Invite Members",
     "MemberRemove": "Remove Member",
+    "MemberRoleEdit": "Change role",
+    "MemberRoleConfirm": "Confirm role",
+    "MemberRoleChangeFailed": "The role could not be changed.",
+    "RoomLeaveLastAdmin": "You are the last admin of this room. Make another member an admin first, or delete the room.",
     "Members": "Members",
     "MistakeWarning": "HAWKI may make mistakes. Check important information.",
     "Models": "Models",
@@ -171,6 +175,7 @@
     "The_web_search": "the Web",
     "The_knowledge_base": "the Vector Database",
     "Reasoning_Msg": "Compare possible options",
+    "Started_Msg": "One moment, please. The AI is processing your request...",
     "Parameters": "Parameters",
     "Temperature": "Temperature",
     "Precise": "Precise",
@@ -183,5 +188,6 @@
     "TT_Top_P": "Limits the AI’s choices to the most probable words whose total probability does not exceed this value. Lower Top_P (e.g., 0.7) results in more conservative responses; higher values (e.g., 0.9) allow for greater variety.",
     "MissingToolMsg": "This message was generated with an obsolete tool: ",
     "Preview_Loading": "Loading preview...",
-    "Preview_Unavailable": "Preview unavailable"
+    "Preview_Unavailable": "Preview unavailable",
+    "Obsolete": "Obsolete"
 }

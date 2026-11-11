@@ -11,7 +11,6 @@ return [
   'provider' => 'featherless_ai',
   'max_input_tokens' => 32768,
   'max_output_tokens' => 4096,
-  'max_tokens' => 4096,
   'mode' => 'chat',
 ),
     array (
@@ -19,7 +18,6 @@ return [
   'provider' => 'featherless_ai',
   'max_input_tokens' => 32768,
   'max_output_tokens' => 4096,
-  'max_tokens' => 4096,
   'mode' => 'chat',
 ),
 ];

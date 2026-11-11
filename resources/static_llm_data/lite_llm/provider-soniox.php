@@ -10,7 +10,7 @@ return [
   'id' => 'soniox/stt-async-v4',
   'provider' => 'soniox',
   'max_output_tokens' => 8000,
-  'max_tokens' => 8000,
+  'max_input_tokens' => 8000,
   'input_cost_per_second' => 0.0,
   'output_cost_per_second' => 2.77778E-5,
   'mode' => 'audio_transcription',
@@ -25,7 +25,7 @@ return [
   'id' => 'soniox/stt-async-v5',
   'provider' => 'soniox',
   'max_output_tokens' => 8000,
-  'max_tokens' => 8000,
+  'max_input_tokens' => 8000,
   'input_cost_per_second' => 0.0,
   'output_cost_per_second' => 2.77778E-5,
   'mode' => 'audio_transcription',
@@ -33,6 +33,156 @@ return [
   'supported_endpoints' => 
   array (
     0 => '/v1/audio/transcriptions',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'soniox/stt-rt-v5',
+  'provider' => 'soniox',
+  'input_cost_per_second' => 3.333E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.12/3600 seconds = $0.00003333 per second',
+    'original_pricing_per_hour' => 0.12,
+  ),
+  'mode' => 'audio_transcription',
+  'source' => 'https://soniox.com/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/realtime',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'soniox/stt-rt-preview',
+  'provider' => 'soniox',
+  'input_cost_per_second' => 3.333E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.12/3600 seconds = $0.00003333 per second',
+    'original_pricing_per_hour' => 0.12,
+  ),
+  'mode' => 'audio_transcription',
+  'source' => 'https://soniox.com/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/realtime',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'soniox/stt-rt-preview-v2',
+  'provider' => 'soniox',
+  'input_cost_per_second' => 3.333E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.12/3600 seconds = $0.00003333 per second',
+    'original_pricing_per_hour' => 0.12,
+  ),
+  'mode' => 'audio_transcription',
+  'source' => 'https://soniox.com/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/realtime',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'soniox/stt-rt-v3',
+  'provider' => 'soniox',
+  'input_cost_per_second' => 3.333E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.12/3600 seconds = $0.00003333 per second',
+    'original_pricing_per_hour' => 0.12,
+  ),
+  'mode' => 'audio_transcription',
+  'source' => 'https://soniox.com/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/realtime',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'soniox/stt-rt-v3-preview',
+  'provider' => 'soniox',
+  'input_cost_per_second' => 3.333E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.12/3600 seconds = $0.00003333 per second',
+    'original_pricing_per_hour' => 0.12,
+  ),
+  'mode' => 'audio_transcription',
+  'source' => 'https://soniox.com/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/realtime',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_audio_input' => true,
+),
+    array (
+  'id' => 'soniox/stt-rt-v4',
+  'provider' => 'soniox',
+  'input_cost_per_second' => 3.333E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.12/3600 seconds = $0.00003333 per second',
+    'original_pricing_per_hour' => 0.12,
+  ),
+  'mode' => 'audio_transcription',
+  'source' => 'https://soniox.com/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/realtime',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
   ),
   'supports_audio_input' => true,
 ),

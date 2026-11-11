@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/home-style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/hljs_custom.css') }}">
 
     @vite('resources/js/app.ts')
     @vite('resources/css/app.css')

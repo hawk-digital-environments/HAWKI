@@ -13,7 +13,6 @@ return [
   'input_cost_per_token' => 2.5E-7,
   'max_input_tokens' => 32000,
   'max_output_tokens' => 8192,
-  'max_tokens' => 8192,
   'mode' => 'completion',
   'output_cost_per_token' => 7.5E-7,
 ),

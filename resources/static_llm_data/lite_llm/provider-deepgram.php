@@ -7,6 +7,28 @@ declare(strict_types=1);
 
 return [
     array (
+  'id' => 'deepgram/aura',
+  'provider' => 'deepgram',
+  'input_cost_per_character' => 1.5E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.0150/1000 characters = $0.000015 per character',
+    'note' => 'Aura-1 text-to-speech voices (aura-<voice>-<lang>), pay as you go',
+  ),
+  'source' => 'https://deepgram.com/pricing',
+),
+    array (
+  'id' => 'deepgram/aura-2',
+  'provider' => 'deepgram',
+  'input_cost_per_character' => 3.0E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.030/1000 characters = $0.00003 per character',
+    'note' => 'Aura-2 text-to-speech voices (aura-2-<voice>-<lang>), pay as you go',
+  ),
+  'source' => 'https://deepgram.com/pricing',
+),
+    array (
   'id' => 'deepgram/base',
   'provider' => 'deepgram',
   'input_cost_per_second' => 0.00020833,
@@ -519,12 +541,12 @@ return [
     array (
   'id' => 'deepgram/streaming/nova-3',
   'provider' => 'deepgram',
-  'input_cost_per_second' => 8.0E-5,
+  'input_cost_per_second' => 0.00012833,
   'metadata' => 
   array (
-    'calculation' => '$0.0048/60 seconds = $0.00008000 per second',
+    'calculation' => '$0.0077/60 seconds = $0.00012833 per second',
     'note' => 'Nova-3 monolingual streaming, pay as you go',
-    'original_pricing_per_minute' => 0.0048,
+    'original_pricing_per_minute' => 0.0077,
   ),
   'mode' => 'audio_transcription',
   'output_cost_per_second' => 0.0,
@@ -535,14 +557,32 @@ return [
   ),
 ),
     array (
-  'id' => 'deepgram/streaming/nova-3-multilingual',
+  'id' => 'deepgram/streaming/nova-3-medical',
   'provider' => 'deepgram',
-  'input_cost_per_second' => 9.667E-5,
+  'input_cost_per_second' => 0.00012833,
   'metadata' => 
   array (
-    'calculation' => '$0.0058/60 seconds = $0.00009667 per second',
+    'calculation' => '$0.0077/60 seconds = $0.00012833 per second',
+    'note' => 'Nova-3 Medical streaming, launch price from Deepgram\'s 2025-03-03 announcement. deepgram.com/pricing does not list Nova-3 Medical, and this matches its current Nova-3 monolingual streaming pay as you go rate',
+    'original_pricing_per_minute' => 0.0077,
+  ),
+  'mode' => 'audio_transcription',
+  'output_cost_per_second' => 0.0,
+  'source' => 'https://www.businesswire.com/news/home/20250303470439/en',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/listen',
+  ),
+),
+    array (
+  'id' => 'deepgram/streaming/nova-3-multilingual',
+  'provider' => 'deepgram',
+  'input_cost_per_second' => 0.00015333,
+  'metadata' => 
+  array (
+    'calculation' => '$0.0092/60 seconds = $0.00015333 per second',
     'note' => 'Nova-3 multilingual (language=multi) streaming, pay as you go',
-    'original_pricing_per_minute' => 0.0058,
+    'original_pricing_per_minute' => 0.0092,
   ),
   'mode' => 'audio_transcription',
   'output_cost_per_second' => 0.0,

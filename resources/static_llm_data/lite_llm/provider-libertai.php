@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'libertai/hermes-3-8b-tee',
   'provider' => 'libertai',
-  'max_tokens' => 16000,
   'max_input_tokens' => 16000,
   'max_output_tokens' => 16000,
   'input_cost_per_token' => 1.5E-7,
@@ -24,7 +23,6 @@ return [
     array (
   'id' => 'libertai/gemma-4-31b-it',
   'provider' => 'libertai',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
@@ -39,7 +37,6 @@ return [
     array (
   'id' => 'libertai/gemma-4-31b-it-thinking',
   'provider' => 'libertai',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
@@ -55,7 +52,6 @@ return [
     array (
   'id' => 'libertai/qwen3.6-27b',
   'provider' => 'libertai',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
@@ -70,7 +66,6 @@ return [
     array (
   'id' => 'libertai/qwen3.6-27b-thinking',
   'provider' => 'libertai',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
@@ -86,7 +81,6 @@ return [
     array (
   'id' => 'libertai/qwen3.6-35b-a3b',
   'provider' => 'libertai',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
@@ -101,7 +95,6 @@ return [
     array (
   'id' => 'libertai/qwen3.6-35b-a3b-thinking',
   'provider' => 'libertai',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 1.5E-7,
@@ -117,7 +110,6 @@ return [
     array (
   'id' => 'libertai/qwen3.5-122b-a10b',
   'provider' => 'libertai',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 2.5E-7,
@@ -132,7 +124,6 @@ return [
     array (
   'id' => 'libertai/qwen3.5-122b-a10b-thinking',
   'provider' => 'libertai',
-  'max_tokens' => 262144,
   'max_input_tokens' => 262144,
   'max_output_tokens' => 262144,
   'input_cost_per_token' => 2.5E-7,
@@ -148,7 +139,6 @@ return [
     array (
   'id' => 'libertai/deepseek-v4-flash',
   'provider' => 'libertai',
-  'max_tokens' => 200000,
   'max_input_tokens' => 200000,
   'max_output_tokens' => 200000,
   'input_cost_per_token' => 2.5E-7,
@@ -163,7 +153,6 @@ return [
     array (
   'id' => 'libertai/deepseek-v4-flash-thinking',
   'provider' => 'libertai',
-  'max_tokens' => 200000,
   'max_input_tokens' => 200000,
   'max_output_tokens' => 200000,
   'input_cost_per_token' => 2.5E-7,
@@ -179,7 +168,6 @@ return [
     array (
   'id' => 'libertai/bge-m3',
   'provider' => 'libertai',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'input_cost_per_token' => 1.0E-8,
   'output_cost_per_token' => 0.0,

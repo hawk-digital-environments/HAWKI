@@ -187,6 +187,8 @@ async function buildRequestObjectForAiConv(
     let messageObj;
     let citations = [];
     let messageTextEl;
+    // A passed-in element already exists in the chatlog (regeneration) and must not be removed on error.
+    const reusesProvidedElement = !!messageElement;
 
 
     return new Promise((resolve, reject) => {
@@ -227,6 +229,14 @@ async function buildRequestObjectForAiConv(
                         messageElement = addMessageToChatlog(messageObj, false);
                     }
 
+                    // Keep the dataset in sync with this request's config. The header
+                    // object carries tools/params top-level (no metadata key), so
+                    // addMessageToChatlog skips them — without this, regenerating a
+                    // message whose generation failed before it was stored would lose
+                    // the original tools and params (see onRegenerateBtn).
+                    messageElement.dataset.tools = JSON.stringify(msgAttributes['metadata'].tools ?? []);
+                    messageElement.dataset.params = JSON.stringify(msgAttributes['metadata'].params ?? {});
+
                     messageBodyElement = messageElement.querySelector('[data-id="message-body"]');
                     if (!messageBodyElement) {
                         console.error('Message body element not found!');
@@ -234,6 +244,8 @@ async function buildRequestObjectForAiConv(
                         messageBodyElement.setProps({message: '', isStreaming: true});
                     }
 
+                    // Resets the reasoning buffer of a previous run on regeneration
+                    delete messageElement.dataset.reasoningText;
                     messageTextEl = messageElement.querySelector('.message-text');
                     if (!messageTextEl) {
                         console.error('Message text element not found!');
@@ -300,7 +312,7 @@ async function buildRequestObjectForAiConv(
 
                 const requestObj = {
                     'isAi': true,
-                    'threadId': activeThreadIndex,
+                    'threadId': Number(msgAttributes['threadIndex'] ?? activeThreadIndex),
                     'content': {
                         'text': {
                             'ciphertext': cryptoMsg.ciphertext,
@@ -343,10 +355,8 @@ async function buildRequestObjectForAiConv(
                 resolve();
             }
         }, () => {
-            if (!response.done) {
-                response.triggerError(window.__('legacy.aiChat.streamProcessingError'));
-            }
-            if (!isUpdate && messageElement) {
+            response.triggerError(window.__('legacy.aiChat.streamProcessingError'));
+            if (!isUpdate && !reusesProvidedElement && messageElement) {
                 messageElement.remove();
             }
             reject();
