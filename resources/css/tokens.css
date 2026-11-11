@@ -1,0 +1,23 @@
+/* ==========================================================================
+   Design tokens only (CSS custom properties, no element styles).
+
+   For legacy Blade layouts that don't load `app.css` but still mount Svelte
+   snippets (e.g. the gateway's guidelines rendered by `MessageBody`): the
+   components' styles read these tokens and fall apart without them. Loading
+   the full `app.css` there would also apply its reset/base layers on top of
+   the legacy styles.
+   ========================================================================== */
+@import './tokens/breakpoints.css';
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+@import './tokens/radius.css';
+@import './tokens/borders.css';
+@import './tokens/shadows.css';
+@import './tokens/transitions.css';
+@import './tokens/layers.css';
+@import './properties.css';
+
+svelte-snippet {
+    display: block;
+}

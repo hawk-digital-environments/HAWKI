@@ -20,6 +20,7 @@
     <script src="{{ asset('js/announcements.js') }}"></script>
     <script src="{{ asset('js/passkeyInputs.js') }}"></script>
     <script src="{{ asset('js/syntax_modifier.js') }}"></script>
+    @vite('resources/css/tokens.css')
     @vite('resources/js/app.ts')
 
     <x-settings-panel/>
