@@ -346,7 +346,7 @@
         font-size: var(--history-title-size);
         line-height: var(--line-height-normal);
         font-weight: var(--font-weight-normal);
-        color: var(--color-nav-icon);
+        color: var(--color-text-muted);
     }
 
     /* Hugs the text, so the chevron sits right next to the title. */
