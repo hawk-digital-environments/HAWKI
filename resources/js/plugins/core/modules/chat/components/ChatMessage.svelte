@@ -312,7 +312,7 @@
         transition: opacity var(--duration-fast);
     }
 
-    .message:hover .actions,
+    .message:hover:not(:has(.message:hover)) > .message-column > .actions,
     .actions:focus-within { opacity: 1; }
 
     @media (hover: none) { .actions { opacity: 1; } }
