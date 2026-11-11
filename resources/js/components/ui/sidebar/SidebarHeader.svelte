@@ -86,16 +86,11 @@
 
     .brand :global(.mark) {
         color: var(--color-logo);
-        transition: filter var(--duration-fast);
+        transition: color var(--duration-fast);
     }
 
     a.brand:hover :global(.mark) {
-        filter: brightness(1.6);
-    }
-
-    /* The dark-mode logo is already near white, so hover can only go darker. */
-    :global(html.darkMode) a.brand:hover :global(.mark) {
-        filter: brightness(0.7);
+        color: var(--color-logo-hover);
     }
 
     .actions {

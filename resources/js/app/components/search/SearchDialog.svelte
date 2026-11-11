@@ -14,6 +14,7 @@
 -->
 <script lang="ts">
     import {Dialog as DialogPrimitive} from 'bits-ui';
+    import HeightTransition from '$lib/components/ui/height-transition/HeightTransition.svelte';
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import SearchBar from '$lib/app/components/search/SearchBar.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
@@ -41,9 +42,6 @@
     let sessionActive = $state(false);
     let closeTimer: ReturnType<typeof setTimeout> | null = null;
 
-    /** The content's height: the panel springs to it as the rows change. */
-    let contentHeight = $state<number | undefined>();
-
     $effect(() => {
         if (open) {
             if (closeTimer !== null) {
@@ -56,8 +54,6 @@
         closeTimer = setTimeout(() => {
             closeTimer = null;
             sessionActive = false;
-            // Unset, so the next opening doesn't grow from this one's height.
-            contentHeight = undefined;
         }, CLOSE_LINGER_MS);
         return () => {
             if (closeTimer !== null) {
@@ -82,11 +78,10 @@
         <DialogPrimitive.Overlay class="dialog-overlay" />
         <DialogPrimitive.Content class="search-dialog" aria-describedby={undefined}>
             <DialogPrimitive.Title class="u-sr-only">{__('ui.search.title')}</DialogPrimitive.Title>
-            <div class="search-dialog-frame" style:height={contentHeight === undefined ? undefined : `${contentHeight}px`}>
-                <div class="search-dialog-content" bind:offsetHeight={contentHeight}>
-                    <SearchBar {search} active={sessionActive} autofocus onSelect={select} />
-                </div>
-            </div>
+            <!-- The panel eases to the rows' height as they filter. -->
+            <HeightTransition>
+                <SearchBar {search} active={sessionActive} autofocus onSelect={select} />
+            </HeightTransition>
         </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
 </DialogPrimitive.Root>
@@ -98,6 +93,8 @@
     :global(.search-dialog) {
         --search-dialog-cap: 27.5rem;
         --search-dialog-max-height: min(var(--search-dialog-cap), 76dvh);
+        /* Stops at the panel's cap, less its border, so the list scrolls past it. */
+        --height-transition-max: calc(var(--search-dialog-max-height) - 2 * var(--divider-width));
         position: fixed;
         /* The top edge stays where a panel at the cap height sits centred, so
            the field holds still while the rows under it filter down. */
@@ -121,22 +118,6 @@
         &[data-state='closed'] {
             animation: search-dialog-out var(--duration-extra-fast) var(--easing-default);
         }
-    }
-
-    /* Both stop at the panel's cap, less its border, so the list scrolls past it. */
-    :global(.search-dialog-frame),
-    :global(.search-dialog-content) {
-        max-height: calc(var(--search-dialog-max-height) - 2 * var(--divider-width));
-    }
-
-    :global(.search-dialog-frame) {
-        overflow: hidden;
-        transition: height var(--duration-extra-fast) var(--easing-out);
-    }
-
-    :global(.search-dialog-content) {
-        display: flex;
-        flex-direction: column;
     }
 
     @keyframes search-dialog-in {
@@ -166,10 +147,6 @@
         :global(.search-dialog[data-state='open']),
         :global(.search-dialog[data-state='closed']) {
             animation: none;
-        }
-
-        :global(.search-dialog-frame) {
-            transition: none;
         }
     }
 
