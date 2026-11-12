@@ -11,4 +11,9 @@ readonly class ExposedModelAndProviderSyncer extends ModelAndProviderSyncer
     {
         return $this->stripWellKnownPathSuffix($input);
     }
+
+    public function exposeParseMaxToolCallingRounds(array $config): int|null
+    {
+        return $this->parseMaxToolCallingRounds($config);
+    }
 }
