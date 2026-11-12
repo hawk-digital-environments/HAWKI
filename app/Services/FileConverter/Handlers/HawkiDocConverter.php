@@ -46,7 +46,7 @@ class HawkiDocConverter extends AbstractFileConverter
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $this->config['api_key'],
                     'Accept' => 'application/json',
-                ])->get(UrlResolver::baseUrl($this->config['api_url']));
+                ])->get(UrlResolver::stripPathSuffix($this->config['api_url'], '/extract'));
                 return (array)array_merge(
                     ['supported_formats' => []],
                     $response->json() ?? []
