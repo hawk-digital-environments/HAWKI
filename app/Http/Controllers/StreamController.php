@@ -12,6 +12,7 @@ use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\AiService;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Ai\Extensions\HawkiExtensionsRegistry;
+use App\Services\Ai\Values\StreamErrorCode;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
@@ -224,8 +225,10 @@ class StreamController extends Controller
         $hawki = $this->userRepository->findHawki();
         $avatar_url = $this->avatarStorage->retrieveAvatar($hawki)?->getUrl();
 
-        $formatError = static fn (string $errorMessage) => json_encode([
+        // `code` lets clients show a translated, specific message; `content` stays for older clients.
+        $formatError = static fn (string $errorMessage, StreamErrorCode $code = StreamErrorCode::GENERATION_FAILED) => json_encode([
             'content' => $errorMessage,
+            'code' => $code->value,
             'type' => 'error',
             'isDone' => true,
         ], \JSON_THROW_ON_ERROR) . "\n";
@@ -360,13 +363,19 @@ class StreamController extends Controller
                 'response' => $e->response->body(),
             ]);
 
-            yield $formatError('There was an error while sending your request to the AI agent. Please try again later.');
+            yield $formatError(
+                'There was an error while sending your request to the AI agent. Please try again later.',
+                StreamErrorCode::fromThrowable($e),
+            );
 
             return;
         } catch (\Throwable $e) {
             $this->logger->error('Something went wrong in the stream', ['exception' => $e]);
 
-            yield $formatError('There was an error while sending your request to the AI agent. Please try again later.');
+            yield $formatError(
+                'There was an error while sending your request to the AI agent. Please try again later.',
+                StreamErrorCode::fromThrowable($e),
+            );
 
             return;
         }

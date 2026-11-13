@@ -194,10 +194,12 @@
 
     // Study assistants can be tagged anywhere; HAWKI itself only in a room, where it is one
     // participant among many — in an AI conversation every message already goes to it.
+    // Like the `/` tool popup, this list exists to tag someone in a single keystroke, so
+    // assistants that cannot run right now (deactivated or offline) are left out; the `@`
+    // button menu still lists offline ones, grayed out.
     const taggableAssistants = $derived(
-        composerContext.type === 'room'
-            ? aiHandleStore.assistants
-            : aiHandleStore.assistants.filter(assistant => assistant.handle !== aiHandleStore.hawkiHandle)
+        aiHandleStore.assistants.filter(assistant => !assistant.unavailable
+            && (composerContext.type === 'room' || assistant.handle !== aiHandleStore.hawkiHandle))
     );
     const mentionsEnabled = $derived(taggableAssistants.length > 0
         && !composerContext.guard.disablesFeature('assistants'));

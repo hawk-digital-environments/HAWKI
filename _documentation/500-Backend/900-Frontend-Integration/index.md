@@ -52,7 +52,7 @@ translation strings via a separate call to
 It wires `CustomTranslator` as the `translator` binding so that `trans()` / `__()` continue to
 work unchanged, while also enabling:
 
-1. Merging HAWKI's own `resources/lang/*.json` files on top of Laravel's fallback messages.
+1. Merging HAWKI's own `resources/language/*_{locale}.json` files on top of Laravel's fallback messages.
 2. Exposing all labels via the `translation-labels` JSON:API resource.
 3. Integration with `LocaleService`'s locale-resolution chain.
 

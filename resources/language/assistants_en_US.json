@@ -110,6 +110,13 @@
             "category_unknown": "Unknown",
             "remixed_via": "via"
         },
+        "availability": {
+            "deactivated": "Deactivated",
+            "deactivatedHint": "This assistant's AI model is no longer available. It can't be used until its creator chooses a new model.",
+            "deactivatedHintEditor": "This assistant's AI model is no longer available. Edit the assistant and choose a new model to reactivate it.",
+            "offline": "Model offline",
+            "offlineHint": "This assistant's AI model can't be reached right now. It can be used again once the model is back online."
+        },
 
         "release_stage": {
             "private": "Private",

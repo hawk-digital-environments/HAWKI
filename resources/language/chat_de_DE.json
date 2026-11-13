@@ -249,7 +249,8 @@
                     "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum"
                 },
                 "searchPlaceholder": "Assistenten suchen",
-                "noResults": "Keine passenden Assistenten"
+                "noResults": "Keine passenden Assistenten",
+                "assistantOffline": "Derzeit nicht verfügbar: Das KI-Modell ist nicht erreichbar"
             },
             "mentionChips": {
                 "removeAriaLabel": ":assistant aus der Nachricht entfernen"
@@ -307,6 +308,8 @@
                 "noWriteAccessTooltip": "Du hast keinen Schreibzugriff auf diesen Chat",
                 "sendingInProgressTooltip": "Das Senden läuft bereits",
                 "modeCannotSendTooltip": "Senden ist im aktuellen Modus nicht möglich",
+                "assistantDeactivatedTooltip": "Dieser Assistent ist deaktiviert, weil sein KI-Modell nicht mehr verfügbar ist. Entferne ihn, um deine Nachricht zu senden.",
+                "assistantOfflineTooltip": "Das KI-Modell dieses Assistenten ist gerade nicht erreichbar. Versuche es später erneut oder entferne den Assistenten, um deine Nachricht zu senden.",
                 "saveLabel": "Speichern",
                 "sendLabel": "Senden",
                 "leaveThread": "Thread verlassen",
@@ -353,6 +356,13 @@
             "offline": "Ein ausgewähltes Werkzeug ist vorübergehend offline.",
             "offlineHelp": "Warte, bis es wieder online ist, oder entferne es, um deine Nachricht zu senden.",
             "requiredOffline": "Ein benötigtes Werkzeug ist offline. Die Anfrage kann nicht verarbeitet werden."
+        },
+        "errors": {
+            "modelUnavailable": "Das ausgewählte KI-Modell ist nicht mehr verfügbar. Bitte wähle ein anderes Modell.",
+            "assistantModelUnavailable": "Dieser Assistent ist deaktiviert, weil sein KI-Modell nicht mehr verfügbar ist. Die Person, die ihn erstellt hat, muss ein neues Modell auswählen.",
+            "providerUnreachable": "Der Anbieter des KI-Modells ist gerade nicht erreichbar. Bitte versuche es später erneut oder wähle ein anderes Modell.",
+            "providerBusy": "Der Anbieter des KI-Modells ist gerade überlastet oder hat das Anfragelimit erreicht. Bitte versuche es gleich noch einmal.",
+            "generationFailed": "Die Antwort konnte nicht erstellt werden. Bitte versuche es später erneut."
         }
     }
 }

@@ -69,6 +69,8 @@ export type AssistantListFilter = {
     is_favorite?: boolean;
     release_stage?: string[];
     shared_with_user?: boolean;
+    /** `true` keeps only assistants whose model is still offered (hides deactivated ones). */
+    model_available?: boolean;
 };
 
 /** Nested JSON:API filter values, e.g. `filter[assistant_category][text]=x`. */
@@ -212,6 +214,10 @@ export class AssistantListContext {
 
         if (this.filter.shared_with_user !== undefined) {
             out['shared_with_user'] = this.filter.shared_with_user;
+        }
+
+        if (this.filter.model_available !== undefined) {
+            out['model_available'] = this.filter.model_available;
         }
 
         return Object.keys(out).length ? out : undefined;

@@ -11,6 +11,9 @@
     import { magnetic } from '$lib/components/ui/magnetic/magnetic.svelte';
     import { assistantRowAppearance } from '$plugins/assistants/utils/assistantRowAppearance';
     import { persistFavourite } from '$plugins/assistants/utils/favouriteToggle';
+    import AssistantAvailabilityStatus from '$plugins/assistants/components/status/AssistantAvailabilityStatus.svelte';
+    import { assistantUnavailability } from '$plugins/assistants/utils/assistantAvailability';
+    import { useStore } from '$lib/app/hooks/useStore.svelte.js';
 
     const { __ } = useTranslator();
 
@@ -44,11 +47,17 @@
 
     // The assistant's own color (its gradient's main stop) for the hover outline.
     const assistantColor = $derived(assistantRowAppearance(assistant).colors.to);
+
+    // A deactivated or offline assistant stays listed (and opens its detail view, where its
+    // creator can pick a new model), but is grayed out.
+    const aiModelStore = useStore('ai-models');
+    const unavailable = $derived(assistantUnavailability(assistant, aiModelStore) !== null);
 </script>
 
 <!-- data-assistant-card: the detail modal's closing morph finds its card by it (morphToDetail). -->
 <article
     class="assistant-card"
+    class:assistant-card--unavailable={unavailable}
     data-assistant-card={assistant.id}
     bind:this={card}
     style:--assistant-color={assistantColor}
@@ -97,6 +106,7 @@
                 {#if assistant.release_stage}
                     <ReleaseStageStatus stage={assistant.releaseStage} />
                 {/if}
+                <AssistantAvailabilityStatus {assistant} />
             </div>
             <div class="description">
                 {assistant.description}
@@ -167,6 +177,11 @@
        (on top of the card's own pull; --magnet-x/y come from magnetic()). */
     .assistant-card :global(.symbol) {
         translate: calc(var(--magnet-x, 0) * 4px) calc(var(--magnet-y, 0) * 2.5px);
+    }
+    /* Only the assistant's own visuals recede; its status pill and the controls stay legible. */
+    .assistant-card--unavailable .cover {
+        filter: grayscale(1);
+        opacity: 0.6;
     }
     .assistant-card:hover {
         border-color: var(--assistant-color, var(--color-accent-200));

@@ -16,6 +16,7 @@
     import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
     import type {BeamColors} from '$lib/components/ui/border-beam/types.js';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         /** The assistant to render. */
@@ -30,9 +31,10 @@
     }
 
     const {assistant, emoji, colors, checked = false}: Props = $props();
+    const {__} = useTranslator();
 </script>
 
-<span class="assistant-row" style:--assistant-from={colors.from} style:--assistant-to={colors.to}>
+<span class={['assistant-row', assistant.unavailable && 'assistant-row--unavailable']} style:--assistant-from={colors.from} style:--assistant-to={colors.to}>
     <!-- The name sits right next to it, so the emoji is decoration rather than content. -->
     <span class={['assistant-row-emoji', checked && 'assistant-row-emoji--checked']} aria-hidden="true">
         <span class="assistant-row-glyph">{emoji}</span>
@@ -45,7 +47,9 @@
             {assistant.label}
             <span class="assistant-row-handle">{assistant.handle}</span>
         </span>
-        <span class="assistant-row-description">{assistant.description}</span>
+        <span class="assistant-row-description">
+            {assistant.unavailable === 'offline' ? __('chat.composer.assistantMenu.assistantOffline') : assistant.description}
+        </span>
     </span>
 </span>
 
@@ -63,6 +67,11 @@
       and don't line up with the assistant's own color, so the tint has to come from behind
       the glyph rather than from it.
     */
+    /* The assistant cannot run right now: the whole row recedes, like a disabled menu row. */
+    .assistant-row--unavailable {
+        opacity: 0.5;
+    }
+
     .assistant-row-emoji {
         position: relative;
         display: inline-flex;

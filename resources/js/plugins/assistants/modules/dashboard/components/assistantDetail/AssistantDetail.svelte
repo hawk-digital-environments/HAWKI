@@ -71,6 +71,7 @@
     import CheckmarkBadge01Icon from '$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte';
     import Loader from '$lib/components/ui/loader/Loader.svelte';
     import GlobeIcon from '$lib/components/ui/icons/iconset/GlobeIcon.svelte';
+    import AssistantAvailabilityStatus from '$plugins/assistants/components/status/AssistantAvailabilityStatus.svelte';
 
     interface Props {
         /** Id of the assistant to show. */
@@ -505,6 +506,13 @@
 
                 <p class="description">{assistant.description}</p>
 
+                <div class="availability">
+                    <AssistantAvailabilityStatus
+                        {assistant}
+                        withHint
+                    />
+                </div>
+
                 <div
                     class="metadata"
                     style:--tile-bg={coverBackground}
@@ -808,6 +816,16 @@
         font-size: var(--font-size-base);
         line-height: var(--line-height-normal);
         color: var(--color-text);
+    }
+    .availability {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    /* A runnable assistant renders no status: drop the empty row and its gap. */
+    .availability:not(:has(*)) {
+        display: none;
     }
 
     /* Metadata cards. */

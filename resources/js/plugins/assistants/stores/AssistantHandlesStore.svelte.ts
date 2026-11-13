@@ -1,8 +1,11 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
+import type {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {ReleaseMode, type Assistant} from '$plugins/assistants/types/assistant';
 import {assistantRowAppearance} from '$plugins/assistants/utils/assistantRowAppearance';
+import {assistantUnavailability} from '$plugins/assistants/utils/assistantAvailability';
 import {
     ASSISTANT_LIST_INCLUDES,
     listAssistants,
@@ -58,6 +61,13 @@ class AssistantHandlesStore implements DataStore {
     loaded = $state(false);
     loading = $state(false);
     error = $state<string | null>(null);
+
+    /** The model list each row's availability is judged against (see `assistantUnavailability`). */
+    private models: AiModelStore | null = null;
+
+    public ready(app: HawkiApp): void {
+        this.models = app.stores.get('ai-models');
+    }
 
     /** Fetches every visible assistant, following the API's pagination until
      *  the last page. Idempotent: concurrent or repeated calls coalesce into
@@ -150,6 +160,9 @@ class AssistantHandlesStore implements DataStore {
             // Addressing the assistant binds the exchange to it — the raw
             // handle travels as `payload.hawkiExtensions.assistant_handle`.
             chatBinding: assistant.handle,
+            // A deactivated or offline assistant stays in the list so its handle is
+            // still recognized; the pickers and the send guard act on the flag.
+            unavailable: (this.models && assistantUnavailability(assistant, this.models)) ?? undefined,
             appearance: assistantRowAppearance(assistant),
             onTogglePin: (pinned: boolean) => {
                 void this.toggleFavorite(assistant.id, pinned);

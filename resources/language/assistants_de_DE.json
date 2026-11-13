@@ -110,6 +110,13 @@
             "category_unknown": "Unbekannt",
             "remixed_via": "via"
         },
+        "availability": {
+            "deactivated": "Deaktiviert",
+            "deactivatedHint": "Das KI-Modell dieses Assistenten ist nicht mehr verfügbar. Er kann erst wieder genutzt werden, wenn die Person, die ihn erstellt hat, ein neues Modell auswählt.",
+            "deactivatedHintEditor": "Das KI-Modell dieses Assistenten ist nicht mehr verfügbar. Bearbeite den Assistenten und wähle ein neues Modell, um ihn wieder zu aktivieren.",
+            "offline": "Modell offline",
+            "offlineHint": "Das KI-Modell dieses Assistenten ist gerade nicht erreichbar. Er kann wieder genutzt werden, sobald das Modell wieder online ist."
+        },
 
         "release_stage": {
             "private": "Privat",
