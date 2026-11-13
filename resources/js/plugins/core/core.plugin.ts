@@ -62,8 +62,7 @@ export default class CorePlugin implements HawkiCorePlugin {
         add(new ChatModule());
         add(new SettingsModule());
 
-        // A dynamic import, so the fixtures stay out of production bundles.
-        if (import.meta.env.DEV && false) {
+        if (import.meta.env.VITE_ENABLE_DEV_SPACES) {
             const {mockSpaces} = await import('$plugins/core/modules/devSpaces/mockSpaces.js');
             mockSpaces().forEach(add);
         }
