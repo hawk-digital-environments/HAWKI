@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\Assistants\Assistant;
-use App\Models\Organization;
 use App\Models\User;
 use App\Policies\Contracts\DefinesSensitiveIncludes;
 use App\Policies\Traits\AuthorizeCreateForUserTrait;
 use App\Policies\Traits\AuthorizeViewAnyForUserTrait;
-use App\Services\Assistant\Values\AssistantReleaseStage;
+use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Organizations\OrgMembership;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
@@ -20,8 +19,10 @@ class AssistantPolicy implements DefinesSensitiveIncludes
     use AuthorizeViewAnyForUserTrait;
     use AuthorizeCreateForUserTrait;
 
-    public function __construct(private readonly OrgMembership $orgMembership)
-    {
+    public function __construct(
+        private readonly OrgMembership $orgMembership,
+        private readonly AssistantRepository $repository,
+    ) {
     }
 
     /**
@@ -249,25 +250,11 @@ class AssistantPolicy implements DefinesSensitiveIncludes
 
     private function isVisibleTo(Assistant $assistant, User $user): bool
     {
-        if (\in_array($assistant->release_stage, AssistantReleaseStage::publiclyVisibleCases(), true)) {
-            return true;
-        }
-
-        if ($assistant->creator_id === $user->id) {
-            return true;
-        }
-
-        return $assistant->sharedUsers()
-            ->where('user_id', $user->id)
-            ->exists();
+        return $this->repository->isVisibleTo($assistant, $user);
     }
 
     private function isPrivileged(User $user, Assistant $assistant): bool
     {
-        if ($assistant->creator_id === $user->id) {
-            return true;
-        }
-
-        return $this->orgMembership->isAdminOf($user, $assistant->organization);
+        return $this->repository->isPrivileged($user, $assistant);
     }
 }

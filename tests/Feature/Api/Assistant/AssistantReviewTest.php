@@ -267,6 +267,63 @@ class AssistantReviewTest extends TestCase
         static::assertSame(AssistantReviewStatus::PENDING->value, $included['attributes']['status']);
     }
 
+    public function testItShowsAnOrgAdminThePendingPrivateSubmissionForReview(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::DRAFT->value,
+        ]);
+        $review = AssistantReview::forceCreate([
+            'assistant_id' => $assistant->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+        ]);
+
+        $this->actingAsUser($this->createAdmin());
+
+        $show = $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}?include=assistant_review,assistant_versions,creator")
+            ->assertOk();
+
+        $included = collect($show->json('included') ?? []);
+        $reviewIncluded = $included->first(static fn ($item) => $item['type'] === 'assistant-reviews');
+        static::assertNotNull($reviewIncluded, 'include=assistant_review did not surface the review for the reviewing admin');
+        static::assertSame((string) $review->id, $reviewIncluded['id']);
+        static::assertNotNull(
+            $included->first(static fn ($item) => $item['type'] === 'assistant-versions'),
+            'include=assistant_versions did not surface a version for the reviewing admin',
+        );
+    }
+
+    public function testItDoesNotShowAPrivateSubmissionToAMemberOfTheOrganization(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE->value,
+        ]);
+
+        $this->actingAsUser($this->createMember());
+
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}?include=assistant_review")
+            ->assertForbidden();
+    }
+
+    public function testItDoesNotShowAPrivateSubmissionToAnotherOrganizationsAdmin(): void
+    {
+        $foreignOrg = Organization::create(['name' => 'Other University']);
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'organization_id' => $foreignOrg->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE->value,
+        ]);
+
+        $this->actingAsUser($this->createAdmin());
+
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+            ->assertForbidden();
+    }
+
     public function testItDoesNotShowAStrangerTheReviewStateOfSomeoneElsesAssistant(): void
     {
         $creator = User::factory()->create();

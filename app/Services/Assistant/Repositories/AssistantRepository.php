@@ -37,13 +37,17 @@ class AssistantRepository extends AbstractRepository
         });
     }
 
+    /**
+     * Org admins review and roll back their organization's assistants —
+     * pending submissions stay private until approval.
+     */
     public function isVisibleTo(Assistant $assistant, User $user): bool
     {
         if (\in_array($assistant->release_stage, AssistantReleaseStage::publiclyVisibleCases(), true)) {
             return true;
         }
 
-        if ($assistant->creator_id === $user->id) {
+        if ($this->isPrivileged($user, $assistant)) {
             return true;
         }
 
