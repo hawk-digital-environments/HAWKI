@@ -19,6 +19,7 @@ class AssistantReviewController extends Controller
     use Actions\FetchMany;
     use Actions\Update;
     private ?AssistantReviewStatus $preUpdateStatus = null;
+    private ?string $preUpdateReason = null;
 
     public function __construct(private readonly AssistantReviewService $reviewService)
     {
@@ -51,6 +52,7 @@ class AssistantReviewController extends Controller
         // honours casts for originals).
         $original = $review->getOriginal('status');
         $this->preUpdateStatus = $original instanceof AssistantReviewStatus ? $original : null;
+        $this->preUpdateReason = $review->getOriginal('reason');
     }
 
     /**
@@ -67,6 +69,6 @@ class AssistantReviewController extends Controller
     {
         $reviewer = $request instanceof Request ? $request->user() : null;
 
-        $this->reviewService->applyStatusTransition($review, $this->preUpdateStatus, $reviewer);
+        $this->reviewService->applyStatusTransition($review, $this->preUpdateStatus, $reviewer, $this->preUpdateReason);
     }
 }

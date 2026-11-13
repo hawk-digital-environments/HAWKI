@@ -9,6 +9,7 @@ use App\Services\Assistant\Repositories\AssistantRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use LaravelJsonApi\Contracts\Server\Server;
+use LaravelJsonApi\Eloquent\Fields\ArrayList;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
@@ -39,6 +40,7 @@ class AssistantReviewSchema extends Schema
             ID::make(),
             Str::make('status'),
             Str::make('reason'),
+            ArrayList::make('history')->readOnly(),
             DateTime::make('reviewed_at')->readOnly(),
             DateTime::make('created_at')->sortable()->readOnly(),
             DateTime::make('updated_at')->sortable()->readOnly(),

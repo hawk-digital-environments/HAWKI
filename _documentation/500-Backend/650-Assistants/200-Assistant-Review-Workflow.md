@@ -65,18 +65,22 @@ A remix deliberately starts a fresh version history: the created event seeds the
 
 ## Decisions and re-decisions
 
-Reviews are decided through `PATCH /assistant-reviews/{id}`. The controller captures the pre-update status and delegates to `AssistantReviewService::applyStatusTransition()`, which fires side effects **only on genuine transitions**. Deciding an already decided review is therefore supported — the admin surface always offers all three options, with the previous decision shown above them:
+Reviews are decided through `PATCH /assistant-reviews/{id}`. The controller captures the pre-update status and reason and delegates to `AssistantReviewService::applyStatusTransition()`, which fires promote/demote side effects **only on genuine transitions**. Deciding an already decided review is therefore supported — the admin surface always offers all three options, with the previous decision shown above them:
 
 | Transition | Effect |
 |---|---|
 | → `approved` (from anything else) | `promoteDraft()`: the draft becomes `max + 1`, its payload is restored onto the live assistant, `promoteRequested()` applies the recorded stage. A fresh draft respawns from the published state. The previous denial reason is cleared — the approval supersedes it |
 | → `denied` (from a non-denial) | `revokeRelease()`: the assistant is demoted to **private**. A denied review permanently blocks resubmission (see below). Reviewer, timestamp and reason are recorded |
 | → `needs_revision` (from a non-denial) | Same demotion to private, but the creator may revise and resubmit — a resubmission reopens the review fresh, judged on its own merits |
-| `denied` → `needs_revision` | Status-only (both are denial variants, no transition fires): **lifts the denial** — nothing is published, resubmission is re-allowed |
+| between the denial variants (`denied` ↔ `needs_revision`) | No promote/demote fires: a switch to `needs_revision` **lifts the denial** (nothing published, resubmission re-allowed), a switch to `denied` blocks it again. The decision is still recorded |
 | `denied` → `approved` | Re-approval: publishes the frozen submission as a new version and unblocks the creator. The approval never takes effect by itself — publishing afterwards always requires a fresh release request and review |
-| same → same | No-op |
+| same → same | Recorded only when the reason changed; otherwise a no-op |
 
-Because denial is the one blocking state, the release request validator (`ReleaseAssistantRequest`) rejects upward releases with a 422 while the review is `denied` — an admin must first lift it (request revision) or re-approve. Both paths are covered by feature tests (`AssistantReviewTest`).## Rollback
+Because denial is the one blocking state, the release request validator (`ReleaseAssistantRequest`) rejects upward releases with a 422 while the review is `denied` — an admin must first lift it (request revision) or re-approve. Both paths are covered by feature tests (`AssistantReviewTest`).
+
+## Decision history
+
+The review row also carries a `history` JSON column (`AssistantReviewHistory`): one append-only entry per decision that changes the status or the reason (status, reason, timestamp), appended inside the same transaction as the decision itself. That includes the promote/demote transitions as well as the switches between the denial variants and re-decisions with a new comment; an unchanged re-decision is a no-op. Reopening a review — resubmission, rollback — resets `status`/`reason` but never touches the history, so an admin always sees the previous rounds' decisions and their comments. It carries no reviewer names, so it is exposed on the `assistant-reviews` resource to every viewer allowed to see the review; the admin detail renders it under the change history.## Rollback
 
 `POST /assistants/{id}/actions/rollback` restores an earlier published version. It is an editorial decision over content, so the policy is the organization's admins (`AssistantPolicy::rollback`) — the same tier that approves reviews. Which of two paths runs depends on one question: can users currently see the assistant?
 

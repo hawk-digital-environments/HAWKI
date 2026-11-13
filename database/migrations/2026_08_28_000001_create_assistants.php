@@ -143,6 +143,7 @@ return new class() extends Migration {
             $table->string('status')->default('pending');
             $table->text('reason')->nullable();
             $table->timestamp('reviewed_at')->nullable();
+            $table->json('history')->nullable();
             $table->timestamps();
         });
 

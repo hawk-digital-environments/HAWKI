@@ -57,6 +57,24 @@
         });
     });
 
+    /** The newest history entry — the last round's decision, still readable after a resubmission. */
+    const latestDecision = $derived.by(() => {
+        const history = targetReview?.history ?? [];
+
+        return history.length > 0 ? history[history.length - 1]! : null;
+    });
+
+    const latestDecisionText = $derived.by(() => {
+        if (!latestDecision) return '';
+        if (!latestDecision.reviewed_at) {
+            return __(`assistants.admin.queue.status.${latestDecision.status}`);
+        }
+
+        return __(`assistants.admin.detail.decided_${latestDecision.status}`, {
+            date: formatDate(latestDecision.reviewed_at)
+        });
+    });
+
     /** "Reason" vs "Reason *" — the mark follows the picked decision card. */
     const reasonRequired = $derived(review.selectedDecision === 'denied' || review.selectedDecision === 'needs_revision');
 
@@ -75,6 +93,16 @@
         title={decidedText}
         description={targetReview.reason
             ? `${__('assistants.admin.detail.previous_reason')}: ${targetReview.reason}`
+            : undefined}
+    />
+{:else if latestDecision}
+    <Alert
+        size="small"
+        tone={reviewAlertTone(latestDecision.status)}
+        icon={PREVIOUS_ICON[latestDecision.status]}
+        title={latestDecisionText}
+        description={latestDecision.reason
+            ? `${__('assistants.admin.detail.previous_reason')}: ${latestDecision.reason}`
             : undefined}
     />
 {/if}

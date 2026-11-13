@@ -13,6 +13,7 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import StatusPill from '$plugins/assistants/components/status/StatusPill.svelte';
+    import {reviewPillTone} from '$plugins/assistants/components/status/reviewTones.js';
     import {formatDate} from '$lib/utils/date.js';
     import {ApiError} from '$plugins/assistants/api/errors.js';
     import {rollbackAssistant} from '$plugins/assistants/admin/api/reviewClient.js';
@@ -104,6 +105,16 @@
 
     let rollbackVersion = $state<number | null>(null);
     let rollingBack = $state(false);
+
+    /** Past decision rounds, oldest first — the review's append-only history. */
+    const decisionRows = $derived(
+        (target?.assistant_review?.history ?? []).map((entry, index) => ({
+            key: `${index}-${entry.status}`,
+            status: entry.status,
+            date: entry.reviewed_at ?? null,
+            reason: entry.reason ?? null
+        }))
+    );
 
     /**
      * Whether a rollback here runs as a submission (public assistant or a
@@ -203,6 +214,21 @@
         {:else}
             <p class="meta">{__('assistants.admin.detail.no_versions')}</p>
         {/if}
+
+        {#if decisionRows.length > 0}
+            <div class="decisions">
+                <p class="u-label">{__('assistants.admin.detail.decisions_title')}</p>
+                {#each decisionRows as entry (entry.key)}
+                    <div class="decision-row">
+                        <StatusPill tone={reviewPillTone(entry.status)} label={__(`assistants.admin.queue.status.${entry.status}`)}/>
+                        <span class="decision-date">{entry.date ? formatDate(entry.date) : '—'}</span>
+                        {#if entry.reason}
+                            <span class="decision-reason">{entry.reason}</span>
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+        {/if}
     </article>
 </div>
 
@@ -261,6 +287,33 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+    }
+
+    .decisions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin-top: var(--space-2);
+    }
+
+    .decision-row {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+    }
+
+    .decision-date {
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .decision-reason {
+        color: var(--color-text);
+        font-size: var(--font-size-sm);
+        min-width: 0;
+        flex: 1;
     }
 
     .chips {

@@ -106,7 +106,10 @@ test('schemas: the review target parses with review, versions, creator and relat
         allow_remix: false,
         allow_model_select: true,
         release_stage: 'organizational',
-        assistant_review: {id: '7', status: 'pending', reason: null},
+        assistant_review: {id: '7', status: 'pending', reason: null, history: [
+            {status: 'needs_revision', reason: 'Tighten the greeting.', reviewed_at: '2026-11-01T10:00:00+01:00'},
+            {status: 'denied', reason: null, reviewed_at: '2026-11-05T12:30:00+01:00'}
+        ]},
         assistant_versions: [
             {id: 'a', text: '', version: 0, changed_keys: ['name'], created_at: '2026-11-09T10:00:00Z', updated_at: '2026-11-09T10:00:00Z'},
             {id: 'b', text: 'Initial', version: 1, changed_keys: null, created_at: '2026-11-08T10:00:00Z', updated_at: '2026-11-08T10:00:00Z'}
@@ -120,6 +123,9 @@ test('schemas: the review target parses with review, versions, creator and relat
     });
 
     assert.equal(target.assistant_review.id, '7');
+    assert.equal(target.assistant_review.history?.length, 2);
+    assert.equal(target.assistant_review.history?.[1]?.status, 'denied');
+    assert.equal(target.assistant_review.history?.[0]?.reason, 'Tighten the greeting.');
     assert.equal(target.assistant_versions.length, 2);
     // The draft row arrives numeric on the wire; the page detects it by its
     // stringified version.

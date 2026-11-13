@@ -77,7 +77,13 @@ export const ReviewTargetWireSchema = z.object({
         /** When the decision was made; null while pending. */
         reviewed_at: z.string().nullable().optional(),
         /** Fallback when no explicit decision date exists. */
-        updated_at: z.string().nullable().optional()
+        updated_at: z.string().nullable().optional(),
+        /** Every past decision round, oldest first — survives resubmissions. */
+        history: z.array(z.object({
+            status: ReviewStatusSchema,
+            reason: z.string().nullable().optional(),
+            reviewed_at: z.string().nullable().optional()
+        })).nullable().optional()
     }).nullable().optional(),
     assistant_versions: z.array(AssistantVersionWireSchema).nullable().optional(),
     creator: z.object({

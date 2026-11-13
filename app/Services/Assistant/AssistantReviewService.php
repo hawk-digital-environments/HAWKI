@@ -8,6 +8,7 @@ use App\Models\Assistants\AssistantReview;
 use App\Models\User;
 use App\Services\Assistant\Exceptions\AssistantReviewNotFoundException;
 use App\Services\Assistant\Repositories\AssistantReviewRepository;
+use App\Services\Assistant\Values\AssistantReviewDecisionEntry;
 use App\Services\Assistant\Values\AssistantReviewStatus;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Database\DatabaseManager;
@@ -28,13 +29,21 @@ readonly class AssistantReviewService
 
     /**
      * React to a review status transition: promote on approval, demote on
-     * denial. Only genuine transitions trigger the side effects; the previous
-     * status is supplied by the caller (captured reliably before the save).
+     * denial. Only genuine transitions trigger those side effects; the
+     * previous status and reason are supplied by the caller (captured
+     * reliably before the save). Every decision that changes either is
+     * recorded in the history — including switches between the denial
+     * variants and re-decisions with a new reason.
      *
-     * @param null|AssistantReviewStatus $previous the status before the update, or null if unknown
+     * @param null|AssistantReviewStatus $previous         the status before the update, or null if unknown
+     * @param null|string                $previousReason   the reason before the update
      */
-    public function applyStatusTransition(AssistantReview $review, ?AssistantReviewStatus $previous, ?User $reviewer): void
-    {
+    public function applyStatusTransition(
+        AssistantReview $review,
+        null|AssistantReviewStatus $previous,
+        null|User $reviewer,
+        null|string $previousReason = null,
+    ): void {
         $newStatus = $review->status;
 
         if (AssistantReviewStatus::APPROVED === $newStatus && AssistantReviewStatus::APPROVED !== $previous) {
@@ -53,6 +62,14 @@ readonly class AssistantReviewService
             if (null !== $reviewer) {
                 $this->deny($review, $reviewer, $review->reason, $newStatus);
             }
+
+            return;
+        }
+
+        // No promote/demote fires between the denial variants or on a
+        // same-status re-decision — but the decision is still recorded.
+        if (null !== $reviewer && ($previous !== $newStatus || $previousReason !== $review->reason)) {
+            $this->recordDecision($review, $reviewer);
         }
     }
 
@@ -74,16 +91,9 @@ readonly class AssistantReviewService
                 throw AssistantReviewNotFoundException::duringDecision();
             }
 
-            // Re-apply the audit fields onto the locked row directly so the
-            // update is consistent with the latest persisted state. The
-            // reason is cleared: it belonged to a previous denial that the
+            // The reason is cleared: it belonged to a previous denial that the
             // approval supersedes (reopening clears it the same way).
-            $locked->status = AssistantReviewStatus::APPROVED;
-            $locked->reason = null;
-            $locked->reviewer_id = $reviewer->id;
-            $locked->reviewed_at = Carbon::instance($this->clock->now());
-            $locked->save();
-
+            $this->applyDecision($locked, $reviewer, AssistantReviewStatus::APPROVED, null);
             $review->setRawAttributes($locked->getAttributes()); // TODO: use orm
 
             // The approved state becomes the next published version; a fresh
@@ -121,16 +131,45 @@ readonly class AssistantReviewService
                 throw AssistantReviewNotFoundException::duringDecision();
             }
 
-            $locked->status = $status;
-            $locked->reason = $reason;
-            $locked->reviewer_id = $reviewer->id;
-            $locked->reviewed_at = Carbon::instance($this->clock->now());
-            $locked->save();
-
+            $this->applyDecision($locked, $reviewer, $status, $reason);
             $review->setRawAttributes($locked->getAttributes());
 
             $this->assistantService->revokeRelease($locked->assistant);
         });
+    }
+
+    /**
+     * Record a decision without promote/demote side effects: the switches
+     * between the denial variants and same-status re-decisions with a new
+     * reason still belong in the history, with a fresh reviewer stamp.
+     */
+    private function recordDecision(AssistantReview $review, User $reviewer): void
+    {
+        $this->db->transaction(function () use ($review, $reviewer): void {
+            $locked = $this->reviewRepository->lockForUpdate($review);
+
+            if (null === $locked) {
+                throw AssistantReviewNotFoundException::duringDecision();
+            }
+
+            $this->applyDecision($locked, $reviewer, $locked->status, $locked->reason);
+            $review->setRawAttributes($locked->getAttributes());
+        });
+    }
+
+    /**
+     * Persist a decision's audit fields and history entry onto the locked row.
+     */
+    private function applyDecision(AssistantReview $locked, User $reviewer, AssistantReviewStatus $status, null|string $reason): void
+    {
+        $reviewedAt = $this->clock->now();
+
+        $locked->status = $status;
+        $locked->reason = $reason;
+        $locked->reviewer_id = $reviewer->id;
+        $locked->reviewed_at = Carbon::instance($reviewedAt);
+        $locked->appendDecision(AssistantReviewDecisionEntry::from($status, $reason, $reviewedAt));
+        $locked->save();
     }
 
     /**
