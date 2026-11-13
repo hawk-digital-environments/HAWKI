@@ -17,6 +17,8 @@ readonly class HealthCheckResult implements \JsonSerializable
     public const STATUS_OK = 'ok';
     /** Check failed — the component is unreachable or behaving incorrectly. */
     public const STATUS_ERROR = 'error';
+    /** A local feature is unavailable while the instance can still serve requests. */
+    public const STATUS_WARNING = 'warning';
 
     public function __construct(
         /** Unique name for this check (see `CHECK_NAME_*` constants on {@see HealthChecker}). */
@@ -42,6 +44,11 @@ readonly class HealthCheckResult implements \JsonSerializable
     /**
      * Returns true when the check failed.
      */
+    public function isWarning(): bool
+    {
+        return $this->status === self::STATUS_WARNING;
+    }
+
     public function isError(): bool
     {
         return $this->status === self::STATUS_ERROR;

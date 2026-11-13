@@ -47,9 +47,12 @@ readonly class ShibbolethService implements AuthServiceWithLogoutRedirectInterfa
             $username = $this->getServerVarOrFail($request, $this->usernameAttribute);
             $this->logger->debug('Authenticated Shibboleth user', ['username' => $username]);
         } catch (\RuntimeException $e) {
+            // The SP returns the visitor to the route that started the flow, so an SPA
+            // /auth/redirect login is answered at /auth/redirect and a legacy /req/login
+            // login at /req/login.
             $loginRedirect = AuthRedirectBuilder::build(
                 $this->loginPath,
-                ['target' => 'web.auth.login.get']
+                ['target' => (string)($request->route()?->getName() ?: 'web.auth.login.get')]
             );
 
             if (!$loginRedirect) {

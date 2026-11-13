@@ -7,6 +7,7 @@ use App\Models\Announcements\AnnouncementUser;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\KnownUsersAccessScope;
 use App\Policies\UserPolicy;
+use App\Services\Announcements\RegistrationPolicyService;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use App\Services\Users\Events\UserCreatedEvent;
@@ -38,7 +39,8 @@ class User extends Authenticatable
         'avatar_id',
         'bio',
         'locale',
-        'isRemoved'
+        'isRemoved',
+        'registration_fingerprint',
     ];
 
     protected $casts = [
@@ -101,7 +103,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Announcement::class, 'announcement_user')
             ->using(AnnouncementUser::class)
-            ->withPivot(['seen_at', 'accepted_at'])
+            ->withPivot(['seen_at', 'accepted_at', 'locale', 'content_hash'])
             ->withTimestamps();
     }
 
@@ -139,6 +141,12 @@ class User extends Authenticatable
 
     public function markAnnouncementAsAccepted($announcementId): void
     {
+        $announcement = Announcement::query()->findOrFail($announcementId);
+        if ($announcement->type === 'policy') {
+            app(RegistrationPolicyService::class)->acceptAnnouncement($this, $announcement);
+            return;
+        }
+
         $this->announcements()->syncWithoutDetaching([
             $announcementId => ['accepted_at' => now()],
         ]);

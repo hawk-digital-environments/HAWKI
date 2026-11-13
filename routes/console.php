@@ -15,3 +15,4 @@ if (getenv('BACKUP_DISABLED') === false) {
 Schedule::command('ai:models:check-status')->everyFifteenMinutes();
 Schedule::command('ai:tools:check-status ')->everyFifteenMinutes();
 Schedule::command('filestorage:cleanup')->daily();
+Schedule::command('passkey-backups:cleanup-archive')->daily();

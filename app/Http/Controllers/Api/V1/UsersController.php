@@ -68,10 +68,10 @@ class UsersController extends Controller
     }
 
     /**
-     * Persists the current user's preferred locale while retaining the session
-     * and cookie fallbacks used by unauthenticated and legacy flows.
+     * Persists the preferred locale. Guests (login, registration, unlock pages)
+     * get the session and cookie fallbacks only; authenticated users additionally
+     * have the preference stored on their account.
      */
-    #[Authorize('view', User::class)]
     public function storeLocale(StoreLocaleRequest $request, LocaleService $localeService): JsonResponse
     {
         try {

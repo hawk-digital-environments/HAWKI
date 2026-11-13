@@ -3,7 +3,7 @@
 namespace App\Services\Profile;
 
 
-use App\Models\PasskeyBackup;
+use App\Services\Profile\Repositories\PasskeyBackupRepository;
 use App\Models\User;
 use App\Services\Chat\AiConv\Repositories\AiConvRepository;
 use App\Services\Chat\Room\RoomService;
@@ -120,11 +120,7 @@ class ProfileService
             $this->getService(FrontendMigrationUserdataRepository::class)->dropAllForUser($user);
             $this->getService(UserKeychainRepository::class)->dropAllForUser($user);
 
-            $backups = PasskeyBackup::where('username', $user->username)->get();
-
-            foreach ($backups as $backup) {
-                $backup->delete();
-            }
+            $this->getService(PasskeyBackupRepository::class)->deleteForUsername($user->username);
 
             $tokens = $user->tokens()->get();
             foreach ($tokens as $token) {
