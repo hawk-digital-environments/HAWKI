@@ -43,10 +43,14 @@
     import ModelMenuListItem from '$plugins/core/modules/chat/components/composer/ModelMenuListItem.svelte';
     import ModelMenuDetail from '$plugins/core/modules/chat/components/composer/ModelMenuDetail.svelte';
     import ModelMenuPreview from '$plugins/core/modules/chat/components/composer/ModelMenuPreview.svelte';
+    import AssistantRow from '$plugins/core/modules/chat/components/composer/AssistantRow.svelte';
+    import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
+    import type {ChatRegenerateGroup} from '$plugins/core/modules/chat/hooks/chatRegenerateHooks.js';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import {usePickerMenuBehaviours} from '$plugins/core/modules/chat/components/composer/utils/pickerMenuBehaviours.svelte.js';
     import {textPopIn} from '$lib/utils/transitions/textPopIn.js';
     import {useComposerContext} from './contexts/ComposerContext.svelte';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
@@ -68,6 +72,7 @@
 
     // svelte-ignore state_referenced_locally
     const composerContext = onSelect ? null : useComposerContext();
+    const app = useApp();
     const aiModelStore = useStore('ai-models');
     const modelFavorites = useStore('model-favorites');
     const {__} = useTranslator();
@@ -129,6 +134,44 @@
         }
         return [...groups.values()];
     });
+
+    // ── Regenerate pick surface ─────────────────────────────────────────────────
+    // While the composer regenerates a reply, the picker becomes the pick surface
+    // for the re-run: core's provider sections as regenerate groups, extendable by
+    // plugins through the `chatRegenerateGroups` hook — e.g. an "Assistants" group
+    // ahead of the providers. A model row is the plain re-run with that model; a
+    // participant row (no `model`) sets the re-run's participant on the regen mode
+    // state, where the transport hands it to the `chatSend` hook. Outside regen
+    // mode the picker shows its regular sections untouched.
+    const handleStore = useStore('ai-handle');
+    const isRegen = $derived(composerContext?.mode.isRegen ?? false);
+    const regenGroups = $derived.by((): ChatRegenerateGroup[] => {
+        if (!isRegen) return [];
+        const systemAssistant = handleStore.assistants.find(assistant => assistant.handle === handleStore.hawkiHandle) ?? null;
+        const core: ChatRegenerateGroup[] = providerGroups.map(group => ({
+            id: `models:${group.id}`,
+            label: group.label,
+            entries: group.models.map(m => ({
+                id: m.model_id,
+                participant: systemAssistant!,
+                model: m.model_id,
+                disabled: m.status === 'offline'
+            }))
+        }));
+        return app.hooks.apply('chatRegenerateGroups', core, {translate: __});
+    });
+
+    function selectParticipant(groupId: string, entryId: string): void {
+        const group = regenGroups.find(candidate => candidate.id === groupId);
+        const entry = group?.entries.find(candidate => candidate.id === entryId);
+        if (!entry || entry.disabled) {
+            return;
+        }
+        if (composerContext?.mode.isRegen) {
+            composerContext.mode.getState('regen').pickedParticipant = entry.participant;
+        }
+        open = false;
+    }
 
     // A search shows every match, folded section or not.
     function isCollapsed(groupId: string): boolean {
@@ -332,24 +375,55 @@
                 <!-- Inside the scrolling viewport, so the sliding hover scrolls with the rows. -->
                 <MenuList class="dropdown-menu-list" bridgeSections>
                     <DropdownMenuRadioGroup value={current?.model_id ?? ''} onValueChange={selectModel}>
-                        {#if favoriteModels.length > 0}
-                            {@render groupHeader(FAVORITES_GROUP, __('chat.composer.favorite.label'), favoriteModels.length)}
-                            {#if !isCollapsed(FAVORITES_GROUP)}
-                                {#each favoriteModels as m (m.model_id)}
-                                    <ModelMenuListItem model={m} selected={m.model_id === current?.model_id} showProvider onOpenDetail={openModelDetail}/>
-                                {/each}
+                        {#if isRegen}
+                            <!-- Regenerate pick surface: hook-extended groups (see `regenGroups`);
+                                 favourites fold into their provider sections here. -->
+                            {#each regenGroups as group (group.id)}
+                                {@const modelEntries = group.entries.filter(entry => entry.model)}
+                                {@const participantEntries = group.entries.filter(entry => !entry.model)}
+                                {@const collapsed = isCollapsed(group.id)}
+                                {@render groupHeader(group.id, group.label, group.entries.length)}
+                                {#if !collapsed}
+                                    {#each participantEntries as entry (entry.id)}
+                                        {@const appearance = entry.participant.appearance ?? defaultAssistantAppearance(entry.participant.label)}
+                                        {@const picked = composerContext?.mode.isRegen
+                                            && composerContext.mode.getState('regen').pickedParticipant?.id === entry.participant.id}
+                                        <DropdownMenuItem
+                                            class="model-menu-item"
+                                            data-participant-id={entry.participant.id}
+                                            disabled={entry.disabled}
+                                            onSelect={() => selectParticipant(group.id, entry.id)}>
+                                            <AssistantRow assistant={entry.participant} emoji={appearance.icon} colors={appearance.colors} checked={Boolean(picked)}/>
+                                        </DropdownMenuItem>
+                                    {/each}
+                                    {#each modelEntries as entry (entry.id)}
+                                        {@const m = aiModelStore.getOneById(entry.model!)}
+                                        {#if m}
+                                            <ModelMenuListItem model={m} selected={m.model_id === current?.model_id} onOpenDetail={openModelDetail}/>
+                                        {/if}
+                                    {/each}
+                                {/if}
+                            {/each}
+                        {:else}
+                            {#if favoriteModels.length > 0}
+                                {@render groupHeader(FAVORITES_GROUP, __('chat.composer.favorite.label'), favoriteModels.length)}
+                                {#if !isCollapsed(FAVORITES_GROUP)}
+                                    {#each favoriteModels as m (m.model_id)}
+                                        <ModelMenuListItem model={m} selected={m.model_id === current?.model_id} showProvider onOpenDetail={openModelDetail}/>
+                                    {/each}
+                                {/if}
                             {/if}
-                        {/if}
 
-                        {#each providerGroups as group (group.id)}
-                            {@const collapsed = isCollapsed(group.id)}
-                            {@render groupHeader(group.id, group.label, group.models.length)}
-                            {#if !collapsed}
-                                {#each group.models as m (m.model_id)}
-                                    <ModelMenuListItem model={m} selected={m.model_id === current?.model_id} onOpenDetail={openModelDetail}/>
-                                {/each}
-                            {/if}
-                        {/each}
+                            {#each providerGroups as group (group.id)}
+                                {@const collapsed = isCollapsed(group.id)}
+                                {@render groupHeader(group.id, group.label, group.models.length)}
+                                {#if !collapsed}
+                                    {#each group.models as m (m.model_id)}
+                                        <ModelMenuListItem model={m} selected={m.model_id === current?.model_id} onOpenDetail={openModelDetail}/>
+                                    {/each}
+                                {/if}
+                            {/each}
+                        {/if}
                     </DropdownMenuRadioGroup>
                 </MenuList>
             {/if}

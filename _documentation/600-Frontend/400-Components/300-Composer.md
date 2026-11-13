@@ -247,7 +247,7 @@ exit()
 | `default` | `ChatDefaultMode` | Normal compose; stays active after send (`exitAfterSend = false`) |
 | `edit` | `ChatEditMode` | Edit a past user message; locks model, settings, and tools UI; blocks send until message or attachments change |
 | `thread` | `ChatInThreadMode` | Compose inside a thread; allows nested edit/regen modes; stays active after send |
-| `regen` | `ChatRegenMode` | Regenerate an assistant reply; pre-fills model and params from the original message; locks attachments, input, and suggestions |
+| `regen` | `ChatRegenMode` | Regenerate an assistant reply; pre-fills model, params, and tools from the original message; locks attachments, input, and suggestions; the model picker becomes the re-run's pick surface |
 
 `ChatInThreadMode.allowsNestedModes()` returns `true`, which is what permits edit and regen to be entered while a thread is active — the thread checkpoint is preserved on the stack beneath the nested mode checkpoint.
 
@@ -255,11 +255,11 @@ exit()
 
 **`ChatDefaultMode`** — carries no state (`{}`). Never exits after send so the user can continue typing in the same session.
 
-**`ChatEditMode`** — takes an `OldUiConversationMessage` as data. Pre-fills the composer with the original message text and reconstructs any attachments as `RemoteFile` references. Stored state: `{ messageId, originalMessage, originalAttachments }`. `canSend` returns `false` until the message text or attachment list has changed from the original. Disables `'models'`, `'settings'`, `'tools'` UI features.
+**`ChatEditMode`** — takes a `ChatMessage` as data. Pre-fills the composer with the original message text and reconstructs any attachments as `RemoteFile` references. Stored state: `{ messageId, originalMessage, originalAttachments }`. `canSend` returns `false` until the message text or attachment list has changed from the original. Disables `'models'`, `'settings'`, `'tools'` UI features.
 
 **`ChatInThreadMode`** — takes a `threadId` string as data. Resets the composer on enter and focuses the input. Stored state: `{ threadId }`. Because `allowsNestedModes()` is `true`, the user can enter edit or regen mode for messages within the thread without losing the thread context.
 
-**`ChatRegenMode`** — takes an `OldUiConversationMessage` (must be an assistant message) as data. On enter, pre-fills the model and sampling parameters from `data.model` and `data.metadata.params`, and restores tools from `data.metadata.tools`. Sets a placeholder message so `canSend` in `GuardSlice` passes the non-empty check. Disables `'attachments'`, `'input'`, `'suggestions'`. Exits after send.
+**`ChatRegenMode`** — takes a `ChatMessage` (must be an assistant message) as data. On enter, pre-fills the model (with a fallback toast when the original model is gone) and sampling parameters from `data.model` / `data.metadata.params`, and restores tools from `data.metadata.tools` (toasting about missing ones). Sets a placeholder message so `canSend` in `GuardSlice` passes the non-empty check. Disables `'attachments'`, `'input'`, `'suggestions'`. Exits after send. Stored state: `{ messageId, originalMessage, pickedParticipant }` — see [Regenerating a Reply](#regenerating-a-reply) for the send path and the pick surface.
 
 ### Writing a New Mode
 
@@ -296,7 +296,7 @@ const mode = new ModeSlice(
         switch (mode) {
             case 'edit':   return new ChatEditMode();
             case 'thread': return new ChatInThreadMode();
-            case 'regen':  return new ChatRegenMode(aiModelStore, aiToolStore, toastContext);
+            case 'regen':  return new ChatRegenMode(aiModelStore, toastContext, app.translator);
             case 'my':     return new ChatMyMode();  // ← add here
             default: throw new Error(`Unsupported mode ${mode}`);
         }
@@ -306,6 +306,83 @@ const mode = new ModeSlice(
 ```
 
 Also add the new key to `ComposerModeRegistry` in `ModeSlice.svelte.ts` so `enter()` and `getState()` are properly typed.
+
+---
+
+## Threads
+
+A conversation is a flat list of messages in the store; threads are a **view** over that list, driven entirely by the legacy `W.DDD` message-id scheme. `12.000` is the twelfth trunk message (a turn in the main log), `12.003` is the third reply in its thread. Both user messages and assistant answers in the main log are trunk messages — each gets its own whole number.
+
+`utils/messageThreads.ts` groups the flat list into `ChatThreadGroup`s (trunk + nested replies) for rendering; `ChatMessage.svelte` renders each group's thread as an indented, collapsible panel. Any persisted message — question *or* response — can anchor a thread (`canThread` requires a parseable `W.000` id and no pending/streaming state).
+
+### What the model sees
+
+Thread runs do **not** inherit the surrounding conversation. `ChatTransport.messageHistory` selects exactly the messages whose id's whole number matches the thread:
+
+```ts
+.filter(message => {
+    const [whole, decimal = 0] = message.message_id.split('.').map(Number);
+    return threadId === 0 ? decimal === 0 : whole === threadId;
+})
+.slice(-MESSAGE_HISTORY_CAP);   // 20
+```
+
+So an AI run inside a thread receives the **system prompt + the trunk message + that thread's replies** (last 20) — nothing else:
+
+| Thread opened on | In the run's context | Excluded |
+|---|---|---|
+| a question (`2.000`) | the question + the thread's replies | the answer that question received in the main log (it lives under the *next* whole id, `3.000`) |
+| a response (`3.000`) | the response + the thread's replies | the question that prompted it (`2.000`) — the history opens with an assistant turn |
+
+Details worth knowing:
+
+- **No cross-thread or cross-turn inheritance**: earlier and later trunk turns, other threads, and the trunk's own main-log answer are all invisible to the run.
+- **Consecutive user turns**: a fresh thread on a question opens with two user messages in a row (trunk + first reply). The backend merges them behind a `[[MESSAGE BOUNDARY]]` marker (`AlternatingMessageHistory`).
+- **History cap**: only the last `MESSAGE_HISTORY_CAP` (20) thread messages travel per run — in a long thread the anchoring trunk message itself drops off, and the run starts mid-thread.
+- **Regenerating inside a thread** cuts the history at the regenerated message (`beforeMessageId`), so the re-run sees only what came before it.
+
+These rules are pinned by the transport tests in `tests/js/tools/transport.test.ts`.
+
+---
+
+## Regenerating a Reply
+
+Regeneration is the composer's `regen` mode — clicking the regenerate action on an assistant message enters the mode (see `ChatRegenMode` above), and the send re-runs the reply **in place**.
+
+### Flow
+
+```
+click regenerate on an assistant message
+  └── mode.enter('regen', message)      → composer focused, snapshot pre-filled
+        ├── model       ← message.model (fallback + toast when gone)
+        ├── params      ← message.metadata.params
+        └── tools       ← message.metadata.tools (toasts for missing ones)
+
+model picker (while in regen mode)
+  └── groups = hooks.apply('chatRegenerateGroups', providerSections, ctx)
+        ├── plugin groups first — e.g. an "Assistants" section (rows without a
+        │   model set `state.pickedParticipant`)
+        └── provider sections — a model row is the plain re-run with that model
+
+send
+  └── ChatTransport.sendMessage (regen branch)
+        ├── no optimistic message, user message is NOT persisted again
+        ├── requestFromContext → chatSend hook → validatedToolSnapshot
+        ├── thread + replace target derived from the message's W.DDD id
+        └── streamAssistant replaces the message in place
+```
+
+### The pick surface
+
+While the regen mode is active, `ModelPicker` swaps its regular sections (favourites + providers) for the result of the `chatRegenerateGroups` hook — core contributes the provider sections as regenerate groups, plugins may prepend participant groups (rendered via `AssistantRow`). Picking a participant row stores it on the mode state (`pickedParticipant`); the transport then hands it to the `chatSend` hook as `ctx.regenParticipant`, where a plugin handler can claim the run. The handle travels on the wire as `payload.hawkiExtensions.assistant_handle` (`AiStreamRequest.assistantHandle`). Core registers no handler — an unclaimed pick stays a plain model re-run.
+
+### Tool and model validation
+
+The composer's live gating (`ModelUsageSlice` → send button + conflict picker) guards the configuration while the mode is active, and the transport re-validates at send time: the active tools pass `validatedToolSnapshot()` against the picked model, aborting with the translated `TOOL_*` messages when the model cannot reproduce the run's tool selection (tool calling off, tool not assigned, tool offline) instead of silently dropping it.
+
+### Composer-independent regeneration
+
+`ChatTransport.regenerateMessage(slug, message, pick, onNotice)` is the same pipeline without a composer: it re-runs from the message's persisted snapshot (model fallback notice included), addressed to the menu `pick`'s participant. It exists as the API for surfaces that have no composer to focus.
 
 ---
 
@@ -492,4 +569,4 @@ Then pass your transport to `MessageSender` inside `createComposerContext()`:
 const sender = new MessageSender(new MyTransport(/* deps */));
 ```
 
-The only current implementation is `OldUiBridgeTransport` (`contexts/sending/transport/OldUiBridgeTransport.ts`), which forwards requests to the legacy UI layer via `oldUiBridge.triggerSendMessage()`. Use it as a reference implementation.
+Current implementations: `OldUiBridgeTransport` (`contexts/sending/transport/OldUiBridgeTransport.ts`), which forwards requests to the legacy UI layer via `oldUiBridge.triggerSendMessage()`, and `ChatTransport` (`modules/chat/transport/ChatTransport.ts`), the chat module's own request-driven transport (conversation creation, streaming, regeneration — see [Threads](#threads) and [Regenerating a Reply](#regenerating-a-reply)).

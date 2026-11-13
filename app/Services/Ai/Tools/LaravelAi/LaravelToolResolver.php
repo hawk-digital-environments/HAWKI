@@ -101,10 +101,13 @@ class LaravelToolResolver
     /**
      * Resolves a HAWKI tool by its exact `name` field on the current model.
      *
-     * No online-status or active check is applied — the tool is resolved purely by name match.
-     * Use {@see resolveToolForCapability()} when you need the online/active guard.
+     * The tool must be attached to the current model, and — when it lives on
+     * an MCP server — that server must be online, mirroring the guard of
+     * {@see resolveToolForCapability()}. No `active` check is applied: the
+     * by-name form is an explicit pick, not a discovery.
      *
-     * @throws ToolNotFoundException when no tool with the given name exists on the model.
+     * @throws ToolNotFoundException when no tool with the given name exists on the model,
+     *         or its MCP server is offline.
      */
     public function resolveToolByName(
         string              $toolName,
@@ -118,6 +121,10 @@ class LaravelToolResolver
 
         if (!$hawkiTool) {
             throw ToolNotFoundException::forName($toolName);
+        }
+
+        if ($hawkiTool->server !== null && $hawkiTool->server->status !== OnlineStatus::ONLINE) {
+            throw ToolNotFoundException::forOfflineServer($toolName);
         }
 
         $tool = $this->toolConverter->convert($hawkiTool, $toolSettings);

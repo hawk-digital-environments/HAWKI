@@ -143,14 +143,14 @@
             },
             "modePanel": {
                 "editTitle": "Nachricht bearbeiten",
-                "regenTitle": "KI Nachricht regenerieren",
                 "threadTitle": "Nachricht in Thread schreiben",
                 "defaultTitle": "Modus",
                 "cancelEdit": "Bearbeitungsmodus verlassen",
-                "cancelRegen": "Regenerieren abbrechen",
                 "cancelThread": "Thread-Ansicht verlassen",
                 "cancelDefault": "Modus verlassen",
-                "actionBusy": "You can not do this right now. Please wait until the current action is finished."
+                "actionBusy": "You can not do this right now. Please wait until the current action is finished.",
+                "regenTitle": "KI Nachricht regenerieren",
+                "cancelRegen": "Regenerieren abbrechen"
             },
             "settings": {
                 "presetCreative": "Kreativ",
@@ -292,16 +292,16 @@
                 "emptyMessageTooltip": "Bitte gib eine Nachricht ein",
                 "sendTooltip": "Nachricht senden",
                 "saveLabel": "Speichern",
-                "regenerateLabel": "Regenerieren",
                 "sendLabel": "Senden",
-                "cancelRegeneration": "Regeneration abbrechen",
                 "leaveThread": "Thread verlassen",
                 "cancelEdit": "Bearbeitung abbrechen",
                 "cancelResponse": "KI-Antwort abbrechen",
                 "improvementError": "Verbesserungsvorschläge konnten nicht geladen werden",
                 "improvementModelSaidNoError": "Deine Nachricht ist gut so. Keine Verbesserungsvorschläge verfügbar.",
                 "improveTooltip": "Verbessere deine Eingabe mit KI-gestützten Vorschlägen",
-                "cancelLabel": "Abbrechen"
+                "cancelLabel": "Abbrechen",
+                "regenerateLabel": "Regenerieren",
+                "cancelRegeneration": "Regeneration abbrechen"
             },
             "demandBars": {
                 "low": "Niedrig",
@@ -312,12 +312,6 @@
                 "highTooltip": "Hohe Auslastung — Antworten verzögert",
                 "ariaLabel": "Auslastung: :label"
             },
-            "regen": {
-                "onlyAssistantMessages": "Nur Nachrichten des Assistenten können regeneriert werden",
-                "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
-                "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
-                "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
-            },
             "sending": {
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
                 "sendError": "Fehler beim Senden der Nachricht."
@@ -326,7 +320,20 @@
                 "label": "Favoriten",
                 "add": "Zu Favoriten hinzufügen",
                 "remove": "Aus Favoriten entfernen"
+            },
+            "regen": {
+                "onlyAssistantMessages": "Nur Nachrichten des Assistenten können regeneriert werden",
+                "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
+                "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
+                "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
             }
+        },
+        "regenerate": {
+            "modelNotAvailable": "Das für diese Nachricht verwendete Modell (:model) ist nicht verfügbar. Es wird das Ersatzmodell :fallback verwendet."
+        },
+        "tools": {
+            "accessDenied": "Sie haben keinen Zugriff mehr auf ein ausgewähltes Tool. Prüfen Sie Ihre Auswahl und versuchen Sie es erneut.",
+            "unavailable": "Ein ausgewähltes Tool ist für dieses Modell derzeit nicht verfügbar. Prüfen Sie Ihre Auswahl."
         }
     }
 }
