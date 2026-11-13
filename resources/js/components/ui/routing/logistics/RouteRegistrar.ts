@@ -516,6 +516,8 @@ export class RouteRegistrar {
     private buildRouteFromOptions(options: RegisteredRouteOptions): Route {
         const path = options.path.replace(/\/$/, ''); // Strip trailing slash for consistency
         const layout = resolveLayoutOption(options.layout, options.lazyLayout, `Route "${options.path}"`);
+        const pageAction = (ctx: RouteContext<any>, params: RouteParams): RouteResultBody =>
+            ({component: options.component, context: ctx as HawkiRouteContext, params});
 
         // `meta` and `layout` sit on the inner route on purpose: middleware
         // wrappers must stay transparent, and the layout chain is collected by
@@ -529,7 +531,7 @@ export class RouteRegistrar {
             // it can run every resolution in parallel instead of one route
             // at a time. This also keeps the action synchronous, which
             // `universal-router` is happy with.
-            action: (ctx, params) => ({component: options.component, context: ctx, params}),
+            action: pageAction,
             meta: options.meta,
             layout,
             nodes: {
@@ -544,11 +546,31 @@ export class RouteRegistrar {
             children: options.catchAll ? [] : undefined
         };
 
+        // Meta guards run inside the leaf action, not as path-less middleware
+        // ancestors: `universal-router` already runs an ancestor's action while
+        // it merely probes a subtree, so wrapping guards would execute them for
+        // every sibling route tried along the way. Composed into the leaf they
+        // fire exactly once, and only when this route actually matched.
         const guards = this.options.metaGuards?.(options.meta ?? {}) ?? [];
-        return buildRouteMiddlewareStack(innerRoute, this.globalMiddlewares, {
-            ...options,
-            middlewares: [...(Array.isArray(guards) ? guards : [guards]), ...(options.middlewares ?? [])]
-        });
+        const guardList = Array.isArray(guards) ? guards : [guards];
+        if (guardList.length > 0) {
+            innerRoute.action = async (ctx, params): Promise<RouteResultBody | undefined> => {
+                const dispatch = async (index: number): Promise<RouteResultBody | undefined> => {
+                    if (index >= guardList.length) {
+                        return pageAction(ctx as HawkiRouteContext, params);
+                    }
+                    // Same contract translation as the middleware wrappers: a
+                    // returned body wins, `undefined` (the guard called `next()`)
+                    // continues the chain, any other nullish return denies the
+                    // route — which falls through to the next candidate.
+                    const result = await guardList[index](ctx as HawkiRouteContext, () => dispatch(index + 1));
+                    return result === undefined ? dispatch(index + 1) : result ?? undefined;
+                };
+                return dispatch(0);
+            };
+        }
+
+        return buildRouteMiddlewareStack(innerRoute, this.globalMiddlewares, options);
     }
 
     /**
