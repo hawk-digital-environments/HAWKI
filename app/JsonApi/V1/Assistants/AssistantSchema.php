@@ -84,7 +84,9 @@ class AssistantSchema extends Schema
             AssistantNameFilter::make(),
             AssistantFavoriteFilter::make(),
             AssistantSharedWithUserFilter::make(),
+            AssistantSharedWithUserFilter::make(),
             AssistantModelAvailableFilter::make(),
+            AssistantReviewStatusFilter::make(),
             WhereIn::make('release_stage')->delimiter(','),
             Where::make('handle')->singular(),
         ];

@@ -22,7 +22,12 @@ return [
         'avatar_id' => env('HAWKI_AVATAR', 'hawkiAvatar.jpg'),
     ],
 
-    'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
+    'aiHandle' => '@' . env('AI_MENTION_HANDLE', 'hawki'),
+
+    'organization' => [
+        // Existing organization every newly registered user is joined to as a member; empty = off.
+        'default' => env('DEFAULT_ORGANIZATION', 'HAWKI'),
+    ],
 
     'accessibility' => [
         // Public URL of the accessibility statement (Barrierefreiheitserklärung). Empty = no link in the UI.
@@ -31,8 +36,8 @@ return [
 
     'security' => [
         'passkey' => [
-            'allow_paste' => filter_var(env('APP_SECURITY_PASSKEY_ALLOW_PASTE', true), FILTER_VALIDATE_BOOLEAN),
-            'char_limitation'=> filter_var(env('APP_SECURITY_PASSKEY_CHAR_LIMITATION', true), FILTER_VALIDATE_INT),
+            'allow_paste' => filter_var(env('APP_SECURITY_PASSKEY_ALLOW_PASTE', true), \FILTER_VALIDATE_BOOLEAN),
+            'char_limitation' => filter_var(env('APP_SECURITY_PASSKEY_CHAR_LIMITATION', true), \FILTER_VALIDATE_INT),
         ],
     ],
 ];

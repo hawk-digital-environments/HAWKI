@@ -37,13 +37,17 @@ class AssistantRepository extends AbstractRepository
         });
     }
 
+    /**
+     * Org admins review and roll back their organization's assistants —
+     * pending submissions stay private until approval.
+     */
     public function isVisibleTo(Assistant $assistant, User $user): bool
     {
         if (\in_array($assistant->release_stage, AssistantReleaseStage::publiclyVisibleCases(), true)) {
             return true;
         }
 
-        if ($assistant->creator_id === $user->id) {
+        if ($this->isPrivileged($user, $assistant)) {
             return true;
         }
 
@@ -181,6 +185,16 @@ class AssistantRepository extends AbstractRepository
     public function loadRelations(Assistant $assistant, array $relations): Assistant
     {
         return $assistant->load($relations);
+    }
+
+    /**
+     * Re-fetch the assistant by key under a row lock, for decisions made
+     * inside the caller's transaction. Null when the row vanished between
+     * the caller's fetch and this lock (a lost race).
+     */
+    public function lockForUpdate(Assistant $assistant): ?Assistant
+    {
+        return $this->getQuery()->whereKey($assistant->getKey())->lockForUpdate()->first();
     }
 
     public function findOneByHandle(string $handle): ?Assistant

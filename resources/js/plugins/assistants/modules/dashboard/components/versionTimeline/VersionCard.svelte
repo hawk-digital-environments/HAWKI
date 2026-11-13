@@ -1,9 +1,17 @@
 <script lang="ts">
     import Badge from '$lib/components/ui/badge/Badge.svelte';
     import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
+    import type {Snippet} from 'svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
 
-    let { version, date, changedKeys, isCreation, note } = $props<{
+    let {
+        version,
+        date,
+        changedKeys,
+        isCreation,
+        note,
+        action
+    } = $props<{
         version: string;
         date: string;
         /** Assistant fields this revision touched; `null`/empty when none were recorded. */
@@ -12,6 +20,8 @@
         isCreation?: boolean;
         /** The creator's version note ("What has changed?") recorded on release. */
         note?: string;
+        /** Optional action rendered on the version's header line (e.g. a rollback). */
+        action?: Snippet;
     }>();
 
     const { __ } = useTranslator();
@@ -28,6 +38,11 @@
         <p class="header">
             <span class="version">v{version}</span>
             <span class="date">{date}</span>
+            {#if action}
+                <span class="action">
+                    {@render action()}
+                </span>
+            {/if}
         </p>
         {#if note}
             <div class="fields">
@@ -112,10 +127,15 @@
         gap: var(--space-2);
         padding-top: calc(var(--row) / 2 - 0.5em);
         box-sizing: border-box;
-        height: var(--row);
+        min-height: var(--row);
         margin: 0;
         font-size: var(--font-size-sm);
         line-height: 1;
+    }
+    /* The header line's trailing action (e.g. a rollback button) — pinned
+       to the row's end, aligned to the version text's baseline. */
+    .header .action {
+        margin-left: auto;
     }
     .version {
         font-weight: var(--font-weight-semibold);

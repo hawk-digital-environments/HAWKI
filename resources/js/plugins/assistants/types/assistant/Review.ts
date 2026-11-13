@@ -8,7 +8,9 @@ import { ReviewStageSchema } from './ReviewStage';
 export const ReviewSchema = z.object({
     status: ReviewStageSchema,
     /** Reviewer note explaining a denial — shown verbatim to the creator. */
-    reason: z.string().nullable()
+    reason: z.string().nullable(),
+    /** When the decision was made (falls back to `updated_at`); null while pending. */
+    reviewedAt: z.string().nullable()
 });
 
 export type Review = z.infer<typeof ReviewSchema>;

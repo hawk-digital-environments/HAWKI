@@ -54,33 +54,33 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertNotNull($clone);
-        self::assertEquals($remixUser->id, $clone->creator_id);
-        self::assertEquals($owner->id, $clone->remixed_creator_id);
-        self::assertNotEquals($assistant->id, $clone->id);
-        self::assertEquals($assistant->id, $clone->remixed_assistant_id);
-        self::assertSame(\App\Services\Assistant\Values\AssistantReleaseStage::PRIVATE, $clone->release_stage);
+        static::assertNotNull($clone);
+        static::assertEquals($remixUser->id, $clone->creator_id);
+        static::assertEquals($owner->id, $clone->remixed_creator_id);
+        static::assertNotEquals($assistant->id, $clone->id);
+        static::assertEquals($assistant->id, $clone->remixed_assistant_id);
+        static::assertSame(\App\Services\Assistant\Values\AssistantReleaseStage::PRIVATE, $clone->release_stage);
 
-        self::assertEquals($assistant->name, $clone->name);
-        self::assertEquals($assistant->system_prompt, $clone->system_prompt);
-        self::assertEquals($assistant->description, $clone->description);
-        self::assertEquals($assistant->greeting, $clone->greeting);
-        self::assertEquals($assistant->allow_remix, $clone->allow_remix);
-        self::assertEquals($assistant->allow_model_select, $clone->allow_model_select);
-        self::assertEquals($assistant->max_tokens, $clone->max_tokens);
-        self::assertEquals($assistant->temp, $clone->temp);
-        self::assertEquals($assistant->top_p, $clone->top_p);
-        self::assertEquals($assistant->model, $clone->model);
-        self::assertEquals($assistant->detail_description, $clone->detail_description);
-        self::assertEquals($assistant->category_id, $clone->category_id);
+        static::assertEquals($assistant->name, $clone->name);
+        static::assertEquals($assistant->system_prompt, $clone->system_prompt);
+        static::assertEquals($assistant->description, $clone->description);
+        static::assertEquals($assistant->greeting, $clone->greeting);
+        static::assertEquals($assistant->allow_remix, $clone->allow_remix);
+        static::assertEquals($assistant->allow_model_select, $clone->allow_model_select);
+        static::assertEquals($assistant->max_tokens, $clone->max_tokens);
+        static::assertEquals($assistant->temp, $clone->temp);
+        static::assertEquals($assistant->top_p, $clone->top_p);
+        static::assertEquals($assistant->model, $clone->model);
+        static::assertEquals($assistant->detail_description, $clone->detail_description);
+        static::assertEquals($assistant->category_id, $clone->category_id);
 
-        self::assertEquals(
+        static::assertEquals(
             $assistant->settingValues()->count(),
             $clone->settingValues()->count(),
         );
 
         foreach ($assistant->settingValues as $value) {
-            self::assertTrue(
+            static::assertTrue(
                 $clone->settingValues()
                     ->where('setting_id', $value->setting_id)
                     ->where('value', $value->value)
@@ -88,12 +88,12 @@ class AssistantRemixTest extends TestCase
             );
         }
 
-        self::assertNull($clone->handle);
+        static::assertNull($clone->handle);
 
-        self::assertEquals(2, $clone->assistantUserPrompts()->count());
-        self::assertTrue($clone->assistantTags()->where('text', 'remix-tag')->exists());
+        static::assertEquals(2, $clone->assistantUserPrompts()->count());
+        static::assertTrue($clone->assistantTags()->where('text', 'remix-tag')->exists());
         // Knowledge files are intentionally not remixed.
-        self::assertEquals(0, $clone->assistantAttachments()->count());
+        static::assertEquals(0, $clone->assistantAttachments()->count());
 
         $response->assertJson([
             'data' => [
@@ -105,7 +105,7 @@ class AssistantRemixTest extends TestCase
         ]);
     }
 
-    public function testRemixCopiesLatestVersionOnly(): void
+    public function testItStartsAFreshVersionHistoryOnRemix(): void
     {
         $owner = User::factory()->create();
         $remixUser = User::factory()->create();
@@ -116,8 +116,9 @@ class AssistantRemixTest extends TestCase
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
         ]);
         // version is intentionally not mass-assignable on AssistantVersion.
-        // The factory already seeds an initial v1.0; append newer versions.
+        // The factory seeds the working draft; append published versions.
         $assistant->assistantVersions()->saveMany([
+            (new \App\Models\Assistants\AssistantVersion())->forceFill(['text' => 'Version 1', 'version' => 1.0]),
             (new \App\Models\Assistants\AssistantVersion())->forceFill(['text' => 'Version 2', 'version' => 2.0]),
             (new \App\Models\Assistants\AssistantVersion())->forceFill(['text' => 'Version 3', 'version' => 3.0]),
         ]);
@@ -129,13 +130,16 @@ class AssistantRemixTest extends TestCase
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
 
-        self::assertEquals(1, $clone->assistantVersions()->count());
-        $latestVersion = $clone->assistantVersions()->first();
-        // The source's version number carries over for continuity, but not its
-        // release note: the note describes the original author's publish, and
-        // the remix's history starts with this copy.
-        self::assertEquals('', $latestVersion->text);
-        self::assertEquals(3.0, (float) $latestVersion->version);
+        // The clone's history starts from scratch: its own working draft at
+        // version 0.0, no published numbers carried over from the source — a
+        // remix is a new assistant, not a continuation of the lineage.
+        static::assertEquals(1, $clone->assistantVersions()->count());
+        $draftVersion = $clone->assistantVersions()->first();
+        static::assertEquals(0.0, (float) $draftVersion->version);
+        static::assertEquals('', $draftVersion->text);
+
+        // The source's history is untouched.
+        static::assertSame(4, $assistant->fresh()->assistantVersions()->count());
     }
 
     public function testRemixCopiesAiToolsWhenUsersShareOrganization(): void
@@ -160,7 +164,7 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertTrue($clone->ai_tools()->where('ai_tool_id', $tool->id)->exists());
+        static::assertTrue($clone->ai_tools()->where('ai_tool_id', $tool->id)->exists());
     }
 
     public function testRemixDoesNotCopyAiToolsWhenUsersDifferOrgs(): void
@@ -187,7 +191,7 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertFalse($clone->ai_tools()->exists());
+        static::assertFalse($clone->ai_tools()->exists());
     }
 
     public function testRemixDoesNotCopyAttachments(): void
@@ -226,8 +230,8 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertEquals(0, $clone->assistantAttachments()->count());
-        self::assertEquals(2, $assistant->assistantAttachments()->count());
+        static::assertEquals(0, $clone->assistantAttachments()->count());
+        static::assertEquals(2, $assistant->assistantAttachments()->count());
     }
 
     public function testRemixDoesNotCopyReviews(): void
@@ -251,7 +255,7 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertNull($clone->assistantReview);
+        static::assertNull($clone->assistantReview);
     }
 
     public function testRemixSetReleaseStageToPrivate(): void
@@ -271,7 +275,7 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertSame(\App\Services\Assistant\Values\AssistantReleaseStage::PRIVATE, $clone->release_stage);
+        static::assertSame(\App\Services\Assistant\Values\AssistantReleaseStage::PRIVATE, $clone->release_stage);
     }
 
     public function testRemixedCreatorIdIsSourceCreatorId(): void
@@ -293,7 +297,7 @@ class AssistantRemixTest extends TestCase
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
-        self::assertEquals($owner->id, $clone->remixed_creator_id);
+        static::assertEquals($owner->id, $clone->remixed_creator_id);
     }
 
     public function testCannotRemixWhenNotAllowed(): void
@@ -312,7 +316,7 @@ class AssistantRemixTest extends TestCase
             ->assertForbidden()
             ->assertJson(['errors' => [['detail' => 'This action is unauthorized.']]]);
 
-        self::assertEquals(1, Assistant::count());
+        static::assertEquals(1, Assistant::count());
     }
 
     /**
@@ -336,7 +340,7 @@ class AssistantRemixTest extends TestCase
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/remix")
             ->assertForbidden();
 
-        self::assertEquals(1, Assistant::count());
+        static::assertEquals(1, Assistant::count());
     }
 
     public function testGuestCannotRemixAssistant(): void
@@ -370,7 +374,7 @@ class AssistantRemixTest extends TestCase
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
-        self::assertSame($initialVersionCount, $assistant->fresh()->assistantVersions()->count());
+        static::assertSame($initialVersionCount, $assistant->fresh()->assistantVersions()->count());
     }
 
     public function testRemixSkipsVersionOnSourceWhenDraft(): void
@@ -389,6 +393,6 @@ class AssistantRemixTest extends TestCase
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
-        self::assertSame($initialVersionCount, $assistant->fresh()->assistantVersions()->count());
+        static::assertSame($initialVersionCount, $assistant->fresh()->assistantVersions()->count());
     }
 }

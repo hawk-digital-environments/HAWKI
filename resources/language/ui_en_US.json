@@ -168,6 +168,13 @@
             "retryLabel": "Search “:group” again",
             "noResults": "Nothing matches “:query”.",
             "empty": "Nothing to search yet."
+        },
+        "table": {
+            "page": "Page :page of :pages (:total entries)",
+            "page_size": "Entries per page",
+            "previous": "Previous",
+            "next": "Next",
+            "empty": "No entries."
         }
     }
 }

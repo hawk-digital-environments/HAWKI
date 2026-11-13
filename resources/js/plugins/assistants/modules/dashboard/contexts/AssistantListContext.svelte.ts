@@ -71,6 +71,8 @@ export type AssistantListFilter = {
     shared_with_user?: boolean;
     /** `true` keeps only assistants whose model is still offered (hides deactivated ones). */
     model_available?: boolean;
+    /** Creator-scoped on the backend: only the user's own submissions match. */
+    review_status?: string[];
 };
 
 /** Nested JSON:API filter values, e.g. `filter[assistant_category][text]=x`. */
@@ -210,6 +212,10 @@ export class AssistantListContext {
 
         if (this.filter.release_stage?.length) {
             out['release_stage'] = this.filter.release_stage.join(',');
+        }
+
+        if (this.filter.review_status?.length) {
+            out['review_status'] = this.filter.review_status.join(',');
         }
 
         if (this.filter.shared_with_user !== undefined) {

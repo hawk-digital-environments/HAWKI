@@ -9,6 +9,9 @@
     import {createBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
+    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+    import {ReleaseMode} from "$plugins/assistants/types/assistant/ReleaseMode";
     import BuilderStepFooter from "$plugins/assistants/modules/builder/components/BuilderStepFooter.svelte";
     import ConfirmBuilderExit from "$plugins/assistants/modules/builder/components/ConfirmBuilderExit.svelte";
     import {breakpointsQueries} from '$lib/components/util/breakpoints/breakpoints.js';
@@ -17,10 +20,50 @@
     let { children } = $props();
 
     const { __ } = useTranslator();
+    const router = useRouter();
     // This layout owns the builder session: it is created here, published to
     // the subtree (every `/advance/*` page and shared builder component picks
     // it up via useBuilderContext), and released when the layout unmounts.
     const builder = createBuilderContext(useToastContext(), __);
+
+    /**
+     * Entering the builder on a published assistant must be acknowledged
+     * first: the first saved change unpublishes it (see
+     * UnpublishReleasedAssistantOnEdit) and it only goes live again after a
+     * fresh review. The counterpart of the draft-exit confirmation — consent
+     * on the way in, keep/discard on the way out.
+     */
+    /** The assistant the released-edit consent was decided for (shown or skipped). */
+    let acknowledgedAssistantId = $state<string | null>(null);
+    let releasedEditOpen = $state(false);
+
+    // Entry consent: asked once per assistant, when the builder is entered
+    // on a published one. Publishing from within the session flips the
+    // stage — the id guard keeps that from re-asking — and a reload
+    // continues a session rather than entering one, so it stays quiet too.
+    $effect(() => {
+        if (builder.loading) return;
+        const {id, releaseStage} = builder.draft;
+        if (!id || acknowledgedAssistantId === id) return;
+        acknowledgedAssistantId = id;
+        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+        if (navigation?.type === 'reload') return;
+        if (releaseStage === ReleaseMode.ORGANIZATIONAL
+            || releaseStage === ReleaseMode.FEDERATED) {
+            releasedEditOpen = true;
+        }
+    });
+
+    /** Cancel: leave the builder for the assistant's detail page instead. */
+    function leaveReleasedEdit(): void {
+        releasedEditOpen = false;
+        const id = builder.draft.id;
+        if (id) {
+            void router.goToRoute('assistants.dashboard.details', {id});
+        } else {
+            void router.goToRoute('assistants.dashboard.index');
+        }
+    }
 
     // The test chat floats over every step (docked as a column on wide
     // viewports). Open by default, except on small screens where it would
@@ -45,6 +88,23 @@
          own router navigation guard and dialog for exactly as long as this
          layout (and therefore the builder session) is mounted. -->
     <ConfirmBuilderExit />
+
+    <!-- Consent before editing a published assistant: dismiss (ESC/backdrop)
+         or "Edit anyway" stays in the builder; the cancel button leaves. -->
+    <ConfirmDialog
+            open={releasedEditOpen}
+            onOpenChange={(open) => {
+                releasedEditOpen = open;
+            }}
+            title={__('assistants.builder.edit_released_title')}
+            description={__('assistants.builder.edit_released_description')}
+            okLabel={__('assistants.builder.edit_released_confirm')}
+            cancelLabel={__('assistants.builder.edit_released_cancel')}
+            onConfirm={() => {
+                releasedEditOpen = false;
+            }}
+            onCancel={leaveReleasedEdit}
+    />
 </div>
 
 
@@ -114,6 +174,12 @@
         min-width: 0;
         overflow-y: auto;
         scrollbar-width: none;
+    }
+
+    .wrapper-grid {
+        /* The section pages' content column width — one source of truth for
+           the column (see :global(.page-content)). */
+        --builder-content-w: 48rem;
     }
 
     .content-col :global(textarea) {
@@ -186,7 +252,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-6);
-        max-width: 48rem;
+        max-width: var(--builder-content-w);
         margin: 0 auto;
         padding: var(--space-8);
     }

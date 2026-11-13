@@ -22,6 +22,7 @@
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     import SidebarGroup from '$lib/components/ui/sidebar/SidebarGroup.svelte';
     import type {SidebarGroupItem} from '$lib/components/ui/sidebar/SidebarGroup.svelte';
+    import StepRing from '$lib/components/ui/step-ring/StepRing.svelte';
     import UserAiIcon from '$lib/components/ui/icons/iconset/UserAiIcon.svelte';
     import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte.js';
     import {useSidebarContext} from '$lib/app/ui/useSidebarHooks.svelte.js';
@@ -175,14 +176,7 @@
                                              fields; a done step closes into a ticked disc. -->
                                         {#snippet media()}
                                             {@const ratio = step ? builderProgress.ratio[step] ?? 0 : 0}
-                                            <svg class="step-ring" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                                <circle class="track" cx="10" cy="10" r="8"/>
-                                                <circle class="arc" class:empty={ratio === 0} cx="10" cy="10" r="8"
-                                                        pathLength="1" style:stroke-dashoffset={1 - ratio}/>
-                                                <text class="number" x="10" y="10">{number}</text>
-                                                <circle class="disc" cx="10" cy="10" r="9"/>
-                                                <path class="tick" d="M6.25 10.5L8.75 13L13.75 7.5" pathLength="1"/>
-                                            </svg>
+                                            <StepRing {number} done={done} {ratio}/>
                                         {/snippet}
                                     </SidebarItem>
                                 </li>
@@ -349,84 +343,10 @@
         color: color-mix(in oklab, var(--color-text-muted) 65%, transparent);
     }
 
-    /* Outweighs the row's own glyph sizing (SidebarItem bumps svgs on mobile). */
-    .wizard .step-ring {
-        width: var(--step-ring-size);
-        height: var(--step-ring-size);
-        overflow: visible;
-    }
-
-    .step-ring .track,
-    .step-ring .arc {
-        stroke-width: 2;
-    }
-
-    /* In the row's own colour, so it follows hover, active and locked. */
-    .step-ring .track {
-        stroke: currentColor;
-        opacity: 0.28;
-    }
-
-    /* The step's number, covered by the disc once the step is done. */
-    .step-ring .number {
-        fill: currentColor;
-        font-size: 10.5px;
-        font-weight: var(--font-weight-semibold);
-        font-variant-numeric: tabular-nums;
-        text-anchor: middle;
-        dominant-baseline: central;
-    }
-
-    /* Starts at twelve o'clock and eases round as fields are filled. */
-    .step-ring .arc {
-        stroke: var(--color-accent-fill);
-        stroke-linecap: round;
-        stroke-dasharray: 1;
-        rotate: -90deg;
-        transform-origin: center;
-        transition: stroke-dashoffset 420ms cubic-bezier(0.3, 0, 0.2, 1), opacity var(--duration-extra-fast);
-    }
-
-    .step-ring .arc.empty {
-        opacity: 0;
-    }
-
-    /* Done: the disc grows out of the ring's centre with a small overshoot,
-       then the tick draws itself in. */
-    .step-ring .disc {
-        fill: var(--color-accent-fill);
-        transform-origin: center;
-        scale: 0;
-        transition: scale var(--duration-extra-fast) var(--easing-out);
-    }
-
-    .step-ring .tick {
-        stroke: var(--color-on-accent-fill);
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        stroke-dasharray: 1;
-        stroke-dashoffset: 1;
-        transition: stroke-dashoffset var(--duration-extra-fast) var(--easing-out);
-    }
-
-    .wizard-step.done .disc {
-        scale: 1;
-        transition: scale 360ms cubic-bezier(0.3, 1.6, 0.5, 1);
-    }
-
-    .wizard-step.done .tick {
-        stroke-dashoffset: 0;
-        transition-delay: 140ms;
-    }
+    /* Ring visuals (track, arc, number, disc, tick) live in `StepRing`. */
 
     @media (prefers-reduced-motion: reduce) {
-        .wizard-step:has(+ .wizard-step)::after,
-        .step-ring .arc,
-        .step-ring .disc,
-        .step-ring .tick,
-        .wizard-step.done .disc,
-        .wizard-step.done .tick {
+        .wizard-step:has(+ .wizard-step)::after {
             transition: none;
         }
     }

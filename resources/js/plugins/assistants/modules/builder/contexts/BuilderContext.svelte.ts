@@ -944,7 +944,7 @@ export class BuilderContext {
       } catch {
         review = this.draft.releaseStage === ReleaseMode.ORGANIZATIONAL
           || this.draft.releaseStage === ReleaseMode.FEDERATED
-          ? { status: ReviewStage.PENDING, reason: null }
+          ? { status: ReviewStage.PENDING, reason: null, reviewedAt: null }
           : null;
       }
       this.draft = {

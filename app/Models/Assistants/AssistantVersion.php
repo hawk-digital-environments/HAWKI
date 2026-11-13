@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property null|array<int, string>         $changed_keys
  * @property null|\Illuminate\Support\Carbon $created_at
  * @property int                             $id
+ * @property null|array<string, mixed>       $payload
  * @property string                          $text
  * @property null|\Illuminate\Support\Carbon $updated_at
  * @property string                          $version
@@ -24,6 +25,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[UsePolicy(AssistantVersionPolicy::class)]
 class AssistantVersion extends Model
 {
+    /**
+     * The version number of the mutable working-draft row every assistant
+     * carries. Content edits accumulate on it; approving a review promotes it
+     * to the next published version number and a fresh draft row is respawned
+     * in its place.
+     *
+     * @see \App\Services\Assistant\AssistantVersionService
+     */
+    public const float DRAFT_VERSION = 0.0;
+
     protected $fillable = [
         'text',
         'changed_keys',
@@ -42,6 +53,7 @@ class AssistantVersion extends Model
         return [
             'version' => 'decimal:1',
             'changed_keys' => 'array',
+            'payload' => 'array',
         ];
     }
 }

@@ -1,6 +1,7 @@
 import { ModuleRegistrar } from '$lib/kernel/modules/moduleRegistrar';
 import type { RouteRegistrar } from '$lib/components/ui/routing/index.js';
 import { HawkiPlugin, HawkiPluginContext, HawkiPluginContextWithConfig } from '$lib/kernel/plugins/types';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import { ResourceSchemaRegistrar } from '$lib/kernel/resources/resourceSchemaRegistrar';
 import { StoreRegistrar } from '$lib/kernel/stores/storeRegistrar';
 import type { HookRegistrar } from '$lib/kernel/hooks/hookRegistrar.js';
@@ -10,6 +11,7 @@ import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
 import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
 import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
 import Share02Icon from '$lib/components/ui/icons/iconset/Share02Icon.svelte';
+import TaskEdit01Icon from '$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte';
 import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
 import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
 import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
@@ -19,6 +21,7 @@ import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
 import AssistantsSidebar from '$plugins/assistants/components/AssistantsSidebar.svelte';
 import CreateAssistantButton from '$plugins/assistants/components/CreateAssistantButton.svelte';
 import BuilderBackButton from '$plugins/assistants/components/BuilderBackButton.svelte';
+import ReviewBackButton from '$plugins/assistants/admin/components/ReviewBackButton.svelte';
 import { DashboardModule } from '$plugins/assistants/modules/dashboard/DashboardModule';
 import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
 import { assistantHandlesStore } from '$plugins/assistants/stores/AssistantHandlesStore.svelte';
@@ -31,6 +34,9 @@ import AssistantTagsSchema from '$plugins/assistants/api/schemas/resources/assis
 import AssistantSettingsSchema from '$plugins/assistants/api/schemas/resources/assistant-settings.schema';
 import { isBuilderStepLocked } from '$plugins/assistants/modules/builder/contexts/builderProgress.svelte.js';
 import { BuilderModule } from '$plugins/assistants/modules/builder/BuilderModule';
+import { AssistantAdminModule } from '$plugins/assistants/admin/AssistantAdminModule';
+import { probeReviewPermission } from '$plugins/assistants/admin/reviewPermission.svelte.js';
+import { AssistantReviewWireSchema } from '$plugins/assistants/admin/api/schemas.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
@@ -99,6 +105,14 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 position: 'action',
                 component: BuilderBackButton,
                 active: ctx.router.isRouteActive(builderGroup)
+            },
+            {
+                // Admin detail routes only — the button hides itself on the
+                // queue index (see ReviewBackButton).
+                id: 'assistants:review-back',
+                position: 'action',
+                component: ReviewBackButton,
+                active: ctx.router.isRouteActive('admin.assistants')
             }
         ]);
 
@@ -165,6 +179,15 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 active: ctx.router.isRouteActive('assistants.dashboard.shared')
             },
             {
+                id: 'dashboard.reviews',
+                level: 'dashboard',
+                group: 'my-assistants',
+                label: ctx.translate('assistants.sidebar.reviews'),
+                icon: TaskEdit01Icon,
+                route: 'assistants.dashboard.reviews',
+                active: ctx.router.isRouteActive('assistants.dashboard.reviews')
+            },
+            {
                 id: 'builder.general',
                 level: 'builder',
                 label: ctx.translate('assistants.builder.sidebar.general'),
@@ -219,10 +242,20 @@ export default class AssistantsPlugin implements HawkiPlugin {
         registrar.add('assistant-categories', AssistantCategoriesSchema);
         registrar.add('assistant-tags', AssistantTagsSchema);
         registrar.add('assistant-settings', AssistantSettingsSchema);
+        registrar.add('assistant-reviews', AssistantReviewWireSchema);
     }
     public modules({ add }: ModuleRegistrar): void | Promise<void> {
         add(new DashboardModule());
         add(new BuilderModule());
+        add(new AssistantAdminModule());
+    }
+
+    /**
+     * Probes the review permission once per session while signed in — the
+     * admin section's own visibility gate (see `admin/AssistantAdminModule`).
+     */
+    public boot(app: HawkiApp): void {
+        probeReviewPermission(app);
     }
 
     /**

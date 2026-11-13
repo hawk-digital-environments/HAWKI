@@ -1,8 +1,7 @@
 {
     "assistants": {
-
-        "assistant" : "Assistant",
-        "assistants" : "Assistants",
+        "assistant": "Assistant",
+        "assistants": "Assistants",
         "categories": {
             "academic_writing": "Academic Writing",
             "computer_science": "Computer Science",
@@ -48,7 +47,7 @@
         },
         "sidebar": {
             "home": "Home",
-            "store":"Store",
+            "store": "Store",
             "my_assistants": "My Assistants",
             "drafts": "Drafts",
             "private": "Private",
@@ -56,12 +55,12 @@
             "shared": "Shared",
             "create": "Create assistant",
             "switch_case": "Switch Section",
-            "back": "Back"
+            "back": "Back",
+            "reviews": "Reviews"
         },
-
         "entry": {
             "title": "Create assistant",
-            "description":"Choose how you want to create your new assistant.",
+            "description": "Choose how you want to create your new assistant.",
             "advanced": "Advanced",
             "advanced_description": "Full control over all settings, knowledge, model and release.",
             "coming_soon": "Coming soon",
@@ -75,25 +74,24 @@
         },
         "drafts": {
             "title": "Draft Assistants",
-            "empty_title":  "No drafts yet",
+            "empty_title": "No drafts yet",
             "empty_description": "You haven't saved any assistants as a draft yet."
         },
         "private": {
             "title": "Private Assistants",
-            "empty_title":  "No private assistants yet",
+            "empty_title": "No private assistants yet",
             "empty_description": "Assistants you save as private are only visible to you."
         },
         "shared": {
             "title": "Shared Assistants",
-            "empty_title":  "No shared assistants",
+            "empty_title": "No shared assistants",
             "empty_description": "Assistants that other users share with you appear here."
         },
         "favourites": {
             "title": "Favorite Assistants",
-            "empty_title":  "No favourites saved",
+            "empty_title": "No favourites saved",
             "empty_description": "Mark assistants with the heart icon to see them here."
         },
-
         "browser": {
             "empty_title": "No assistants found",
             "empty_description": "No assistants match your current filters.",
@@ -103,7 +101,6 @@
             "search": "Search",
             "search_placeholder": "Search assistants…"
         },
-
         "card": {
             "remix": "Remix",
             "open_aria": "Open details for :name",
@@ -120,16 +117,15 @@
 
         "release_stage": {
             "private": "Private",
-            "organizational": "Federated release",
-            "federated": "Verified"
+            "organizational": "University-internal",
+            "federated": "Federated",
+            "draft": "Draft"
         },
-
         "risk": {
             "low": "Low risk",
             "medium": "Medium risk",
             "high": "High risk"
         },
-
         "detail": {
             "dialog_title": "Assistant details",
             "back": "Back",
@@ -164,9 +160,11 @@
             "release_pending": "In review",
             "release_updated": "Release status updated.",
             "release_submitted": "Assistant submitted for review.",
-            "release_failed": "The release status could not be changed."
+            "release_failed": "The release status could not be changed.",
+            "review_title": "Review",
+            "review_requested_hint": "Awaiting review — the assistant is released as “:stage” once approved.",
+            "review_decided_on": "Decided on :date"
         },
-
         "feedback": {
             "feedback_to": "Feedback to",
             "visible_to_creator": "Only visible to creator",
@@ -178,7 +176,7 @@
             "original_status": "Original-Status:",
             "remix_hint": "Your remix starts as a private draft and must be reviewed before it can be shared more widely. The trust status is not carried over from the original."
         },
-        "builder":{
+        "builder": {
             "sidebar": {
                 "new_assistant": "New assistant",
                 "general": "General",
@@ -424,7 +422,11 @@
                 "saved": "Assistant saved.",
                 "submitted": "Assistant submitted for review.",
                 "save_failed": "Could not save the assistant."
-            }
+            },
+            "edit_released_title": "You are about to edit a published assistant",
+            "edit_released_description": "Any change takes it back to private and requires a new publishing request.",
+            "edit_released_confirm": "Edit anyway",
+            "edit_released_cancel": "Go back"
         },
         "testChat": {
             "status": {
@@ -442,6 +444,125 @@
             "unnamed": "Your assistant",
             "placeholder": "Message your assistant…",
             "send": "Send"
+        },
+        "reviews": {
+            "title": "My submissions",
+            "empty_title": "Nothing submitted yet",
+            "empty_description": "Assistants you submit for review appear here with their review state.",
+            "tab": {
+                "all": "All"
+            }
+        },
+        "review": {
+            "outdated_hint": "Outdated approval. Resubmit for a new review for publishing.",
+            "status": {
+                "pending": "In review",
+                "approved": "Approved",
+                "denied": "Denied",
+                "needs_revision": "Needs revision"
+            }
+        },
+        "admin": {
+            "section": "Assistant review",
+            "queue": {
+                "title": "Review queue",
+                "description": "Submissions waiting for a decision before they are published.",
+                "empty": "No reviews in this state.",
+                "no_access": "You do not have permission to review assistants.",
+                "tab": {
+                    "label": "Review status",
+                    "all": "All",
+                    "pending": "Pending",
+                    "needs_revision": "Needs revision",
+                    "denied": "Denied",
+                    "approved": "Approved"
+                },
+                "columns": {
+                    "name": "Assistant",
+                    "handle": "Handle",
+                    "stage": "Release stage",
+                    "submitted": "Submitted",
+                    "status": "Status"
+                },
+                "status": {
+                    "pending": "In review",
+                    "approved": "Approved",
+                    "denied": "Denied",
+                    "needs_revision": "Needs revision"
+                }
+            },
+            "detail": {
+                "title": "Review",
+                "no_access": "You do not have permission to review assistants.",
+                "previous_reason": "Previous decision",
+                "decisions_title": "Decisions",
+                "changed_keys": "Changed since last publish",
+                "no_draft": "No pending draft.",
+                "fields": {
+                    "description": "Description",
+                    "greeting": "Greeting",
+                    "system_prompt": "System prompt",
+                    "name": "Name",
+                    "handle": "Handle",
+                    "detail_description": "Detailed description",
+                    "model": "Model",
+                    "max_tokens": "Max tokens",
+                    "temp": "Temperature",
+                    "top_p": "Top-P",
+                    "allow_remix": "Allow remix",
+                    "allow_model_select": "Model selection",
+                    "category": "Category",
+                    "tags": "Tags",
+                    "prompts": "Prompts",
+                    "tools": "Tools",
+                    "settings": "Settings",
+                    "attachments": "Knowledge files",
+                    "avatar": "Avatar"
+                },
+                "versions": "Versions",
+                "draft_version": "Working draft (pending changes)",
+                "no_versions": "No published versions yet.",
+                "rollback": "Roll back",
+                "rollback_confirm_title": "Roll back to version :version?",
+                "rollback_confirm_description": "Every version above :version is deleted and the assistant is restored to this state. This cannot be undone.",
+                "rollback_submit_description": "The rollback to version :version is submitted for review and applied only when an admin approves it.",
+                "reason": "Reason",
+                "reason_placeholder": "Tell the creator what needs to change…",
+                "toast": {
+                    "approved": "Review approved — the new version is published.",
+                    "denied": "Review denied.",
+                    "needs_revision": "Revision requested.",
+                    "rolled_back": "Rolled back to version :version.",
+                    "rollback_submitted": "Rollback to version :version submitted for review.",
+                    "failed": "Action failed:"
+                },
+                "note_label": "Submission note",
+                "previous_step": "Previous step",
+                "next_step": "Next step",
+                "chip_jump_hint": "Show on the corresponding step",
+                "field_required": "This field is required.",
+                "value_yes": "Yes",
+                "value_no": "No",
+                "decision_title": "Choose the decision",
+                "decision_approved_label": "Approve",
+                "decision_approved_description": "Publishes the submitted state as the next version.",
+                "decision_needs_revision_label": "Request revision",
+                "decision_needs_revision_description": "Sends your reason back; the creator may revise and resubmit.",
+                "decision_needs_revision_lift_description": "Lifts the denial — nothing is published and the creator may revise and resubmit.",
+                "decision_denied_label": "Deny",
+                "decision_denied_description": "Permanently blocks this submission.",
+                "decided_approved": "Approved on :date",
+                "decided_denied": "Denied on :date",
+                "decided_needs_revision": "Revision requested on :date"
+            },
+            "steps": {
+                "progress": "Review progress",
+                "changes": "Changes",
+                "review": "Review",
+                "back": "Back",
+                "continue_to": "Continue to :step",
+                "submit": "Submit"
+            }
         }
     }
 }
