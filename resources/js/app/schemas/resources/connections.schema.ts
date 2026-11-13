@@ -63,7 +63,8 @@ export const InternalAuthenticatedConnectionSchema = BaseConnectionSchema.extend
      * Information about the authenticated user. This is only present if the client is authenticated with the HAWKI backend.
      */
     userinfo: AuthenticatedUserInfoSchema,
-    migrations_to_apply: z.number().optional()
+    migrations_to_apply: z.number().optional(),
+    keychain_state: z.enum(['initialized', 'legacy_migration_required', 'setup_required', 'inconsistent'])
 });
 
 export type InternalAuthenticatedConnection = z.infer<typeof InternalAuthenticatedConnectionSchema>;
