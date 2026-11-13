@@ -159,8 +159,9 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         }
 
         $settings = $this->makeModelSettings();
-        if (!empty($config['max_tool_calling_rounds'])) {
-            $settings->setMaxToolCallingRounds((int)$config['max_tool_calling_rounds']);
+        $maxRounds = $this->parseMaxToolCallingRounds($config);
+        if ($maxRounds !== null) {
+            $settings->setMaxToolCallingRounds($maxRounds);
         }
 
         $parameters = AiModelParameters::fromArray([]);
@@ -222,6 +223,21 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         $metrics->increment('AI models');
 
         return $modelId;
+    }
+
+    /**
+     * Reads `max_tool_calling_rounds` from a model config entry.
+     * 0 is a valid value ("no limit") and must not be skipped like with empty();
+     * missing, non-numeric and negative values return null, so the registry default applies.
+     */
+    protected function parseMaxToolCallingRounds(array $config): int|null
+    {
+        $value = $config['max_tool_calling_rounds'] ?? null;
+        if (!is_numeric($value) || (int)$value < 0) {
+            return null;
+        }
+
+        return (int)$value;
     }
 
     /**
