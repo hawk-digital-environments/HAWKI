@@ -85,7 +85,7 @@ export const ReviewTargetWireSchema = z.object({
         display_name: z.string().nullable().optional()
     }).nullable().optional(),
     /** Relation summaries for changed-key entries. */
-    assistant_category: z.object({name: z.string().nullable().optional()}).loose().nullable().optional(),
+    assistant_category: z.object({text: z.string()}).loose().nullable().optional(),
     assistant_avatar: z.object({
         name: z.string().nullable().optional(),
         icon_css: z.string().nullable().optional()

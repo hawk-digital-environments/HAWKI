@@ -112,7 +112,7 @@ test('schemas: the review target parses with review, versions, creator and relat
             {id: 'b', text: 'Initial', version: 1, changed_keys: null, created_at: '2026-11-08T10:00:00Z', updated_at: '2026-11-08T10:00:00Z'}
         ],
         creator: {id: '5', display_name: 'Jane'},
-        assistant_category: {name: 'Writing'},
+        assistant_category: {text: 'assistants.categories.academic_writing'},
         assistant_tags: [{text: 'essay'}, {text: 'thesis'}],
         assistant_user_prompts: [{text: 'Help me plan.'}],
         assistant_setting_values: [{value: 'en', setting: {key: 'language'}}],
@@ -126,7 +126,7 @@ test('schemas: the review target parses with review, versions, creator and relat
     assert.equal(String(target.assistant_versions[0].version), DRAFT_VERSION);
     assert.equal(target.creator.display_name, 'Jane');
     assert.equal(target.detail_description, 'dd');
-    assert.equal(target.assistant_category?.name, 'Writing');
+    assert.equal(target.assistant_category?.text, 'assistants.categories.academic_writing');
     assert.equal(target.assistant_setting_values?.[0]?.setting?.key, 'language');
     assert.equal(target.ai_tools?.[0]?.name, 'Web search');
 });

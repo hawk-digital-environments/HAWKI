@@ -148,7 +148,7 @@
                         <div class="grid-2">
                             <ReadonlyField
                                 label={__('assistants.builder.general.input_category')}
-                                value={target.assistant_category?.name ?? null}
+                                value={target.assistant_category ? __(target.assistant_category.text) : null}
                                 changed={changed('category_id')}
                             />
                             <ReadonlyField
