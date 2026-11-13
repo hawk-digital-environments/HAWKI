@@ -93,7 +93,11 @@ class LaravelToolResolver
             throw ToolNotFoundException::forCapability($capabilityKey);
         }
 
-        $tool = $this->toolConverter->convert($hawkiTool, $toolSettings);
+        $tool = $this->toolConverter->convert(
+            $hawkiTool,
+            $toolSettings,
+            $this->modelRunCeiling($context)
+        );
 
         return ToolForCapabilityResolvedFilterEvent::dispatch($tool, $capabilityKey, $context, $hawkiTool, $toolSettings)->getTool();
     }
@@ -120,8 +124,22 @@ class LaravelToolResolver
             throw ToolNotFoundException::forName($toolName);
         }
 
-        $tool = $this->toolConverter->convert($hawkiTool, $toolSettings);
+        $tool = $this->toolConverter->convert(
+            $hawkiTool,
+            $toolSettings,
+            $this->modelRunCeiling($context)
+        );
 
         return ToolByNameResolvedFilterEvent::dispatch($tool, $toolName, $context, $toolSettings)->getTool();
+    }
+
+    /**
+     * Returns the model's tool-calling round limit to enforce as the default per-tool
+     * call ceiling on resolved tools (used only by tools that declare no ceiling of
+     * their own — see {@see AbstractTool::applyDefaultMaxRuns()}).
+     */
+    private function modelRunCeiling(AgentRequestContext $context): int
+    {
+        return $context->model->settings->getMaxToolCallingRounds();
     }
 }

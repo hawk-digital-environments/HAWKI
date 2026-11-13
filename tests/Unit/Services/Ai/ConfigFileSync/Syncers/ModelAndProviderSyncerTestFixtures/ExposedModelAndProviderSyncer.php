@@ -21,7 +21,6 @@ readonly class ExposedModelAndProviderSyncer extends ModelAndProviderSyncer
         // scope cannot resolve because no container is available to the settings object.
         $registry = new AiModelSettingRegistry();
         $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, 5);
-        $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING, 3);
         $registry->declare(WellKnownModelSettings::FILE_UPLOAD, false);
         $registry->declare(WellKnownModelSettings::TOOL_CALLING, false);
         $registry->declare(WellKnownModelSettings::NATIVE_CAPABILITIES, true);
@@ -29,5 +28,10 @@ readonly class ExposedModelAndProviderSyncer extends ModelAndProviderSyncer
         $settings = AiModelSettings::fromArray([]);
         $settings->setService(AiModelSettingRegistry::class, $registry);
         return $settings;
+    }
+
+    public function exposeParseMaxToolCallingRounds(array $config): int|null
+    {
+        return $this->parseMaxToolCallingRounds($config);
     }
 }

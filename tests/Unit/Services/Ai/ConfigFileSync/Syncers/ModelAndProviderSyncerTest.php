@@ -338,4 +338,36 @@ class ModelAndProviderSyncerTest extends TestCase
             $capturedSettings->getAdapterSettings()
         );
     }
+
+    // =========================================================================
+    // sync — max_tool_calling_rounds
+    // =========================================================================
+
+    public static function provideMaxToolCallingRoundsCases(): iterable
+    {
+        yield 'positive value' => [3, 3];
+        yield 'zero ("no limit") is kept, not skipped' => [0, 0];
+        yield 'numeric string is cast' => ['2', 2];
+        yield 'negative value is ignored' => [-1, null];
+        yield 'non-numeric value is ignored' => ['abc', null];
+        yield 'missing key is ignored' => [null, null];
+    }
+
+    #[DataProvider('provideMaxToolCallingRoundsCases')]
+    public function testItParsesMaxToolCallingRounds(mixed $configValue, int|null $expected): void
+    {
+        $config = $configValue === null ? [] : ['max_tool_calling_rounds' => $configValue];
+
+        $sut = new ExposedModelAndProviderSyncer(
+            providers: [],
+            modelRepository: $this->createMock(AiModelRepository::class),
+            modelDescriptionRepository: $this->createMock(AiModelDescriptionRepository::class),
+            providerRepository: $this->createMock(AiProviderRepository::class),
+            providerProxyResolver: $this->createMock(AiProviderProxyResolver::class),
+            useRuleRepository: $this->createMock(AiModelUsageRuleRepository::class),
+            modelInfoFetcher: $this->createMock(ModelInfoFetcher::class),
+        );
+
+        static::assertSame($expected, $sut->exposeParseMaxToolCallingRounds($config));
+    }
 }
