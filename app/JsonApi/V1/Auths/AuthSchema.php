@@ -42,12 +42,10 @@ class AuthSchema extends Schema
     public function fields(): array
     {
         return [
-            // Pinned to the single valid id rather than a general pattern, so that the custom
-            // actions registered alongside it (`auth/actions/login`) cannot be swallowed by the
-            // `auth/{auth}` show route, which the router matches first.
+            // Pinned to the single valid id rather than a general pattern, so no sibling
+            // route can be swallowed by the `auth/{auth}` show route.
             ID::make()->matchAs('hawki'),
             Attribute::make('mode'),
-            Attribute::make('start_url'),
             Attribute::make('capabilities'),
             Attribute::make('last_error'),
         ];

@@ -15,8 +15,11 @@ use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
 use App\Http\Controllers\Api\V1\McpServerController;
 use App\Http\Controllers\Api\V1\MigrationController;
+use App\Http\Controllers\Api\V1\PasskeyBackupController;
+use App\Http\Controllers\Api\V1\RegistrationsController;
 use App\Http\Controllers\Api\V1\RoomMemberController;
 use App\Http\Controllers\Api\V1\RoomMessageController;
+use App\Http\Controllers\Api\V1\SessionsController;
 use App\Http\Controllers\Api\V1\SystemModelController;
 use App\Http\Controllers\Api\V1\SystemPromptController;
 use App\Http\Controllers\Api\V1\TranslationLabelController;
@@ -80,6 +83,24 @@ JsonApiRoute::server('v1')
     ->resources(static function (ResourceRegistrar $server): void {
         $server->resource('connections', ConnectionController::class)
             ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
+            ->only('show');
+
+        // How to become authenticated: a read-only singleton whose `redirect` link (present
+        // in redirect mode) starts the identity provider round trip at /auth/redirect.
+        $server->resource('auth', \App\Http\Controllers\Api\V1\AuthController::class)
+            ->only('show');
+
+        // Session lifecycle: POST /sessions logs in, DELETE /sessions/hawki logs out.
+        $server->resource('sessions', SessionsController::class)
+            ->only('store', 'destroy');
+
+        // Registration lifecycle: GET /registrations/hawki shows the policy awaiting
+        // consent, POST /registrations completes the registration.
+        $server->resource('registrations', RegistrationsController::class)
+            ->only('show', 'store');
+
+        $server->resource('passkey-backups', PasskeyBackupController::class)
+            ->middleware('auth:sanctum')
             ->only('show');
 
         $server->resource('migrations', MigrationController::class)

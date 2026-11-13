@@ -4,6 +4,8 @@ namespace App\JsonApi\V1\Auths;
 
 use App\Services\Auth\Value\AuthInfo;
 use Illuminate\Http\Request;
+use LaravelJsonApi\Core\Document\Link;
+use LaravelJsonApi\Core\Document\Links;
 use LaravelJsonApi\Core\Resources\JsonApiResource;
 
 /**
@@ -24,21 +26,32 @@ class AuthResource extends JsonApiResource
      *
      * Get the resource's attributes.
      *
-     * Every attribute is always present, `null` where it does not apply. Unlike the connection
-     * resource, nulls are not filtered out here: the frontend switches on `mode`/`start_url` as
-     * a pair, and an attribute that silently disappears is far harder to narrow against than one
-     * that is explicitly null.
-     *
      * @param Request|null $request
      */
     public function attributes($request): iterable
     {
         return [
             'mode' => $this->resource->mode->value,
-            'start_url' => $this->resource->startUrl,
             'capabilities' => get_object_vars($this->resource->capabilities),
             'last_error' => $this->resource->lastError,
         ];
+    }
+
+    /**
+     * The redirect link is present exactly when `mode` is `redirect`: navigating the browser
+     * there starts the identity provider round trip. The frontend never hardcodes the URL.
+     *
+     * @param Request|null $request
+     */
+    public function links($request): Links
+    {
+        $links = new Links();
+
+        if ($this->resource->startUrl !== null) {
+            $links->push(new Link('redirect', $this->resource->startUrl));
+        }
+
+        return $links;
     }
 
     /**
