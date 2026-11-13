@@ -7,6 +7,21 @@ declare(strict_types=1);
 
 return [
     array (
+  'id' => 'parallel_ai/decision',
+  'provider' => 'parallel_ai',
+  'input_cost_per_query' => 0.001,
+  'input_cost_per_token' => 0.0,
+  'output_cost_per_token' => 0.0,
+  'max_input_tokens' => 32000,
+  'mode' => 'evaluation',
+  'source' => 'https://docs.parallel.ai/getting-started/pricing#decisions-api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/decisions',
+    1 => '/v1/systemone',
+  ),
+),
+    array (
   'id' => 'parallel_ai/search',
   'provider' => 'parallel_ai',
   'input_cost_per_query' => 0.005,

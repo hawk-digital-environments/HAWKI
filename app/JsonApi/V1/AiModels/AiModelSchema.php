@@ -32,6 +32,11 @@ class AiModelSchema extends Schema
 
     public static string $model = AiModel::class;
 
+    /**
+     * The provider is needed to build the qualified `model_id`.
+     */
+    protected array $with = ['provider'];
+
     public static function type(): string
     {
         return 'ai-models';
@@ -42,7 +47,11 @@ class AiModelSchema extends Schema
         return [
             ID::make(),
             Boolean::make('active'),
-            Str::make('model_id'),
+            // Provider-qualified (`<provider_id>/<model_id>`), because the same model_id may exist for several providers.
+            // The legacy UI and the composer send this value back as the `model` of chat requests.
+            Str::make('model_id')
+                ->extractUsing(fn(AiModel $model) => $model->getIdentifier())
+                ->readOnly(),
             Str::make('model_type'),
             Str::make('label'),
             ArrayList::make('input')

@@ -33,6 +33,7 @@ return [
   'mode' => 'evaluation',
   'output_cost_per_token' => 0.0,
   'source' => 'https://docs.typesafe.ai/models',
+  'supports_box_questions' => true,
 ),
     array (
   'id' => 'typesafe/jev-preview',

@@ -7,13 +7,63 @@ declare(strict_types=1);
 
 return [
     array (
+  'id' => 'meta/muse-ember-1.0',
+  'provider' => 'meta',
+  'cache_read_input_token_cost' => 4.0E-9,
+  'cache_read_input_token_cost_above_200k_tokens' => 1.2E-8,
+  'input_cost_per_token' => 1.0E-7,
+  'input_cost_per_token_above_200k_tokens' => 3.0E-7,
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 524288,
+  'mode' => 'chat',
+  'output_cost_per_token' => 5.0E-7,
+  'output_cost_per_token_above_200k_tokens' => 1.5E-6,
+  'search_context_cost_per_query' => 
+  array (
+    'search_context_size_high' => 0.0025,
+    'search_context_size_low' => 0.0025,
+    'search_context_size_medium' => 0.0025,
+  ),
+  'source' => 'https://dev.meta.ai/docs/pricing-rate-limits',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/responses',
+    2 => '/v1/messages',
+  ),
+  'supported_modalities' => 
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'video',
+    3 => 'audio',
+  ),
+  'supported_output_modalities' => 
+  array (
+    0 => 'text',
+  ),
+  'supports_function_calling' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => true,
+  'supports_none_reasoning_effort' => false,
+  'supports_parallel_function_calling' => true,
+  'supports_pdf_input' => true,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_tool_choice' => true,
+  'supports_vision' => true,
+  'supports_web_search' => true,
+  'supports_xhigh_reasoning_effort' => true,
+),
+    array (
   'id' => 'meta/muse-spark-1.1',
   'provider' => 'meta',
   'cache_read_input_token_cost' => 1.5E-7,
   'input_cost_per_token' => 1.25E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 4.25E-6,
   'search_context_cost_per_query' => 
@@ -59,7 +109,6 @@ return [
   'input_cost_per_token' => 1.25E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 4.25E-6,
   'search_context_cost_per_query' => 
@@ -105,7 +154,6 @@ return [
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'search_context_cost_per_query' => 
@@ -151,7 +199,6 @@ return [
   'input_cost_per_token' => 1.25E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 4.25E-6,
   'search_context_cost_per_query' => 
@@ -197,7 +244,6 @@ return [
   'input_cost_per_token' => 1.0E-7,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-7,
   'search_context_cost_per_query' => 
@@ -263,7 +309,6 @@ return [
   'input_cost_per_token' => 4.0E-6,
   'max_input_tokens' => 1048576,
   'max_output_tokens' => 131072,
-  'max_tokens' => 131072,
   'mode' => 'chat',
   'output_cost_per_token' => 2.0E-5,
   'search_context_cost_per_query' => 

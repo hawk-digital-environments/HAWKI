@@ -952,22 +952,6 @@
     }
 
 
-    .math {
-        position: relative;
-        margin-top: 1rem;
-    }
-
-    .math-copy-btn {
-        opacity: 0;
-        justify-self: end;
-        transition: opacity var(--transition-fast);
-    }
-
-    .math:hover .math-copy-btn {
-        opacity: 1;
-    }
-
-
     .think {
         position: relative;
         display: flex;

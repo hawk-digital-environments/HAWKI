@@ -43,6 +43,8 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         root: HTMLSvelteSnippetElement;
         /** Whether the conversation has unread messages. Shows a visual indicator if true. */
         hasUnreadMessages?: boolean;
+        /** The current user's role in the room (only for the "room" context). Room actions like renaming are limited to admins. */
+        role?: string;
     }
 
     const {
@@ -50,7 +52,8 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         name,
         context,
         root,
-        hasUnreadMessages = false
+        hasUnreadMessages = false,
+        role
     }: Props = $props();
 
     // Binding renaming allows us to prevent the click event from propagating and opening
@@ -86,6 +89,7 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
     {#if context === 'room'}
         <RoomNameMenu
             bind:isRenaming={isRenaming}
+            role={role ?? ''}
             {...sharedProps}
         />
     {:else}

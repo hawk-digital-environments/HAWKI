@@ -14,7 +14,6 @@ return [
   'input_cost_per_token' => 3.0E-7,
   'max_input_tokens' => 196608,
   'max_output_tokens' => 196608,
-  'max_tokens' => 196608,
   'mode' => 'chat',
   'output_cost_per_token' => 1.2E-6,
   'source' => 'https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing',

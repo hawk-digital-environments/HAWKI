@@ -17,7 +17,6 @@ return [
   ),
   'max_input_tokens' => 922000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'source' => 'https://developers.openai.com/api/docs/pricing',
   'supports_function_calling' => true,
   'supports_max_reasoning_effort' => true,
@@ -40,7 +39,6 @@ return [
   ),
   'max_input_tokens' => 922000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'source' => 'https://developers.openai.com/api/docs/pricing',
   'supports_function_calling' => true,
   'supports_max_reasoning_effort' => true,
@@ -63,7 +61,6 @@ return [
   ),
   'max_input_tokens' => 922000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'source' => 'https://developers.openai.com/api/docs/pricing',
   'supports_function_calling' => true,
   'supports_max_reasoning_effort' => true,
@@ -86,7 +83,6 @@ return [
   ),
   'max_input_tokens' => 922000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'source' => 'https://developers.openai.com/api/docs/pricing',
   'supports_function_calling' => true,
   'supports_max_reasoning_effort' => true,
@@ -104,7 +100,6 @@ return [
   'source' => 'https://platform.openai.com/docs/models/gpt-5.5',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -126,7 +121,6 @@ return [
   'source' => 'https://platform.openai.com/docs/models/gpt-5.6-luna',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -148,7 +142,6 @@ return [
   'source' => 'https://platform.openai.com/docs/models/gpt-5.6-sol',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -170,7 +163,6 @@ return [
   'source' => 'https://platform.openai.com/docs/models/gpt-5.6-terra',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -191,7 +183,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -213,7 +204,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 1050000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -233,7 +223,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -253,7 +242,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -269,7 +257,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 64000,
-  'max_tokens' => 64000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -286,7 +273,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 64000,
-  'max_tokens' => 64000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -304,7 +290,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -321,7 +306,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 64000,
-  'max_tokens' => 64000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -343,7 +327,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 128000,
-  'max_tokens' => 128000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -360,7 +343,6 @@ return [
   'provider' => 'chatgpt',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 64000,
-  'max_tokens' => 64000,
   'mode' => 'responses',
   'supported_endpoints' => 
   array (
@@ -381,5 +363,70 @@ return [
   array (
     0 => '/v1/responses',
   ),
+),
+    array (
+  'id' => 'chatgpt/gpt-6.1-terra',
+  'provider' => 'chatgpt',
+  'max_input_tokens' => 922000,
+  'max_output_tokens' => 128000,
+  'mode' => 'responses',
+  'source' => 'https://developers.openai.com/api/docs/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/responses',
+  ),
+  'supports_function_calling' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+  'supports_none_reasoning_effort' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_vision' => true,
+  'supports_xhigh_reasoning_effort' => true,
+),
+    array (
+  'id' => 'chatgpt/gpt-6-rosalind',
+  'provider' => 'chatgpt',
+  'max_input_tokens' => 922000,
+  'max_output_tokens' => 128000,
+  'mode' => 'responses',
+  'source' => 'https://developers.openai.com/api/docs/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/responses',
+  ),
+  'supports_function_calling' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+  'supports_none_reasoning_effort' => false,
+  'supports_parallel_function_calling' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_vision' => true,
+  'supports_xhigh_reasoning_effort' => true,
+),
+    array (
+  'id' => 'chatgpt/gpt-6-astra-law',
+  'provider' => 'chatgpt',
+  'max_input_tokens' => 922000,
+  'max_output_tokens' => 128000,
+  'mode' => 'responses',
+  'source' => 'https://developers.openai.com/api/docs/pricing',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/responses',
+  ),
+  'supports_function_calling' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+  'supports_none_reasoning_effort' => false,
+  'supports_parallel_function_calling' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_vision' => true,
+  'supports_xhigh_reasoning_effort' => true,
 ),
 ];

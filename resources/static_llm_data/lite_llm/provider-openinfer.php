@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'openinfer/@oi/GLM-5.3-Flash',
   'provider' => 'openinfer',
-  'max_tokens' => 393216,
   'max_input_tokens' => 393216,
   'max_output_tokens' => 393216,
   'input_cost_per_token' => 1.95E-7,
@@ -22,7 +21,6 @@ return [
     array (
   'id' => 'openinfer/@oi/Qwen3.5-27B',
   'provider' => 'openinfer',
-  'max_tokens' => 32768,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 32768,
   'input_cost_per_token' => 1.95E-7,
@@ -35,7 +33,6 @@ return [
     array (
   'id' => 'openinfer/@oi/Qwen3.5-9B',
   'provider' => 'openinfer',
-  'max_tokens' => 100000,
   'max_input_tokens' => 100000,
   'max_output_tokens' => 100000,
   'input_cost_per_token' => 5.0E-6,

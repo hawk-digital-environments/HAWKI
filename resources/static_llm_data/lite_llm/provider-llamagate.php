@@ -9,7 +9,6 @@ return [
     array (
   'id' => 'llamagate/llama-3.1-8b',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 3.0E-8,
@@ -21,7 +20,6 @@ return [
     array (
   'id' => 'llamagate/llama-3.2-3b',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 4.0E-8,
@@ -33,7 +31,6 @@ return [
     array (
   'id' => 'llamagate/mistral-7b-v0.3',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 1.0E-7,
@@ -45,7 +42,6 @@ return [
     array (
   'id' => 'llamagate/qwen3-8b',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 4.0E-8,
@@ -57,7 +53,6 @@ return [
     array (
   'id' => 'llamagate/dolphin3-8b',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 8.0E-8,
@@ -69,7 +64,6 @@ return [
     array (
   'id' => 'llamagate/deepseek-r1-8b',
   'provider' => 'llamagate',
-  'max_tokens' => 16384,
   'max_input_tokens' => 65536,
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 1.0E-7,
@@ -82,7 +76,6 @@ return [
     array (
   'id' => 'llamagate/deepseek-r1-7b-qwen',
   'provider' => 'llamagate',
-  'max_tokens' => 16384,
   'max_input_tokens' => 131072,
   'max_output_tokens' => 16384,
   'input_cost_per_token' => 8.0E-8,
@@ -95,7 +88,6 @@ return [
     array (
   'id' => 'llamagate/openthinker-7b',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 8.0E-8,
@@ -108,7 +100,6 @@ return [
     array (
   'id' => 'llamagate/qwen2.5-coder-7b',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 6.0E-8,
@@ -120,7 +111,6 @@ return [
     array (
   'id' => 'llamagate/deepseek-coder-6.7b',
   'provider' => 'llamagate',
-  'max_tokens' => 4096,
   'max_input_tokens' => 16384,
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 6.0E-8,
@@ -132,7 +122,6 @@ return [
     array (
   'id' => 'llamagate/codellama-7b',
   'provider' => 'llamagate',
-  'max_tokens' => 4096,
   'max_input_tokens' => 16384,
   'max_output_tokens' => 4096,
   'input_cost_per_token' => 6.0E-8,
@@ -144,7 +133,6 @@ return [
     array (
   'id' => 'llamagate/qwen3-vl-8b',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 32768,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 1.5E-7,
@@ -157,7 +145,6 @@ return [
     array (
   'id' => 'llamagate/llava-7b',
   'provider' => 'llamagate',
-  'max_tokens' => 2048,
   'max_input_tokens' => 4096,
   'max_output_tokens' => 2048,
   'input_cost_per_token' => 1.0E-7,
@@ -169,7 +156,6 @@ return [
     array (
   'id' => 'llamagate/gemma3-4b',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 128000,
   'max_output_tokens' => 8192,
   'input_cost_per_token' => 3.0E-8,
@@ -182,7 +168,6 @@ return [
     array (
   'id' => 'llamagate/nomic-embed-text',
   'provider' => 'llamagate',
-  'max_tokens' => 8192,
   'max_input_tokens' => 8192,
   'input_cost_per_token' => 2.0E-8,
   'output_cost_per_token' => 0,
@@ -191,7 +176,6 @@ return [
     array (
   'id' => 'llamagate/qwen3-embedding-8b',
   'provider' => 'llamagate',
-  'max_tokens' => 40960,
   'max_input_tokens' => 40960,
   'input_cost_per_token' => 2.0E-8,
   'output_cost_per_token' => 0,
