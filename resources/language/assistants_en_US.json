@@ -49,7 +49,7 @@
         "sidebar": {
             "home": "Home",
             "store":"Store",
-            "my_assistants": "My assistants",
+            "my_assistants": "My Assistants",
             "drafts": "Drafts",
             "private": "Private",
             "favourites": "Favourites",
@@ -74,22 +74,22 @@
             "empty_description": ""
         },
         "drafts": {
-            "title": "My drafts",
+            "title": "Draft Assistants",
             "empty_title":  "No drafts yet",
             "empty_description": "You haven't saved any assistants as a draft yet."
         },
         "private": {
-            "title": "My private assistants",
+            "title": "Private Assistants",
             "empty_title":  "No private assistants yet",
             "empty_description": "Assistants you save as private are only visible to you."
         },
         "shared": {
-            "title": "Shared assistants",
+            "title": "Shared Assistants",
             "empty_title":  "No shared assistants",
             "empty_description": "Assistants that other users share with you appear here."
         },
         "favourites": {
-            "title": "Favourites",
+            "title": "Favorite Assistants",
             "empty_title":  "No favourites saved",
             "empty_description": "Mark assistants with the heart icon to see them here."
         },
@@ -100,13 +100,15 @@
             "loading": "Loading assistants…",
             "no_results": "No results were found",
             "pagination_of": "of",
-            "search": "Search"
+            "search": "Search",
+            "search_placeholder": "Search assistants…"
         },
 
         "card": {
             "remix": "Remix",
+            "open_aria": "Open details for :name",
             "category_unknown": "Unknown",
-            "remixed_via": ". via"
+            "remixed_via": "via"
         },
         "availability": {
             "deactivated": "Deactivated",
@@ -129,10 +131,12 @@
         },
 
         "detail": {
+            "dialog_title": "Assistant details",
             "back": "Back",
             "edit": "Edit",
             "menu_aria": "Open assistant menu",
-            "favourite_aria": "Toggle favourite",
+            "favourite_aria": "Favourite",
+            "favourite_failed": "The favourite could not be saved.",
             "delete": "Delete",
             "delete_confirm_title": "Delete assistant :name",
             "delete_confirm_description": "Are you sure you want to delete this assistant? This action cannot be undone.",
@@ -218,7 +222,7 @@
                 "handle_available": "This handle is available.",
                 "handle_checking": "Checking availability…",
                 "input_description": "Short description",
-                "input_description_hint": "One sentence shown on the assistant's card in the app store.",
+                "input_description_hint": "One sentence shown on the assistant's card in the Assistant Store.",
                 "input_short_description": "Detailed description",
                 "input_detail_description_hint": "Shown on the detail page. Explain what the assistant does, who it is for and how to use it.",
                 "input_category": "Category",
@@ -233,7 +237,7 @@
                 "avatar_backgrounds_prev": "Previous backgrounds",
                 "avatar_backgrounds_next": "More backgrounds",
                 "input_tags": "Tags",
-                "input_tags_hint": "Keywords that help others find your assistant in the app store.",
+                "input_tags_hint": "Keywords that help others find your assistant in the Assistant Store.",
                 "tag_add": "Add tag",
                 "tag_input_aria": "Enter tag",
                 "tag_confirm_aria": "Confirm tag"

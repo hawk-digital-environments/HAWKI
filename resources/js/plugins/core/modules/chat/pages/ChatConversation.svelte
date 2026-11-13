@@ -33,7 +33,6 @@ announces streaming errors.
     import {groupMessagesIntoThreads, threadIndexOf} from '$plugins/core/modules/chat/utils/messageThreads.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
-    import type {ChatRegeneratePick} from '$plugins/core/modules/chat/hooks/chatRegenerateHooks.js';
 
     interface Props { params?: RouteParams; }
     const {params = {}}: Props = $props();
@@ -259,22 +258,6 @@ announces streaming errors.
         return messagesElement?.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`) ?? scrollRegion;
     }
 
-    // Regenerate is a plain per-message action, not a composer mode: the transport streams
-    // the replacement reply while the composer stays locked through `store.isGenerating`.
-    async function regenerateMessage(message: ChatMessageType, pick: ChatRegeneratePick) {
-        const conversationSlug = store.active?.slug;
-        if (!conversationSlug) return;
-        if (store.isGenerating(conversationSlug)) {
-            toast.info(__('chat.composer.modePanel.actionBusy'));
-            return;
-        }
-        try {
-            await transport.regenerateMessage(conversationSlug, message, pick, notice => toast.info(notice));
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : String(error));
-        }
-    }
-
     async function removeAttachment(message: ChatMessageType, fileId: string) {
         try {
             await store.removeAttachment(message.message_id, fileId);
@@ -353,7 +336,7 @@ announces streaming errors.
                     >
                         <h2 id={historyHeadingId} class="u-sr-only">{__('chat.page.messageHistory')}</h2>
                         {#each threadGroups as group (group.message.clientKey ?? group.message.message_id)}
-                            <ChatMessage message={group.message} replies={group.replies} {composer} onRegenerate={regenerateMessage} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
+                            <ChatMessage message={group.message} replies={group.replies} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
                         {/each}
                     </div>
                 {/if}

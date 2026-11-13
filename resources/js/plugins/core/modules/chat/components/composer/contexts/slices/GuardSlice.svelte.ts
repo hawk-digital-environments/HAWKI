@@ -84,6 +84,10 @@ export class GuardSlice {
             return true;
         }
 
+        if (context.mode.is === 'regen') {
+            return true;
+        }
+
         return context.containsAiHandle;
     });
 

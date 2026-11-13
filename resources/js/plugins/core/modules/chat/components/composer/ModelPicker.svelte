@@ -32,6 +32,10 @@
     import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
     import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
     import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
+    import AssistantRow from '$plugins/core/modules/chat/components/composer/AssistantRow.svelte';
+    import {defaultAssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
+    import type {ChatRegenerateGroup} from '$plugins/core/modules/chat/hooks/chatRegenerateHooks.js';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
 
     interface Props {
         /** Selected model when used outside the composer (requires `onSelect`). */
@@ -50,12 +54,71 @@
 
     // svelte-ignore state_referenced_locally
     const composerContext = onSelect ? null : useComposerContext();
+    const app = useApp();
     const current = $derived(composerContext ? composerContext.model.current : (model ?? null));
     const isDisabled = $derived(disabled || (composerContext?.guard.disablesFeature('models') ?? false));
     const {__} = useTranslator();
     const aiModelStore = useStore('ai-models');
+    const handleStore = useStore('ai-handle');
+
+    // ── Regenerate pick surface ─────────────────────────────────────────────────
+    // In regen mode the list comes from the `chatRegenerateGroups` hook: a model row
+    // re-runs with that model; a participant row sets the re-run's participant.
+    const isRegen = $derived(composerContext?.mode.isRegen ?? false);
+
+    const PARTICIPANT_PREFIX = 'participant:';
+
+    function regenGroups(): ChatRegenerateGroup[] {
+        // Core contributes one group per provider (plain model re-runs); handlers may prepend more.
+        const systemAssistant = handleStore.assistants.find(assistant => assistant.handle === handleStore.hawkiHandle) ?? null;
+        const core: ChatRegenerateGroup[] = systemAssistant
+            ? [...Map.groupBy(aiModelStore.models, entry => entry.provider?.name ?? __('chat.composer.modelPicker.otherProvider'))]
+                .map(([label, models]) => ({
+                    id: `models:${label}`,
+                    label,
+                    entries: models.map(entry => ({
+                        id: entry.model_id,
+                        participant: systemAssistant,
+                        model: entry.model_id,
+                        disabled: entry.status === 'offline'
+                    }))
+                }))
+            : [];
+        return app.hooks.apply('chatRegenerateGroups', core, {translate: __});
+    }
+
+    const regenItems: Array<SelectItemDefinition> = $derived.by(() => {
+        if (!isRegen) return [];
+        return regenGroups().flatMap(group => group.entries.map(entry => {
+            if (entry.model) {
+                return {
+                    value: entry.model,
+                    label: aiModelStore.getOneById(entry.model)?.label ?? entry.model,
+                    groupLabel: group.label,
+                    disabled: entry.disabled
+                };
+            }
+            return {
+                value: `${PARTICIPANT_PREFIX}${group.id}:${entry.id}`,
+                label: entry.participant.label,
+                groupLabel: group.label,
+                disabled: entry.disabled
+            };
+        }));
+    });
+
+    function participantByItemValue(value: string) {
+        if (!value.startsWith(PARTICIPANT_PREFIX)) return null;
+        const [groupId, ...rest] = value.slice(PARTICIPANT_PREFIX.length).split(':');
+        const entryId = rest.join(':');
+        const group = regenGroups().find(candidate => candidate.id === groupId);
+        return group?.entries.find(entry => entry.id === entryId)?.participant ?? null;
+    }
 
     const selectItems: Array<SelectItemDefinition> = $derived.by(() => {
+        if (isRegen) {
+            return regenItems;
+        }
         return Array.from(aiModelStore.models).map(model => ({
             value: model.model_id,
             label: model.label,
@@ -69,24 +132,49 @@
             onSelect(newModelId);
             return;
         }
+        if (isRegen && newModelId.startsWith(PARTICIPANT_PREFIX)) {
+            const participant = participantByItemValue(newModelId);
+            if (participant && composerContext?.mode.isRegen) {
+                composerContext.mode.getState('regen').pickedParticipant = participant;
+            }
+            return;
+        }
+        // A model pick after a participant pick returns to the plain model re-run.
+        if (isRegen && composerContext?.mode.isRegen) {
+            composerContext.mode.getState('regen').pickedParticipant = null;
+        }
         composerContext?.model.set(newModelId);
     }
 
 </script>
 
 {#snippet itemSnippet({item, selected}: ItemSnippetProps)}
-    {@const m = aiModelStore.getOneById(item.value)!}
-    <div class="model-row">
-        <span class={{'model-selected': selected }}>
-            {m.label}
-        </span>
-        <span class="model-load">
-            {#if m.status !== 'offline'}
-                <ModelDemandBars model={m} focusable={false}/>
-            {/if}
-            <StatusDotForModel model={m} focusable={false}/>
-        </span>
-    </div>
+    {#if isRegen && item.value.startsWith(PARTICIPANT_PREFIX)}
+        {@const participant = participantByItemValue(item.value)}
+        {#if participant}
+            {@const appearance = participant.appearance ?? defaultAssistantAppearance(participant.label)}
+            {@const picked = composerContext?.mode.isRegen
+                && composerContext.mode.getState('regen').pickedParticipant?.id === participant.id}
+            <div class="model-row">
+                <AssistantRow assistant={participant} emoji={appearance.icon} colors={appearance.colors} checked={Boolean(picked)}/>
+            </div>
+        {/if}
+    {:else}
+        {@const m = aiModelStore.getOneById(item.value)!}
+        {#if m}
+            <div class="model-row">
+                <span class={{'model-selected': selected }}>
+                    {m.label}
+                </span>
+                <span class="model-load">
+                    {#if m.status !== 'offline'}
+                        <ModelDemandBars model={m} focusable={false}/>
+                    {/if}
+                    <StatusDotForModel model={m} focusable={false}/>
+                </span>
+            </div>
+        {/if}
+    {/if}
 {/snippet}
 
 {#snippet triggerValue()}

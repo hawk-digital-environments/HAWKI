@@ -162,7 +162,9 @@
                 "cancelThread": "Thread-Ansicht verlassen",
                 "cancelDefault": "Modus verlassen",
                 "modeExited": "Zurück im normalen Schreibmodus.",
-                "actionBusy": "You can not do this right now. Please wait until the current action is finished."
+                "actionBusy": "You can not do this right now. Please wait until the current action is finished.",
+                "regenTitle": "KI Nachricht regenerieren",
+                "cancelRegen": "Regenerieren abbrechen"
             },
             "settings": {
                 "presetCreative": "Kreativ",
@@ -316,7 +318,9 @@
                 "improvementError": "Verbesserungsvorschläge konnten nicht geladen werden",
                 "improvementModelSaidNoError": "Deine Nachricht ist gut so. Keine Verbesserungsvorschläge verfügbar.",
                 "improveTooltip": "Verbessere deine Eingabe mit KI-gestützten Vorschlägen",
-                "cancelLabel": "Abbrechen"
+                "cancelLabel": "Abbrechen",
+                "regenerateLabel": "Regenerieren",
+                "cancelRegeneration": "Regeneration abbrechen"
             },
             "demandBars": {
                 "low": "Niedrig",
@@ -335,6 +339,12 @@
                 "pinnedLabel": "Angeheftet",
                 "pin": "Oben in diesem Menü anheften",
                 "unpin": "Nicht mehr anheften"
+            },
+            "regen": {
+                "onlyAssistantMessages": "Nur Nachrichten des Assistenten können regeneriert werden",
+                "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
+                "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
+                "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
             }
         },
         "tools": {

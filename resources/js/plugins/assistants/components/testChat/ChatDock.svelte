@@ -5,18 +5,19 @@
   collapsed, so a running conversation survives closing the dock.
 
   The host positions it: a `position: relative` box that defines
-  `--test-panel-w` and `--test-fab-inset`, and (on `--bp-xl`) opens a grid
+  `--test-panel-w` and `--test-fab-inset` (optionally `--test-launcher-bg`
+  / `--test-launcher-fg` to tint the launcher), and (on `--bp-xl`) opens a grid
   track of `--test-panel-w` beside its content while the dock is open (see
   the builder layout and the store's detail page).
 -->
 <script lang="ts">
-    import type {Snippet} from 'svelte';
-    import type {ChatStoreApi} from './stream/chatStore.svelte.js';
+    import type { Snippet } from 'svelte';
+    import type { ChatStoreApi } from './stream/chatStore.svelte.js';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import BubbleChatIcon from '$lib/components/ui/icons/iconset/BubbleChatIcon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import Refresh01Icon from '$lib/components/ui/icons/iconset/Refresh01Icon.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         open: boolean;
@@ -31,57 +32,70 @@
         children: Snippet;
     }
 
-    let {
-        open = $bindable(),
-        title,
-        description,
-        chat,
-        onLauncherDragEnter,
-        header,
-        children,
-    }: Props = $props();
+    let { open = $bindable(), title, description, chat, onLauncherDragEnter, header, children }: Props = $props();
 
-    const {__} = useTranslator();
+    const { __ } = useTranslator();
 </script>
 
 <!-- Open on mobile the dock covers the whole content area, header included:
      opt out of the content column's top fade (see SidebarContent), which
      would otherwise veil the header actions. The fade only exists there. -->
-<div class="test-shell" class:open data-content-fade={open ? 'none' : undefined}>
-<aside class="test-panel" class:open aria-label={title}>
-    <button type="button" class="launcher" inert={open}
+<div
+    class="test-shell"
+    class:open
+    data-content-fade={open ? 'none' : undefined}
+>
+    <aside
+        class="test-panel"
+        class:open
+        aria-label={title}
+    >
+        <button
+            type="button"
+            class="launcher"
+            inert={open}
             aria-label={__('assistants.builder.test.open')}
             title={__('assistants.builder.test.open')}
-            onclick={() => open = true}
-            ondragenter={onLauncherDragEnter}>
-        <BubbleChatIcon/>
-    </button>
-    <div class="inner" inert={!open}>
-        <header class="panel-header">
-            <h3 class="u-sr-only">{title}</h3>
-            {#if description}
-                <p class="u-sr-only">{description}</p>
-            {/if}
-            <div class="header-main">
-                {@render header?.()}
-            </div>
-            <div class="header-actions">
-                {#if chat && chat.messages.length > 0}
-                    <ButtonWithTooltip variant="iconGhost" iconLeft={Refresh01Icon}
-                                       tooltip={__('assistants.builder.test.reset')}
-                                       disabled={chat.status === 'streaming'}
-                                       onclick={() => chat.clear()}/>
+            onclick={() => (open = true)}
+            ondragenter={onLauncherDragEnter}
+        >
+            <BubbleChatIcon />
+        </button>
+        <div
+            class="inner"
+            inert={!open}
+        >
+            <header class="panel-header">
+                <h3 class="u-sr-only">{title}</h3>
+                {#if description}
+                    <p class="u-sr-only">{description}</p>
                 {/if}
-                <ButtonWithTooltip variant="iconGhost" iconLeft={Cancel01Icon}
-                                   tooltip={__('assistants.builder.test.close')}
-                                   onclick={() => open = false}/>
+                <div class="header-main">
+                    {@render header?.()}
+                </div>
+                <div class="header-actions">
+                    {#if chat && chat.messages.length > 0}
+                        <ButtonWithTooltip
+                            variant="iconGhost"
+                            iconLeft={Refresh01Icon}
+                            tooltip={__('assistants.builder.test.reset')}
+                            disabled={chat.status === 'streaming'}
+                            onclick={() => chat.clear()}
+                        />
+                    {/if}
+                    <ButtonWithTooltip
+                        variant="iconGhost"
+                        iconLeft={Cancel01Icon}
+                        tooltip={__('assistants.builder.test.close')}
+                        onclick={() => (open = false)}
+                    />
+                </div>
+            </header>
+            <div class="panel-body">
+                {@render children()}
             </div>
-        </header>
-        <div class="panel-body">
-            {@render children()}
         </div>
-    </div>
-</aside>
+    </aside>
 </div>
 
 <style>
@@ -92,7 +106,45 @@
        so the surface grows over it instead of reflowing it. The blue
        launcher layer is the surface's colour, not separate content. */
     .test-shell {
-        --spring: linear(0, 0.034, 0.116, 0.224, 0.341, 0.456, 0.563, 0.658, 0.739, 0.807, 0.862, 0.905, 0.938, 0.963, 0.981, 0.994, 1.002, 1.007, 1.01, 1.011, 1.011, 1.01, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+        --spring: linear(
+            0,
+            0.034,
+            0.116,
+            0.224,
+            0.341,
+            0.456,
+            0.563,
+            0.658,
+            0.739,
+            0.807,
+            0.862,
+            0.905,
+            0.938,
+            0.963,
+            0.981,
+            0.994,
+            1.002,
+            1.007,
+            1.01,
+            1.011,
+            1.011,
+            1.01,
+            1.009,
+            1.008,
+            1.007,
+            1.005,
+            1.004,
+            1.003,
+            1.003,
+            1.002,
+            1.001,
+            1.001,
+            1.001,
+            1,
+            1,
+            1,
+            1
+        );
         --settle: cubic-bezier(0.3, 0, 0.2, 1);
         /* Launcher: size and icon size of a default Button. */
         --fab: 2.5rem;
@@ -132,7 +184,9 @@
     .test-panel.open {
         width: 100cqw;
         height: 100cqh;
-        box-shadow: 0 0 0 1px oklch(0% 0 0 / 0.06), 0 18px 40px oklch(0% 0 0 / 0.14);
+        box-shadow:
+            0 0 0 1px oklch(0% 0 0 / 0.06),
+            0 18px 40px oklch(0% 0 0 / 0.14);
         /* Open: stiff spring with a barely-there settle; width leads height
            slightly so the circle swells out of its corner. */
         transition:
@@ -151,16 +205,18 @@
         border: none;
         /* Brand ramp of the builder's primary step action
            (BuilderStepFooter) and the sidebar's create button. */
-        background: linear-gradient(
-            135deg,
-            var(--gradient-brand-1),
-            var(--gradient-brand-2) 55%,
-            var(--gradient-brand-3)
+        /* Hosts may tint it with their own pair (e.g. the store detail page
+           passes the assistant's cover colours). */
+        background: var(
+            --test-launcher-bg,
+            linear-gradient(135deg, var(--gradient-brand-1), var(--gradient-brand-2) 55%, var(--gradient-brand-3))
         );
-        color: var(--color-on-accent-fill);
+        color: var(--test-launcher-fg, var(--color-on-accent-fill));
         cursor: pointer;
         /* Blue returns only as the surface nears the circle. */
-        transition: opacity 160ms var(--settle) 190ms, filter 150ms;
+        transition:
+            opacity 160ms var(--settle) 190ms,
+            filter 150ms;
     }
 
     /* The icon stays pinned in the corner the button came from. */
@@ -243,7 +299,10 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .test-panel, .test-panel.open, .launcher, .open .launcher {
+        .test-panel,
+        .test-panel.open,
+        .launcher,
+        .open .launcher {
             transition: none !important;
         }
     }

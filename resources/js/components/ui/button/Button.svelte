@@ -21,8 +21,11 @@
   />
   ```
 -->
-<script module lang="ts">
-    import {cva, type VariantProps} from 'class-variance-authority';
+<script
+    module
+    lang="ts"
+>
+    import { cva, type VariantProps } from 'class-variance-authority';
 
     const buttonVariants = cva('btn', {
         variants: {
@@ -42,7 +45,7 @@
                 iconOnly: 'btn--iconOnly'
             }
         },
-        defaultVariants: {variant: 'fill', size: 'md'}
+        defaultVariants: { variant: 'fill', size: 'md' }
     });
 
     export type ButtonVariant = VariantProps<typeof buttonVariants>['variant'];
@@ -50,10 +53,10 @@
 </script>
 
 <script lang="ts">
-    import type {HTMLButtonAttributes} from 'svelte/elements';
-    import {mergeProps} from 'bits-ui';
-    import type {Component} from 'svelte';
-    import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import type { HTMLButtonAttributes } from 'svelte/elements';
+    import { mergeProps } from 'bits-ui';
+    import type { Component } from 'svelte';
+    import type { IconComponent } from '$lib/components/ui/icons/index.js';
 
     interface Props extends HTMLButtonAttributes {
         /** The reference to the underlying button element. Can be used for imperative actions like focusing the button. */
@@ -90,31 +93,38 @@
         const activeValues = ['active', 'true', '1', 'open', 'delayed-open', 'instant-open'];
         return activeValues.includes(String(highlight).toLowerCase());
     });
-
 </script>
 
-<button bind:this={ref} {...mergeProps(
-    {
-        class: buttonVariants({
+<button
+    bind:this={ref}
+    {...mergeProps(
+        {
+            class: buttonVariants({
                 variant,
-                size: ((IconLeft || IconRight) && !children) ? 'iconOnly' : size
+                size: (IconLeft || IconRight) && !children ? 'iconOnly' : size
+            })
+        },
+        {
+            class: {
+                'btn--block': restProps.block,
+                'btn--active': forceActive
             }
-        )
-    },
-    {
-        class: {
-            'btn--block': restProps.block,
-            'btn--active': forceActive
-        }
-    },
-    restProps
-)}>
+        },
+        restProps
+    )}
+>
     {#if IconLeft}
-        <IconLeft class="btnIcon" aria-hidden="true"/>
+        <IconLeft
+            class="btnIcon"
+            aria-hidden="true"
+        />
     {/if}
     {@render children?.()}
     {#if IconRight}
-        <IconRight class="btnIcon" aria-hidden="true"/>
+        <IconRight
+            class="btnIcon"
+            aria-hidden="true"
+        />
     {/if}
 </button>
 
@@ -267,15 +277,17 @@
         padding: 0 var(--space-3);
         font-size: var(--font-size-sm);
         border-radius: var(--corner-full);
+        /* At this size the label reads as one unit with its icon. */
+        gap: var(--space-1_5);
 
-        /* Icons carry their own side bearing, so the icon side sits a notch
-           tighter than the text side to look even. */
+        /* Icons carry their own side bearing (2–5px inside the 16px box), so
+           the icon side sits tighter than the text side to look even. */
         &:has(> :global(.btnIcon):first-child) {
-            padding-inline-start: var(--space-2_5);
+            padding-inline-start: var(--space-2);
         }
 
         &:has(> :global(.btnIcon):last-child) {
-            padding-inline-end: var(--space-2_5);
+            padding-inline-end: var(--space-2);
         }
     }
 

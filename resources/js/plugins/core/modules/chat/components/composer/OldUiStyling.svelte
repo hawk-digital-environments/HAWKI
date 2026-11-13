@@ -25,6 +25,7 @@
 <script lang="ts">
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatEditModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
+    import type {ChatRegenModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
     import type {ChatThreadModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
 
     const composerContext = useComposerContext();
@@ -144,6 +145,10 @@
         return highlightAndDisableMessageWithId(modeState.messageId);
     }
 
+    function styleElementForRegenMode(modeState: ChatRegenModeState): () => void {
+        return highlightAndDisableMessageWithId(modeState.messageId);
+    }
+
     function styleElementForThreadMode(modeState: ChatThreadModeState): () => void {
         const threadContainers = document.querySelectorAll('.thread.branch.visible');
         const container = Array.from(threadContainers)
@@ -178,6 +183,9 @@
     $effect(() => {
         if (composerContext.mode.isEdit) {
             return styleElementForEditMode(composerContext.mode.getState('edit'));
+        }
+        if (composerContext.mode.isRegen) {
+            return styleElementForRegenMode(composerContext.mode.getState('regen'));
         }
         if (composerContext.mode.isThread) {
             return styleElementForThreadMode(composerContext.mode.getState('thread'));

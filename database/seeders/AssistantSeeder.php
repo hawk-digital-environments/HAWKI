@@ -41,7 +41,7 @@ class AssistantSeeder extends Seeder
             'handle' => 'study-buddy',
             'prompt' => 'You are a patient study companion who helps learners review material, build flashcards and rehearse for exams.',
             'icon' => '🎓',
-            'background' => 'background: linear-gradient(135deg, rgb(73,66,215), rgb(101,34,195));',
+            'background' => 'background: hsl(228 80% 52%); color: hsl(205 100% 88%)',
             'user_prompts' => [
                 'Help me rehearse for my next exam.',
                 'Turn my notes into flashcards.',
@@ -52,7 +52,7 @@ class AssistantSeeder extends Seeder
             'handle' => 'research-coach',
             'prompt' => 'You are a methodical research tutor who guides students through finding, evaluating and comparing sources.',
             'icon' => '🔬',
-            'background' => 'background: linear-gradient(135deg, rgb(16,185,129), rgb(5,150,105));',
+            'background' => 'background: hsl(155 100% 19%); color: hsl(72 90% 62%)',
             'user_prompts' => [
                 'Find trustworthy sources on my topic.',
                 'Compare these two theories for me.',
@@ -63,7 +63,7 @@ class AssistantSeeder extends Seeder
             'handle' => 'writing-tutor',
             'prompt' => 'You are an encouraging writing tutor who improves structure, clarity and style of student texts.',
             'icon' => '✍️',
-            'background' => 'background: linear-gradient(135deg, rgb(219,39,119), rgb(225,29,72));',
+            'background' => 'background: hsl(345 75% 66%); color: hsl(340 65% 18%)',
             'user_prompts' => [
                 'Give feedback on my introduction.',
                 'Suggest a structure for my essay.',
@@ -74,7 +74,7 @@ class AssistantSeeder extends Seeder
             'handle' => 'code-mentor',
             'prompt' => 'You are a pragmatic programming mentor who explains code step by step and reviews snippets for common mistakes.',
             'icon' => '💡',
-            'background' => 'background: linear-gradient(135deg, rgb(59,130,246), rgb(37,99,235));',
+            'background' => 'background: hsl(260 80% 87%); color: hsl(265 55% 28%)',
             'user_prompts' => [
                 'Explain this error message.',
                 'Review my function for bugs.',
@@ -85,7 +85,7 @@ class AssistantSeeder extends Seeder
             'handle' => 'lab-assistant',
             'prompt' => 'You are a careful lab assistant who walks through experiments, safety rules and protocols.',
             'icon' => '🧪',
-            'background' => 'background: linear-gradient(135deg, rgb(245,158,11), rgb(234,88,12));',
+            'background' => 'background: hsl(72 90% 60%); color: hsl(155 100% 18%)',
             'user_prompts' => [
                 'Summarize the following protocol.',
                 'What safety rules apply to this experiment?',
@@ -96,7 +96,7 @@ class AssistantSeeder extends Seeder
             'handle' => 'language-guide',
             'prompt' => 'You are a friendly language coach who practices vocabulary, grammar and conversation with learners.',
             'icon' => '🌐',
-            'background' => 'background: linear-gradient(135deg, rgb(239,68,68), rgb(220,38,38));',
+            'background' => 'background: hsl(205 90% 84%); color: hsl(225 70% 25%)',
             'release_stage' => 'federated',
             'user_prompts' => [
                 'Practice a conversation with me.',
@@ -108,7 +108,7 @@ class AssistantSeeder extends Seeder
             'handle' => 'math-helper',
             'prompt' => 'You are a structured math tutor who solves problems step by step and checks the learner\'s own attempts.',
             'icon' => '➗',
-            'background' => 'background: linear-gradient(135deg, rgb(107,114,128), rgb(55,65,81));',
+            'background' => 'background: hsl(45 98% 60%); color: hsl(355 75% 18%)',
             'user_prompts' => [
                 'Solve this equation step by step.',
                 'Check my solution for mistakes.',
@@ -119,7 +119,7 @@ class AssistantSeeder extends Seeder
             'handle' => 'career-advisor',
             'prompt' => 'You are a supportive career advisor who helps with orientation, applications and interview preparation.',
             'icon' => '🎯',
-            'background' => 'background: linear-gradient(135deg, rgb(168,85,79), rgb(120,53,15));',
+            'background' => 'background: hsl(22 95% 82%); color: hsl(15 70% 24%)',
             'release_stage' => 'federated',
             'user_prompts' => [
                 'Review my application letter.',

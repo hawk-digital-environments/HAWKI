@@ -12,8 +12,8 @@
     <ActionIcon icon={Cancel01Icon} label={__('ui.dialog.closeLabel')} size="sm" class="dialog-close" {...props}/>
 -->
 <script lang="ts">
-    import type {IconComponent} from '$lib/components/ui/icons';
-    import type {HTMLButtonAttributes} from 'svelte/elements';
+    import type { IconComponent } from '$lib/components/ui/icons';
+    import type { HTMLButtonAttributes } from 'svelte/elements';
 
     interface Props {
         icon: IconComponent;
@@ -52,20 +52,20 @@
 </script>
 
 <button
-        bind:this={el}
-        type="button"
-        class="action-icon {cls}"
-        style={style}
-        data-variant={variant}
-        data-tone={tone}
-        data-size={size}
-        data-active={active || undefined}
-        aria-label={label}
-        {disabled}
-        {onclick}
-        {...rest}
+    bind:this={el}
+    type="button"
+    class="action-icon {cls}"
+    {style}
+    data-variant={variant}
+    data-tone={tone}
+    data-size={size}
+    data-active={active || undefined}
+    aria-label={label}
+    {disabled}
+    {onclick}
+    {...rest}
 >
-    <Icon size="1em"/>
+    <Icon size="1em" />
 </button>
 
 <style>
@@ -155,7 +155,12 @@
         backdrop-filter: blur(6px);
     }
     button[data-variant='frosted']:hover:not(:disabled) {
-        background-color: var(--action-icon-hover-bg, oklch(100% 0 0 / 0.4));
+        /* Brighten from the button's own fill — never drop below it, so a
+           near-opaque backdrop doesn't fade on hover. */
+        background-color: var(
+            --action-icon-hover-bg,
+            color-mix(in oklch, var(--action-icon-bg, oklch(100% 0 0 / 0.25)), oklch(100% 0 0) 40%)
+        );
         transform: scale(1.06);
     }
     button[data-variant='frosted'][data-active] :global(svg) {
