@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Services\Announcements\AnnouncementService;
+use App\Services\Announcements\Values\AnnouncementType;
 use Illuminate\Console\Command;
 
 class AnnouncementPublish extends Command
@@ -26,7 +27,11 @@ class AnnouncementPublish extends Command
                             {--expire= : Expire datetime (Y-m-d H:i:s)}';
     protected $description = 'Create a new announcement entry referencing a content folder';
 
-    private const array TYPES = ['policy', 'news', 'system', 'event', 'info'];
+    /** @return list<string> */
+    private static function typeValues(): array
+    {
+        return array_column(AnnouncementType::cases(), 'value');
+    }
 
     public function handle(AnnouncementService $service): void
     {
@@ -35,11 +40,22 @@ class AnnouncementPublish extends Command
         $title = $this->argument('title') ?: $this->ask('Enter the announcement title');
         $view = $this->argument('view') ?: $this->ask('Enter the content folder name (e.g. basic-guidelines)');
 
-        $type = $this->option('type')
+        $typeValue = $this->option('type')
             ?: ($interactive
-                ? $this->choice('Select the announcement type', self::TYPES, 4)
+                ? $this->choice('Select the announcement type', self::typeValues(), 4)
                 // Same default as the interactive choice (index 4).
                 : 'info');
+
+        $type = AnnouncementType::tryFrom((string)$typeValue);
+        if ($type === null) {
+            $this->error(sprintf(
+                'Unknown announcement type "%s". Valid types: %s.',
+                (string)$typeValue,
+                implode(', ', self::typeValues())
+            ));
+
+            return;
+        }
 
         $force = $this->option('force') !== null
             ? filter_var($this->option('force'), \FILTER_VALIDATE_BOOLEAN)

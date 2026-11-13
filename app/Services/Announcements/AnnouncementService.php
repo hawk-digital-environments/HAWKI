@@ -4,8 +4,8 @@ namespace App\Services\Announcements;
 
 use App\Models\Announcements\Announcement;
 use App\Models\User;
+use App\Services\Announcements\Values\AnnouncementType;
 use App\Services\Translation\LocaleService;
-use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\Session;
 readonly class AnnouncementService
 {
     public function __construct(
-        private LocaleService $localeService
+        private LocaleService                    $localeService,
+        private RegistrationPolicyPublishService $policyPublisher,
+        private RegistrationPolicyService        $policies
     )
     {
     }
@@ -23,20 +25,34 @@ readonly class AnnouncementService
      * Create a new announcement
      *
      * Example:
-     * $service->createAnnouncement('announcements.terms_update', 'info', true);
+     * $service->createAnnouncement('announcements.terms_update', AnnouncementType::INFO, true);
      */
     public function createAnnouncement(
-        string  $title,
-        string  $view,
-        string  $type = 'info',
-        bool    $isForced = false,
-        bool    $isGlobal = true,
-        ?array  $targetUsers = null,
-        ?string $anchor = null,
-        ?string $startsAt = null,
-        ?string $expiresAt = null
+        string          $title,
+        string          $view,
+        AnnouncementType $type = AnnouncementType::INFO,
+        bool            $isForced = false,
+        bool            $isGlobal = true,
+        ?array          $targetUsers = null,
+        ?string         $anchor = null,
+        ?string         $startsAt = null,
+        ?string         $expiresAt = null
     ): Announcement
     {
+        // A policy is the one document users consent to, so two of them may never be in
+        // effect at the same time. Catching that here means the operator sees it while
+        // publishing, instead of users consenting to whichever policy the tie-break picked.
+        if ($type === AnnouncementType::POLICY && $isGlobal) {
+            return $this->policyPublisher->publish(
+                $title,
+                $view,
+                $isForced,
+                $anchor,
+                $startsAt,
+                $expiresAt,
+            );
+        }
+
         return Announcement::create([
             'title' => $title,
             'view' => $view,
@@ -65,7 +81,7 @@ readonly class AnnouncementService
             return [
                 'id' => $ann->id,
                 'title' => $ann->title,
-                'type' => $ann->type,
+                'type' => $ann->type->value,
                 'isForced' => $ann->is_forced,
                 'anchor' => $ann->anchor,
                 'expires_at' => $ann->expires_at
@@ -94,7 +110,7 @@ readonly class AnnouncementService
 
     public function fetchLatestPolicy(): Announcement
     {
-        return $this->getActiveAnnouncements()->where('type', 'policy')->firstOrFail();
+        return $this->getActiveAnnouncements()->where('type', AnnouncementType::POLICY->value)->firstOrFail();
     }
 
 
@@ -156,7 +172,7 @@ readonly class AnnouncementService
             $user->markAnnouncementAsSeen($announcementId);
             return true;
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }
@@ -172,9 +188,15 @@ readonly class AnnouncementService
                 return false;
             }
 
+            // Policy consent is hash-bound and recorded per revision — not a plain pivot timestamp.
+            if ($announcement->type === AnnouncementType::POLICY) {
+                $this->policies->acceptAnnouncement($user, $announcement);
+                return true;
+            }
+
             $user->markAnnouncementAsAccepted($announcementId);
             return true;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }

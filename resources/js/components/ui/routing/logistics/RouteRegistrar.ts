@@ -1,4 +1,16 @@
 import {type Route, type RouteContext, type RouteParams, type RouteResult as URRouteResult} from 'universal-router';
+
+// The registrar attaches each route's `meta` (see RouteOptions.meta) to the compiled
+// universal-router route at build time; the library's own Route type just doesn't
+// declare it. Augment it so consumers — the app's middlewares, layouts and tests —
+// get a typed `route.meta` instead of casting.
+declare module 'universal-router' {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- augmentation must repeat the generics
+    export interface Route<R = any, C extends RouterContext = RouterContext> {
+        /** Meta registered with the route through {@link RouteRegistrar}; absent on group nodes. */
+        meta?: RouteMeta;
+    }
+}
 import {buildMiddlewareStack, buildRouteMiddlewareStack} from '$lib/components/ui/routing/logistics/buildMiddlewareStack.js';
 import {type ComponentLoader, type ComponentOrLoader, lazyComponent, resolveLayoutOption} from '$lib/components/ui/routing/logistics/lazyComponent.js';
 import type {Component} from 'svelte';
@@ -57,7 +69,7 @@ export type RouteLayoutOrLoader = ComponentOrLoader<RouteLayout>;
  * {@link RouteOptions.layout}) deliberately live outside of it, so they can
  * never collide with — or leak into — a plugin's own meta.
  */
-export type RouteMeta = Record<string, unknown>;
+export type RouteMeta = Record<string, unknown> & import('../extendableTypes.js').RouteMetaExtensions;
 
 /**
  * The `universal-router` {@link Route} plus the extra fields this router
@@ -324,7 +336,14 @@ function buildRouteNode(kind: RouteNodeKind, componentOrLoader: ComponentOrLoade
  *     }, {middlewares: [requireAdmin]});
  * }
  */
+export interface RouteRegistrarOptions {
+    /** Application-owned access policy, applied before route loaders, including fallbacks. */
+    metaGuards?: (meta: RouteMeta) => RouteMiddleware | RouteMiddleware[];
+}
+
 export class RouteRegistrar {
+    public constructor(private readonly options: RouteRegistrarOptions = {}) {}
+
     private readonly routes = new Map<string, RegisteredRouteOptions>();
     private readonly groups = new Map<string, RegisteredRouteGroupOptions>();
     /**
@@ -412,8 +431,9 @@ export class RouteRegistrar {
     public group(path: string, callback: RouteRegistrationCallback, options?: RouteGroupOptions) {
         if (this.groups.has(path)) {
             const existingGroup = this.groups.get(path)!;
+            const existingChildren = existingGroup.children;
             existingGroup.children = (registrar) => {
-                existingGroup.children(registrar);
+                existingChildren(registrar);
                 callback(registrar);
             };
             return this;
@@ -467,7 +487,7 @@ export class RouteRegistrar {
      * list) would silently scope the guard to that group's subtree.
      */
     public createNestedRegistrar() {
-        const nestedRegistrar = new RouteRegistrar();
+        const nestedRegistrar = new RouteRegistrar(this.options);
         nestedRegistrar.globalMiddlewares = this.globalMiddlewares;
         return nestedRegistrar;
     }
@@ -508,6 +528,8 @@ export class RouteRegistrar {
     private buildRouteFromOptions(options: RegisteredRouteOptions): Route {
         const path = options.path.replace(/\/$/, ''); // Strip trailing slash for consistency
         const layout = resolveLayoutOption(options.layout, options.lazyLayout, `Route "${options.path}"`);
+        const pageAction = (ctx: RouteContext<any>, params: RouteParams): RouteResultBody =>
+            ({component: options.component, context: ctx as HawkiRouteContext, params});
 
         // `meta` and `layout` sit on the inner route on purpose: middleware
         // wrappers must stay transparent, and the layout chain is collected by
@@ -521,7 +543,7 @@ export class RouteRegistrar {
             // it can run every resolution in parallel instead of one route
             // at a time. This also keeps the action synchronous, which
             // `universal-router` is happy with.
-            action: (ctx, params) => ({component: options.component, context: ctx, params}),
+            action: pageAction,
             meta: options.meta,
             layout,
             nodes: {
@@ -535,6 +557,30 @@ export class RouteRegistrar {
             // action answers the whole subtree.
             children: options.catchAll ? [] : undefined
         };
+
+        // Meta guards run inside the leaf action, not as path-less middleware
+        // ancestors: `universal-router` already runs an ancestor's action while
+        // it merely probes a subtree, so wrapping guards would execute them for
+        // every sibling route tried along the way. Composed into the leaf they
+        // fire exactly once, and only when this route actually matched.
+        const guards = this.options.metaGuards?.(options.meta ?? {}) ?? [];
+        const guardList = Array.isArray(guards) ? guards : [guards];
+        if (guardList.length > 0) {
+            innerRoute.action = async (ctx, params): Promise<RouteResultBody | undefined> => {
+                const dispatch = async (index: number): Promise<RouteResultBody | undefined> => {
+                    if (index >= guardList.length) {
+                        return pageAction(ctx as HawkiRouteContext, params);
+                    }
+                    // Same contract translation as the middleware wrappers: a
+                    // returned body wins, `undefined` (the guard called `next()`)
+                    // continues the chain, any other nullish return denies the
+                    // route — which falls through to the next candidate.
+                    const result = await guardList[index](ctx as HawkiRouteContext, () => dispatch(index + 1));
+                    return result === undefined ? dispatch(index + 1) : result ?? undefined;
+                };
+                return dispatch(0);
+            };
+        }
 
         return buildRouteMiddlewareStack(innerRoute, this.globalMiddlewares, options);
     }

@@ -4,7 +4,7 @@ namespace App\Services\Auth;
 
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
-use App\Services\Auth\Exception\AuthFailedException;
+use App\Services\Auth\Exceptions\AuthFailedException;
 use App\Services\Auth\Util\AuthRedirectBuilder;
 use App\Services\Auth\Util\DisplayNameBuilder;
 use App\Services\Auth\Value\AuthenticatedUserInfo;

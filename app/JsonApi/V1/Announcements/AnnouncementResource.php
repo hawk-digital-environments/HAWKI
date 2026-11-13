@@ -30,7 +30,7 @@ class AnnouncementResource extends JsonApiResource
     {
         yield from [
             'title' => $this->resource->title,
-            'type' => $this->resource->type,
+            'type' => $this->resource->type->value,
             'is_global' => $this->resource->isGlobal,
             'is_forced' => $this->resource->isForced,
             'anchor' => $this->resource->anchor,

@@ -22,7 +22,7 @@ class AnnouncementForUser
     public function __construct(
         public int $id,
         public string $title,
-        public string $type,
+        public AnnouncementType $type,
         public bool $isGlobal,
         public bool $isForced,
         public ?string $anchor,

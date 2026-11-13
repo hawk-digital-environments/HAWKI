@@ -53,6 +53,11 @@ export class UriBuilder {
         return this.joinUri(this.baseUri, '/logout');
     }
 
+    /** URI of the session lifecycle resource — `DELETE` logs the visitor out. */
+    public sessionUri(id: string = 'hawki'): string {
+        return this.jsonApiUri('sessions', id);
+    }
+
     public linkPreviewMetadataUri(url: string): string {
         return this.jsonApiUri('/proxy/link-preview/metadata', {url});
     }

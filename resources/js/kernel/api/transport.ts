@@ -50,7 +50,7 @@ function readCsrfHeaders(method: string): Record<string, string> {
     return metaToken ? {'X-CSRF-TOKEN': metaToken} : {};
 }
 
-export function createDefaultTransport(): ApiTransport {
+export function createDefaultTransport(onSessionRejected?: (status: 401 | 419) => void): ApiTransport {
     return (async (path: string, options: ApiTransportOptions = {}) => {
         const {responseType = 'json', ...requestOptions} = options;
         const headers = new Headers(requestOptions.headers);
@@ -64,6 +64,9 @@ export function createDefaultTransport(): ApiTransport {
 
         const response = await fetch(path, {...requestOptions, headers});
         if (!response.ok) {
+            if (response.status === 401 || response.status === 419) {
+                onSessionRejected?.(response.status);
+            }
             throw await createTransportError(response);
         }
 
@@ -102,6 +105,7 @@ async function createTransportError(response: Response): Promise<ApiTransportErr
     if (body && typeof body === 'object' && 'errors' in body && Array.isArray(body.errors)) {
         const errors = body.errors as Array<Record<string, unknown>>;
         serverErrorMessages.push(...errors.map((error) => ({
+            code: typeof error.code === 'string' ? error.code : undefined,
             title: typeof error.title === 'string' ? error.title : 'Unknown error',
             detail: typeof error.detail === 'string' ? error.detail : 'No detail provided'
         })));

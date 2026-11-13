@@ -6,6 +6,7 @@ namespace App\Services\System\Health;
 
 
 use App\Services\System\Health\Events\HealthCheckEvent;
+use App\Services\System\Health\Events\QuickHealthCheckEvent;
 use App\Services\System\Health\Exception\HealthcheckFailedException;
 use App\Services\System\Health\Value\HealthCheckResult;
 use App\Services\System\Health\Value\HealthCheckResultCollection;
@@ -75,7 +76,7 @@ readonly class HealthChecker
     public function check(): HealthCheckResultCollection
     {
         if ($this->timer->getTestType() === HealthTimer::TEST_TYPE_QUICK) {
-            return new HealthCheckResultCollection($this->quickCheck());
+            return $this->quickCheck();
         }
 
         return $this->deepCheck();
@@ -85,7 +86,30 @@ readonly class HealthChecker
      * Perform a quick health check that only verifies basic connectivity.
      * This is designed to be fast and is suitable for frequent checks (e.g., every 30 seconds).
      */
-    public function quickCheck(): HealthCheckResult
+    public function quickCheck(): HealthCheckResultCollection
+    {
+        $event = new QuickHealthCheckEvent(new HealthCheckResultCollection($this->checkQuickDatabase()));
+        $this->dispatchChecks($event);
+        $results = $event->getResults();
+        if ($results->isUnhealthy()) $this->timer->markAsFailed();
+        return $results;
+    }
+
+    private function dispatchChecks(HealthCheckEvent|QuickHealthCheckEvent $event): void
+    {
+        try {
+            $this->eventDispatcher->dispatch($event);
+        } catch (\Throwable $exception) {
+            $this->logger->error('Health check listener failed', ['exception' => $exception]);
+            $event->addResult(new HealthCheckResult(
+                checkName: 'health_check_listener',
+                status: HealthCheckResult::STATUS_ERROR,
+                message: 'Health check listener failed'
+            ));
+        }
+    }
+
+    private function checkQuickDatabase(): HealthCheckResult
     {
         try {
             $responseTime = $this->trackTime(function () {
@@ -126,11 +150,11 @@ readonly class HealthChecker
             )
         );
 
-        $this->eventDispatcher->dispatch($e);
+        $this->dispatchChecks($e);
 
         $results = $e->getResults();
 
-        if ($results->isOk()) {
+        if (!$results->isUnhealthy()) {
             $this->timer->markAsHealthy();
         } else {
             $this->timer->markAsFailed();

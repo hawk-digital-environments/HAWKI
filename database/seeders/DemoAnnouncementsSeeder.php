@@ -49,7 +49,7 @@ class DemoAnnouncementsSeeder extends Seeder
             $rows[] = [
                 'view' => $announcement->view,
                 'id' => (string) $announcement->id,
-                'type' => $announcement->type,
+                'type' => $announcement->type->value,
                 'targeting' => $announcement->is_global
                     ? 'global'
                     : ([] === $announcement->target_users ? 'nobody' : implode(', ', $announcement->target_users ?? [])),

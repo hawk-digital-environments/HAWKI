@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace App\Services\Auth\Exception;
+namespace App\Services\Auth\Exceptions;
 
 /**
  * Exception thrown when authentication fails.
@@ -10,6 +10,6 @@ namespace App\Services\Auth\Exception;
  * The message will be visible to the user, so it should be user-friendly and not expose sensitive information!
  * If a previous exception is provided, it will be logged but not shown to the user.
  */
-class AuthFailedException extends \RuntimeException
+class AuthFailedException extends \RuntimeException implements AuthExceptionInterface
 {
 }
