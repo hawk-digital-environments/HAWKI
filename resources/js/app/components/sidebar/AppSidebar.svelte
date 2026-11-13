@@ -24,13 +24,14 @@
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
     import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
-    import {isApple} from '$lib/utils/platform.js';
+    import {useKeyboard} from '$lib/components/ui/keyboard/KeyboardState.svelte.js';
 
     const app = useApp();
     const router = useRouter();
     const sidebar = useSidebar();
     const chatStore = useStore('chat');
     const {__} = useTranslator();
+    const keyboard = useKeyboard();
     const activeModule = $derived.by(() => app.modules.all.find(module =>
         router.isRouteActive(getModuleRouteGroupName(module.plugin.name, module.name))
     ) ?? null);
@@ -51,12 +52,6 @@
     let searchOpen = $state(false);
     let settingsOpen = $state(false);
     let settingsSection = $state<SettingsSection | null>(null);
-    // Holding Cmd (Ctrl off Apple) points out what has a shortcut in the sidebar.
-    let shortcutsHeld = $state(false);
-
-    function trackShortcutModifier(event: KeyboardEvent) {
-        shortcutsHeld = isApple ? event.metaKey : event.ctrlKey;
-    }
 
     function startNewChat(event: MouseEvent) {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
@@ -81,14 +76,7 @@
     onMount(() => app.events.sync.on('settingsRequested', section => openSettings(section)));
 </script>
 
-<!-- Blur clears it: a keyup in another window never reaches this one. -->
-<svelte:window
-    onkeydown={trackShortcutModifier}
-    onkeyup={trackShortcutModifier}
-    onblur={() => (shortcutsHeld = false)}
-/>
-
-<Sidebar label={__('ui.navigation.label')} class={shortcutsHeld ? 'shortcuts-held' : undefined}>
+<Sidebar label={__('ui.navigation.label')} class={keyboard.shortcutModifierHeld ? 'shortcuts-held' : undefined}>
     <MobileNavCollapse />
     <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
         <HawkLogo label={__('ui.navigation.newChat')} />
@@ -97,12 +85,12 @@
                 icon={Search01Icon}
                 label={__('ui.navigation.search')}
                 shortcut="K"
-                aria-keyshortcuts={isApple ? 'Meta+K' : 'Control+K'}
+                aria-keyshortcuts={keyboard.aria({key: 'k', ctrl: true})}
                 onclick={openSearch}
             >
                 {#snippet tooltip()}
                     {__('ui.navigation.search')}
-                    <span class="tooltip-shortcut">{isApple ? '⌘K' : 'Ctrl K'}</span>
+                    <span class="tooltip-shortcut">{keyboard.label({key: 'k', ctrl: true})}</span>
                 {/snippet}
             </SidebarIconButton>
         {/snippet}

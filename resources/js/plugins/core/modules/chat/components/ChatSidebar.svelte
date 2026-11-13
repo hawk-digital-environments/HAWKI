@@ -10,7 +10,7 @@
     import ChatHistoryItem from '$plugins/core/modules/chat/components/ChatHistoryItem.svelte';
     import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
-    import {isApple} from '$lib/utils/platform.js';
+    import {useKeyboard} from '$lib/components/ui/keyboard/KeyboardState.svelte.js';
     import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -44,6 +44,7 @@
     const router = useRouter();
     const sidebar = useSidebar();
     const {__} = useTranslator();
+    const keyboard = useKeyboard();
     const toast = useToastContext();
 
     const RANGES = ['today', 'last7Days', 'last30Days'] as const satisfies readonly HistoryBucket[];
@@ -277,7 +278,7 @@
         <SidebarButton
             icon={BubbleChatAddIcon}
             label={__('chat.sidebar.newChat')}
-            shortcut={isApple ? '⇧⌘O' : 'Ctrl Shift O'}
+            shortcut={keyboard.label({key: 'o', ctrl: true, shift: true})}
             onclick={newChat}
         />
     </div>

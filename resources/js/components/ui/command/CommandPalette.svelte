@@ -25,7 +25,7 @@
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import {createProximityHover} from '$lib/utils/proximityHover.svelte.js';
-    import {isApple} from '$lib/utils/platform.js';
+    import {useKeyboard} from '$lib/components/ui/keyboard/KeyboardState.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
@@ -67,6 +67,7 @@
     }: Props = $props();
 
     const {__} = useTranslator();
+    const keyboard = useKeyboard();
     const paletteLabel = $derived(label ?? __('ui.commandPalette.label'));
 
     const breakpoint = useBreakpoint();
@@ -88,8 +89,7 @@
         }));
     });
 
-    // ⌘ on Apple platforms, Ctrl elsewhere.
-    const shortcutKeys = isApple ? ['⌘', 'K'] : ['Strg', 'K'];
+    const shortcutKeys = keyboard.labelParts({key: 'k', ctrl: true});
 
     // Focus target when the palette opens. Command binds its arrow/Enter
     // handling to the *root* (which carries tabindex="-1"), so focusing the root
@@ -140,7 +140,7 @@
 
     function handleKeydown(event: KeyboardEvent) {
         if (!shortcut) return;
-        if (event.key !== 'k' || !(event.metaKey || event.ctrlKey)) return;
+        if (!keyboard.matches(event, {key: 'k', ctrl: true})) return;
         // Beat the browser's own ⌘K (address-bar search / Slack-style handlers).
         event.preventDefault();
         open = !open;
