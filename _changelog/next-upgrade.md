@@ -11,11 +11,21 @@ switch, otherwise nobody can log in.
 
 ### 1. OIDC: whitelist the SPA login URL
 
-Add the following to your IdP client registration's allowed redirect URIs:
+When you set up HAWKI, you registered it as a client at your OIDC provider and entered a redirect URI ending in `/req/login` there (see the authentication docs). The SPA now starts logins at a second URL, and your provider only accepts registered URLs — logins fail at the provider with a `redirect_uri` error until it is added.
+
+Find the client registration for HAWKI at your provider and add a second allowed redirect URI next to the existing one:
+
+| Your provider | Where the list lives |
+|---|---|
+| Keycloak | *Clients → your HAWKI client → Settings → Valid Redirect URIs* |
+| Microsoft Entra ID (Azure AD) | *App registrations → your app → Authentication → Redirect URIs* |
+| Other | Wherever the client's allowed redirect/callback URIs are configured |
 
 ```
-https://<your-host>/auth/redirect
+https://<your-hawki-domain>/auth/redirect
 ```
+
+Keep the existing `/req/login` entry — it stays the callback for the legacy route.
 
 ### 2. Shibboleth: protect the SPA login route
 
