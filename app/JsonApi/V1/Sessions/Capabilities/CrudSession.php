@@ -28,9 +28,10 @@ class CrudSession extends CrudResource
         private readonly LoginHandler  $login,
         private readonly SpaAuthHandoff $handoff,
         private readonly UserContext   $userContext,
-        private readonly Request       $request,
+        Request                        $request,
     ) {
         parent::__construct();
+        $this->request = $request;
     }
 
     public function create(array $validatedData): object

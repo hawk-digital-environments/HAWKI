@@ -23,6 +23,8 @@ use LaravelJsonApi\NonEloquent\Concerns\HasCrudCapability;
  */
 class RegistrationRepository extends AbstractRepository implements CreatesResources
 {
+    use HasCrudCapability;
+
     private const string HAWKI_ID = 'hawki';
 
     public function __construct(

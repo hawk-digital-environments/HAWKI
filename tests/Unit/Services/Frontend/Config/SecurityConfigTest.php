@@ -22,6 +22,22 @@ class SecurityConfigTest extends TestCase
         static::assertInstanceOf(SecurityConfig::class, $sut);
     }
 
+    public function testAutomaticPasskeyGenerationDefaultsToDisabled(): void
+    {
+        $sut = SecurityConfig::make(new Repository());
+        static::assertFalse($sut->passkeyAutoGenerate);
+        static::assertFalse($sut->toPublicArray(Request::create('/'))['passkeyAutoGenerate']);
+    }
+
+    public function testAutomaticPasskeyGenerationIsExposedToTheFrontend(): void
+    {
+        $repo = $this->repo();
+        $repo->set('hawki.security.passkey.auto_generate', true);
+        $sut = SecurityConfig::make($repo);
+        static::assertTrue($sut->passkeyAutoGenerate);
+        static::assertTrue($sut->toPublicArray(Request::create('/'))['passkeyAutoGenerate']);
+    }
+
     public function testItDefaultsPasskeyAllowPasteToTrue(): void
     {
         $sut = SecurityConfig::make($this->repo());

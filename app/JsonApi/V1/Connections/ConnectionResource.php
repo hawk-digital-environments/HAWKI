@@ -35,7 +35,8 @@ class ConnectionResource extends JsonApiResource
                 ? get_object_vars($this->resource->extAppSecrets)
                 : null,
             'ext_app_connect_request' => $this->resource->extAppConnectRequest,
-            'migrations_to_apply' => $this->resource->migrationsToApply
+            'migrations_to_apply' => $this->resource->migrationsToApply,
+            'keychain_state' => $this->resource->keychainState?->value
         ]);
     }
 

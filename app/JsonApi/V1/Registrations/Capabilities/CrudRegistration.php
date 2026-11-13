@@ -36,13 +36,14 @@ use LaravelJsonApi\NonEloquent\Capabilities\CrudResource;
 class CrudRegistration extends CrudResource
 {
     public function __construct(
-        private readonly RegistrationService          $registrations,
+        private readonly RegistrationService             $registrations,
         private readonly RegistrationPayloadFingerprint $fingerprints,
-        private readonly UserContext                 $userContext,
-        private readonly AuthManager                 $auth,
-        private readonly Request                     $request,
+        private readonly UserContext                    $userContext,
+        private readonly AuthManager                    $auth,
+        Request                                        $request,
     ) {
         parent::__construct();
+        $this->request = $request;
     }
 
     public function create(array $validatedData): object

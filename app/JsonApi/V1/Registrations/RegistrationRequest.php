@@ -5,7 +5,6 @@ namespace App\JsonApi\V1\Registrations;
 
 use App\Http\Errors\CodedError;
 use App\Models\User;
-use App\Services\System\UserTypes\Values\RegisteringUser;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
 use App\Services\Users\Keychain\Value\UserKeychainValueType;
 use Illuminate\Validation\Validator;
@@ -20,8 +19,6 @@ class RegistrationRequest extends ResourceRequest
         'aiConvKey|ai_conv',
     ];
 
-    private User|RegisteringUser $registrationActor;
-
     public function authorize(): bool
     {
         $actor = $this->user();
@@ -34,7 +31,6 @@ class RegistrationRequest extends ResourceRequest
         if (!$this->hasSession()) {
             CodedError::abort('auth_session_required', 403, 'A browser session is required');
         }
-        $this->registrationActor = $actor;
 
         return true;
     }
@@ -66,7 +62,7 @@ class RegistrationRequest extends ResourceRequest
             }
 
             $found = [];
-            foreach ($this->input('keychain.set', []) as $index => $entry) {
+            foreach (($this->validationData()['keychain']['set'] ?? []) as $index => $entry) {
                 if (!is_array($entry) || !isset($entry['key'], $entry['type'], $entry['value'])) {
                     continue;
                 }
