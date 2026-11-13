@@ -184,7 +184,7 @@
             tooltip={sendTooltip}
             aria-label={sendLabel}
             disabled={!composerContext.guard.canSend}
-            variant="accent"
+            variant="fill"
             iconRight={SendIcon}
             size="xs"
             class="chat-send-btn"
@@ -201,10 +201,15 @@
 {/if}
 
 <style>
-    /* Inactive (disabled) send button: the fill variant defaults to the
-       slightly blue-tinted --color-bg-secondary. Combine with .btn--fill so
-       this out-specifies Button's own disabled rule. */
-    :global(.btn--fill.chat-send-btn:disabled) {
-        --btn-bg: var(--color-surface-light);
+    /* Inactive (disabled) send button: the model picker's fill rather than
+       --color-disabled-bg. The doubled class out-specifies the fill variant's own
+       disabled input. */
+    :global(.btn--fill.chat-send-btn.chat-send-btn) {
+        --btn-bg-disabled: var(--color-surface-light);
+    }
+
+    /* --color-text-disabled is too close to that fill in dark mode to read. */
+    :global(html.darkMode .btn--fill.chat-send-btn.chat-send-btn) {
+        --btn-color-disabled: color-mix(in oklab, var(--color-text) 50%, var(--color-surface-light));
     }
 </style>

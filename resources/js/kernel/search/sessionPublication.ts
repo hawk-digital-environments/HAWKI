@@ -36,8 +36,6 @@ export interface RankingCandidate {
     readonly row: SearchRow;
     /** Inverted Fuse score, higher is better. `0` for a remote non-match and for a blank query. */
     readonly score: number;
-    /** Higher is more recent. Only the blank-query recents path uses it. */
-    readonly recency: number;
     /** The provider's declaration order. */
     readonly providerOrder: number;
     /** The row's position inside its provider's own result order. */
@@ -101,7 +99,6 @@ export function rankGroups(
 
     ranked.sort((a, b) =>
         b.rows[0].score - a.rows[0].score
-        || b.rows[0].recency - a.rows[0].recency
         || a.group.order - b.group.order);
 
     return ranked.map(({group, rows}) => ({
@@ -182,7 +179,6 @@ function takeWithinBudget(
 
 function byRelevance(a: RankingCandidate, b: RankingCandidate): number {
     return b.score - a.score
-        || b.recency - a.recency
         || a.providerOrder - b.providerOrder
         || a.entryOrder - b.entryOrder;
 }

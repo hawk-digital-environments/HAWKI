@@ -15,6 +15,9 @@
 
   An optional `action` snippet renders a trailing shortcut next to the field, e.g. a
   button that leads to the full model or assistant overview.
+
+  A `hidden` field stays mounted — a remount would re-run the focus-claim effect below
+  and steal focus from the row restored on detail close.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
@@ -27,9 +30,11 @@
         placeholder: string;
         /** Optional trailing shortcut rendered after the field. */
         action?: Snippet;
+        /** Hides the field without unmounting it (see component doc). */
+        hidden?: boolean;
     }
 
-    let {value = $bindable(''), placeholder, action}: Props = $props();
+    let {value = $bindable(''), placeholder, action, hidden = false}: Props = $props();
 
     let inputEl = $state<HTMLInputElement | null>(null);
 
@@ -59,7 +64,7 @@
     });
 </script>
 
-<div class="menu-search">
+<div class="menu-search" hidden={hidden || undefined}>
     <Search01Icon class="menu-search-icon" size={16}/>
     <input
         bind:this={inputEl}
@@ -88,6 +93,9 @@
         border: none;
         flex: 0 0 auto;
     }
+
+    /* display:flex above would override the UA's [hidden] rule. */
+    .menu-search[hidden] { display: none; }
 
     /*
       The legacy global stylesheet (`public/css/style.css`) still gives every bare `input`

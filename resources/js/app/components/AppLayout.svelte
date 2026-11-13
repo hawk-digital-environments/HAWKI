@@ -1,7 +1,7 @@
 <!--
   @component App-level layout assembly: the grid shell with the navigation
   sidebar in the `nav` column and the page content in the `main` column. The
-  layout mechanics (open/closed state, rail collapse, off-canvas behaviour)
+  layout mechanics (open/closed state, off-canvas behaviour)
   live in the components under components/ui/sidebar.
 -->
 <script lang="ts">
@@ -10,6 +10,7 @@
     import SidebarContent from '$lib/components/ui/sidebar/SidebarContent.svelte';
     import SidebarRoot from '$lib/components/ui/sidebar/SidebarRoot.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {createKeyboardContext} from '$lib/components/ui/keyboard/KeyboardState.svelte.js';
     import Toaster from '$lib/components/ui/toast/Toaster.svelte';
     import AnnouncementDialog from '$lib/app/components/announcements/AnnouncementDialog.svelte';
 
@@ -20,6 +21,8 @@
 
     const {children}: Props = $props();
     const {__} = useTranslator();
+
+    createKeyboardContext();
 </script>
 
 <SidebarRoot>

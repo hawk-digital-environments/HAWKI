@@ -6,10 +6,12 @@
 
 @layer tokens {
     :root {
-        --corner-xs:   8px;
-        --corner-sm:   12px;    /* --border-radius-tight */
-        --corner-md:   16px;    /* --border-radius-normal */
-        --corner-lg:   24px;    /* --border-radius-large */
+        /* Concentric scale, derived from --corner-sm: each step is the step inside
+           it plus the inset between them (and the outer surface's border). */
+        --corner-sm:   var(--space-2_5);    /* 10px, --border-radius-tight */
+        --corner-xs:   calc(var(--corner-sm) - var(--space-1));    /* 6px: inside a sm row */
+        --corner-md:   calc(var(--corner-sm) + var(--space-1) + var(--divider-width));    /* 15px: menus around sm rows */
+        --corner-lg:   calc(var(--corner-md) + var(--space-2) + var(--divider-width));    /* 24px: composer around md panels */
         --corner-full: 9999px;
     }
 }

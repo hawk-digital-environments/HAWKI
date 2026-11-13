@@ -313,8 +313,9 @@
                     {...props}/>
             {/snippet}
 
-            {#if !detailEntry && searchEnabled && !shownCommand}
+            {#if searchEnabled && !shownCommand}
                 <MenuSearchField
+                    hidden={!!detailEntry}
                     bind:value={query}
                     placeholder={__('chat.composer.assistantMenu.searchPlaceholder')}>
                     {#snippet action()}

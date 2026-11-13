@@ -2,7 +2,7 @@
   @component The reusable search surface: a text field, optional scope filters
   and the ranked result rows of one search session. Everything it shows comes
   from `app.search` — the kernel owns matching, ranking, the five-per-group /
-  20-row caps, the frozen order and the recent selections; this component owns
+  20-row caps and the frozen order; this component owns
   only the input, the filters and the announcements.
 
   A session lives exactly as long as the bar is `active`, so a palette that is
@@ -30,7 +30,7 @@
   ```
 -->
 <script lang="ts">
-    import {untrack, type Snippet} from 'svelte';
+    import {untrack} from 'svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import CommandSearch, {type CommandGroupDefinition} from '$lib/components/ui/command/CommandSearch.svelte';
     import Loader from '$lib/components/ui/loader/Loader.svelte';
@@ -69,8 +69,6 @@
         label?: string;
         /** Focus the search input when opening a palette. */
         autofocus?: boolean;
-        /** Rendered at the trailing edge of the field, e.g. an Esc keycap. */
-        hint?: Snippet;
     }
 
     let {
@@ -80,8 +78,7 @@
         showFilters = false,
         onSelect,
         label,
-        autofocus = false,
-        hint
+        autofocus = false
     }: Props = $props();
 
     const {__} = useTranslator();
@@ -241,8 +238,7 @@
 
     /**
      * The command value of one row: its group plus its entity, joined on a
-     * NUL. The same entity may sit in several groups at once (its own and
-     * "Recently used"); Command highlights every item whose value equals the
+     * NUL. The same entity may sit in several groups at once; Command highlights every item whose value equals the
      * current one, so rows sharing a bare entity key would all light up and
      * share an `aria-activedescendant` target. Scoping by group keeps the
      * value row-unique; {@link entityKeyOf} splits it back apart.
@@ -288,7 +284,7 @@
     // live session.
 
     function choose(value: string) {
-        // The kernel re-checks the row and records the static history; a row
+        // The kernel re-checks the row; a row
         // that has gone stale in the meantime yields nothing and does nothing.
         const entry = session?.select(entityKeyOf(value));
         if (!entry) return;
@@ -350,7 +346,6 @@
         describedBy={hintId}
         resultsLabel={__('ui.search.resultsLabel')}
         iconLeft={Search01Icon}
-        {hint}
     />
 
     <p id={hintId} class="u-sr-only">{__('ui.search.keyboardHint')}</p>
@@ -434,13 +429,80 @@
     /* ── Results, status, errors ──────────────────────────────────────── */
 
     :global(.search-bar .command-list) {
-        padding: var(--space-1);
+        padding: 0 var(--space-1) var(--space-1);
     }
 
-    /* Command moves `data-selected` on hover as well, so one rule paints both
-       the keyboard and the pointer highlight. */
-    :global(.search-bar .command-item[data-selected]) {
-        background-color: var(--color-hover);
+    :global(.search-bar .command-list .command-group),
+    :global(.search-bar .command-list .command-group-items) {
+        gap: 0;
+    }
+
+    /* Listed twice to outrank the shared list's first-group padding. */
+    :global(.search-bar .command-list .command-group .command-group-heading),
+    :global(.search-bar .command-list .command-group:first-of-type .command-group-heading) {
+        padding: var(--space-1_5) var(--space-2);
+        font-weight: var(--font-weight-normal);
+        line-height: var(--line-height-normal);
+        letter-spacing: normal;
+        text-transform: none;
+    }
+
+    /* The field's own height already spaces it from the first heading. */
+    :global(.search-bar .command-list .command-group:first-of-type .command-group-heading) {
+        padding-top: 0;
+    }
+
+    :global(.search-bar .command-list .command-item) {
+        font-weight: var(--font-weight-normal);
+        line-height: var(--line-height-normal);
+    }
+
+    /* Rows rest muted and take full ink under the highlight, which
+       `CommandSearch` paints as one fill behind them. */
+    :global(.search-bar .command-list .command-item:not([data-disabled])) {
+        gap: var(--space-2);
+        padding-inline: var(--space-2);
+        color: var(--color-text-muted);
+        transition: color var(--duration-extra-fast) var(--easing-out);
+    }
+
+    :global(.search-bar .command-list .command-item[data-selected]:not([data-disabled])) {
+        color: var(--color-text);
+    }
+
+    :global(.search-bar .command-list .item-icon) {
+        color: inherit;
+    }
+
+    :global(.search-bar .command-list .item-icon svg) {
+        width: var(--space-4);
+        height: var(--space-4);
+    }
+
+    :global(.search-bar .command-list .item-icon path) {
+        stroke-width: 1.5;
+    }
+
+    :global(.search-bar .command-list .command-item[data-selected] .item-icon path) {
+        stroke-width: 2;
+    }
+
+    /* The description follows the label on its line, muted in either state. */
+    :global(.search-bar .command-list .item-text) {
+        flex-direction: row;
+        align-items: baseline;
+        gap: var(--space-2);
+        padding-block: 0;
+    }
+
+    :global(.search-bar .command-list .item-text .item-label) {
+        flex: 0 1 auto;
+    }
+
+    :global(.search-bar .command-list .command-item .item-text .item-description) {
+        min-width: 0;
+        color: var(--color-text-muted);
+        font-size: inherit;
     }
 
     :global(.search-bar .search-empty) {
@@ -478,6 +540,7 @@
         gap: var(--space-2);
         justify-content: space-between;
         font-size: var(--font-size-xs);
+        line-height: var(--line-height-normal);
         color: var(--color-text);
     }
 

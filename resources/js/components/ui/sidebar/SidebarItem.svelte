@@ -4,8 +4,7 @@
   registers itself as a MenuListItem so the enclosing SidebarItems can track it with
   its proximity-hover and active highlights. When given `children` (its
   sub-items) it owns its own chevron and toggles the sub-tree inline — the
-  layout never injects a trailing icon. In the collapsed rail it shrinks to an
-  icon with a tooltip.
+  layout never injects a trailing icon.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
@@ -19,7 +18,6 @@
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import ChevronRightIcon from '$lib/components/ui/icons/iconset/ChevronRightIcon.svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
 
     interface Props extends HTMLButtonAttributes {
         /** Hugeicons icon shown before the label. Ignored when `media` is provided.
@@ -65,16 +63,10 @@
     }: Props = $props();
 
     const sidebar = useSidebar();
-    const collapsed = $derived(!sidebar.navOpen);
 
     // Optional: rows used outside a list container (e.g. a footer) have no
     // sliding highlight behind them, so they paint their own hover surface.
     const standalone = !useMenuList();
-
-    // The rail row still spans the full panel width, so a tooltip anchored to the
-    // button would open a row's width away from the icon it describes. Anchor it
-    // to the icon instead.
-    let iconEl = $state<HTMLElement | null>(null);
 
     // A row wired up as a popup trigger is marked active while its surface is
     // showing, which is a pressed state — not "this is the current page". Let
@@ -82,13 +74,12 @@
     const isPopupTrigger = $derived(!!rest['aria-haspopup']);
 
     const hasChildren = $derived(!!children);
-    // Children never render in the rail; the chevron and sub-tree are hidden there.
-    const showChildren = $derived(hasChildren && expanded && !collapsed);
+    const showChildren = $derived(hasChildren && expanded);
 
     function handleClick(event: MouseEvent & {currentTarget: EventTarget & HTMLButtonElement}) {
-        // Expandable rows toggle their sub-tree inline (only when not collapsed)
-        // and never navigate, so the off-canvas nav stays open for them.
-        if (hasChildren && !collapsed) {
+        // Expandable rows toggle their sub-tree inline and never navigate, so the
+        // off-canvas nav stays open for them.
+        if (hasChildren) {
             expanded = !expanded;
         } else if (sidebar.mobile) {
             // Tapping a leaf row navigates; collapse the off-canvas overlay so it
@@ -99,24 +90,23 @@
     }
 </script>
 
-{#snippet row(attach: Attachment<HTMLElement>, triggerProps: Record<string, unknown> = {})}
+{#snippet row(attach: Attachment<HTMLElement>)}
     <button
         type="button"
         {@attach attach}
         aria-current={active && !isPopupTrigger ? 'page' : undefined}
         aria-expanded={hasChildren ? expanded : undefined}
-        {...mergeProps(triggerProps, rest, {
+        {...mergeProps(rest, {
             class: ['sidebar-item', className],
             onclick: handleClick
         })}
         class:active
         class:indent
-        class:collapsed
         class:drill
         class:standalone
     >
         {#if media || Icon}
-            <span class="icon-wrap" bind:this={iconEl}>
+            <span class="icon-wrap">
                 {#if media}
                     {@render media()}
                 {:else if Icon}
@@ -143,21 +133,7 @@
 
 <MenuListItem {active} inset={indent}>
     {#snippet children({attach})}
-        {#if collapsed}
-            <Tooltip
-                tooltip={label}
-                side="right"
-                sideOffset={24}
-                delayDuration={300}
-                customAnchor={iconEl}
-            >
-                {#snippet children({props})}
-                    {@render row(attach, props)}
-                {/snippet}
-            </Tooltip>
-        {:else}
-            {@render row(attach)}
-        {/if}
+        {@render row(attach)}
     {/snippet}
 </MenuListItem>
 
@@ -175,18 +151,14 @@
         z-index: var(--sidebar-item-z);
         display: flex;
         align-items: center;
-        gap: var(--space-2_5);
+        gap: var(--space-2);
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
+        padding-inline: var(--nav-item-pad-x);
         border: none;
         background: transparent;
-        /* Rows recede at rest and come forward on hover — the same treatment as
-           the section switcher's chevron and the header actions, but held part
-           way to the full text color: a list of chat titles is content, not
-           chrome, so it stays comfortably readable while unselected. */
-        color: color-mix(in oklab, var(--color-text) 60%, var(--color-text-muted));
-        font-size: var(--font-size-xs);
+        color: var(--color-nav-text);
+        font-size: var(--nav-font-size);
         cursor: pointer;
         border-radius: var(--corner-sm);
         text-align: left;
@@ -195,7 +167,7 @@
 
     /* Hover/active surfaces are provided by the sliding highlights in List. */
     .sidebar-item:hover {
-        color: var(--color-text);
+        color: var(--color-nav-text-hover);
     }
 
     .sidebar-item.active {
@@ -244,23 +216,12 @@
 
     /* Child rows sit indented under their parent, aligning with the label. */
     .sidebar-item.indent {
-        padding-left: calc(var(--nav-item-pad-x) + var(--nav-icon-size) + var(--space-2_5));
-    }
-
-    /* Icon-only rail. The padding is deliberately unchanged: the icon keeps the
-       exact same offset from the panel edge in both states, so it never drifts
-       sideways while the column animates. Label and chevron fade out and are
-       clipped by the panel instead of being pulled from the flow. */
-    .sidebar-item.collapsed .label,
-    .sidebar-item.collapsed .caret {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 100ms ease;
+        padding-left: calc(var(--nav-item-pad-x) + var(--nav-icon-size) + var(--space-2));
     }
 
     /* Pinned to the icon column rather than shrink-wrapped, so leading visuals
        that are not glyph-sized — an avatar, say — still centre on the same
-       column as every icon, in the rail as well as the open panel. Media wider
+       column as every icon. Media wider
        than the column spills symmetrically; --nav-media-size declares the
        media's actual extent (an avatar's diameter, say) so the right-hand
        spill can be handed back and the gap before the label stays even with
@@ -274,6 +235,8 @@
         height: var(--nav-icon-size);
         margin-right: calc((var(--wrap-media-size) - var(--nav-icon-size)) / 2);
         flex-shrink: 0;
+        color: var(--color-nav-icon);
+        transition: color var(--duration-fast);
     }
 
     .label {
@@ -282,34 +245,31 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        /* Out fast, in late — the text is gone well before the rail is narrow
-           enough to squeeze it, and only returns once there is room again. */
-        transition: opacity 160ms ease 100ms;
     }
 
     /* Caret on expandable rows; rotates down when the sub-tree is open. */
     .caret {
         display: inline-flex;
         flex-shrink: 0;
-        color: inherit;
+        color: var(--color-nav-icon);
         transition:
             transform 120ms var(--easing-spring),
-            color var(--duration-fast),
-            opacity 160ms ease 100ms;
+            color var(--duration-fast);
     }
 
     .caret.open {
         transform: rotate(90deg);
     }
 
-    /* A trailing visual recedes at rest and comes forward on hover or while the
-       row is active — same treatment as the section switcher's chevron. */
-    .caret.trailing {
-        color: var(--color-text-muted);
-    }
-
-    .sidebar-item:hover .caret.trailing,
-    .sidebar-item.active .caret.trailing {
+    /* Icons recede at rest and come forward on hover or while the row is active
+       — same treatment as the section switcher's chevron. Drill rows sit on the
+       brand gradient, so their icons always take the row's color. */
+    .sidebar-item:hover .icon-wrap,
+    .sidebar-item.active .icon-wrap,
+    .sidebar-item.drill .icon-wrap,
+    .sidebar-item:hover .caret,
+    .sidebar-item.active .caret,
+    .sidebar-item.drill .caret {
         color: inherit;
     }
 

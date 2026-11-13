@@ -7,6 +7,9 @@
   Low-level primitive: for a button that needs a tooltip, prefer
   `ButtonWithTooltip` which wires this up for you.
 
+  Inside a `TooltipGroup`, the tooltip joins the group's one bubble, which
+  travels between neighbouring triggers; the group then owns the delay.
+
   Usage — string trigger and tooltip:
     <Tooltip tooltip="Copy to clipboard">Copy</Tooltip>
 
@@ -30,6 +33,7 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import SnippetOrStringTrigger from '$lib/components/util/snippetOrString/SnippetOrStringTrigger.svelte';
+    import {getTooltipGroup, type TooltipGroupPayload} from '$lib/components/ui/tooltip/TooltipGroup.svelte';
 
     type Props = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & Partial<{
         /** Delay in milliseconds before the tooltip is shown after hovering over the trigger. Default is 200ms. */
@@ -83,6 +87,18 @@
         ...restProps
     }: Props = $props();
 
+    const group = getTooltipGroup();
+    const uid = $props.id();
+    const groupTriggerId = `tooltip-trigger-${uid}`;
+    const groupPayload: TooltipGroupPayload = $derived({tooltip, side, sideOffset});
+
+    // In a group bits-ui takes `disabled` on the trigger, which would also disable
+    // the element itself; only the tooltip is meant.
+    function withoutDisabled(props: Record<string, any>): Record<string, any> {
+        const {disabled: _, ...rest} = props;
+        return rest;
+    }
+
     // A snippet tooltip can't be flattened to text, so only a plain string may
     // stand in for a missing hiddenLabel.
     const srOnlyLabel = $derived(hiddenLabel ?? (typeof tooltip === 'string' ? tooltip : undefined));
@@ -104,7 +120,8 @@
     function handleTouchStart(e: TouchEvent) {
         isTouching = true;
         longPress.timer = setTimeout(() => {
-            open = true;
+            if (!group) open = true;
+            else if (!disabled) group.tether.open(groupTriggerId);
         }, 300);
     }
 
@@ -125,44 +142,58 @@
 
 </script>
 
-<TooltipPrimitive.Provider>
-    <TooltipPrimitive.Root
-        {delayDuration}
-        {open}
-        {disabled}
-        onOpenChange={o => open = o}
-        ignoreNonKeyboardFocus>
-        <TooltipPrimitive.Trigger>
-            {#snippet child(a)}
-                <SnippetOrStringTrigger value={children as string|Snippet} snippetArgs={{
-                    props: applyFocusable(mergeProps(
-                        a.props,
-                        {
-                            ontouchstart: handleTouchStart,
-                            ontouchend: handleTouchEnd,
-                            ontouchcancel: handleTouchEnd,
-                            oncontextmenu: handleContextMenu
-                        }
-                    ))
-                }}/>
-            {/snippet}
-        </TooltipPrimitive.Trigger><!-- Deliberately no whitespace between trigger and portal:
-            it would render as a stray text node right after the trigger — visible as a space
-            behind every tooltip-wrapped inline element (e.g. links in chat markdown).
-        --><TooltipPrimitive.Portal>
-            <TooltipPrimitive.Content
-                {...mergeProps({class: 'tooltip-content', side, sideOffset}, restProps) as TooltipContentProps}
-            >
-                <SnippetOrString value={tooltip}/>
-            </TooltipPrimitive.Content>
-        </TooltipPrimitive.Portal>
-    </TooltipPrimitive.Root>
-</TooltipPrimitive.Provider>{#if !focusable && srOnlyLabel}<span class="u-sr-only">{srOnlyLabel}</span>{/if}
+{#snippet trigger(props: Record<string, any>)}
+    <SnippetOrStringTrigger value={children as string|Snippet} snippetArgs={{
+        props: applyFocusable(mergeProps(
+            props,
+            {
+                ontouchstart: handleTouchStart,
+                ontouchend: handleTouchEnd,
+                ontouchcancel: handleTouchEnd,
+                oncontextmenu: handleContextMenu
+            }
+        ))
+    }}/>
+{/snippet}
+
+{#if group}
+    <TooltipPrimitive.Trigger tether={group.tether} id={groupTriggerId} payload={groupPayload} {disabled}>
+        {#snippet child(a)}
+            {@render trigger(withoutDisabled(a.props))}
+        {/snippet}
+    </TooltipPrimitive.Trigger>
+{:else}
+    <TooltipPrimitive.Provider>
+        <TooltipPrimitive.Root
+            {delayDuration}
+            {open}
+            {disabled}
+            onOpenChange={o => open = o}
+            ignoreNonKeyboardFocus>
+            <TooltipPrimitive.Trigger>
+                {#snippet child(a)}
+                    {@render trigger(a.props)}
+                {/snippet}
+            </TooltipPrimitive.Trigger><!-- Deliberately no whitespace between trigger and portal:
+                it would render as a stray text node right after the trigger — visible as a space
+                behind every tooltip-wrapped inline element (e.g. links in chat markdown).
+            --><TooltipPrimitive.Portal>
+                <TooltipPrimitive.Content
+                    {...mergeProps({class: 'tooltip-content', side, sideOffset}, restProps) as TooltipContentProps}
+                >
+                    <SnippetOrString value={tooltip}/>
+                </TooltipPrimitive.Content>
+            </TooltipPrimitive.Portal>
+        </TooltipPrimitive.Root>
+    </TooltipPrimitive.Provider>
+{/if}{#if !focusable && srOnlyLabel}<span class="u-sr-only">{srOnlyLabel}</span>{/if}
 
 <style>
     :global(.tooltip-content) {
         --tooltip-bg: var(--color-surface-raised);
         --tooltip-text: var(--color-text);
+        /* Read by `TooltipGroup` to cap its content. */
+        --tooltip-max-width: 300px;
 
         position: relative;
         border-radius: var(--corner-sm);
@@ -175,7 +206,7 @@
         color: var(--tooltip-text);
         box-shadow: var(--elevation-1);
         z-index: var(--layer-tooltip);
-        max-width: 300px;
+        max-width: var(--tooltip-max-width);
 
         &[data-state="delayed-open"],
         &[data-state="instant-open"] {

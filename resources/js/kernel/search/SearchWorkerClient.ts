@@ -18,8 +18,8 @@
  *   session to wait on forever.
  * - **No main-thread fallback.** Matching a large corpus inline is exactly the
  *   jank the worker exists to avoid, so a failure is reported as a *retryable*
- *   error (the host offers "try again"); recents and the dynamic groups carry
- *   the palette meanwhile.
+ *   error (the host offers "try again"); the dynamic groups carry the palette
+ *   meanwhile.
  */
 import type {SearchScores} from './searchEngine.js';
 import type {SearchWorkerRequest, SearchWorkerResponse} from './search.worker.js';

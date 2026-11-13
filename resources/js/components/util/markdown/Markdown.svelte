@@ -180,7 +180,7 @@
         }
 
         :global(mark) {
-            background: var(--color-active-surface);
+            background: var(--color-accent-100);
             color: inherit;
         }
 

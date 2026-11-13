@@ -310,11 +310,10 @@
             </Tooltip>
         {/snippet}
 
-        {#if !detailModel}
-            <MenuSearchField
-                bind:value={query}
-                placeholder={__('chat.composer.modelPicker.searchPlaceholder')}/>
-        {/if}
+        <MenuSearchField
+            hidden={!!detailModel}
+            bind:value={query}
+            placeholder={__('chat.composer.modelPicker.searchPlaceholder')}/>
 
         <DropdownMenuDetailView open={!!detailModel}>
             {#snippet details()}

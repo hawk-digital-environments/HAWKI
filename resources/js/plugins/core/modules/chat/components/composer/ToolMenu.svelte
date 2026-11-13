@@ -402,8 +402,9 @@
                     highlight={props['data-state']}
                     {...props}/>
             {/snippet}
-            {#if !detailEntry && !shownCommand}
+            {#if !shownCommand}
                 <MenuSearchField
+                    hidden={!!detailEntry}
                     bind:value={query}
                     placeholder={__('chat.composer.toolMenu.searchPlaceholder')}/>
             {/if}

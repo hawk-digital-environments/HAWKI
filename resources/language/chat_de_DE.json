@@ -9,12 +9,15 @@
             "loading": "Chats werden geladen…",
             "generating": "Antwort wird generiert",
             "empty": "Deine Unterhaltungen erscheinen hier.",
-            "groups": {
+            "title": "Zuletzt verwendet",
+            "pinned": "Angeheftet",
+            "filter": {
+                "label": "Chats filtern",
+                "clear": "Filter entfernen",
                 "today": "Heute",
-                "yesterday": "Gestern",
-                "last7Days": "Letzte 7 Tage",
-                "last30Days": "Letzte 30 Tage",
-                "older": "Älter"
+                "last7Days": "Letzte Woche",
+                "last30Days": "Letzter Monat",
+                "empty": "Keine Chats in diesem Zeitraum."
             }
         },
         "page": {
@@ -46,7 +49,8 @@
             "noImprovementModel": "Es ist kein Modell verfügbar, um die Nachricht zu verbessern.",
             "noConversationOpen": "Es ist keine Unterhaltung geöffnet.",
             "requestFailed": "Die KI-Anfrage ist fehlgeschlagen.",
-            "welcomeTitle": "Wie kann ich helfen?",
+            "welcomeTitle": "Frag los, :name.",
+            "welcomeTitleAnonymous": "Frag los.",
             "welcomeDescription": "Starte eine private, verschlüsselte Unterhaltung mit HAWKI.",
             "starterPrompts": "Vorgeschlagene Einstiegsnachrichten",
             "disclaimer": "KI kann Fehler machen. Prüfe wichtige Informationen."
@@ -77,8 +81,11 @@
             "deleteConfirmDescription": "Bist du sicher, dass du diesen Chat löschen möchtest? Dieser Vorgang kann nicht rückgängig gemacht werden.",
             "leaveConfirmTitle": "Raum :name verlassen",
             "deleteConfirmTitle": "Chat :name löschen",
+            "deleteConfirmLabel": "Löschen",
             "newNameAriaLabel": "Neuer Chatname",
             "actionsTooltip": "Chat Aktionen",
+            "pin": "Anheften",
+            "unpin": "Nicht mehr anheften",
             "rename": "Umbenennen",
             "manageRoom": "Raum verwalten",
             "markAsRead": "Als gelesen markieren"

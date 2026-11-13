@@ -134,7 +134,8 @@ export function usePickerMenuBehaviours(options: PickerMenuOptions): PickerMenuB
             const content = event.currentTarget as HTMLElement;
             const inSearch = event.target instanceof HTMLInputElement;
             if (!inSearch && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && event.key !== ' ') {
-                const search = content.querySelector<HTMLInputElement>('.menu-search input');
+                // Hidden fields (detail view showing) cannot take focus or input.
+                const search = content.querySelector<HTMLInputElement>('.menu-search:not([hidden]) input');
                 if (search) {
                     // Focus moves before the key's default action, so the character lands in the field.
                     event.stopPropagation();

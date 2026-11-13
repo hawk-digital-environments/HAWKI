@@ -309,6 +309,7 @@
     :global(.dropdown-content.dropdown-content--dropdown) {
         --dropdown-bg: var(--color-surface-raised);
 
+        position: relative;
         /* Above sticky/faded chrome like the chat header overlay. bits-ui copies
            this z-index onto the floating wrapper it positions the panel with. */
         z-index: var(--layer-overlay);

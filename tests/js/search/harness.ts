@@ -1,7 +1,6 @@
 /**
  * A minimal stand-in for everything the session manager's host provides: a
- * registry, a real shared index, an in-memory local storage and controllable
- * worker replies. Deliberately not a mock framework — the tests assert on
+ * registry, a real shared index and controllable worker replies. Deliberately not a mock framework — the tests assert on
  * observable session output, and this only supplies the inputs.
  */
 import {SearchRegistry, type SearchProviderDefinition} from '$lib/kernel/search/searchRegistry.js';
@@ -12,22 +11,6 @@ import type {ModuleSearchRegistrar, SearchEntry, SearchProviderError, StaticSour
 import {SearchEngine, type SearchScores} from '$lib/kernel/search/searchEngine.js';
 import {handleSearchWorkerRequest, type SearchWorkerRequest} from '$lib/kernel/search/search.worker.js';
 
-export class MemoryStorage {
-    public readonly items = new Map<string, string>();
-
-    public getItem(key: string): string | null {
-        return this.items.get(key) ?? null;
-    }
-
-    public setItem(key: string, value: string): void {
-        this.items.set(key, value);
-    }
-
-    public removeItem(key: string): void {
-        this.items.delete(key);
-    }
-}
-
 export interface WorkerReply {
     revision: number;
     scores: SearchScores;
@@ -36,10 +19,8 @@ export interface WorkerReply {
 export class TestSearchHost implements SearchSessionHost {
     public readonly registry = new SearchRegistry();
     public readonly index = new SharedSearchIndex();
-    public readonly storage = new MemoryStorage();
     public readonly schedulerTimers = new FakeTimers();
     public readonly app: any;
-    public identity: string | null = 'user-1@connection-a';
     public errors: SearchProviderError[] = [];
 
     /** Answers `queryWorker`. Replace per test; the default never resolves on its own. */
@@ -52,8 +33,7 @@ export class TestSearchHost implements SearchSessionHost {
     private readonly active = new Map<string, {definition: SearchProviderDefinition; controller: AbortController}>();
 
     public constructor() {
-        this.app = {localStorage: this.storage};
-
+        this.app = {};
     }
 
     public get providers(): readonly {definition: SearchProviderDefinition; signal: AbortSignal}[] {

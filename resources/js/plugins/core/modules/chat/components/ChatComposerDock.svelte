@@ -91,7 +91,7 @@ padding so the composer stays aligned with the centred message column).
         /* Backdrop inside the dock's stacking context. */
         --composer-dock-fade-z: -1;
         z-index: var(--composer-dock-fade-z);
-        background: linear-gradient(to top, var(--color-surface-raised) 45%, color-mix(in srgb, var(--color-surface-raised) 70%, transparent) 85%, transparent);
+        background: linear-gradient(to top, var(--color-bg) 45%, color-mix(in srgb, var(--color-bg) 70%, transparent) 85%, transparent);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         mask-image: linear-gradient(to top, black 80%, transparent);

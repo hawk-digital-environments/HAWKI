@@ -11,7 +11,6 @@
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
     import Settings03Icon from '$lib/components/ui/icons/iconset/Settings03Icon.svelte';
-    import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
     import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
     import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
     import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
@@ -39,7 +38,7 @@
     // settings glyph follow the same step so the footer row stays proportional.
     const breakpoint = useBreakpoint();
     const compact = $derived(breakpoint.is('bpMdAndSmaller'));
-    const triggerAvatarSize = $derived(compact ? 24 : 22);
+    const triggerAvatarSize = $derived(compact ? 26 : 24);
     const triggerIconSize = $derived(compact ? 18 : 16);
     const userinfo = $derived(connection.hasUserInfo ? connection.userinfo : null);
     const userName = $derived(userinfo?.name || __('ui.profile.fallbackName'));
@@ -74,7 +73,6 @@
 
 <DropdownMenu
     bind:open={menuOpen}
-    title={__('ui.profile.menuTitle')}
     side="top"
     align="start"
     sideOffset={8}
@@ -105,7 +103,7 @@
     </div>
 
     <DropdownMenuSeparator/>
-    <DropdownMenuItem iconLeft={Settings05Icon} onclick={openSettings}>
+    <DropdownMenuItem iconLeft={Settings03Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
     <DropdownMenuItem iconLeft={Megaphone01Icon} onclick={openAnnouncements}>
@@ -122,7 +120,8 @@
 
 <style>
     :global(.profile-menu-content.dropdown-content--dropdown) {
-        width: min(15rem, calc(100vw - 2 * var(--space-4)));
+        /* Spans its row. */
+        width: min(var(--bits-floating-anchor-width), calc(100vw - 2 * var(--space-4)));
     }
 
     .profile-summary {
@@ -138,6 +137,11 @@
         flex: 1;
         flex-direction: column;
         gap: var(--space-0_5);
+        /* A length, so the smaller email line keeps the same height as the name. */
+        line-height: calc(var(--font-size-xs) * var(--line-height-tight));
+        /* The smaller email leaves more room under its baseline than the name has
+           above its capitals, so the centred block reads high. Nudges it down 0.5px. */
+        margin-top: 1px;
     }
 
     .profile-summary__text strong,

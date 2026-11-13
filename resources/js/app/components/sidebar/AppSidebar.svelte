@@ -1,6 +1,6 @@
 <!--
   @component App navigation sidebar. Composes the generic sidebar components
-  from components/ui/sidebar with HAWKI's brand and navigation entries.
+  from components/ui/sidebar with HAWKI's navigation entries.
 
   @todo placeholder entries until the real navigation is wired up.
 -->
@@ -9,7 +9,9 @@
     import SidebarHeader from '$lib/components/ui/sidebar/SidebarHeader.svelte';
     import SidebarFooter from '$lib/components/ui/sidebar/SidebarFooter.svelte';
     import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
-    import ModuleSelector from '$lib/app/components/sidebar/ModuleSelector.svelte';
+    import SidebarIconButton from '$lib/components/ui/sidebar/SidebarIconButton.svelte';
+    import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
+    import SpaceTabs from '$lib/app/components/sidebar/SpaceTabs.svelte';
     import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
     import MobileNavCollapse from '$lib/app/components/sidebar/MobileNavCollapse.svelte';
     import SearchDialog from '$lib/app/components/search/SearchDialog.svelte';
@@ -22,12 +24,14 @@
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
     import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
+    import {useKeyboard} from '$lib/components/ui/keyboard/KeyboardState.svelte.js';
 
     const app = useApp();
     const router = useRouter();
     const sidebar = useSidebar();
     const chatStore = useStore('chat');
     const {__} = useTranslator();
+    const keyboard = useKeyboard();
     const activeModule = $derived.by(() => app.modules.all.find(module =>
         router.isRouteActive(getModuleRouteGroupName(module.plugin.name, module.name))
     ) ?? null);
@@ -57,6 +61,13 @@
         void router.goToRoute('chat.index');
     }
 
+    function openSearch() {
+        // The dialog shouldn't open over a drawer that would still cover the page
+        // once it closes.
+        if (sidebar.mobile) sidebar.navOpen = false;
+        searchOpen = true;
+    }
+
     function openSettings(section: SettingsSection | null = null) {
         settingsSection = section;
         settingsOpen = true;
@@ -65,39 +76,66 @@
     onMount(() => app.events.sync.on('settingsRequested', section => openSettings(section)));
 </script>
 
-<Sidebar label={__('ui.navigation.label')}>
+<Sidebar label={__('ui.navigation.label')} class={keyboard.shortcutModifierHeld ? 'shortcuts-held' : undefined}>
     <MobileNavCollapse />
-    <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat} onSearch={() => searchOpen = true}>
+    <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
         <HawkLogo label={__('ui.navigation.newChat')} />
+        {#snippet actions()}
+            <SidebarIconButton
+                icon={Search01Icon}
+                label={__('ui.navigation.search')}
+                shortcut="K"
+                aria-keyshortcuts={keyboard.aria({key: 'k', ctrl: true})}
+                onclick={openSearch}
+            >
+                {#snippet tooltip()}
+                    {__('ui.navigation.search')}
+                    <span class="tooltip-shortcut">{keyboard.label({key: 'k', ctrl: true})}</span>
+                {/snippet}
+            </SidebarIconButton>
+        {/snippet}
     </SidebarHeader>
-    <div class="module-selector">
-        <ModuleSelector />
+    <div class="sidebar-content">
+        <div class="spaces">
+            <SpaceTabs />
+        </div>
+        <div class="module-sidebar">
+            {#if ModuleSidebar}
+                <ModuleSidebar />
+            {/if}
+        </div>
+        <SidebarFooter>
+            <ProfileButton onOpenSettings={() => openSettings()}/>
+        </SidebarFooter>
     </div>
-    <div class="module-sidebar">
-        {#if ModuleSidebar}
-            <ModuleSidebar />
-        {/if}
-    </div>
-    <SidebarFooter>
-        <ProfileButton onOpenSettings={() => openSettings()}/>
-    </SidebarFooter>
 </Sidebar>
 
 <SearchDialog bind:open={searchOpen} />
 <SettingsDialog bind:open={settingsOpen} section={settingsSection}/>
 
 <style>
+    .sidebar-content {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        flex-direction: column;
+    }
+
+    /* The panel's padding, matching the header's gap above the tabs. */
+    .spaces {
+        flex-shrink: 0;
+        margin-bottom: var(--space-4);
+    }
+
+    .tooltip-shortcut {
+        margin-left: var(--space-1);
+        color: var(--color-text-muted);
+    }
+
     .module-sidebar {
         display: flex;
         min-height: 0;
         flex: 1;
         flex-direction: column;
-    }
-
-    .module-selector {
-        /* A step beyond the sidebar's group gap: the switcher changes what the
-           whole list below shows, so it gets clear separation from that list
-           rather than reading as its first row. */
-        margin-bottom: var(--space-4);
     }
 </style>

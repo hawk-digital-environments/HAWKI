@@ -40,7 +40,7 @@
         closeOnSelect?: boolean;
         /** Item content. */
         children?: Snippet;
-        /** An optional icon before the item's content, e.g. `Settings05Icon`. */
+        /** An optional icon before the item's content, e.g. `Settings03Icon`. */
         iconLeft?: IconComponent;
         /** An optional icon after the item's content; pushed to the row's end edge. */
         iconRight?: IconComponent;
@@ -60,9 +60,10 @@
     }: Props = $props();
 
     // Inside a MenuList (every DropdownMenu provides one) the row is highlighted by the
-    // list's sliding "magnetic" hover instead of its own :hover background.
-    const listRow = useMenuListRow();
-    const magnetic = $derived(!!listRow && !disabled && variant !== 'destructive');
+    // list's sliding "magnetic" hover instead of its own :hover background — a
+    // destructive row too, which tints that highlight red while it is on it.
+    const listRow = useMenuListRow({get destructive() { return variant === 'destructive'; }});
+    const magnetic = $derived(!!listRow && !disabled);
 
     const IconLeft = $derived.by(() => {
         if (variant === 'destructive' && !iconLeft) {
@@ -117,12 +118,18 @@
         }
     }
 
+    /* Text-only menus get a little more room on the left. Decided per menu rather
+       than per row, so rows stay aligned in a menu that mixes in an icon. */
+    :global(.dropdown-content:not(:has(.dropdown-item svg))) .dropdown-item {
+        padding-inline-start: var(--space-2_5);
+    }
+
     .dropdown-item:is([data-highlighted]:not(.magnetic), [data-highlighted]:focus-visible, :hover:not([data-disabled], .magnetic)) {
         background-color: var(--color-hover);
         color: var(--color-text);
     }
 
-    .dropdown-item.variant--destructive:is([data-highlighted], :hover:not([data-disabled])) {
+    .dropdown-item.variant--destructive:is([data-highlighted]:not(.magnetic), [data-highlighted]:focus-visible, :hover:not([data-disabled], .magnetic)) {
         background-color: color-mix(in oklch, var(--color-error) 10%, transparent);
         color: var(--color-error);
     }

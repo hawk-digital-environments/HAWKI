@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SEARCH_WORKER_PROVIDER_ID, SearchSessionManager} from '$lib/kernel/search/SearchSessionManager.svelte.js';
 import {documentKey} from '$lib/kernel/search/sharedIndex.js';
-import {SEARCH_LOCAL_PENDING_DELAY_MS, SEARCH_RECENT_GROUP_ID} from '$lib/kernel/search/types.js';
+import {SEARCH_LOCAL_PENDING_DELAY_MS} from '$lib/kernel/search/types.js';
 import {TestSearchHost, staticSourceOf, entry, tick, rowTitles, type WorkerReply} from './harness.js';
 
 function manager(host: TestSearchHost) {
@@ -56,8 +56,6 @@ test('server groups publish together, use Fuse scores, and retain server-only ma
         await tick();
         assert.deepEqual(rowTitles(session.state.groups), ['Design', 'Roadmap', 'Unrelated']);
         assert.equal(session.state.remotePending, false);
-        session.select('entity/strong');
-        assert.equal(host.storage.items.size, 0);
     } finally {api.dispose();}
 });
 
@@ -81,7 +79,7 @@ test('disabled dynamic callbacks cannot return into the current query', async ()
     } finally {api.dispose();}
 });
 
-test('a server-only match uses an available static copy and records static history', async () => {
+test('a server-only match uses an available static copy', async () => {
     const host = new TestSearchHost();
     host.register('core:test', 'core', ({group}) => {
         group('local', {kind: 'static', label: () => 'Local'}).add('local', staticSourceOf([entry('local', 'Roadmap', {entityKey:'shared'})]));
@@ -93,12 +91,6 @@ test('a server-only match uses an available static copy and records static histo
         session.setInput({query: 'design'}); await host.schedulerTimers.advance(250);
         assert.equal(session.state.groups[0].id, 'core:test.local');
         assert.equal(session.select('shared')!.kind, 'static');
-        const history = JSON.parse([...host.storage.items.values()][0]);
-        assert.deepEqual(Object.keys(history[0]).sort(), ['at', 'entityKey']);
-        const second = api.createSession();
-        // The blank view lists the source and repeats the pick in the recents group.
-        assert.deepEqual(second.state.groups.map(group => group.id), ['core:test.local', SEARCH_RECENT_GROUP_ID]);
-        assert.deepEqual(rowTitles(second.state.groups), ['Roadmap', 'Roadmap']);
     } finally {api.dispose();}
 });
 
@@ -154,37 +146,19 @@ function registerTitles(host: TestSearchHost) {
         .add('titles', staticSourceOf([entry('a', 'Design review'), entry('b', 'Release plan')])));
 }
 
-test('a blank query lists every source plus a recents group that repeats picks', () => {
+test('a blank query lists every source, and a pick adds nothing to it', () => {
     const host = new TestSearchHost();
     registerTitles(host);
     const api = manager(host);
     try {
         const session = api.createSession();
-        // No history yet: the plain source list, no recents group.
         assert.deepEqual(session.state.groups.map(group => group.id), ['core:chat.titles']);
         assert.deepEqual(rowTitles(session.state.groups), ['Design review', 'Release plan']);
 
         session.select('entity/a')!.onSelect();
 
-        // After a pick: the full list stays, and the recents group repeats the pick.
-        assert.deepEqual(session.state.groups.map(group => group.id), ['core:chat.titles', SEARCH_RECENT_GROUP_ID]);
-        assert.deepEqual(rowTitles([session.state.groups[0]]), ['Design review', 'Release plan']);
-        assert.deepEqual(rowTitles([session.state.groups[1]]), ['Design review']);
-    } finally {api.dispose();}
-});
-
-test('the recents group caps at three rows, most recent first', () => {
-    const host = new TestSearchHost();
-    host.register('core:chat', 'core', ({group}) => group('titles', {kind: 'static', label: () => 'Titles'})
-        .add('titles', staticSourceOf(['one', 'two', 'three', 'four', 'five'].map(id => entry(id, `Chat ${id}`)))));
-    const api = manager(host);
-    try {
-        const session = api.createSession();
-        for (const id of ['one', 'two', 'three', 'four']) {
-            session.select(`entity/${id}`);
-        }
-        const recent = session.state.groups.find(group => group.id === SEARCH_RECENT_GROUP_ID);
-        assert.deepEqual(rowTitles([recent!]), ['Chat four', 'Chat three', 'Chat two']);
+        assert.deepEqual(session.state.groups.map(group => group.id), ['core:chat.titles']);
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review', 'Release plan']);
     } finally {api.dispose();}
 });
 

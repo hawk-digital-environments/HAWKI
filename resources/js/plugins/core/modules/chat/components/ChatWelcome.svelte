@@ -10,9 +10,10 @@
   plugin shows the addressed assistant's name, greeting and starter prompts.
 -->
 <script lang="ts">
-    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
+    import EyeTracker from '$lib/components/ui/eye-tracker/EyeTracker.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
     import type {ChatWelcomeSection} from '$plugins/core/modules/chat/hooks/chatWelcomeHooks.js';
@@ -33,6 +34,8 @@
     const {composer = null, conversation = null, headingLevel = 1}: Props = $props();
     const app = useApp();
     const {__} = useTranslator();
+    const connection = useConnection();
+    const userName = $derived(connection.hasUserInfo ? connection.userinfo.name : '');
 
     /** The hook section with `starterPrompts` normalised to a list. */
     type ResolvedWelcomeSection = ChatWelcomeSection & {starterPrompts: string[]};
@@ -59,7 +62,9 @@
         key: section ? `${section.id}:${section.handle ?? section.title}` : 'default',
         icon: section?.icon,
         tint: section?.tint,
-        title: section ? section.title : __('chat.page.welcomeTitle'),
+        title: section
+            ? section.title
+            : userName ? __('chat.page.welcomeTitle', {name: userName}) : __('chat.page.welcomeTitleAnonymous'),
         description: section ? (section.description ?? '') : __('chat.page.welcomeDescription'),
         starterPrompts: section?.starterPrompts ?? []
     });
@@ -110,19 +115,20 @@
 <div class="welcome-stage" bind:this={stage}>
     {#each [hero] as current (current.key)}
         <div class="welcome" data-hero-key={current.key}>
-            <span
-                class="welcome-icon"
-                class:personalized={current.icon}
-                style:--assistant-tint={current.tint}
-                aria-hidden="true"
-                in:textRise|global={{index: 0}}
-                out:textRise={leave}>
-                {#if current.icon}
+            {#if current.icon}
+                <span
+                    class="welcome-icon personalized"
+                    style:--assistant-tint={current.tint}
+                    aria-hidden="true"
+                    in:textRise|global={{index: 0}}
+                    out:textRise={leave}>
                     <span class="welcome-glyph">{current.icon}</span>
-                {:else}
-                    <BubbleChatAddIcon size={28} />
-                {/if}
-            </span>
+                </span>
+            {:else}
+                <span class="welcome-eyes" aria-hidden="true" in:textRise|global={{index: 0}} out:textRise={leave}>
+                    <EyeTracker shape="Circle" size={64} eyeScale={1.2} follow={50} within=".welcome" />
+                </span>
+            {/if}
             <svelte:element
                 this={`h${headingLevel}`}
                 class="title"
@@ -184,6 +190,14 @@
         color: var(--color-active-text);
     }
 
+    .welcome-eyes {
+        margin-bottom: var(--space-4);
+    }
+
+    /* the tracker's 200px frame is sized for a wall of knobs; here it
+       hugs the ball */
+    .welcome-eyes :global(.eyt) { width: auto; height: auto; }
+
     /* A section that brings its own glyph paints the circle in its tint —
        the same treatment an assistant-authored message's circle gets. */
     .welcome-icon.personalized {
@@ -223,5 +237,5 @@
     }
 
     .starter-prompt:hover { border-color: var(--color-interactive); }
-    .starter-prompt:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+    .starter-prompt:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
 </style>
