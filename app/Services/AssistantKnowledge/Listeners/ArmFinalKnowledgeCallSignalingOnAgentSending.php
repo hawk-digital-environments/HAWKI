@@ -34,8 +34,16 @@ class ArmFinalKnowledgeCallSignalingOnAgentSending
 
     public function handle(AgentSendingEvent $event): void
     {
+        $settings = $event->context->model->settings;
+
+        // Hand-built models (e.g. the builder guide's agent) carry no
+        // settings — nothing to arm, the collector keeps its default.
+        if (!$settings instanceof AiModelSettings) {
+            return;
+        }
+
         $this->citations->setToolRoundLimit(
-            $this->resolveRoundLimit($event->context->model->settings, streaming: false),
+            $this->resolveRoundLimit($settings, streaming: false),
         );
     }
 
