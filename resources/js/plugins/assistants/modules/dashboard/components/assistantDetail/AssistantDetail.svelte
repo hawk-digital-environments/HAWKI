@@ -225,8 +225,19 @@
     const coverForeground = $derived(avatar.iconCss.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1]);
 
     const lastUpdateLabel = $derived(
-        assistant?.versions[0]?.createdAt ? formatDate(assistant.versions[0].createdAt, intlLocale) : '—'
+        assistant?.updatedAt ? formatDate(assistant.updatedAt, intlLocale) : '—'
     );
+
+    /** The newest published version number — never the mutable 0.0 draft. */
+    const latestVersionLabel = $derived.by(() => {
+        const published = (assistant?.versions ?? []).filter(version => Number(version.version) > 0);
+
+        if (0 === published.length) {
+            return '—';
+        }
+
+        return Math.max(...published.map(version => Number(version.version))).toFixed(1);
+    });
 
     /**
      * `BuilderContext` can only be created during its owning layout's
@@ -568,7 +579,7 @@
                     />
                     <StatusCard
                         label={__('assistants.detail.meta_version')}
-                        status={assistant.versions[0]?.version ?? '—'}
+                        status={latestVersionLabel}
                         size="large"
                         icon={HashtagIcon}
                         type={ValidationState.UNKNOWN}

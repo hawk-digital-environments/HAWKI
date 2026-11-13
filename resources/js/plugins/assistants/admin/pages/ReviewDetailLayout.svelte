@@ -65,7 +65,7 @@
                         <StatusPill tone={reviewPillTone(targetReview.status)} label={__(`assistants.admin.queue.status.${targetReview.status}`)}/>
                     {/if}
                     <p class="meta">
-                        {target.creator?.display_name ?? '—'}
+                        {__('assistants.detail.meta_creator')}: {target.creator?.display_name ?? '—'}
                         · {__(`assistants.release_stage.${target.release_stage ?? 'private'}`)}
                         {#if target.requested_release_stage}
                             → {__(`assistants.release_stage.${target.requested_release_stage}`)}
