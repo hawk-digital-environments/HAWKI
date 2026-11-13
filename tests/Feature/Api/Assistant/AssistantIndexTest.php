@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api\Assistant;
 
+use App\Models\Ai\AiModel;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantCategory;
 use App\Models\Assistants\AssistantSetting;
@@ -14,6 +15,7 @@ use App\Services\Assistant\Values\AssistantReleaseStage;
 use Database\Seeders\AssistantSettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\ContextualScopeStatics;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
@@ -616,24 +618,32 @@ class AssistantIndexTest extends TestCase
 
     public function testModelAvailableFilterHonorsContextualScopes(): void
     {
-        $user = User::factory()->create();
-        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Offered', 'model' => $this->seedOfferedModel('filter-test-offered')]);
-        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'No usage rule', 'model' => $this->seedOfferedModel('filter-test-no-rule', withUsageRule: false)]);
-        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Deactivated model', 'model' => $this->seedOfferedModel('filter-test-inactive-model', activeModel: false)]);
-        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Deactivated provider', 'model' => $this->seedOfferedModel('filter-test-inactive-provider', activeProvider: false)]);
+        // AiModel's contextual scopes must be live for this test; outside of
+        // it the suite's long-standing unscoped baseline stays untouched.
+        $restoreScopeStatics = ContextualScopeStatics::rebind(AiModel::class);
 
-        $this->actingAsUser($user);
+        try {
+            $user = User::factory()->create();
+            Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Offered', 'model' => $this->seedOfferedModel('filter-test-offered')]);
+            Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'No usage rule', 'model' => $this->seedOfferedModel('filter-test-no-rule', withUsageRule: false)]);
+            Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Deactivated model', 'model' => $this->seedOfferedModel('filter-test-inactive-model', activeModel: false)]);
+            Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Deactivated provider', 'model' => $this->seedOfferedModel('filter-test-inactive-provider', activeProvider: false)]);
 
-        // "Offered" means exactly what the ai-models list shows: active model,
-        // active provider and a usage rule for the current context.
-        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['model_available' => 'true']]))
-            ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.attributes.name', 'Offered');
+            $this->actingAsUser($user);
 
-        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['model_available' => 'false']]))
-            ->assertOk()
-            ->assertJsonCount(3, 'data');
+            // "Offered" means exactly what the ai-models list shows: active model,
+            // active provider and a usage rule for the current context.
+            $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['model_available' => 'true']]))
+                ->assertOk()
+                ->assertJsonCount(1, 'data')
+                ->assertJsonPath('data.0.attributes.name', 'Offered');
+
+            $this->jsonApiRaw('get', '/api/hawki/v1/assistants?' . http_build_query(['filter' => ['model_available' => 'false']]))
+                ->assertOk()
+                ->assertJsonCount(3, 'data');
+        } finally {
+            $restoreScopeStatics();
+        }
     }
 
     public function testCanFilterAssistantsBySharedWithUser(): void

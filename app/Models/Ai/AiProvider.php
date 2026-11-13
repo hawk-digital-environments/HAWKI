@@ -75,13 +75,31 @@ class AiProvider extends Model
     }
 
     /**
-     * The models that belong to this provider.
+     * The provider's full model catalog, unaffected by AiModel's contextual
+     * scopes (active/provider/usage filters) — admin surfaces and the status
+     * updater must see every model row. Exempting only this relation's query
+     * keeps every other AiModel query scoped: the previous global disable
+     * leaked past the relation and unscoped all later AiModel queries of
+     * the process.
      *
      * @return HasMany<AiModel, $this>
      */
     public function models(): HasMany
     {
-        AiModel::scopeContext()->setAllScopesLocallyDisabled();
-        return $this->hasMany(AiModel::class, 'provider_id');
+        return $this->hasMany(AiModel::class, 'provider_id')
+            ->withoutGlobalScopes(self::aiModelContextualScopeKeys());
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function aiModelContextualScopeKeys(): array
+    {
+        $context = AiModel::scopeContext();
+
+        return array_map(
+            static fn (string $scopeKey): string => $context->getFullScopeKey($scopeKey),
+            array_keys(AiModel::getContextualScopes()),
+        );
     }
 }

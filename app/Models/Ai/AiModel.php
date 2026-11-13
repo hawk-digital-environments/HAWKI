@@ -44,7 +44,7 @@ use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
  * @property AiModelParameters $parameters
  * @property OnlineStatus $status
  * @property ModelDemand $demand
- * @property AiModelSettings $settings
+ * @property null|AiModelSettings $settings
  * @property AiModelLimitsInterface $limits
  * @property AiModelPricingInterface $pricing
  * @property AiModelFlags $flags
