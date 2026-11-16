@@ -324,6 +324,53 @@ class AssistantReviewTest extends TestCase
             ->assertForbidden();
     }
 
+    public function testItShowsAnOrgAdminAPrivateAssistantWithADecidedReview(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE->value,
+        ]);
+        AssistantReview::forceCreate([
+            'assistant_id' => $assistant->id,
+            'status' => AssistantReviewStatus::NEEDS_REVISION->value,
+            'reason' => 'Please tighten the greeting.',
+        ]);
+
+        $this->actingAsUser($this->createAdmin());
+
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}?include=assistant_review")
+            ->assertOk();
+    }
+
+    public function testItDoesNotShowAnOrgAdminAPrivateAssistantWithoutReview(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE->value,
+        ]);
+
+        $this->actingAsUser($this->createAdmin());
+
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+            ->assertForbidden();
+    }
+
+    public function testItDoesNotShowAnOrgAdminADraftAssistantWithoutReview(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::DRAFT->value,
+        ]);
+
+        $this->actingAsUser($this->createAdmin());
+
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+            ->assertForbidden();
+    }
+
     public function testItDoesNotShowAStrangerTheReviewStateOfSomeoneElsesAssistant(): void
     {
         $creator = User::factory()->create();

@@ -38,8 +38,9 @@ class AssistantRepository extends AbstractRepository
     }
 
     /**
-     * Org admins review and roll back their organization's assistants —
-     * pending submissions stay private until approval.
+     * Org admins see another user's private or draft assistant only while a
+     * review record exists — deciding or re-deciding needs it; anything
+     * unsubmitted stays the creator's business.
      */
     public function isVisibleTo(Assistant $assistant, User $user): bool
     {
@@ -47,7 +48,11 @@ class AssistantRepository extends AbstractRepository
             return true;
         }
 
-        if ($this->isPrivileged($user, $assistant)) {
+        if ($assistant->creator_id === $user->id) {
+            return true;
+        }
+
+        if ($this->isAdminOf($user, $assistant->organization_id) && null !== $assistant->assistantReview) {
             return true;
         }
 
@@ -68,15 +73,17 @@ class AssistantRepository extends AbstractRepository
     /**
      * Is the user an administrator of the given organization?
      */
-    public function isAdminOf(User $user, ?Organization $organization): bool
+    public function isAdminOf(User $user, null|int|Organization $organization): bool
     {
-        if (null === $organization) {
+        $organizationId = $organization instanceof Organization ? $organization->id : $organization;
+
+        if (null === $organizationId) {
             return false;
         }
 
         return $user->organizations()
             ->wherePivot('role', 'admin')
-            ->where('organizations.id', $organization->id)
+            ->where('organizations.id', $organizationId)
             ->exists();
     }
 
@@ -91,7 +98,7 @@ class AssistantRepository extends AbstractRepository
             return true;
         }
 
-        return $this->isAdminOf($user, $assistant->organization);
+        return $this->isAdminOf($user, $assistant->organization_id);
     }
 
     /**

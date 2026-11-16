@@ -80,7 +80,7 @@ class AssistantPolicy implements DefinesSensitiveIncludes
      */
     public function rollback(User $user, Assistant $assistant): bool
     {
-        return $this->orgMembership->isAdminOf($user, $assistant->organization);
+        return $this->orgMembership->isAdminOf($user, $assistant->organization_id);
     }
 
     public function addFavorite(User $user, Assistant $assistant): bool
