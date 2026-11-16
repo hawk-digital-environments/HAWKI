@@ -133,7 +133,8 @@ class ChatToolResolverTest extends TestCase
         $this->expectException(InvalidToolTransferStringException::class);
         $this->expectExceptionMessage('array of strings');
 
-        [...$sut->findTools([42], $this->makeContext())];
+        // Deliberately violates the string[] contract to trigger the runtime guard.
+        [...$sut->findTools([42], $this->makeContext())]; // @phpstan-ignore argument.type
     }
 
     public function testItReturnsEmptyWhenNoTransferStrings(): void

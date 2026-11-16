@@ -83,9 +83,36 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
         $this->maxRuns = $maxRuns;
     }
 
-    protected function getMaxRuns(): int
+    /**
+     * Returns the per-instance run ceiling: the maximum number of calls this tool may
+     * receive in a single agent session, or 0 when unlimited.
+     *
+     * A tool's own ceiling is authoritative and independent of the loop's step budget
+     * ({@see \App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent::maxSteps()}
+     * derives that from the model setting alone); the getter exists so the conversion
+     * pipeline and tests can inspect the declared value. Tools without a ceiling of
+     * their own inherit the model's round limit via {@see applyDefaultMaxRuns()} at
+     * conversion time.
+     */
+    public function getMaxRuns(): int
     {
         return $this->maxRuns;
+    }
+
+    /**
+     * Applies the model's tool-calling round limit as the default run ceiling. It is
+     * used only when the tool declares no ceiling of its own: a tool's explicit ceiling
+     * (set via {@see setMaxRuns()}) is authoritative and is never overridden, and a
+     * limit of 0 (model opted out) changes nothing.
+     *
+     * Called by the tool pipeline ({@see \App\Services\Ai\Tools\LaravelAi\LaravelToolConverter})
+     * after conversion.
+     */
+    public function applyDefaultMaxRuns(int $limit): void
+    {
+        if ($this->maxRuns === 0 && $limit > 0) {
+            $this->maxRuns = $limit;
+        }
     }
 
     public function setSettings(array $settings): void
