@@ -18,7 +18,7 @@ use ZipArchive;
 #[CoversClass(HawkiDocConverter::class)]
 class HawkiDocConverterTest extends TestCase
 {
-    private const API_URL = 'http://hawki-converter.test/convert';
+    private const API_URL = 'http://hawki-converter.test/extract';
     private const API_KEY = 'test-api-key';
 
     // =========================================================================
@@ -120,6 +120,34 @@ class HawkiDocConverterTest extends TestCase
         static::assertContains('application/pdf', $types);
         // docx MIME type
         static::assertContains('application/vnd.openxmlformats-officedocument.wordprocessingml.document', $types);
+    }
+
+    #[DataProvider('provideTestItRequestsServiceInfoFromServiceRootData')]
+    public function testItRequestsServiceInfoFromServiceRoot(string $apiUrl, string $expectedInfoUrl): void
+    {
+        Http::fake(['*' => Http::response(['supported_formats' => ['pdf']], 200)]);
+
+        $sut = new HawkiDocConverter($this->makeCache(), new CarbonClock());
+        $sut->setConfig(['api_url' => $apiUrl, 'api_key' => self::API_KEY]);
+
+        static::assertContains('application/pdf', $sut->getAllowedMimeTypes());
+        Http::assertSent(fn($request) => $request->method() === 'GET' && $request->url() === $expectedInfoUrl);
+        Http::assertSentCount(1);
+    }
+
+    public static function provideTestItRequestsServiceInfoFromServiceRootData(): iterable
+    {
+        yield 'extract endpoint at root' => ['https://converter.test/extract', 'https://converter.test'];
+        yield 'extract endpoint below sub path' => ['https://example.test/hawki/converter/extract', 'https://example.test/hawki/converter'];
+        yield 'extract endpoint with trailing slash' => ['https://example.test/converter/extract/', 'https://example.test/converter'];
+        yield 'extract endpoint with port' => ['http://localhost:8001/extract', 'http://localhost:8001'];
+    }
+
+    public function testItGetAllowedMimeTypesReturnsEmptyArrayWhenServiceListsNoFormats(): void
+    {
+        Http::fake(['*' => Http::response(['status' => 'ok'], 200)]);
+
+        static::assertSame([], $this->makeSut()->getAllowedMimeTypes());
     }
 
     // =========================================================================

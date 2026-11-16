@@ -112,15 +112,18 @@ class UrlResolver
     public static function stripPathSuffix(string $url, string $pathToRemove): string
     {
         $baseUrl = self::baseUrl($url);
-        $path = parse_url($url, PHP_URL_PATH) ?? '';
-        $normalizedPathToRemove = '/' . ltrim($pathToRemove, '/');
-        $normalizedPath = '/' . ltrim($path, '/');
 
-        if (str_ends_with($normalizedPath, $normalizedPathToRemove)) {
-            $newPath = substr($normalizedPath, 0, -strlen($normalizedPathToRemove));
-            return rtrim($baseUrl . $newPath, '/');
+        // Mirror baseUrl(): without a scheme, parse_url() treats the host as part of the path.
+        $parseableUrl = isset(parse_url($url)['scheme']) ? $url : 'http://' . $url;
+
+        // Trailing slashes are ignored on both sides, so "/sub/extract/" matches "extract/".
+        $path = rtrim('/' . ltrim((string)parse_url($parseableUrl, PHP_URL_PATH), '/'), '/');
+        $normalizedPathToRemove = rtrim('/' . ltrim($pathToRemove, '/'), '/');
+
+        if ($normalizedPathToRemove !== '' && str_ends_with($path, $normalizedPathToRemove)) {
+            $path = substr($path, 0, -strlen($normalizedPathToRemove));
         }
 
-        return rtrim($baseUrl . $normalizedPath, '/');
+        return rtrim($baseUrl . $path, '/');
     }
 }
