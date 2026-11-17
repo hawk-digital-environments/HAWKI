@@ -7,10 +7,13 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
+use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exceptions\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
@@ -117,6 +120,49 @@ class SpaAuthFlowTest extends TestCase
     {
         $this->postJson('/api/hawki/v1/sessions', $this->createSession(['account' => 'alice', 'password' => 'wrong']), $this->headers())
             ->assertStatus(401)->assertJsonPath('errors.0.code', 'invalid_credentials');
+    }
+
+    public function testProviderRedirectDuringCredentialsLoginHasAMachineCode(): void
+    {
+        $this->useAuthService(new class implements AuthServiceInterface, AuthServiceWithCredentialsInterface {
+            public function useCredentials(string $username, string $password): void {}
+            public function forgetCredentials(): void {}
+            public function authenticate(Request $request): RedirectResponse {
+                return new RedirectResponse('https://idp.example.test/authorize');
+            }
+        });
+
+        $this->postJson('/api/hawki/v1/sessions', $this->createSession(['account' => 'alice', 'password' => 'test-password']), $this->headers())
+            ->assertStatus(409)->assertJsonPath('errors.0.code', 'auth_redirect_required');
+        $this->assertGuest();
+    }
+
+    public function testPostProcessingResponseRollsBackTheLogin(): void
+    {
+        $this->user();
+        $this->useAuthService(new class implements AuthServiceInterface, AuthServiceWithCredentialsInterface, AuthServiceWithPostProcessingInterface {
+            public function useCredentials(string $username, string $password): void {}
+            public function forgetCredentials(): void {}
+            public function authenticate(Request $request): AuthenticatedUserInfo {
+                return new AuthenticatedUserInfo('alice', 'Test User', 'alice@example.test', 'employee');
+            }
+            public function afterLoginWithUser(User $user, Request $request): ?Response {
+                return new RedirectResponse('/somewhere');
+            }
+            public function afterLoginWithoutUser(AuthenticatedUserInfo $userInfo, Request $request): ?Response {
+                return new RedirectResponse('/somewhere');
+            }
+        });
+
+        $this->postJson('/api/hawki/v1/sessions', $this->createSession(['account' => 'alice', 'password' => 'test-password']), $this->headers())
+            ->assertStatus(409)->assertJsonPath('errors.0.code', 'auth_redirect_required');
+        $this->assertGuest();
+    }
+
+    private function useAuthService(AuthServiceInterface $service): void
+    {
+        $this->app->instance(AuthServiceInterface::class, $service);
+        $this->app->forgetInstance(\App\Services\Auth\LoginHandler::class);
     }
 
     public function testLegacyLoginDiscardsAnAbandonedSpaHandoff(): void
