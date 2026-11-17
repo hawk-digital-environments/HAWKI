@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Auth\Contract;
 
 
-use App\Services\Auth\Exception\AuthFailedException;
+use App\Services\Auth\Exceptions\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;

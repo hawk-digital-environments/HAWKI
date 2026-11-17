@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Console\Commands;
 
 use App\Console\Commands\AnnouncementPublish;
+use App\Services\Announcements\Values\AnnouncementType;
 use App\Models\Announcements\Announcement;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -44,7 +45,7 @@ class AnnouncementPublishTest extends TestCase
         $announcement = Announcement::query()->where('view', 'publish-command-sample')->firstOrFail();
 
         self::assertSame('Publish Command Sample', $announcement->title);
-        self::assertSame('system', $announcement->type);
+        self::assertSame(AnnouncementType::SYSTEM, $announcement->type);
         self::assertTrue((bool) $announcement->is_forced);
         self::assertFalse((bool) $announcement->is_global);
         self::assertSame([3, 7], $announcement->target_users);

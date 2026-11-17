@@ -7,7 +7,9 @@ namespace App\Services\Announcements\Repositories;
 use App\Models\Announcements\Announcement;
 use App\Models\Announcements\AnnouncementUser;
 use App\Models\User;
+use App\Services\Announcements\RegistrationPolicyService;
 use App\Services\Announcements\Values\AnnouncementForUser;
+use App\Services\Announcements\Values\AnnouncementType;
 use App\Services\Translation\LocaleService;
 use Illuminate\Support\Collection;
 
@@ -22,7 +24,10 @@ use Illuminate\Support\Collection;
  */
 readonly class UserAnnouncementRepository
 {
-    public function __construct(private LocaleService $localeService)
+    public function __construct(
+        private LocaleService             $localeService,
+        private RegistrationPolicyService $policies
+    )
     {
     }
 
@@ -77,14 +82,22 @@ readonly class UserAnnouncementRepository
     /**
      * Sets the `accepted_at` timestamp for the user, or returns null if the
      * announcement does not exist or is not visible to the user.
+     *
+     * Policy-type announcements route their acceptance through the policy service: their
+     * consent is hash-bound and recorded per revision, not as a plain pivot timestamp.
      */
     public function markAccepted(User $user, int $announcementId): ?AnnouncementForUser
     {
-        if ($this->findOneForUser($user, $announcementId) === null) {
+        $announcement = $this->queryVisibleForUser($user)->whereKey($announcementId)->first();
+        if ($announcement === null) {
             return null;
         }
 
-        $user->markAnnouncementAsAccepted($announcementId);
+        if ($announcement->type === AnnouncementType::POLICY) {
+            $this->policies->acceptAnnouncement($user, $announcement);
+        } else {
+            $user->markAnnouncementAsAccepted($announcementId);
+        }
 
         return $this->findOneForUser($user, $announcementId);
     }

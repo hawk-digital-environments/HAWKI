@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\Announcements\AnnouncementService;
+use App\Services\Announcements\Values\AnnouncementType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -28,7 +29,7 @@ return new class extends Migration
             $service->createAnnouncement(
                 'guidelines',
                 'basic-guidelines',
-                'policy',
+                AnnouncementType::POLICY,
                 true,
                 true,
                 null,
@@ -43,7 +44,7 @@ return new class extends Migration
             $service->createAnnouncement(
                 'firstUpload',
                 'first-upload',
-                'system',
+                AnnouncementType::SYSTEM,
                 true,
                 true,
                 null,

@@ -102,6 +102,11 @@
         /** Overrides the icon size the button's `size` would otherwise set, in px or any
          *  CSS length. */
         iconSize?: number | string;
+        /** While an async action the button triggers is in flight: the button announces
+         *  `aria-busy` and `aria-disabled` but — unlike `disabled` — stays in the tab
+         *  order, so a pending state is perceivable without moving focus. Callers keep
+         *  guarding the handler themselves. */
+        busy?: boolean;
     }
 
     let {
@@ -116,6 +121,7 @@
         disclosure = false,
         truncate = false,
         iconSize,
+        busy = false,
         ...restProps
     }: Props = $props();
 
@@ -153,7 +159,9 @@
             'btn--disclosure': disclosure,
             'btn--truncate': truncate
         },
-        style: iconSizeStyle
+        style: iconSizeStyle,
+        'aria-busy': busy || undefined,
+        'aria-disabled': busy || undefined
     },
     restProps
 )}>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Seeders;
 
 use App\Models\Announcements\Announcement;
+use App\Services\Announcements\Values\AnnouncementType;
 use App\Models\User;
 use Database\Seeders\DemoAnnouncementsSeeder;
 use Illuminate\Filesystem\Filesystem;
@@ -62,14 +63,14 @@ class DemoAnnouncementsSeederTest extends TestCase
 
         // A) Global news — unforced dialog, news page.
         $news = $byView['maintenance-window'];
-        self::assertSame('news', $news->type);
+        self::assertSame(AnnouncementType::NEWS, $news->type);
         self::assertFalse((bool) $news->is_forced);
         self::assertTrue((bool) $news->is_global);
         self::assertNull($news->anchor);
 
         // B) Forced policy.
         $policy = $byView['new-usage-policy'];
-        self::assertSame('policy', $policy->type);
+        self::assertSame(AnnouncementType::POLICY, $policy->type);
         self::assertTrue((bool) $policy->is_forced);
 
         // C) Anchored to the file-upload trigger.

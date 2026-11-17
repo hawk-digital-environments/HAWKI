@@ -42,6 +42,7 @@ import {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import {dependencyLoader} from '$lib/legacy/dependencies.js';
 import {buildStorageFileUrl} from '$lib/utils/storageFileProxy.js';
 import {getConfig} from '$lib/kernel/config/helpers.js';
+import {generatePasskey} from '$lib/kernel/encryption/utils.js';
 import type {WellKnownSystemModelType} from '$plugins/core/schemas/resources/system-models.schema.js';
 import type {WellKnownSystemPromptType} from '$plugins/core/schemas/resources/system-prompts.schema.js';
 import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
@@ -92,6 +93,7 @@ declare global {
         getConnectionWithUserInfo: typeof getConnectionWithUserInfo;
         /** Reads a validated config bundle (defaults to `hawki-core`). */
         getConfig: typeof getConfig;
+        generatePasskey: typeof generatePasskey;
         /** Runs the pending keychain/encryption migrations; called from the legacy handshake/passkey flows. */
         applyMigrations: typeof applyMigrations;
         /** Translation helper (`__('some.label')`), mirroring the Laravel-side API. */
@@ -138,6 +140,8 @@ export function provideLegacyGlobals() {
     window.getAuthenticatedConnection = getAuthenticatedConnection;
     window.getConnectionWithUserInfo = getConnectionWithUserInfo;
     window.getConfig = getConfig;
+    // TODO: Remove with legacy registration. Both UIs use the kernel's browser-only generator.
+    window.generatePasskey = generatePasskey;
     window.__ = __;
     window.applyMigrations = applyMigrations;
     window.oldUiBridge = oldUiBridge;

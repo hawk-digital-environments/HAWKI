@@ -38,7 +38,8 @@ class User extends Authenticatable
         'avatar_id',
         'bio',
         'locale',
-        'isRemoved'
+        'isRemoved',
+        'registration_fingerprint',
     ];
 
     protected $casts = [
@@ -101,7 +102,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Announcement::class, 'announcement_user')
             ->using(AnnouncementUser::class)
-            ->withPivot(['seen_at', 'accepted_at'])
+            ->withPivot(['seen_at', 'accepted_at', 'locale', 'content_hash'])
             ->withTimestamps();
     }
 

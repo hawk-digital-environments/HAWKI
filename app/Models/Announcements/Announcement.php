@@ -3,6 +3,7 @@
 namespace App\Models\Announcements;
 
 use App\Models\User;
+use App\Services\Announcements\Values\AnnouncementType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -25,6 +26,7 @@ class Announcement extends Model
         'target_users' => 'array',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
+        'type' => AnnouncementType::class,
     ];
 
     /**
@@ -34,7 +36,7 @@ class Announcement extends Model
     {
         return $this->belongsToMany(User::class, 'announcement_user')
                     ->using(AnnouncementUser::class) // use custom pivot model
-                    ->withPivot(['seen_at', 'accepted_at'])
+                    ->withPivot(['seen_at', 'accepted_at', 'locale', 'content_hash'])
                     ->withTimestamps();
     }
 

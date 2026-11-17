@@ -1,4 +1,5 @@
 export interface ApiTransportServerErrorMessage {
+    code?: string;
     title: string;
     detail: string;
 }
@@ -11,5 +12,9 @@ export class ApiTransportError extends Error {
         message: string
     ) {
         super(message);
+    }
+
+    public get code(): string | undefined {
+        return this.errors[0]?.code;
     }
 }

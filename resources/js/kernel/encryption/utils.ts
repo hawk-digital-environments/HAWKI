@@ -17,6 +17,11 @@
 
 export type ServerSalt = Uint8Array;
 
+/** Generates a 256-bit passkey using characters accepted by the registration form. */
+export function generatePasskey(): string {
+    return Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
 export async function exportCryptoKeyToArrayBuffer(key: CryptoKey, format: Exclude<KeyFormat, 'jwk'> = 'raw'): Promise<ArrayBuffer> {
     try {
         return await window.crypto.subtle.exportKey(format, key);

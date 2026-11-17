@@ -221,6 +221,16 @@ class ApiV1EndpointsTest extends TestCase
         self::assertSame('de_DE', $user->refresh()->locale);
     }
 
+    public function testItAcceptsTheLocaleFromGuests(): void
+    {
+        // Login, registration and unlock pages let visitors pick a language before they are signed in.
+        // Session/cookie persistence is skipped by LocaleService when running in console (incl. PHPUnit),
+        // so this only covers that guests are no longer rejected.
+        $this->postJson('/api/hawki/v1/users/actions/locale', ['locale' => 'de_DE'], $this->jsonApiHeaders())
+            ->assertOk()
+            ->assertJsonPath('locale', 'de_DE');
+    }
+
     // =========================================================================
 
     private function createConversation(User $owner): AiConv
