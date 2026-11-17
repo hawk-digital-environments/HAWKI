@@ -56,6 +56,19 @@ class HawkiDocConverter extends AbstractFileConverter
     }
 
     /**
+     * Builds the URL of an endpoint relative to the service root (empty path = the root itself).
+     * A query string on the configured URL (e.g. a proxy token) is carried over, as it was
+     * when the configured URL was posted to verbatim.
+     */
+    private function getEndpointUrl(string $path = ''): string
+    {
+        $url = $this->getServiceRootUrl() . ($path === '' ? '' : '/' . ltrim($path, '/'));
+        $query = parse_url($this->config['api_url'], PHP_URL_QUERY);
+
+        return is_string($query) && $query !== '' ? $url . '?' . $query : $url;
+    }
+
+    /**
      * Collects and returns a cached version of the service description endpoint of the
      * HAWKI file converter service root (`/`). The returned array contains a `supported_formats` key with an array of supported file extensions.
      * @return array
@@ -69,7 +82,7 @@ class HawkiDocConverter extends AbstractFileConverter
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $this->config['api_key'],
                     'Accept' => 'application/json',
-                ])->get($this->getServiceRootUrl());
+                ])->get($this->getEndpointUrl());
                 return (array)array_merge(
                     ['supported_formats' => []],
                     $response->json() ?? []
@@ -164,7 +177,7 @@ class HawkiDocConverter extends AbstractFileConverter
         ])
             ->timeout($this->getRequestTimeout())
             ->attach('file', $file->getStream(), $file->getOriginalFilename())
-            ->post($this->getServiceRootUrl() . '/extract');
+            ->post($this->getEndpointUrl('/extract'));
 
         if (!$response->successful()) {
             throw ConversionFailedException::forFailedResponse($this, $response);

@@ -13,7 +13,7 @@
 
 ### Bugfix
 
-- Fixed the HAWKI file converter integration when the converter service runs behind a reverse proxy sub path (e.g. `https://host/hawki/converter`): `HAWKI_FILE_CONVERTER_API_URL` is now treated as the service base URL, with the `/extract` endpoint and the service info page addressed relative to it. Legacy values that still contain `/extract` keep working. Clear the application cache after updating, since the supported formats are cached for a day.
+- Fixed the HAWKI file converter integration when the converter service runs behind a reverse proxy sub path (e.g. `https://host/hawki/converter`): `HAWKI_FILE_CONVERTER_API_URL` is now treated as the service base URL, with the `/extract` endpoint and the service info page addressed relative to it. Legacy values that still contain `/extract` keep working, including any query string. **Action required** only if your value points at a renamed endpoint (e.g. a proxy route `https://host/convert` instead of `.../extract`): set it to the service base URL instead. Clear the application cache after updating, since the supported formats are cached for a day.
 - Fixed the announcement CLI: `--anchor` names were mangled into booleans by `FILTER_VALIDATE_BOOLEAN`, `announcement:make` created timestamped folders that didn't match the published `view`, and string `--users=` ids made targeted announcements invisible to their own targets on MySQL.
 
 ### Internals

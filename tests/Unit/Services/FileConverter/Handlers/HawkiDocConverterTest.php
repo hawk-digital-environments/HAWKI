@@ -145,6 +145,8 @@ class HawkiDocConverterTest extends TestCase
         yield 'legacy url with extract endpoint below sub path' => ['https://example.test/hawki/converter/extract', 'https://example.test/hawki/converter'];
         yield 'legacy url with extract endpoint and trailing slash' => ['https://example.test/converter/extract/', 'https://example.test/converter'];
         yield 'legacy url with extract endpoint and port' => ['http://localhost:8001/extract', 'http://localhost:8001'];
+        yield 'base url with query string' => ['https://example.test/converter?token=abc', 'https://example.test/converter?token=abc'];
+        yield 'legacy url with query string' => ['https://example.test/converter/extract?token=abc', 'https://example.test/converter?token=abc'];
     }
 
     public function testItGetAllowedMimeTypesReturnsEmptyArrayWhenServiceListsNoFormats(): void
@@ -226,6 +228,8 @@ class HawkiDocConverterTest extends TestCase
         yield 'base url with trailing slash' => ['https://example.test/converter/', 'https://example.test/converter/extract'];
         yield 'legacy url containing the extract endpoint' => ['https://example.test/hawki/converter/extract', 'https://example.test/hawki/converter/extract'];
         yield 'legacy url containing the extract endpoint with trailing slash' => ['https://example.test/hawki/converter/extract/', 'https://example.test/hawki/converter/extract'];
+        yield 'base url with query string' => ['https://example.test/converter?token=abc', 'https://example.test/converter/extract?token=abc'];
+        yield 'legacy url with query string' => ['https://example.test/converter/extract?token=abc', 'https://example.test/converter/extract?token=abc'];
     }
 
     // =========================================================================
