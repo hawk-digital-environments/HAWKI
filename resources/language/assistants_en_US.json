@@ -114,7 +114,6 @@
             "offline": "Model offline",
             "offlineHint": "This assistant's AI model can't be reached right now. It can be used again once the model is back online."
         },
-
         "release_stage": {
             "private": "Private",
             "organizational": "University-internal",
@@ -163,7 +162,21 @@
             "release_failed": "The release status could not be changed.",
             "review_title": "Review",
             "review_requested_hint": "Awaiting review — the assistant is released as “:stage” once approved.",
-            "review_decided_on": "Decided on :date"
+            "review_decided_on": "Decided on :date",
+            "share": "Share",
+            "share_title": "Share assistant",
+            "share_description": "Decide who may use or edit this assistant.",
+            "share_search_ph": "Search name, username or email…",
+            "share_searching": "Searching…",
+            "share_no_results": "No users found.",
+            "share_search_failed": "The user search failed.",
+            "share_can_edit": "Can edit",
+            "share_copy_link": "Copy link to assistant",
+            "share_link_copied": "Link copied to clipboard.",
+            "share_copy_failed": "The link could not be copied.",
+            "share_save": "Save shares",
+            "share_saved": "Shares saved.",
+            "share_save_failed": "The shares could not be saved."
         },
         "feedback": {
             "feedback_to": "Feedback to",
@@ -353,6 +366,8 @@
             "publish": {
                 "title": "Publish",
                 "description": "Choose the publishing path.",
+                "finish": "Finish",
+                "not_allowed": "Only the creator may publish this assistant.",
                 "release_stage": {
                     "title": "Choose the publishing path",
                     "draft_label": "Keep as draft",

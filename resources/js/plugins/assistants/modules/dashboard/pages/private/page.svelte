@@ -44,7 +44,9 @@
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
-            release_stage: [ReleaseMode.PRIVATE]
+            release_stage: [ReleaseMode.PRIVATE],
+            // Private assistants others shared with me live on the "shared" page instead.
+            is_creator: true
         });
     }
 

@@ -235,6 +235,11 @@ return new class() extends Migration {
                 ->constrained()
                 ->cascadeOnDelete();
 
+            // Whether the sharee may edit the assistant's content (the
+            // builder), or only use it. Release/delete/rollback stay with
+            // the creator either way.
+            $table->boolean('can_edit')->default(false);
+
             $table->timestamps();
 
             $table->unique(['assistant_id', 'user_id']);

@@ -391,6 +391,80 @@ export async function toggleAssistantFavorite(assistant: Assistant, active: bool
     }
 }
 
+// ─── Sharing ────────────────────────────────────────────────────────────────
+
+/** One entry of the assistant's share list, as answered by `actions/share`. */
+export interface AssistantShareEntry {
+    userId: number;
+    displayName: string;
+    username: string;
+    canEdit: boolean;
+    avatar: string | null;
+}
+
+const SharesResponseSchema = z.object({
+    data: z.array(
+        z.object({
+            user_id: z.number(),
+            display_name: z.string(),
+            username: z.string(),
+            can_edit: z.boolean(),
+            avatar: z.string().nullable()
+        }).transform((wire): AssistantShareEntry => ({
+            userId: wire.user_id,
+            displayName: wire.display_name,
+            username: wire.username,
+            canEdit: wire.can_edit,
+            avatar: wire.avatar
+        }))
+    )
+});
+
+/**
+ * The assistant's current share list — creator-only (`listShares` gate, see
+ * `actionPermissions.listShares` on the assistant resource).
+ */
+export async function listAssistantShares(id: string, signal?: AbortSignal): Promise<AssistantShareEntry[]> {
+    try {
+        const response = await useApp().restApi.getFromResourceAction(ASSISTANTS, `${id}/actions/share`, {
+            schema: SharesResponseSchema,
+            signal
+        });
+        return response.data;
+    } catch (err) {
+        throw logApiError('listAssistantShares', err, { id });
+    }
+}
+
+/**
+ * Replaces the share list wholesale: attach new, update `canEdit` flags,
+ * detach absent. Answers with the resulting list, so the caller can adopt
+ * the server's state without a follow-up fetch.
+ */
+export async function syncAssistantShares(
+    id: string,
+    shares: ReadonlyArray<{ userId: number; canEdit: boolean }>
+): Promise<AssistantShareEntry[]> {
+    try {
+        const response = await useApp().restApi.postToResourceAction(
+            ASSISTANTS,
+            `${id}/actions/share`,
+            {
+                data: {
+                    shares: shares.map((share) => ({
+                        user_id: share.userId,
+                        can_edit: share.canEdit
+                    }))
+                }
+            },
+            { schema: SharesResponseSchema }
+        );
+        return response.data;
+    } catch (err) {
+        throw logApiError('syncAssistantShares', err, { id, count: shares.length });
+    }
+}
+
 /**
  * The handle-namespace probe (`GET /assistants/actions/handles`): which of
  * the given candidate handles already exist — globally, regardless of

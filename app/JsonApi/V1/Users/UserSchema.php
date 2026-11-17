@@ -50,7 +50,9 @@ class UserSchema extends Schema
 
     public function filters(): array
     {
-        return [];
+        return [
+            UserSearchFilter::make(),
+        ];
     }
 
     public function pagination(): ?PagePagination

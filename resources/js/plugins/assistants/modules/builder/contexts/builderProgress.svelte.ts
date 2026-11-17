@@ -15,6 +15,11 @@ import {BUILDER_STEPS, COMPLETENESS_RULES, type BuilderStep} from "./builderVali
  */
 export const builderProgress = $state({
     reachable: BUILDER_STEPS.length as number,
+    /**
+     * Whether this session's user may release at all (edit-sharees may
+     * edit content but never publish). Allowed until a verdict arrives.
+     */
+    canRelease: true,
     complete: {} as Partial<Record<BuilderStep, boolean>>,
     ratio: {} as Partial<Record<BuilderStep, number>>,
     furthest: 0,
@@ -23,6 +28,14 @@ export const builderProgress = $state({
 /** Whether `step` lies past the first incomplete step and can't be opened yet. */
 export function isBuilderStepLocked(step: BuilderStep): boolean {
     return BUILDER_STEPS.indexOf(step) > builderProgress.reachable;
+}
+
+/**
+ * Whether the publish step is unavailable: locked by progress, or denied by
+ * policy because the session's user is not the creator (co-editor).
+ */
+export function isPublishStepUnavailable(): boolean {
+    return isBuilderStepLocked('publish') || !builderProgress.canRelease;
 }
 
 /**

@@ -8,8 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Assistant\AddFavoriteAssistantRequest;
 use App\Http\Requests\Assistant\AssistantHandlesRequest;
 use App\Http\Requests\Assistant\DeleteAssistantAttachmentRequest;
+use App\Http\Requests\Assistant\ListSharesAssistantRequest;
 use App\Http\Requests\Assistant\RemixAssistantRequest;
 use App\Http\Requests\Assistant\RemoveFavoriteAssistantRequest;
+use App\Http\Requests\Assistant\SyncSharesAssistantRequest;
 use App\Http\Requests\Assistant\UploadAssistantAttachmentRequest;
 use App\JsonApi\V1\Assistants\AssistantQuery;
 use App\JsonApi\V1\Assistants\AssistantRequest;
@@ -23,6 +25,7 @@ use App\Services\Assistant\Events\AssistantCreatedEvent;
 use App\Services\Assistant\Events\AssistantUpdatedEvent;
 use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Assistant\Values\AssistantReleaseStage;
+use App\Services\Assistant\Values\AssistantShare;
 use App\Services\Storage\Values\FileReference;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
@@ -183,6 +186,30 @@ class AssistantController extends Controller
         AssistantRepository $repository,
     ): JsonResponse {
         return response()->json(['data' => $repository->findExistingHandles($request->handles())]);
+    }
+
+    /**
+     * The assistant's current share list (`actions/share`), creator-only.
+     */
+    public function listShares(
+        ListSharesAssistantRequest $request,
+        Assistant $assistant,
+    ): JsonResponse {
+        return response()->json(['data' => $this->assistantService->listShares($assistant)]);
+    }
+
+    /**
+     * Replaces the share list with the request's set — attach new, update
+     * edit grants, detach absent — and answers with the resulting list, so
+     * the client needs no follow-up fetch.
+     */
+    public function syncShares(
+        SyncSharesAssistantRequest $request,
+        Assistant $assistant,
+    ): JsonResponse {
+        $shares = $this->assistantService->syncShares($assistant, $request->shares());
+
+        return response()->json(['data' => $shares]);
     }
 
     /**

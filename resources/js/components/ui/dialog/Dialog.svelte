@@ -79,6 +79,11 @@
         description?: Snippet | string;
         /** Additional props to apply to the DialogDescription component. */
         descriptionProps?: Omit<DialogDescriptionProps, 'children'>;
+        /**
+         * Optional media (an avatar, an icon) right of the title/description
+         * column; turns the header into a row.
+         */
+        headerTrailing?: Snippet;
         /** Additional props to apply to the header container. */
         headerProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
         /** Additional props to apply to the body region that wraps the main content. */
@@ -110,6 +115,7 @@
         titleProps,
         description,
         descriptionProps,
+        headerTrailing,
         headerProps,
         bodyProps,
         footer,
@@ -158,18 +164,33 @@
                         </DialogPrimitive.Close>
                     {/if}
 
-                    {#if title || description}
-                        <div {...mergeProps({class: 'dialog-header'}, headerProps)}>
-                            {#if title}
-                                <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
-                                    <SnippetOrString value={title}/>
-                                </DialogPrimitive.Title>
+                    {#if title || description || headerTrailing}
+                        <div
+                            {...mergeProps(
+                                {class: headerTrailing ? 'dialog-header dialog-header--row' : 'dialog-header'},
+                                headerProps
+                            )}
+                        >
+                            {#if title || description}
+                                <div class="dialog-header-text">
+                                    {#if title}
+                                        <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
+                                            <SnippetOrString value={title}/>
+                                        </DialogPrimitive.Title>
+                                    {/if}
+
+                                    {#if description}
+                                        <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
+                                            <SnippetOrString value={description}/>
+                                        </DialogPrimitive.Description>
+                                    {/if}
+                                </div>
                             {/if}
 
-                            {#if description}
-                                <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
-                                    <SnippetOrString value={description}/>
-                                </DialogPrimitive.Description>
+                            {#if headerTrailing}
+                                <div class="dialog-header-trailing">
+                                    {@render headerTrailing()}
+                                </div>
                             {/if}
                         </div>
                     {/if}
@@ -195,6 +216,29 @@
         flex-direction: column;
         gap: var(--space-1);
         flex: none;
+    }
+
+    /* Trailing media (an avatar, an icon) turns the header into a row around
+       the title/description column. Doubled class to out-specify the plain
+       `.dialog-header` rule regardless of stylesheet order. The inline-end
+       padding keeps the media clear of the corner close button. */
+    :global(.dialog-header.dialog-header--row) {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-4);
+        padding-inline-end: calc(var(--space-4) + var(--space-6) + var(--space-2));
+    }
+
+    .dialog-header-trailing {
+        flex-shrink: 0;
+    }
+
+    .dialog-header-text {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        flex: 1;
+        min-width: 0;
     }
 
     :global(.dialog-body) {
@@ -229,6 +273,9 @@
         flex-direction: column;
         width: 100%;
         max-width: 32rem;
+        /* Bounds the dialog so `.dialog-body` becomes the scroll container
+           for long content (mirrors the BottomSheet's cap). */
+        max-height: min(85vh, 40rem);
         translate: -50% -50%;
         gap: var(--space-4);
         border: var(--border);

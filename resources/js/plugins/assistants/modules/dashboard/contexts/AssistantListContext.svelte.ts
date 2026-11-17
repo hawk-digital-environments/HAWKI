@@ -69,6 +69,8 @@ export type AssistantListFilter = {
     is_favorite?: boolean;
     release_stage?: string[];
     shared_with_user?: boolean;
+    /** `true` keeps only assistants the current user created (drafts/private pages). */
+    is_creator?: boolean;
     /** `true` keeps only assistants whose model is still offered (hides deactivated ones). */
     model_available?: boolean;
     /** Creator-scoped on the backend: only the user's own submissions match. */
@@ -220,6 +222,10 @@ export class AssistantListContext {
 
         if (this.filter.shared_with_user !== undefined) {
             out['shared_with_user'] = this.filter.shared_with_user;
+        }
+
+        if (this.filter.is_creator !== undefined) {
+            out['is_creator'] = this.filter.is_creator;
         }
 
         if (this.filter.model_available !== undefined) {

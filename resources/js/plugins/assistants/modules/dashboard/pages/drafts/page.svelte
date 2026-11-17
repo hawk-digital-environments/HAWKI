@@ -37,7 +37,9 @@
         list.setFilter({
             name: searchQuery,
             assistant_category: [...activeFilters],
-            release_stage: [ReleaseMode.DRAFT]
+            release_stage: [ReleaseMode.DRAFT],
+            // Drafts others shared with me live on the "shared" page instead.
+            is_creator: true
         });
     }
 

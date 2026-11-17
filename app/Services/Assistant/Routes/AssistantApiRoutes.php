@@ -80,6 +80,8 @@ final class AssistantApiRoutes
                 $actions->withId()->post('actions/rollback', 'rollback');
                 $actions->withId()->post('actions/favorite', 'addFavorite');
                 $actions->withId()->delete('actions/favorite', 'removeFavorite');
+                $actions->withId()->get('actions/share', 'listShares');
+                $actions->withId()->post('actions/share', 'syncShares');
                 $actions->withId()->post('actions/attachment', 'uploadAttachment');
                 $actions->withId()->delete('actions/attachment', 'deleteAttachment');
             });

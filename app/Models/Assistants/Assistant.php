@@ -213,7 +213,19 @@ class Assistant extends Model
     public function sharedUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'assistant_shared_users')
+            ->withPivot('can_edit')
             ->withTimestamps();
+    }
+
+    /**
+     * Pivot rows of the share list, for eager-loaded edit-grant checks
+     * (see AssistantSchema::with()).
+     *
+     * @return HasMany<AssistantSharedUser, $this>
+     */
+    public function sharedUserPivots(): HasMany
+    {
+        return $this->hasMany(AssistantSharedUser::class);
     }
 
     /**

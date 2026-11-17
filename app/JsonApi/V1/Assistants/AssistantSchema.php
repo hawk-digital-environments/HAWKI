@@ -84,7 +84,7 @@ class AssistantSchema extends Schema
             AssistantNameFilter::make(),
             AssistantFavoriteFilter::make(),
             AssistantSharedWithUserFilter::make(),
-            AssistantSharedWithUserFilter::make(),
+            AssistantCreatorFilter::make(),
             AssistantModelAvailableFilter::make(),
             AssistantReviewStatusFilter::make(),
             WhereIn::make('release_stage')->delimiter(','),
@@ -95,6 +95,16 @@ class AssistantSchema extends Schema
     public function pagination(): ?PagePagination
     {
         return PagePagination::make();
+    }
+
+    /**
+     * Share pivots ride along on every query, so the action links' update
+     * gate can check the edit grant from loaded data — one pivot query per
+     * page instead of one exists() per assistant (see canEditViaShare()).
+     */
+    public function with(): array
+    {
+        return [...parent::with(), 'sharedUserPivots'];
     }
 
     public function indexQuery(?Request $request, Builder $query): Builder

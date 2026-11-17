@@ -52,7 +52,7 @@
             "drafts": "Entwürfe",
             "private": "Privat",
             "favourites": "Favoriten",
-            "shared": "Freigegeben",
+            "shared": "Geteilt",
             "create": "Assistent erstellen",
             "switch_case": "Bereich wechseln",
             "back": "Zurück",
@@ -83,9 +83,9 @@
             "empty_description": "Assistenten, die du als privat speicherst, sind nur für dich sichtbar."
         },
         "shared": {
-            "title": "Freigegebene Assistenten",
-            "empty_title": "Keine freigegebene Assistant",
-            "empty_description": "Hier erscheinen Assistenten, die andere Benutzer für dich freigegeben haben."
+            "title": "Geteilte Assistenten",
+            "empty_title": "Keine geteilten Assistenten vorhanden",
+            "empty_description": "Hier erscheinen Assistenten, die andere Benutzer mit dir geteilt haben."
         },
         "favourites": {
             "title": "Favorisierte Assistenten",
@@ -114,7 +114,6 @@
             "offline": "Modell offline",
             "offlineHint": "Das KI-Modell dieses Assistenten ist gerade nicht erreichbar. Er kann wieder genutzt werden, sobald das Modell wieder online ist."
         },
-
         "release_stage": {
             "private": "Privat",
             "organizational": "Hochschulintern",
@@ -163,7 +162,21 @@
             "release_failed": "Der Veröffentlichungsstatus konnte nicht geändert werden.",
             "review_title": "Prüfung",
             "review_requested_hint": "In Prüfung — der Assistent wird nach Genehmigung als „:stage“ freigegeben.",
-            "review_decided_on": "Entschieden am :date"
+            "review_decided_on": "Entschieden am :date",
+            "share": "Teilen",
+            "share_title": "Assistent teilen",
+            "share_description": "Lege fest, wer diesen Assistenten nutzen oder bearbeiten darf.",
+            "share_search_ph": "Name, Benutzername oder E-Mail suchen…",
+            "share_searching": "Suche läuft…",
+            "share_no_results": "Keine Benutzer:innen gefunden.",
+            "share_search_failed": "Die Benutzer:innensuche ist fehlgeschlagen.",
+            "share_can_edit": "Darf bearbeiten",
+            "share_copy_link": "Link zum Assistenten kopieren",
+            "share_link_copied": "Link in die Zwischenablage kopiert.",
+            "share_copy_failed": "Der Link konnte nicht kopiert werden.",
+            "share_save": "Freigaben speichern",
+            "share_saved": "Freigaben gespeichert.",
+            "share_save_failed": "Die Freigaben konnten nicht gespeichert werden."
         },
         "feedback": {
             "feedback_to": "Feedback an",
@@ -353,6 +366,8 @@
             "publish": {
                 "title": "Veröffentlichen",
                 "description": "Wähle den Veröffentlichungspfad.",
+                "finish": "Fertig",
+                "not_allowed": "Nur die Erstellerin bzw. der Ersteller darf diesen Assistenten veröffentlichen.",
                 "release_stage": {
                     "title": "Veröffentlichungspfad wählen",
                     "draft_label": "Als Entwurf behalten",
