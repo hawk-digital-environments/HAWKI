@@ -98,8 +98,8 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $creatorResource = $included->first(static fn ($item) => 'users' === $item['type']);
-        self::assertEquals((string) $user->id, $creatorResource['id']);
-        self::assertEquals($user->name, $creatorResource['attributes']['display_name']);
+        static::assertEquals((string) $user->id, $creatorResource['id']);
+        static::assertEquals($user->name, $creatorResource['attributes']['display_name']);
     }
 
     public function testCanShowAssistantWithOrganization(): void
@@ -133,7 +133,7 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $orgResource = $included->first(static fn ($item) => 'organizations' === $item['type']);
-        self::assertEquals($org->name, $orgResource['attributes']['name']);
+        static::assertEquals($org->name, $orgResource['attributes']['name']);
     }
 
     public function testCanShowAssistantWithVersions(): void
@@ -148,8 +148,8 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $versionResource = $included->first(static fn ($item) => 'assistant-versions' === $item['type']);
-        self::assertEquals('', $versionResource['attributes']['text']);
-        self::assertEquals('1.0', $versionResource['attributes']['version']);
+        static::assertEquals('', $versionResource['attributes']['text']);
+        static::assertEquals('0.0', $versionResource['attributes']['version']);
     }
 
     public function testCanShowAssistantWithSettingValues(): void
@@ -173,7 +173,7 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $valueResource = $included->first(static fn ($item) => 'assistant-setting-values' === $item['type']);
-        self::assertEquals('en', $valueResource['attributes']['value']);
+        static::assertEquals('en', $valueResource['attributes']['value']);
     }
 
     public function testCanShowAssistantWithNestedSettingInclude(): void
@@ -197,12 +197,12 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $valueResource = $included->first(static fn ($item) => 'assistant-setting-values' === $item['type']);
-        self::assertNotNull($valueResource, 'Setting value resource should be included');
-        self::assertSame((string) $setting->id, $valueResource['relationships']['setting']['data']['id']);
+        static::assertNotNull($valueResource, 'Setting value resource should be included');
+        static::assertSame((string) $setting->id, $valueResource['relationships']['setting']['data']['id']);
 
         $settingResource = $included->first(static fn ($item) => 'assistant-settings' === $item['type']);
-        self::assertNotNull($settingResource, 'Related setting resource should be included via nested include');
-        self::assertSame('language', $settingResource['attributes']['key']);
+        static::assertNotNull($settingResource, 'Related setting resource should be included via nested include');
+        static::assertSame('language', $settingResource['attributes']['key']);
     }
 
     public function testCanShowAssistantWithCategory(): void
@@ -221,7 +221,7 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $catResource = $included->first(static fn ($item) => 'assistant-categories' === $item['type']);
-        self::assertEquals('general', $catResource['attributes']['text']);
+        static::assertEquals('general', $catResource['attributes']['text']);
     }
 
     public function testCanShowAssistantWithCreator(): void
@@ -250,7 +250,7 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $creatorResource = $included->first(static fn ($item) => 'users' === $item['type']);
-        self::assertEquals($user->name, $creatorResource['attributes']['display_name']);
+        static::assertEquals($user->name, $creatorResource['attributes']['display_name']);
     }
 
     public function testCanShowAssistantWithRemixedCreator(): void
@@ -283,7 +283,7 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $creatorResource = $included->first(static fn ($item) => 'users' === $item['type']);
-        self::assertEquals($originalCreator->name, $creatorResource['attributes']['display_name']);
+        static::assertEquals($originalCreator->name, $creatorResource['attributes']['display_name']);
     }
 
     public function testCanShowAssistantWithRemixedAssistant(): void
@@ -316,7 +316,7 @@ class AssistantShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $originalResource = $included->first(static fn ($item) => 'assistants' === $item['type']);
-        self::assertEquals($original->name, $originalResource['attributes']['name']);
+        static::assertEquals($original->name, $originalResource['attributes']['name']);
     }
 
     public function testRelationshipDataAbsentWhenNotIncluded(): void
@@ -363,7 +363,7 @@ class AssistantShowTest extends TestCase
             ->assertForbidden();
     }
 
-    public function testShowAssistantShowsDeniedReleaseLinkForNonCreator(): void
+    public function testItShowsTheDeniedReleaseLinkToNonCreators(): void
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
@@ -393,7 +393,7 @@ class AssistantShowTest extends TestCase
         ]);
     }
 
-    public function testShowAssistantShowsDeniedRemixLinkWhenNotAllowed(): void
+    public function testItShowsTheDeniedRemixLinkWhenRemixIsNotAllowed(): void
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
@@ -420,7 +420,7 @@ class AssistantShowTest extends TestCase
         ]);
     }
 
-    public function testShowAssistantShowsAllowedFavoriteLinksForCreator(): void
+    public function testItShowsAllowedFavoriteLinksToTheCreator(): void
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -453,7 +453,7 @@ class AssistantShowTest extends TestCase
         ]);
     }
 
-    public function testShowAssistantHasNoActionLinksWhenUnauthenticated(): void
+    public function testItShowsNoActionLinksWhenUnauthenticated(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([

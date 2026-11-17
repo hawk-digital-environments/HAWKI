@@ -43,8 +43,8 @@ class AssistantReleaseTest extends TestCase
             ->assertOk();
 
         $assistant->refresh();
-        self::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
-        self::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->requested_release_stage);
+        static::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
+        static::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->requested_release_stage);
 
         $this->assertDatabaseHas('assistant_reviews', [
             'assistant_id' => $assistant->id,
@@ -78,7 +78,7 @@ class AssistantReleaseTest extends TestCase
             ->assertOk();
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('Reworked the system prompt', $version->text);
+        static::assertSame('Reworked the system prompt', $version->text);
     }
 
     public function testReleaseRejectsTooLongNote(): void
@@ -106,7 +106,7 @@ class AssistantReleaseTest extends TestCase
             ->assertJsonPath('errors.0.source.pointer', '/data/attributes/note');
     }
 
-    public function testCanReleaseToPublicImmediatelyWhenApproved(): void
+    public function testItAlwaysOpensAFreshReviewForAnUpwardReleaseEvenWhenApproved(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -132,14 +132,16 @@ class AssistantReleaseTest extends TestCase
         ])
             ->assertOk();
 
+        // An approved review only counts as current while the assistant is
+        // public. Once it has fallen back to private, the record never takes
+        // effect by itself: the upward release opens a fresh review and the
+        // assistant stays private until an admin approves it.
         $assistant->refresh();
-        self::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->release_stage);
-        self::assertNull($assistant->requested_release_stage);
+        static::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
+        static::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->requested_release_stage);
+        static::assertSame(AssistantReviewStatus::PENDING, AssistantReview::where('assistant_id', $assistant->id)->sole()->status);
 
-        Event::assertDispatched(AssistantReleaseStageChangedEvent::class, static function (AssistantReleaseStageChangedEvent $event): bool {
-            return AssistantReleaseStage::PRIVATE === $event->oldStage
-                && AssistantReleaseStage::ORGANIZATIONAL === $event->newStage;
-        });
+        Event::assertNotDispatched(AssistantReleaseStageChangedEvent::class);
     }
 
     public function testReleaseResponseReflectsFavoritedState(): void
@@ -175,7 +177,7 @@ class AssistantReleaseTest extends TestCase
             ->assertJsonPath('data.attributes.is_favorite', true);
     }
 
-    public function testDownwardPublicMoveIsFree(): void
+    public function testItAppliesDownwardPublicMovesFreely(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -198,7 +200,7 @@ class AssistantReleaseTest extends TestCase
             ->assertOk();
 
         $assistant->refresh();
-        self::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->release_stage);
+        static::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->release_stage);
 
         Event::assertDispatched(AssistantReleaseStageChangedEvent::class, static function (AssistantReleaseStageChangedEvent $event): bool {
             return AssistantReleaseStage::FEDERATED === $event->oldStage
@@ -206,7 +208,7 @@ class AssistantReleaseTest extends TestCase
         });
     }
 
-    public function testEscalationBetweenPublicStagesRequiresFreshApproval(): void
+    public function testItRequiresFreshApprovalForEscalationBetweenPublicStages(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -233,8 +235,8 @@ class AssistantReleaseTest extends TestCase
             ->assertOk();
 
         $assistant->refresh();
-        self::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->release_stage);
-        self::assertSame(AssistantReleaseStage::FEDERATED, $assistant->requested_release_stage);
+        static::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->release_stage);
+        static::assertSame(AssistantReleaseStage::FEDERATED, $assistant->requested_release_stage);
 
         $this->assertDatabaseHas('assistant_reviews', [
             'assistant_id' => $assistant->id,
@@ -287,7 +289,7 @@ class AssistantReleaseTest extends TestCase
             ->assertForbidden();
     }
 
-    public function testReleaseWithSameStageDoesNotDispatchEvent(): void
+    public function testItDoesNotDispatchTheEventForASameStageRelease(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -335,7 +337,7 @@ class AssistantReleaseTest extends TestCase
             ->assertJsonPath('errors.0.source.pointer', '/data/attributes/release_stage');
     }
 
-    public function testCannotSubmitForPublicationWithDeniedReview(): void
+    public function testItCannotSubmitForPublicationWithADeniedReview(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -363,7 +365,7 @@ class AssistantReleaseTest extends TestCase
             ->assertJsonPath('errors.0.source.pointer', '/data/attributes/release_stage');
     }
 
-    public function testCannotFederateAssistantWithDeniedReview(): void
+    public function testItCannotFederateAnAssistantWithADeniedReview(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -391,7 +393,7 @@ class AssistantReleaseTest extends TestCase
             ->assertJsonPath('errors.0.source.pointer', '/data/attributes/release_stage');
     }
 
-    public function testCanSubmitForPublicationAfterAdminClearsDeniedReview(): void
+    public function testItCanSubmitForPublicationAfterAdminClearsTheDeniedReview(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -425,8 +427,8 @@ class AssistantReleaseTest extends TestCase
         // Still pending approval, so the assistant stays private but records
         // the desired stage and keeps the review open.
         $assistant->refresh();
-        self::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
-        self::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->requested_release_stage);
+        static::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
+        static::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->requested_release_stage);
 
         $this->assertDatabaseHas('assistant_reviews', [
             'assistant_id' => $assistant->id,

@@ -71,6 +71,12 @@
     --assistant-detail-cover-radius: 0px;
 }
 
+/* The test chat's own open spring (520/560ms, see ChatDock) would keep
+   resizing past the morph's 400ms — while the morph runs, it stays put. */
+html[data-assistant-morph] :is(.test-panel, .test-panel.open, .launcher .test-panel, .launcher .test-panel.open) {
+    transition: none;
+}
+
 /* The card's banner, glyph and title spring into (or back out of) the
    detail cover. The handle rides along with the title (its movement is set
    from morphToDetail.ts); these timings also pace its fade. */

@@ -74,6 +74,12 @@ return new class() extends Migration {
                 ->cascadeOnDelete();
             $table->text('text');
             $table->json('changed_keys')->nullable();
+            // Full serialized state of the assistant at this version, captured
+            // when the creator submits for review ("frozen draft"). Version 0
+            // is the mutable working draft; every submit overwrites its
+            // payload. Not exposed through the API — internal to the
+            // versioning/rollback machinery.
+            $table->json('payload')->nullable();
             $table->timestamps();
 
             // Prevents concurrent AssistantUpdatedVersion listeners from
@@ -137,6 +143,7 @@ return new class() extends Migration {
             $table->string('status')->default('pending');
             $table->text('reason')->nullable();
             $table->timestamp('reviewed_at')->nullable();
+            $table->json('history')->nullable();
             $table->timestamps();
         });
 

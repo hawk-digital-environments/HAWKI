@@ -9,8 +9,8 @@ use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantReview;
 use App\Models\Assistants\AssistantTag;
 use App\Models\User;
-use App\Services\Assistant\Listeners\AssistantResetReviewOnUpdate;
 use App\Services\Assistant\Listeners\AssistantUpdatedVersion;
+use App\Services\Assistant\Listeners\UnpublishReleasedAssistantOnEdit;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\AssistantReviewStatus;
 use App\Services\System\Time\CarbonClock;
@@ -39,7 +39,7 @@ class AssistantUpdateTest extends TestCase
     {
         Event::fake(AssistantUpdatedEvent::class);
         Event::assertListening(AssistantUpdatedEvent::class, AssistantUpdatedVersion::class);
-        Event::assertListening(AssistantUpdatedEvent::class, AssistantResetReviewOnUpdate::class);
+        Event::assertListening(AssistantUpdatedEvent::class, UnpublishReleasedAssistantOnEdit::class);
 
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id, 'remixed_creator_id' => null]);
@@ -112,12 +112,12 @@ class AssistantUpdateTest extends TestCase
 
         // Within the debounce window the change merges into the latest version.
         $versions = $assistant->fresh()->assistantVersions;
-        self::assertCount(1, $versions);
-        self::assertEquals(['name'], $versions->first()->changed_keys);
-        self::assertSame('', $versions->first()->text);
+        static::assertCount(1, $versions);
+        static::assertEquals(['name'], $versions->first()->changed_keys);
+        static::assertSame('', $versions->first()->text);
     }
 
-    public function testMultipleUpdatesWithinWindowMergeIntoOneVersion(): void
+    public function testItMergesMultipleUpdatesWithinTheWindowIntoOneVersion(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
@@ -138,22 +138,20 @@ class AssistantUpdateTest extends TestCase
 
         $versions = $assistant->fresh()->assistantVersions()->orderBy('version')->get();
 
-        self::assertCount(1, $versions);
-        self::assertEquals(['description', 'name'], $versions[0]->changed_keys);
-        self::assertSame('', $versions[0]->text);
+        static::assertCount(1, $versions);
+        static::assertEquals(['description', 'name'], $versions[0]->changed_keys);
+        static::assertSame('', $versions[0]->text);
     }
 
-    public function testChangeOutsideDebounceWindowCreatesNewVersion(): void
+    public function testItAccumulatesChangesOnTheDraftRowRegardlessOfTiming(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
 
         $this->actingAsUser($user);
 
-        // Drive the listener's clock from a controllable MockClock so the
-        // debounce window can be advanced deterministically. The listener reads
-        // and writes time solely through this injected clock, so advancing the
-        // MockClock moves both "now" and the version's updated_at in lockstep.
+        // Drive the app clock so advancing past the old debounce window is
+        // provable — the draft row must remain the single accumulator.
         $clock = new MockClock();
         $this->app->instance(CarbonClockInterface::class, new CarbonClock($clock));
 
@@ -162,9 +160,8 @@ class AssistantUpdateTest extends TestCase
         ]))
             ->assertOk();
 
-        self::assertCount(1, $assistant->fresh()->assistantVersions);
-
-        // Advance past the debounce window (default 10s).
+        // Advance past the debounce window the previous journal-style
+        // implementation used (default 10s) — no new version row appears.
         $clock->sleep(11);
 
         $this->jsonApiRaw('patch', "/api/hawki/v1/assistants/{$assistant->id}", $this->updatePayload($assistant, [
@@ -173,12 +170,12 @@ class AssistantUpdateTest extends TestCase
             ->assertOk();
 
         $versions = $assistant->fresh()->assistantVersions()->orderBy('version')->get();
-        self::assertCount(2, $versions);
-        self::assertEquals(['name'], $versions[0]->changed_keys);
-        self::assertEquals(['description'], $versions[1]->changed_keys);
+        static::assertCount(1, $versions);
+        static::assertSame('0.0', $versions[0]->version);
+        static::assertEquals(['description', 'name'], $versions[0]->changed_keys);
     }
 
-    public function testSlidingWindowExtendsOnEachChange(): void
+    public function testItExtendsTheWindowOnEachChange(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
@@ -209,8 +206,8 @@ class AssistantUpdateTest extends TestCase
 
         // All three changes collapsed into the single (baseline) version via the sliding window.
         $versions = $assistant->fresh()->assistantVersions;
-        self::assertCount(1, $versions);
-        self::assertEquals(['description', 'greeting', 'name'], $versions->first()->changed_keys);
+        static::assertCount(1, $versions);
+        static::assertEquals(['description', 'greeting', 'name'], $versions->first()->changed_keys);
     }
 
     public function testRapidSameKeyUpdatesAreDebouncedIntoOneVersion(): void
@@ -233,7 +230,7 @@ class AssistantUpdateTest extends TestCase
         ]))
             ->assertOk();
 
-        self::assertSame($initialVersionCount, $assistant->fresh()->assistantVersions()->count());
+        static::assertSame($initialVersionCount, $assistant->fresh()->assistantVersions()->count());
     }
 
     public function testCanUpdateAssistantWithTags(): void
@@ -252,12 +249,12 @@ class AssistantUpdateTest extends TestCase
             ->assertOk();
 
         $assistant->refresh();
-        self::assertEquals(2, $assistant->assistantTags()->count());
-        self::assertTrue($assistant->assistantTags->pluck('text')->contains('tag-one'));
-        self::assertTrue($assistant->assistantTags->pluck('text')->contains('tag-two'));
+        static::assertEquals(2, $assistant->assistantTags()->count());
+        static::assertTrue($assistant->assistantTags->pluck('text')->contains('tag-one'));
+        static::assertTrue($assistant->assistantTags->pluck('text')->contains('tag-two'));
     }
 
-    public function testUpdateResetsReviewToPending(): void
+    public function testItUnpublishesAReleasedAssistantOnUpdate(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -277,11 +274,14 @@ class AssistantUpdateTest extends TestCase
         ]))
             ->assertOk();
 
-        $this->assertDatabaseHas('assistant_reviews', [
-            'assistant_id' => $assistant->id,
-            'status' => AssistantReviewStatus::PENDING->value,
-            'reason' => 'Assistant updated since last review',
-        ]);
+        // The first content edit demotes the released assistant to private:
+        // the change never reaches users, and the creator must resubmit for
+        // review before it is published again.
+        static::assertSame(AssistantReleaseStage::PRIVATE, $assistant->fresh()->release_stage);
+        static::assertNull($assistant->fresh()->requested_release_stage);
+
+        // The stage-change cascade tears down the non-denied review.
+        $this->assertDatabaseMissing('assistant_reviews', ['assistant_id' => $assistant->id]);
     }
 
     public function testUpdateDoesNotCreateReviewWhenNoneExists(): void
@@ -324,7 +324,7 @@ class AssistantUpdateTest extends TestCase
             'name' => 'Updated Name',
         ]);
 
-        self::assertCount(1, $assistant->fresh()->assistantVersions);
+        static::assertCount(1, $assistant->fresh()->assistantVersions);
     }
 
     public function testUpdateDoesNotResetReviewWhenDraft(): void

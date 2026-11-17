@@ -30,6 +30,7 @@
         onFilterChange,
         hero,
         title,
+        filters,
         emptyTitle = __('assistants.browser.empty_title'),
         emptyDescription = __('assistants.browser.empty_description')
     } = $props<{
@@ -40,12 +41,18 @@
         /** Called with the query to search for (debounced typing, Enter, icon click). */
         onSearchChange: (query: string) => void;
         /** Called with the next filter set whenever a category is toggled or reset. */
-        onFilterChange: (filters: Set<string>) => void;
+        onFilterChange?: (filters: Set<string>) => void;
         /** Hero content (e.g. a page title) rendered above the search controls;
          *  turns the controls into a vertically centred hero section. */
         hero?: Snippet;
         /** Page title rendered as the h1 above the search controls. */
         title?: string;
+        /**
+         * Replaces the category bar with the page's own filter controls (e.g.
+         * the reviews page's status tabs). Categories are the wrong axis for
+         * every list that filters by state instead of topic.
+         */
+        filters?: Snippet;
         emptyTitle?: string;
         emptyDescription?: string;
     }>();
@@ -176,10 +183,14 @@
         loading={list.loading}
         loadingLabel={__('assistants.browser.loading')}
     />
-    <CategoryBar
-        {activeFilters}
-        {onFilterChange}
-    />
+    {#if filters}
+        {@render filters()}
+    {:else}
+        <CategoryBar
+            {activeFilters}
+            {onFilterChange}
+        />
+    {/if}
 {/snippet}
 
 {#if hero}

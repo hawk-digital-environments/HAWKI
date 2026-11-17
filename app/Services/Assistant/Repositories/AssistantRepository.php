@@ -37,6 +37,11 @@ class AssistantRepository extends AbstractRepository
         });
     }
 
+    /**
+     * Org admins see another user's private or draft assistant only while a
+     * review record exists — deciding or re-deciding needs it; anything
+     * unsubmitted stays the creator's business.
+     */
     public function isVisibleTo(Assistant $assistant, User $user): bool
     {
         if (\in_array($assistant->release_stage, AssistantReleaseStage::publiclyVisibleCases(), true)) {
@@ -44,6 +49,10 @@ class AssistantRepository extends AbstractRepository
         }
 
         if ($assistant->creator_id === $user->id) {
+            return true;
+        }
+
+        if ($this->isAdminOf($user, $assistant->organization_id) && null !== $assistant->assistantReview) {
             return true;
         }
 
@@ -64,15 +73,17 @@ class AssistantRepository extends AbstractRepository
     /**
      * Is the user an administrator of the given organization?
      */
-    public function isAdminOf(User $user, ?Organization $organization): bool
+    public function isAdminOf(User $user, null|int|Organization $organization): bool
     {
-        if (null === $organization) {
+        $organizationId = $organization instanceof Organization ? $organization->id : $organization;
+
+        if (null === $organizationId) {
             return false;
         }
 
         return $user->organizations()
             ->wherePivot('role', 'admin')
-            ->where('organizations.id', $organization->id)
+            ->where('organizations.id', $organizationId)
             ->exists();
     }
 
@@ -87,7 +98,7 @@ class AssistantRepository extends AbstractRepository
             return true;
         }
 
-        return $this->isAdminOf($user, $assistant->organization);
+        return $this->isAdminOf($user, $assistant->organization_id);
     }
 
     /**
@@ -181,6 +192,16 @@ class AssistantRepository extends AbstractRepository
     public function loadRelations(Assistant $assistant, array $relations): Assistant
     {
         return $assistant->load($relations);
+    }
+
+    /**
+     * Re-fetch the assistant by key under a row lock, for decisions made
+     * inside the caller's transaction. Null when the row vanished between
+     * the caller's fetch and this lock (a lost race).
+     */
+    public function lockForUpdate(Assistant $assistant): ?Assistant
+    {
+        return $this->getQuery()->whereKey($assistant->getKey())->lockForUpdate()->first();
     }
 
     public function findOneByHandle(string $handle): ?Assistant

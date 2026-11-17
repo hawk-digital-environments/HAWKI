@@ -123,7 +123,11 @@ const WireFeedbackSchema = z.object({
 export const AssistantReviewWireSchema = z.object({
     id: z.string(),
     status: z.enum(ReviewStage),
-    reason: z.string().nullable().optional()
+    reason: z.string().nullable().optional(),
+    /** When the decision was made; null while pending. */
+    reviewed_at: z.string().nullable().optional(),
+    /** Fallback when no explicit decision date exists. */
+    updated_at: z.string().nullable().optional()
 });
 
 /** Backend `assistant_setting_values[].setting.key` → the assistant field it fills. */
@@ -312,7 +316,8 @@ const AssistantsSchema: z.ZodType<Assistant> = AssistantResourceSchema.transform
         wire.assistant_review ?
             {
                 status: wire.assistant_review.status,
-                reason: wire.assistant_review.reason ?? null
+                reason: wire.assistant_review.reason ?? null,
+                reviewedAt: wire.assistant_review.reviewed_at ?? wire.assistant_review.updated_at ?? null
             }
         :   null,
 

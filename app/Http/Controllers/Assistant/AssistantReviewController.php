@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Assistant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Assistant\AssistantReviewPermissionsRequest;
 use App\Models\Assistants\AssistantReview;
 use App\Services\Assistant\AssistantReviewService;
 use App\Services\Assistant\Values\AssistantReviewStatus;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use LaravelJsonApi\Laravel\Http\Controllers\Actions;
 
 class AssistantReviewController extends Controller
@@ -16,9 +19,24 @@ class AssistantReviewController extends Controller
     use Actions\FetchMany;
     use Actions\Update;
     private ?AssistantReviewStatus $preUpdateStatus = null;
+    private ?string $preUpdateReason = null;
 
     public function __construct(private readonly AssistantReviewService $reviewService)
     {
+    }
+
+    /**
+     * The `actions/permissions` probe: the class-level `updateAny` verdict
+     * for the signed-in user, in the action-links ALLOWED/DENIED vocabulary.
+     * Visibility only; the per-review policies stay the boundary.
+     */
+    public function permissions(AssistantReviewPermissionsRequest $request): JsonResponse
+    {
+        $response = Gate::inspect('updateAny', AssistantReview::class);
+
+        return response()->json(['data' => [
+            'updateAny' => $response->allowed() ? 'ALLOWED' : 'DENIED',
+        ]]);
     }
 
     /**
@@ -34,6 +52,7 @@ class AssistantReviewController extends Controller
         // honours casts for originals).
         $original = $review->getOriginal('status');
         $this->preUpdateStatus = $original instanceof AssistantReviewStatus ? $original : null;
+        $this->preUpdateReason = $review->getOriginal('reason');
     }
 
     /**
@@ -50,6 +69,6 @@ class AssistantReviewController extends Controller
     {
         $reviewer = $request instanceof Request ? $request->user() : null;
 
-        $this->reviewService->applyStatusTransition($review, $this->preUpdateStatus, $reviewer);
+        $this->reviewService->applyStatusTransition($review, $this->preUpdateStatus, $reviewer, $this->preUpdateReason);
     }
 }

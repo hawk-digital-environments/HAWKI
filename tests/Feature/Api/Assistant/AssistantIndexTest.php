@@ -7,11 +7,13 @@ namespace Tests\Feature\Api\Assistant;
 use App\Models\Ai\AiModel;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantCategory;
+use App\Models\Assistants\AssistantReview;
 use App\Models\Assistants\AssistantSetting;
 use App\Models\Assistants\AssistantSettingValue;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Values\AssistantReleaseStage;
+use App\Services\Assistant\Values\AssistantReviewStatus;
 use Database\Seeders\AssistantSettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -95,7 +97,7 @@ class AssistantIndexTest extends TestCase
 
         $included = collect($response->json('included'));
         $creatorResource = $included->first(static fn ($item) => 'users' === $item['type']);
-        self::assertEquals($user->name, $creatorResource['attributes']['display_name']);
+        static::assertEquals($user->name, $creatorResource['attributes']['display_name']);
     }
 
     public function testCanListAssistantsWithVersions(): void
@@ -110,8 +112,64 @@ class AssistantIndexTest extends TestCase
 
         $included = collect($response->json('included'));
         $versionResource = $included->first(static fn ($item) => 'assistant-versions' === $item['type']);
-        self::assertEquals('', $versionResource['attributes']['text']);
-        self::assertEquals('1.0', $versionResource['attributes']['version']);
+        static::assertEquals('', $versionResource['attributes']['text']);
+        static::assertEquals('0.0', $versionResource['attributes']['version']);
+    }
+
+    public function testItReturnsOnlyOwnSubmittedAssistantsForTheReviewStatusFilter(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        $pending = Assistant::factory()->create(['creator_id' => $user->id]);
+        AssistantReview::forceCreate([
+            'assistant_id' => $pending->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+        ]);
+        $denied = Assistant::factory()->create(['creator_id' => $user->id]);
+        AssistantReview::forceCreate([
+            'assistant_id' => $denied->id,
+            'status' => AssistantReviewStatus::DENIED->value,
+        ]);
+        // No review row: never in the list.
+        Assistant::factory()->create(['creator_id' => $user->id]);
+        // Another user's submission: never in the list.
+        $foreign = Assistant::factory()->create(['creator_id' => $other->id]);
+        AssistantReview::forceCreate([
+            'assistant_id' => $foreign->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+        ]);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?filter[review_status]=pending,denied,approved,needs_revision')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => (string) $pending->id])
+            ->assertJsonFragment(['id' => (string) $denied->id]);
+    }
+
+    public function testItMatchesASingleStatusInTheReviewStatusFilter(): void
+    {
+        $user = User::factory()->create();
+
+        $pending = Assistant::factory()->create(['creator_id' => $user->id]);
+        AssistantReview::forceCreate([
+            'assistant_id' => $pending->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+        ]);
+        $approved = Assistant::factory()->create(['creator_id' => $user->id]);
+        AssistantReview::forceCreate([
+            'assistant_id' => $approved->id,
+            'status' => AssistantReviewStatus::APPROVED->value,
+        ]);
+
+        $this->actingAsUser($user);
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?filter[review_status]=pending')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonFragment(['id' => (string) $pending->id]);
     }
 
     public function testCanFilterAssistantsByCategory(): void
@@ -133,7 +191,7 @@ class AssistantIndexTest extends TestCase
         $catResources = $included->filter(static fn ($item) => 'assistant-categories' === $item['type']);
 
         foreach ($catResources as $catResource) {
-            self::assertEquals('education', $catResource['attributes']['text']);
+            static::assertEquals('education', $catResource['attributes']['text']);
         }
     }
 
@@ -157,11 +215,11 @@ class AssistantIndexTest extends TestCase
         $catResources = $included->filter(static fn ($item) => 'assistant-categories' === $item['type']);
 
         foreach ($catResources as $catResource) {
-            self::assertContains($catResource['attributes']['text'], ['education', 'general']);
+            static::assertContains($catResource['attributes']['text'], ['education', 'general']);
         }
     }
 
-    public function testFilterByCategoryReturnsEmptyWhenNoMatch(): void
+    public function testItReturnsEmptyForACategoryFilterWithoutMatches(): void
     {
         $user = User::factory()->create();
         $general = AssistantCategory::factory()->create(['text' => 'general']);
@@ -174,7 +232,7 @@ class AssistantIndexTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
-    public function testListWithoutCategoryFilterReturnsAll(): void
+    public function testItReturnsAllAssistantsWithoutACategoryFilter(): void
     {
         $user = User::factory()->create();
         Assistant::factory()->count(3)->create(['creator_id' => $user->id]);
@@ -219,7 +277,7 @@ class AssistantIndexTest extends TestCase
 
         $included = collect($response->json('included'));
         $orgResource = $included->first(static fn ($item) => 'organizations' === $item['type']);
-        self::assertEquals($org->name, $orgResource['attributes']['name']);
+        static::assertEquals($org->name, $orgResource['attributes']['name']);
     }
 
     public function testCanListAssistantsWithSettingValuesAndCategory(): void
@@ -269,9 +327,9 @@ class AssistantIndexTest extends TestCase
 
         $included = collect($response->json('included'));
         $valueResource = $included->first(static fn ($item) => 'assistant-setting-values' === $item['type']);
-        self::assertEquals('de', $valueResource['attributes']['value']);
+        static::assertEquals('de', $valueResource['attributes']['value']);
         $catResource = $included->first(static fn ($item) => 'assistant-categories' === $item['type']);
-        self::assertEquals('education', $catResource['attributes']['text']);
+        static::assertEquals('education', $catResource['attributes']['text']);
     }
 
     public function testUserCannotSeeOtherUsersPrivateAssistantInList(): void
@@ -369,12 +427,12 @@ class AssistantIndexTest extends TestCase
 
         $links = $response->json('links');
 
-        self::assertStringContainsString('include=assistant_tags%2Cassistant_category', $links['first']);
-        self::assertStringContainsString('fields%5Bassistant-tags%5D=text', $links['first']);
-        self::assertStringContainsString('filter%5Bassistant_category%5D%5Btext%5D=general', $links['first']);
-        self::assertStringContainsString('page%5Bsize%5D=5', $links['first']);
-        self::assertStringContainsString('page%5Bnumber%5D=1', $links['first']);
-        self::assertStringContainsString('page%5Bnumber%5D=2', $links['next']);
+        static::assertStringContainsString('include=assistant_tags%2Cassistant_category', $links['first']);
+        static::assertStringContainsString('fields%5Bassistant-tags%5D=text', $links['first']);
+        static::assertStringContainsString('filter%5Bassistant_category%5D%5Btext%5D=general', $links['first']);
+        static::assertStringContainsString('page%5Bsize%5D=5', $links['first']);
+        static::assertStringContainsString('page%5Bnumber%5D=1', $links['first']);
+        static::assertStringContainsString('page%5Bnumber%5D=2', $links['next']);
     }
 
     public function testPaginationAdvancesPagesCorrectly(): void
@@ -393,8 +451,8 @@ class AssistantIndexTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
-        self::assertStringContainsString('page%5Bnumber%5D=2', $page1->json('links.next'));
-        self::assertNull($page1->json('links.prev'));
+        static::assertStringContainsString('page%5Bnumber%5D=2', $page1->json('links.next'));
+        static::assertNull($page1->json('links.prev'));
 
         $page2Query = http_build_query(['page' => ['size' => 1, 'number' => 2]]);
 
@@ -402,8 +460,8 @@ class AssistantIndexTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
-        self::assertStringContainsString('page%5Bnumber%5D=1', $page2->json('links.prev'));
-        self::assertNull($page2->json('links.next'));
+        static::assertStringContainsString('page%5Bnumber%5D=1', $page2->json('links.prev'));
+        static::assertNull($page2->json('links.next'));
     }
 
     public function testUserCanSeeFederatedAssistantInList(): void
@@ -423,7 +481,7 @@ class AssistantIndexTest extends TestCase
             ->assertJsonCount(1, 'data');
     }
 
-    public function testListShowsDeniedActionLinksForNonOwner(): void
+    public function testItShowsDeniedActionLinksToNonOwners(): void
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
@@ -468,7 +526,7 @@ class AssistantIndexTest extends TestCase
             ->assertJsonCount(2, 'data');
     }
 
-    public function testFilterByNameIsCaseInsensitive(): void
+    public function testItFiltersByNameCaseInsensitively(): void
     {
         $user = User::factory()->create();
         Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Code Helper']);
@@ -480,7 +538,7 @@ class AssistantIndexTest extends TestCase
             ->assertJsonCount(1, 'data');
     }
 
-    public function testFilterByNameReturnsEmptyWhenNoMatch(): void
+    public function testItReturnsEmptyForANameFilterWithoutMatches(): void
     {
         $user = User::factory()->create();
         Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Code Helper']);
@@ -547,7 +605,7 @@ class AssistantIndexTest extends TestCase
             ->assertJsonCount(2, 'data');
     }
 
-    public function testCanFilterAssistantReleaseStatus(): void
+    public function testItCanFilterByAssistantReleaseStatus(): void
     {
         $user = User::factory()->create();
         $draftAssistant = Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Release draft', 'release_stage' => AssistantReleaseStage::DRAFT]);
@@ -568,7 +626,7 @@ class AssistantIndexTest extends TestCase
             ->assertJsonCount(2, 'data');
 
         $ids = collect($response->json('data'))->pluck('id')->sort()->values();
-        self::assertSame([(string) $draftAssistant->id, (string) $privateAssistant->id], $ids->all());
+        static::assertSame([(string) $draftAssistant->id, (string) $privateAssistant->id], $ids->all());
     }
 
     public function testIsFavoriteFilterOnlyScopesToAuthenticatedUser(): void
@@ -646,7 +704,7 @@ class AssistantIndexTest extends TestCase
         }
     }
 
-    public function testCanFilterAssistantsBySharedWithUser(): void
+    public function testItCanFilterAssistantsBySharedWithUser(): void
     {
         $owner = User::factory()->create();
         $user = User::factory()->create();
@@ -678,7 +736,7 @@ class AssistantIndexTest extends TestCase
             ->assertJsonPath('data.0.attributes.name', 'Shared with me');
     }
 
-    public function testFilterBySharedWithUserReturnsEmptyWhenNothingShared(): void
+    public function testItReturnsEmptyForTheSharedWithUserFilterWhenNothingIsShared(): void
     {
         $user = User::factory()->create();
 

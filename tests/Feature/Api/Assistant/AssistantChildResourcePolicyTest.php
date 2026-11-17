@@ -22,7 +22,7 @@ class AssistantChildResourcePolicyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function testSettingValuesIndexScopedToPrivilegedAssistants(): void
+    public function testItScopesTheSettingValuesIndexToPrivilegedAssistants(): void
     {
         $org = Organization::first();
 
@@ -58,11 +58,11 @@ class AssistantChildResourcePolicyTest extends TestCase
             ->assertOk();
 
         $ids = collect($response->json('data'))->pluck('id');
-        self::assertContains((string) $ownedValue->id, $ids);
-        self::assertNotContains((string) AssistantSettingValue::where('assistant_id', $inaccessible->id)->value('id'), $ids);
+        static::assertContains((string) $ownedValue->id, $ids);
+        static::assertNotContains((string) AssistantSettingValue::where('assistant_id', $inaccessible->id)->value('id'), $ids);
     }
 
-    public function testSettingValuesShowForbiddenToNonPrivilegedViewer(): void
+    public function testItForbidsSettingValuesShowToNonPrivilegedViewers(): void
     {
         $org = Organization::first();
         $owner = User::factory()->create();
@@ -91,7 +91,7 @@ class AssistantChildResourcePolicyTest extends TestCase
             ->assertOk();
     }
 
-    public function testTagsIndexVisibleToAnyAuthenticatedUser(): void
+    public function testItShowsTheTagsIndexToAnyAuthenticatedUser(): void
     {
         // Tags are a global, shared library of unique labels (no ownership,
         // no per-assistant scoping). Any authenticated user can list and show
@@ -105,13 +105,13 @@ class AssistantChildResourcePolicyTest extends TestCase
         $ids = collect($this->jsonApiRaw('get', '/api/hawki/v1/assistant-tags')->assertOk()->json('data'))
             ->pluck('id');
 
-        self::assertContains((string) $ownedTag->id, $ids);
-        self::assertContains((string) $otherTag->id, $ids);
+        static::assertContains((string) $ownedTag->id, $ids);
+        static::assertContains((string) $otherTag->id, $ids);
 
         $this->jsonApiRaw('get', "/api/hawki/v1/assistant-tags/{$otherTag->id}")->assertOk();
     }
 
-    public function testOrgAdminSeesOrgAssistantsSettingValues(): void
+    public function testItLetsAnOrgAdminSeeOrgAssistantsSettingValues(): void
     {
         $org = Organization::first();
         $owner = User::factory()->create();
@@ -136,10 +136,10 @@ class AssistantChildResourcePolicyTest extends TestCase
 
         $ids = collect($this->jsonApiRaw('get', '/api/hawki/v1/assistant-setting-values')->assertOk()->json('data'))
             ->pluck('id');
-        self::assertContains((string) $value->id, $ids);
+        static::assertContains((string) $value->id, $ids);
     }
 
-    public function testReviewsIndexScopedToPrivilegedAssistants(): void
+    public function testItScopesTheReviewsIndexToPrivilegedAssistants(): void
     {
         $org = Organization::first();
 
@@ -166,17 +166,20 @@ class AssistantChildResourcePolicyTest extends TestCase
             'status' => AssistantReviewStatus::PENDING->value,
         ]);
 
+        // The index lists accessible reviews: creators see their own
+        // submissions, even though the admin menu itself is gated by the
+        // `actions/permissions` probe.
         $this->actingAsUser($owner);
 
         $response = $this->jsonApiRaw('get', '/api/hawki/v1/assistant-reviews')
             ->assertOk();
 
         $ids = collect($response->json('data'))->pluck('id');
-        self::assertContains((string) $ownedReview->id, $ids);
-        self::assertNotContains((string) AssistantReview::where('assistant_id', $inaccessible->id)->value('id'), $ids);
+        static::assertContains((string) $ownedReview->id, $ids);
+        static::assertNotContains((string) AssistantReview::where('assistant_id', $inaccessible->id)->value('id'), $ids);
     }
 
-    public function testOrgAdminSeesOrgAssistantsReviews(): void
+    public function testItLetsAnOrgAdminSeeOrgAssistantsReviews(): void
     {
         $org = Organization::first();
         $owner = User::factory()->create();
@@ -197,10 +200,43 @@ class AssistantChildResourcePolicyTest extends TestCase
 
         $ids = collect($this->jsonApiRaw('get', '/api/hawki/v1/assistant-reviews')->assertOk()->json('data'))
             ->pluck('id');
-        self::assertContains((string) $review->id, $ids);
+        static::assertContains((string) $review->id, $ids);
     }
 
-    public function testNonPrivilegedUserSeesNoReviews(): void
+    public function testItShowsAnOrgAdminOnlyTheirOwnOrganizationsReviews(): void
+    {
+        $org = Organization::first();
+        $otherOrg = Organization::create(['name' => 'Other University']);
+        $owner = User::factory()->create();
+
+        $ownReview = AssistantReview::forceCreate([
+            'assistant_id' => Assistant::factory()->create([
+                'creator_id' => $owner->id,
+                'organization_id' => $org->id,
+                'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+            ])->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+        ]);
+        $foreignReview = AssistantReview::forceCreate([
+            'assistant_id' => Assistant::factory()->create([
+                'creator_id' => $owner->id,
+                'organization_id' => $otherOrg->id,
+                'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
+            ])->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+        ]);
+
+        $admin = User::factory()->create();
+        $admin->organizations()->attach($org, ['role' => 'admin']);
+        $this->actingAsUser($admin);
+
+        $ids = collect($this->jsonApiRaw('get', '/api/hawki/v1/assistant-reviews')->assertOk()->json('data'))
+            ->pluck('id');
+        static::assertContains((string) $ownReview->id, $ids);
+        static::assertNotContains((string) $foreignReview->id, $ids);
+    }
+
+    public function testItShowsNoReviewsToNonPrivilegedUsers(): void
     {
         $org = Organization::first();
         $owner = User::factory()->create();
@@ -220,6 +256,6 @@ class AssistantChildResourcePolicyTest extends TestCase
         $response = $this->jsonApiRaw('get', '/api/hawki/v1/assistant-reviews')
             ->assertOk();
 
-        self::assertEmpty($response->json('data'));
+        static::assertEmpty($response->json('data'));
     }
 }

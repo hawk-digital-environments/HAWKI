@@ -6,86 +6,50 @@ namespace App\Services\Assistant\Listeners;
 
 use App\Models\Assistants\AssistantVersion;
 use App\Services\Assistant\Events\AssistantUpdatedEvent;
-use App\Services\Assistant\Values\AssistantReleaseStage;
-use App\Services\System\Time\CarbonClockInterface;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Database\DatabaseManager;
 
+/**
+ * Records content edits on the assistant's working-draft row (version 0.0).
+ *
+ * The changed keys accumulate there until the next approval promotes the
+ * draft, which resets them — they describe the delta between the published
+ * state and the pending draft, which is exactly what a reviewer diff shows.
+ * Edits never create additional version rows, so the debounce window of the
+ * previous journal-style implementation is obsolete; the row is still locked
+ * so concurrent edits serialise.
+ */
 class AssistantUpdatedVersion
 {
-    public function __construct(
-        private readonly ConfigRepository $config,
-        private readonly DatabaseManager $db,
-        private readonly CarbonClockInterface $clock,
-    ) {
-    }
-
-    private static ?int $getDebounceUpdateDefault = null;
-
-    private function getDebounceUpdateDefault(): int
+    public function __construct(private readonly DatabaseManager $db)
     {
-        return self::$getDebounceUpdateDefault ??= (int) $this->config->get(
-            'assistant.assistant_versions.debounce_seconds',
-            10
-        );
     }
 
     public function handle(AssistantUpdatedEvent $event): void
     {
-        if ($event->assistant->release_stage === AssistantReleaseStage::DRAFT) {
+        if ([] === $event->changedKeys) {
             return;
         }
 
-
-        $seconds = $this -> getDebounceUpdateDefault(); 
-
-        $this->db->transaction(function () use ($event, $seconds): void {
-            // Lock the latest version row so two concurrent updates cannot
-            // both read the same max('version') and both insert duplicate rows.
-            $latest = $event->assistant
-                ->assistantVersions()
-                ->latest('version')
+        $this->db->transaction(function () use ($event): void {
+            $draft = $event->assistant->assistantVersions()
+                ->where('version', AssistantVersion::DRAFT_VERSION)
                 ->lockForUpdate()
                 ->first();
 
-            // Time is fully driven by the injected clock: both the "now" read
-            // below and the updated_at written on merge/create come from it, so
-            // the debounce comparison uses a single source of truth. Eloquent's
-            // auto-timestamps are overridden explicitly (updateTimestamps() keeps
-            // dirty values), otherwise the comparison would mix clock-time with
-            // Eloquent's own Carbon::now() and diverge under test-time control.
-            $now = $this->clock->now();
-
-            // Sliding window: if the most recent version was touched within the
-            // debounce window, merge this change into it. The update refreshes
-            // updated_at, which extends the window for the next change. The
-            // human release note in `text` is deliberately left untouched — it
-            // was written by a deliberate release, not by these edits.
-            if (null !== $latest && $now->subSeconds($seconds) <= $latest->updated_at) {
-                $keys = $this->mergeKeys($latest->changed_keys ?? [], $event->changedKeys);
-
-                $latest->forceFill([
-                    'changed_keys' => $keys,
-                    'updated_at' => $now,
-                ])->save();
+            if (null === $draft) {
+                // Covers assistants whose rows predate the draft model.
+                $event->assistant->assistantVersions()->save((new AssistantVersion())->forceFill([
+                    'text' => '',
+                    'version' => AssistantVersion::DRAFT_VERSION,
+                    'changed_keys' => $this->mergeKeys([], $event->changedKeys),
+                ]), );
 
                 return;
             }
 
-            $lastVersion = $event->assistant->assistantVersions()->max('version') ?? 0.0;
-
-            // version is server-controlled and intentionally not mass-assignable.
-            $event->assistant->assistantVersions()->save(
-                (new AssistantVersion())->forceFill([
-                    // `text` carries the creator's release note (written by the
-                    // release action); content edits leave it empty.
-                    'text' => '',
-                    'version' => $lastVersion + 1.0,
-                    'changed_keys' => $event->changedKeys,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]),
-            );
+            $draft->forceFill([
+                'changed_keys' => $this->mergeKeys($draft->changed_keys ?? [], $event->changedKeys),
+            ])->save();
         });
     }
 

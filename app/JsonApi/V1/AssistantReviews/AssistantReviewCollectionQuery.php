@@ -13,6 +13,7 @@ class AssistantReviewCollectionQuery extends ResourceQuery
     {
         return [
             'fields' => [JsonApiRule::fieldSets()],
+            'filter' => [JsonApiRule::filter()],
             'include' => [JsonApiRule::includePaths()],
             'page' => [JsonApiRule::page()],
         ];

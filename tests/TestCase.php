@@ -24,6 +24,9 @@ abstract class TestCase extends BaseTestCase
         // here so every test starts from a clean cache, regardless of trait
         // usage. This keeps production code free of test-aware bypasses.
         Cache::flush();
+
+        // Most fixtures assume org-free users; the default-org assignment has its own tests.
+        config()->set('hawki.organization.default', '');
     }
 
     protected function jsonApiRaw(string $method, string $uri, array $data = [], array $headers = []): TestResponse

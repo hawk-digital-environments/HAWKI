@@ -1,0 +1,7 @@
+{
+    "admin": {
+        "title": "Administration",
+        "forbidden_title": "No access",
+        "forbidden": "You do not have permission to view this page."
+    }
+}

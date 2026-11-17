@@ -8,12 +8,12 @@ use App\Http\Controllers\Assistant\AssistantAvatarController;
 use App\Http\Controllers\Assistant\AssistantCategoryController;
 use App\Http\Controllers\Assistant\AssistantController;
 use App\Http\Controllers\Assistant\AssistantFeedbackController;
+use App\Http\Controllers\Assistant\AssistantGuideTurnController;
 use App\Http\Controllers\Assistant\AssistantReviewController;
 use App\Http\Controllers\Assistant\AssistantSettingController;
 use App\Http\Controllers\Assistant\AssistantSettingValueController;
 use App\Http\Controllers\Assistant\AssistantTagController;
 use App\Http\Controllers\Assistant\AssistantUserPromptController;
-use App\Http\Controllers\Assistant\AssistantGuideTurnController;
 use App\Http\Controllers\ClientSchemaController;
 use Illuminate\Support\Facades\Route;
 use LaravelJsonApi\Laravel\Routing\ActionRegistrar;
@@ -77,6 +77,7 @@ final class AssistantApiRoutes
                 $actions->get('actions/handles', 'handles');
                 $actions->withId()->post('actions/remix', 'remix');
                 $actions->withId()->post('actions/release', 'release');
+                $actions->withId()->post('actions/rollback', 'rollback');
                 $actions->withId()->post('actions/favorite', 'addFavorite');
                 $actions->withId()->delete('actions/favorite', 'removeFavorite');
                 $actions->withId()->post('actions/attachment', 'uploadAttachment');
@@ -102,6 +103,11 @@ final class AssistantApiRoutes
             ->only('index', 'update')
             ->relationships(static function (Relationships $relationships): void {
                 $relationships->hasOne('assistant')->readOnly();
+            })
+            ->actions(static function (ActionRegistrar $actions): void {
+                // Collection-level probe: may the signed-in user decide
+                // reviews at all (class-level verdict, no {id}).
+                $actions->get('actions/permissions', 'permissions');
             });
 
         $server->resource('assistant-settings', AssistantSettingController::class)

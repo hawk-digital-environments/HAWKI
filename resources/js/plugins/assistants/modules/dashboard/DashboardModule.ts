@@ -1,4 +1,4 @@
-import {HawkiCoreModule, HawkiModule} from "$lib/kernel/modules/types";
+import {HawkiCoreModule} from "$lib/kernel/modules/types";
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 export class DashboardModule implements HawkiCoreModule {
@@ -38,6 +38,11 @@ export class DashboardModule implements HawkiCoreModule {
             '/shared',
             () => import('$plugins/assistants/modules/dashboard/pages/shared/page.svelte'),
             {name: "assistants.dashboard.shared"}
+        );
+        registrar.lazyRoute(
+            '/reviews',
+            () => import('$plugins/assistants/modules/dashboard/pages/reviews/page.svelte'),
+            {name: "assistants.dashboard.reviews"}
         );
 
         registrar.lazyRoute(

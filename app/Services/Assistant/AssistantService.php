@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Assistant;
 
 use App\Models\Assistants\Assistant;
-use App\Models\Assistants\AssistantVersion;
 use App\Models\User;
 use App\Services\Assistant\Events\AssistantAttachmentStoredEvent;
 use App\Services\Assistant\Events\AssistantCreatedEvent;
@@ -30,6 +29,7 @@ readonly class AssistantService
         private AssistantRepository $repository,
         private AssistantOrganizationRepository $organizationRepository,
         private AssistantReviewRepository $reviewRepository,
+        private AssistantVersionService $versionService,
         private DatabaseManager $db,
         private EventDispatcher $events,
         private FileStorageService $fileStorage,
@@ -59,21 +59,12 @@ readonly class AssistantService
                 $this->repository->syncTools($clone, $source->ai_tools->pluck('id')->toArray());
             }
 
-            $latestVersion = $source->assistantVersions->sortByDesc('version')->first();
-
-            if ($latestVersion) {
-                // A remix starts with the same version number as the source, but an empty note.
-                // The remix's first edit will increment the version.
-                $clone->assistantVersions()->save((new AssistantVersion())->forceFill([
-                    'text' => '',
-                    'version' => $latestVersion->version,
-                    'changed_keys' => $latestVersion->changed_keys,
-                ]), );
-            }
+            // A remix starts a fresh version history — the created event seeds
+            // its own working draft (a remix is a new assistant, not a lineage).
 
             // Knowledge files are NOT remixed.
             // Each assistant owns its own files (and later its own RAG dataset), so the
-            // clone starts with an empty knowledge base. 
+            // clone starts with an empty knowledge base.
             // Otherwise a remix would need to trigger a rag workflow.
             $this->events->dispatch(new AssistantCreatedEvent($clone));
 
@@ -105,16 +96,14 @@ readonly class AssistantService
             $oldStage = $assistant->release_stage;
             $review = $assistant->assistantReview;
 
-            // A denied review would make the release below a no-op (the request
-            // validator is the primary gate there).
-            // It skips the note so a blocked release cannot overwrite the version history.
+            // A denied review makes the release below a no-op — and skips the
+            // freeze so a blocked release cannot overwrite the frozen draft.
             $isDenied = null !== $review && AssistantReviewStatus::DENIED === $review->status;
 
-            // The note describes the content revision being published, so it is
-            // recorded on the latest version row whichever way the release
-            // resolves — an immediate stage change or a review now pending.
-            if (null !== $note && !$isDenied) {
-                $this->applyVersionNote($assistant, $note);
+            // Every submit freezes the current state onto the working draft
+            // (overwrite semantics: the review judges exactly what was submitted).
+            if (!$isDenied) {
+                $this->versionService->freeze($assistant, $note);
             }
 
             // Draft / private are freely settable: publish immediately and drop
@@ -137,23 +126,17 @@ readonly class AssistantService
                 return $this->applyStageChange($assistant, $target);
             }
 
-            // Upward move into a broader public stage. Release stage change between two
-            // public stages (e.g. organizational -> federated) always needs a fresh
-            // approval, regardless of the current review status. A first publish
-            // from a non-public tier happens right away when already approved.
-            $isEscalation = $oldStage->isPublic();
-            $isApproved = null !== $review
-                && AssistantReviewStatus::APPROVED === $review->status;
-
-            if (!$isEscalation && $isApproved) {
-                return $this->applyStageChange($assistant, $target);
-            }
-
-            // Not yet approved, or a release stage change that requires re-approval: record
-            // the desired stage and (re)open the review as pending. The assistant
-            // stays at its current stage until an admin approves it. Reopening
-            // starts a fresh round, so a previous denial reason is cleared — a
-            // resubmission after NEEDS_REVISION is judged on its own merits.
+            // Upward move into a broader public stage: always a fresh review,
+            // regardless of any previous approval. An approved review only
+            // represents a current state while the assistant is public — once
+            // it has fallen back to private, the record is history and never
+            // takes effect by itself.
+            //
+            // Record the desired stage and (re)open the review as pending. The
+            // assistant stays at its current stage until an admin approves it.
+            // Reopening starts a fresh round, so a previous denial reason is
+            // cleared — a resubmission after NEEDS_REVISION is judged on its
+            // own merits.
             $this->reviewRepository->updateOrCreateForAssistant(
                 $assistant->id,
                 ['status' => AssistantReviewStatus::PENDING->value, 'reason' => null],
@@ -225,30 +208,5 @@ readonly class AssistantService
         }
 
         return $assistant;
-    }
-
-    /**
-     * Records the creator's release note on the latest version.
-     * Locked like the update listener locks the row, so a concurrent
-     * debounced edit cannot interleave within the release transaction.
-     */
-    private function applyVersionNote(Assistant $assistant, string $note): void
-    {
-        $latest = $assistant->assistantVersions()->latest('version')->lockForUpdate()->first();
-
-        if (null === $latest) {
-            // Every assistant normally gets v1.0 from the create listener; this
-            // covers records that predate it.
-            $assistant->assistantVersions()->save(
-                (new AssistantVersion())->forceFill([
-                    'text' => $note,
-                    'version' => 1.0,
-                ]),
-            );
-
-            return;
-        }
-
-        $latest->forceFill(['text' => $note])->save();
     }
 }

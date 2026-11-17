@@ -6,6 +6,8 @@ namespace App\Models\Assistants;
 
 use App\Models\User;
 use App\Policies\AssistantReviewPolicy;
+use App\Services\Assistant\Values\AssistantReviewDecisionEntry;
+use App\Services\Assistant\Values\AssistantReviewHistory;
 use App\Services\Assistant\Values\AssistantReviewStatus;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property Assistant                       $assistant
  * @property int                             $assistant_id
+ * @property null|array                      $history
  * @property int                             $id
  * @property null|string                     $reason
  * @property null|\Illuminate\Support\Carbon $reviewed_at
@@ -39,7 +42,18 @@ class AssistantReview extends Model
         return [
             'status' => AssistantReviewStatus::class,
             'reviewed_at' => 'datetime',
+            'history' => 'array',
         ];
+    }
+
+    /**
+     * Appends a decision to the history; see {@see AssistantReviewHistory}.
+     */
+    public function appendDecision(AssistantReviewDecisionEntry $entry): void
+    {
+        $this->history = AssistantReviewHistory::fromRows($this->history)
+            ->appended($entry)
+            ->toRows();
     }
 
     /**

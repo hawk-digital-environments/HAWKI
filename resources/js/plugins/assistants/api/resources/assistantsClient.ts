@@ -33,6 +33,9 @@ export const ASSISTANT_LIST_INCLUDES = [
     'creator',
     'assistant_category',
     'assistant_avatar',
+    // Seeds the detail modal's initial render with the change history, so
+    // its opening morph captures the settled layout.
+    'assistant_versions',
     'remixed_assistant'
 ] as const;
 
@@ -248,7 +251,7 @@ export async function getAssistantReview(id: string | null): Promise<Review | nu
         beforeSchema: (response) => (response?.data ? decodeJsonApiResourceResponse(response) : null),
         schema: AssistantReviewWireSchema.nullable()
     });
-    return raw ? { status: raw.status, reason: raw.reason ?? null } : null;
+    return raw ? { status: raw.status, reason: raw.reason ?? null, reviewedAt: raw.reviewed_at ?? null } : null;
 }
 
 /**

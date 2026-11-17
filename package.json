@@ -7,7 +7,8 @@
         "postinstall": "patch-package",
         "build": "vite build",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
-        "test": "npm run test:assistants && npm run test:chat && npm run test:client-schema && npm run test:routing && npm run test:search && npm run test:tools",
+        "test": "npm run test:admin && npm run test:assistants && npm run test:chat && npm run test:client-schema && npm run test:routing && npm run test:search && npm run test:tools",
+        "test:admin": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/admin/*.test.ts tests/js/admin/*.test.svelte.ts",
         "test:assistants": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/assistants/*.test.ts tests/js/assistants/*.test.svelte.ts",
         "test:client-schema": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/client-schema/*.test.ts tests/js/client-schema/*.test.svelte.ts",
         "test:routing": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/routing/*.test.ts tests/js/routing/*.test.svelte.ts",
@@ -61,6 +62,7 @@
     },
     "dependencies": {
         "@formkit/auto-animate": "^0.10.0",
+        "@tanstack/svelte-table": "^9.3.1",
         "emoji-picker-element": "^1.29.1",
         "smob": "^1.6.2"
     }

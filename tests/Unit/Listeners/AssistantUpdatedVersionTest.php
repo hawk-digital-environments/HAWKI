@@ -5,38 +5,26 @@ declare(strict_types=1);
 namespace Tests\Unit\Listeners;
 
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantVersion;
 use App\Services\Assistant\Events\AssistantUpdatedEvent;
 use App\Services\Assistant\Listeners\AssistantUpdatedVersion;
 use App\Services\Assistant\Values\AssistantReleaseStage;
-use App\Services\System\Time\CarbonClock;
-use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\CoversClass;
-use Symfony\Component\Clock\MockClock;
 use Tests\TestCase;
 
+/**
+ * Edits accumulate their changed keys on the assistant's working-draft row
+ * (version 0.0) — the delta a reviewer sees between the published state and
+ * the pending draft. They never spawn additional version rows; the previous
+ * debounce window is obsolete because there is only ever one mutable row.
+ */
 #[CoversClass(AssistantUpdatedVersion::class)]
 class AssistantUpdatedVersionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private MockClock $clock;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        config(['app.timezone' => 'UTC']);
-        date_default_timezone_set('UTC');
-
-        // Time is fully driven by the injected clock: both the "now" read and
-        // the updated_at written by the listener come from it, so advancing the
-        // MockClock moves the debounce window deterministically (same wiring as
-        // the feature tests in AssistantUpdateTest).
-        $this->clock = new MockClock();
-        $this->app->instance(CarbonClockInterface::class, new CarbonClock($this->clock));
-    }
-
-    public function testMergesKeysIntoLatestWithinDebounceWindow(): void
+    public function testItMergesKeysIntoTheDraftRow(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
@@ -46,50 +34,27 @@ class AssistantUpdatedVersionTest extends TestCase
         $this->trigger($assistant, ['description']);
 
         $versions = $assistant->fresh()->assistantVersions()->orderBy('version')->get();
-        self::assertCount(1, $versions);
-        self::assertEquals(['description', 'name'], $versions->first()->changed_keys);
+        static::assertCount(1, $versions);
+        static::assertSame('0.0', $versions->first()->version);
+        static::assertEquals(['description', 'name'], $versions->first()->changed_keys);
     }
 
-    public function testCreatesNewVersionAfterDebounceWindow(): void
+    public function testItNeverCreatesNewVersionsForRepeatedEdits(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
         ]);
 
         $this->trigger($assistant, ['name']);
-
-        // Default debounce window is 10s (config/assistant.php).
-        $this->clock->sleep(11);
-
         $this->trigger($assistant, ['description']);
-
-        $versions = $assistant->fresh()->assistantVersions()->orderBy('version')->get();
-        self::assertCount(2, $versions);
-        self::assertSame('1.0', $versions[0]->version);
-        self::assertEquals(['name'], $versions[0]->changed_keys);
-        self::assertSame('2.0', $versions[1]->version);
-        self::assertEquals(['description'], $versions[1]->changed_keys);
-    }
-
-    public function testSlidingWindowExtendsOnEachMerge(): void
-    {
-        $assistant = Assistant::factory()->create([
-            'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
-        ]);
-
-        // Each merged change refreshes updated_at, sliding the window forward.
-        $this->trigger($assistant, ['name']);
-        $this->clock->sleep(9);
-        $this->trigger($assistant, ['description']);
-        $this->clock->sleep(9);
         $this->trigger($assistant, ['greeting']);
 
         $versions = $assistant->fresh()->assistantVersions;
-        self::assertCount(1, $versions);
-        self::assertEquals(['description', 'greeting', 'name'], $versions->first()->changed_keys);
+        static::assertCount(1, $versions);
+        static::assertEquals(['description', 'greeting', 'name'], $versions->first()->changed_keys);
     }
 
-    public function testSortsAndDeduplicatesMergedKeys(): void
+    public function testItSortsAndDeduplicatesMergedKeys(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
@@ -99,30 +64,31 @@ class AssistantUpdatedVersionTest extends TestCase
         $this->trigger($assistant, ['a', 'c']);
 
         $version = $assistant->fresh()->assistantVersions()->latest('version')->first();
-        self::assertEquals(['a', 'b', 'c'], $version->changed_keys);
+        static::assertEquals(['a', 'b', 'c'], $version->changed_keys);
     }
 
-    public function testSkipsDraftAssistants(): void
+    public function testTracksDraftStageAssistants(): void
     {
+        // Unlike the previous journal implementation, draft-stage edits are
+        // tracked too: the draft row's changed keys describe everything not
+        // yet published, no matter which stage the assistant currently sits in.
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::DRAFT->value,
         ]);
-        $baselineCount = $assistant->assistantVersions()->count();
 
         $this->trigger($assistant, ['name']);
 
-        // The listener returns before any DB write, so the factory baseline row
-        // is untouched (changed_keys stays NULL).
         $versions = $assistant->fresh()->assistantVersions;
-        self::assertCount($baselineCount, $versions);
-        self::assertNull($versions->first()->changed_keys);
+        static::assertCount(1, $versions);
+        static::assertSame('0.0', $versions->first()->version);
+        static::assertEquals(['name'], $versions->first()->changed_keys);
     }
 
-    public function testInsertsAtVersionOneWhenNoVersionsExist(): void
+    public function testItInsertsADraftRowWhenNoVersionsExist(): void
     {
         // Bypass the factory's afterCreating baseline so the listener starts
-        // from an empty version history (exercises the max('version') ?? 0.0
-        // fallback in the create branch).
+        // from an empty version history (covers assistants whose rows predate
+        // the draft model).
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
         ]);
@@ -131,12 +97,12 @@ class AssistantUpdatedVersionTest extends TestCase
         $this->trigger($assistant, ['name']);
 
         $versions = $assistant->fresh()->assistantVersions()->orderBy('version')->get();
-        self::assertCount(1, $versions);
-        self::assertSame('1.0', $versions->first()->version);
-        self::assertEquals(['name'], $versions->first()->changed_keys);
+        static::assertCount(1, $versions);
+        static::assertSame('0.0', $versions->first()->version);
+        static::assertEquals(['name'], $versions->first()->changed_keys);
     }
 
-    public function testCreatesVersionsWithEmptyText(): void
+    public function testItLeavesTheTextEmptyOnEdits(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
@@ -144,28 +110,31 @@ class AssistantUpdatedVersionTest extends TestCase
 
         $this->trigger($assistant, ['foo']);
 
-        $version = $assistant->assistantVersions()->latest('version')->first();
+        $version = $assistant->fresh()->assistantVersions()->latest('version')->first();
         // `text` carries only the creator's release note (written by the
         // release action); content edits leave it empty.
-        self::assertSame('', $version->text);
+        static::assertSame('', $version->text);
     }
 
-    public function testMergeKeepsExistingReleaseNote(): void
+    public function testItKeepsTheExistingReleaseNoteOnMerge(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
         ]);
 
-        // Simulate the release action having recorded a note on the latest row.
-        $assistant->assistantVersions()->latest('version')->first()->forceFill([
-            'text' => 'Tightened the system prompt',
-        ])->save();
+        // Simulate the release action having recorded a note on the draft row.
+        $assistant->assistantVersions()
+            ->where('version', AssistantVersion::DRAFT_VERSION)
+            ->first()
+            ->forceFill([
+                'text' => 'Tightened the system prompt',
+            ])->save();
 
         $this->trigger($assistant, ['name']);
 
-        $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('Tightened the system prompt', $version->text);
-        self::assertEquals(['name'], $version->changed_keys);
+        $version = $assistant->fresh()->assistantVersions()->latest('version')->first();
+        static::assertSame('Tightened the system prompt', $version->text);
+        static::assertEquals(['name'], $version->changed_keys);
     }
 
     private function trigger(Assistant $assistant, array $changedKeys): void

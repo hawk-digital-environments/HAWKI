@@ -16,6 +16,10 @@
     import VersionTimeline from '$plugins/assistants/modules/dashboard/components/versionTimeline/VersionTimeline.svelte';
     import VersionCard from '$plugins/assistants/modules/dashboard/components/versionTimeline/VersionCard.svelte';
     import StatusCard from '$plugins/assistants/components/report/StatusCard.svelte';
+    import StatusPill from '$plugins/assistants/components/status/StatusPill.svelte';
+    import Alert from '$lib/components/ui/alert/Alert.svelte';
+    import { ReviewStage } from '$plugins/assistants/types/assistant/ReviewStage';
+    import { reviewPillTone, reviewAlertTone } from '$plugins/assistants/components/status/reviewTones.js';
     import AssistantBanner from '$plugins/assistants/components/avatarBuilder/AssistantBanner.svelte';
     import { submitAssistantFeedbacks } from '$plugins/assistants/api/resources/assistantFeedbackClient';
     import { ApiError } from '$plugins/assistants/api/errors';
@@ -111,7 +115,8 @@
     let assistant = $state<Assistant | undefined>(initial?.id === id ? initial : undefined);
     let loading = $state(true);
     let error = $state<Error | null>(null);
-    let feedbacks = $state<AssistantFeedback[]>([]);
+    // svelte-ignore state_referenced_locally
+    let feedbacks = $state<AssistantFeedback[]>(initial?.feedbacks ?? []);
 
     // The detailed description is clamped to DESCRIPTION_COLLAPSED_LINES with
     // a bottom fade; FadeText expands it to the full text (one-way).
@@ -150,6 +155,9 @@
                 if (result.actionPermissions?.viewAssistantFeedback) {
                     void loadFeedbacks(result.id, controller.signal);
                 }
+                // `assistant_review` is likewise privileged (creator or org
+                // admin only) — it rides its own request too.
+                void loadReview(result.id, controller.signal);
             })
             .catch((err) => {
                 if (!controller.signal.aborted) error = err;
@@ -178,6 +186,29 @@
         }
     }
 
+    /**
+     * `assistant_review` is a privileged include (creator or org admin) that
+     * 403s the whole fetch for other viewers — so, like the feedback load, it
+     * rides its own request. A 403 is not an error here: the review section
+     * simply stays hidden for strangers.
+     */
+    async function loadReview(assistantId: string | null, signal?: AbortSignal): Promise<void> {
+        if (!assistantId) return;
+        try {
+            const withReview = await getAssistant(
+                assistantId,
+                { include: ['assistant_review'] },
+                signal
+            );
+            if (signal?.aborted) return;
+            if (assistant?.id === assistantId) {
+                assistant.review = withReview.review ?? null;
+            }
+        } catch {
+            // Not privileged (or transient failure) — no review section.
+        }
+    }
+
     /** Persist the favourite toggle: failures surface as a toast and
      *  FavButton rolls its optimistic flip back (see persistFavourite). */
     function onFavoriteChange(active: boolean): Promise<void> | undefined {
@@ -194,8 +225,19 @@
     const coverForeground = $derived(avatar.iconCss.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1]);
 
     const lastUpdateLabel = $derived(
-        assistant?.versions[0]?.createdAt ? formatDate(assistant.versions[0].createdAt, intlLocale) : '—'
+        assistant?.updatedAt ? formatDate(assistant.updatedAt, intlLocale) : '—'
     );
+
+    /** The newest published version number — never the mutable 0.0 draft. */
+    const latestVersionLabel = $derived.by(() => {
+        const published = (assistant?.versions ?? []).filter(version => Number(version.version) > 0);
+
+        if (0 === published.length) {
+            return '—';
+        }
+
+        return Math.max(...published.map(version => Number(version.version))).toFixed(1);
+    });
 
     /**
      * `BuilderContext` can only be created during its owning layout's
@@ -254,6 +296,16 @@
         assistant?.requested_release_stage && assistant.requested_release_stage !== assistant.releaseStage ?
             assistant.requested_release_stage
         :   null
+    );
+
+    /**
+     * An approved review only counts as current while the assistant is
+     * public — after falling back to private, it is an outdated record that
+     * never takes effect by itself (publishing needs a fresh review).
+     */
+    const outdatedApproval = $derived(
+        assistant?.review?.status === ReviewStage.APPROVED
+        && (assistant?.releaseStage === ReleaseMode.PRIVATE || assistant?.releaseStage === ReleaseMode.DRAFT)
     );
 
     const releaseValueLabel = $derived(
@@ -527,7 +579,7 @@
                     />
                     <StatusCard
                         label={__('assistants.detail.meta_version')}
-                        status={assistant.versions[0]?.version ?? '—'}
+                        status={latestVersionLabel}
                         size="large"
                         icon={HashtagIcon}
                         type={ValidationState.UNKNOWN}
@@ -582,6 +634,43 @@
                         </div>
                         {#if assistant.riskNote}
                             <p class="section-text">{assistant.riskNote}</p>
+                        {/if}
+                    </section>
+                {/if}
+
+                {#if assistant.review}
+                    <hr />
+
+                    <section class="section">
+                        <div class="section-head">
+                            <h3 class="section-title">{__('assistants.detail.review_title')}</h3>
+                            <StatusPill
+                                tone={reviewPillTone(assistant.review.status)}
+                                label={__(`assistants.review.status.${assistant.review.status}`)}
+                            />
+                        </div>
+                        {#if outdatedApproval}
+                            <p class="section-text outdated">
+                                <Clock01Icon size="1em" aria-hidden="true" />
+                                {__('assistants.review.outdated_hint')}
+                            </p>
+                        {:else if assistant.review.status === ReviewStage.PENDING && assistant.requested_release_stage}
+                            <p class="section-text">
+                                {__('assistants.detail.review_requested_hint', {
+                                    stage: __(`assistants.release_stage.${assistant.requested_release_stage}`)
+                                })}
+                            </p>
+                        {:else if assistant.review.reviewedAt}
+                            <p class="section-text">
+                                {__('assistants.detail.review_decided_on', {date: formatDate(assistant.review.reviewedAt, intlLocale)})}
+                            </p>
+                        {/if}
+                        {#if assistant.review.reason}
+                            <Alert
+                                size="small"
+                                tone={reviewAlertTone(assistant.review.status)}
+                                description={assistant.review.reason}
+                            />
                         {/if}
                     </section>
                 {/if}
@@ -903,6 +992,12 @@
         flex-wrap: wrap;
         align-items: center;
         gap: var(--space-3);
+    }
+    /* The outdated-approval hint: clock icon inline with the muted text. */
+    .section-text.outdated {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
     }
     .section-title {
         margin: 0;

@@ -79,7 +79,7 @@ class AssistantServiceReleaseTest extends TestCase
         Event::assertNotDispatched(AssistantReleaseStageChangedEvent::class);
     }
 
-    public function testRevokeReleaseDemotesToPrivate(): void
+    public function testItDemotesToPrivateOnRevokeRelease(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::ORGANIZATIONAL->value,
@@ -99,7 +99,7 @@ class AssistantServiceReleaseTest extends TestCase
         Event::assertDispatched(AssistantReleaseStageChangedEvent::class);
     }
 
-    public function testReleaseRecordsNoteOnLatestVersion(): void
+    public function testReleaseRecordsNoteOnDraftVersion(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::DRAFT->value,
@@ -109,9 +109,11 @@ class AssistantServiceReleaseTest extends TestCase
 
         app(AssistantService::class)->release($assistant, AssistantReleaseStage::PRIVATE, 'Fixed the greeting');
 
+        // Every submit freezes the state onto the working-draft row; the note
+        // travels with it.
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('Fixed the greeting', $version->text);
-        self::assertSame('1.0', $version->version);
+        static::assertSame('Fixed the greeting', $version->text);
+        static::assertSame('0.0', $version->version);
     }
 
     public function testReleaseRecordsNoteWhileReviewIsPending(): void
@@ -133,10 +135,10 @@ class AssistantServiceReleaseTest extends TestCase
         ]);
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('Ready for the org', $version->text);
+        static::assertSame('Ready for the org', $version->text);
     }
 
-    public function testReleaseWithoutNoteLeavesVersionTextUntouched(): void
+    public function testItLeavesTheVersionTextUntouchedWhenTheReleaseCarriesNoNote(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::DRAFT->value,
@@ -147,7 +149,7 @@ class AssistantServiceReleaseTest extends TestCase
         app(AssistantService::class)->release($assistant, AssistantReleaseStage::PRIVATE);
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('', $version->text);
+        static::assertSame('', $version->text);
     }
 
     public function testReleaseReopensNeedsRevisionReviewAsPending(): void
@@ -197,10 +199,10 @@ class AssistantServiceReleaseTest extends TestCase
         app(AssistantService::class)->release($assistant, AssistantReleaseStage::ORGANIZATIONAL, 'Try again');
 
         $version = $assistant->assistantVersions()->latest('version')->first();
-        self::assertSame('Previous note', $version->text);
+        static::assertSame('Previous note', $version->text);
     }
 
-    public function testReleaseNoteCreatesVersionWhenNoneExists(): void
+    public function testReleaseNoteCreatesDraftVersionWhenNoneExists(): void
     {
         $assistant = Assistant::factory()->create([
             'release_stage' => AssistantReleaseStage::DRAFT->value,
@@ -212,8 +214,8 @@ class AssistantServiceReleaseTest extends TestCase
         app(AssistantService::class)->release($assistant, AssistantReleaseStage::PRIVATE, 'First publish');
 
         $versions = $assistant->assistantVersions()->orderBy('version')->get();
-        self::assertCount(1, $versions);
-        self::assertSame('1.0', $versions->first()->version);
-        self::assertSame('First publish', $versions->first()->text);
+        static::assertCount(1, $versions);
+        static::assertSame('0.0', $versions->first()->version);
+        static::assertSame('First publish', $versions->first()->text);
     }
 }

@@ -168,6 +168,13 @@
             "retryLabel": "„:group“ erneut durchsuchen",
             "noResults": "Nichts passt zu „:query“.",
             "empty": "Noch nichts zum Durchsuchen."
+        },
+        "table": {
+            "page": "Seite :page von :pages (:total Einträge)",
+            "page_size": "Einträge pro Seite",
+            "previous": "Zurück",
+            "next": "Weiter",
+            "empty": "Keine Einträge."
         }
     }
 }
