@@ -109,7 +109,7 @@ Configuration for document conversion services. Choose between HAWIK's built-in 
 | Variable                     | Default Value                                         | Description                                           |
 |------------------------------|-------------------------------------------------------|-------------------------------------------------------|
 | FILE_CONVERTER               | hawki_converter                                       | Converter to use: "hawki_converter" or "gwdg_docling" |
-| HAWKI_FILE_CONVERTER_API_URL | http://127.0.0.1:8004                                 | Base URL of the hosted HAWKI converter service (a legacy value ending in `/extract` is still accepted) |
+| HAWKI_FILE_CONVERTER_API_URL | http://file-converter                                 | Base URL of the hosted HAWKI converter service (a legacy value ending in `/extract` is still accepted) |
 | HAWKI_FILE_CONVERTER_API_KEY | 123456                                                | API key for the HAWKI converter service               |
 | GWDG_FILE_CONVERTER_API_URL  | https://chat-ai.academiccloud.de/v1/documents/convert | URL to the GWDG Docling converter service             |
 
