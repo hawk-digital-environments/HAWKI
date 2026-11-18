@@ -227,6 +227,9 @@
 
     .cover {
         position: relative;
+        /* Purely decorative (banner + title): let clicks fall through to the
+           card's stretched `.open` button underneath. */
+        pointer-events: none;
         /* Never squeezed: a cropped banner would be shorter than the one the
            detail morph lands on (morphToDetail), and snap at the end. */
         flex-shrink: 0;

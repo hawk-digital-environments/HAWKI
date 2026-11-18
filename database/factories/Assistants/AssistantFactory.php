@@ -32,9 +32,24 @@ class AssistantFactory extends Factory
             'category_id' => AssistantCategory::factory(),
             'release_stage' => 'private',
             'requested_release_stage' => null,
-            // A model that is actually offered — the store's model_available filter
-            // hides assistants whose model no longer resolves.
-            'model' => AiModel::query()->inRandomOrder()->value('model_id')
+            // A model that is actually offered, referenced by its provider-qualified
+            // identifier (the form the API exposes, the builder stores and the
+            // frontend resolves). Prefer the configured default, then any active
+            // model of an active provider.
+            'model' => AiModel::query()
+                ->where('model_id', config('model_providers.default_models.default_model'))
+                ->where('active', true)
+                ->whereHas('provider', static fn ($provider) => $provider->where('active', true))
+                ->get()
+                ->map(static fn (AiModel $model) => $model->getIdentifier())
+                ->first()
+                ?? AiModel::query()
+                    ->where('active', true)
+                    ->whereHas('provider', static fn ($provider) => $provider->where('active', true))
+                    ->inRandomOrder()
+                    ->get()
+                    ->map(static fn (AiModel $model) => $model->getIdentifier())
+                    ->first()
                 ?? 'openAi/gpt-6.1-terra',
             'max_tokens' => fake()->numberBetween(100, 4096),
             'temp' => fake()->randomFloat(2, 0, 1),

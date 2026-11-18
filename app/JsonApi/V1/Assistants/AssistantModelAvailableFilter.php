@@ -34,7 +34,13 @@ class AssistantModelAvailableFilter implements Filter
 
     public function apply($query, $value)
     {
-        $offeredModelIds = AiModel::query()->select('model_id');
+        // Assistants reference models by their provider-qualified identifier
+        // (the form the API exposes and the builder stores), so the offered
+        // list must be qualified the same way.
+        $offeredModelIds = AiModel::query()
+            ->select('provider_id', 'model_id')
+            ->get()
+            ->map(static fn (AiModel $model) => $model->getIdentifier());
 
         return filter_var($value, \FILTER_VALIDATE_BOOLEAN)
             ? $query->whereIn('model', $offeredModelIds)
